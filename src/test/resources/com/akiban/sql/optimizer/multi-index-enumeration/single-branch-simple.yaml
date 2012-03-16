@@ -5,8 +5,5 @@ usingIndexes:
 conditionsOn:
     - customers.name
     - orders.odate
-combinations:
-    -   outputIndex: orders.odatekey
-        outputSkip: [orders.odate]
-        selectorIndex: customers.namekey
-        selectorSkip: [customers.name]
+results:
+    - INTERSECT( [ODATE, cid, id] AND [NAME, id] with 1 comparison)

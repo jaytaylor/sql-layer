@@ -60,9 +60,8 @@ public class TestCostEstimator extends CostEstimator
     @Override
     public IndexStatistics[] getIndexColumnStatistics(Index index)
     {
-        // Adapter from IndexStatisticsServiceImpl.getIndexCollumnStatistics
-        List<IndexColumn> allIndexColumns = new ArrayList<IndexColumn>(index.getKeyColumns());
-        allIndexColumns.addAll(index.getValueColumns());
+        // Adapted from IndexStatisticsServiceImpl.getIndexColumnStatistics
+        List<IndexColumn> allIndexColumns = index.getAllColumns();
         IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
         int i = 0;
         // For the first column, the index supplied by the optimizer is likely to be a better choice than an aribtrary

@@ -147,8 +147,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Override
     public IndexStatistics[] getIndexColumnStatistics(Session session, Index index) {
-        List<IndexColumn> allIndexColumns = new ArrayList<IndexColumn>(index.getKeyColumns());
-        allIndexColumns.addAll(index.getValueColumns());
+        List<IndexColumn> allIndexColumns = index.getAllColumns();
         IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
         int i = 0;
         // For the first column, the index supplied by the optimizer is likely to be a better choice than an aribtrary
