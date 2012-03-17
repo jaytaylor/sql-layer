@@ -74,18 +74,27 @@ public class AbsExpression extends AbstractUnaryExpression
             
             switch (operandType) {
                 case DOUBLE:
-                    valueHolder().putDouble( Math.abs(operand().getDouble()) ); break;   
+                    valueHolder().putDouble( Math.abs(operand().getDouble()) ); 
+                    break;   
                 case FLOAT:
-                    valueHolder().putFloat( Math.abs(operand().getFloat()) ); break;
+                    valueHolder().putFloat( Math.abs(operand().getFloat()) ); 
+                    break;
                 case LONG:
-                    valueHolder().putLong( Math.abs(operand().getLong()) ); break;
+                    valueHolder().putLong( Math.abs(operand().getLong()) ); 
+                    break;
                 case INT:
-                    valueHolder().putInt( Math.abs(operand().getInt()) ); break;
+                    valueHolder().putInt( Math.abs(operand().getInt()) ); 
+                    break;
                 case DECIMAL:
-                    valueHolder().putDecimal( operand().getDecimal().abs()); break;
-                case U_DOUBLE: case U_BIGINT: case U_FLOAT: case U_INT:
+                    valueHolder().putDecimal( operand().getDecimal().abs()); 
+                    break;
+                case U_DOUBLE: 
+                case U_BIGINT: 
+                case U_FLOAT: 
+                case U_INT:
                     // Unsigned values remain the same
-                    valueHolder().copyFrom(operand()); break;
+                    valueHolder().copyFrom(operand()); 
+                    break;
                 default:
                     QueryContext context = queryContext();
                     if (context != null)
