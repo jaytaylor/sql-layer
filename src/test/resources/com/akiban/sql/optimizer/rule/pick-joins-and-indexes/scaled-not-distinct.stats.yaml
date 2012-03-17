@@ -1,0 +1,61 @@
+Index: PRIMARY
+RowCount: 600
+SampledCount: 6
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [101]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [102]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [201]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [202]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [301]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [401]
+    lt: 0
+Table: orders
+Timestamp: 2012-03-15T22:41:31.955Z
+---
+Index: order_date
+RowCount: 600
+SampledCount: 6
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: ['2011-01-01']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['2011-02-28']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['2011-03-01']
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: ['2011-03-02']
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: ['2011-03-03']
+    lt: 0
+Table: orders
+Timestamp: 2012-03-15T22:41:31.950Z

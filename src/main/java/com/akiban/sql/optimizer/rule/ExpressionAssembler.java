@@ -15,22 +15,27 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.pg.PostgresType;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
+
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.sql.optimizer.plan.*;
-import com.akiban.sql.types.DataTypeDescriptor;
-import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.server.expression.std.InExpression;
-import com.akiban.server.types.AkType;
+import com.akiban.server.expression.std.IntervalCastExpression;
+import static com.akiban.server.expression.std.Expressions.*;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.expression.std.IntervalCastExpression;
-import com.akiban.sql.pg.PostgresType;
-import com.akiban.sql.types.TypeId;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +43,8 @@ import java.util.List;
 /** Turn {@link ExpressionNode} into {@link Expression}. */
 public class ExpressionAssembler
 {
+    private static final Logger logger = LoggerFactory.getLogger(ExpressionAssembler.class);
+
     private FunctionsRegistry functionsRegistry;
 
     public ExpressionAssembler(RulesContext rulesContext) {
@@ -169,6 +176,8 @@ public class ExpressionAssembler
                 return boundField(boundRow.getRowType(), rowIndex, fieldIndex);
             }
         }
+        logger.debug("Did not find {} from {} in {}", 
+                     new Object[] { column, column.getTable(), boundRows });
         throw new AkibanInternalException("Column not found " + column);
     }
 

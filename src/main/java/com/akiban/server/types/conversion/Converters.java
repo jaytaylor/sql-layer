@@ -164,18 +164,27 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(DATE,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATETIME,
                 TIMESTAMP,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(DATETIME,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATE,
                 TIMESTAMP,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(TIME,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATE,
                 YEAR,
                 DATETIME,
@@ -184,12 +193,18 @@ public final class Converters {
                 LONG
         );
         builder.legalConversions(TIMESTAMP,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATETIME,
                 DATE,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(YEAR,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATE,
                 DATETIME,
                 TIMESTAMP,

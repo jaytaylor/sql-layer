@@ -23,8 +23,6 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Map;
 import java.util.Collections;
 import java.io.File;
@@ -55,64 +53,6 @@ public class TestCostEstimator extends CostEstimator
     @Override
     public IndexStatistics getIndexStatistics(Index index) {
         return stats.get(index);
-    }
-
-    @Override
-    public IndexStatistics[] getIndexColumnStatistics(Index index)
-    {
-        // Adapted from IndexStatisticsServiceImpl.getIndexColumnStatistics
-        List<IndexColumn> allIndexColumns = index.getAllColumns();
-        IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
-        int i = 0;
-        // For the first column, the index supplied by the optimizer is likely to be a better choice than an aribtrary
-        // index with the right leading column.
-        IndexStatistics statsForRequestedIndex = getIndexStatistics(index);
-        if (statsForRequestedIndex != null) {
-            indexStatsArray[i++] = getIndexStatistics(index);
-        }
-        while (i < allIndexColumns.size()) {
-            IndexStatistics indexStatistics = null;
-            Column leadingColumn = allIndexColumns.get(i).getColumn();
-            // Find a TableIndex whose first column is leadingColumn
-            for (TableIndex tableIndex : leadingColumn.getTable().getIndexes()) {
-                if (tableIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
-                    indexStatistics = getIndexStatistics(tableIndex);
-                    if (indexStatistics != null) {
-                        break;
-                    }
-                }
-            }
-            // If none, find a GroupIndex whose first column is leadingColumn
-            if (indexStatistics == null) {
-                groupLoop: for (Group group : ais.getGroups().values()) {
-                    for (GroupIndex groupIndex : group.getIndexes()) {
-                        if (groupIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
-                            indexStatistics = getIndexStatistics(groupIndex);
-                            if (indexStatistics != null) {
-                                break groupLoop;
-                            }
-                        }
-                    }
-                }
-            }
-            indexStatsArray[i++] = indexStatistics;
-        }
-        return indexStatsArray;
-    }
-
-    @Override
-    public long getTableRowCount(Table table) {
-        for (Index index : table.getIndexes()) {
-            IndexStatistics istats = stats.get(index);
-            if (istats != null)
-                return istats.getRowCount();
-        }
-        return 1;
-    }
-
-    @Override
-    protected boolean scaleIndexStatistics() {
-        return false;
     }
 
 }
