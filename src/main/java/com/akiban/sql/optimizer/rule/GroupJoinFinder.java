@@ -695,8 +695,11 @@ public class GroupJoinFinder extends BaseRule
         TableGroup tg2 = ts2.getGroup();
         if (g1 != g2)
             return g1.getName().compareTo(g2.getName());
-        if (tg1 == tg2)         // Including null because not yet computed.
+        if (tg1 == tg2) {       // Including null because not yet computed.
+            if (ut1 == ut2)
+                return ts1.getName().compareTo(ts2.getName());
             return t1.getOrdinal() - t2.getOrdinal();
+        }
         return tg1.getMinOrdinal() - tg2.getMinOrdinal();
     }
 
