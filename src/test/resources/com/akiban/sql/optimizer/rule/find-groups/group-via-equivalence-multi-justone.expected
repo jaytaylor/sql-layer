@@ -1,9 +1,9 @@
 SelectQuery@7979a49f
   ResultSet@21270107[bid1, bid2, title, bcol1, bcol2, cid, bfk1, bfk2, content, ccol1, ccol2]
-    Project@7b48392[blogs.bid1, blogs.bid2, blogs.title, blogs.bcol1, blogs.bcol2, comments.cid, comments.bfk1, comments.bfk2, comments.content, comments.ccol1, comments.ccol2]
-      Select@5c29ea31[comments.ccol1 == blogs.bcol1, comments.ccol2 == blogs.bcol2, blogs.bcol1 == blogs.bid1, blogs.bcol2 == blogs.bid2, comments.ccol1 == comments.bfk1]
+    Project@7b48392[b.bid1, b.bid2, b.title, b.bcol1, b.bcol2, c.cid, c.bfk1, c.bfk2, c.content, c.ccol1, c.ccol2]
+      Select@5c29ea31[c.ccol1 == b.bcol1, c.ccol2 == b.bcol2, b.bcol1 == b.bid1, b.bcol2 == b.bid2, c.ccol1 == c.bfk1]
         JoinNode@43ce663c(INNER)
           TableJoins@239a0feb(TableGroup@578b1f8f(blogs))
-            TableSource@18abe654(blogs - TableGroup@578b1f8f(blogs))
+            TableSource@18abe654(b - TableGroup@578b1f8f(blogs))
           TableJoins@6ec5122f(TableGroup@4c2d0479(blogs))
-            TableSource@3d9ea173(comments - TableGroup@4c2d0479(blogs))
+            TableSource@3d9ea173(c - TableGroup@4c2d0479(blogs))

@@ -10,8 +10,8 @@ SelectQuery@377e9134
         Select@9f293df[]
           Limit@2b125a40(LIMIT 1)
             Select@39880571[]
-              Flatten@2be3d80c(items)
-                Select@41e335d7[items.quan == items.quan]
+              Flatten@2be3d80c(i2)
+                Select@41e335d7[items.quan == i2.quan]
                   AncestorLookup@7b7d1256(items -> [items])
                     IndexScan@503f0b70(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234)
-                    TableSource@37975d46(items - TableGroup@5b080f38(customers))
+                    TableSource@37975d46(i2 - TableGroup@5b080f38(customers))

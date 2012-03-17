@@ -4,13 +4,13 @@ SelectQuery@1f31cd12
       SubquerySource@74a138(ANY)
         Subquery@14ca1a93
           Distinct@3df3bec
-            Project@6096b38e[customers.name]
+            Project@6096b38e[c2.name]
               Select@45e6612c[]
-                Flatten@108543aa(customers INNER orders)
+                Flatten@108543aa(c2 INNER orders)
                   Select@1d1d565f[orders.order_date > 2011-03-02]
                     BranchLookup@711185e7(customers -> customers)
                       IndexScan@356e3aaf(Index(user.customers.name[IndexColumn(name)]), SORTED)
-                      TableSource@6c22fde7(customers - TableGroup@1ff19e50(customers))
+                      TableSource@6c22fde7(c2 - TableGroup@1ff19e50(customers))
                       TableSource@24753433(orders - TableGroupJoin@57ced290(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
       Project@377e9134[customers.cid, customers.name]
         Select@566f0962[]
