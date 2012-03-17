@@ -57,17 +57,11 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
             if (argc != 1)
                 throw new WrongExpressionArityException(1, argc);
             
-            ExpressionType firstExpType = argumentTypes.get(0);
-            AkType firstAkType = firstExpType.getType();
-
+            AkType firstAkType = argumentTypes.get(0).getType();
             if (firstAkType == AkType.VARCHAR)
-            {
-                firstAkType = AkType.DOUBLE;
-                firstExpType = ExpressionTypes.DOUBLE;
                 argumentTypes.setType(0, AkType.DOUBLE);
-            }
 
-            return firstExpType;
+            return argumentTypes.get(0);
         }
 
         @Override
@@ -100,8 +94,12 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
             switch (operandType)
             {
                 // For any integer type, ROUND/FLOOR/CEIL just return the same value
-                case INT: case LONG: case U_INT: case U_BIGINT:
-                    valueHolder().copyFrom(firstOperand); break;
+                case INT: 
+                case LONG: 
+                case U_INT: 
+                case U_BIGINT:
+                    valueHolder().copyFrom(firstOperand); 
+                    break;
                 // Math.floor/ceil only with doubles, so we split FLOAT/DOUBLE to be safe with casting
                 case DOUBLE:
                     double dInput = firstOperand.getDouble();
