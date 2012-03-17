@@ -33,22 +33,15 @@ import java.math.BigInteger;
 
 public class SignExpression extends AbstractUnaryExpression 
 {
+    public static final int NEG = -1, ZERO = 0, POS = 1;
+    
     // This function takes the result from a `compare` function and maps it to
     // the desired return for SIGN. also allows us to change -1, 1, 0 if we want
     private static int finalReturnValueOf(int x)
     {
-        if (x < 0) return signValue.NEG.intValue();
-        if (x > 0) return signValue.POS.intValue();
-        return signValue.ZERO.intValue();
-    }
-    
-    // The "actual" return value of our SIGN SQL function is stored in the enum constructor
-    public enum signValue
-    {
-        NEG(-1), ZERO(0), POS(1);
-        private int assignedValue;
-        private signValue(int x) { this.assignedValue = x; }
-        public int intValue() { return assignedValue; }
+        if (x < 0) return NEG;
+        if (x > 0) return POS;
+        return ZERO;
     }
     
     @Scalar("sign")
@@ -68,10 +61,6 @@ public class SignExpression extends AbstractUnaryExpression
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
             
-           AkType firstAkType = argumentTypes.get(0).getType();
-            if (firstAkType == AkType.VARCHAR)
-                argumentTypes.setType(0, AkType.DOUBLE);
-
             return ExpressionTypes.INT;
         }
         

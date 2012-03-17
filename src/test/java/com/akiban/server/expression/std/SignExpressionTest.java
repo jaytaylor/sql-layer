@@ -27,9 +27,9 @@ import org.junit.Test;
 
 public class SignExpressionTest extends ComposedExpressionTestBase {
     
-    private static final int POS = SignExpression.signValue.POS.intValue();
-    private static final int NEG = SignExpression.signValue.NEG.intValue();
-    private static final int ZERO = SignExpression.signValue.ZERO.intValue();
+    private static final int POS = SignExpression.POS;
+    private static final int NEG = SignExpression.NEG;
+    private static final int ZERO = SignExpression.ZERO;
 
     @Test
     public void checkSignEnumValues()
