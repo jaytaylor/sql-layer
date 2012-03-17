@@ -36,6 +36,7 @@ import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.yaml.snakeyaml.Yaml;
@@ -56,6 +57,7 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+@Ignore
 @RunWith(NamedParameterizedRunner.class)
 public final class MultiIndexEnumeratorTest {
     
