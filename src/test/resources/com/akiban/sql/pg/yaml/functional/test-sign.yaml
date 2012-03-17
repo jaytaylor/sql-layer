@@ -49,8 +49,7 @@
     ('-Infinity', '-Infinity', '-Infinity'),
     ('NaN', 'NaN', 'NaN')
 ---
-- Statement: SELECT SIGN(float_field), SIGN(double_field),
-    SIGN(real_field) FROM all_types
+- Statement: SELECT SIGN(float_field), SIGN(double_field), SIGN(real_field) FROM all_types
 - output: [[1, 1, 1],
            [-1, -1, -1], 
            [NaN, NaN, NaN]]
