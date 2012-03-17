@@ -1,0 +1,85 @@
+# Test the SIGN function - returns 0 for zero values, 1 for posiive, -1 for negative
+---
+- Properties: all
+- suppressed: true
+---
+- Include: all-types-schema.yaml
+---
+- Statement: SELECT SIGN() FROM all_types
+- error: [4250C]
+---
+- Statement: SELECT SIGN(1.0, -2.0) FROM all_types
+- error: [4250C]
+---
+# Test NULL
+- Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
+            integer_field, bigint_field, bigint_unsigned_field, decimal_field,
+            numeric_field, real_field, varchar_field)
+            VALUES (null, null, null, null, null, null, null, null, null, null)
+---
+- Statement: SELECT SIGN(float_field), SIGN(double_field),
+    SIGN(smallint_field), SIGN(integer_field), SIGN(bigint_field),
+    SIGN(bigint_unsigned_field), SIGN(decimal_field), SIGN(numeric_field),
+    SIGN(real_field), SIGN(varchar_field) FROM all_types
+- output: [[null, null, null, null, null, null, null, null, null, null]]
+---
+- Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
+            integer_field, bigint_field, bigint_unsigned_field, decimal_field,
+            numeric_field, real_field, varchar_field)
+    VALUES (16.0, 16.0, 16, 16, 16, 16, 16.0, 16.0, 16.0, '16'),
+    (-2.0, -2.0, -2, -2, -2, -2, -2.0, -2.0, -2.0, '-2.0'),
+    (0.0, 0.0, 0, 0, 0, 0, 0.0, 0.0, 0.0, '0.0'),
+---
+- Statement: SELECT SIGN(float_field), SIGN(double_field),
+    SIGN(smallint_field), SIGN(integer_field), SIGN(bigint_field),
+    SIGN(bigint_unsigned_field), SIGN(decimal_field), SIGN(numeric_field), 
+    SIGN(real_field), SIGN(varchar_field) FROM all_types
+- output: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+           [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1],
+           [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]]
+
+# Infinity and NaN
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
+            integer_field, bigint_field, bigint_unsigned_field, decimal_field,
+            numeric_field, real_field, varchar_field)
+    VALUES ('Infinity', 'Infinity', 'Infinity','Infinity', 'Infinity', 'Infinity','Infinity', 'Infinity', 'Infinity','Infinity'),
+    ('-Infinity', '-Infinity', '-Infinity','-Infinity', '-Infinity', '-Infinity','-Infinity', '-Infinity', '-Infinity','-Infinity'),
+    ('NaN', 'NaN', 'NaN','NaN', 'NaN', 'NaN','NaN', 'NaN', 'NaN','NaN')
+---
+- Statement: SELECT SIGN(float_field), SIGN(double_field),
+    SIGN(smallint_field), SIGN(integer_field), SIGN(bigint_field),
+    SIGN(bigint_unsigned_field), SIGN(decimal_field), SIGN(numeric_field), 
+    SIGN(real_field), SIGN(varchar_field) FROM all_types
+- output: [[1, 1, 1, 1, 1, 1, 1, 1, 1, 1],
+           [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1], 
+           ['NaN', 'NaN', 'NaN','NaN', 'NaN', 'NaN','NaN', 'NaN', 'NaN','NaN']]
+
+# Literals
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (float_field) VALUES (1.0)
+---
+- Statement: SELECT SIGN(0.0) FROM all_types
+- output: [[0]]
+---
+- Statement: SELECT SIGN(2000.234) FROM all_types
+- output: [[1]]
+---
+- Statement: SELECT SIGN(-123.45) FROM all_types
+- output: [[-1]]
+
+# Parameters
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (double_field) VALUES (1.0)
+---
+- Statement: SELECT SIGN(?) FROM all_types
+- params: [[2.5], [-100.25], [0.0]]
+- output: [[1], [-1], [0]]
+
+...
