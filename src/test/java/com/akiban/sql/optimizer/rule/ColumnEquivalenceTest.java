@@ -111,15 +111,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     }
 
     private static String[] readEquivalences(String columnEquivalenceLine) {
-        String[] results = columnEquivalenceLine.split("\\s+");
-        for (int i = 0; i < results.length; ++i) {
-            String elem = results[i];
-            if (elem.split("\\.").length == 2) {
-                elem = DEFAULT_SCHEMA + '.' + elem;
-                results[i] = elem;
-            }
-        }
-        return results;
+        return columnEquivalenceLine.split("\\s+");
     }
 
     @Before
