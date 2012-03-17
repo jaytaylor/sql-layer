@@ -317,6 +317,11 @@ public final class MultiIndexEnumeratorTest {
         }
 
         @Override
+        protected List<Column> getComparisonColumns(TestNode first, TestNode second, EquivalenceFinder<Column> equivs) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        @Override
         protected TestNode intersect(TestNode first, TestNode second,
                                                   int comparisonCount) {
             return new SimpleBranch(first, second, comparisonCount);

@@ -26,7 +26,6 @@ public final class MultiIndexIntersectScan extends IndexScan {
     private IndexScan outputScan;
     private IndexScan selectorScan;
     private int comparisonColumns;
-    private List<ConditionExpression> conditions;
 
     public MultiIndexIntersectScan(IndexScan outerScan, IndexScan selectorScan, int comparisonColumns)
     {
@@ -67,6 +66,11 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
+    public List<ExpressionNode> getColumns() {
+        return outputScan.getColumns();
+    }
+
+    @Override
     public void setConditions(List<ConditionExpression> newConditions) {
         super.setConditions(newConditions); // promote visibility
     }
@@ -85,7 +89,6 @@ public final class MultiIndexIntersectScan extends IndexScan {
     public int getPeggedCount() {
         return outputScan.getPeggedCount();
     }
-
 
     @Override
     public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,

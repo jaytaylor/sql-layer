@@ -18,7 +18,6 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
@@ -147,34 +146,33 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
     {
         Table firstTable = first.getLeafMostUTable();
         Table secondTable = second.getLeafMostUTable();
-        List<IndexColumn> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
-        if (commonTrailing.isEmpty())
+        List<Column> comparisonCols = getComparisonColumns(first, second, columnEquivalences);
+        if (comparisonCols.isEmpty())
             return;
         UserTable firstUTable = (UserTable) firstTable;
         UserTable secondUTable = (UserTable) secondTable;
-        int comparisonsLen = commonTrailing.size();
+        int comparisonsLen = comparisonCols.size();
         UserTable commonAncestor = first.findCommonAncestor(second);
         assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
         boolean isMultiBranch = true;
         if (firstUTable != secondUTable) {
             if (commonAncestor == firstUTable) {
                 isMultiBranch = false;
-                if (includesHKey(firstUTable, commonTrailing, columnEquivalences))
+                if (includesHKey(firstUTable, comparisonCols, columnEquivalences))
                     output.add(intersect(second, first, comparisonsLen));
             }
             else if (commonAncestor == secondUTable) {
                 isMultiBranch = false;
-                if (includesHKey(secondUTable, commonTrailing, columnEquivalences))
+                if (includesHKey(secondUTable, comparisonCols, columnEquivalences))
                     output.add(intersect(first, second, comparisonsLen));
             }
         }
         if (isMultiBranch) {
             Collection<Column> ancestorHKeys = ancestorHKeys(commonAncestor);
-            List<Column> commonCols = indexColsToCols(commonTrailing);
             // check if commonTrailing contains all ancestorHKeys, using equivalence
             for (Column hkeyCol : ancestorHKeys) {
                 boolean found = false;
-                for (Column commonCol : commonCols) {
+                for (Column commonCol : comparisonCols) {
                     if (columnEquivalences.areEquivalent(commonCol, hkeyCol)) {
                         found = true;
                         break;
@@ -188,13 +186,6 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         }
     }
 
-    private List<Column> indexColsToCols(List<IndexColumn> inList) {
-        List<Column> results = new ArrayList<Column>(inList.size());
-        for (IndexColumn iCol : inList)
-            results.add(iCol.getColumn());
-        return results;
-    }
-
     private Collection<Column> ancestorHKeys(UserTable ancefoo) {
         // find most common ancestor
         HKey hkey = ancefoo.hKey();
@@ -206,7 +197,7 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         return results;
     }
 
-    private boolean includesHKey(UserTable table, List<IndexColumn> columns, EquivalenceFinder<Column> columnEquivalences) {
+    private boolean includesHKey(UserTable table, List<Column> columns, EquivalenceFinder<Column> columnEquivalences) {
         HKey hkey = table.hKey();
         int ncols = hkey.nColumns();
         // no overhead, but O(N) per hkey segment. assuming ncols and columns is very small
@@ -217,37 +208,37 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         return true;
     }
 
-    private boolean containsEquivalent(List<IndexColumn> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
-        for (IndexColumn indexCol : cols) {
-            Column col = indexCol.getColumn();
+    private boolean containsEquivalent(List<Column> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
+        for (Column col : cols) {
             if (columnEquivalences.areEquivalent(col, tgt))
                 return true;
         }
         return false;
     }
 
-    private List<IndexColumn> getCommonTrailing(N first, N second, EquivalenceFinder<Column> columnEquivalences)
-    {
-        List<IndexColumn> firstTrailing = orderingColumns(first);
-        if (firstTrailing.isEmpty())
-            return Collections.emptyList();
-        List<IndexColumn> secondTrailing = orderingColumns(second);
-        if (secondTrailing.isEmpty())
-            return Collections.emptyList();
-        
-        int maxTrailing = Math.min(firstTrailing.size(), secondTrailing.size());
-        int commonCount;
-        for (commonCount = 0; commonCount < maxTrailing; ++commonCount) {
-            Column firstCol = firstTrailing.get(commonCount).getColumn();
-            Column secondCol = secondTrailing.get(commonCount).getColumn();
-            if (!columnEquivalences.areEquivalent(firstCol, secondCol))
-                break;
-        }
-        return firstTrailing.subList(0, commonCount);
-    }
-
-    private List<IndexColumn> orderingColumns(N scan) {
-        List<IndexColumn> allCols = scan.getAllColumns();
-        return allCols.subList(scan.getPeggedCount(), allCols.size());
-    }
+    protected abstract List<Column> getComparisonColumns(N first, N second, EquivalenceFinder<Column> equivalencies);
+//    private List<IndexColumn> getCommonTrailing(N first, N second, EquivalenceFinder<Column> columnEquivalences)
+//    {
+//        List<IndexColumn> firstTrailing = orderingColumns(first);
+//        if (firstTrailing.isEmpty())
+//            return Collections.emptyList();
+//        List<IndexColumn> secondTrailing = orderingColumns(second);
+//        if (secondTrailing.isEmpty())
+//            return Collections.emptyList();
+//        
+//        int maxTrailing = Math.min(firstTrailing.size(), secondTrailing.size());
+//        int commonCount;
+//        for (commonCount = 0; commonCount < maxTrailing; ++commonCount) {
+//            Column firstCol = firstTrailing.get(commonCount).getColumn();
+//            Column secondCol = secondTrailing.get(commonCount).getColumn();
+//            if (!columnEquivalences.areEquivalent(firstCol, secondCol))
+//                break;
+//        }
+//        return firstTrailing.subList(0, commonCount);
+//    }
+//
+//    private List<IndexColumn> orderingColumns(N scan) {
+//        List<IndexColumn> allCols = scan.getAllColumns();
+//        return allCols.subList(scan.getPeggedCount(), allCols.size());
+//    }
 }

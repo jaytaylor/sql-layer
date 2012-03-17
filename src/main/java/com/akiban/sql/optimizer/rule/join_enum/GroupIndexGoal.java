@@ -73,7 +73,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     // Mapping of Range-expressible conditions, by their column. lazy loaded.
     private Map<ColumnExpression,ColumnRanges> columnsToRanges;
-    private static final LeafFinderPredicate<MieBranchBuilder> requiredTrees
+    private final LeafFinderPredicate<MieBranchBuilder> requiredTrees
             = new LeafFinderPredicate<MieBranchBuilder>()
     {
         @Override
@@ -92,7 +92,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                             Collection<ConditionExpression> conditions);
     }
     
-    private static class MieBranchInfo implements BranchInfo<ConditionExpression>, MieBranchBuilder {
+    private class MieBranchInfo implements BranchInfo<ConditionExpression>, MieBranchBuilder {
 
         private Map<Table,TableSource> tablesMap;
         private List<Index> singleIndexes;
@@ -123,9 +123,18 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         @Override
         public Column columnFromCondition(ConditionExpression condition) {
-            ComparisonCondition comparison = (ComparisonCondition) condition;
-            ColumnExpression asCol = (ColumnExpression) comparison.getLeft();
-            return asCol.getColumn();
+            ExpressionNode columnNode = null;
+            if (condition instanceof ComparisonCondition) {
+                ComparisonCondition comparison = (ComparisonCondition) condition;
+                 columnNode = comparison.getLeft();
+            }
+            else if (condition instanceof FunctionExpression) {
+                FunctionExpression fcond = (FunctionExpression) condition;
+                if ("isNull".equals(fcond.getFunction()))
+                    columnNode = fcond.getOperands().get(0);
+            }
+            assert columnNode != null : condition;
+            return ((ColumnExpression)columnNode).getColumn();
         }
 
         @Override
@@ -177,28 +186,40 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             boolean foundAny = false;
             conditions = new HashSet<ConditionExpression>(fromConds.size());
             for (ConditionExpression condition : fromConds) {
-                ComparisonCondition comparison = findValidCondition(condition);
-                if (comparison != null) {
-                    ColumnExpression eqCol = (ColumnExpression) comparison.getLeft(); // ensured by findValidCondition
-                    ColumnSource eqSource = eqCol.getTable();
-                    if (eqSource instanceof TableSource) {
-                        TableSource eqTable = (TableSource) eqSource;
-                        if (tablesMap.values().contains(eqTable)) {
-                            conditions.add(comparison);
-                            foundAny = true;
+                condition = findValidCondition(condition);
+                if (condition != null) {
+                    if (condition instanceof ComparisonCondition) {
+                        ComparisonCondition comparison = (ComparisonCondition) condition;
+                        ColumnExpression eqCol = (ColumnExpression) comparison.getLeft(); // ensured by findValidCondition
+                        foundAny |= addCondition(eqCol, comparison);
+                        if (columnExpressionEquivs == null)
+                            columnExpressionEquivs = eqCol.getEquivalenceFinder();
+                        else
+                            assert columnExpressionEquivs == eqCol.getEquivalenceFinder() : fromConds;
+                    }
+                    else if (condition instanceof FunctionCondition) {
+                        FunctionCondition fcond = (FunctionCondition) condition;
+                        if ("isNull".equals(fcond.getFunction())) {
+                            ColumnExpression nullCol = (ColumnExpression) fcond.getOperands().get(0);
+                            foundAny |= addCondition(nullCol, fcond);
                         }
                     }
-                    if (columnExpressionEquivs == null)
-                        columnExpressionEquivs = eqCol.getEquivalenceFinder();
-                    else
-                        assert columnExpressionEquivs == eqCol.getEquivalenceFinder() : fromConds;
                 }
             }
             return foundAny;
         }
 
-        private void buildAncestryCache(Map<TableSource, Set<TableSource>> ancestryCache) {
-            
+        private boolean addCondition(ColumnExpression column, ConditionExpression columnCondition) {
+            boolean foundOne = false;
+            ColumnSource eqSource = column.getTable();
+            if (eqSource instanceof TableSource) {
+                TableSource eqTable = (TableSource) eqSource;
+                if (tablesMap.values().contains(eqTable)) {
+                    foundOne = true;
+                    conditions.add(columnCondition);
+                }
+            }
+            return foundOne;
         }
 
         private void buildEquivalenceFinder(EquivalenceFinder<Column> equivalences)
@@ -287,50 +308,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(SingleIndexScan index) {
-        setColumnsAndOrdering(index);
+        int nequals = insertLeadingEqualities(index, conditions);
         List<ExpressionNode> indexExpressions = index.getColumns();
-        int nequals = 0;
-        int ncols = indexExpressions.size();
-        while (nequals < ncols) {
-            ExpressionNode indexExpression = indexExpressions.get(nequals);
-            if (indexExpression == null) break;
-            ConditionExpression equalityCondition = null;
-            ExpressionNode otherComparand = null;
-            for (ConditionExpression condition : conditions) {
-                if (condition instanceof ComparisonCondition) {
-                    ComparisonCondition ccond = (ComparisonCondition)condition;
-                    ExpressionNode comparand = null;
-                    if (ccond.getOperation() == Comparison.EQ) {
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
-                            comparand = ccond.getRight();
-                        }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
-                            comparand = ccond.getLeft();
-                        }
-                    }
-                    if ((comparand != null) && constantOrBound(comparand)) {
-                        equalityCondition = condition;
-                        otherComparand = comparand;
-                        break;
-                    }
-                }
-                else if (condition instanceof FunctionCondition) {
-                    FunctionCondition fcond = (FunctionCondition)condition;
-                    if (fcond.getFunction().equals("isNull") &&
-                        (fcond.getOperands().size() == 1) &&
-                        (fcond.getOperands().get(0).equals(indexExpression))) {
-                        equalityCondition = condition;
-                        otherComparand = null; // TODO: Or constant NULL, depending on API.
-                        break;
-                    }
-                }
-            }
-            if (equalityCondition == null)
-                break;
-            index.addEqualityCondition(equalityCondition, otherComparand);
-            nequals++;
-        }
-        if (nequals < ncols) {
+        if (nequals < indexExpressions.size()) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
             if (indexExpression != null) {
                 boolean foundInequalityCondition = false;
@@ -369,6 +349,53 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             return false;
         index.setCostEstimate(estimateCost(index));
         return true;
+    }
+
+    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds) {
+        setColumnsAndOrdering(index);
+        int nequals = 0;
+        List<ExpressionNode> indexExpressions = index.getColumns();
+        int ncols = indexExpressions.size();
+        while (nequals < ncols) {
+            ExpressionNode indexExpression = indexExpressions.get(nequals);
+            if (indexExpression == null) break;
+            ConditionExpression equalityCondition = null;
+            ExpressionNode otherComparand = null;
+            for (ConditionExpression condition : localConds) {
+                if (condition instanceof ComparisonCondition) {
+                    ComparisonCondition ccond = (ComparisonCondition)condition;
+                    ExpressionNode comparand = null;
+                    if (ccond.getOperation() == Comparison.EQ) {
+                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
+                            comparand = ccond.getRight();
+                        }
+                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
+                            comparand = ccond.getLeft();
+                        }
+                    }
+                    if ((comparand != null) && constantOrBound(comparand)) {
+                        equalityCondition = condition;
+                        otherComparand = comparand;
+                        break;
+                    }
+                }
+                else if (condition instanceof FunctionCondition) {
+                    FunctionCondition fcond = (FunctionCondition)condition;
+                    if (fcond.getFunction().equals("isNull") &&
+                        (fcond.getOperands().size() == 1) &&
+                        (fcond.getOperands().get(0).equals(indexExpression))) {
+                        equalityCondition = condition;
+                        otherComparand = null; // TODO: Or constant NULL, depending on API.
+                        break;
+                    }
+                }
+            }
+            if (equalityCondition == null)
+                break;
+            index.addEqualityCondition(equalityCondition, otherComparand);
+            nequals++;
+        }
+        return nequals;
     }
 
     private static void setColumnsAndOrdering(IndexScan index) {
@@ -558,8 +585,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     /** Is the comparison operand what the index indexes? */
     protected boolean indexExpressionMatches(ExpressionNode indexExpression,
                                              ExpressionNode comparisonOperand) {
-        if (indexExpression.equals(comparisonOperand))
+        if (indexExpression.equals(comparisonOperand)) {
+            if ((indexExpression instanceof ColumnExpression) && (comparisonOperand instanceof ColumnExpression)) {
+                ColumnExpression iCol = (ColumnExpression) indexExpression;
+                ColumnExpression cCol = (ColumnExpression) comparisonOperand;
+                iCol.markEquivalentTo(cCol);
+            }
             return true;
+        }
         if (!(comparisonOperand instanceof ColumnExpression))
             return false;
         // See if comparing against a result column of the subquery,
@@ -644,33 +677,28 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         scan.setConditions(covered);
     }
 
-    public EquivalenceFinder<Column> getColumnEquivalencies(EquivalenceFinder<ColumnExpression> colExprsEquivs) {
-        EquivalenceFinder<Column> columnEquivalencies = new EquivalenceFinder<Column>();
-        for (Map.Entry<ColumnExpression, ColumnExpression> equiv : colExprsEquivs.equivalencePairs()) {
-            columnEquivalencies.markEquivalent(equiv.getKey().getColumn(), equiv.getValue().getColumn());
-        }
-        return columnEquivalencies;
-    }
-
-    public static ComparisonCondition findValidCondition(ConditionExpression cond) {
+    public ConditionExpression findValidCondition(ConditionExpression cond) {
         if (cond instanceof ComparisonCondition) {
             ComparisonCondition condition = (ComparisonCondition) cond;
             if (condition.getOperation() == Comparison.EQ) {
                 if (condition.getLeft() instanceof ColumnExpression) {
-                    if (isIndexable(condition.getRight())) {
+                    if (constantOrBound(condition.getRight())) {
                         return condition;
                     }
                 }
             }
         }
+        else if (cond instanceof FunctionCondition) {
+            FunctionCondition fcond = (FunctionCondition) cond;
+            if ("isNull".equals(fcond.getFunction())) {
+                return fcond;
+            }
+        }
+        
         return null;
     }
-
-    private static boolean isIndexable(ExpressionNode node) {
-        return (node instanceof ConstantExpression) || (node instanceof ParameterExpression);
-    }
     
-    private static class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,MieBranchInfo,IndexScan> { 
+    private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,MieBranchInfo,IndexScan> {
 
         @Override
         protected SingleIndexScan buildLeaf(MultiIndexCandidate<ConditionExpression> candidate, MieBranchInfo branch) {
@@ -679,10 +707,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             TableSource leaf = branch.tablesMap.get(index.leafMostTable());
             assert root != null && leaf != null : index + ", " + branch.tablesMap;
             SingleIndexScan result = new SingleIndexScan(candidate.getIndex(), root, leaf);
-            for (ConditionExpression cond : candidate.getPegged()) {
-                ComparisonCondition comparison = (ComparisonCondition) cond;
-                result.addEqualityCondition(comparison, comparison.getRight());
-            }
+            insertLeadingEqualities(result, candidate.getPegged());
             setColumnsAndOrdering(result);
             return result;
         }
@@ -690,6 +715,27 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         @Override
         protected IndexScan intersect(IndexScan first, IndexScan second, int comparisons) {
             return new MultiIndexIntersectScan(first, second, comparisons);
+        }
+
+        @Override
+        protected List<Column> getComparisonColumns(IndexScan first, IndexScan second, EquivalenceFinder<Column> equivs) {
+            List<ExpressionNode> firstOrdering = orderingCols(first);
+            List<ExpressionNode> secondOrdering = orderingCols(second);
+            int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
+            List<Column> result = new ArrayList<Column>(ncols);
+            for (int i=0; i < ncols; ++i) {
+                ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
+                ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
+                if (!equivs.areEquivalent(firstCol.getColumn(), secondCol.getColumn()))
+                    break;
+                result.add(firstCol.getColumn());
+            }
+            return result;
+        }
+
+        private List<ExpressionNode> orderingCols(IndexScan index) {
+            List<ExpressionNode> result = index.getColumns();
+            return result.subList(index.getPeggedCount(), result.size());
         }
     }
 
