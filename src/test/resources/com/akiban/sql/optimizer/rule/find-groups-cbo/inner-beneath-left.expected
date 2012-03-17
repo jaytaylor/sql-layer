@@ -4,7 +4,7 @@ SelectQuery@2be26d42
       Select@4fadbfde[]
         JoinNode@180fb0b0(LEFT[parent.name == c1.name])
           JoinNode@2e18ff27(INNER[child.name == c2.name])
-            JoinNode@6b177115(INNER[c1.name == c2.name, c1.cid != c2.cid])
+            JoinNode@6b177115(INNER[c2.name == c1.name, c2.cid != c1.cid])
               TableGroupJoinTree@500150a0(TableGroup@6546169(customers), c1)
                 TableSource@4fff395a(c1 - TableGroup@6546169(customers))
               TableGroupJoinTree@dc737be(TableGroup@121ca203(customers), c2)

@@ -1,7 +1,7 @@
 SelectQuery@7aa30a4e
   ResultSet@65f9c5c8[name]
     Project@712801c5[customers.name]
-      Select@798c668c[o1.oid > o2.oid, i1.quan > 100, i2.quan > 100]
+      Select@798c668c[o2.oid < o1.oid, i1.quan > 100, i2.quan > 100]
         Product@747541f8(customers)
           Flatten@3e3e3c83(customers INNER o1 INNER i1)
             AncestorLookup@67f6dc61(orders -> [customers])
