@@ -2,6 +2,8 @@ choose-condition-1: narrow and wide
 
 choose-condition-2: wide and narrow
 
+covering-or-group-scan: covering index or group scan?
+
 group-equals: two equals on group index
 
 in-index: IN that can use index
@@ -24,10 +26,22 @@ single-subquery: just derived table (should push down condition)
 
 single-table: whole row from indexed table
 
-subquery: join to subquery (with condition pushed down)
+subquery: join to subquery (with condition pushed down and combined into index)
 
 three-groups: second group dividing two halves
 
 two-groups: group and non-group joins
 
 two-groups-indexed: two groups with condition on one
+
+no-stats: no statistics
+
+no-stats-group: no statistics and group joins
+
+no-stats-large: no statistics but reasonable row count
+
+empty-stats: analyzed with no rows
+
+scaled-distinct: mostly distinct now larger
+
+scaled-not-distinct: not so distinct now larger

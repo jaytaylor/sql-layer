@@ -132,6 +132,10 @@ public abstract class Index implements Traversable
     {
         return valueColumns;
     }
+    
+    public List<IndexColumn> getAllColumns() {
+        return allColumns;
+    }
 
     private void sortColumnsIfNeeded() {
         if (columnsStale) {
@@ -298,6 +302,9 @@ public abstract class Index implements Traversable
                 toHKeyBuilder.toHKeyEntry(-1, indexRowPos, fieldPos);
             }
         }
+        allColumns = new ArrayList<IndexColumn>(keyColumns.size() + valueColumns.size());
+        allColumns.addAll(keyColumns);
+        allColumns.addAll(valueColumns);
 
         indexRowComposition = rowCompBuilder.createIndexRowComposition();
         indexToHKey = toHKeyBuilder.createIndexToHKey();
@@ -408,6 +415,7 @@ public abstract class Index implements Traversable
     private boolean isHKeyEquivalent;
     private List<IndexColumn> keyColumns;
     private List<IndexColumn> valueColumns;
+    private List<IndexColumn> allColumns;
 
     public enum JoinType {
         LEFT, RIGHT

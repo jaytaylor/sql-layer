@@ -1,0 +1,12 @@
+!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
+usingIndexes:
+    - customers.name_vipstatus
+    - customers.yob_password
+conditionsOn:
+    - customers.name
+    - customers.yob
+    - customers.password
+    - customers.vipstatus
+results:
+    - INTERSECT( [NAME, VIPSTATUS, id] AND [YOB, PASSWORD, id] with 1 comparison)
+    - INTERSECT( [YOB, PASSWORD, id] AND [NAME, VIPSTATUS, id] with 1 comparison)

@@ -26,12 +26,33 @@ import java.util.Properties;
 public class RulesContext
 {
     // TODO: Need more much sophisticated invocation mechanism.
-    private List<? extends BaseRule> rules;
     private Properties properties;
+    private List<? extends BaseRule> rules;
 
-    public RulesContext(List<? extends BaseRule> rules, Properties properties) {
-        this.rules = rules;
+    protected RulesContext() {
+    }
+
+    protected void initProperties(Properties properties) {
         this.properties = properties;
+    }
+
+    protected void initRules(List<? extends BaseRule> rules) {
+        this.rules = rules;
+    }
+
+    protected void initDone() {
+        assert (properties != null) : "initProperties() not called";
+        assert (rules != null) : "initRules() not called";
+    }
+
+    /** Make context with these rules. Just for testing. */
+    public static RulesContext create(List<? extends BaseRule> rules,
+                                      Properties properties) {
+        RulesContext context = new RulesContext();
+        context.initProperties(properties);
+        context.initRules(rules);
+        context.initDone();
+        return context;
     }
 
     public void applyRules(PlanContext plan) {

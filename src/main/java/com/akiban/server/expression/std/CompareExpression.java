@@ -250,7 +250,11 @@ public class CompareExpression extends AbstractBinaryExpression {
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            argumentTypes.setType(1, argumentTypes.get(0).getType());
+            
+            AkType top = CoalesceExpression.getTopType(argumentTypes);
+            argumentTypes.setType(0, top);
+            argumentTypes.setType(1, top);
+            
             return ExpressionTypes.BOOL;
         }
 

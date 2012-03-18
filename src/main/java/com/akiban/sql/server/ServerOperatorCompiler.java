@@ -27,11 +27,19 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
 {
     protected SessionTracer tracer;
 
-    protected ServerOperatorCompiler(ServerSession server) {
-        super(server.getParser(), server.getCompilerProperties(), 
-              server.getAIS(), server.getDefaultSchemaName(),
-              server.functionsRegistry(), 
-              "true".equals(server.getProperty("cbo")) ? server.costEstimator() : null);
+    protected ServerOperatorCompiler() {
+    }
+
+    protected void initServer(ServerSession server) {
+        initProperties(server.getCompilerProperties());
+        initAIS(server.getAIS(), server.getDefaultSchemaName());
+        initParser(server.getParser());
+        initFunctionsRegistry(server.functionsRegistry());
+        if (Boolean.parseBoolean(server.getProperty("cbo")))
+            initCostEstimator(server.costEstimator(this));
+        else
+            initCostEstimator(null);
+        
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);
 

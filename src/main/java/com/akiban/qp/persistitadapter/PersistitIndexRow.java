@@ -61,10 +61,7 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public ValueSource eval(int i) 
     {
-        IndexColumn column = 
-            i < keyColumns.length
-            ? keyColumns[i]
-            : valueColumns[i - keyColumns.length];
+        IndexColumn column = indexColumns[i];
         PersistitKeyValueSource keySource = keySource(i);
         keySource.attach(indexRow, column);
         return keySource;
@@ -82,10 +79,8 @@ public class PersistitIndexRow extends AbstractRow
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;
-        this.keyColumns = new IndexColumn[index().getKeyColumns().size()];
-        this.valueColumns = new IndexColumn[index().getValueColumns().size()];
-        index().getKeyColumns().toArray(this.keyColumns);
-        index().getValueColumns().toArray(this.valueColumns);
+        this.indexColumns = new IndexColumn[index().getAllColumns().size()];
+        index().getAllColumns().toArray(this.indexColumns);
         this.keySources = new PersistitKeyValueSource[indexRowType.nFields()];
         this.indexRow = adapter.persistit().getKey(adapter.session());
         this.hKey = new PersistitHKey(adapter, index().hKey());
@@ -122,8 +117,7 @@ public class PersistitIndexRow extends AbstractRow
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private IndexColumn[] keyColumns;
-    private IndexColumn[] valueColumns;
+    private IndexColumn[] indexColumns;
     private final PersistitKeyValueSource[] keySources;
     private final Key indexRow;
     private PersistitHKey hKey;
