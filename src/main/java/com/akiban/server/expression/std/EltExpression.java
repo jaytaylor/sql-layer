@@ -83,13 +83,13 @@ public class EltExpression extends AbstractCompositeExpression
     @Override
     protected boolean nullIsContaminating()
     {
-        return false;
-    }
+        return false; // This is a fun case. NULL is only contaminating if it is        
+    }                 // the first arg.
 
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("ELF");
+        sb.append("ELT");
     }
 
     @Override
