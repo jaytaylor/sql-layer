@@ -10,7 +10,7 @@
 - output: [['1']]
 --- ## null or error?
 - Statement: select WEEKOFYEAR('A') from all_types;
-- error: [22007]
+- output: [[null]]
 ---
 - Statement: select WEEKOFYEAR('1864-02-28') from all_types;
 - output: [['8']]

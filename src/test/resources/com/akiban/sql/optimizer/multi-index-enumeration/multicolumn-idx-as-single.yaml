@@ -5,4 +5,4 @@ usingIndexes:
 conditionsOn:
     - customers.name
     - customers.yob
-combinations: []
+results: []

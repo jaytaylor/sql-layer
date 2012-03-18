@@ -59,11 +59,58 @@ public abstract class CostEstimator implements TableRowCounts
         this(rulesContext.getSchema());
     }
 
-    public abstract IndexStatistics getIndexStatistics(Index index);
-    public abstract IndexStatistics[] getIndexColumnStatistics(Index index);
+    @Override
+    public long getTableRowCount(Table table) {
+        // This implementation is only for testing; normally overridden by real server.
+        // Return row count (not sample count) from analysis time.
+        for (Index index : table.getIndexes()) {
+            IndexStatistics istats = getIndexStatistics(index);
+            if (istats != null)
+                return istats.getRowCount();
+        }
+        return 1;
+    }
 
-    protected boolean scaleIndexStatistics() {
-        return true;
+    public abstract IndexStatistics getIndexStatistics(Index index);
+
+    public IndexStatistics[] getIndexColumnStatistics(Index index) {
+        List<IndexColumn> allIndexColumns = index.getAllColumns();
+        IndexStatistics[] indexStatsArray = new IndexStatistics[allIndexColumns.size()];
+        int i = 0;
+        // For the first column, the index supplied by the optimizer is likely to be a better choice than an arbitrary
+        // index with the right leading column.
+        IndexStatistics statsForRequestedIndex = getIndexStatistics(index);
+        if (statsForRequestedIndex != null) {
+            indexStatsArray[i++] = statsForRequestedIndex;
+        }
+        while (i < allIndexColumns.size()) {
+            IndexStatistics indexStatistics = null;
+            Column leadingColumn = allIndexColumns.get(i).getColumn();
+            // Find a TableIndex whose first column is leadingColumn
+            for (TableIndex tableIndex : leadingColumn.getTable().getIndexes()) {
+                if (tableIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
+                    indexStatistics = getIndexStatistics(tableIndex);
+                    if (indexStatistics != null) {
+                        break;
+                    }
+                }
+            }
+            // If none, find a GroupIndex whose first column is leadingColumn
+            if (indexStatistics == null) {
+                groupLoop: for (Group group : schema.ais().getGroups().values()) {
+                    for (GroupIndex groupIndex : group.getIndexes()) {
+                        if (groupIndex.getKeyColumns().get(0).getColumn() == leadingColumn) {
+                            indexStatistics = getIndexStatistics(groupIndex);
+                            if (indexStatistics != null) {
+                                break groupLoop;
+                            }
+                        }
+                    }
+                }
+            }
+            indexStatsArray[i++] = indexStatistics;
+        }
+        return indexStatsArray;
     }
 
     /** Estimate cost of scanning from this index. */
@@ -84,7 +131,7 @@ public abstract class CostEstimator implements TableRowCounts
                                          ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
-                (equalityComparands.size() == index.getKeyColumns().size())) {
+                (equalityComparands.size() >= index.getKeyColumns().size())) {
                 // Exact match from unique index; probably one row.
                 return indexAccessCost(1, index);
             }
@@ -93,7 +140,7 @@ public abstract class CostEstimator implements TableRowCounts
         long statsCount = 0;
         IndexStatistics indexStats = getIndexStatistics(index);
         if (indexStats != null)
-            statsCount = indexStats.getRowCount();
+            statsCount = indexStats.getSampledCount();
         int columnCount = 0;
         if (equalityComparands != null) {
             columnCount = Math.min(equalityComparands.size(), // No histogram for value cols.
@@ -109,7 +156,7 @@ public abstract class CostEstimator implements TableRowCounts
             // TODO: Is this too conservative?
             return indexAccessCost(rowCount, index);
         }
-        boolean scaleCount = scaleIndexStatistics();
+        boolean scaleCount = true;
         long nrows;
         if ((lowComparand == null) && (highComparand == null)) {
             // Equality lookup.
@@ -118,8 +165,7 @@ public abstract class CostEstimator implements TableRowCounts
             // not so declared, then the result size doesn't scale up from
             // when it was analyzed.
             long totalDistinct = histogram.totalDistinctCount();
-            // TODO: Shouldn't this be totalDistinct * 10 > statsCount * 9 ?
-            boolean mostlyDistinct = totalDistinct * 9 > statsCount * 10; // > 90% distinct
+            boolean mostlyDistinct = totalDistinct * 10 > statsCount * 9; // > 90% distinct
             if (mostlyDistinct) scaleCount = false;
             byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null, false);
             if (keyBytes == null) {
@@ -135,7 +181,7 @@ public abstract class CostEstimator implements TableRowCounts
             byte[] highBytes = encodeKeyBytes(index, equalityComparands, highComparand, true);
             if ((lowBytes == null) && (highBytes == null)) {
                 // Range completely unknown.
-                nrows = indexStats.getRowCount();
+                nrows = indexStats.getSampledCount();
             }
             else {
                 nrows = rowsBetween(histogram, lowBytes, lowInclusive, highBytes, highInclusive);
@@ -153,7 +199,7 @@ public abstract class CostEstimator implements TableRowCounts
                                          ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
-                (equalityComparands.size() == index.getKeyColumns().size())) {
+                (equalityComparands.size() >= index.getKeyColumns().size())) {
                 // Exact match from unique index; probably one row.
                 return indexAccessCost(1, index);
             }
@@ -175,7 +221,7 @@ public abstract class CostEstimator implements TableRowCounts
             // TODO: Is this too conservative?
             return indexAccessCost(rowCount, index);
         }
-        boolean scaleCount = scaleIndexStatistics();
+        boolean scaleCount = true;
         double selectivity = 1.0;
         if (equalityComparands != null && !equalityComparands.isEmpty()) {
             selectivity = fractionEqual(equalityComparands, index, indexStatsArray);
@@ -190,6 +236,10 @@ public abstract class CostEstimator implements TableRowCounts
         //    statistics, which may be stale.
         // rowCount: Approximate number of rows in the table, reasonably up to date.
         long statsCount = rowsInTableAccordingToIndex(indexedTable, indexStatsArray);
+        if (statsCount <= 0) {
+            statsCount = rowCount;
+            scaleCount = false;
+        }
         long nrows = Math.max(1, round(selectivity * statsCount));
         if (scaleCount)
             nrows = simpleRound((nrows * rowCount), statsCount);
@@ -204,12 +254,12 @@ public abstract class CostEstimator implements TableRowCounts
                 Index index = indexStats.index();
                 Column leadingColumn = index.getKeyColumns().get(0).getColumn();
                 if (leadingColumn.getTable() == indexedTable) {
-                    return indexStats.getRowCount();
+                    return indexStats.getSampledCount();
                 }
             }
         }
-        // No index stats available. Use the current table row count
-        return indexedTable.rowDef().getTableStatus().getApproximateRowCount();
+        // No index stats available.
+        return -1;
     }
     
     // Estimate cost of fetching nrows from index.
@@ -311,11 +361,14 @@ public abstract class CostEstimator implements TableRowCounts
             return 1.0;
         } else {
             Histogram histogram = indexStats.getHistogram(1);
-            if (columnValue == null) {
+            if ((histogram == null) || histogram.getEntries().isEmpty()) {
+                return 1;
+            }
+            else if (columnValue == null) {
                 // Variable expression. Use average selectivity for histogram.
                 return
                     mostlyDistinct(indexStats)
-                    ? 1.0 / indexStats.getRowCount()
+                    ? 1.0 / indexStats.getSampledCount()
                     : 1.0 / histogram.totalDistinctCount();
             } else {
                 // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
@@ -324,10 +377,10 @@ public abstract class CostEstimator implements TableRowCounts
                     // Constant expression
                     int compare = bytesComparator.compare(columnValue, entry.getKeyBytes());
                     if (compare == 0) {
-                        return ((double) entry.getEqualCount()) / indexStats.getRowCount();
+                        return ((double) entry.getEqualCount()) / indexStats.getSampledCount();
                     } else if (compare < 0) {
                         long d = entry.getDistinctCount();
-                        return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getRowCount());
+                        return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
                     }
                 }
                 HistogramEntry lastEntry = entries.get(entries.size() - 1);
@@ -402,7 +455,7 @@ public abstract class CostEstimator implements TableRowCounts
             }
             rowCount += entry.getLessCount() + entry.getEqualCount() - portionStart;
         }
-        return ((double) Math.max(rowCount, 1)) / indexStats.getRowCount();
+        return ((double) Math.max(rowCount, 1)) / indexStats.getSampledCount();
     }
 
 
@@ -424,7 +477,9 @@ public abstract class CostEstimator implements TableRowCounts
 
     private boolean mostlyDistinct(IndexStatistics indexStats)
     {
-        return indexStats.getHistogram(1).totalDistinctCount() * 10 > indexStats.getRowCount() * 9;
+        Histogram histogram = indexStats.getHistogram(1);
+        if (histogram == null) return false;
+        return histogram.totalDistinctCount() * 10 > indexStats.getSampledCount() * 9;
     }
 
     /** Assuming that byte strings are uniformly distributed, what
@@ -499,7 +554,7 @@ public abstract class CostEstimator implements TableRowCounts
         if (expr == null)
             return false;
         ValueSource valueSource = expr.evaluation().eval();
-        keyTarget.expectingType(index.getKeyColumns().get(column).getColumn().getType().akType());
+        keyTarget.expectingType(index.getAllColumns().get(column).getColumn().getType().akType());
         Converters.convert(valueSource, keyTarget);
         return true;
     }
@@ -509,6 +564,15 @@ public abstract class CostEstimator implements TableRowCounts
         byte[] keyBytes = new byte[key.getEncodedSize()];
         System.arraycopy(key.getEncodedBytes(), 0, keyBytes, 0, keyBytes.length);
         return keyBytes;
+    }
+
+    /** Estimate the cost of intersecting a left-deep multi-index intersection. */
+    public CostEstimate costIndexIntersection(MultiIndexIntersectScan intersection, IndexIntersectionCoster coster)
+    {
+        IntersectionCostRunner runner = new IntersectionCostRunner(coster);
+        runner.buildIndexScanCost(intersection);
+        CostEstimate estimate = new CostEstimate(runner.rowCount, runner.cost);
+        return estimate;
     }
 
     /** Estimate the cost of starting at the given table's index and
@@ -681,11 +745,15 @@ public abstract class CostEstimator implements TableRowCounts
         }
     }
 
-    /** Number of child rows per ancestor. */
+    /** Number of child rows per ancestor. 
+     * Never returns zero to avoid contaminating product estimate.
+     */
     protected long descendantCardinality(TableGroupJoinNode childNode, 
                                          TableGroupJoinNode ancestorNode) {
-        return simpleRound(getTableRowCount(childNode.getTable().getTable().getTable()),
-                           getTableRowCount(ancestorNode.getTable().getTable().getTable()));
+        long childCount = getTableRowCount(childNode.getTable().getTable().getTable());
+        long ancestorCount = getTableRowCount(ancestorNode.getTable().getTable().getTable());
+        if (ancestorCount == 0) return 1;
+        return Math.max(simpleRound(childCount, ancestorCount), 1);
     }
 
     /** Estimate the cost of testing some conditions. */
@@ -716,4 +784,43 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(nrows, model.fullGroupScan(schema.userTableRowType(root)));
     }
 
+    public interface IndexIntersectionCoster {
+        public CostEstimate singleIndexScanCost(SingleIndexScan scan, CostEstimator costEstimator);
+
+    }
+
+    private class IntersectionCostRunner {
+        private IndexIntersectionCoster coster;
+        private double cost = 0;
+        private long rowCount = 0;
+
+        private IntersectionCostRunner(IndexIntersectionCoster coster) {
+            this.coster = coster;
+        }
+
+        public void buildIndexScanCost(IndexScan scan) {
+            if (scan instanceof SingleIndexScan) {
+                SingleIndexScan singleScan = (SingleIndexScan) scan;
+                CostEstimate estimate = coster.singleIndexScanCost(singleScan, CostEstimator.this);
+                long singleCount = estimate.getRowCount();
+                double singleCost = estimate.getCost();
+                long totalRowCount = getTableRowCount(singleScan.getIndex().leafMostTable());
+
+                long selectedRowCount = simpleRound(rowCount *
+                        singleCount,
+                        totalRowCount);
+                selectedRowCount = Math.max(selectedRowCount, 1);
+                cost += singleCost + model.intersect((int)rowCount, (int)singleCount);
+                rowCount = selectedRowCount;
+            }
+            else if (scan instanceof MultiIndexIntersectScan) {
+                MultiIndexIntersectScan multiScan = (MultiIndexIntersectScan) scan;
+                buildIndexScanCost(multiScan.getOutputIndexScan());
+                buildIndexScanCost(multiScan.getSelectorIndexScan());
+            }
+            else {
+                throw new AssertionError("can't build scan of: " + scan);
+            }
+        }
+    }
 }

@@ -1,0 +1,13 @@
+Index: PRIMARY
+RowCount: 10000
+SampledCount: 0
+Statistics: []
+Table: customers
+Timestamp: 2012-03-15T22:17:18.846Z
+---
+Index: name
+RowCount: 10000
+SampledCount: 0
+Statistics: []
+Table: customers
+Timestamp: 2012-03-15T22:17:18.845Z
