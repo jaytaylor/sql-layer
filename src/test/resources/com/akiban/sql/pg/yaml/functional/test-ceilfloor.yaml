@@ -30,12 +30,14 @@
     CEIL(real_field), CEIL(varchar_field) FROM all_types
 - output: [[null, null, null, null, null, null, null, null, null, null]]
 ---
+- Statement: DELETE FROM all_types
+---
 # Test numeric
 - Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
             integer_field, bigint_field, bigint_unsigned_field, decimal_field,
             numeric_field, real_field, varchar_field)
     VALUES (16.425, 16.425, 16, 16, 16, 16, 16.643, 16.512, 16.634, '16.142'),
-    (-2.235, -2.555, -2, -2, -2, -2, -2.672, -2.457, -2.512, '-2.324')
+    (-2.235, -2.555, -2, -2, -2, -2, -2.672, -2.457, -2.512, -2.324)
 ---
 - Statement: SELECT FLOOR(float_field), FLOOR(double_field),
     FLOOR(smallint_field), FLOOR(integer_field), FLOOR(bigint_field),
@@ -61,11 +63,15 @@
 ---
 - Statement: SELECT CEIL(double_field), CEIL(float_field), CEIL(real_field)
     FROM all_types
-- output: [['Infinity', 'Infinity', 'Infinity'], ['-Infinity', '-Infinity', '-Infinity'], [NaN, NaN, NaN]]
+- output: [['Infinity', 'Infinity', 'Infinity'], 
+          ['-Infinity', '-Infinity', '-Infinity'], 
+          [NaN, NaN, NaN]]
 ---
 - Statement: SELECT FLOOR(double_field), FLOOR(float_field), FLOOR(real_field)
     FROM all_types
-- output: [['Infinity', 'Infinity', 'Infinity'], ['-Infinity', '-Infinity', '-Infinity'], [NaN, NaN, NaN]]
+- output: [['Infinity', 'Infinity', 'Infinity'], 
+          ['-Infinity', '-Infinity', '-Infinity'], 
+          [NaN, NaN, NaN]]
 ---
 
 # Literals
@@ -83,11 +89,37 @@
 - Statement: INSERT INTO all_types (double_field) VALUES (1.0)
 ---
 - Statement: SELECT CEIL(?) FROM all_types
-- params: [[0.124], [4.532]]
-- output: [[1.0], [5.0]]
+- params: [[0.124]]
+- output: [[1.0]]
+---
+- Statement: SELECT CEIL(?) FROM all_types
+- params: [[4.522]]
+- output: [[5.0]]
 ---
 - Statement: SELECT FLOOR(?) FROM all_types
-- params: [[0.124], [4.532]]
-- output: [[0.0], [4.0]]
-
+- params: [[0.124]]
+- output: [[0.0]]
+---
+- Statement: SELECT FLOOR(?) FROM all_types
+- params: [[4.522]]
+- output: [[4.0]]
+---
+# Test WHERE statements
+- Statement: SELECT double_field from all_types WHERE CEIL(100.253) = 101.0
+- output: [[1.0]]
+---
+- Statement: SELECT double_field from all_types WHERE FLOOR(100.253) = 100.0
+- output: [[1.0]]
+---
+- Statement: SELECT double_field from all_types WHERE FLOOR(-100.253) = -101.0
+- output: [[1.0]]
+---
+- Statement: SELECT double_field from all_types WHERE CEIL(-100.253) = -100.0
+- output: [[1.0]]
+---
+- Statement: SELECT double_field from all_types WHERE CEIL(null) = null
+- output: [[1.0]]
+---
+-Statement: SELECT double_field from all_types WHERE FLOOR(null) = null
+- output: [[1.0]]
 ...
