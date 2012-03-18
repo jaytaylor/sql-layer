@@ -192,7 +192,7 @@
 ---
 - Statement: SELECT SIN() from all_types;
 - error: [4250C]
----
+--- # command 44
 - Statement: SELECT COS(0.1, 0.9) from all_types;
 - error: [4250C]
 ---
@@ -236,40 +236,41 @@
 - Statement: SELECT ACOS(6.4) from all_types;
 - output: [[NaN]]
 ## Test bad numeric string: inconvertible char(s) to num
----
+## Should result in the argument being '0.0' + warnings
+--- # command 73
 - Statement: SELECT SIN('abc') from all_types;
-- error: [70001]
+- output: [[0.0]]
 ---
 - Statement: SELECT COS('abc') from all_types;
-- error: [70001]
+- output: [[1.0]]
 ---
 - Statement: SELECT TAN('abc') from all_types;
-- error: [70001]
----
+- output: [[0.0]]
+--- # expect overflow
 - Statement: SELECT COT('abc') from all_types;
-- error: [70001]
----
-- Statement: SELECT ACOS('abc') from all_types;
-- error: [70001]
+- error: [55004]
+--- # 'abc' => '0'. => sin(acos(0)) = 1
+- Statement: SELECT SIN(ACOS('abc')) from all_types;
+- output: [[1.0]]
 ---
 - Statement: SELECT ASIN('abc') from all_types;
-- error: [70001]
+- output: [[0.0]]
 ---
 - Statement: SELECT ATAN('abc') from all_types;
-- error: [70001]
----
-- Statement: SELECT ACOT('abc') from all_types;
-- error: [70001]
----
+- output: [[0.0]]
+--- # acot(0) is pi/2 = > sin(pi/2) = 1
+- Statement: SELECT SIN(ACOT('abc')) from all_types;
+- output: [[1.0]]
+--- #COTH(0) is infinity => expect overflow
 - Statement: SELECT COTH('abc') from all_types;
-- error: [70001]
+- error: [55004]
 ---
 - Statement: SELECT COSH('abc') from all_types;
-- error: [70001]
+- output: [[1.0]]
 ---
 - Statement: SELECT SINH('abc') from all_types;
-- error: [70001]
+- output: [[0.0]]
 ---
 - Statement: SELECT TANH('abc') from all_types;
-- error: [70001]
+- output: [[0.0]]
 ...

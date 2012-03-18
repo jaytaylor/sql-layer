@@ -44,21 +44,21 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
             "schema", "p",
             "pid int not null primary key",
             "x int");
-        createIndex("schema", "p", "x", "x");
+        createIndex("schema", "p", "px", "x");
         c = createTable(
             "schema", "c",
             "cid int not null primary key",
             "pid int",
             "y int",
             "grouping foreign key (pid) references p(pid)");
-        createIndex("schema", "c", "y", "y");
+        createIndex("schema", "c", "cy", "y");
         d = createTable(
             "schema", "d",
             "did int not null primary key",
             "pid int",
             "z int",
             "grouping foreign key (pid) references p(pid)");
-        createIndex("schema", "d", "z", "z");
+        createIndex("schema", "d", "dz", "z");
         schema = new Schema(rowDefCache().ais());
         pRowType = schema.userTableRowType(userTable(p));
         cRowType = schema.userTableRowType(userTable(c));
@@ -89,7 +89,6 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
             createNewRow(c, 3002L, 30L, 3L),
             createNewRow(d, 3000L, 30L, 3L),
             createNewRow(d, 3001L, 30L, 3L),
-            createNewRow(d, 3002L, 30L, 3L),
         };
         use(db);
     }
@@ -147,7 +146,6 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         expected = new RowBase[]{
             row(dRowType, 3L, 30L, 3000L),
             row(dRowType, 3L, 30L, 3001L),
-            row(dRowType, 3L, 30L, 3002L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }

@@ -32,10 +32,11 @@ public class ServerCostEstimator extends CostEstimator
 
     public ServerCostEstimator(ServerSession session,
                                ServerServiceRequirements reqs,
-                               Properties compilerProperties) {
+                               ServerOperatorCompiler compiler) {
+        super(compiler);
         this.session = session;
         indexStatistics = reqs.indexStatistics();
-        scaleIndexStatistics = compilerProperties.getProperty("scaleIndexStatistics", "true").equals("true");
+        scaleIndexStatistics = Boolean.parseBoolean(compiler.getProperty("scaleIndexStatistics", "true"));
     }
 
     @Override
@@ -45,12 +46,11 @@ public class ServerCostEstimator extends CostEstimator
 
     @Override
     public long getTableRowCount(Table table) {
-        return table.rowDef().getTableStatus().getApproximateRowCount();
-    }
-
-    @Override
-    protected boolean scaleIndexStatistics() {
-        return scaleIndexStatistics;
+        if (scaleIndexStatistics)
+            return table.rowDef().getTableStatus().getApproximateRowCount();
+        else
+            // Unscaled test mode: return count from statistics.
+            return super.getTableRowCount(table);
     }
 
 }

@@ -24,6 +24,7 @@ import com.akiban.ais.model.TableName;
 
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -76,13 +77,13 @@ public class IndexStatisticsYamlLoader
         this.defaultSchema = defaultSchema;
     }
     
-    public Map<Index,IndexStatistics> load(File file) throws IOException {
+    public Map<Index,IndexStatistics> load(File file, boolean statsIgnoreMissingIndexes) throws IOException {
         Map<Index,IndexStatistics> result = new TreeMap<Index,IndexStatistics>(INDEX_NAME_COMPARATOR);
         Yaml yaml = new Yaml();
         FileInputStream istr = new FileInputStream(file);
         try {
             for (Object doc : yaml.loadAll(istr)) {
-                parseStatistics(doc, result);
+                parseStatistics(doc, result, statsIgnoreMissingIndexes);
             }
         }
         finally {
@@ -91,7 +92,11 @@ public class IndexStatisticsYamlLoader
         return result;
     }
 
-    protected void parseStatistics(Object obj, Map<Index,IndexStatistics> result) {
+    public Map<Index,IndexStatistics> load(File file) throws IOException {
+        return load(file, false);
+    }
+
+    protected void parseStatistics(Object obj, Map<Index,IndexStatistics> result, boolean statsIgnoreMissingIndexes) {
         if (!(obj instanceof Map))
             throw new AkibanInternalException("Document not in expected format");
         Map<?,?> map = (Map<?,?>)obj;
@@ -104,8 +109,11 @@ public class IndexStatisticsYamlLoader
         Index index = table.getIndex(indexName);
         if (index == null) {
             index = table.getGroup().getIndex(indexName);
-            if (index == null)
+            if (index == null) {
+                if (statsIgnoreMissingIndexes)
+                    return;
                 throw new NoSuchIndexException(indexName);
+            }
         }
         IndexStatistics stats = new IndexStatistics(index);
         Date timestamp = (Date)map.get(TIMESTAMP_KEY);
@@ -220,11 +228,30 @@ public class IndexStatisticsYamlLoader
         List<Object> result = new ArrayList<Object>(columnCount);
         for (int i = 0; i < columnCount; i++) {
             keySource.attach(key, index.getKeyColumns().get(i));
-            // TODO: Special handling for date/time types to make them
-            // more legible than internal long representation?
-            result.add(valueTarget.convertFromSource(keySource));
+            valueTarget.expectType(convertToType(keySource.getConversionType()));
+            Converters.convert(keySource, valueTarget);
+            result.add(valueTarget.lastConvertedValue());
         }
         return result;
+    }
+
+    /** If the AkType's internal representation corresponds to a Java
+     * type for which there is standard YAML tag, can use
+     * it. Otherwise, must resort to string, either because the
+     * internal value isn't friendly (<code>Date</code> is a <code>Long</code>) 
+     * or isn't standard (<code>Decimal</code> turns into <code>!!float</code>).
+     */
+    protected static AkType convertToType(AkType sourceType) {
+        switch (sourceType) {
+        case DOUBLE:
+        case FLOAT:
+        case INT:
+        case LONG:
+        case BOOL:
+            return sourceType;
+        default:
+            return AkType.VARCHAR;
+        }
     }
 
 }

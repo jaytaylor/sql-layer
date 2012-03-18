@@ -226,6 +226,7 @@ public class PersistitStoreIndexStatistics
                 
                 for (int i = 0; i < index.getKeyColumns().size(); i++) {
                     Histogram histogram = indexStatistics.getHistogram(i + 1);
+                    if (histogram == null) continue;
                     int itemNumber = 0;
                     for (HistogramEntry entry : histogram.getEntries()) {
                         rowData.createRow(indexStatisticsEntryRowDef, new Object[] {

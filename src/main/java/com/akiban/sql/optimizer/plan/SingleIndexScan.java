@@ -17,9 +17,9 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.sql.optimizer.rule.CostEstimator;
-import com.akiban.sql.optimizer.rule.range.RangeSegment;
+import com.akiban.ais.model.UserTable;
 
+import java.util.Collection;
 import java.util.List;
 
 public final class SingleIndexScan extends IndexScan {
@@ -30,6 +30,10 @@ public final class SingleIndexScan extends IndexScan {
     {
         super(table);
         this.index = index;
+    }
+    
+    public SingleIndexScan(Index index, TableSource rootMost, TableSource leafMost) {
+        this(index, rootMost, rootMost, leafMost, leafMost);
     }
 
     public SingleIndexScan(Index index,
@@ -47,8 +51,8 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public List<IndexColumn> getKeyColumns() {
-        return getIndex().getKeyColumns();
+    public List<IndexColumn> getIndexColumns() {
+        return index.getAllColumns();
     }
 
     @Override
@@ -58,6 +62,38 @@ public final class SingleIndexScan extends IndexScan {
 
     @Override
     protected boolean isAscendingAt(int i) {
-        return index.getKeyColumns().get(i).isAscending();
+        return index.getAllColumns().get(i).isAscending();
+    }
+
+    @Override
+    public UserTable getLeafMostUTable() {
+        return (UserTable) index.leafMostTable();
+    }
+
+    @Override
+    public List<IndexColumn> getAllColumns() {
+        return index.getAllColumns();
+    }
+
+    @Override
+    public int getPeggedCount() {
+        // Note! Really what we want are the *leading* equalities. But this method is only
+        // used in the context of MultiIndexEnumerator, which will only put in leading
+        // equalities.
+        return getEqualityComparands().size();
+    }
+
+    @Override
+    public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,
+                                           Collection<? super ConditionExpression> removeTo) {
+
+        boolean removedAny = false;
+        for (ConditionExpression cond : getConditions()) {
+            if(conditions.remove(cond)) {
+                removeTo.add(cond);
+                removedAny = true;
+            }
+        }
+        return removedAny;
     }
 }
