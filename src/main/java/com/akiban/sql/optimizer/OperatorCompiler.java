@@ -53,21 +53,39 @@ public class OperatorCompiler extends SchemaRulesContext
     protected SubqueryFlattener subqueryFlattener;
     protected DistinctEliminator distinctEliminator;
 
-    public OperatorCompiler(SQLParser parser, Properties properties,
-                            AkibanInformationSchema ais, String defaultSchemaName,
-                            FunctionsRegistry functionsRegistry,
-                            CostEstimator costEstimator) {
-        super(ais, functionsRegistry, 
-              costEstimator, (costEstimator != null) ? DEFAULT_RULES_CBO : DEFAULT_RULES,
-              properties);
+    protected OperatorCompiler() {
+    }
+
+    protected void initAIS(AkibanInformationSchema ais, String defaultSchemaName) {
+        initAIS(ais);
+        binder = new AISBinder(ais, defaultSchemaName);
+    }
+
+    protected void initParser(SQLParser parser) {
         parserContext = parser;
         nodeFactory = parserContext.getNodeFactory();
-        binder = new AISBinder(ais, defaultSchemaName);
         parser.setNodeFactory(new BindingNodeFactory(nodeFactory));
-        typeComputer = new FunctionsTypeComputer(functionsRegistry);
         booleanNormalizer = new BooleanNormalizer(parser);
         subqueryFlattener = new SubqueryFlattener(parser);
         distinctEliminator = new DistinctEliminator(parser);
+    }
+
+    @Override
+    protected void initFunctionsRegistry(FunctionsRegistry functionsRegistry) {
+        super.initFunctionsRegistry(functionsRegistry);
+        typeComputer = new FunctionsTypeComputer(functionsRegistry);
+    }
+
+    @Override
+    protected void initCostEstimator(CostEstimator costEstimator) {
+        super.initCostEstimator(costEstimator);
+        initRules((costEstimator != null) ? DEFAULT_RULES_CBO : DEFAULT_RULES);
+    }
+
+    @Override
+    protected void initDone() {
+        super.initDone();
+        assert (parserContext != null) : "initParser() not called";
     }
 
     public void addView(ViewDefinition view) throws StandardException {

@@ -19,6 +19,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
@@ -28,9 +29,10 @@ import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.rowdata.SchemaFactory;
+import com.akiban.sql.optimizer.plan.IndexIntersectionNode;
 import com.akiban.sql.optimizer.plan.MultiIndexCandidate;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator;
-import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.MultiIndexPair;
+import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
@@ -46,9 +48,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeSet;
+
+import static org.junit.Assert.assertTrue;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class MultiIndexEnumeratorTest {
@@ -79,25 +85,13 @@ public final class MultiIndexEnumeratorTest {
     
     @Test @OnlyIfNot("expectException")
     public void combinations() throws IOException {
-        Collection<MultiIndexPair<String>> enumerated = getEnumerations();
-        List<Combination> actual = new ArrayList<Combination>(enumerated.size());
-        for (MultiIndexEnumerator.MultiIndexPair<String> elem : enumerated) {
-            Combination combo = new Combination();
-            
-            MultiIndexCandidate<String> output = elem.getOutputIndex();
-            combo.setOutputIndex(output.getIndex());
-            combo.setOutputSkip(output.getPegged());
-
-            MultiIndexCandidate<String> selector = elem.getSelectorIndex();
-            combo.setSelectorIndex(selector.getIndex());
-            combo.setSelectorSkip(selector.getPegged());
-
-            actual.add(combo);
+        Collection<TestNode> enumerated = getEnumerations();
+        Set<String> actual = new TreeSet<String>(); 
+        for (IndexIntersectionNode elem : enumerated) {
+            actual.add(elem.toString());
         }
-        List<Combination> combinations = tc.getCombinations();
-        Collections.sort(combinations);
-        Collections.sort(actual);
-        AssertUtils.assertCollectionEquals("enumerations", combinations, actual);
+        Set<String> expected = tc.getResults();
+        AssertUtils.assertCollectionEquals("enumerations", expected, actual);
     }
 
     @Test(expected = DuplicateConditionException.class) @OnlyIf("expectException")
@@ -105,7 +99,7 @@ public final class MultiIndexEnumeratorTest {
         getEnumerations();
     }
 
-    private Collection<MultiIndexPair<String>> getEnumerations() {
+    private Collection<TestNode> getEnumerations() {
         SchemaFactory factory = new SchemaFactory(DEFAULT_SCHEMA);
         AkibanInformationSchema ais = factory.ais(ddl);
         factory.rowDefCache(ais); // set up indx row compositions
@@ -114,7 +108,12 @@ public final class MultiIndexEnumeratorTest {
         Set<String> conditions = new HashSet<String>(tc.getConditionsOn());
         EquivalenceFinder<Column> columnEquivalences = innerJoinEquivalencies(ais);
         addExtraEquivalencies(tc.getExtraEquivalencies(), ais, columnEquivalences);
-        return new StringConditionEnumerator(ais).get(indexes, conditions, columnEquivalences);
+
+        StringBranchInfo info = new StringBranchInfo(ais, indexes, conditions);
+        StringConditionEnumerator enumerator = new StringConditionEnumerator();
+        enumerator.addBranch(info);
+
+        return enumerator.getCombinations(columnEquivalences);
     }
 
     private void addExtraEquivalencies(Map<String, String> equivMap, AkibanInformationSchema ais,
@@ -201,23 +200,153 @@ public final class MultiIndexEnumeratorTest {
     private TestCase tc;
     public final boolean expectException;
     
-    private static class StringConditionEnumerator extends MultiIndexEnumerator<String> {
+    private static class StringBranchInfo implements BranchInfo<String> {
+        List<Index> indexes;
+        Set<String> conditions;
+        AkibanInformationSchema ais;
+
+        private StringBranchInfo(AkibanInformationSchema ais, List<Index> indexes, Set<String> conditions) {
+            this.indexes = indexes;
+            this.conditions = conditions;
+            this.ais = ais;
+        }
 
         @Override
-        protected Column columnFromCondition(String condition) {
+        public Column columnFromCondition(String condition) {
             return findColumn(condition, ais);
         }
+
+        @Override
+        public Collection<? extends Index> getIndexes() {
+            return indexes;
+        }
+
+        @Override
+        public Set<String> getConditions() {
+            return conditions;
+        }
+    }
+    
+    private static class StringConditionEnumerator extends MultiIndexEnumerator<String,StringBranchInfo,TestNode> {
 
         @Override
         protected void handleDuplicateCondition() {
             throw new DuplicateConditionException();
         }
 
-        private StringConditionEnumerator(AkibanInformationSchema ais) {
-            this.ais = ais;
+        @Override
+        protected TestNode buildLeaf(MultiIndexCandidate<String> candidate, StringBranchInfo branchInfo) {
+            Index index = candidate.getIndex();
+            UserTable leaf = (UserTable) index.leafMostTable();
+            return new SimpleLeaf(leaf, index.getAllColumns(), candidate.getPegged());
         }
 
-        private AkibanInformationSchema ais;
+        @Override
+        protected TestNode intersect(TestNode first, TestNode second,
+                                                  int comparisonCount) {
+            return new SimpleBranch(first, second, comparisonCount);
+        }
+    }
+    
+    private interface TestNode extends IndexIntersectionNode<String> {}
+    
+    private static class SimpleLeaf implements TestNode {
+        private UserTable leaf;
+        private List<IndexColumn> allCols;
+        private List<String> pegged;
+
+        private SimpleLeaf(UserTable leaf, List<IndexColumn> allCols, List<String> pegged) {
+            this.leaf = leaf;
+            this.allCols = allCols;
+            this.pegged = pegged;
+        }
+
+        @Override
+        public UserTable getLeafMostUTable() {
+            return leaf;
+        }
+
+        @Override
+        public List<IndexColumn> getAllColumns() {
+            return allCols;
+        }
+
+        @Override
+        public int getPeggedCount() {
+            return pegged.size();
+        }
+
+        @Override
+        public boolean removeCoveredConditions(Collection<? super String> conditions, Collection<? super String> removeTo) {
+            boolean removedAny = false;
+            for (String cond : pegged) {
+                if(conditions.remove(cond)) {
+                    removeTo.add(cond);
+                    removedAny = true;
+                }
+            }
+            return removedAny;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append('[');
+            int remainingPegged = pegged.size();
+            for (Iterator<IndexColumn> iterator = allCols.iterator(); iterator.hasNext(); ) {
+                IndexColumn icol = iterator.next();
+                String colName = icol.getColumn().getName();
+                if (remainingPegged-- > 0)
+                    colName = colName.toUpperCase();
+                sb.append(colName);
+                if (iterator.hasNext())
+                    sb.append(", ");
+                else
+                    sb.append(']');
+            }
+            assertTrue(remainingPegged + " pegged remaining", remainingPegged <= 0);
+            return sb.toString();
+        }
+    }
+    
+    private static class SimpleBranch implements TestNode {
+        TestNode left, right;
+        int comparisons;
+
+        private SimpleBranch(TestNode left, TestNode right, int comparisons) {
+            this.left = left;
+            this.right = right;
+            this.comparisons = comparisons;
+        }
+
+        @Override
+        public UserTable getLeafMostUTable() {
+            return left.getLeafMostUTable();
+        }
+
+        @Override
+        public List<IndexColumn> getAllColumns() {
+            return left.getAllColumns();
+        }
+
+        @Override
+        public int getPeggedCount() {
+            return left.getPeggedCount();
+        }
+
+        @Override
+        public boolean removeCoveredConditions(Collection<? super String> conditions, Collection<? super String> removeTo) {
+            // using a bitwise or on purpose here -- we do NOT want to short-circuit this, since even if the left
+            // covers some conditions, we want to know which ones the right covers.
+            return left.removeCoveredConditions(conditions, removeTo)
+                    | right.removeCoveredConditions(conditions, removeTo);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("INTERSECT( %s AND %s with %d comparison%s)",
+                    left.toString(), right.toString(), comparisons, (comparisons == 1 ? "" : "s"));
+        }
     }
     
     private static class DuplicateConditionException extends RuntimeException {}
@@ -226,7 +355,7 @@ public final class MultiIndexEnumeratorTest {
     public static class TestCase {
         public Set<String> usingIndexes;
         public Set<String> conditionsOn;
-        public List<Combination> combinations;
+        public Set<String> results;
         public Map<String,String> extraEquivalencies = Collections.emptyMap();
         public boolean isError = false;
 
@@ -242,8 +371,10 @@ public final class MultiIndexEnumeratorTest {
             return conditionsOn;
         }
 
-        public List<Combination> getCombinations() {
-            return combinations;
+        public Set<String> getResults() {
+            if (!(results instanceof TreeSet))
+                results = new TreeSet<String>(results);
+            return results;
         }
 
         public void setConditionsOn(Set<String> conditionsOn) {
@@ -266,9 +397,8 @@ public final class MultiIndexEnumeratorTest {
             this.extraEquivalencies = extraEquivalences;
         }
 
-        public void setCombinations(List<Combination> combinations) {
-            this.combinations = new ArrayList<Combination>(combinations);
-            Collections.sort(this.combinations);
+        public void setCombinations(List<String> results) {
+            this.results = new TreeSet<String>(results);
         }
 
         @Override
@@ -277,7 +407,7 @@ public final class MultiIndexEnumeratorTest {
             if (isError)
                 sb.append("isError=true");
             else
-                sb.append("combinations: ").append(combinations);
+                sb.append("combinations: ").append(results);
             return sb.toString();
         }
 
@@ -288,7 +418,7 @@ public final class MultiIndexEnumeratorTest {
 
             TestCase testCase = (TestCase) o;
 
-            return combinations.equals(testCase.combinations)
+            return results.equals(testCase.results)
                     && conditionsOn.equals(testCase.conditionsOn)
                     && isError == testCase.isError;
         }
@@ -296,106 +426,8 @@ public final class MultiIndexEnumeratorTest {
         @Override
         public int hashCode() {
             int result = conditionsOn.hashCode();
-            result = 31 * result + combinations.hashCode();
+            result = 31 * result + results.hashCode();
             return result;
-        }
-    }
-
-    @SuppressWarnings("unused") // getters and setters used by yaml reflection
-    public static class Combination implements Comparable<Combination> {
-        public String outputIndex;
-        public String selectorIndex;
-        public List<String> outputSkip;
-        public List<String> selectorSkip;
-
-        public String getOutputIndex() {
-            return outputIndex;
-        }
-        
-        public void setOutputIndex(Index index) {
-            setOutputIndex(indexToString(index));
-        }
-
-        public void setOutputIndex(String outputIndex) {
-            this.outputIndex = outputIndex;
-        }
-
-        public String getSelectorIndex() {
-            return selectorIndex;
-        }
-
-        public void setSelectorIndex(Index index) {
-            setSelectorIndex(indexToString(index));
-        }
-
-        public void setSelectorIndex(String selectorIndex) {
-            this.selectorIndex = selectorIndex;
-        }
-
-        public List<String> getOutputSkip() {
-            return outputSkip;
-        }
-
-        public void setOutputSkip(List<String> outputSkip) {
-            this.outputSkip = outputSkip;
-        }
-
-        public List<String> getSelectorSkip() {
-            return selectorSkip;
-        }
-
-        public void setSelectorSkip(List<String> selectorSkip) {
-            this.selectorSkip = selectorSkip;
-        }
-
-        @Override
-        public String toString() {
-            return String.format("(output <skip %s from %s> selector: <skip %s from %s>)",
-                    getOutputSkip(),
-                    getOutputIndex(),
-                    getSelectorSkip(),
-                    getSelectorIndex()
-            );
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-
-            Combination that = (Combination) o;
-
-            return outputSkip.equals(that.outputSkip)
-                    && selectorSkip.equals(that.selectorSkip)
-                    && outputIndex.equals(that.outputIndex)
-                    && selectorIndex.equals(that.selectorIndex);
-        }
-
-        @Override
-        public int hashCode() {
-            int result = outputIndex.hashCode();
-            result = 31 * result + selectorIndex.hashCode();
-            result = 31 * result + outputSkip.hashCode();
-            result = 31 * result + selectorSkip.hashCode();
-            return result;
-        }
-
-        @Override
-        public int compareTo(Combination o) {
-            int cmp = getOutputIndex().compareTo(o.getOutputIndex());
-            if (cmp != 0)
-                return cmp;
-            cmp = getSelectorIndex().compareTo(o.getSelectorIndex());
-            if (cmp != 0)
-                return cmp;
-            cmp = compare(getOutputSkip(), o.getOutputSkip());
-            if (cmp != 0)
-                return cmp;
-            return compare(getSelectorSkip(), o.getSelectorSkip());
-        }
-
-        private int compare(List<String> list1, List<String> list2) {
-            return String.valueOf(list1).compareTo(String.valueOf(list2));
         }
     }
 }

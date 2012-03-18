@@ -15,9 +15,10 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
+import com.akiban.ais.model.*;
+import com.akiban.sql.optimizer.OptimizerTestBase;
+
+import com.akiban.qp.rowtype.Schema;
 
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
@@ -29,35 +30,29 @@ import java.io.IOException;
 
 public class TestCostEstimator extends CostEstimator
 {
+    private final AkibanInformationSchema ais;
     private final Map<Index,IndexStatistics> stats;
 
-    public TestCostEstimator(AkibanInformationSchema ais, String defaultSchema,
-                             File statsFile) 
+    public TestCostEstimator(AkibanInformationSchema ais, Schema schema, 
+                             File statsFile, boolean statsIgnoreMissingIndexes) 
             throws IOException {
+        super(schema);
+        this.ais = ais;
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
         else
-            stats = new IndexStatisticsYamlLoader(ais, defaultSchema).load(statsFile);
+            stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA)
+                .load(statsFile, statsIgnoreMissingIndexes);
+    }
+
+    public TestCostEstimator(AkibanInformationSchema ais, Schema schema, File statsFile)
+            throws IOException {
+        this(ais, schema, statsFile, false);
     }
 
     @Override
     public IndexStatistics getIndexStatistics(Index index) {
         return stats.get(index);
-    }
-
-    @Override
-    public long getTableRowCount(Table table) {
-        for (Index index : table.getIndexes()) {
-            IndexStatistics istats = stats.get(index);
-            if (istats != null)
-                return istats.getRowCount();
-        }
-        return 1;
-    }
-
-    @Override
-    protected boolean scaleIndexStatistics() {
-        return false;
     }
 
 }

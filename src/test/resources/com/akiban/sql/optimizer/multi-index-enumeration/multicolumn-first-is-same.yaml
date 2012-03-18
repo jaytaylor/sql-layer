@@ -6,12 +6,6 @@ conditionsOn:
     - customers.name
     - customers.yob
     - customers.vipstatus
-combinations:
-    -   outputIndex: customers.name_yob
-        outputSkip: [customers.name, customers.yob]
-        selectorIndex: customers.name_vipstatus
-        selectorSkip: [customers.name, customers.vipstatus]
-    -   outputIndex: customers.name_vipstatus
-        outputSkip: [customers.name, customers.vipstatus]
-        selectorIndex: customers.name_yob
-        selectorSkip: [customers.name, customers.yob]
+results:
+    - INTERSECT( [NAME, VIPSTATUS, id] AND [NAME, YOB, id] with 1 comparison)
+    - INTERSECT( [NAME, YOB, id] AND [NAME, VIPSTATUS, id] with 1 comparison)

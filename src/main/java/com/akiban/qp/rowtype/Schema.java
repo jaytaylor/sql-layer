@@ -70,6 +70,10 @@ public class Schema extends DerivedTypesSchema
         return userTableTypes;
     }
 
+    public List<IndexRowType> groupIndexRowTypes() {
+        return groupIndexRowTypes;
+    }
+
     public Schema(AkibanInformationSchema ais)
     {
         this.ais = ais;

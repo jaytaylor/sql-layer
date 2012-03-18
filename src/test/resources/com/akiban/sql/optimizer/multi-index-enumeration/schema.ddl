@@ -10,6 +10,7 @@ CREATE TABLE customers(
 CREATE INDEX namekey ON customers(name);
 CREATE INDEX name_yob ON customers(name, yob);
 CREATE INDEX name_vipstatus ON customers(name, vipstatus);
+CREATE INDEX vipstatuskey ON customers(vipstatus);
 CREATE INDEX yob_password ON customers(yob, password);
 CREATE INDEX yobkey ON customers(yob);
 CREATE INDEX yob_vipstatus ON customers(yob, vipstatus);

@@ -3,7 +3,7 @@ SelectQuery@72c7423b
     Project@4f01b9cf[user.orders.order_date, user.items.sku, user.items.quan]
       Select@7a4ded8e[]
         JoinNode@1227445d(SEMI/NESTED_LOOPS[user.items.quan == ANY[0]])
-          TableGroupJoinTree@4a710a3e(TableGroup@370e652(customers), customers INNER orders INNER items - IndexScan@690c2a7a(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 200, cost = 221.870))
+          TableGroupJoinTree@4a710a3e(TableGroup@370e652(customers), customers INNER orders INNER items - IndexScan@690c2a7a(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith, rows = 200, cost = 16447.9))
             TableSource@38a3d488(user.customers - TableGroup@370e652(customers))
               TableSource@bd649c5(user.orders - TableGroupJoin@2a6cc873(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
                 TableSource@21852a95(user.items - TableGroupJoin@55e0f6df(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
@@ -11,5 +11,5 @@ SelectQuery@72c7423b
             Subquery@4ff93efa
               Project@2ca9f04e[user.items.quan]
                 Select@7495b81a[]
-                  TableGroupJoinTree@7be27131(TableGroup@5b895cb9(customers), items - IndexScan@1726a4a2(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 81, cost = 186.800))
+                  TableGroupJoinTree@7be27131(TableGroup@5b895cb9(customers), items - IndexScan@1726a4a2(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 740.981))
                     TableSource@26f997aa(user.items - TableGroup@5b895cb9(customers))
