@@ -86,16 +86,16 @@
 - output: [[NaN]]
 ---
 # Test WHERE - positive, negative, zero, null
-- Statement: SELECT double_field from all_types where SQRT(100.0) = 10.0
+- Statement: SELECT double_field from all_types WHERE SQRT(100.0) = 10.0
 - output: [[1.0]]
 ---
-- Statement: SELECT double_field from all_types where SQRT(-100.0) = NaN
+- Statement: SELECT double_field from all_types WHERE SQRT(-100.0) = NaN
 - output: [[1.0]]
 ---
-- Statement: SELECT double_field from all_types where SQRT(0.0) = 0.0
+- Statement: SELECT double_field from all_types WHERE SQRT(0.0) = 0.0
 - output: [[1.0]]
 ---
-- Statement: SELECT double_field from all_types where SQRT(null) = null
+- Statement: SELECT double_field from all_types WHERE SQRT(null) = null
 - output: [[1.0]]
 
 ...
