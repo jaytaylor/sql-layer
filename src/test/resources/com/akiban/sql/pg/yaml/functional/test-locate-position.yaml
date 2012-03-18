@@ -107,13 +107,13 @@
 ---
 - Statement: SELECT varchar_field from all_types WHERE LOCATE(varchar_field, double_field, bigint_field) = 0;
 - output: [['foobarbar'], ['foobar']]
----
+--- # invalid argument type
 - Statement: SELECT LOCATE ('foo', varchar_field, date_field) from all_types;
-- error: [55003]
+- output: [[0], [0]]
 ---
 - Statement: SELECT LOCATE (null, varchar_field) from all_types;
 - output: [[null], [null]]
----
+--- 
 - Statement: SELECT POSITION(null, varchar_field) from all_types;
 - output: [[null], [null]]
 ## Test wrong arity:
