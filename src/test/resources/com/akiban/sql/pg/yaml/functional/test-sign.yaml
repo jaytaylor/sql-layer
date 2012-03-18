@@ -76,20 +76,28 @@
 - Statement: INSERT INTO all_types (double_field) VALUES (1.0)
 ---
 - Statement: SELECT SIGN(?) FROM all_types
-- params: [[2.5], [-100.25], [0.0]]
-- output: [[1], [-1], [0]]
+- params: [[2.5]]
+- output: [[1]]
+---
+- Statement: SELECT SIGN(?) FROM all_types
+- params: [[-100.25]]
+- output: [[-1]]
+---
+- Statement: SELECT SIGN(?) FROM all_types
+- params: [[0.0]]
+- output: [[0]]
 ---
 # Test WHERE statements on positive, neg, zero, and null
 - Statement: SELECT double_field from all_types WHERE SIGN(100) = 1
 - output: [[1.0]]
 ---
-- Statement: SELECT double_field from all_types where SIGN(-25) = -1
+- Statement: SELECT double_field from all_types WHERE SIGN(-25) = -1
 - output: [[1.0]]
 ---
-- Statement: SELECT double_field from all_types where SIGN(0) = 0
+- Statement: SELECT double_field from all_types WHERE SIGN(0) = 0
 - output: [[1.0]]
 ---
--Statement: SELECT double_field from all_types where SIGN(null) = null
+-Statement: SELECT double_field from all_types WHERE SIGN(null) = null
 - output: [[1.0]]
 
 ...

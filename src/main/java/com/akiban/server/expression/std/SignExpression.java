@@ -60,7 +60,7 @@ public class SignExpression extends AbstractUnaryExpression
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            
+
             return ExpressionTypes.INT;
         }
         
@@ -138,7 +138,7 @@ public class SignExpression extends AbstractUnaryExpression
     
     protected SignExpression(Expression operand)
     {
-        super(operand.valueType(), operand);
+        super(AkType.INT, operand);
     }
 
 }
