@@ -15,6 +15,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
@@ -28,11 +29,8 @@ import java.math.BigInteger;
 
 public class AbsExpression extends AbstractUnaryExpression 
 {    
-    @Scalar("absolute")
+    @Scalar ({"absolute", "abs"})
     public static final ExpressionComposer COMPOSER = new InternalComposer();
-    
-    @Scalar("abs")
-    public static final ExpressionComposer COMPOSER_ALIAS = COMPOSER;
     
     private static class InternalComposer extends UnaryComposer
     {
@@ -76,21 +74,32 @@ public class AbsExpression extends AbstractUnaryExpression
             
             switch (operandType) {
                 case DOUBLE:
-                    valueHolder().putDouble( Math.abs(operand().getDouble()) ); break;       
+                    valueHolder().putDouble( Math.abs(operand().getDouble()) ); 
+                    break;   
                 case FLOAT:
-                    valueHolder().putFloat( Math.abs(operand().getFloat()) ); break;
+                    valueHolder().putFloat( Math.abs(operand().getFloat()) ); 
+                    break;
                 case LONG:
-                    valueHolder().putLong( Math.abs(operand().getLong()) ); break;
+                    valueHolder().putLong( Math.abs(operand().getLong()) ); 
+                    break;
                 case INT:
-                    valueHolder().putInt( Math.abs(operand().getInt()) ); break;
-                case U_BIGINT:
-                    valueHolder().putUBigInt( operand().getUBigInt() ); break;
+                    valueHolder().putInt( Math.abs(operand().getInt()) ); 
+                    break;
                 case DECIMAL:
-                    valueHolder().putDecimal( operand().getDecimal().abs()); break;
-                case VARCHAR:
-                    valueHolder().putDouble(Math.abs (Double.parseDouble(operand().getString()) )); break;
+                    valueHolder().putDecimal( operand().getDecimal().abs()); 
+                    break;
+                case U_DOUBLE: 
+                case U_BIGINT: 
+                case U_FLOAT: 
+                case U_INT:
+                    // Unsigned values remain the same
+                    valueHolder().copyFrom(operand()); 
+                    break;
                 default:
-                    throw new InvalidArgumentTypeException("ABS: " + operandType.name()); 
+                    QueryContext context = queryContext();
+                    if (context != null)
+                        context.warnClient(new InvalidArgumentTypeException("ABS: " + operandType.name()));
+                    return NullValueSource.only();
             }
             
             return valueHolder();
