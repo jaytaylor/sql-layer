@@ -137,8 +137,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
-        if (result != null)
+        if (result != null) {
+            cache.put(index, result);
             return result;
+        }
         result = new IndexStatistics(index);
         result.setAnalysisTimestamp(-1);
         cache.put(index, result);
