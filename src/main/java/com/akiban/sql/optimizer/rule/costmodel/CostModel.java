@@ -60,7 +60,7 @@ public class CostModel
     public double ancestorLookup(List<UserTableRowType> ancestorTableTypes)
     {
         // Overhead of AncestorLookup_Default not measured
-        long cost = 0;
+        double cost = 0;
         for (UserTableRowType ancestorTableType : ancestorTableTypes) {
             cost += hKeyBoundGroupScanSingleRow(ancestorTableType);
         }
