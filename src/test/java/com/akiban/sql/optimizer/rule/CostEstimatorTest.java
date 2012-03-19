@@ -210,7 +210,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costFlatten(i, Arrays.asList(c, o, i));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(198.0,
+        assertEquals(199.38819999999998,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -222,7 +222,7 @@ public class CostEstimatorTest
         TableSource i = tableSource("items");
         CostEstimate costEstimate = costFlatten(o, Arrays.asList(c, o, i));
         assertEquals(20, costEstimate.getRowCount());
-        assertEquals(1791.4098,
+        assertEquals(1791.6014,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -258,7 +258,7 @@ public class CostEstimatorTest
         TableSource a = tableSource("addresses");
         CostEstimate costEstimate = costFlatten(i, Arrays.asList(c, o, i, a));
         assertEquals(1, costEstimate.getRowCount());
-        assertEquals(295.7224,
+        assertEquals(297.1106,
                      costEstimate.getCost(),
                      0.0001);
     }
@@ -294,7 +294,7 @@ public class CostEstimatorTest
         TableSource s = tableSource("shipments");
         CostEstimate costEstimate = costFlatten(a, Arrays.asList(c, o, i, s));
         assertEquals(300, costEstimate.getRowCount());
-        assertEquals(21412.1154,
+        assertEquals(21412.307,
                      costEstimate.getCost(),
                      0.0001);
     }
