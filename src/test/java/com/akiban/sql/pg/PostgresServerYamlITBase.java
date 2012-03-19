@@ -18,7 +18,8 @@ package com.akiban.sql.pg;
 import com.akiban.server.error.InvalidOperationException;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.Connection;
@@ -90,7 +91,7 @@ public class PostgresServerYamlITBase {
         Throwable exception = null;
 	Reader in = null;
 	try {
-	    in = new FileReader(file);
+	    in = new InputStreamReader(new FileInputStream(file), "UTF-8");
 	    new YamlTester(file.toString(), in, connection).test();
 	    if (DEBUG) {
 		System.err.println("Test passed");

@@ -33,7 +33,8 @@ import org.junit.Ignore;
 
 import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
@@ -69,7 +70,7 @@ public class PostgresServerFilesITBase extends PostgresServerITBase
         int tableId = tableId(SCHEMA_NAME, tableName);
         Reader rdr = null;
         try {
-            rdr = new FileReader(file);
+            rdr = new InputStreamReader(new FileInputStream(file), "UTF-8");
             BufferedReader brdr = new BufferedReader(rdr);
             while (true) {
                 String line = brdr.readLine();
