@@ -18,6 +18,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
@@ -25,6 +26,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.List;
 
 public class ArithOps 
 {
@@ -242,8 +244,9 @@ public class ArithOps
         }
     };
             
-    static abstract class ArithOpComposer extends BinaryComposer implements ArithOp
+    static abstract class ArithOpComposer implements ExpressionComposer, ArithOp
     {
+        private static final Expression ZERO_INT = new LiteralExpression(AkType.INT, 0L);
         /**
          * 
          * @param args
@@ -255,15 +258,39 @@ public class ArithOps
          */
         protected abstract void adjustVarchar (TypesList args, int index) throws StandardException;
         
-        @Override
         protected Expression compose (Expression first, Expression second)
         {
             return new ArithExpression(first, this, second);
         }
+        
+        @Override
+        public Expression compose (List<? extends Expression> args)
+        {        
+            switch(args.size())
+            {
+                case 2:   return new ArithExpression(args.get(0), this, args.get(1));
+                case 1:   if (ArithExpression.isNumeric(args.get(0).valueType()))      // INT has the lowest precedence
+                              return new ArithExpression(ZERO_INT, this, args.get(0)); // as far as ArithExp concerns
+                default:  throw new WrongExpressionArityException(2, args.size());
+            }
+        }                        
 
         @Override
         public ExpressionType composeType(TypesList arguments) throws StandardException
         {
+            AkType top;
+            // unary ops (- or +) should only work with numeric types
+            if (arguments.size() == 1 && (name == '-' || name == '+'))
+            {
+                if (ArithExpression.isNumeric(top = arguments.get(0).getType()))            
+                    return arguments.get(0);                
+                else if (top == AkType.VARCHAR)
+                {                    
+                    arguments.setType(0, AkType.DOUBLE); 
+                    return arguments.get(0);
+                }
+            }
+            
             if(arguments.size() != 2) throw new WrongExpressionArityException(2, arguments.size());
             ExpressionType first = arguments.get(0), second = arguments.get(1);
             
@@ -291,7 +318,7 @@ public class ArithOps
                 second = arguments.get(1);
             }
             
-            AkType top = ArithExpression.getTopType(first.getType(), second.getType(), this);
+            top = ArithExpression.getTopType(first.getType(), second.getType(), this);
             int scale = first.getScale() + second.getScale();
             int pre = first.getPrecision() + second.getPrecision();
             return ExpressionTypes.newType(top, pre, scale);
