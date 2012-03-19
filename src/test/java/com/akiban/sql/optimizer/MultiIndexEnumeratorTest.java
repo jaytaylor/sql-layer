@@ -57,7 +57,6 @@ import java.util.TreeSet;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-@Ignore
 @RunWith(NamedParameterizedRunner.class)
 public final class MultiIndexEnumeratorTest {
     
@@ -320,7 +319,18 @@ public final class MultiIndexEnumeratorTest {
 
         @Override
         protected List<Column> getComparisonColumns(TestNode first, TestNode second, EquivalenceFinder<Column> equivs) {
-            throw new UnsupportedOperationException(); // TODO
+            List<IndexColumn> firstUnpegged = first.getUnpegged();
+            List<IndexColumn> secondUnpegged = second.getUnpegged();
+            int ncols = Math.min(firstUnpegged.size(), secondUnpegged.size());
+            List<Column> results = new ArrayList<Column>(ncols);
+            for (int i=0; i < ncols; ++i) {
+                Column firstCol = firstUnpegged.get(i).getColumn();
+                Column secondCol = secondUnpegged.get(i).getColumn();
+                if (!equivs.areEquivalent(firstCol, secondCol))
+                    break;
+                results.add(firstCol);
+            }
+            return results;
         }
 
         @Override
@@ -332,6 +342,7 @@ public final class MultiIndexEnumeratorTest {
     
     private interface TestNode extends IndexIntersectionNode<Condition,TestNode> {
         String leafBranch();
+        List<IndexColumn> getUnpegged();
     }
     
     private static class SimpleLeaf implements TestNode {
@@ -350,6 +361,11 @@ public final class MultiIndexEnumeratorTest {
                 else if (!leafBranch.equals(cond.branch))
                     throw new RuntimeException("mis-created branch: " + pegged);
             }
+        }
+
+        @Override
+        public List<IndexColumn> getUnpegged() {
+            return allCols.subList(pegged.size(), allCols.size());
         }
 
         @Override
@@ -436,6 +452,11 @@ public final class MultiIndexEnumeratorTest {
             this.left = left;
             this.right = right;
             this.comparisons = comparisons;
+        }
+
+        @Override
+        public List<IndexColumn> getUnpegged() {
+            return left.getUnpegged();
         }
 
         @Override

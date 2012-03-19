@@ -217,28 +217,4 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
     }
 
     protected abstract List<Column> getComparisonColumns(N first, N second, EquivalenceFinder<Column> equivalencies);
-//    private List<IndexColumn> getCommonTrailing(N first, N second, EquivalenceFinder<Column> columnEquivalences)
-//    {
-//        List<IndexColumn> firstTrailing = orderingColumns(first);
-//        if (firstTrailing.isEmpty())
-//            return Collections.emptyList();
-//        List<IndexColumn> secondTrailing = orderingColumns(second);
-//        if (secondTrailing.isEmpty())
-//            return Collections.emptyList();
-//        
-//        int maxTrailing = Math.min(firstTrailing.size(), secondTrailing.size());
-//        int commonCount;
-//        for (commonCount = 0; commonCount < maxTrailing; ++commonCount) {
-//            Column firstCol = firstTrailing.get(commonCount).getColumn();
-//            Column secondCol = secondTrailing.get(commonCount).getColumn();
-//            if (!columnEquivalences.areEquivalent(firstCol, secondCol))
-//                break;
-//        }
-//        return firstTrailing.subList(0, commonCount);
-//    }
-//
-//    private List<IndexColumn> orderingColumns(N scan) {
-//        List<IndexColumn> allCols = scan.getAllColumns();
-//        return allCols.subList(scan.getPeggedCount(), allCols.size());
-//    }
 }
