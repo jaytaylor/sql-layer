@@ -152,6 +152,7 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         UserTable firstUTable = (UserTable) firstTable;
         UserTable secondUTable = (UserTable) secondTable;
         int comparisonsLen = comparisonCols.size();
+        // find the UserTable associated with the common N. This works for multi- as well as single-branch
         UserTable commonAncestor = first.findCommonAncestor(second);
         assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
         boolean isMultiBranch = true;

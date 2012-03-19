@@ -82,24 +82,8 @@ public class ColumnExpression extends BaseExpression
     public void setPosition(int position) {
         this.position = position;
     }
-    
-    public boolean isEquivalentTo(ColumnExpression other) {
-        if (equivalenceFinder == null)
-            return false;
-        return equivalenceFinder.areEquivalent(this, other);
-    }
 
     public void markEquivalentTo(ColumnExpression other) {
-        if (equivalenceFinder == null) {
-            equivalenceFinder = other.equivalenceFinder;
-            assert equivalenceFinder != null;
-        }
-        else if (other.equivalenceFinder == null) {
-            other.equivalenceFinder = equivalenceFinder;
-        }
-        else if (other.equivalenceFinder != equivalenceFinder) {
-            throw new IllegalStateException("columns are in different equivalence scopes");
-        }
         equivalenceFinder.markEquivalent(this, other);
     }
 
