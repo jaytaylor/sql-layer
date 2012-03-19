@@ -17,8 +17,10 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Canned handling for fixed SQL text that comes from tools that
@@ -28,7 +30,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 {
     enum Query {
         // ODBC driver sends this at the start; returning no rows is fine (and normal).
-        ODBC_LO_TYPE_QUERY("select oid, typbasetype from pg_type where typname = 'lo'");
+        ODBC_LO_TYPE_QUERY("select oid, typbasetype from pg_type where typname = 'lo'"),
+        // SEQUEL 3.33.0 (http://sequel.rubyforge.org/) sends this when opening a new connection
+        SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'");
 
         // TODO: May need regex for some cases.
         private String sql;
@@ -49,7 +53,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     static final PostgresType OID_PG_TYPE = 
-        new PostgresType(PostgresType.OID_TYPE_OID, (short)4, -1, AkType.LONG);
+        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG);
+    static final PostgresType TYPNAME_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR);
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -67,6 +73,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             ncols = 2;
             names = new String[] { "oid", "typbasetype" };
             types = new PostgresType[] { OID_PG_TYPE, OID_PG_TYPE };
+            break;
+        case SEQUEL_B_TYPE_QUERY:
+            ncols = 2;
+            names = new String[] { "oid", "typname" };
+            types = new PostgresType[] { OID_PG_TYPE, TYPNAME_PG_TYPE };
             break;
         default:
             return;
@@ -103,6 +114,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case ODBC_LO_TYPE_QUERY:
             nrows = odbcLoTypeQuery(messenger, maxrows);
             break;
+        case SEQUEL_B_TYPE_QUERY:
+            nrows = sequelBTypeQuery(messenger, maxrows);
+            break;
         }
         {        
           messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -114,6 +128,37 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int odbcLoTypeQuery(PostgresMessenger messenger, int maxrows) {
         return 0;
+    }
+
+    private int sequelBTypeQuery(PostgresMessenger messenger, int maxrows) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+    	for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
+            if (pgtype.getType() == PostgresType.TypeOid.TypType.BASE) {
+                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+                messenger.writeShort(2); // 2 columns for this query
+                ByteArrayOutputStream bytes = encoder.encodeObject(pgtype.getOid(), OID_PG_TYPE, false);
+                if (bytes == null) {
+                    messenger.writeInt(-1);
+                } else {
+                    messenger.writeInt(bytes.size());
+                    messenger.writeByteStream(bytes);
+                }
+                bytes = encoder.encodeObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
+                if (bytes == null) {
+                    messenger.writeInt(-1);
+                } else {
+                    messenger.writeInt(bytes.size());
+                    messenger.writeByteStream(bytes);
+                }
+                messenger.sendMessage();
+                nrows++;
+                if ((maxrows > 0) && (nrows >= maxrows)) {
+                    break;
+                }
+            }
+        }
+        return nrows;
     }
 
 }
