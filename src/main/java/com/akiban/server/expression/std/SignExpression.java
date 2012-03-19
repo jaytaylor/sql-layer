@@ -61,6 +61,9 @@ public class SignExpression extends AbstractUnaryExpression
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
 
+            if (argumentTypes.get(0).getType() == AkType.VARCHAR)
+                argumentTypes.setType(0, AkType.DOUBLE);
+            
             return ExpressionTypes.INT;
         }
         
