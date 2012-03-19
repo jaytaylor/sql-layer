@@ -1,4 +1,4 @@
-# Returns the weekday index for date (0 = Monday, 1 = Tuesday, … 6 = Sunday).
+# Returns the weekday index for date (0 = Monday, 1 = Tuesday, ... 6 = Sunday).
 # Test the WEEKDAY() function
 # BUG: 902169, 902168
 # Status: triaged
