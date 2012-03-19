@@ -51,7 +51,7 @@ public class AbsExpressionTest extends ComposedExpressionTestBase
         AkType testType = AkType.FLOAT;
         Expression posOutput = new AbsExpression(new LiteralExpression(testType, 10.456f));
         Expression negOutput = new AbsExpression(new LiteralExpression(testType, -2.23f));
-        
+
         float absValueOfPos = posOutput.evaluation().eval().getFloat();
         float absValueOfNeg = negOutput.evaluation().eval().getFloat();
         
@@ -73,7 +73,43 @@ public class AbsExpressionTest extends ComposedExpressionTestBase
         Assert.assertEquals("ABS posOutput should be BIGINT", testType, posOutput.valueType());
         Assert.assertEquals(posLiteral, absValueOfPos);
     }
+    
+    @Test
+    public void testUnsignedInt()
+    {
+        AkType testType = AkType.U_INT;
+        long posLiteral = 40;
+        Expression posOutput = new AbsExpression(new LiteralExpression(testType, posLiteral) );       
+        long absValueOfPos = posOutput.evaluation().eval().getUInt();
 
+        Assert.assertEquals("ABS posOutput should be UINT", testType, posOutput.valueType());
+        Assert.assertEquals(posLiteral, absValueOfPos);
+    }
+    
+    @Test
+    public void testUnsignedFloat()
+    {
+        AkType testType = AkType.U_FLOAT;
+        float posLiteral = 23.22f;
+        Expression posOutput = new AbsExpression(new LiteralExpression(testType, posLiteral) );       
+        float absValueOfPos = posOutput.evaluation().eval().getUFloat();
+
+        Assert.assertEquals("ABS posOutput should be UFLOAT", testType, posOutput.valueType());
+        Assert.assertEquals(posLiteral, absValueOfPos, 0.0001);
+    }
+        
+    @Test
+    public void testUnsignedDouble()
+    {
+        AkType testType = AkType.U_DOUBLE;
+        double posLiteral = 23.22;
+        Expression posOutput = new AbsExpression(new LiteralExpression(testType, posLiteral) );       
+        double absValueOfPos = posOutput.evaluation().eval().getUDouble();
+
+        Assert.assertEquals("ABS posOutput should be UDOUBLE", testType, posOutput.valueType());
+        Assert.assertEquals(posLiteral, absValueOfPos, 0.0001);
+    }
+    
     @Test
     public void testDecimal()
     {
@@ -123,23 +159,6 @@ public class AbsExpressionTest extends ComposedExpressionTestBase
         Assert.assertEquals("ABS negOutput should be INT", testType, negOutput.valueType());
         Assert.assertEquals(1234, absValueOfPos);
         Assert.assertEquals(4321, absValueOfNeg); 
-    }
-    
-    @Test
-    public void testVarchar()
-    {
-        AkType testType = AkType.VARCHAR;
-        Expression posOutput = new AbsExpression(new LiteralExpression(testType, "1234"));
-        Expression negOutput = new AbsExpression(new LiteralExpression(testType, "-4321"));
-        
-        // getInt() still returns a Java long
-        double absValueOfPos = posOutput.evaluation().eval().getDouble();
-        double absValueOfNeg = negOutput.evaluation().eval().getDouble();
-
-        Assert.assertEquals("ABS posOutput should be DOUBLE for VARCHAR input", testType, posOutput.valueType());
-        Assert.assertEquals("ABS negOutput should be DOUBLE for VARCHAR input", testType, negOutput.valueType());
-        Assert.assertEquals(1234, absValueOfPos, 0.0001);
-        Assert.assertEquals(4321, absValueOfNeg, 0.0001); 
     }
     
     @Test
