@@ -15,12 +15,19 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.InvalidCharToNumException;
+import com.akiban.server.error.InvalidDateFormatException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import java.math.BigDecimal;
+import java.math.BigInteger;
 
 public class CastExpression extends AbstractUnaryExpression
 {
@@ -52,9 +59,46 @@ public class CastExpression extends AbstractUnaryExpression
             if (type.equals(operandSource.getConversionType()))
                 return operandSource;
             valueHolder().expectType(type);
-            return Converters.convert(operandSource, valueHolder());
+            try
+            {
+                return Converters.convert(operandSource, valueHolder());
+            }
+            catch (InvalidDateFormatException e)
+            {
+                return errorCase(e);
+            }
+            catch (InconvertibleTypesException e)
+            {
+                return errorCase(e);
+            }
+            catch (InvalidCharToNumException e)
+            {
+                return errorCase(e);
+            }
         }
         
+        private ValueSource errorCase (InvalidOperationException e)
+        {
+            QueryContext qc = queryContext();
+            if (qc != null)
+                qc.warnClient(e);
+
+            switch(type)
+            {
+                case DECIMAL:   valueHolder().putDecimal(BigDecimal.ZERO); break;
+                case U_BIGINT:  valueHolder().putUBigInt(BigInteger.ZERO); break;
+                case LONG:
+                case U_INT:
+                case INT:        valueHolder().putRaw(type, 0L); break;
+                case DOUBLE:     valueHolder().putDouble(0.0); break;
+                case U_FLOAT:
+                case FLOAT:      valueHolder().putRaw(type, 0.0f); break;
+                case TIME:       valueHolder().putTime(0L);
+                default:         return NullValueSource.only();
+
+            }
+            return valueHolder();
+        }
         private final AkType type;        
     }
 }

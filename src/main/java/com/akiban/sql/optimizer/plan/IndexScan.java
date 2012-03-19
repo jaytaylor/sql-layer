@@ -15,21 +15,19 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
-import com.akiban.ais.model.Index;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.*;
 
-public class IndexScan extends BasePlanNode
+public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression>
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
     }
-
-    private Index index;
 
     private TableSource rootMostTable, rootMostInnerTable, leafMostInnerTable, leafMostTable;
 
@@ -63,25 +61,18 @@ public class IndexScan extends BasePlanNode
     // Estimated cost of using this index.
     private CostEstimate costEstimate;
 
-    public IndexScan(Index index, TableSource table) {
-        this.index = index;
+    public IndexScan(TableSource table) {
         rootMostTable = rootMostInnerTable = leafMostInnerTable = leafMostTable = table;
     }
 
-    public IndexScan(Index index, 
-                     TableSource rootMostTable, 
+    public IndexScan(TableSource rootMostTable, 
                      TableSource rootMostInnerTable,
                      TableSource leafMostInnerTable,
                      TableSource leafMostTable) {
-        this.index = index;
         this.rootMostTable = rootMostTable;
         this.rootMostInnerTable = rootMostInnerTable;
         this.leafMostInnerTable = leafMostInnerTable;
         this.leafMostTable = leafMostTable;
-    }
-
-    public Index getIndex() {
-        return index;
     }
 
     public TableSource getRootMostTable() {
@@ -269,11 +260,13 @@ public class IndexScan extends BasePlanNode
         ordering = duplicateList(ordering, map);
     }
     
+    public abstract List<IndexColumn> getIndexColumns();
+
     @Override
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
-        str.append(index);
+        str.append(summarizeIndex());
         str.append(", ");
         if (covering)
             str.append("covering/");
@@ -282,8 +275,7 @@ public class IndexScan extends BasePlanNode
         if (ordering != null) {
             boolean anyReverse = false, allReverse = true;
             for (int i = 0; i < ordering.size(); i++) {
-                if (ordering.get(i).isAscending() != 
-                    index.getKeyColumns().get(i).isAscending())
+                if (ordering.get(i).isAscending() != isAscendingAt(i))
                     anyReverse = true;
                 else
                     allReverse = false;
@@ -326,5 +318,13 @@ public class IndexScan extends BasePlanNode
         str.append(")");
         return str.toString();
     }
+    
+    void setConditions(List<ConditionExpression> newConditions) {
+        if (conditions != null)
+            throw new IllegalStateException(conditions.toString());
+        conditions = newConditions;
+    }
 
+    protected abstract String summarizeIndex();
+    protected abstract boolean isAscendingAt(int index);
 }

@@ -5,4 +5,4 @@ SELECT order_date, sku, quan, child.name
  CROSS JOIN parent
  INNER JOIN child ON parent.id = child.pid
  WHERE customers.name = parent.name
-   AND sku IN ('1234', '4567')
+   AND sku IN ('1234', '4567', '6666')

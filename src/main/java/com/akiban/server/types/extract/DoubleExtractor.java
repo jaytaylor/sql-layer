@@ -15,6 +15,7 @@
 
 package com.akiban.server.types.extract;
 
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -67,7 +68,14 @@ public final class DoubleExtractor extends AbstractExtractor {
     }
 
     public double getDouble(String string) {
-        return Double.parseDouble(string);
+        try
+        {
+            return Double.parseDouble(string);
+        }
+        catch (NumberFormatException e)
+        {
+            throw new InvalidCharToNumException(e.getMessage());
+        }
     }
 
     public String asString(double value) {

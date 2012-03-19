@@ -59,9 +59,10 @@
 ---
 - Statement: SELECT year_field % time_field FROM all_types;
 - error: [22503]
-## test with params
+# test with params
 ---
-- Statement: SELECT 2 % ? FROM all_types;
+- Statement: SELECT 2 mod ? FROM all_types;
 - params: [[1]]
 - output: [[0]]
 ...
+

@@ -84,9 +84,9 @@ public class DPhypEnumerateTest extends OptimizerTestBase
     @Before
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
-        rules = new RulesTestContext(ais, DEFAULT_SCHEMA, null,
-                                     Collections.<BaseRule>singletonList(new ASTStatementLoader()),
-                                     new Properties());
+        rules = RulesTestContext.create(ais, null, false,
+                                        Collections.<BaseRule>singletonList(new ASTStatementLoader()),
+                                        new Properties());
     }
 
     @Test
@@ -154,6 +154,10 @@ public class DPhypEnumerateTest extends OptimizerTestBase
                         cstr.append(condition);
                     }
                 }
+            }
+            if (first) {
+                jstr = " CROSS JOIN ";
+                cstr.setLength(0);
             }
             for (String left : p1) {
                 if (left.indexOf(' ') > 0)

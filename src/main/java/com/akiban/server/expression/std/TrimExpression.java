@@ -25,19 +25,18 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
+import java.util.List;
 
-public class TrimExpression extends AbstractUnaryExpression
+public class TrimExpression extends AbstractBinaryExpression
 {
     public static enum TrimType { LEADING, TRAILING}
     
     private final TrimType trimType;
     
     @Scalar ("ltrim")
-    public static final ExpressionComposer LTRIM_COMPOSER = new InternalComposer(TrimType.TRAILING);
+    public static final ExpressionComposer LTRIM_COMPOSER = new InternalComposer(TrimType.LEADING);
     
     @Scalar ("rtrim")
     public static final ExpressionComposer RTRIM_COMPOSER = new InternalComposer(TrimType.TRAILING);
@@ -45,53 +44,55 @@ public class TrimExpression extends AbstractUnaryExpression
     @Scalar ("trim")
     public static final ExpressionComposer TRIM_COMPOSER = new InternalComposer(null);
     
-    private static final class InnerEvaluation extends AbstractUnaryExpressionEvaluation
+    private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         final TrimType trimType;
         
-        public InnerEvaluation (ExpressionEvaluation ev, TrimType trimType)
+        public InnerEvaluation (List< ? extends ExpressionEvaluation> children, TrimType trimType)
         {
-            super(ev);
+            super(children);
             this.trimType = trimType;
         }
 
         @Override
         public ValueSource eval() 
         {
-            ValueSource operandSource = this.operand();
-            if (operandSource.isNull()) return NullValueSource.only();
+            ValueSource trimSource = left();
+            if (trimSource.isNull()) return NullValueSource.only();
             
-            ObjectExtractor<String> sExtractor = Extractors.getStringExtractor();
-            String st = sExtractor.getObject(operandSource);
+            ValueSource trimChar = right();
+            if (trimChar.isNull()) return NullValueSource.only();
             
+            String st = trimSource.getString();
+            char ch = trimChar.getString().charAt(0);
+
             if (trimType != TrimType.TRAILING)
-                st = ltrim(st);
+                st = ltrim(st, ch);
             if (trimType != TrimType.LEADING)
-                st = rtrim(st);          
+                st = rtrim(st, ch);          
             
             valueHolder().putString(st);
             return valueHolder();
         }
         
-        private static String ltrim (String st)
+        private static String ltrim (String st, char ch)
         {
             for (int n = 0; n < st.length(); ++n)
-                if (!Character.isWhitespace(st.charAt(n)))
+                if (st.charAt(n) != ch)
                     return st.substring(n);
             return "";
         }
         
-        private static String rtrim (String st)
+        private static String rtrim (String st, char ch)
         {
             for (int n = st.length() - 1; n >= 0; --n)
-                if(!Character.isWhitespace(st.charAt(n)))
+                if(st.charAt(n) != ch)
                     return st.substring(0, n+1);                   
-                
             return "";
         }        
     }
     
-    private static final class InternalComposer extends UnaryComposer
+    private static final class InternalComposer extends BinaryComposer
     {
         private final TrimType trimType;
         
@@ -101,21 +102,34 @@ public class TrimExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected Expression compose(Expression argument) 
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
-            return new TrimExpression (argument,trimType);
+            if (argumentTypes.size() != 2)
+                throw new WrongExpressionArityException(1, argumentTypes.size());
+            for (int n = 0; n < argumentTypes.size(); ++n)
+                argumentTypes.setType(n, AkType.VARCHAR);
+            return argumentTypes.get(0);
         }
 
         @Override
-        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
+        protected Expression compose(Expression first, Expression second)
         {
-            if (argumentTypes.size() != 1)
-                throw new WrongExpressionArityException(1, argumentTypes.size());
-            argumentTypes.setType(0, AkType.VARCHAR);
-            return argumentTypes.get(0);
+            return new TrimExpression(first, second, trimType);
         }
     }
   
+        
+    @Override
+    protected boolean nullIsContaminating()
+    {
+        return true;
+    }
+
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append(trimType);
+    }
     
     /**
      * type specifies whether to trim trailing or leading
@@ -125,21 +139,15 @@ public class TrimExpression extends AbstractUnaryExpression
      * @param operand
      * @param type 
      */
-    public TrimExpression (Expression operand, TrimType type)
+    public TrimExpression (Expression first, Expression second,TrimType type)
     {
-        super(AkType.VARCHAR, operand);
+        super(AkType.VARCHAR, first, second);
         this.trimType = type;
     }
     
     @Override
-    protected String name() 
-    {       
-        return "TRIM " + (trimType == null ? "" : trimType.name());
-    }
-
-    @Override
     public ExpressionEvaluation evaluation() 
     {
-        return new InnerEvaluation(this.operandEvaluation(), trimType);
+        return new InnerEvaluation(childrenEvaluations(), trimType);
     }    
 }

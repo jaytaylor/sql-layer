@@ -17,7 +17,10 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Set;
 
@@ -35,7 +38,7 @@ public class TableGroupJoinTree extends BaseJoinable
         TableGroupJoinNode parent, nextSibling, firstChild;
         JoinType parentJoinType;
         ConditionList joinConditions;
-        int flags;
+        long state;
         
         public TableGroupJoinNode(TableSource table) {
             this.table = table;
@@ -77,11 +80,12 @@ public class TableGroupJoinTree extends BaseJoinable
             this.joinConditions = joinConditions;
         }
 
-        public int getFlags() {
-            return flags;
+        /** Integer state managed by some rule. */
+        public long getState() {
+            return state;
         }
-        public void setFlags(int flags) {
-            this.flags = flags;
+        public void setState(long state) {
+            this.state = state;
         }
 
         /** Find the given table in this (sub-)tree. */
@@ -102,7 +106,7 @@ public class TableGroupJoinTree extends BaseJoinable
         @Override
         public String toString() {
             return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
-                "(" + table + ")";
+                "(" + table + ", " + state + ")";
         }
     }
 
@@ -153,6 +157,11 @@ public class TableGroupJoinTree extends BaseJoinable
         }
     }
 
+    public interface LeafFinderPredicate<V> {
+        boolean includeAndContinue(TableGroupJoinNode node, TableGroupJoinTree tree);
+        V mapToValue(TableGroupJoinNode node);
+    }
+    
     private TableGroup group;
     private TableGroupJoinNode root;
     private Set<TableSource> required;
@@ -182,6 +191,13 @@ public class TableGroupJoinTree extends BaseJoinable
     }
     public void setScan(PlanNode scan) {
         this.scan = scan;
+    }
+    
+    public <V> Map<TableGroupJoinNode,V> findLeaves(LeafFinderPredicate<V> predicate) {
+        Map<TableGroupJoinNode,V> results = new HashMap<TableGroupJoinNode, V>();
+        if (predicate.includeAndContinue(root, this))
+            buildLeaves(root, predicate, results);
+        return results;
     }
 
     @Override
@@ -254,6 +270,31 @@ public class TableGroupJoinTree extends BaseJoinable
                     str.append(joinCondition);
                 }
             }
+        }
+    }
+
+    private <V> void buildLeaves(TableGroupJoinNode root, LeafFinderPredicate<V> predicate,
+                                 Map<TableGroupJoinNode,V> out)
+    {
+        // parent caller is responsible for checking that this root satisfies the predicate
+        TableGroupJoinNode child = root.getFirstChild();
+        boolean hitLeaf;
+        if (child == null) {
+            hitLeaf = true;
+        }
+        else {
+            boolean anyChildMatched = false;
+            for (; child != null; child = child.getNextSibling()) {
+                if (predicate.includeAndContinue(child, this)) {
+                    buildLeaves(child, predicate, out);
+                    anyChildMatched = true; // this frame's root is not the leaf of the predicate-matching tree
+                }
+            }
+            hitLeaf = !anyChildMatched;
+        }
+        if (hitLeaf) {
+            V value = predicate.mapToValue(root);
+            out.put(root, value);
         }
     }
 

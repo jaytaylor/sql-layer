@@ -104,6 +104,7 @@ public class BranchJoiner_CBO extends BaseRule
             requiredTables = indexScan.getRequiredTables();
         }
         markBranches(tableGroup, requiredTables);
+        top:
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             TableSource indexTable = indexScan.getLeafMostTable();
@@ -124,23 +125,29 @@ public class BranchJoiner_CBO extends BaseRule
                 // side branch.
                 PlanNode sideScan = trySideBranch(scan, leafTable, rootTable,
                                                   indexTable, ancestors);
-                if (sideScan != null)
-                    return sideScan;
+                if (sideScan != null) {
+                    scan = sideScan;
+                    break top;
+                }
             }
             if (!ancestors.isEmpty())
                 scan = new AncestorLookup(scan, indexTable, ancestors);
             scan = flatten(scan, leafTable, rootTable);
-            return fillSideBranches(scan, leafTable, rootTable);
+            scan = fillSideBranches(scan, leafTable, rootTable);
         }
         else if (scan instanceof GroupScan) {
             GroupScan groupScan = (GroupScan)scan;
             List<TableSource> tables = new ArrayList<TableSource>();
             groupScan.setTables(tables);
-            return fillBranch(scan, tables, rootTable, null);
+            scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");
         }
+        for (TableGroupJoinNode table : tableGroup) {
+            assert !isPending(table) : table;
+        }
+        return scan;
     }
 
     /** Try to switch from the main branch over to a side branch.
@@ -213,24 +220,22 @@ public class BranchJoiner_CBO extends BaseRule
                 scan = new AncestorLookup(scan, sideBranch.getTable(), ancestors);
         }
         // And flatten up through root-most ancestor.
-        return fillBranch(scan, tables, sideBranch, rootTable);
+        return fillBranch(scan, tables, sideBranch, rootTable, rootTable);
     }
 
     /** Given a <code>BranchLookup</code> / <code>GroupScan</code>,
-     * pick a primary branch, flatten it onto <code>input</code> and
-     * then <code>Product</code> that with any remaining branches.
+     * pick a primary branch under <code>underRoot</code>, flatten it
+     * up to <code>flattenRoot</code> onto <code>input</code> and then
+     * <code>Product</code> that with any remaining branches up to
+     * <code>sideRoot</code>.
      */
     protected PlanNode fillBranch(PlanNode input, List<TableSource> lookupTables,
-                                  TableGroupJoinNode rootTable, 
-                                  TableGroupJoinNode flattenRoot) {
-        TableGroupJoinNode leafTable = singleBranchPending(rootTable, lookupTables);
-        if (flattenRoot == null)
-            // If from a side-branch, we flatten up one extra level to
-            // get connected coverage of the graph. Otherwise, it's
-            // the same branch.
-            flattenRoot = rootTable;
+                                  TableGroupJoinNode underRoot, 
+                                  TableGroupJoinNode flattenRoot,
+                                  TableGroupJoinNode sideRoot) {
+        TableGroupJoinNode leafTable = singleBranchPending(underRoot, lookupTables);
         return fillSideBranches(flatten(input, leafTable, flattenRoot),
-                                leafTable, rootTable);
+                                leafTable, sideRoot);
     }
 
     /** Generate single branch <code>Flatten</code> joins from
@@ -286,13 +291,15 @@ public class BranchJoiner_CBO extends BaseRule
                 subplans.add(input);
                 for (TableGroupJoinNode sibling = parent.getFirstChild();
                      sibling != null; sibling = sibling.getNextSibling()) {
-                    if (sibling == branchTable) continue;
+                    if ((sibling == branchTable) ||
+                        (leafLeftMostPending(sibling) == null))
+                        continue;
                     List<TableSource> tables = new ArrayList<TableSource>();
                     PlanNode subplan = new BranchLookup(null, // no input means _Nested.
                                                         parent.getTable().getTable(),
                                                         sibling.getTable().getTable(), 
                                                         tables);
-                    subplan = fillBranch(subplan, tables, sibling, parent);
+                    subplan = fillBranch(subplan, tables, sibling, parent, sibling);
                     if (subplans == null)
                         subplans = new ArrayList<PlanNode>();
                     subplans.add(subplan);
@@ -360,28 +367,35 @@ public class BranchJoiner_CBO extends BaseRule
 
     /* Flags for TableGroupJoinNode */
 
-    protected static final int REQUIRED = 1;
-    protected static final int PARENT = 2;
-    protected static final int BRANCHPOINT = 4;
-    protected static final int PENDING = 8;
+    /** This table needs to be included in flattens, either because
+     * its columns are needed or it is a source for a
+     * <code>BranchLookup</code>. */
+    protected static final long REQUIRED = 1;
+    /** This table has at least one descendants. */
+    protected static final long PARENT = 2;
+    /** This table has at least <em>two</em> active descendants, which
+     * means that it is where two branches meet. */
+    protected static final long BRANCHPOINT = 4;
+    /** This table has not yet been included in result plan nodes. */
+    protected static final long PENDING = 8;
 
     protected static boolean isRequired(TableGroupJoinNode table) {
-        return ((table.getFlags() & REQUIRED) != 0);
+        return ((table.getState() & REQUIRED) != 0);
     }
     protected static boolean isParent(TableGroupJoinNode table) {
-        return ((table.getFlags() & PARENT) != 0);
+        return ((table.getState() & PARENT) != 0);
     }
     protected static boolean isBranchpoint(TableGroupJoinNode table) {
-        return ((table.getFlags() & BRANCHPOINT) != 0);
+        return ((table.getState() & BRANCHPOINT) != 0);
     }
     protected static boolean isPending(TableGroupJoinNode table) {
-        return ((table.getFlags() & PENDING) != 0);
+        return ((table.getState() & PENDING) != 0);
     }
     protected static void setPending(TableGroupJoinNode table) {
-        table.setFlags(table.getFlags() | PENDING);
+        table.setState(table.getState() | PENDING);
     }
     protected static void clearPending(TableGroupJoinNode table) {
-        table.setFlags(table.getFlags() & ~PENDING);
+        table.setState(table.getState() & ~PENDING);
     }
 
     protected void markBranches(TableGroupJoinTree tableGroup, 
@@ -391,7 +405,7 @@ public class BranchJoiner_CBO extends BaseRule
 
     private boolean markBranches(TableGroupJoinNode parent, 
                                  Set<TableSource> requiredTables) {
-        int flags = 0;
+        long flags = 0;
         for (TableGroupJoinNode child = parent.getFirstChild(); child != null; child = child.getNextSibling()) {
             if (markBranches(child, requiredTables)) {
                 if ((flags & PARENT) == 0)
@@ -405,7 +419,7 @@ public class BranchJoiner_CBO extends BaseRule
             ((flags & BRANCHPOINT) != 0)) {
             flags |= REQUIRED | PENDING;
         }
-        parent.setFlags(flags);
+        parent.setState(flags);
         return (flags != 0);
     }
 

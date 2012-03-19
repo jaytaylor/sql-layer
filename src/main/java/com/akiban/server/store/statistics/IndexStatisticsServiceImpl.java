@@ -15,11 +15,7 @@
 
 package com.akiban.server.store.statistics;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;

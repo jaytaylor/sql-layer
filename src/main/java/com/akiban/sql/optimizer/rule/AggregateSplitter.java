@@ -133,8 +133,8 @@ public class AggregateSplitter extends BaseRule
         if (!select.getConditions().isEmpty())
             return null;
         input = select.getInput();
-        if (input instanceof IndexScan) {
-            IndexScan index = (IndexScan)input;
+        if (input instanceof SingleIndexScan) {
+            SingleIndexScan index = (SingleIndexScan)input;
             if (index.isCovering() && !index.hasConditions() &&
                 index.getIndex().isTableIndex())
                 return index.getLeafMostTable();

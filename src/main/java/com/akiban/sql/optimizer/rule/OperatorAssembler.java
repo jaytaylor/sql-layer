@@ -17,6 +17,8 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
+import com.akiban.qp.operator.API.IntersectOutputOption;
+import com.akiban.qp.operator.API.JoinType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -227,44 +229,75 @@ public class OperatorAssembler extends BaseRule
         // Assemble an ordinary stream node.
         protected RowStream assembleStream(PlanNode node) {
             if (node instanceof IndexScan)
-                return assembleIndexScan((IndexScan)node);
+                return assembleIndexScan((IndexScan) node);
             else if (node instanceof GroupScan)
-                return assembleGroupScan((GroupScan)node);
+                return assembleGroupScan((GroupScan) node);
             else if (node instanceof Select)
-                return assembleSelect((Select)node);
+                return assembleSelect((Select) node);
             else if (node instanceof Flatten)
-                return assembleFlatten((Flatten)node);
+                return assembleFlatten((Flatten) node);
             else if (node instanceof AncestorLookup)
-                return assembleAncestorLookup((AncestorLookup)node);
+                return assembleAncestorLookup((AncestorLookup) node);
             else if (node instanceof BranchLookup)
-                return assembleBranchLookup((BranchLookup)node);
+                return assembleBranchLookup((BranchLookup) node);
             else if (node instanceof MapJoin)
-                return assembleMapJoin((MapJoin)node);
+                return assembleMapJoin((MapJoin) node);
             else if (node instanceof Product)
-                return assembleProduct((Product)node);
+                return assembleProduct((Product) node);
             else if (node instanceof AggregateSource)
-                return assembleAggregateSource((AggregateSource)node);
+                return assembleAggregateSource((AggregateSource) node);
             else if (node instanceof Distinct)
-                return assembleDistinct((Distinct)node);
+                return assembleDistinct((Distinct) node);
             else if (node instanceof Sort            )
-                return assembleSort((Sort)node);
+                return assembleSort((Sort) node);
             else if (node instanceof Limit)
-                return assembleLimit((Limit)node);
+                return assembleLimit((Limit) node);
             else if (node instanceof NullIfEmpty)
-                return assembleNullIfEmpty((NullIfEmpty)node);
+                return assembleNullIfEmpty((NullIfEmpty) node);
             else if (node instanceof Project)
-                return assembleProject((Project)node);
+                return assembleProject((Project) node);
             else if (node instanceof ExpressionsSource)
-                return assembleExpressionsSource((ExpressionsSource)node);
+                return assembleExpressionsSource((ExpressionsSource) node);
             else if (node instanceof SubquerySource)
-                return assembleSubquerySource((SubquerySource)node);
+                return assembleSubquerySource((SubquerySource) node);
             else if (node instanceof NullSource)
-                return assembleNullSource((NullSource)node);
+                return assembleNullSource((NullSource) node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
+        
+        protected RowStream assembleIndexScan(IndexScan index) {
+            if (index instanceof SingleIndexScan)
+                return assembleSingleIndexScan((SingleIndexScan) index);
+            else if (index instanceof MultiIndexIntersectScan)
+                return assembleIndexIntersection((MultiIndexIntersectScan) index);
+            else
+                throw new UnsupportedSQLException("Plan node " + index, null);
+        }
 
-        protected RowStream assembleIndexScan(IndexScan indexScan) {
+        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index) {
+            RowStream stream = new RowStream();
+            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan());
+            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan());
+            Operator intersect;
+            intersect = API.intersect_Ordered(
+                    outputScan.operator,
+                    selectorScan.operator,
+                    outputScan.rowType,
+                    selectorScan.rowType,
+                    index.getOutputOrderingFields(),
+                    index.getSelectorOrderingFields(),
+                    index.getComparisonFields(),
+                    JoinType.INNER_JOIN,
+                    IntersectOutputOption.OUTPUT_LEFT
+            );
+            stream.operator = intersect;
+            stream.rowType = outputScan.rowType;
+            stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
+            return stream;
+        }
+
+        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan) {
             RowStream stream = new RowStream();
             Index index = indexScan.getIndex();
             IndexRowType indexRowType = schema.indexRowType(index);
@@ -844,7 +877,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Generate key range bounds.
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets) {
+        protected IndexKeyRange assembleIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets) {
             return assembleIndexKeyRange(
                     index,
                     fieldOffsets,
@@ -855,7 +888,7 @@ public class OperatorAssembler extends BaseRule
             );
         }
 
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets,
+        protected IndexKeyRange assembleIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets,
                                                       RangeSegment segment)
         {
             return assembleIndexKeyRange(
@@ -868,7 +901,7 @@ public class OperatorAssembler extends BaseRule
             );
         }
 
-        private IndexKeyRange assembleIndexKeyRange(IndexScan index,
+        private IndexKeyRange assembleIndexKeyRange(SingleIndexScan index,
                                                     ColumnExpressionToIndex fieldOffsets,
                                                     ExpressionNode lowComparand,
                                                     boolean lowInclusive, ExpressionNode highComparand,
@@ -956,7 +989,7 @@ public class OperatorAssembler extends BaseRule
             return schema.newValuesType(fields);
         }
 
-        protected IndexRowType getIndexRowType(IndexScan index) {
+        protected IndexRowType getIndexRowType(SingleIndexScan index) {
             return schema.indexRowType(index.getIndex());
         }
 
@@ -1141,6 +1174,11 @@ public class OperatorAssembler extends BaseRule
             else
                 return column.getPosition();
         }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + source + ")";
+        }
     }
 
     // Index used as field source (e.g., covering).
@@ -1157,6 +1195,12 @@ public class OperatorAssembler extends BaseRule
         // (Covering index or condition before lookup.)
         public int getIndex(ColumnExpression column) {
             return index.getColumns().indexOf(column);
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + index + ")";
         }
     }
 
@@ -1209,6 +1253,12 @@ public class OperatorAssembler extends BaseRule
                                 other.tableOffsets.get(otherTable));
                 }
             }
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + tableOffsets.keySet() + ")";
         }
     }
 
