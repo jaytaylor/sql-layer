@@ -1,5 +1,5 @@
-UpdateStatement@638bd7f1(user.items[items.price = times(user.items.price,0.95), items.sku = concatenate(user.items.sku,BULK), items.quan = divide(user.items.quan,1000)])
-  Select@720e4245[user.orders.order_date > Cast(2011-01-01 AS DATE NOT NULL), user.items.quan > 1000, user.items.sku == $0, user.items.oid == user.orders.oid]
+UpdateStatement@638bd7f1(items[items.price = times(items.price,0.95), items.sku = concatenate(items.sku,BULK), items.quan = divide(items.quan,1000)])
+  Select@720e4245[orders.order_date > Cast(2011-01-01 AS DATE NOT NULL), items.quan > 1000, items.sku == $0, items.oid == orders.oid]
     JoinNode@620fa83(INNER)
-      TableSource@5f1eb199(user.items)
-      TableSource@581de498(user.orders)
+      TableSource@5f1eb199(items)
+      TableSource@581de498(orders)

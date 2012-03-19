@@ -1,5 +1,5 @@
 SelectQuery@556917ee
   ResultSet@206cc2a4[_SQL_COL_1]
-    Project@445ead9d[plus(divide(times(user.items.price,user.items.quan),user.items.oid),1)]
+    Project@445ead9d[plus(divide(times(items.price,items.quan),items.oid),1)]
       Select@238b8914[]
-        TableSource@1dd49247(user.items)
+        TableSource@1dd49247(items)

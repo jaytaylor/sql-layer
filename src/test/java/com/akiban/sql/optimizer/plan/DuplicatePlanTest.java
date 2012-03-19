@@ -20,10 +20,12 @@ import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.rule.ASTStatementLoader;
 import com.akiban.sql.optimizer.rule.BaseRule;
-import com.akiban.sql.optimizer.rule.RulesContext;
+import com.akiban.sql.optimizer.rule.RulesTestContext;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
+
+import com.akiban.ais.model.AkibanInformationSchema;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
@@ -55,13 +57,15 @@ public class DuplicatePlanTest extends OptimizerTestBase
         return NamedParamsTestBase.namedCases(result);
     }
 
+    private AkibanInformationSchema ais;
+
     public DuplicatePlanTest(String caseName, String sql) {
         super(caseName, sql, null, null);
     }
 
     @Before
     public void loadDDL() throws Exception {
-        loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        ais = loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
     }
 
     @Test
@@ -74,8 +78,9 @@ public class DuplicatePlanTest extends OptimizerTestBase
         // Turn parsed AST into intermediate form.
         PlanNode plan = new AST((DMLStatementNode)stmt, parser.getParameterList());
         {
-            RulesContext rulesContext = 
-                RulesContext.create(Collections.<BaseRule>singletonList(new ASTStatementLoader()), new Properties());
+            RulesTestContext rulesContext = 
+                RulesTestContext.create(ais, null, false,
+                                        Collections.<BaseRule>singletonList(new ASTStatementLoader()), new Properties());
             PlanContext planContext = new PlanContext(rulesContext, plan);
             rulesContext.applyRules(planContext);
             plan = planContext.getPlan();

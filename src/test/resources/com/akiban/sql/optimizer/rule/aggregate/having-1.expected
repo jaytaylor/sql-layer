@@ -2,8 +2,8 @@ SelectQuery@7e3bc473
   ResultSet@16aeea66[order_date, _SQL_COL_1]
     Project@359eda2c[GROUP[0], GROUP[1]]
       Select@5982bcde[GROUP[1] > 1000.00]
-        AggregateSource@30384065([user.orders.order_date],[SUM(times(user.items.price,user.items.quan))])
+        AggregateSource@30384065([orders.order_date],[SUM(times(items.price,items.quan))])
           Select@3d0bbf9e[]
-            JoinNode@4e513d61(INNER[user.orders.oid == user.items.oid])
-              TableSource@1089cc5e(user.items)
-              TableSource@76b33d0a(user.orders)
+            JoinNode@4e513d61(INNER[orders.oid == items.oid])
+              TableSource@1089cc5e(items)
+              TableSource@76b33d0a(orders)

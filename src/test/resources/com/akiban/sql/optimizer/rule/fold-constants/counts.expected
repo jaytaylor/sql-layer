@@ -2,8 +2,8 @@ SelectQuery@14a7a12
   ResultSet@26132ae7[name, _SQL_COL_1, _SQL_COL_2, _SQL_COL_3, _SQL_COL_4]
     Project@3465b738[GROUP[0], GROUP[1], GROUP[2], GROUP[3], GROUP[4]]
       Select@32060c[]
-        AggregateSource@15ed659([user.customers.name],[COUNT(*), COUNT(*), COUNT(DISTINCT user.orders.order_date), COUNT(user.orders.special)])
+        AggregateSource@15ed659([customers.name],[COUNT(*), COUNT(*), COUNT(DISTINCT orders.order_date), COUNT(orders.special)])
           Select@2b323e[]
-            JoinNode@1fa6d18(INNER[user.customers.cid == user.orders.cid])
-              TableSource@983d95(user.customers)
-              TableSource@f30494(user.orders)
+            JoinNode@1fa6d18(INNER[customers.cid == orders.cid])
+              TableSource@983d95(customers)
+              TableSource@f30494(orders)

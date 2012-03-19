@@ -523,6 +523,8 @@ public class BranchJoiner extends BaseRule
         @Override
         // Access things in stable order.
         public int compare(TableSource t1, TableSource t2) {
+            if (t1.getTable().getTable() == t2.getTable().getTable())
+                return t1.getName().compareTo(t2.getName());
             return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
         }
     };

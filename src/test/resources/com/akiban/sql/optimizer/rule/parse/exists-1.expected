@@ -1,9 +1,9 @@
 SelectQuery@68a53de4
   ResultSet@78c6cbc[id, name, state]
-    Project@1436ae83[user.parent.id, user.parent.name, user.parent.state]
+    Project@1436ae83[parent.id, parent.name, parent.state]
       Select@7df0b7d3[not(EXISTS(Subquery@1cad157f))]
-        TableSource@435bb0f(user.parent)
+        TableSource@435bb0f(parent)
 
 Subquery@1cad157f
-  Select@638bd7f1[user.child.pid == user.parent.id, user.child.name == Bill]
-    TableSource@720e4245(user.child)
+  Select@638bd7f1[child.pid == parent.id, child.name == Bill]
+    TableSource@720e4245(child)

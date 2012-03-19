@@ -1,10 +1,10 @@
 SelectQuery@138c63
   ResultSet@24c759f5[cid, name, iid, oid, sku, quan, price, oid, cid, order_date]
-    Project@1be2f6b0[user.customers.cid, user.customers.name, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Project@1be2f6b0[customers.cid, customers.name, items.iid, items.oid, items.sku, items.quan, items.price, orders.oid, orders.cid, orders.order_date]
       Select@149b290[]
         TableJoins@4b61cd25(TableGroup@1eec35(customers))
-          JoinNode@16a38b5(INNER/GROUP[user.items.oid == user.orders.oid] - TableGroupJoin@b1074a(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-            JoinNode@55a338(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@4ee70b(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@22ab57(user.customers - TableGroup@1eec35(customers))
-              TableSource@25c828(user.orders - TableGroupJoin@4ee70b(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@77ef83(user.items - TableGroupJoin@b1074a(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+          JoinNode@16a38b5(INNER/GROUP[items.oid == orders.oid] - TableGroupJoin@b1074a(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+            JoinNode@55a338(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@4ee70b(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@22ab57(customers - TableGroup@1eec35(customers))
+              TableSource@25c828(orders - TableGroupJoin@4ee70b(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            TableSource@77ef83(items - TableGroupJoin@b1074a(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

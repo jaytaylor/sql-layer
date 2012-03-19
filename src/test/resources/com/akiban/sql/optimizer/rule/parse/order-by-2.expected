@@ -1,8 +1,8 @@
 SelectQuery@12c9b196
   ResultSet@746e96ff[name, order_date]
-    Project@87b7b11[user.customers.name, user.orders.order_date]
-      Sort@37f8d244[user.orders.order_date, user.customers.name]
+    Project@87b7b11[customers.name, orders.order_date]
+      Sort@37f8d244[orders.order_date, customers.name]
         Select@30b48b11[]
-          JoinNode@1d162212(LEFT[user.customers.cid == user.orders.cid])
-            TableSource@1816daa9(user.customers)
-            TableSource@46d999a(user.orders)
+          JoinNode@1d162212(LEFT[customers.cid == orders.cid])
+            TableSource@1816daa9(customers)
+            TableSource@46d999a(orders)

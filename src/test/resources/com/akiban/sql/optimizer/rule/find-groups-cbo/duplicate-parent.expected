@@ -1,11 +1,11 @@
 SelectQuery@44ec366a
   ResultSet@6fe88c7f[id, name, state, id, name, state, id, pid, name, id, pid, name]
-    Project@c601f3f[user.parent.id, user.parent.name, user.parent.state, user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
+    Project@c601f3f[p1.id, p1.name, p1.state, p2.id, p2.name, p2.state, c1.id, c1.pid, c1.name, c2.id, c2.pid, c2.name]
       Select@7aa36771[]
         JoinNode@7ddc6a9d(INNER)
-          TableGroupJoinTree@11dba9f9(TableGroup@377e4cec(parent), parent INNER child)
-            TableSource@54992725(user.parent - TableGroup@377e4cec(parent))
-              TableSource@12d91987(user.child - TableGroupJoin@6c742397(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
-          TableGroupJoinTree@3cccc621(TableGroup@6b1af7bb(parent), parent INNER child)
-            TableSource@c106121(user.parent - TableGroup@6b1af7bb(parent))
-              TableSource@758c3b7(user.child - TableGroupJoin@27e3bfb6(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+          TableGroupJoinTree@11dba9f9(TableGroup@377e4cec(parent), p1 INNER c1)
+            TableSource@54992725(p1 - TableGroup@377e4cec(parent))
+              TableSource@12d91987(c1 - TableGroupJoin@6c742397(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+          TableGroupJoinTree@3cccc621(TableGroup@6b1af7bb(parent), p2 INNER c2)
+            TableSource@c106121(p2 - TableGroup@6b1af7bb(parent))
+              TableSource@758c3b7(c2 - TableGroupJoin@27e3bfb6(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))

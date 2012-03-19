@@ -1,10 +1,10 @@
 SelectQuery@35ecfe07
   ResultSet@78cd6aa0[order_date]
-    Project@76136c55[user.orders.order_date]
+    Project@76136c55[orders.order_date]
       Select@469a9b65[not(ANY(Subquery@47c297a3))]
-        TableSource@3e78aa80(user.orders)
+        TableSource@3e78aa80(orders)
 
 Subquery@47c297a3
-  Project@588491b8[100 >= times(user.items.price,user.items.quan)]
-    Select@6401d98a[user.items.oid == user.orders.oid]
-      TableSource@35712651(user.items)
+  Project@588491b8[100 >= times(items.price,items.quan)]
+    Select@6401d98a[items.oid == orders.oid]
+      TableSource@35712651(items)
