@@ -23,7 +23,7 @@ import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.*;
 
-public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression>
+public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression,IndexScan>
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
@@ -261,6 +261,7 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     }
     
     public abstract List<IndexColumn> getIndexColumns();
+    public abstract List<ConditionExpression> getGroupConditions();
 
     @Override
     public String summaryString() {
@@ -317,12 +318,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         }
         str.append(")");
         return str.toString();
-    }
-    
-    void setConditions(List<ConditionExpression> newConditions) {
-        if (conditions != null)
-            throw new IllegalStateException(conditions.toString());
-        conditions = newConditions;
     }
 
     protected abstract String summarizeIndex();

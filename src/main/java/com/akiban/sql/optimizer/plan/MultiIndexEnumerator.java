@@ -18,7 +18,6 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
@@ -44,7 +43,7 @@ import java.util.Set;
  * subclasses for this class: one for unit testing, and one for production.</p>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends IndexIntersectionNode<? extends C>> {
+public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends IndexIntersectionNode<C,N>> {
     
     public interface BranchInfo<C> {
         Column columnFromCondition(C condition);
@@ -147,31 +146,34 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
     {
         Table firstTable = first.getLeafMostUTable();
         Table secondTable = second.getLeafMostUTable();
-        List<IndexColumn> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
-        if (commonTrailing.isEmpty())
+        List<Column> comparisonCols = getComparisonColumns(first, second, columnEquivalences);
+        if (comparisonCols.isEmpty())
             return;
         UserTable firstUTable = (UserTable) firstTable;
         UserTable secondUTable = (UserTable) secondTable;
-        // handle the two single-branch cases
-        boolean onSameBranch = false;
-        int comparisonsLen = commonTrailing.size();
-        if (firstUTable.isDescendantOf(secondUTable)
-                && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
-            output.add(intersect(first, second, comparisonsLen));
-            onSameBranch = true;
+        int comparisonsLen = comparisonCols.size();
+        // find the UserTable associated with the common N. This works for multi- as well as single-branch
+        UserTable commonAncestor = first.findCommonAncestor(second);
+        assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
+        boolean isMultiBranch = true;
+        if (firstUTable != secondUTable) {
+            if (commonAncestor == firstUTable) {
+                isMultiBranch = false;
+                if (includesHKey(firstUTable, comparisonCols, columnEquivalences))
+                    output.add(intersect(second, first, comparisonsLen));
+            }
+            else if (commonAncestor == secondUTable) {
+                isMultiBranch = false;
+                if (includesHKey(secondUTable, comparisonCols, columnEquivalences))
+                    output.add(intersect(first, second, comparisonsLen));
+            }
         }
-        if (secondUTable.isDescendantOf(firstUTable)
-                && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
-            output.add(intersect(second, first, comparisonsLen));
-            onSameBranch = true;
-        }
-        if (!onSameBranch) {
-            Collection<Column> ancestorHKeys = ancestorHKeys(firstUTable, secondUTable);
-            List<Column> commonCols = indexColsToCols(commonTrailing);
+        if (isMultiBranch) {
+            Collection<Column> ancestorHKeys = ancestorHKeys(commonAncestor);
             // check if commonTrailing contains all ancestorHKeys, using equivalence
             for (Column hkeyCol : ancestorHKeys) {
                 boolean found = false;
-                for (Column commonCol : commonCols) {
+                for (Column commonCol : comparisonCols) {
                     if (columnEquivalences.areEquivalent(commonCol, hkeyCol)) {
                         found = true;
                         break;
@@ -185,32 +187,18 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         }
     }
 
-    private List<Column> indexColsToCols(List<IndexColumn> inList) {
-        List<Column> results = new ArrayList<Column>(inList.size());
-        for (IndexColumn iCol : inList)
-            results.add(iCol.getColumn());
-        return results;
-    }
-
-    private Collection<Column> ancestorHKeys(UserTable first, UserTable second) {
+    private Collection<Column> ancestorHKeys(UserTable ancefoo) {
         // find most common ancestor
-        List<UserTable> firstAncestors = first.getAncestors();
-        List<UserTable> secondAncestors = second.getAncestors();
-        int ntables = Math.min(firstAncestors.size(), secondAncestors.size());
-        List<Column> results = new ArrayList<Column>(ntables); // size assuming one pk per table
-        for (int i=0; i < ntables; ++i) {
-            UserTable firstAncestor = firstAncestors.get(i);
-            UserTable secondAncestor = secondAncestors.get(i);
-            if (firstAncestor != secondAncestor)
-                break;
-            List<IndexColumn> pk = firstAncestor.getPrimaryKey().getIndex().getAllColumns();
-            for (IndexColumn iCol : pk)
-                results.add(iCol.getColumn());
+        HKey hkey = ancefoo.hKey();
+        int ncols = hkey.nColumns();
+        List<Column> results = new ArrayList<Column>(ncols);
+        for (int i=0; i < ncols; ++i) {
+            results.add(hkey.column(i));
         }
         return results;
     }
 
-    private boolean includesHKey(UserTable table, List<IndexColumn> columns, EquivalenceFinder<Column> columnEquivalences) {
+    private boolean includesHKey(UserTable table, List<Column> columns, EquivalenceFinder<Column> columnEquivalences) {
         HKey hkey = table.hKey();
         int ncols = hkey.nColumns();
         // no overhead, but O(N) per hkey segment. assuming ncols and columns is very small
@@ -221,37 +209,13 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         return true;
     }
 
-    private boolean containsEquivalent(List<IndexColumn> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
-        for (IndexColumn indexCol : cols) {
-            Column col = indexCol.getColumn();
+    private boolean containsEquivalent(List<Column> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
+        for (Column col : cols) {
             if (columnEquivalences.areEquivalent(col, tgt))
                 return true;
         }
         return false;
     }
 
-    private List<IndexColumn> getCommonTrailing(N first, N second, EquivalenceFinder<Column> columnEquivalences)
-    {
-        List<IndexColumn> firstTrailing = orderingColumns(first);
-        if (firstTrailing.isEmpty())
-            return Collections.emptyList();
-        List<IndexColumn> secondTrailing = orderingColumns(second);
-        if (secondTrailing.isEmpty())
-            return Collections.emptyList();
-        
-        int maxTrailing = Math.min(firstTrailing.size(), secondTrailing.size());
-        int commonCount;
-        for (commonCount = 0; commonCount < maxTrailing; ++commonCount) {
-            Column firstCol = firstTrailing.get(commonCount).getColumn();
-            Column secondCol = secondTrailing.get(commonCount).getColumn();
-            if (!columnEquivalences.areEquivalent(firstCol, secondCol))
-                break;
-        }
-        return firstTrailing.subList(0, commonCount);
-    }
-
-    private List<IndexColumn> orderingColumns(N scan) {
-        List<IndexColumn> allCols = scan.getAllColumns();
-        return allCols.subList(scan.getPeggedCount(), allCols.size());
-    }
+    protected abstract List<Column> getComparisonColumns(N first, N second, EquivalenceFinder<Column> equivalencies);
 }

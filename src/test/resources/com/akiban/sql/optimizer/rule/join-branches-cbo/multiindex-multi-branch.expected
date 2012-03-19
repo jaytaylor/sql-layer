@@ -1,7 +1,7 @@
 SelectQuery@1271ba
   ResultSet@3ae86a5f[cid]
     Project@709fa12f[user.customers.cid]
-      Select@f4e6d[]
+      Select@f4e6d[user.addresses.state == CA]
         Product@5c68b20(user.customers)
           Flatten@2dd7e4d6(user.customers INNER user.orders)
             AncestorLookup@38f0b51d(user.items -> [user.customers, user.orders])
