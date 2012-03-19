@@ -672,9 +672,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         MultiIndexIntersectScan scan = (MultiIndexIntersectScan) rawScan;
 
         List<ConditionExpression> conditionsCopy = new ArrayList<ConditionExpression>(conditions);
-        List<ConditionExpression> covered = new ArrayList<ConditionExpression>(conditions.size());
-        scan.removeCoveredConditions(conditionsCopy, covered);
-        scan.setCoveringConditions(covered);
+        List<ConditionExpression> groupConds = new ArrayList<ConditionExpression>(conditions.size());
+        scan.removeCoveredConditions(conditionsCopy, groupConds);
+        scan.setGroupConditions(groupConds);
     }
 
     public ConditionExpression findValidCondition(ConditionExpression cond) {

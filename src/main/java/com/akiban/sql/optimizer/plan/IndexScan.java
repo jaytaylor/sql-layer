@@ -319,12 +319,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         str.append(")");
         return str.toString();
     }
-    
-    void setConditions(List<ConditionExpression> newConditions) {
-        if (conditions != null)
-            throw new IllegalStateException(conditions.toString());
-        conditions = newConditions;
-    }
 
     protected abstract String summarizeIndex();
     protected abstract boolean isAscendingAt(int index);

@@ -70,19 +70,19 @@ public final class MultiIndexIntersectScan extends IndexScan {
     public List<ConditionExpression> getGroupConditions() {
         return coveringConditions;
     }
-
-    public void setCoveringConditions(List<ConditionExpression> coveringConditions) {
+    
+    public void setGroupConditions(List<ConditionExpression> coveringConditions) {
         this.coveringConditions = coveringConditions;
+    }
+
+    @Override
+    public List<ConditionExpression> getConditions() {
+        return outputScan.getConditions();
     }
 
     @Override
     public List<ExpressionNode> getColumns() {
         return outputScan.getColumns();
-    }
-
-    @Override
-    public void setConditions(List<ConditionExpression> newConditions) {
-        super.setConditions(newConditions); // promote visibility
     }
 
     @Override
