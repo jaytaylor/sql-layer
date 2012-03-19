@@ -1,5 +1,5 @@
-SelectQuery@76caf6c1
-  ResultSet@2af6a882[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3]
-    Project@27b104d7[absolute(items.price), sqrt(times(items.price,items.price)), mod(items.quan,7)]
-      Select@35f03691[]
-        TableSource@2d8e8541(items)
+SelectQuery@37958652
+  ResultSet@39a58e00[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3]
+    Project@240dbf91[absolute(items.price), sqrt(Cast(times(items.price,items.price) AS DOUBLE)), mod(items.quan,7)]
+      Select@29bdb15[]
+        TableSource@464c4109(items)
