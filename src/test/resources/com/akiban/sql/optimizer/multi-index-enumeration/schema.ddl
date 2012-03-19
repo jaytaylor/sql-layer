@@ -31,7 +31,9 @@ CREATE TABLE addresses(
     PRIMARY KEY(id),
     cid INT,
     GROUPING FOREIGN KEY(cid) REFERENCES customers(id),
-    street VARCHAR (32) NOT NULL
+    street VARCHAR (32) NOT NULL,
+    apt_num INT NOT NULL
 );
 
 CREATE INDEX streetkey ON addresses(street);
+CREATE INDEX street_aptnum ON addresses(street, apt_num);

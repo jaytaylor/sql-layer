@@ -66,6 +66,11 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
+    public List<ConditionExpression> getGroupConditions() {
+        return getConditions();
+    }
+
+    @Override
     public UserTable getLeafMostUTable() {
         return (UserTable) index.leafMostTable();
     }
@@ -95,5 +100,26 @@ public final class SingleIndexScan extends IndexScan {
             }
         }
         return removedAny;
+    }
+
+    @Override
+    public UserTable findCommonAncestor(IndexScan otherScan) {
+        TableSource myTable = getLeafMostTable();
+        TableSource otherTable = otherScan.getLeafMostTable();
+        int myDepth = myTable.getTable().getDepth();
+        int otherDepth = otherTable.getTable().getDepth();
+        while (myDepth > otherDepth) {
+            myTable = myTable.getParentTable();
+            myDepth = myTable.getTable().getDepth();
+        }
+        while (otherDepth > myDepth) {
+            otherTable = otherTable.getParentTable();
+            otherDepth = otherTable.getTable().getDepth();
+        }
+        while (myTable != otherTable) {
+            myTable = myTable.getParentTable();
+            otherTable = otherTable.getParentTable();
+        }
+        return myTable.getTable().getTable();
     }
 }

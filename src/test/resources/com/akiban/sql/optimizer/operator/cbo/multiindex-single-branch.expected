@@ -1,7 +1,8 @@
 PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], aid:int[INT], cid:int[INT], state:char(2)[VARCHAR], city:varchar(100)[VARCHAR]]
   project([Field(0), Field(1), Field(2), Field(3), Field(4), Field(5)])
     Flatten_HKeyOrdered(user.customers INNER user.addresses)
-      AncestorLookup_Default(Index(user.addresses.state[IndexColumn(state)]) -> [user.customers, user.addresses])
-        Intersect_Ordered
-          IndexScan_Default(Index(user.addresses.state[IndexColumn(state)]) (>=UnboundExpressions[Literal(CA)],<=UnboundExpressions[Literal(CA)]))
-          IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Awwyqrezr)],<=UnboundExpressions[Literal(Awwyqrezr)]))
+      Select_HKeyOrdered(user.customers, Field(1) == Literal(Awwyqrezr))
+        AncestorLookup_Default(Index(user.addresses.state[IndexColumn(state)]) -> [user.customers, user.addresses])
+          Intersect_Ordered
+            IndexScan_Default(Index(user.addresses.state[IndexColumn(state)]) (>=UnboundExpressions[Literal(CA)],<=UnboundExpressions[Literal(CA)]))
+            IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Awwyqrezr)],<=UnboundExpressions[Literal(Awwyqrezr)]))

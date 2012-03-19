@@ -21,9 +21,10 @@ import com.akiban.ais.model.UserTable;
 import java.util.Collection;
 import java.util.List;
 
-public interface IndexIntersectionNode<C> {
+public interface IndexIntersectionNode<C, N extends IndexIntersectionNode<C,N>> {
     UserTable getLeafMostUTable();
     List<IndexColumn> getAllColumns();
     boolean removeCoveredConditions(Collection<? super C> conditions, Collection<? super C> removeTo);
+    UserTable findCommonAncestor(N other);
     int getPeggedCount();
 }

@@ -26,7 +26,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     private IndexScan outputScan;
     private IndexScan selectorScan;
     private int comparisonColumns;
-    private List<ConditionExpression> conditions;
+    private List<ConditionExpression> coveringConditions;
 
     public MultiIndexIntersectScan(IndexScan outerScan, IndexScan selectorScan, int comparisonColumns)
     {
@@ -63,12 +63,26 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     private int getOrderingFields(IndexScan scan) {
-        return scan.getIndexColumns().size();
+        return scan.getAllColumns().size() - scan.getPeggedCount();
     }
 
     @Override
-    public void setConditions(List<ConditionExpression> newConditions) {
-        super.setConditions(newConditions); // promote visibility
+    public List<ConditionExpression> getGroupConditions() {
+        return coveringConditions;
+    }
+    
+    public void setGroupConditions(List<ConditionExpression> coveringConditions) {
+        this.coveringConditions = coveringConditions;
+    }
+
+    @Override
+    public List<ConditionExpression> getConditions() {
+        return outputScan.getConditions();
+    }
+
+    @Override
+    public List<ExpressionNode> getColumns() {
+        return outputScan.getColumns();
     }
 
     @Override
@@ -85,7 +99,6 @@ public final class MultiIndexIntersectScan extends IndexScan {
     public int getPeggedCount() {
         return outputScan.getPeggedCount();
     }
-
 
     @Override
     public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,
@@ -111,15 +124,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
         return outputScan.isAscendingAt(i);
     }
 
-    private void buildConditions(IndexScan child, List<ConditionExpression> output) {
-        if (child instanceof SingleIndexScan) {
-            output.addAll(child.getConditions());
-        }
-        else if (child instanceof MultiIndexIntersectScan) {
-            MultiIndexIntersectScan miis = (MultiIndexIntersectScan) child;
-            buildConditions(miis.outputScan, output);
-            buildConditions(miis.selectorScan, output);
-        }
+    @Override
+    public UserTable findCommonAncestor(IndexScan other) {
+        return outputScan.findCommonAncestor(other);
     }
-    
 }
