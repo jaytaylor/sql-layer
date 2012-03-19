@@ -153,6 +153,7 @@ public class IndexGoal implements Comparator<IndexScan>
      * @return <code>false</code> if the index is useless.
      */
     public boolean usable(IndexScan index) {
+        // TODO: This could be getIndexColumns(), but that would change test results.
         List<IndexColumn> indexColumns = ((SingleIndexScan)index).getIndex().getKeyColumns();
         int ncols = indexColumns.size();
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);

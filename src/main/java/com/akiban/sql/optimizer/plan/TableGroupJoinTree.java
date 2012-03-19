@@ -106,7 +106,7 @@ public class TableGroupJoinTree extends BaseJoinable
         @Override
         public String toString() {
             return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
-                "(" + table + ")";
+                "(" + table + ", " + state + ")";
         }
     }
 
