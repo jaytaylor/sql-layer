@@ -261,6 +261,7 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     }
     
     public abstract List<IndexColumn> getIndexColumns();
+    public abstract List<ConditionExpression> getGroupConditions();
 
     @Override
     public String summaryString() {

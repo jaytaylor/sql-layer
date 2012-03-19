@@ -674,7 +674,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         List<ConditionExpression> conditionsCopy = new ArrayList<ConditionExpression>(conditions);
         List<ConditionExpression> covered = new ArrayList<ConditionExpression>(conditions.size());
         scan.removeCoveredConditions(conditionsCopy, covered);
-        scan.setConditions(covered);
+        scan.setCoveringConditions(covered);
     }
 
     public ConditionExpression findValidCondition(ConditionExpression cond) {
@@ -932,8 +932,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         Collection<ConditionExpression> unhandledConditions = 
             new HashSet<ConditionExpression>(conditions);
-        if (index.getConditions() != null)
-            unhandledConditions.removeAll(index.getConditions());
+        if (index.getGroupConditions() != null)
+            unhandledConditions.removeAll(index.getGroupConditions());
         if (!unhandledConditions.isEmpty()) {
             CostEstimate select = costEstimator.costSelect(unhandledConditions,
                                                            cost.getRowCount());

@@ -1,0 +1,13 @@
+PhysicalSelect[cid:int[INT]]
+  project([Field(0)])
+    Product_NestedLoops(flatten(user.customers, user.orders) x flatten(user.customers, user.addresses))
+      Flatten_HKeyOrdered(user.customers INNER user.orders)
+        AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.customers, user.orders])
+          Select_HKeyOrdered(Index(user.orders.order_date[IndexColumn(order_date)]), Field(0) == Literal(2010-04-22))
+            Intersect_Ordered
+              IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>=UnboundExpressions[Literal(2010-04-22)],<=UnboundExpressions[Literal(2010-04-22)]))
+              IndexScan_Default(Index(user.addresses.state[IndexColumn(state)]) (>=UnboundExpressions[Literal(CA)],<=UnboundExpressions[Literal(CA)]))
+      Filter_Default([flatten(user.customers, user.addresses)])
+        Flatten_HKeyOrdered(user.customers INNER user.addresses)
+          Select_HKeyOrdered(user.addresses, Field(2) == Literal(CA))
+            BranchLookup_Nested(_akiban_customers user.customers -> user.addresses)
