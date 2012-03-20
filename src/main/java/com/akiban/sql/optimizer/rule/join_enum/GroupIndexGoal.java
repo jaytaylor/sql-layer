@@ -506,11 +506,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             if (previousBest == null) {
                 logger.debug("Selecting {}", intersectedIndex);
                 previousBest = intersectedIndex;
-            } else if (compare(intersectedIndex, previousBest) > 0) {
+            }
+            else if (compare(intersectedIndex, previousBest) > 0) {
                 logger.debug("Preferring {}", intersectedIndex);
                 previousBest = intersectedIndex;
 
-            } else {
+            }
+            else {
                 logger.debug("Rejecting {}", intersectedIndex);
                 // If the scan costs alone are higher than the previous best cost, there's no way this scan or
                 // any scan that uses it will be the best. Just remove the whole branch.
