@@ -19,7 +19,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
-import java.util.Collection;
 import java.util.List;
 
 public final class SingleIndexScan extends IndexScan {
@@ -90,17 +89,9 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,
-                                           Collection<? super ConditionExpression> removeTo) {
-
-        boolean removedAny = false;
-        for (ConditionExpression cond : getConditions()) {
-            if(conditions.remove(cond)) {
-                removeTo.add(cond);
-                removedAny = true;
-            }
-        }
-        return removedAny;
+    public void removeCoveredConditions(ConditionsStack<ConditionExpression> stack) {
+        for (ConditionExpression cond : getConditions())
+            stack.removeCondition(cond);
     }
 
     @Override

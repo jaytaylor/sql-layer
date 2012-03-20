@@ -526,10 +526,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     private void setIntersectionConditions(IndexScan rawScan) {
         MultiIndexIntersectScan scan = (MultiIndexIntersectScan) rawScan;
 
-        List<ConditionExpression> conditionsCopy = new ArrayList<ConditionExpression>(conditions);
-        List<ConditionExpression> groupConds = new ArrayList<ConditionExpression>(conditions.size());
-        scan.removeCoveredConditions(conditionsCopy, groupConds);
-        scan.setGroupConditions(groupConds);
+        ConditionsStack<ConditionExpression> stack = new ConditionsStack<ConditionExpression>(conditions, 1);
+        stack.enter();
+        scan.removeCoveredConditions(stack);
+        List<ConditionExpression> coveringConditions = stack.getAllRemoved();
+        scan.setGroupConditions(coveringConditions);
     }
     
     private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan,SingleIndexScan> {

@@ -55,8 +55,7 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
 
         // These are only used in advancePhase, but we cache them to save on allocations
         private List<N> previous = new ArrayList<N>();
-        private List<C> outerRecycle = new ArrayList<C>(conditions.size());
-        private List<C> innerRecycle = new ArrayList<C>(conditions.size());
+        private ConditionsStack<C> outerStack = new ConditionsStack<C>(conditions, 2);
 
         private ComboIterator() {
             current.addAll(leaves);
@@ -98,15 +97,21 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
             previous.addAll(current);
             current.clear();
             for (N outer : previous) {
-                if (outer.removeCoveredConditions(conditions, outerRecycle) && (!conditions.isEmpty())) {
+                outerStack.enter();
+                outer.removeCoveredConditions(outerStack);
+                if (outerStack.removedAny() && (!conditions.isEmpty())) {
                     for (N inner : leaves) {
-                        if (inner != outer && inner.removeCoveredConditions(conditions, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
+                        if (inner == outer)
+                            continue; // fast path, we know there's full overlap
+                        outerStack.enter();
+                        inner.removeCoveredConditions(outerStack);
+                        if (outerStack.removedAny()) {
                             emit(outer, inner, current);
-                            emptyInto(innerRecycle,conditions);
                         }
+                        outerStack.leave();
                     }
                 }
-                emptyInto(outerRecycle, conditions);
+                outerStack.leave();
             }
             if (current.isEmpty()) {
                 done = true;

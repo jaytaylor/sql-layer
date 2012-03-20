@@ -18,7 +18,6 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
-import java.util.Collection;
 import java.util.List;
 
 public final class MultiIndexIntersectScan extends IndexScan {
@@ -101,12 +100,9 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,
-                                           Collection<? super ConditionExpression> removeTo) {
-        // using a bitwise or on purpose here -- we do NOT want to short-circuit this, since even if the left
-        // covers some conditions, we want to know which ones the right covers.
-        return outputScan.removeCoveredConditions(conditions, removeTo)
-                | selectorScan.removeCoveredConditions(conditions, removeTo);
+    public void removeCoveredConditions(ConditionsStack<ConditionExpression> stack) {
+        outputScan.removeCoveredConditions(stack);
+        selectorScan.removeCoveredConditions(stack);
     }
 
     @Override
