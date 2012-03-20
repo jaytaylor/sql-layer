@@ -94,9 +94,6 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         source.clear();
     }
 
-    protected void handleDuplicateCondition() {
-    }
-
     private MultiIndexCandidate<C> createCandidate(Index index, Map<Column, C> colsToConds) {
         MultiIndexCandidate<C> result = new MultiIndexCandidate<C>(index);
         while(true) {
