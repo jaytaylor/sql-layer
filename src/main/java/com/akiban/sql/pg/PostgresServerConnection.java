@@ -621,8 +621,12 @@ public class PostgresServerConnection extends ServerSessionBase
                                        reqs.treeService(),
                                        session,
                                        reqs.config());
-
-        statementCache = server.getStatementCache(aisTimestamp);
+        
+        // Statement cache depends on various compiler settings.
+        statementCache = server.getStatementCache(Arrays.asList(getCompilerProperties(),
+                                                                format,
+                                                                getProperty("cbo")),
+                                                  aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
