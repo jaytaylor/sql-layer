@@ -11,5 +11,5 @@ SelectQuery@72c7423b
             Subquery@4ff93efa
               Project@2ca9f04e[i2.quan]
                 Select@7495b81a[]
-                  TableGroupJoinTree@7be27131(TableGroup@5b895cb9(customers), i2 - IndexScan@1726a4a2(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 740.981))
+                  TableGroupJoinTree@7be27131(TableGroup@5b895cb9(customers), i2 - IndexScan@1726a4a2(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 814.313))
                     TableSource@26f997aa(i2 - TableGroup@5b895cb9(customers))
