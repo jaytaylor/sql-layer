@@ -56,6 +56,7 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         // These are only used in advancePhase, but we cache them to save on allocations
         private List<N> previous = new ArrayList<N>();
         private ConditionsStack<C> outerStack = new ConditionsStack<C>(conditions, 2);
+        private ConditionsStack<C> innerStack = new ConditionsStack<C>(conditions, 2);
 
         private ComboIterator() {
             current.addAll(leaves);
@@ -100,14 +101,28 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
                 outerStack.enter();
                 outer.removeCoveredConditions(outerStack);
                 if (outerStack.removedAny() && (!conditions.isEmpty())) {
+                    // at this point, "outer" satisfies some conditions, and more conditions are left
                     for (N inner : leaves) {
                         if (inner == outer)
                             continue; // fast path, we know there's full overlap
                         outerStack.enter();
                         inner.removeCoveredConditions(outerStack);
                         if (outerStack.removedAny()) {
-                            emit(outer, inner, current);
+                            // at this point, "inner" satisfies some of the conditions "outer" didn't.
+                            // we still need to check if "outer" satisfies conditions "inner" didn't.
+                            innerStack.enter();
+                            inner.removeCoveredConditions(innerStack);
+                            if (innerStack.removedAny()) { // should always be true, but may as well check
+                                innerStack.enter();
+                                outer.removeCoveredConditions(innerStack);
+                                if (innerStack.removedAny())
+                                    emit(outer, inner, current);
+                                innerStack.leave();
+                            }
+                            
+                            innerStack.leave();
                         }
+                        
                         outerStack.leave();
                     }
                 }
@@ -140,11 +155,6 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
                 iter.remove();
             }
         }
-    }
-
-    private static <T> void emptyInto(Collection<? extends T> source, Collection<? super T> target) {
-        target.addAll(source);
-        source.clear();
     }
 
     private void emit(N first, N second, Collection<N> output)
