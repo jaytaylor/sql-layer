@@ -4,6 +4,6 @@ SelectQuery@3f9872ad
       Select@5efe087b[]
         AggregateSource@77def3f5(UNGROUPED,[MIN, SUM, COUNT, MAX])
           Distinct@4e62974e
-            Project@2abbaa16[user.items.sku, user.items.sku, user.items.sku, user.items.sku]
+            Project@2abbaa16[items.sku, items.sku, items.sku, items.sku]
               Select@69ba045[]
-                TableSource@bc22eb(user.items)
+                TableSource@bc22eb(items)

@@ -1,13 +1,13 @@
 SelectQuery@7826f9e5
   ResultSet@6ca02839[order_date, _SQL_COL_1]
-    Project@6b0ede6[user.orders.order_date, Subquery@49d29a78]
+    Project@6b0ede6[orders.order_date, Subquery@49d29a78]
       Select@666c5482[]
-        TableSource@52205756(user.orders)
+        TableSource@52205756(orders)
 
 Subquery@14d964af
   ResultSet@505fa26[_SQL_COL_2]
-    Project@5b184326[MAX(user.items.price)]
+    Project@5b184326[MAX(items.price)]
       Select@4945f939[]
         AggregateSource@10ed32c4(UNGROUPED,[])
-          Select@449fea8a[user.items.oid == user.orders.oid]
-            TableSource@5edf2d38(user.items)
+          Select@449fea8a[items.oid == orders.oid]
+            TableSource@5edf2d38(items)

@@ -1,12 +1,12 @@
 SelectQuery@d02b2b6
   ResultSet@6fe22c75[cid, name]
-    Project@69d4eeb5[user.customers.cid, user.customers.name]
+    Project@69d4eeb5[customers.cid, customers.name]
       Select@21e1962d[ANY(Subquery@1e670479)]
-        TableSource@5f7779e3(user.customers)
+        TableSource@5f7779e3(customers)
 
 Subquery@1e670479
-  Project@7d0ade7e[user.customers.name == MAX(user.child.name)]
+  Project@7d0ade7e[customers.name == MAX(child.name)]
     Select@1b6aa42e[]
-      AggregateSource@1167e3a5([user.child.pid],[])
+      AggregateSource@1167e3a5([child.pid],[])
         Select@3b926e90[]
-          TableSource@a98ce7e(user.child)
+          TableSource@a98ce7e(child)

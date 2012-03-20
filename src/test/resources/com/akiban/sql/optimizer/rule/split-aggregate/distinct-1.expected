@@ -4,6 +4,6 @@ SelectQuery@47042c25
       Select@244e5056[]
         AggregateSource@117c50b9(UNGROUPED,[COUNT])
           Distinct@7897aaa6
-            Project@2d44b624[user.customers.name]
+            Project@2d44b624[customers.name]
               Select@7a120cb3[]
-                TableSource@57c501f7(user.customers)
+                TableSource@57c501f7(customers)

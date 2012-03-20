@@ -1,11 +1,11 @@
 SelectQuery@7cd1a1ab
   ResultSet@26cd2192[name, order_date]
-    Project@65570c24[user.customers.name, user.orders.order_date]
-      Sort@5e4b2b75[user.customers.name, user.orders.order_date]
+    Project@65570c24[customers.name, orders.order_date]
+      Sort@5e4b2b75[customers.name, orders.order_date]
         Select@35de4376[]
-          Flatten@54cb2185(user.customers LEFT user.orders)
-            AncestorLookup@3927ff0d(user.orders -> [user.customers])
-              BranchLookup@6405ce40(user.addresses -> user.orders via user.customers)
+          Flatten@54cb2185(customers LEFT orders)
+            AncestorLookup@3927ff0d(orders -> [customers])
+              BranchLookup@6405ce40(addresses -> orders via customers)
                 IndexScan@70d9cbcb(Index(user.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 150, cost = 15678.0)
-                TableSource@61e090ee(user.orders - TableGroupJoin@2fbef1ac(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@51017ca1(user.customers - TableGroup@6ad2b64e(customers))
+                TableSource@61e090ee(orders - TableGroupJoin@2fbef1ac(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@51017ca1(customers - TableGroup@6ad2b64e(customers))

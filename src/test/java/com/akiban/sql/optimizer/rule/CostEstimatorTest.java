@@ -81,7 +81,7 @@ public class CostEstimatorTest
     }
 
     protected TableSource tableSource(String name) {
-        return new TableSource(tableNode(name), true);
+        return new TableSource(tableNode(name), true, name);
     }
 
     protected static ExpressionNode constant(Object value, AkType type) {
@@ -297,7 +297,8 @@ public class CostEstimatorTest
                 UserTable parentTable = parentJoin.getParent();
                 TableSource parentSource = tableSources.get(parentTable);
                 if (parentSource == null) {
-                    parentSource = new TableSource(tree.addNode(parentTable), true);
+                    parentSource = new TableSource(tree.addNode(parentTable), true,
+                                                   parentTable.getName().getTableName());
                     tableSources.put(parentTable, parentSource);
                 }
                 TableGroupJoin groupJoin = new TableGroupJoin(tableGroup, 

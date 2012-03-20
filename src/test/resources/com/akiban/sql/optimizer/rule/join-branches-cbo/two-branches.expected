@@ -1,13 +1,13 @@
 SelectQuery@19fac852
   ResultSet@1f758cd1[name, order_date, state]
-    Project@5e6ffd79[user.customers.name, user.orders.order_date, user.addresses.state]
+    Project@5e6ffd79[customers.name, orders.order_date, addresses.state]
       Select@a6a435f[]
-        Product@466d1750(user.customers)
-          Flatten@2415a94f(user.customers INNER user.addresses)
-            AncestorLookup@a1e940b(user.addresses -> [user.customers, user.addresses])
+        Product@466d1750(customers)
+          Flatten@2415a94f(customers INNER addresses)
+            AncestorLookup@a1e940b(addresses -> [customers, addresses])
               IndexScan@5d89635d(Index(user.addresses.state[IndexColumn(state)]), NONE, >M, rows = 640, cost = 63146.4)
-              TableSource@52234265(user.customers - TableGroup@66da9ea4(customers))
-              TableSource@8dc1f04(user.addresses - TableGroupJoin@1ae555bd(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
-          Flatten@465ff916(user.customers LEFT user.orders)
-            BranchLookup@46da3772(user.customers -> user.orders)
-              TableSource@2b784427(user.orders - TableGroupJoin@206e41b5(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@52234265(customers - TableGroup@66da9ea4(customers))
+              TableSource@8dc1f04(addresses - TableGroupJoin@1ae555bd(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+          Flatten@465ff916(customers LEFT orders)
+            BranchLookup@46da3772(customers -> orders)
+              TableSource@2b784427(orders - TableGroupJoin@206e41b5(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))

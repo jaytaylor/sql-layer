@@ -1,9 +1,9 @@
 SelectQuery@63a1bc40
   ResultSet@f4e40da[name]
-    Project@5a83b00f[user.customers.name]
+    Project@5a83b00f[customers.name]
       Select@7b9bd735[ANY(Subquery@344e17f9)]
-        TableSource@2424c672(user.customers)
+        TableSource@2424c672(customers)
 
 Subquery@344e17f9
-  Project@7307f742[user.customers.cid == VALUES[0]]
+  Project@7307f742[customers.cid == VALUES[0]]
     ExpressionsSource@6a6078e7([[1], [2], [3]])
