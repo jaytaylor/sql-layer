@@ -682,7 +682,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     protected IndexScan betterIndex(IndexScan bestIndex, SingleIndexScan candidate, IntersectionEnumerator enumerator) {
         if (usable(candidate, enumerator)) {
-            enumerator.possiblyAddLeaf(candidate);
+            enumerator.addLeaf(candidate);
             if (bestIndex == null) {
                 logger.debug("Selecting {}", candidate);
                 return candidate;

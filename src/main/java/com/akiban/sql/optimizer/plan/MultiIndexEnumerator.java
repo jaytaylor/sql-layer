@@ -24,6 +24,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 
@@ -34,20 +35,20 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
     protected abstract boolean areEquivalent(Column one, Column two);
     protected abstract List<Column> getComparisonColumns(N first, N second);
 
+    // becomes null when we start enumerating
     private List<N> results = new ArrayList<N>();
     private Set<C> conditions = new HashSet<C>();
     
-    public void possiblyAddLeaf(N leaf) {
-        Collection<? extends C> nodeConditions = getLeafConditions(leaf);
-        if ( (nodeConditions != null) && (!nodeConditions.isEmpty()) ) {
-            results.add(leaf);
-            conditions.addAll(nodeConditions);
-        }
+    public void addLeaf(N leaf) {
+        results.add(leaf);
     }
     
     public Collection<N> getCombinations() {
         if (results.isEmpty())
             return Collections.emptyList(); // return early if there's nothing here, cause why not.
+        
+        filterLeaves();
+        
         final int leaves = results.size();
         
         List<N> freshNodes = results;
@@ -77,7 +78,20 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         
         return results.subList(leaves, results.size());
     }
-    
+
+    private void filterLeaves() {
+        for (Iterator<N> iter = results.iterator(); iter.hasNext(); ) {
+            N leaf = iter.next();
+            Collection<? extends C> nodeConditions = getLeafConditions(leaf);
+            if ( (nodeConditions != null) && (!nodeConditions.isEmpty()) ) {
+                conditions.addAll(nodeConditions);
+            }
+            else {
+                iter.remove();
+            }
+        }
+    }
+
     private static <T> void emptyInto(Collection<? extends T> source, Collection<? super T> target) {
         target.addAll(source);
         source.clear();
