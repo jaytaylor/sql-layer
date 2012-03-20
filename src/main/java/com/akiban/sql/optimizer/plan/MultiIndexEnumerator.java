@@ -43,6 +43,10 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         leaves.add(leaf);
     }
     
+    public Iterator<L> leavesIterator() {
+        return leaves.iterator();
+    }
+    
     private class ComboIterator implements Iterator<N> {
         
         private boolean done = false;
@@ -59,6 +63,11 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
 
         @Override
         public boolean hasNext() {
+            if (done)
+                return false;
+            if (currentIter.hasNext())
+                return true;
+            advancePhase();
             return !done;
         }
 
@@ -66,10 +75,9 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         public N next() {
             if (done)
                 throw new NoSuchElementException();
-            N result = currentIter.next();
             if (!currentIter.hasNext())
                 advancePhase();
-            return result;
+            return currentIter.next();
         }
 
         @Override

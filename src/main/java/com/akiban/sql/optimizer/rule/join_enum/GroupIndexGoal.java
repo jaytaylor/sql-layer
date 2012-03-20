@@ -487,7 +487,17 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     private IndexScan pickBestIntersection(IndexScan previousBest, IntersectionEnumerator enumerator) {
-        for (IndexScan intersectedIndex : enumerator) {
+        // filter out all leaves which are obviously bad
+        if (previousBest != null) {
+            CostEstimate previousBestCost = previousBest.getCostEstimate();
+            for (Iterator<SingleIndexScan> iter = enumerator.leavesIterator(); iter.hasNext(); ) {
+                SingleIndexScan scan = iter.next();
+                if (scan.getScanCostEstimate().compareTo(previousBestCost) > 0)
+                    iter.remove();
+            }
+        }
+        for (Iterator<IndexScan> iterator = enumerator.iterator(); iterator.hasNext(); ) {
+            IndexScan intersectedIndex = iterator.next();
             setIntersectionConditions(intersectedIndex);
             setColumnsAndOrdering(intersectedIndex);
             intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
@@ -496,13 +506,16 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             if (previousBest == null) {
                 logger.debug("Selecting {}", intersectedIndex);
                 previousBest = intersectedIndex;
-            }
-            else if (compare(intersectedIndex, previousBest) > 0) {
+            } else if (compare(intersectedIndex, previousBest) > 0) {
                 logger.debug("Preferring {}", intersectedIndex);
                 previousBest = intersectedIndex;
-            }
-            else {
+
+            } else {
                 logger.debug("Rejecting {}", intersectedIndex);
+                // If the scan costs alone are higher than the previous best cost, there's no way this scan or
+                // any scan that uses it will be the best. Just remove the whole branch.
+                if (intersectedIndex.getScanCostEstimate().compareTo(previousBest.getCostEstimate()) > 0)
+                    iterator.remove();
             }
         }
         return previousBest;
