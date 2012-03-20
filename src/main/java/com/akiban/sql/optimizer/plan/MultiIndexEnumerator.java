@@ -20,15 +20,10 @@ import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
-import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -43,51 +38,25 @@ import java.util.Set;
  * subclasses for this class: one for unit testing, and one for production.</p>
  * @param <C> the condition type.
  */
-public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends IndexIntersectionNode<C,N>> {
-    
-    public interface BranchInfo<C> {
-        Column columnFromCondition(C condition);
-        Collection<? extends Index> getIndexes();
-        Set<C> getConditions();
-    }
-    
-    Logger log = LoggerFactory.getLogger(MultiIndexEnumerator.class);
+public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N>> {
 
-    protected abstract N buildLeaf(MultiIndexCandidate<C> candidate, B branchInfo);
+    protected abstract Collection<? extends C> getLeafConditions(N node);
     protected abstract N intersect(N first, N second, int comparisonCount);
+    protected abstract boolean areEquivalent(Column one, Column two);
+    protected abstract List<Column> getComparisonColumns(N first, N second);
 
     private List<N> results = new ArrayList<N>();
     private Set<C> conditions = new HashSet<C>();
     
-    public void addBranch(B branchInfo)
-    {
-        Set<C> branchConditions = branchInfo.getConditions();
-        conditions.addAll(branchConditions);
-        Map<Column,C> colsToConds = new HashMap<Column,C>(branchConditions.size());
-        for (C cond : branchConditions) {
-            Column column = branchInfo.columnFromCondition(cond);
-            if (column == null) {
-                log.warn("couldn't map <{}> to Column", cond);
-                continue;
-            }
-            C old = colsToConds.put(column, cond);
-            if (old != null) {
-                handleDuplicateCondition(); // test hook
-            }
-        }
-        
-        
-        // Seed the results with single-index scans. Remember how many there are, so that we can later crop those out.
-        for (Index index : branchInfo.getIndexes()) {
-            MultiIndexCandidate<C> candidate = createCandidate(index, colsToConds);
-            if (candidate.anyPegged()) {
-                N leaf = buildLeaf(candidate, branchInfo);
-                results.add(leaf);
-            }
+    public void possiblyAddLeaf(N leaf) {
+        Collection<? extends C> nodeConditions = getLeafConditions(leaf);
+        if ( (nodeConditions != null) && (!nodeConditions.isEmpty()) ) {
+            results.add(leaf);
+            conditions.addAll(nodeConditions);
         }
     }
     
-    public Collection<N> getCombinations(EquivalenceFinder<Column> columnEquivalences) {
+    public Collection<N> getCombinations() {
         if (results.isEmpty())
             return Collections.emptyList(); // return early if there's nothing here, cause why not.
         final int leaves = results.size();
@@ -104,7 +73,7 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
                 if (outer.removeCoveredConditions(conditionsCopy, outerRecycle) && (!conditionsCopy.isEmpty())) {
                     for (N inner : oldNodes) {
                         if (inner != outer && inner.removeCoveredConditions(conditionsCopy, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
-                            emit(outer, inner, newNodes, columnEquivalences);
+                            emit(outer, inner, newNodes);
                             emptyInto(innerRecycle,conditionsCopy);
                         }
                     }
@@ -142,11 +111,11 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         return result;
     }
 
-    private void emit(N first, N second, Collection<N> output, EquivalenceFinder<Column> columnEquivalences)
+    private void emit(N first, N second, Collection<N> output)
     {
         Table firstTable = first.getLeafMostUTable();
         Table secondTable = second.getLeafMostUTable();
-        List<Column> comparisonCols = getComparisonColumns(first, second, columnEquivalences);
+        List<Column> comparisonCols = getComparisonColumns(first, second);
         if (comparisonCols.isEmpty())
             return;
         UserTable firstUTable = (UserTable) firstTable;
@@ -159,12 +128,12 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         if (firstUTable != secondUTable) {
             if (commonAncestor == firstUTable) {
                 isMultiBranch = false;
-                if (includesHKey(firstUTable, comparisonCols, columnEquivalences))
+                if (includesHKey(firstUTable, comparisonCols))
                     output.add(intersect(second, first, comparisonsLen));
             }
             else if (commonAncestor == secondUTable) {
                 isMultiBranch = false;
-                if (includesHKey(secondUTable, comparisonCols, columnEquivalences))
+                if (includesHKey(secondUTable, comparisonCols))
                     output.add(intersect(first, second, comparisonsLen));
             }
         }
@@ -174,7 +143,7 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
             for (Column hkeyCol : ancestorHKeys) {
                 boolean found = false;
                 for (Column commonCol : comparisonCols) {
-                    if (columnEquivalences.areEquivalent(commonCol, hkeyCol)) {
+                    if (areEquivalent(commonCol, hkeyCol)) {
                         found = true;
                         break;
                     }
@@ -198,24 +167,22 @@ public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends 
         return results;
     }
 
-    private boolean includesHKey(UserTable table, List<Column> columns, EquivalenceFinder<Column> columnEquivalences) {
+    private boolean includesHKey(UserTable table, List<Column> columns) {
         HKey hkey = table.hKey();
         int ncols = hkey.nColumns();
         // no overhead, but O(N) per hkey segment. assuming ncols and columns is very small
         for (int i = 0; i < ncols; ++i) {
-            if (!containsEquivalent(columns, hkey.column(i), columnEquivalences))
+            if (!containsEquivalent(columns, hkey.column(i)))
                 return false;
         }
         return true;
     }
 
-    private boolean containsEquivalent(List<Column> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
+    private boolean containsEquivalent(List<Column> cols, Column tgt) {
         for (Column col : cols) {
-            if (columnEquivalences.areEquivalent(col, tgt))
+            if (areEquivalent(col, tgt))
                 return true;
         }
         return false;
     }
-
-    protected abstract List<Column> getComparisonColumns(N first, N second, EquivalenceFinder<Column> equivalencies);
 }

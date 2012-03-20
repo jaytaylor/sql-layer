@@ -85,7 +85,8 @@ public final class SingleIndexScan extends IndexScan {
         // Note! Really what we want are the *leading* equalities. But this method is only
         // used in the context of MultiIndexEnumerator, which will only put in leading
         // equalities.
-        return getEqualityComparands().size();
+        List<ExpressionNode> equalityComparands = getEqualityComparands();
+        return (equalityComparands == null) ? 0 : equalityComparands.size();
     }
 
     @Override

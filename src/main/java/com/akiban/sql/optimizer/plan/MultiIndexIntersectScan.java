@@ -116,7 +116,12 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
     @Override
     protected String summarizeIndex() {
-        return String.format("INTERSECT(%s AND %s)", outputScan, selectorScan);
+        StringBuilder sb = new StringBuilder("INTERSECT(");
+        outputScan.buildSummaryString(sb, false);
+        sb.append(" AND ");
+        selectorScan.buildSummaryString(sb, false);
+        sb.append(')');
+        return sb.toString();
     }
 
     @Override
