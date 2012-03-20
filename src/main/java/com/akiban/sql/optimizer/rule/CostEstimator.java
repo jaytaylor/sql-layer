@@ -804,14 +804,19 @@ public abstract class CostEstimator implements TableRowCounts
                 CostEstimate estimate = coster.singleIndexScanCost(singleScan, CostEstimator.this);
                 long singleCount = estimate.getRowCount();
                 double singleCost = estimate.getCost();
-                long totalRowCount = getTableRowCount(singleScan.getIndex().leafMostTable());
-
-                long selectedRowCount = simpleRound(rowCount *
-                        singleCount,
-                        totalRowCount);
-                selectedRowCount = Math.max(selectedRowCount, 1);
-                cost += singleCost + model.intersect((int)rowCount, (int)singleCount);
-                rowCount = selectedRowCount;
+                if (rowCount == 0) {
+                    // First index: start with its cost.
+                    rowCount = singleCount;
+                    cost = singleCost;
+                }
+                else {
+                    // Add cost of this index and of intersecting its rows with rows so far.
+                    cost += singleCost + model.intersect((int)rowCount, (int)singleCount);
+                    long totalRowCount = getTableRowCount(singleScan.getIndex().leafMostTable());
+                    // Apply this index's selectivity to cumulative row count.
+                    rowCount = simpleRound(rowCount * singleCount, totalRowCount);
+                }
+                rowCount = Math.max(rowCount, 1);
             }
             else if (scan instanceof MultiIndexIntersectScan) {
                 MultiIndexIntersectScan multiScan = (MultiIndexIntersectScan) scan;
