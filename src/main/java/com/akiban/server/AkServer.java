@@ -181,4 +181,22 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
             out.flush();
         }
     }
+
+    /** Start from procrun.
+     * @see <a href="http://commons.apache.org/daemon/procrun.html">Daemon: Procrun</a>
+     */
+    public static void procrunStart(String[] args) throws Exception {
+        // Start server and return from this thread.
+        // Normal entry does that.
+        main(args);
+    }
+
+    public static void procrunStop(String[] args) throws Exception {
+        // Stop server from another thread.
+        // Need global access to ServiceManager. Can get it via the shutdown bean.
+        ObjectName name = new ObjectName(ShutdownMXBeanImpl.BEAN_NAME);
+        ManagementFactory.getPlatformMBeanServer().invoke(name, "shutdown",
+                                                          new Object[0], new String[0]);
+    }
+
 }
