@@ -22,66 +22,137 @@ import com.akiban.ais.model.UserTable;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
-public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N>> {
+public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N>,L extends N> implements Iterable<N> {
 
-    protected abstract Collection<? extends C> getLeafConditions(N node);
+    protected abstract Collection<? extends C> getLeafConditions(L node);
     protected abstract N intersect(N first, N second, int comparisonCount);
     protected abstract boolean areEquivalent(Column one, Column two);
     protected abstract List<Column> getComparisonColumns(N first, N second);
 
     // becomes null when we start enumerating
-    private List<N> results = new ArrayList<N>();
+    private List<L> leaves = new ArrayList<L>();
     private Set<C> conditions = new HashSet<C>();
     
-    public void addLeaf(N leaf) {
-        results.add(leaf);
+    public void addLeaf(L leaf) {
+        leaves.add(leaf);
     }
     
-    public Collection<N> getCombinations() {
-        if (results.isEmpty())
-            return Collections.emptyList(); // return early if there's nothing here, cause why not.
+    private class ComboIterator implements Iterator<N> {
         
-        filterLeaves();
-        
-        final int leaves = results.size();
-        
-        List<N> freshNodes = results;
-        List<N> oldNodes = results;
-        List<N> newNodes = new ArrayList<N>(leaves);
-        Set<C> conditionsCopy = new HashSet<C>(conditions);
+        private boolean done = false;
+        private List<N> previous = new ArrayList<N>();
+        private List<N> current = new ArrayList<N>();
+        private Iterator<N> currentIter;
         List<C> outerRecycle = new ArrayList<C>(conditions.size());
         List<C> innerRecycle = new ArrayList<C>(conditions.size());
-        do {
-            newNodes.clear();
-            for (N outer : freshNodes) {
-                if (outer.removeCoveredConditions(conditionsCopy, outerRecycle) && (!conditionsCopy.isEmpty())) {
-                    for (N inner : oldNodes) {
-                        if (inner != outer && inner.removeCoveredConditions(conditionsCopy, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
-                            emit(outer, inner, newNodes);
-                            emptyInto(innerRecycle,conditionsCopy);
+
+        private ComboIterator() {
+            current.addAll(leaves);
+            advancePhase();
+        }
+
+        @Override
+        public boolean hasNext() {
+            return !done;
+        }
+
+        @Override
+        public N next() {
+            if (done)
+                throw new NoSuchElementException();
+            N result = currentIter.next();
+            if (!currentIter.hasNext())
+                advancePhase();
+            return result;
+        }
+
+        @Override
+        public void remove() {
+            currentIter.remove();
+        }
+
+        private void advancePhase() {
+            assert (currentIter == null) || (!currentIter.hasNext()) : "internal iterator not exhausted";
+            if (current.isEmpty()) {
+                done = true;
+                return;
+            }
+
+            previous.clear();
+            previous.addAll(current);
+            current.clear();
+            for (N outer : previous) {
+                if (outer.removeCoveredConditions(conditions, outerRecycle) && (!conditions.isEmpty())) {
+                    for (N inner : leaves) {
+                        if (inner != outer && inner.removeCoveredConditions(conditions, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
+                            emit(outer, inner, current);
+                            emptyInto(innerRecycle,conditions);
                         }
                     }
                 }
-                emptyInto(outerRecycle, conditionsCopy);
+                emptyInto(outerRecycle, conditions);
             }
-            int oldCount = results.size();
-            results.addAll(newNodes);
-            oldNodes = results.subList(0, oldCount);
-            freshNodes = results.subList(oldCount, results.size());
-        } while (!newNodes.isEmpty());
-        
-        return results.subList(leaves, results.size());
+            if (current.isEmpty()) {
+                done = true;
+                currentIter = null;
+            }
+            else {
+                currentIter = current.iterator();
+            }
+        }
     }
 
+    @Override
+    public Iterator<N> iterator() {
+        filterLeaves();
+        return new ComboIterator();
+    }
+
+//    public Collection<N> getCombinations() {
+//        if (results.isEmpty())
+//            return Collections.emptyList(); // return early if there's nothing here, cause why not.
+//
+//        filterLeaves();
+//
+//        final int leaves = results.size();
+//
+//        List<N> freshNodes = results;
+//        List<N> oldNodes = results;
+//        List<N> newNodes = new ArrayList<N>(leaves);
+//        Set<C> conditionsCopy = new HashSet<C>(conditions);
+//        List<C> outerRecycle = new ArrayList<C>(conditions.size());
+//        List<C> innerRecycle = new ArrayList<C>(conditions.size());
+//        do {
+//            newNodes.clear();
+//            for (N outer : freshNodes) {
+//                if (outer.removeCoveredConditions(conditionsCopy, outerRecycle) && (!conditionsCopy.isEmpty())) {
+//                    for (N inner : oldNodes) {
+//                        if (inner != outer && inner.removeCoveredConditions(conditionsCopy, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
+//                            emit(outer, inner, newNodes);
+//                            emptyInto(innerRecycle,conditionsCopy);
+//                        }
+//                    }
+//                }
+//                emptyInto(outerRecycle, conditionsCopy);
+//            }
+//            int oldCount = results.size();
+//            results.addAll(newNodes);
+//            oldNodes = results.subList(0, oldCount);
+//            freshNodes = results.subList(oldCount, results.size());
+//        } while (!newNodes.isEmpty());
+//
+//        return results.subList(leaves, results.size());
+//    }
+
     private void filterLeaves() {
-        for (Iterator<N> iter = results.iterator(); iter.hasNext(); ) {
-            N leaf = iter.next();
+        for (Iterator<L> iter = leaves.iterator(); iter.hasNext(); ) {
+            L leaf = iter.next();
             Collection<? extends C> nodeConditions = getLeafConditions(leaf);
             if ( (nodeConditions != null) && (!nodeConditions.isEmpty()) ) {
                 conditions.addAll(nodeConditions);
@@ -117,11 +188,11 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
                 if (includesHKey(firstUTable, comparisonCols))
                     output.add(intersect(second, first, comparisonsLen));
             }
-            else if (commonAncestor == secondUTable) {
-                isMultiBranch = false;
-                if (includesHKey(secondUTable, comparisonCols))
-                    output.add(intersect(first, second, comparisonsLen));
-            }
+//            else if (commonAncestor == secondUTable) {
+//                isMultiBranch = false;
+//                if (includesHKey(secondUTable, comparisonCols))
+//                    output.add(intersect(first, second, comparisonsLen));
+//            }
         }
         if (isMultiBranch) {
             Collection<Column> ancestorHKeys = ancestorHKeys(commonAncestor);
@@ -138,7 +209,6 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
                     return;
             }
             output.add(intersect(first, second, comparisonsLen));
-            output.add(intersect(second, first, comparisonsLen));
         }
     }
 

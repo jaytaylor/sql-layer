@@ -487,8 +487,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     private IndexScan pickBestIntersection(IndexScan previousBest, IntersectionEnumerator enumerator) {
-        Collection<IndexScan> intersections = enumerator.getCombinations();
-        for (IndexScan intersectedIndex : intersections) {
+        for (IndexScan intersectedIndex : enumerator) {
             setIntersectionConditions(intersectedIndex);
             setColumnsAndOrdering(intersectedIndex);
             intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
@@ -518,7 +517,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         scan.setGroupConditions(groupConds);
     }
     
-    private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan> {
+    private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan,SingleIndexScan> {
 
         private EquivalenceFinder<ColumnExpression> columnExpressionEquivs = null;
         private EquivalenceFinder<Column> columnEquivs = null;
@@ -533,7 +532,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         @Override
-        protected Collection<ConditionExpression> getLeafConditions(IndexScan node) {
+        protected Collection<ConditionExpression> getLeafConditions(SingleIndexScan node) {
             if (!(node instanceof SingleIndexScan))
                 return null;
             SingleIndexScan scan = (SingleIndexScan) node;
