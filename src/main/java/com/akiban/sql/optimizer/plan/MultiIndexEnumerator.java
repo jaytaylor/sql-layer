@@ -50,11 +50,13 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
     private class ComboIterator implements Iterator<N> {
         
         private boolean done = false;
-        private List<N> previous = new ArrayList<N>();
         private List<N> current = new ArrayList<N>();
         private Iterator<N> currentIter;
-        List<C> outerRecycle = new ArrayList<C>(conditions.size());
-        List<C> innerRecycle = new ArrayList<C>(conditions.size());
+
+        // These are only used in advancePhase, but we cache them to save on allocations
+        private List<N> previous = new ArrayList<N>();
+        private List<C> outerRecycle = new ArrayList<C>(conditions.size());
+        private List<C> innerRecycle = new ArrayList<C>(conditions.size());
 
         private ComboIterator() {
             current.addAll(leaves);
@@ -154,17 +156,10 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         UserTable commonAncestor = first.findCommonAncestor(second);
         assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
         boolean isMultiBranch = true;
-        if (firstUTable != secondUTable) {
-            if (commonAncestor == firstUTable) {
-                isMultiBranch = false;
-                if (includesHKey(firstUTable, comparisonCols))
-                    output.add(intersect(second, first, comparisonsLen));
-            }
-//            else if (commonAncestor == secondUTable) {
-//                isMultiBranch = false;
-//                if (includesHKey(secondUTable, comparisonCols))
-//                    output.add(intersect(first, second, comparisonsLen));
-//            }
+        if (firstUTable != secondUTable && commonAncestor == firstUTable) {
+            isMultiBranch = false;
+            if (includesHKey(firstUTable, comparisonCols))
+                output.add(intersect(second, first, comparisonsLen));
         }
         if (isMultiBranch) {
             Collection<Column> ancestorHKeys = ancestorHKeys(commonAncestor);
