@@ -15,49 +15,45 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Queue;
 
 public final class ConditionsStack<C> {
     private Collection<C> main;
-    private Deque<Collection<C>> recycleStack;
-    private Queue<Collection<C>> recycleFlywheel;
+    private List<Collection<C>> recycleStack;
+    int frameIndex = -1;
     private int conditionsCount;
     
     public ConditionsStack(Collection<C> conditions, int expectedLevels) {
         conditionsCount = conditions.size();
         main = new HashSet<C>(conditions);
-        recycleStack = new ArrayDeque<Collection<C>>(expectedLevels);
-        recycleFlywheel = new ArrayDeque<Collection<C>>(expectedLevels);
+        recycleStack = new ArrayList<Collection<C>>(expectedLevels);
     }
     
     public void enter() {
-        Collection<C> frame = recycleFlywheel.poll();
-        if (frame == null)
-            frame = new ArrayList<C>(conditionsCount);
-        recycleStack.push(frame);
+        ++frameIndex;
+        assert frameIndex <= recycleStack.size() : frameIndex + " > " + recycleStack;
+        if (frameIndex == recycleStack.size()) {
+            recycleStack.add(new ArrayList<C>(conditionsCount));
+        }
     }
 
     public void leave() {
-        Collection<C> frame = recycleStack.pop();
+        Collection<C> frame = getFrame();
         main.addAll(frame);
         frame.clear();
-        recycleFlywheel.offer(frame);
+        --frameIndex;
     }
-    
+
     public boolean removedAny() {
-        return ! recycleStack.peek().isEmpty();
+        return ! getFrame().isEmpty();
     }
     
     public void removeCondition(C condition) {
         if (main.remove(condition)) {
-            Collection<C> frame = recycleStack.peek();
-            frame.add(condition);
+            getFrame().add(condition);
         }
     }
 
@@ -66,5 +62,11 @@ public final class ConditionsStack<C> {
         for (Collection<C> frame : recycleStack)
             results.addAll(frame);
         return results;
+    }
+
+    private Collection<C> getFrame() {
+        if (frameIndex < 0)
+            throw new IllegalStateException("no active frame: " + frameIndex);
+        return recycleStack.get(frameIndex);
     }
 }
