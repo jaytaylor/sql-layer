@@ -805,7 +805,10 @@ public abstract class CostEstimator implements TableRowCounts
                 long singleCount = estimate.getRowCount();
                 double singleCost = estimate.getCost();
                 if (rowCount == 0) {
-                    // First index: start with its cost.
+                    // First index: start with its cost. This should
+                    // be the output side, since nested intersections
+                    // are left-deep. Its selectivity does not matter;
+                    // subsequent ones filter it.
                     rowCount = singleCount;
                     cost = singleCost;
                 }
