@@ -17,7 +17,6 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 
@@ -26,18 +25,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 
-/**
- * <p>An enumerator which, given an Index and a set of conditions, will produce a collection of
- * {@link MultiIndexCandidate} which represent valid multi-index intersection pairs.</p>
- * 
- * <p>Like {@link MultiIndexCandidate}, this class is generic and abstract; its only abstract method is one for
- * creating an empty {@link MultiIndexCandidate}. Also like that class, the expectation is that there will be two
- * subclasses for this class: one for unit testing, and one for production.</p>
- * @param <C> the condition type.
- */
 public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N>> {
 
     protected abstract Collection<? extends C> getLeafConditions(N node);
@@ -92,20 +81,6 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
     private static <T> void emptyInto(Collection<? extends T> source, Collection<? super T> target) {
         target.addAll(source);
         source.clear();
-    }
-
-    private MultiIndexCandidate<C> createCandidate(Index index, Map<Column, C> colsToConds) {
-        MultiIndexCandidate<C> result = new MultiIndexCandidate<C>(index);
-        while(true) {
-            Column nextCol = result.getNextFreeColumn();
-            if (nextCol == null)
-                break;
-            C condition = colsToConds.get(nextCol);
-            if (condition == null)
-                break;
-            result.peg(condition);
-        }
-        return result;
     }
 
     private void emit(N first, N second, Collection<N> output)
