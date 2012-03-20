@@ -114,42 +114,6 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         return new ComboIterator();
     }
 
-//    public Collection<N> getCombinations() {
-//        if (results.isEmpty())
-//            return Collections.emptyList(); // return early if there's nothing here, cause why not.
-//
-//        filterLeaves();
-//
-//        final int leaves = results.size();
-//
-//        List<N> freshNodes = results;
-//        List<N> oldNodes = results;
-//        List<N> newNodes = new ArrayList<N>(leaves);
-//        Set<C> conditionsCopy = new HashSet<C>(conditions);
-//        List<C> outerRecycle = new ArrayList<C>(conditions.size());
-//        List<C> innerRecycle = new ArrayList<C>(conditions.size());
-//        do {
-//            newNodes.clear();
-//            for (N outer : freshNodes) {
-//                if (outer.removeCoveredConditions(conditionsCopy, outerRecycle) && (!conditionsCopy.isEmpty())) {
-//                    for (N inner : oldNodes) {
-//                        if (inner != outer && inner.removeCoveredConditions(conditionsCopy, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
-//                            emit(outer, inner, newNodes);
-//                            emptyInto(innerRecycle,conditionsCopy);
-//                        }
-//                    }
-//                }
-//                emptyInto(outerRecycle, conditionsCopy);
-//            }
-//            int oldCount = results.size();
-//            results.addAll(newNodes);
-//            oldNodes = results.subList(0, oldCount);
-//            freshNodes = results.subList(oldCount, results.size());
-//        } while (!newNodes.isEmpty());
-//
-//        return results.subList(leaves, results.size());
-//    }
-
     private void filterLeaves() {
         for (Iterator<L> iter = leaves.iterator(); iter.hasNext(); ) {
             L leaf = iter.next();
