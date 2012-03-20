@@ -784,7 +784,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     protected CostEstimate estimateCost(IndexScan index) {
         CostEstimator costEstimator = queryGoal.getCostEstimator();
-        CostEstimate cost = createBasicCostEstimate(index, costEstimator);
+        CostEstimate cost = getScanOnlyCost(index, costEstimator);
         if (!index.isCovering()) {
             CostEstimate flatten = costEstimator.costFlatten(tables,
                                                              index.getLeafMostTable(),
@@ -810,7 +810,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return cost;
     }
 
-    private CostEstimate createBasicCostEstimate(IndexScan index, CostEstimator costEstimator) {
+    private CostEstimate getScanOnlyCost(IndexScan index, CostEstimator costEstimator) {
         CostEstimate result = index.getScanCostEstimate();
         if (result == null) {
             if (index instanceof SingleIndexScan) {
@@ -845,7 +845,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 result = costEstimator.costIndexIntersection(multiIndex, new IndexIntersectionCoster() {
                     @Override
                     public CostEstimate singleIndexScanCost(SingleIndexScan scan, CostEstimator costEstimator) {
-                        return createBasicCostEstimate(scan, costEstimator);
+                        return getScanOnlyCost(scan, costEstimator);
                     }
                 });
             }
