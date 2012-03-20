@@ -195,7 +195,7 @@ public class MultipleIndexCostSensitivityTest
     }
 
     protected TableSource tableSource(String name) {
-        return new TableSource(tableNode(name), true);
+        return new TableSource(tableNode(name), true, name);
     }
 
     protected static ExpressionNode constant(Object value, AkType type) {
