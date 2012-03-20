@@ -121,6 +121,18 @@ public class CostEstimatorTest
         costEstimate = costEstimator.costIndexScan(index, null,
                                                    constant("L", AkType.VARCHAR), true, constant("Q", AkType.VARCHAR), true); // BETWEEN 'L' AND 'Q'
         assertEquals(17, costEstimate.getRowCount());
+        // Lower bound only
+        costEstimate = costEstimator.costIndexScan(index, null,
+                                                   constant("B", AkType.VARCHAR), true, null, false); // >= 'B'
+        // 5 rows from entry with key Ctewy. "B" is near the beginning of this range which contains 6 keys total.
+        // The remainder of the histogram has 90 rows.
+        assertEquals(95, costEstimate.getRowCount());
+        // Upper bound only
+        costEstimate = costEstimator.costIndexScan(index, null,
+                                                   null, false, constant("B", AkType.VARCHAR), false); // < 'B'
+        // 1 rows from entry with key Ctewy. "B" is near the beginning of this range which contains 6 keys total.
+        // 4 rows from the prior entries.
+        assertEquals(5, costEstimate.getRowCount());
     }
 
     @Test
@@ -161,22 +173,30 @@ public class CostEstimatorTest
         CostEstimate costEstimate = costEstimator.costIndexScan(index, skuEQ, loDate, true, hiDate, true);
         // sku 0254 is a match for a histogram entry with eq = 110. total distinct count = 20000
         //     selectivity = 110 / 20000 = 0.0055
-        // date 1029500:
+        // date 1029500 (2010-11-28):
         //     - Past the first 3 histogram entries (1029263, 1029270, 1029298)
         //     - 32% through the range of the 4th entry (1029937) with distinct = 108, lt = 140, so this contributes a
         //       about 140 * (1 - 0.32) = 96. Actual bit-twiddly calculation yields 107.
-        // date 1033000:
+        // date 1033000 (2017-09-08):
         //     - Next entries cover 541  entries
         //     - 69% through the entry with key 1033431 with distinct = 99, lt = 127, so it contributes
         //       127 * 0.69 = 88, (actually 46)
         // Selectivity for the date range is (107 + 541 + 46) / 1000 = 69.4%
         // Combined selectivity = 0.00382
         // Expected rows = 76.
-        if (NEW_COST_ESTIMATOR) {
-            assertEquals(76, costEstimate.getRowCount());
-        } else {
-            assertEquals(1, costEstimate.getRowCount());
-        }
+        assertEquals(76, costEstimate.getRowCount());
+        // No upper bound on date
+        // 107 from entry containing low bound (as above), 799 from higher entries, 906/1000 = 0.906 selectivity
+        // Combined selectivity = 0.004983
+        // Expected rows = 100
+        costEstimate = costEstimator.costIndexScan(index, skuEQ, loDate, true, null, false);
+        assertEquals(100, costEstimate.getRowCount());
+        // No lower bound on date
+        // 46 from entry containing hi bound (as above), 742 from higher entries, 788/1000 = 0.788 selectivity
+        // Combined selectivity = 0.004334
+        // Expected rows = 100
+        costEstimate = costEstimator.costIndexScan(index, skuEQ, null, false, hiDate, true);
+        assertEquals(87, costEstimate.getRowCount());
     }
 
     /* Cardinalities are:
