@@ -236,7 +236,7 @@ public class ProtobufWriter {
     private static void writeIndexColumn(AISProtobuf.Index.Builder indexBuilder, IndexColumn indexColumn) {
         AISProtobuf.IndexColumn.Builder indexColumnBuilder = AISProtobuf.IndexColumn.newBuilder().
                 setColumnName(indexColumn.getColumn().getName()).
-                setAscending(indexColumn.isAscending()).
+                setIsAscending(indexColumn.isAscending()).
                 setPosition(indexColumn.getPosition());
 
         indexBuilder.addColumns(indexColumnBuilder.build());

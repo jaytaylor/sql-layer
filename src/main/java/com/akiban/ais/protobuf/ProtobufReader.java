@@ -185,7 +185,7 @@ public class ProtobufReader {
                     index,
                     index.getTable().getColumn(pbIndexColumn.getColumnName()),
                     pbIndexColumn.getPosition(),
-                    pbIndexColumn.getAscending(),
+                    pbIndexColumn.getIsAscending(),
                     null /* indexedLength, not in proto */
             );
         }
