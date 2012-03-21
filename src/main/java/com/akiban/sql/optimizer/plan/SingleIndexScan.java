@@ -89,9 +89,18 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public void removeCoveredConditions(ConditionsStack<ConditionExpression> stack) {
+    public void incrementConditionsCounter(ConditionsCounter<? super ConditionExpression> counter) {
         for (ConditionExpression cond : getConditions())
-            stack.removeCondition(cond);
+            counter.increment(cond);
+    }
+
+    @Override
+    public boolean isUseful(ConditionsCounter<? super ConditionExpression> counter) {
+        for (ConditionExpression cond : getConditions()) {
+            if (counter.exactlyOne(cond))
+                return true;
+        }
+        return false;
     }
 
     @Override

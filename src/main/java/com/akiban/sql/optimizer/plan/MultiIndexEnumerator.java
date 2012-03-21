@@ -55,8 +55,7 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
 
         // These are only used in advancePhase, but we cache them to save on allocations
         private List<N> previous = new ArrayList<N>();
-        private ConditionsStack<C> outerStack = new ConditionsStack<C>(conditions, 2);
-        private ConditionsStack<C> innerStack = new ConditionsStack<C>(conditions, 2);
+        private ConditionsCounter<C> conditionsCounter = new ConditionsCounter<C>(conditions.size());
 
         private ComboIterator() {
             current.addAll(leaves);
@@ -97,36 +96,32 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
             previous.clear();
             previous.addAll(current);
             current.clear();
-            for (N outer : previous) {
-                outerStack.enter();
-                outer.removeCoveredConditions(outerStack);
-                if (outerStack.removedAny() && (!conditions.isEmpty())) {
+            int conditionsCount = conditions.size();
+            for (int outerI = 0, outerLen = previous.size(); outerI < outerLen; outerI++) {
+                N outer = previous.get(outerI);
+                outer.incrementConditionsCounter(conditionsCounter);
+                int counted = conditionsCounter.conditionsCounted();
+                // only try the leaves if the outer counted some conditions, but not all of them.
+                if (counted > 0 && counted < conditionsCount) {
                     // at this point, "outer" satisfies some conditions, and more conditions are left
-                    for (N inner : leaves) {
+                    for (int leavesI = 0, leavesLen = leaves.size(); leavesI < leavesLen; leavesI++) {
+                        N inner = leaves.get(leavesI);
                         if (inner == outer)
                             continue; // fast path, we know there's full overlap
-                        outerStack.enter();
-                        inner.removeCoveredConditions(outerStack);
-                        if (outerStack.removedAny()) {
-                            // at this point, "inner" satisfies some of the conditions "outer" didn't.
-                            // we still need to check if "outer" satisfies conditions "inner" didn't.
-                            innerStack.enter();
-                            inner.removeCoveredConditions(innerStack);
-                            if (innerStack.removedAny()) { // should always be true, but may as well check
-                                innerStack.enter();
-                                outer.removeCoveredConditions(innerStack);
-                                if (innerStack.removedAny())
-                                    emit(outer, inner, current);
-                                innerStack.leave();
-                            }
-                            
-                            innerStack.leave();
+                        inner.incrementConditionsCounter(conditionsCounter);
+                        if (inner.isUseful(conditionsCounter) && outer.isUseful(conditionsCounter)) {
+                            emit(outer, inner, current);
                         }
-                        
-                        outerStack.leave();
+                        // if this isn't the last inner N, reset the counter to what it was at the top of the loop
+                        if (leavesI < leavesLen) {
+                            conditionsCounter.clear();
+                            outer.incrementConditionsCounter(conditionsCounter);
+                        }
                     }
                 }
-                outerStack.leave();
+                if (outerI < outerLen) {
+                    conditionsCounter.clear();
+                }
             }
             if (current.isEmpty()) {
                 done = true;

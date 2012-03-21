@@ -23,7 +23,8 @@ import java.util.List;
 public interface IndexIntersectionNode<C, N extends IndexIntersectionNode<C,N>> {
     UserTable getLeafMostUTable();
     List<IndexColumn> getAllColumns();
-    void removeCoveredConditions(ConditionsStack<C> conditionsStack);
+    void incrementConditionsCounter(ConditionsCounter<? super C> counter);
+    boolean isUseful(ConditionsCounter<? super C> counter);
     UserTable findCommonAncestor(N other);
     int getPeggedCount();
 }
