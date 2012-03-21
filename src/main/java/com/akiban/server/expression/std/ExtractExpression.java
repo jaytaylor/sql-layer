@@ -169,11 +169,11 @@ public class ExtractExpression extends AbstractUnaryExpression
                         Extractors.getLongExtractor(type).getLong(source));
                 switch(type)
                 {
-                    case TIME:      long yr = ymd_hms[3]; // hour in TIME doesnt have to be less than 24. It could be anything
+                    case TIME:      long hr = ymd_hms[3]; // hour in TIME doesnt have to be less than 24. It could be anything
                                     ymd_hms[3] = 1;       // but the checking method has no way to know, 
                                                           // so we put a legal value in hr field (which is a bit clumsy)
                                                           
-                                    return validHrMinSec(ymd_hms) ? yr : null;
+                                    return validHrMinSec(ymd_hms) ? hr : null;
                     case DATETIME:  return validDayMonth(ymd_hms) && validHrMinSec(ymd_hms) ? ymd_hms[3] : null;
                     case TIMESTAMP: return ymd_hms[3];
                     default:        return null;
@@ -189,38 +189,18 @@ public class ExtractExpression extends AbstractUnaryExpression
                 AkType type = source.getConversionType();
                 long ymd[] = Extractors.getLongExtractor(type).getYearMonthDayHourMinuteSecond(
                         Extractors.getLongExtractor(type).getLong(source));
-               
+   
                 switch (type)
                 {
                     case DATE:      
                     case DATETIME:  
-                    case TIMESTAMP: return validDayMonth(ymd)? getLast(ymd) : null;
+                    case TIMESTAMP: Long last = getLastDay(ymd);
+                                    if (last == null || ymd[1] * ymd[2] == 0 || ymd[2] > last) 
+                                        return null;
+                                    ymd[2] = last;
+                                    return Extractors.getLongExtractor(AkType.DATE).getEncoded(ymd);
                     default: /*year or time*/       return null;
                 }
-            }
-            
-            private Long getLast(long ymd[])
-            {
-                if (ymd[1] * ymd[2] == 0) return null;
-                long y = ymd[0], m = ymd[1];
-                switch((int)m)
-                {
-                    case 2:     ymd[2] = (y % 400 == 0 || y % 4 == 0 && y % 100 != 0 ? 29L : 28L); break;
-                    case 4:
-                    case 6:
-                    case 9:
-                    case 11:    ymd[2] = 30L; break;
-                    case 3:
-                    case 1:
-                    case 5:
-                    case 7:
-                    case 8:
-                    case 10:
-                    case 0:
-                    case 12:    ymd[2] = 31L; break;
-                    default:    throw new InvalidParameterValueException("Invalid month: " + m);
-                }
-                return Extractors.getLongExtractor(AkType.DATE).getEncoded(ymd);
             }
         },
         
@@ -315,7 +295,6 @@ public class ExtractExpression extends AbstractUnaryExpression
                 switch (type)
                 {
                     case TIME:      return source.getTime();
-//                    case DATE:      return 0;
                     case DATETIME:  
                     case TIMESTAMP: return validDayMonth(ymd) && validHrMinSec(ymd) ? extractor.getEncoded(ymd) : null;
                     default:        return null;
@@ -374,15 +353,15 @@ public class ExtractExpression extends AbstractUnaryExpression
             return hms[3] >= 0 && hms[3] < 24 && hms[4] >= 0 && hms[4] < 60 && hms[5] >= 0 && hms[5] < 60;
         }
 
-        private static boolean validDayMonth (long ymd[])
+        private static Long getLastDay (long ymd[])
         {
             switch ((int)ymd[1])
             {
-                case 2:     return ymd[1] <= (ymd[0] % 400 == 0 || ymd[0] % 4 == 0 && ymd[0] % 100 != 0 ? 29L : 28L);
+                case 2:     return ymd[0] % 400 == 0 || ymd[0] % 4 == 0 && ymd[0] % 100 != 0 ? 29L : 28L;
                 case 4:
                 case 6:
                 case 9:
-                case 11:    return ymd[2] <= 30;
+                case 11:    return 30L;
                 case 3:
                 case 1:
                 case 5:
@@ -390,9 +369,15 @@ public class ExtractExpression extends AbstractUnaryExpression
                 case 8:
                 case 10:
                 case 0:
-                case 12:    return ymd[2] <= 31;                        
-                default:    return false;
+                case 12:    return 31L;                        
+                default:    return null;
             }
+        }
+        
+        private static boolean validDayMonth (long ymd[])
+        {
+            Long last = getLastDay(ymd);
+            return last != null && ymd[2] <= last;
         }
     }
     
