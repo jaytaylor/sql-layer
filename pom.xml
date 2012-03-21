@@ -425,9 +425,9 @@
                     <phase>generate-sources</phase>
                     <configuration>
                         <tasks>
-                            <mkdir dir="target/generated-sources"/>
+                            <mkdir dir="target/generated-sources/protobuf"/>
                             <exec executable="protoc" failonerror="true">
-                                <arg value="--java_out=target/generated-sources"/>
+                                <arg value="--java_out=target/generated-sources/protobuf"/>
                                 <arg value="src/main/protobuf/akiban_information_schema.proto"/>
                             </exec>
                         </tasks>
