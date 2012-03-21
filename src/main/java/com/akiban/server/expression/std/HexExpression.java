@@ -44,7 +44,7 @@ public class HexExpression extends AbstractUnaryExpression
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
             if (ArithExpression.isNumeric(argumentTypes.get(0).getType()))
-                argumentTypes.setType(0, AkType.U_BIGINT);
+                argumentTypes.setType(0, AkType.LONG);
             else
                 argumentTypes.setType(0, AkType.VARCHAR);
             return ExpressionTypes.varchar(argumentTypes.get(0).getPrecision() * 2);
@@ -66,13 +66,13 @@ public class HexExpression extends AbstractUnaryExpression
             if (source.isNull())
                 return NullValueSource.only();
             
-            if (source.getConversionType() == AkType.U_BIGINT)
-                valueHolder().putString(source.getUBigInt().toString(16));
+            if (source.getConversionType() == AkType.LONG)
+                valueHolder().putString(Long.toHexString(source.getLong()).toUpperCase());
             else
             {
                 StringBuilder builder = new StringBuilder();
                 for (char ch : source.getString().toCharArray())
-                    builder.append(String.format("%02x", (int) ch));
+                    builder.append(String.format("%02X", (int) ch));
                 valueHolder().putString(builder.toString());
             }
             
