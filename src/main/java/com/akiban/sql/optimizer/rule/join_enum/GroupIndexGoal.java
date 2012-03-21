@@ -254,6 +254,25 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         index.setOrdering(orderBy);
     }
 
+    // TODO: When we support ordering for a MultiIndexIntersectScan,
+    // this will need to take its ordering and work out the
+    // implications for the components. Right now, Intersect_Ordered
+    // only does ascending.
+    private static void resetOrdering(IndexScan index) {
+        List<IndexColumn> indexColumns = index.getAllColumns();
+        List<OrderByExpression> orderBy = index.getOrdering();
+        if (orderBy != null) {
+            for (int i = 0; i < indexColumns.size(); i++) {
+                orderBy.get(i).setAscending(indexColumns.get(i).isAscending());
+            }        
+        }
+        if (index instanceof MultiIndexIntersectScan) {
+            MultiIndexIntersectScan multiIndex = (MultiIndexIntersectScan)index;
+            resetOrdering(multiIndex.getOutputIndexScan());
+            resetOrdering(multiIndex.getSelectorIndexScan());
+        }
+    }
+
     // Determine how well this index does against the target.
     // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness
@@ -862,6 +881,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         tables.setScan(scan);
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
+            if (indexScan instanceof MultiIndexIntersectScan) {
+                resetOrdering(indexScan);
+            }
             installConditions(indexScan, conditionSources);
             queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
         }
