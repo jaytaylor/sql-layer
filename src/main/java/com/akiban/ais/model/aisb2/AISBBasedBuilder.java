@@ -41,6 +41,10 @@ public class AISBBasedBuilder
         return new ActualBuilder().defaultSchema(defaultSchema);
     }
 
+    public static NewAISBuilder create(AkibanInformationSchema ais, String defaultSchema) {
+        return new ActualBuilder(ais).defaultSchema(defaultSchema);
+    }
+
     private static class ActualBuilder implements NewAISBuilder, NewUserTableBuilder, NewAkibanJoinBuilder {
 
         // NewAISProvider interface
@@ -99,7 +103,10 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {
-            return new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), defaultSchema).groupIndex(indexName, joinType);
+            ActualGroupIndexBuilder actual  = new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), defaultSchema);
+            actual.aisb.setTableIdOffset(aisb.getTableIdOffset());
+            actual.aisb.setIndexIdOffset(aisb.getIndexIdOffset());
+            return actual.groupIndex(indexName, joinType);
         }
 
         // NewuserTableBuilder interface
@@ -266,9 +273,16 @@ public class AISBBasedBuilder
         }
 
         // ActualBuilder interface
-
         public ActualBuilder() {
-            aisb = new AISBuilder();
+            this(new AISBuilder());
+        }
+
+        public ActualBuilder(AkibanInformationSchema ais) {
+            this(new AISBuilder(ais));
+        }
+
+        private ActualBuilder(AISBuilder builder) {
+            aisb = builder;
             usable = true;
             tablesToGroups = new HashMap<TableName, String>();
             nameGenerator = new DefaultNameGenerator();
