@@ -360,13 +360,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
         final Table table = getTable(session, tableName);
-        Collection<? extends Index> indexes;
+        Collection<Index> indexes = new HashSet<Index>();
         if (indexesToUpdate == null) {
-            indexes = table.getIndexes();
-            // TODO: Group indexes that include this table? That terminate with it?
+            indexes.addAll(table.getIndexes());
+            for (Index index : table.getGroup().getIndexes()) {
+                if (table == index.leafMostTable())
+                    indexes.add(index);
+            }
         }
         else {
-            Set<Index> namedIndexes = new HashSet<Index>();
             for (String indexName : indexesToUpdate) {
                 Index index = table.getIndex(indexName);
                 if (index == null) {
@@ -374,9 +376,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if (index == null)
                         throw new NoSuchIndexException(indexName);
                 }
-                namedIndexes.add(index);
+                indexes.add(index);
             }
-            indexes = namedIndexes;
         }
         indexStatisticsService.updateIndexStatistics(session, indexes);
     }

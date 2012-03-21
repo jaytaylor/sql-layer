@@ -119,12 +119,6 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
         assertNotNull("parent name was analyzed", parentNameCount);
         assertEquals("parent name two entries", 2, parentNameCount.intValue());
         GroupIndex bothValue = ais.getGroup("parent").getIndex("value");
-        assertNull("group index not analyzed", entries.get(bothValue));
-        
-        executeStatement.executeUpdate("ALTER TABLE parent UPDATE STATISTICS value");
-        entries = check();
-        ais = ddl().getAIS(session());
-        bothValue = ais.getGroup("parent").getIndex("value");
         Integer bothValueCount = entries.get(bothValue);
         assertNotNull("group index was analyzed", bothValueCount);
         assertEquals("group index two entries", 4, bothValueCount.intValue());
