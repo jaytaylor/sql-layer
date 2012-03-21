@@ -40,6 +40,11 @@ public class CharsetAndCollation
     {
         return collation;
     }
+    
+    @Override
+    public String toString() {
+        return key(charset, collation);
+    }
 
     private CharsetAndCollation(String charset, String collation)
     {
