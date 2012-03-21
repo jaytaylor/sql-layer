@@ -146,7 +146,7 @@ public abstract class Index implements Traversable
     {
         return valueColumns;
     }
-    
+
     /**
      * Return all columns that make up the physical index key (declared and not).
      * @return list of columns
