@@ -22,6 +22,7 @@ public interface NameGenerator
     String generateColumnName(Column column);
     String generateGroupIndexName(TableIndex userTableIndex);
     String generateGroupName (UserTable userTable);
+    String generateGroupName (String tableName);
     String generateGroupTableName (String groupName);
     String generateIndexName (String indexName, String columnName, String constraint);
     String generateJoinName (TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
