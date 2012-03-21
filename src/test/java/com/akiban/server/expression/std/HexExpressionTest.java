@@ -26,7 +26,6 @@ import static com.akiban.server.expression.std.ExprUtil.*;
 @RunWith(NamedParameterizedRunner.class)
 public class HexExpressionTest
 {
-    String 
     @Test
     public void test()
     {
