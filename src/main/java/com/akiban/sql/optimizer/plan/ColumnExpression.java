@@ -94,6 +94,10 @@ public class ColumnExpression extends BaseExpression
         }
         equivalenceFinder.markEquivalent(this, other);
     }
+    
+    public EquivalenceFinder<ColumnExpression> tryGetEquivalenceFinder() {
+        return equivalenceFinder;
+    }
 
     public EquivalenceFinder<ColumnExpression> getEquivalenceFinder() {
         if (equivalenceFinder == null)

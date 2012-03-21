@@ -19,7 +19,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
-import java.util.Collection;
 import java.util.List;
 
 public final class SingleIndexScan extends IndexScan {
@@ -85,21 +84,14 @@ public final class SingleIndexScan extends IndexScan {
         // Note! Really what we want are the *leading* equalities. But this method is only
         // used in the context of MultiIndexEnumerator, which will only put in leading
         // equalities.
-        return getEqualityComparands().size();
+        List<ExpressionNode> equalityComparands = getEqualityComparands();
+        return (equalityComparands == null) ? 0 : equalityComparands.size();
     }
 
     @Override
-    public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,
-                                           Collection<? super ConditionExpression> removeTo) {
-
-        boolean removedAny = false;
-        for (ConditionExpression cond : getConditions()) {
-            if(conditions.remove(cond)) {
-                removeTo.add(cond);
-                removedAny = true;
-            }
-        }
-        return removedAny;
+    public void removeCoveredConditions(ConditionsStack<ConditionExpression> stack) {
+        for (ConditionExpression cond : getConditions())
+            stack.removeCondition(cond);
     }
 
     @Override

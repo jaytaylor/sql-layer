@@ -1,9 +1,0 @@
-!!com.akiban.sql.optimizer.MultiIndexEnumeratorTest$TestCase
-usingIndexes:
-    - addresses.streetkey
-conditionsOn:
-    - (1) addresses.street
-    - (2) addresses.street
-results:
-    - INTERSECT( [1.STREET, cid, id] AND [2.STREET, cid, id] with 2 comparisons)
-    - INTERSECT( [2.STREET, cid, id] AND [1.STREET, cid, id] with 2 comparisons)
