@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
 
 import java.util.List;
 
@@ -89,9 +90,18 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public void removeCoveredConditions(ConditionsStack<ConditionExpression> stack) {
+    public void incrementConditionsCounter(ConditionsCounter<? super ConditionExpression> counter) {
         for (ConditionExpression cond : getConditions())
-            stack.removeCondition(cond);
+            counter.increment(cond);
+    }
+
+    @Override
+    public boolean isUseful(ConditionsCount<? super ConditionExpression> count) {
+        for (ConditionExpression cond : getConditions()) {
+            if (count.getCount(cond) == HowMany.ONE)
+                return true;
+        }
+        return false;
     }
 
     @Override

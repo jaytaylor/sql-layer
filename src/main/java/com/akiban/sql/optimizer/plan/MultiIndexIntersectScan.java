@@ -18,6 +18,8 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 public final class MultiIndexIntersectScan extends IndexScan {
@@ -70,8 +72,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
         return coveringConditions;
     }
     
-    public void setGroupConditions(List<ConditionExpression> coveringConditions) {
-        this.coveringConditions = coveringConditions;
+    public void setGroupConditions(Collection<ConditionExpression> coveringConditions) {
+        this.coveringConditions = new ArrayList<ConditionExpression>(coveringConditions);
     }
 
     @Override
@@ -100,9 +102,14 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public void removeCoveredConditions(ConditionsStack<ConditionExpression> stack) {
-        outputScan.removeCoveredConditions(stack);
-        selectorScan.removeCoveredConditions(stack);
+    public void incrementConditionsCounter(ConditionsCounter<? super ConditionExpression> counter) {
+        outputScan.incrementConditionsCounter(counter);
+        selectorScan.incrementConditionsCounter(counter);
+    }
+
+    @Override
+    public boolean isUseful(ConditionsCount<? super ConditionExpression> count) {
+        return outputScan.isUseful(count) && selectorScan.isUseful(count);
     }
 
     @Override
