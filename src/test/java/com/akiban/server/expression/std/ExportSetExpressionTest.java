@@ -27,7 +27,6 @@ import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import java.util.Arrays;
 import java.util.List;
@@ -57,12 +56,32 @@ public class ExportSetExpressionTest extends ComposedExpressionTestBase
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
         
-        param(pb, false, "0,0,0,0,0,0,1,0,0,0", lit(64L), lit("1"), lit("0"), lit(","),lit(10L));
-        param(pb, false, "0000001000", lit(64L), lit("1"), lit("0"), lit(""),lit(10L));
-        param(pb, false, "OFF-OFF-OFF-OFF-OFF-OFF-ON-OFF-OFF-OFF", lit(64L), lit("ON"), lit("OFF"), lit("-"), lit(10L));
-        param(pb, false, "ON-ON-ON-ON-ON-ON-OFF-ON-ON-ON", lit(64L), lit("OFF"), lit("ON"), lit("-"), lit(10L));
-        param(pb, false, "1,1,1,1,1,1,1,1,1,1", lit(-1L), lit("1"), lit("0"), lit(","), lit(10L));
-        param(pb, false, "0,0,0,0,0,0,1,0,0,0", lit(64L), lit("1"), lit("0"), lit(","), lit(10L));
+        // test 5 args
+        param(pb, false, "0,0,0,0,0,0,1,0,0,0", 
+                lit(64L), lit("1"), lit("0"), lit(","),lit(10L));
+        
+        param(pb, false, "0000001000", 
+                lit(64L), lit("1"), lit("0"), lit(""),lit(10L));
+        
+        param(pb, false, "OFF-OFF-OFF-OFF-OFF-OFF-ON-OFF-OFF-OFF", 
+                lit(64L), lit("ON"), lit("OFF"), lit("-"), lit(10L));
+        
+        param(pb, false, "ON-ON-ON-ON-ON-ON-OFF-ON-ON-ON", 
+                lit(64L), lit("OFF"), lit("ON"), lit("-"), lit(10L));
+      
+        // test 4 args
+        param(pb, false, "N-N-N-N-N-Y-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N",
+                lit(32L), lit("Y"), lit("N"), lit("-"));
+        param(pb, false, "-_-_--__________________________________________________________",
+                lit(53L), lit("-"), lit("_"), lit(""));
+        
+        // test 3 args
+        param(pb, false, "A,A,B,A,A,A,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B",
+                lit(59L), lit("A"), lit("B"));
+        
+        // test negative value
+        param(pb, false, "1,1,1,1,1,1,1,1,1,1", 
+                lit(-1L), lit("1"), lit("0"), lit(","), lit(10L));
        
         // test upper limit
         param(pb, false, "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1",
