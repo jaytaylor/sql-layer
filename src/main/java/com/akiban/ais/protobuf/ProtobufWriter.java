@@ -24,6 +24,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 
 import com.akiban.ais.model.UserTable;
@@ -145,10 +146,9 @@ public class ProtobufWriter {
                 setRootTableName(rootTable.getName().getTableName()).
                 setTreeName(rootTable.getTreeName());
 
-        // Proto IndexColumn needs generalized
-        //for(Index index : group.getIndexes()) {
-        //    writeIndex(index, );
-        //}
+        for(Index index : group.getIndexes()) {
+            writeGroupIndex(groupBuilder, index);
+        }
 
         schemaBuilder.addGroups(groupBuilder.build());
     }
@@ -166,7 +166,7 @@ public class ProtobufWriter {
         }
 
         for(Index index : table.getIndexes()) {
-            writeIndex(tableBuilder, index);
+            writeTableIndex(tableBuilder, index);
         }
 
         Join join = table.getParentJoin();
@@ -186,6 +186,8 @@ public class ProtobufWriter {
                         setPosition(position++).
                         build());
             }
+
+            tableBuilder.setParentTable(joinBuilder.build());
         }
 
         schemaBuilder.addTables(tableBuilder.build());
@@ -213,7 +215,7 @@ public class ProtobufWriter {
         tableBuilder.addColumns(columnBuilder.build());
     }
 
-    private static void writeIndex(AISProtobuf.Table.Builder tableBuilder, Index index) {
+    private static AISProtobuf.Index writeIndexCommon(Index index, boolean withTableName) {
         final IndexName indexName = index.getIndexName();
         AISProtobuf.Index.Builder indexBuilder = AISProtobuf.Index.newBuilder();
         indexBuilder.
@@ -227,17 +229,35 @@ public class ProtobufWriter {
                 // Not yet in AIS: description
 
         for(IndexColumn indexColumn : index.getKeyColumns()) {
-            writeIndexColumn(indexBuilder, indexColumn);
+            writeIndexColumn(indexBuilder, indexColumn, withTableName);
         }
 
-        tableBuilder.addIndexes(indexBuilder.build());
+        return indexBuilder.build();
     }
 
-    private static void writeIndexColumn(AISProtobuf.Index.Builder indexBuilder, IndexColumn indexColumn) {
+    private static void writeTableIndex(AISProtobuf.Table.Builder tableBuilder, Index index) {
+        tableBuilder.addIndexes(writeIndexCommon(index, false));
+    }
+
+    private static void writeGroupIndex(AISProtobuf.Group.Builder tableBuilder, Index index) {
+        tableBuilder.addIndexes(writeIndexCommon(index, true));
+    }
+
+    private static void writeIndexColumn(AISProtobuf.Index.Builder indexBuilder, IndexColumn indexColumn, boolean withTableName) {
         AISProtobuf.IndexColumn.Builder indexColumnBuilder = AISProtobuf.IndexColumn.newBuilder().
                 setColumnName(indexColumn.getColumn().getName()).
                 setIsAscending(indexColumn.isAscending()).
                 setPosition(indexColumn.getPosition());
+        
+        if(withTableName) {
+            TableName tableName = indexColumn.getColumn().getTable().getName();
+            indexColumnBuilder.setTableName(
+                    AISProtobuf.TableName.newBuilder().
+                            setSchemaName(tableName.getSchemaName()).
+                            setTableName(tableName.getTableName()).
+                            build()
+            );
+        }
 
         indexBuilder.addColumns(indexColumnBuilder.build());
     }

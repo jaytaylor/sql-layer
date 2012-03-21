@@ -20,48 +20,48 @@ import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
-import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.Descriptors;
 
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class ProtobufReader {
     private final ByteBuffer buffer;
+    private final AkibanInformationSchema destAIS;
     private AISProtobuf.AkibanInformationSchema pbAIS;
+    private Map<TableName,Group> rootToGroupMap = new HashMap<TableName,Group>();
     
     public ProtobufReader(ByteBuffer buffer) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
+        this.destAIS = new AkibanInformationSchema();
     }
     
     public AkibanInformationSchema load()
     {
-        return load(new AkibanInformationSchema());
-    }
-
-    public AkibanInformationSchema load(AkibanInformationSchema ais)
-    {
         loadFromBuffer();
         // All fields (currently types, schemas) are optional
-        loadTypes(ais, pbAIS.getTypesList());
-        loadSchemas(ais, pbAIS.getSchemasList());
-        return ais;
-    }
-
-    AISProtobuf.AkibanInformationSchema getProtobufAIS() {
-        return pbAIS;
+        loadTypes(pbAIS.getTypesList());
+        loadSchemas(pbAIS.getSchemasList());
+        return destAIS;
     }
     
     private void loadFromBuffer() {
@@ -77,11 +77,11 @@ public class ProtobufReader {
         }
     }
     
-    private static void loadTypes(AkibanInformationSchema ais, Collection<AISProtobuf.Type> pbTypes) {
+    private void loadTypes(Collection<AISProtobuf.Type> pbTypes) {
         for(AISProtobuf.Type pbType : pbTypes) {
             hasRequiredFields(pbType);
             Type.create(
-                    ais,
+                    destAIS,
                     pbType.getTypeName(),
                     pbType.getParameters(),
                     pbType.getFixedSize(),
@@ -92,35 +92,89 @@ public class ProtobufReader {
         }
     }
 
-    private static void loadSchemas(AkibanInformationSchema ais, Collection<AISProtobuf.Schema> pbSchemas) {
+    private void loadSchemas(Collection<AISProtobuf.Schema> pbSchemas) {
+        List<List<NewGroupInfo>> allNewGroups = new ArrayList<List<NewGroupInfo>>();
+
+        // Assume no ordering, create groups after all tables exist
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             hasRequiredFields(pbSchema);
-            String schemaName = pbSchema.getSchemaName();
-            loadTables(ais, schemaName, pbSchema.getTablesList());
-            loadGroups(ais, schemaName, pbSchema.getGroupsList());
+            List<NewGroupInfo> newGroups = loadGroups(pbSchema.getSchemaName(), pbSchema.getGroupsList());
+            allNewGroups.add(newGroups);
+        }
+
+        for(AISProtobuf.Schema pbSchema : pbSchemas) {
+            loadTables( pbSchema.getSchemaName(), pbSchema.getTablesList());
+        }
+        
+        for(List<NewGroupInfo> newGroups : allNewGroups) {
+            createGroupTablesAndIndexes(newGroups);
         }
     }
     
-    private static void loadGroups(AkibanInformationSchema ais, String schema, Collection<AISProtobuf.Group> pbGroups) {
-        DefaultNameGenerator nameGenerator = new DefaultNameGenerator();
+    private List<NewGroupInfo> loadGroups(String schema, Collection<AISProtobuf.Group> pbGroups) {
+        List<NewGroupInfo> newGroups = new ArrayList<NewGroupInfo>();
         for(AISProtobuf.Group pbGroup : pbGroups) {
             hasRequiredFields(pbGroup);
             String rootTableName = pbGroup.getRootTableName();
-            Group group = Group.create(ais, nameGenerator.generateGroupName(rootTableName));
-            UserTable userTable = ais.getUserTable(schema, rootTableName);
-            userTable.setTreeName(pbGroup.getTreeName());
-            userTable.setGroup(group);
+            Group group = Group.create(destAIS, rootTableName);
+            newGroups.add(new NewGroupInfo(schema, group, pbGroup));
+            
+            rootToGroupMap.put(TableName.create(schema, rootTableName), group);
+        }
+        return newGroups;
+    }
+
+    private void createGroupTablesAndIndexes(List<NewGroupInfo> newGroups) {
+        int maxTableId = 1;
+        for(Table table : destAIS.getUserTables().values()) {
+            maxTableId = Math.max(maxTableId, table.getTableId());
+        }
+        for(Table table : destAIS.getGroupTables().values()) {
+            maxTableId = Math.max(maxTableId, table.getTableId());
+        }
+
+        List<Join> joinsNeedingGroup = new ArrayList<Join>();
+        
+        DefaultNameGenerator nameGenerator = new DefaultNameGenerator();
+        for(NewGroupInfo newGroupInfo : newGroups) {
+            String rootTableName = newGroupInfo.pbGroup.getRootTableName();
+            UserTable rootUserTable = destAIS.getUserTable(newGroupInfo.schema, rootTableName);
+            rootUserTable.setTreeName(newGroupInfo.pbGroup.getTreeName());
+            rootUserTable.setGroup(newGroupInfo.group);
+            joinsNeedingGroup.addAll(rootUserTable.getCandidateChildJoins());
+
+            GroupTable groupTable = GroupTable.create(
+                    destAIS,
+                    newGroupInfo.schema,
+                    nameGenerator.generateGroupTableName(rootTableName),
+                    ++maxTableId
+            );
+            newGroupInfo.group.setGroupTable(groupTable);
+        }
+        
+        for(int i = 0; i < joinsNeedingGroup.size(); ++i) {
+            Join join = joinsNeedingGroup.get(i);
+            Group group = join.getParent().getGroup();
+            join.setGroup(group);
+            join.getChild().setGroup(group);
+            joinsNeedingGroup.addAll(join.getChild().getCandidateChildJoins());
+        }
+
+        // Final pass (GI creation requires everything else be created)
+        for(NewGroupInfo newGroupInfo : newGroups) {
+            loadGroupIndexes(newGroupInfo.group, newGroupInfo.pbGroup.getIndexesList());
         }
     }
-    
-    private static void loadTables(AkibanInformationSchema ais, String schema, Collection<AISProtobuf.Table> pbTables) {
+
+    private void loadTables(String schema, Collection<AISProtobuf.Table> pbTables) {
         for(AISProtobuf.Table pbTable : pbTables) {
             hasRequiredFields(pbTable);
-            UserTable userTable = UserTable.create(ais, schema, pbTable.getTableName(), pbTable.getTableId());
+            UserTable userTable = UserTable.create(destAIS, schema, pbTable.getTableName(), pbTable.getTableId());
             userTable.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
             loadColumns(userTable, pbTable.getColumnsList());
-            loadIndexes(userTable, pbTable.getIndexesList());
+            loadTableIndexes(userTable, pbTable.getIndexesList());
         }
+
         // Assume no ordering of table list, load joins second
         for(AISProtobuf.Table pbTable : pbTables) {
             if(pbTable.hasParentTable()) {
@@ -128,11 +182,11 @@ public class ProtobufReader {
                 hasRequiredFields(pbJoin);
                 AISProtobuf.TableName pbParentName = pbJoin.getParentTable();
                 hasRequiredFields(pbParentName);
-                UserTable parentTable = ais.getUserTable(pbParentName.getSchemaName(), pbParentName.getTableName());
-                UserTable childTable = ais.getUserTable(schema, pbTable.getTableName());
+                UserTable parentTable = destAIS.getUserTable(pbParentName.getSchemaName(), pbParentName.getTableName());
+                UserTable childTable = destAIS.getUserTable(schema, pbTable.getTableName());
 
                 String joinName = parentTable.getName() + "/" + childTable.getName();
-                Join join = Join.create(ais, joinName, parentTable, childTable);
+                Join join = Join.create(destAIS, joinName, parentTable, childTable);
                 for(AISProtobuf.JoinColumn pbJoinColumn : pbJoin.getColumnsList()) {
                     hasRequiredFields(pbJoinColumn);
                     JoinColumn.create(
@@ -145,62 +199,70 @@ public class ProtobufReader {
         }
     }
     
-    private static void loadColumns(UserTable userTable, Collection<AISProtobuf.Column> pbColumns) {
+    private void loadColumns(UserTable userTable, Collection<AISProtobuf.Column> pbColumns) {
         for(AISProtobuf.Column pbColumn : pbColumns) {
             hasRequiredFields(pbColumn);
-            Type type = userTable.getAIS().getType(pbColumn.getTypeName());
+            Type type = destAIS.getType(pbColumn.getTypeName());
             Column.create(
                     userTable,
                     pbColumn.getColumnName(),
                     pbColumn.getPosition(),
                     type,
                     pbColumn.getIsNullable(),
-                    getOptionalField(Long.class, pbColumn, AISProtobuf.Column.TYPEPARAM1_FIELD_NUMBER),
-                    getOptionalField(Long.class, pbColumn, AISProtobuf.Column.TYPEPARAM2_FIELD_NUMBER),
-                    getOptionalField(Long.class, pbColumn, AISProtobuf.Column.INITAUTOINC_FIELD_NUMBER),
+                    pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
+                    pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
+                    pbColumn.hasInitAutoInc() ? pbColumn.getInitAutoInc() : null,
                     getCharColl(pbColumn.hasCharColl(), pbColumn.getCharColl())
             );
         }
     }
     
-    private static void loadIndexes(UserTable userTable, Collection<AISProtobuf.Index> pbIndexes) {
+    private void loadTableIndexes(UserTable userTable, Collection<AISProtobuf.Index> pbIndexes) {
         for(AISProtobuf.Index pbIndex : pbIndexes) {
             hasRequiredFields(pbIndex);
             TableIndex tableIndex = TableIndex.create(
-                    userTable.getAIS(),
+                    destAIS,
                     userTable,
                     pbIndex.getIndexName(),
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex)
             );
-            loadIndexColumns(tableIndex, pbIndex.getColumnsList());
+            loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
         }
     }
 
-    private static void loadIndexColumns(TableIndex index, Collection<AISProtobuf.IndexColumn> pbIndexColumns) {
+    private void loadGroupIndexes(Group group, Collection<AISProtobuf.Index> pbIndexes) {
+        for(AISProtobuf.Index pbIndex : pbIndexes) {
+            hasRequiredFieldsGI(pbIndex);
+            GroupIndex groupIndex = GroupIndex.create(
+                    destAIS,
+                    group,
+                    pbIndex.getIndexName(),
+                    pbIndex.getIndexId(),
+                    pbIndex.getIsUnique(),
+                    getIndexConstraint(pbIndex),
+                    getJoinType(pbIndex.hasJoinType(), pbIndex.getJoinType())
+            );
+            loadIndexColumns(null, groupIndex, pbIndex.getColumnsList());
+        }
+    }
+
+    private void loadIndexColumns(UserTable table, Index index, Collection<AISProtobuf.IndexColumn> pbIndexColumns) {
         for(AISProtobuf.IndexColumn pbIndexColumn : pbIndexColumns) {
             hasRequiredFields(pbIndexColumn);
+            if(pbIndexColumn.hasTableName()) {
+                hasRequiredFields(pbIndexColumn.getTableName());
+                table = destAIS.getUserTable(getTableName(true, pbIndexColumn.getTableName()));
+            }
             IndexColumn.create(
                     index,
-                    index.getTable().getColumn(pbIndexColumn.getColumnName()),
+                    table != null ? table.getColumn(pbIndexColumn.getColumnName()) : null,
                     pbIndexColumn.getPosition(),
                     pbIndexColumn.getIsAscending(),
-                    null /* indexedLength, not in proto */
+                    null /* indexedLength not in proto */
             );
         }
-    }
-
-    private static <T> T getOptionalField(Class<T> clazz, AbstractMessage message, int fieldNumber) {
-        Descriptors.FieldDescriptor field = message.getDescriptorForType().findFieldByNumber(fieldNumber);
-        if(message.hasField(field)) {
-            Object obj = message.getField(field);
-            if(!obj.getClass().equals(clazz)) {
-                throw new IllegalArgumentException("Unexpected class: " + clazz + " vs " + obj.getClass());
-            }
-            return clazz.cast(obj);
-        }
-        return null;
     }
 
     private static String getIndexConstraint(AISProtobuf.Index pbIndex) {
@@ -221,6 +283,24 @@ public class ProtobufReader {
             hasRequiredFields(pbCharAndCol);
             return CharsetAndCollation.intern(pbCharAndCol.getCharacterSetName(),
                                               pbCharAndCol.getCollationOrderName());
+        }
+        return null;
+    }
+
+    private static Index.JoinType getJoinType(boolean isValid, AISProtobuf.JoinType joinType) {
+        if(isValid) {
+            switch(joinType) {
+                case LEFT_OUTER_JOIN: return Index.JoinType.LEFT;
+                case RIGHT_OUTER_JOIN: return Index.JoinType.RIGHT;
+            }
+        }
+        return null;
+    }
+    
+    private static TableName getTableName(boolean isValid, AISProtobuf.TableName tableName) {
+        if(isValid) {
+            hasRequiredFields(tableName);
+            return new TableName(tableName.getSchemaName(), tableName.getTableName());
         }
         return null;
     }
@@ -279,6 +359,21 @@ public class ProtobufReader {
         );
     }
 
+    private static void hasRequiredFieldsGI(AISProtobuf.Index pbIndex) {
+        checkRequiredFields(
+                pbIndex,
+                AISProtobuf.Index.TREENAME_FIELD_NUMBER,
+                AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.IndexColumn pbIndexColumn) {
+        checkRequiredFields(
+                pbIndexColumn,
+                AISProtobuf.IndexColumn.TABLENAME_FIELD_NUMBER
+        );
+    }
+
     private static void checkRequiredFields(AbstractMessage message, int... descriptorsNotRequired) {
         Collection<Descriptors.FieldDescriptor> required = new ArrayList<Descriptors.FieldDescriptor>(message.getDescriptorForType().getFields());
         Collection<Descriptors.FieldDescriptor> actual = message.getAllFields().keySet();
@@ -294,6 +389,18 @@ public class ProtobufReader {
                 names.add(desc.getFullName());
             }
             throw new IllegalStateException("Missing required fields: " + names);
+        }
+    }
+    
+    private static class NewGroupInfo {
+        final String schema;
+        final Group group;
+        final AISProtobuf.Group pbGroup;
+
+        public NewGroupInfo(String schema, Group group, AISProtobuf.Group pbGroup) {
+            this.schema = schema;
+            this.group = group;
+            this.pbGroup = pbGroup;
         }
     }
 }

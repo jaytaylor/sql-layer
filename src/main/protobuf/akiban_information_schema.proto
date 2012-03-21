@@ -48,9 +48,11 @@ message Join {
 }
 
 message IndexColumn {
-    optional string columnName  = 1;  // links to Column.columnName 
-    optional bool   isAscending = 2;  // sort order of the column
-    optional int32  position    = 3;  // order of the column in the index
+    optional string    columnName  = 1;  // links to Column.columnName 
+    optional bool      isAscending = 2;  // sort order of the column
+    optional int32     position    = 3;  // order of the column in the index
+    optional TableName tableName   = 4;  // can be set to override owner name,
+                                         // GroupIndex has columns from multiple
 }
 
 message Index {
