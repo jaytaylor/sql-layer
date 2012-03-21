@@ -69,7 +69,7 @@ public class RulesContext
             }
             catch (RuntimeException e) {
                 if (debug) {
-                    String msg = "error while applying " + plan.getClass() + " to " + plan.getPlan();
+                    String msg = "error while applying " + rule.getName() + " to " + plan.getPlan();
                     logger.debug(msg, e);
                 }
                 throw e;
