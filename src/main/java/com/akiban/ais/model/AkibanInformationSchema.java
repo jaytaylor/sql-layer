@@ -33,10 +33,15 @@ public class AkibanInformationSchema implements Traversable
 {
     public AkibanInformationSchema()
     {
+        this(DEFAULT_CHARSET, DEFAULT_COLLATION);
+    }
+    
+    public AkibanInformationSchema(String charset, String collation)
+    {
         for (Type type : Types.types()) {
             addType(type);
         }
-        charsetAndCollation = CharsetAndCollation.intern(DEFAULT_CHARSET, DEFAULT_COLLATION);
+        charsetAndCollation = CharsetAndCollation.intern(charset, collation);
     }
 
     public AkibanInformationSchema(AkibanInformationSchema ais)
