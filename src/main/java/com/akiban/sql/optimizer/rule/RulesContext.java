@@ -67,6 +67,13 @@ public class RulesContext
             try {
                 rule.apply(plan);
             }
+            catch (RuntimeException e) {
+                if (debug) {
+                    String msg = "error while applying " + rule.getName() + " to " + plan.getPlan();
+                    logger.debug(msg, e);
+                }
+                throw e;
+            }
             finally {
                 endRule(rule);
             }
