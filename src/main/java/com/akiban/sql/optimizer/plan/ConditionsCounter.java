@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
-public final class ConditionsCounter<C> {
+public final class ConditionsCounter<C> implements ConditionsCount<C> {
     public void clear() {
         counter.clear();
     }
@@ -33,24 +33,31 @@ public final class ConditionsCounter<C> {
     }
     
     public void increment(C condition) {
-        Boolean prev = counter.get(condition);
-        if (prev == ZERO)
-            counter.put(condition, ONE);
-        else if (prev == ONE)
-            counter.put(condition, MANY);
+        HowMany howMany = getCount(condition);
+        switch (howMany) {
+        case NONE:
+            counter.put(condition, HowMany.ONE);
+            break;
+        case ONE:
+            counter.put(condition, HowMany.MANY);
+            break;
+        case MANY:
+            break;
+        default:
+            throw new AssertionError(howMany.name());
+        }
     }
-    
-    public boolean exactlyOne(C condition) {
-        return ONE.equals(counter.get(condition));
+
+    @Override
+    public HowMany getCount(C condition) {
+        HowMany internalCount = counter.get(condition);
+        return internalCount == null ? HowMany.NONE : internalCount;
     }
 
     public ConditionsCounter(int capacity) {
-        counter = new HashMap<C, Boolean>(capacity);
+        counter = new HashMap<C, HowMany>(capacity);
     }
 
     // mapping of C -> [0, 1, >1 ]
-    private Map<C,Boolean> counter;
-    private static final Boolean ZERO = null; // must be null, since it's what Map.get returns when there's no mapping
-    private static final Boolean ONE = Boolean.TRUE;
-    private static final Boolean MANY = Boolean.FALSE;
+    private Map<C,HowMany> counter;
 }

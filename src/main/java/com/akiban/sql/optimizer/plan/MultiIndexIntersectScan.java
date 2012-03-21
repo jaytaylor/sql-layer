@@ -108,8 +108,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public boolean isUseful(ConditionsCounter<? super ConditionExpression> counter) {
-        return outputScan.isUseful(counter) && selectorScan.isUseful(counter);
+    public boolean isUseful(ConditionsCount<? super ConditionExpression> count) {
+        return outputScan.isUseful(count) && selectorScan.isUseful(count);
     }
 
     @Override

@@ -55,7 +55,9 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
 
         // These are only used in advancePhase, but we cache them to save on allocations
         private List<N> previous = new ArrayList<N>();
-        private ConditionsCounter<C> conditionsCounter = new ConditionsCounter<C>(conditions.size());
+        private ConditionsCounter<C> outerCounter = new ConditionsCounter<C>(conditions.size());
+        private ConditionsCounter<C> innerCounter = new ConditionsCounter<C>(conditions.size());
+        private ConditionsCount<C> bothCount = new OverlayedConditionsCount<C>(outerCounter, innerCounter);
 
         private ComboIterator() {
             current.addAll(leaves);
@@ -97,31 +99,23 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
             previous.addAll(current);
             current.clear();
             int conditionsCount = conditions.size();
-            for (int outerI = 0, outerLen = previous.size(); outerI < outerLen; outerI++) {
-                N outer = previous.get(outerI);
-                outer.incrementConditionsCounter(conditionsCounter);
-                int counted = conditionsCounter.conditionsCounted();
+            for (N outer : previous) {
+                outer.incrementConditionsCounter(outerCounter);
+                int counted = outerCounter.conditionsCounted();
                 // only try the leaves if the outer counted some conditions, but not all of them.
                 if (counted > 0 && counted < conditionsCount) {
                     // at this point, "outer" satisfies some conditions, and more conditions are left
-                    for (int leavesI = 0, leavesLen = leaves.size(); leavesI < leavesLen; leavesI++) {
-                        N inner = leaves.get(leavesI);
+                    for (L inner : leaves) {
                         if (inner == outer)
                             continue; // fast path, we know there's full overlap
-                        inner.incrementConditionsCounter(conditionsCounter);
-                        if (inner.isUseful(conditionsCounter) && outer.isUseful(conditionsCounter)) {
+                        inner.incrementConditionsCounter(innerCounter);
+                        if (inner.isUseful(bothCount) && outer.isUseful(bothCount)) {
                             emit(outer, inner, current);
                         }
-                        // if this isn't the last inner N, reset the counter to what it was at the top of the loop
-                        if (leavesI < leavesLen) {
-                            conditionsCounter.clear();
-                            outer.incrementConditionsCounter(conditionsCounter);
-                        }
+                        innerCounter.clear();
                     }
                 }
-                if (outerI < outerLen) {
-                    conditionsCounter.clear();
-                }
+                outerCounter.clear();
             }
             if (current.isEmpty()) {
                 done = true;
