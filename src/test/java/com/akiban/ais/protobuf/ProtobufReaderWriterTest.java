@@ -62,8 +62,8 @@ public class ProtobufReaderWriterTest {
 
     @Test
     public void nonDefaultCharsetAndCollations() {
-        final AkibanInformationSchema inAIS = new AkibanInformationSchema("utf32", "utf32_polish_ci");
-        CAOIBuilderFiller.createAndFillBuilder(inAIS, "test").ais(false);
+        // AIS char/col not serialized (will be on Schema when that exists)
+        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder("test").ais(false);
         inAIS.getUserTable("test", CAOIBuilderFiller.ORDER_TABLE).
                 setCharsetAndCollation(CharsetAndCollation.intern("utf16", "utf16_slovak_ci"));
         inAIS.getUserTable("test", CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name").

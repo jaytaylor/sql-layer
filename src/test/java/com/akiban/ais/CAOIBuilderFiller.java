@@ -15,7 +15,6 @@
 
 package com.akiban.ais;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 
@@ -27,14 +26,8 @@ public class CAOIBuilderFiller {
     public final static String COMPONENT_TABLE = "component";
 
     public static NewAISBuilder createAndFillBuilder(String schema) {
-        return fillBuilder(AISBBasedBuilder.create(schema));
-    }
+        NewAISBuilder builder = AISBBasedBuilder.create(schema);
 
-    public static NewAISBuilder createAndFillBuilder(AkibanInformationSchema ais, String schema) {
-        return fillBuilder(AISBBasedBuilder.create(ais, schema));
-    }
-
-    private static NewAISBuilder fillBuilder(NewAISBuilder builder) {
         builder.userTable(CUSTOMER_TABLE).
                 colBigInt("customer_id", false).
                 colString("customer_name", 100, false).

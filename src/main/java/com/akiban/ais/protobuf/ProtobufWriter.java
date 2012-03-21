@@ -157,8 +157,9 @@ public class ProtobufWriter {
         AISProtobuf.Table.Builder tableBuilder = AISProtobuf.Table.newBuilder();
         tableBuilder.
                 setTableName(table.getName().getTableName()).
-                setTableId(table.getTableId());
-        // Not yet in AIS: ordinal, description, protected
+                setTableId(table.getTableId()).
+                setCharColl(makeCharCollation(table.getCharsetAndCollation()));
+                // Not yet in AIS: ordinal, description, protected
 
         for(Column column : table.getColumns()) {
             writeColumn(tableBuilder, column);
@@ -196,7 +197,8 @@ public class ProtobufWriter {
                 setColumnName(column.getName()).
                 setTypeName(column.getType().name()).
                 setIsNullable(column.getNullable()).
-                setPosition(column.getPosition());
+                setPosition(column.getPosition()).
+                setCharColl(makeCharCollation(column.getCharsetAndCollation()));
 
         if(column.getTypeParameter1() != null) {
             columnBuilder.setTypeParam1(column.getTypeParameter1());
@@ -207,15 +209,7 @@ public class ProtobufWriter {
         if(column.getInitialAutoIncrementValue() != null) {
             columnBuilder.setInitAutoInc(column.getInitialAutoIncrementValue());
         }
-
-        CharsetAndCollation charAndCol = column.getCharsetAndCollation();
-        if(charAndCol != null) {
-            columnBuilder.setCharColl(AISProtobuf.CharCollation.newBuilder().
-                    setCharacterSetName(charAndCol.charset()).
-                    setCollationOrderName(charAndCol.collation()).
-                    build());
-        }
-
+        
         tableBuilder.addColumns(columnBuilder.build());
     }
 
@@ -254,5 +248,15 @@ public class ProtobufWriter {
             case RIGHT: return AISProtobuf.JoinType.RIGHT_OUTER_JOIN;
         }
         throw new IllegalStateException("Unknown JoinType: " + joinType);
+    }
+
+    private static AISProtobuf.CharCollation makeCharCollation(CharsetAndCollation charAndColl) {
+        if(charAndColl == null) {
+            return null;
+        }
+        return AISProtobuf.CharCollation.newBuilder().
+                setCharacterSetName(charAndColl.charset()).
+                setCollationOrderName(charAndColl.collation()).
+                build();
     }
 }

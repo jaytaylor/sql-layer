@@ -41,10 +41,6 @@ public class AISBBasedBuilder
         return new ActualBuilder().defaultSchema(defaultSchema);
     }
 
-    public static NewAISBuilder create(AkibanInformationSchema ais, String defaultSchema) {
-        return new ActualBuilder(ais).defaultSchema(defaultSchema);
-    }
-
     private static class ActualBuilder implements NewAISBuilder, NewUserTableBuilder, NewAkibanJoinBuilder {
 
         // NewAISProvider interface
@@ -274,15 +270,7 @@ public class AISBBasedBuilder
 
         // ActualBuilder interface
         public ActualBuilder() {
-            this(new AISBuilder());
-        }
-
-        public ActualBuilder(AkibanInformationSchema ais) {
-            this(new AISBuilder(ais));
-        }
-
-        private ActualBuilder(AISBuilder builder) {
-            aisb = builder;
+            aisb = new AISBuilder();
             usable = true;
             tablesToGroups = new HashMap<TableName, String>();
             nameGenerator = new DefaultNameGenerator();
