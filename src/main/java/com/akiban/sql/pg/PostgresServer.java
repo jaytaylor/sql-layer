@@ -63,7 +63,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     // AIS-dependent state
     private final Object aisLock = new Object();
     private volatile long aisTimestamp = -1;
-    private volatile ServerStatementCache<PostgresStatement> statementCache;
+    private volatile int statementCacheCapacity;
+    private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
     private final Map<String, LoadablePlan<?>> loadablePlans = new HashMap<String, LoadablePlan<?>>();
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
@@ -80,9 +81,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             throw new InvalidPortException(port);
         
         String capacityString = properties.getProperty("statementCacheCapacity");
-        int statementCacheCapacity = Integer.parseInt(capacityString);
-        if (statementCacheCapacity > 0)
-            statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
+        statementCacheCapacity = Integer.parseInt(capacityString);
     }
 
     public Properties getProperties() {
@@ -200,7 +199,18 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return getConnection(pid).getRemoteAddress();
     }
 
-    public ServerStatementCache<PostgresStatement> getStatementCache() {
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
+        if (statementCacheCapacity <= 0) 
+            return null;
+
+        ServerStatementCache<PostgresStatement> statementCache;
+        synchronized (statementCaches) {
+            statementCache = statementCaches.get(key);
+            if (statementCache == null) {
+                statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
+                statementCaches.put(key, statementCache);
+            }
+        }
         return statementCache;
     }
 
@@ -209,9 +219,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     /** This is the version for use by connections. */
-    // TODO: This could create a new one if we didn't want to share them.
-    public ServerStatementCache<PostgresStatement> getStatementCache(long timestamp)
-    {
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
+        ServerStatementCache<PostgresStatement> statementCache = getStatementCache(key);
         synchronized (aisLock) {
             if (aisTimestamp != timestamp) {
                 assert aisTimestamp < timestamp : timestamp;
@@ -227,37 +236,42 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public int getStatementCacheCapacity() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getCapacity();
+        return statementCacheCapacity;
     }
 
     @Override
     public void setStatementCacheCapacity(int capacity) {
-        if (capacity <= 0) {
-            statementCache = null;
+        statementCacheCapacity = capacity;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                statementCache.setCapacity(capacity);
+            }
+            if (capacity <= 0) {
+                statementCaches.clear();
+            }
         }
-        else if (statementCache == null)
-            statementCache = new ServerStatementCache<PostgresStatement>(capacity);
-        else
-            statementCache.setCapacity(capacity);
     }
 
     @Override
     public int getStatementCacheHits() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getHits();
+        int total = 0;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                total += statementCache.getHits();
+            }        
+        }
+        return total;
     }
 
     @Override
     public int getStatementCacheMisses() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getMisses();
+        int total = 0;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                total += statementCache.getMisses();
+            }        
+        }
+        return total;
     }
     
     @Override
