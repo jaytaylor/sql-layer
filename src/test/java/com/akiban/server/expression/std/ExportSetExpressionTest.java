@@ -16,6 +16,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.junit.Parameterization;
+import com.akiban.server.expression.ExpressionComposer;
 import java.util.Collection;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import org.junit.runner.RunWith;
@@ -36,7 +37,7 @@ import static org.junit.Assert.*;
 import static com.akiban.server.expression.std.ExprUtil.*;
 
 @RunWith(NamedParameterizedRunner.class)
-public class ExportSetExpressionTest
+public class ExportSetExpressionTest extends ComposedExpressionTestBase
 {
     private static boolean alreadyExc = false;
     
@@ -73,9 +74,13 @@ public class ExportSetExpressionTest
         param(pb, false, null, lit(null), lit("1"), lit("0"), lit(","), lit(10L));
         param(pb, false, null, lit(2L), lit(null), lit("0"));
         
+        // test arity
         param(pb, true, null, lit(null));
+        param(pb, true, null, lit(null), lit(null), lit(null), lit(null), lit(null), lit(null));
+        
         return pb.asList();
     }
+    
     private static void param(ParameterizationBuilder pb, boolean error, String expected, Expression ... children)
     {
        pb.add("EXPORT_SET(" + children + ")" + expected, 
@@ -95,6 +100,7 @@ public class ExportSetExpressionTest
             assertEquals("EXPORT_SET(" + args + ") ",
                 expected,
                 top.evaluation().eval());
+        alreadyExc = true;
     }
     
     @OnlyIf("expectError()")
@@ -102,11 +108,29 @@ public class ExportSetExpressionTest
     public void testArity()
     {
         ExportSetExpression.COMPOSER.compose(args);
+        alreadyExc = true;
     }
     
     public boolean expectError ()
     {
         return expectException;
     }
-    
+
+    @Override
+    protected CompositionTestInfo getTestInfo()
+    {
+        return new CompositionTestInfo(3, AkType.NULL, true);
+    }
+
+    @Override
+    protected ExpressionComposer getComposer()
+    {
+        return ExportSetExpression.COMPOSER;
+    }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return alreadyExc;
+    }
 }
