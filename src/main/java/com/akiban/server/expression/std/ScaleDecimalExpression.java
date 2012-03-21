@@ -21,7 +21,6 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -74,16 +73,7 @@ public class ScaleDecimalExpression extends AbstractUnaryExpression
             return valueHolder();
         }
 
-        private ValueSource hold(BigDecimal value) {
-            if (holder == null) {
-                holder = new ValueHolder();
-            }
-            holder.putDecimal(value);
-            return holder;
-        }
-
         private final int precision, scale;
-        private final RoundingMode roundingMode;
-        private ValueHolder holder;
+        private final RoundingMode roundingMode;            
     }
 }
