@@ -31,6 +31,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.ProtobufReadException;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors;
@@ -39,26 +40,22 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 public class ProtobufReader {
     private final ByteBuffer buffer;
     private final AkibanInformationSchema destAIS;
     private AISProtobuf.AkibanInformationSchema pbAIS;
-    private Map<TableName,Group> rootToGroupMap = new HashMap<TableName,Group>();
-    
+
     public ProtobufReader(ByteBuffer buffer) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
         this.destAIS = new AkibanInformationSchema();
     }
     
-    public AkibanInformationSchema load()
-    {
+    public AkibanInformationSchema load() {
         loadFromBuffer();
-        // All fields (currently types, schemas) are optional
+        // AIS has two fields (types, schemas) and both are optional
         loadTypes(pbAIS.getTypesList());
         loadSchemas(pbAIS.getSchemasList());
         return destAIS;
@@ -67,13 +64,17 @@ public class ProtobufReader {
     private void loadFromBuffer() {
         final int serializedSize = buffer.getInt();
         final int initialPos = buffer.position();
-        CodedInputStream codedInput = CodedInputStream.newInstance(buffer.array(), buffer.position(), serializedSize);
+        final int bufferSize = buffer.limit() - initialPos;
+        CodedInputStream codedInput = CodedInputStream.newInstance(buffer.array(), buffer.position(), Math.min(serializedSize, bufferSize));
         try {
             pbAIS = AISProtobuf.AkibanInformationSchema.parseFrom(codedInput);
             // Successfully consumed, update byte buffer
             buffer.position(initialPos + serializedSize);
         } catch(IOException e) {
-            throw new RuntimeException(e);
+            throw new ProtobufReadException(
+                    AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName(),
+                    String.format("Required size exceeded actual size: %d vs %d", serializedSize, bufferSize)
+            );
         }
     }
     
@@ -118,8 +119,6 @@ public class ProtobufReader {
             String rootTableName = pbGroup.getRootTableName();
             Group group = Group.create(destAIS, rootTableName);
             newGroups.add(new NewGroupInfo(schema, group, pbGroup));
-            
-            rootToGroupMap.put(TableName.create(schema, rootTableName), group);
         }
         return newGroups;
     }
@@ -167,9 +166,15 @@ public class ProtobufReader {
     }
 
     private void loadTables(String schema, Collection<AISProtobuf.Table> pbTables) {
+        int generatedId = 1;
         for(AISProtobuf.Table pbTable : pbTables) {
             hasRequiredFields(pbTable);
-            UserTable userTable = UserTable.create(destAIS, schema, pbTable.getTableName(), pbTable.getTableId());
+            UserTable userTable = UserTable.create(
+                    destAIS,
+                    schema,
+                    pbTable.getTableName(),
+                    pbTable.hasTableId() ? pbTable.getTableId() : generatedId++
+            );
             userTable.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
             loadColumns(userTable, pbTable.getColumnsList());
             loadTableIndexes(userTable, pbTable.getIndexesList());
@@ -182,8 +187,17 @@ public class ProtobufReader {
                 hasRequiredFields(pbJoin);
                 AISProtobuf.TableName pbParentName = pbJoin.getParentTable();
                 hasRequiredFields(pbParentName);
-                UserTable parentTable = destAIS.getUserTable(pbParentName.getSchemaName(), pbParentName.getTableName());
                 UserTable childTable = destAIS.getUserTable(schema, pbTable.getTableName());
+                UserTable parentTable = destAIS.getUserTable(pbParentName.getSchemaName(), pbParentName.getTableName());
+
+                if(parentTable == null) {
+                    throw new ProtobufReadException(
+                            pbTable.getDescriptorForType().getFullName(),
+                            String.format("%s has unknown parentTable %s.%s", childTable.getName(),
+                                          pbParentName.getSchemaName(), pbParentName.getTableName())
+                    );
+                }
+
 
                 String joinName = parentTable.getName() + "/" + childTable.getName();
                 Join join = Join.create(destAIS, joinName, parentTable, childTable);
@@ -202,12 +216,11 @@ public class ProtobufReader {
     private void loadColumns(UserTable userTable, Collection<AISProtobuf.Column> pbColumns) {
         for(AISProtobuf.Column pbColumn : pbColumns) {
             hasRequiredFields(pbColumn);
-            Type type = destAIS.getType(pbColumn.getTypeName());
             Column.create(
                     userTable,
                     pbColumn.getColumnName(),
                     pbColumn.getPosition(),
-                    type,
+                    destAIS.getType(pbColumn.getTypeName()),
                     pbColumn.getIsNullable(),
                     pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
                     pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
@@ -242,7 +255,7 @@ public class ProtobufReader {
                     pbIndex.getIndexId(),
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex),
-                    getJoinType(pbIndex.hasJoinType(), pbIndex.getJoinType())
+                    convertJoinTypeOrNull(pbIndex.hasJoinType(), pbIndex.getJoinType())
             );
             loadIndexColumns(null, groupIndex, pbIndex.getColumnsList());
         }
@@ -253,7 +266,7 @@ public class ProtobufReader {
             hasRequiredFields(pbIndexColumn);
             if(pbIndexColumn.hasTableName()) {
                 hasRequiredFields(pbIndexColumn.getTableName());
-                table = destAIS.getUserTable(getTableName(true, pbIndexColumn.getTableName()));
+                table = destAIS.getUserTable(convertTableNameOrNull(true, pbIndexColumn.getTableName()));
             }
             IndexColumn.create(
                     index,
@@ -287,17 +300,19 @@ public class ProtobufReader {
         return null;
     }
 
-    private static Index.JoinType getJoinType(boolean isValid, AISProtobuf.JoinType joinType) {
+    private static Index.JoinType convertJoinTypeOrNull(boolean isValid, AISProtobuf.JoinType joinType) {
         if(isValid) {
             switch(joinType) {
                 case LEFT_OUTER_JOIN: return Index.JoinType.LEFT;
                 case RIGHT_OUTER_JOIN: return Index.JoinType.RIGHT;
             }
+            throw new ProtobufReadException(AISProtobuf.JoinType.getDescriptor().getFullName(),
+                                            "Unsupported join type: " + joinType.name());
         }
         return null;
     }
     
-    private static TableName getTableName(boolean isValid, AISProtobuf.TableName tableName) {
+    private static TableName convertTableNameOrNull(boolean isValid, AISProtobuf.TableName tableName) {
         if(isValid) {
             hasRequiredFields(tableName);
             return new TableName(tableName.getSchemaName(), tableName.getTableName());
@@ -305,7 +320,11 @@ public class ProtobufReader {
         return null;
     }
 
-    // Require all by default
+    /**
+     * Check that a given message instance has all (application) required fields.
+     * By default, this is all declared fields. See overloads for specific types.
+     * @param message Message to check
+     */
     private static void hasRequiredFields(AbstractMessage message) {
         checkRequiredFields(message);
     }
@@ -330,6 +349,7 @@ public class ProtobufReader {
     private static void hasRequiredFields(AISProtobuf.Table pbTable) {
         checkRequiredFields(
                 pbTable,
+                AISProtobuf.Table.TABLEID_FIELD_NUMBER,
                 AISProtobuf.Table.ORDINAL_FIELD_NUMBER,
                 AISProtobuf.Table.CHARCOLL_FIELD_NUMBER,
                 AISProtobuf.Table.INDEXES_FIELD_NUMBER,
@@ -374,21 +394,22 @@ public class ProtobufReader {
         );
     }
 
-    private static void checkRequiredFields(AbstractMessage message, int... descriptorsNotRequired) {
+    private static void checkRequiredFields(AbstractMessage message, int... fieldNumbersNotRequired) {
         Collection<Descriptors.FieldDescriptor> required = new ArrayList<Descriptors.FieldDescriptor>(message.getDescriptorForType().getFields());
         Collection<Descriptors.FieldDescriptor> actual = message.getAllFields().keySet();
         required.removeAll(actual);
-        if(descriptorsNotRequired != null) {
-            for(int descId : descriptorsNotRequired) {
-                required.remove(message.getDescriptorForType().findFieldByNumber(descId));
+        if(fieldNumbersNotRequired != null) {
+            for(int fieldNumber : fieldNumbersNotRequired) {
+                required.remove(message.getDescriptorForType().findFieldByNumber(fieldNumber));
             }
         }
         if(!required.isEmpty()) {
             Collection<String> names = new ArrayList<String>(required.size());
             for(Descriptors.FieldDescriptor desc : required) {
-                names.add(desc.getFullName());
+                names.add(desc.getName());
             }
-            throw new IllegalStateException("Missing required fields: " + names);
+            throw new ProtobufReadException(message.getDescriptorForType().getFullName(),
+                                            "Missing required fields: " + names.toString());
         }
     }
     

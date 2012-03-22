@@ -21,8 +21,11 @@ import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.server.error.ProtobufReadException;
+import com.akiban.server.error.ProtobufWriteException;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -32,6 +35,7 @@ import java.util.TreeSet;
 import static org.junit.Assert.assertEquals;
 
 public class ProtobufReaderWriterTest {
+    private final String SCHEMA = "test";
 
     @Test
     public void empty() {
@@ -43,14 +47,14 @@ public class ProtobufReaderWriterTest {
 
     @Test
     public void caoi() {
-        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder("test").ais();
+        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS);
     }
     
     @Test
     public void caoiWithGroupIndex() {
-        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder("test");
+        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder(SCHEMA);
         builder.groupIndex("iprice_odate", Index.JoinType.RIGHT).
                 on(CAOIBuilderFiller.ITEM_TABLE, "unit_price").
                 and(CAOIBuilderFiller.ORDER_TABLE, "order_date");
@@ -63,16 +67,45 @@ public class ProtobufReaderWriterTest {
     @Test
     public void nonDefaultCharsetAndCollations() {
         // AIS char/col not serialized (will be on Schema when that exists)
-        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder("test").ais(false);
-        inAIS.getUserTable("test", CAOIBuilderFiller.ORDER_TABLE).
+        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);
+        inAIS.getUserTable(SCHEMA, CAOIBuilderFiller.ORDER_TABLE).
                 setCharsetAndCollation(CharsetAndCollation.intern("utf16", "utf16_slovak_ci"));
-        inAIS.getUserTable("test", CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name").
+        inAIS.getUserTable(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE).getColumn("customer_name").
                 setCharsetAndCollation(CharsetAndCollation.intern("ujis", "ujis_japanese_ci"));
         inAIS.freeze();
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS);
     }
+
+    @Test(expected=ProtobufReadException.class)
+    public void missingRootTable() {
+        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);
+        inAIS.getUserTables().remove(TableName.create(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE));
+        writeAndRead(inAIS);
+    }
+
+    @Test(expected=ProtobufReadException.class)
+    public void readBufferTooSmall() {
+        ByteBuffer bb = ByteBuffer.allocate(4096);
+        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
+        ProtobufWriter writer = new ProtobufWriter(bb);
+        writer.save(inAIS);
+
+        bb.flip();
+        bb.limit(bb.limit() / 2);
+        ProtobufReader reader = new ProtobufReader(bb);
+        reader.load();
+    }
+
+    @Test(expected=ProtobufWriteException.class)
+    public void writeBufferTooSmall() {
+        ByteBuffer bb = ByteBuffer.allocate(10);
+        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
+        ProtobufWriter writer = new ProtobufWriter(bb);
+        writer.save(inAIS);
+    }
+
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         ByteBuffer bb = createByteBuffer();

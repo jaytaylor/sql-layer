@@ -28,11 +28,11 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.ProtobufWriteException;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.MessageLite;
 
 import java.io.IOException;
-import java.nio.BufferOverflowException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -40,16 +40,6 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class ProtobufWriter {
-    private static class Schema {
-        public final String name;
-        public final List<Group> groups = new ArrayList<Group>();
-        public final List<UserTable> userTables = new ArrayList<UserTable>();
-
-        public Schema(String name) {
-            this.name = name;
-        }
-    }
-
     private final ByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
     private Map<String,Schema> schemaMap = new TreeMap<String,Schema>();
@@ -87,10 +77,6 @@ public class ProtobufWriter {
         writeMessageLite(pbAIS);
     }
 
-    AISProtobuf.AkibanInformationSchema getProtobufAIS() {
-        return pbAIS;
-    }
-
     private Schema getSchemaFromName(String schemaName) {
         Schema schema = schemaMap.get(schemaName);
         if(schema == null) {
@@ -104,14 +90,18 @@ public class ProtobufWriter {
         final int serializedSize = msg.getSerializedSize();
         buffer.putInt(serializedSize);
         final int initialPos = buffer.position();
-        CodedOutputStream codedOutput = CodedOutputStream.newInstance(buffer.array(), initialPos, buffer.limit());
+        final int bufferSize = buffer.limit() - initialPos;
+        CodedOutputStream codedOutput = CodedOutputStream.newInstance(buffer.array(), initialPos, bufferSize);
         try {
             msg.writeTo(codedOutput);
             // Successfully written, update backing buffer info
             buffer.position(initialPos + serializedSize);
         } catch(IOException e) {
             // CodedOutputStream really only throws OutOfSpace exception, but declares IOE
-            throw new BufferOverflowException();
+            throw new ProtobufWriteException(
+                    AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName(),
+                    String.format("Required size exceeded available size: %d vs %d", serializedSize, bufferSize)
+            );
         }
     }
 
@@ -158,7 +148,7 @@ public class ProtobufWriter {
         tableBuilder.
                 setTableName(table.getName().getTableName()).
                 setTableId(table.getTableId()).
-                setCharColl(makeCharCollation(table.getCharsetAndCollation()));
+                setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
                 // Not yet in AIS: ordinal, description, protected
 
         for(Column column : table.getColumns()) {
@@ -194,13 +184,12 @@ public class ProtobufWriter {
     }
 
     private static void writeColumn(AISProtobuf.Table.Builder tableBuilder, Column column) {
-        AISProtobuf.Column.Builder columnBuilder = AISProtobuf.Column.newBuilder();
-        columnBuilder.
+        AISProtobuf.Column.Builder columnBuilder = AISProtobuf.Column.newBuilder().
                 setColumnName(column.getName()).
                 setTypeName(column.getType().name()).
                 setIsNullable(column.getNullable()).
                 setPosition(column.getPosition()).
-                setCharColl(makeCharCollation(column.getCharsetAndCollation()));
+                setCharColl(convertCharAndCol(column.getCharsetAndCollation()));
 
         if(column.getTypeParameter1() != null) {
             columnBuilder.setTypeParam1(column.getTypeParameter1());
@@ -225,7 +214,7 @@ public class ProtobufWriter {
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
-                setJoinType(getProtoJoinType(index.getJoinType()));
+                setJoinType(convertJoinType(index.getJoinType()));
                 // Not yet in AIS: description
 
         for(IndexColumn indexColumn : index.getKeyColumns()) {
@@ -262,15 +251,16 @@ public class ProtobufWriter {
         indexBuilder.addColumns(indexColumnBuilder.build());
     }
 
-    private static AISProtobuf.JoinType getProtoJoinType(Index.JoinType joinType) {
+    private static AISProtobuf.JoinType convertJoinType(Index.JoinType joinType) {
         switch(joinType) {
             case LEFT: return AISProtobuf.JoinType.LEFT_OUTER_JOIN;
             case RIGHT: return AISProtobuf.JoinType.RIGHT_OUTER_JOIN;
         }
-        throw new IllegalStateException("Unknown JoinType: " + joinType);
+        throw new ProtobufWriteException(AISProtobuf.Join.getDescriptor().getFullName(),
+                                         "No match for Index.JoinType "+joinType.name());
     }
 
-    private static AISProtobuf.CharCollation makeCharCollation(CharsetAndCollation charAndColl) {
+    private static AISProtobuf.CharCollation convertCharAndCol(CharsetAndCollation charAndColl) {
         if(charAndColl == null) {
             return null;
         }
@@ -278,5 +268,15 @@ public class ProtobufWriter {
                 setCharacterSetName(charAndColl.charset()).
                 setCollationOrderName(charAndColl.collation()).
                 build();
+    }
+
+    private static class Schema {
+        public final String name;
+        public final List<Group> groups = new ArrayList<Group>();
+        public final List<UserTable> userTables = new ArrayList<UserTable>();
+
+        public Schema(String name) {
+            this.name = name;
+        }
     }
 }
