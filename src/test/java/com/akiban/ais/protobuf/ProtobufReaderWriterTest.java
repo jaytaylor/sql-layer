@@ -19,7 +19,6 @@ import com.akiban.ais.CAOIBuilderFiller;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
@@ -34,10 +33,8 @@ import com.akiban.server.error.ProtobufWriteException;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
-import java.util.Collection;
-import java.util.TreeSet;
 
-import static org.junit.Assert.assertEquals;
+import static com.akiban.ais.AISComparator.compareAndAssert;
 
 public class ProtobufReaderWriterTest {
     private final String SCHEMA = "test";
@@ -127,7 +124,6 @@ public class ProtobufReaderWriterTest {
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, false);
-
     }
 
     @Test
@@ -181,64 +177,5 @@ public class ProtobufReaderWriterTest {
 
     private ByteBuffer createByteBuffer() {
         return ByteBuffer.allocate(4096);
-    }
-
-    private void compareAndAssert(AkibanInformationSchema lhs, AkibanInformationSchema rhs, boolean withIDs) {
-        assertEquals("AIS charsets", lhs.getCharsetAndCollation().charset(), rhs.getCharsetAndCollation().charset());
-        assertEquals("AIS collations", lhs.getCharsetAndCollation().collation(), rhs.getCharsetAndCollation().collation());
-
-        GroupMaps lhsGroups = new GroupMaps(lhs.getGroups().values(), withIDs);
-        GroupMaps rhsGroups = new GroupMaps(rhs.getGroups().values(), withIDs);
-        lhsGroups.compareAndAssert(rhsGroups);
-        
-        TableMaps lhsTables = new TableMaps(lhs.getUserTables().values(), withIDs);
-        TableMaps rhsTables = new TableMaps(rhs.getUserTables().values(), withIDs);
-        lhsTables.compareAndAssert(rhsTables);
-    }
-
-    private static class GroupMaps {
-        public final Collection<String> names = new TreeSet<String>();
-        public final Collection<String> indexes = new TreeSet<String>();
-        
-        public GroupMaps(Collection<Group> groups, boolean withIDs) {
-            for(Group group : groups) {
-                names.add(group.getName());
-                for(Index index : group.getIndexes()) {
-                    indexes.add(index.toString() + (withIDs ? index.getIndexId() : ""));
-                }
-            }
-        }
-        
-        public void compareAndAssert(GroupMaps rhs) {
-            assertEquals("Group names", names.toString(), rhs.names.toString());
-            assertEquals("Group indexes", indexes.toString(), rhs.indexes.toString());
-        }
-    }
-
-    private static class TableMaps {
-        public final Collection<String> names = new TreeSet<String>();
-        public final Collection<String> indexes = new TreeSet<String>();
-        public final Collection<String> columns = new TreeSet<String>();
-        public final Collection<String> charAndCols = new TreeSet<String>();
-        
-        public TableMaps(Collection<UserTable> tables, boolean withIDs) {
-            for(UserTable table : tables) {
-                names.add(table.getName().toString() + (withIDs ? table.getTableId() : ""));
-                for(Column column : table.getColumns()) {
-                    columns.add(column.toString() + " " + column.getTypeDescription() + " " + column.getCharsetAndCollation());
-                }
-                for(Index index : table.getIndexes()) {
-                    indexes.add(index.toString() + (withIDs ? index.getIndexId() : ""));
-                }
-                charAndCols.add(table.getName() + " " + table.getCharsetAndCollation().toString());
-            }
-        }
-        
-        public void compareAndAssert(TableMaps rhs) {
-            assertEquals("Table names", names.toString(), rhs.names.toString());
-            assertEquals("Table columns", columns.toString(), rhs.columns.toString());
-            assertEquals("Table indexes", indexes.toString(), rhs.indexes.toString());
-            assertEquals("Table charAndCols", charAndCols.toString(), rhs.charAndCols.toString());
-        }
     }
 }
