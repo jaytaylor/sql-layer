@@ -1174,6 +1174,11 @@ public class OperatorAssembler extends BaseRule
             else
                 return column.getPosition();
         }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + source + ")";
+        }
     }
 
     // Index used as field source (e.g., covering).
@@ -1190,6 +1195,12 @@ public class OperatorAssembler extends BaseRule
         // (Covering index or condition before lookup.)
         public int getIndex(ColumnExpression column) {
             return index.getColumns().indexOf(column);
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + index + ")";
         }
     }
 
@@ -1242,6 +1253,12 @@ public class OperatorAssembler extends BaseRule
                                 other.tableOffsets.get(otherTable));
                 }
             }
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + tableOffsets.keySet() + ")";
         }
     }
 

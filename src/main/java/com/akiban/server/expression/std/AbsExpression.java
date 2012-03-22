@@ -26,6 +26,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.MathContext;
 
 public class AbsExpression extends AbstractUnaryExpression 
 {    
