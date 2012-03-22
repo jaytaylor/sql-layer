@@ -1,5 +1,9 @@
 duplicate-child: same child table twice
 
+multiindex-single-branch: Intersection on single branch.
+
+multiindex-multi-branch: Intersection on two branches.
+
 single-table-1: covering index
 
 single-table-2: group scan required
