@@ -21,7 +21,12 @@ import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.error.ProtobufReadException;
@@ -76,6 +81,53 @@ public class ProtobufReaderWriterTest {
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS);
+    }
+
+    /*
+     * Stubbed out parent, similar to how table creation from the adapter works
+     */
+    @Test
+    public void partialParentWithFullChild() {
+        final AkibanInformationSchema inAIS = new AkibanInformationSchema();
+        
+        UserTable stubCustomer = UserTable.create(inAIS, SCHEMA, "c", 1);
+        Column cId = Column.create(stubCustomer, "id", 2, Types.BIGINT, false, null, null, null, null);
+
+        UserTable realOrder = UserTable.create(inAIS, SCHEMA, "o", 2);
+        Column oId = Column.create(realOrder, "oid", 0, Types.BIGINT, false, null, null, null, null);
+        Column oCid = Column.create(realOrder, "cid", 1, Types.BIGINT, false, null, null, null, null);
+        Column.create(realOrder, "odate", 2, Types.DATE, true, null, null, null, null);
+        Index orderPK = TableIndex.create(inAIS, realOrder, Index.PRIMARY_KEY_CONSTRAINT, 0, true, Index.PRIMARY_KEY_CONSTRAINT);
+        IndexColumn.create(orderPK, oId, 0, true, null);
+        Index akFk = TableIndex.create(inAIS, realOrder, Index.GROUPING_FK_PREFIX + "_fk1", 1, false, Index.FOREIGN_KEY_CONSTRAINT);
+        IndexColumn.create(akFk, oCid, 0, true, null);
+        Join coJoin = Join.create(inAIS, "co", stubCustomer, realOrder);
+        JoinColumn.create(coJoin, cId, oCid);
+
+        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        compareAndAssert(inAIS, outAIS);
+    }
+
+    /*
+     * Stubbed out table, similar to how index creation from the adapter works
+     */
+    @Test
+    public void partialTableWithIndexes() {
+        final AkibanInformationSchema inAIS = new AkibanInformationSchema();
+
+        UserTable stubCustomer = UserTable.create(inAIS, SCHEMA, "c", 1);
+        Column cFirstName = Column.create(stubCustomer, "first_name", 3, Types.VARCHAR, true, 32L, null, null, null);
+        Column cLastName = Column.create(stubCustomer, "last_name", 4, Types.VARCHAR, true, 32L, null, null, null);
+        Column cPayment = Column.create(stubCustomer, "payment", 6, Types.INT, true, null, null, null, null);
+        Index iName = TableIndex.create(inAIS, stubCustomer, "name", 2, false, Index.KEY_CONSTRAINT);
+        IndexColumn.create(iName, cLastName, 0, true, null);
+        IndexColumn.create(iName, cFirstName, 1, true, null);
+        Index iPayment = TableIndex.create(inAIS, stubCustomer, "payment", 3, false, Index.KEY_CONSTRAINT);
+        IndexColumn.create(iPayment, cPayment, 0, true, null);
+        
+        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        compareAndAssert(inAIS, outAIS);
+
     }
 
     @Test(expected=ProtobufReadException.class)
