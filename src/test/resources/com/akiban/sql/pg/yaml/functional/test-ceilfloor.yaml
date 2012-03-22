@@ -35,22 +35,22 @@
             numeric_field, real_field, varchar_field)
     VALUES (16.425, 16.425, 16, 16, 16, 16, 16.643, 16.512, 16.634, '16.142'),
     (-2.235, -2.555, -2, -2, -2, null, -2.672, -2.457, -2.512, '-2.324')
----
- # NOTE: Ceil and floor return a types decimal/numeric with scale 0, casted to an integer
- # DECIMAL/NUMERIC: scale works differently; input being casted before it even reaches
-- Statement: SELECT CEIL(float_field), CEIL(double_field),
-    CEIL(smallint_field), CEIL(integer_field), CEIL(bigint_field),
-    CEIL(bigint_unsigned_field), CEIL(decimal_field), CEIL(numeric_field),
-    CEIL(real_field), CEIL(varchar_field) FROM all_types
-- output: [[17.0, 17.0, 16, 16, 16, 16, 17, 17, 17.0, 17.0],
-           [-2.0, -2.0, -2, -2, -2, null, -2, -2, -2.0, -2.0]]
----
-- Statement: SELECT FLOOR(float_field), FLOOR(double_field),
-    FLOOR(smallint_field), FLOOR(integer_field), FLOOR(bigint_field),
-    FLOOR(bigint_unsigned_field), FLOOR(decimal_field), FLOOR(numeric_field),
-    FLOOR(real_field), FLOOR(varchar_field) FROM all_types
-- output: [[16.0, 16.0, 16, 16, 16, 16, 16, 16, 16.0, 16.0],
-           [-3.0, -3.0, -2, -2, -2, null, -3, -3, -3.0, -3.0]]
+#---
+# # NOTE: Ceil and floor return a types decimal/numeric with scale 0, casted to an integer
+# # DECIMAL/NUMERIC: scale works differently; input being casted before it even reaches
+#- Statement: SELECT CEIL(float_field), CEIL(double_field),
+#    CEIL(smallint_field), CEIL(integer_field), CEIL(bigint_field),
+#    CEIL(bigint_unsigned_field), CEIL(decimal_field), CEIL(numeric_field),
+#    CEIL(real_field), CEIL(varchar_field) FROM all_types
+#- output: [[17.0, 17.0, 16, 16, 16, 16, 17, 17, 17.0, 17.0],
+#           [-2.0, -2.0, -2, -2, -2, null, -2, -2, -2.0, -2.0]]
+#---
+#- Statement: SELECT FLOOR(float_field), FLOOR(double_field),
+#    FLOOR(smallint_field), FLOOR(integer_field), FLOOR(bigint_field),
+#    FLOOR(bigint_unsigned_field), FLOOR(decimal_field), FLOOR(numeric_field),
+#    FLOOR(real_field), FLOOR(varchar_field) FROM all_types
+#- output: [[16.0, 16.0, 16, 16, 16, 16, 16, 16, 16.0, 16.0],
+#           [-3.0, -3.0, -2, -2, -2, null, -3, -3, -3.0, -3.0]]
 ---
 # Infinity and NaN
 - Statement: DELETE FROM all_types
@@ -73,12 +73,11 @@
           [NaN, NaN, NaN]]
 ---
 # Literals
-# TODO - being casted to integers whenever decimal-type is used
 - Statement: SELECT FLOOR(4.2) FROM all_types
-- output: [[4.0], [4.0], [4.0]]
+- output: [[4], [4], [4]]
 ---
 - Statement: SELECT CEIL(4.2) FROM all_types
-- output: [[5.0], [5.0], [5.0]]
+- output: [[5], [5], [5]]
 
 
 ---
@@ -87,7 +86,6 @@
 - Statement: INSERT INTO all_types (double_field) VALUES (1.0)
 ---
 # Parameters
-# TODO - Fix params
 - Statement: SELECT CEIL(?) FROM all_types
 - params: [[0.124]]
 - output: [[1.0]]

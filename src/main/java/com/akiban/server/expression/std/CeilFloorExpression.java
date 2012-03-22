@@ -60,7 +60,8 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
             
             ExpressionType firstExpType = argumentTypes.get(0);
             AkType firstAkType = argumentTypes.get(0).getType();
-            if (firstAkType == AkType.VARCHAR)
+            // TODO - Temporary handling of UNSUPPORTED types case
+            if (firstAkType == AkType.VARCHAR || firstAkType == AkType.UNSUPPORTED)
             {
                 argumentTypes.setType(0, AkType.DOUBLE);
                 firstAkType = AkType.DOUBLE;
