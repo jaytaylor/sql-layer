@@ -19,12 +19,17 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
+import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class SingleIndexScan extends IndexScan {
 
     private Index index;
+    private ColumnRanges conditionRange;
+    // First equalities in the order of the index.
+    private List<ExpressionNode> equalityComparands;
 
     public SingleIndexScan(Index index, TableSource table)
     {
@@ -48,6 +53,34 @@ public final class SingleIndexScan extends IndexScan {
 
     public Index getIndex() {
         return index;
+    }
+
+    public ColumnRanges getConditionRange() {
+        return conditionRange;
+    }
+
+    public void addRangeCondition(ColumnRanges range) {
+        assert conditionRange == null : conditionRange;
+        conditionRange = range;
+        internalGetConditions().addAll(range.getConditions());
+    }
+
+    public List<ExpressionNode> getEqualityComparands() {
+        return equalityComparands;
+    }
+
+    public void addEqualityCondition(ConditionExpression condition,
+                                     ExpressionNode comparand) {
+        if (equalityComparands == null)
+            equalityComparands = new ArrayList<ExpressionNode>();
+        equalityComparands.add(comparand);
+        internalGetConditions().add(condition);
+    }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        equalityComparands = duplicateList(equalityComparands, map);
     }
 
     @Override
@@ -123,5 +156,23 @@ public final class SingleIndexScan extends IndexScan {
             otherTable = otherTable.getParentTable();
         }
         return myTable.getTable().getTable();
+    }
+
+    @Override
+    protected void describeConditionRange(StringBuilder output) {
+        if (conditionRange != null) {
+            output.append(", UNIONs of ");
+            output.append(conditionRange.describeRanges());
+        }
+    }
+
+    @Override
+    protected void describeEqualityComparands(StringBuilder output) {
+        if (equalityComparands != null) {
+            for (ExpressionNode expression : equalityComparands) {
+                output.append(", =");
+                output.append(expression);
+            }
+        }
     }
 }

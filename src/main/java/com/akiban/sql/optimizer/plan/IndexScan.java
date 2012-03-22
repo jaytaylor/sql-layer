@@ -19,8 +19,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
-import com.akiban.sql.optimizer.rule.range.ColumnRanges;
-
 import java.util.*;
 
 public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression,IndexScan>
@@ -36,15 +34,11 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     // still needs to be checked with Select?
     private List<ConditionExpression> conditions;
 
-    // First equalities in the order of the index.
-    private List<ExpressionNode> equalityComparands;
     // Followed by an optional inequality.
     private ExpressionNode lowComparand, highComparand;
     // TODO: This doesn't work for merging: consider x < ? AND x <= ?. 
     // May need building of index keys in the expressions subsystem.
     private boolean lowInclusive, highInclusive;
-
-    private ColumnRanges conditionRange;
 
     // This is how the indexed result will be ordered from using this index.
     private List<OrderByExpression> ordering;
@@ -105,18 +99,11 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     public List<ConditionExpression> getConditions() {
         return conditions;
     }
-
-    public ColumnRanges getConditionRange() {
-        return conditionRange;
-    }
-
+    
     public boolean hasConditions() {
         return ((conditions != null) && !conditions.isEmpty());
     }
 
-    public List<ExpressionNode> getEqualityComparands() {
-        return equalityComparands;
-    }
     public ExpressionNode getLowComparand() {
         return lowComparand;
     }
@@ -128,16 +115,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     }
     public boolean isHighInclusive() {
         return highInclusive;
-    }
-
-    public void addEqualityCondition(ConditionExpression condition, 
-                                     ExpressionNode comparand) {
-        if (equalityComparands == null)
-            equalityComparands = new ArrayList<ExpressionNode>();
-        equalityComparands.add(comparand);
-        if (conditions == null)
-            conditions = new ArrayList<ConditionExpression>();
-        conditions.add(condition);
     }
 
     public void addInequalityCondition(ConditionExpression condition, 
@@ -184,17 +161,8 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         else {
             return;
         }
-        if (conditions == null)
-            conditions = new ArrayList<ConditionExpression>();
-        conditions.add(condition);
-    }
 
-    public void addRangeCondition(ColumnRanges range) {
-        assert conditionRange == null : conditionRange;
-        conditionRange = range;
-        if (conditions == null)
-            conditions = new ArrayList<ConditionExpression>();
-        conditions.addAll(range.getConditions());
+        internalGetConditions().add(condition);
     }
 
     public List<ExpressionNode> getColumns() {
@@ -263,7 +231,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        equalityComparands = duplicateList(equalityComparands, map);
         if (lowComparand != null)
             lowComparand = (ConditionExpression)lowComparand.duplicate(map);
         if (highComparand != null)
@@ -280,6 +247,12 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         buildSummaryString(sb, true);
         return sb.toString();
     }
+    
+    protected List<ConditionExpression> internalGetConditions() {
+        if (conditions == null)
+            conditions = new ArrayList<ConditionExpression>();
+        return conditions;
+    } 
      
     protected void buildSummaryString(StringBuilder str, boolean full) {
         str.append(super.summaryString());
@@ -309,12 +282,7 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
                 }
             }
         }
-        if (equalityComparands != null) {
-            for (ExpressionNode expression : equalityComparands) {
-                str.append(", =");
-                str.append(expression);
-            }
-        }
+        describeEqualityComparands(str);
         if (lowComparand != null) {
             str.append(", ");
             str.append((lowInclusive) ? ">=" : ">");
@@ -325,10 +293,7 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
             str.append((highInclusive) ? "<=" : "<");
             str.append(highComparand);
         }
-        if (conditionRange != null) {
-            str.append(", UNIONs of ");
-            str.append(conditionRange.describeRanges());
-        }
+        describeConditionRange(str);
         if (full && costEstimate != null) {
             str.append(", ");
             str.append(costEstimate);
@@ -336,6 +301,8 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         str.append(")");
     }
 
+    protected void describeConditionRange(StringBuilder output) {}
+    protected void describeEqualityComparands(StringBuilder output) {}
     protected abstract String summarizeIndex();
     protected abstract boolean isAscendingAt(int index);
 }

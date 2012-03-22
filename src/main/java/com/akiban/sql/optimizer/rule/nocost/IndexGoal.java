@@ -152,7 +152,7 @@ public class IndexGoal implements Comparator<IndexScan>
     /** Populate given index usage according to goal.
      * @return <code>false</code> if the index is useless.
      */
-    public boolean usable(IndexScan index) {
+    public boolean usable(SingleIndexScan index) {
         // TODO: This could be getIndexColumns(), but that would change test results.
         List<IndexColumn> indexColumns = ((SingleIndexScan)index).getIndex().getKeyColumns();
         int ncols = indexColumns.size();
@@ -418,13 +418,13 @@ public class IndexGoal implements Comparator<IndexScan>
      * @param groupOnly 
      */
     public IndexScan pickBestIndex(TableSource table, Set<TableSource> required) {
-        IndexScan bestIndex = null;
+        SingleIndexScan bestIndex = null;
         // If this table is the optional part of a LEFT join, can
         // still consider group indexes to it, but not single table
         // indexes on it.
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new SingleIndexScan(index, table);
+                SingleIndexScan candidate = new SingleIndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -486,7 +486,7 @@ public class IndexGoal implements Comparator<IndexScan>
                         (rootRequired == null))
                         continue;
                 }
-                IndexScan candidate = new SingleIndexScan(index, rootTable,
+                SingleIndexScan candidate = new SingleIndexScan(index, rootTable,
                                                     rootRequired, leafRequired, 
                                                     table);
                 bestIndex = betterIndex(bestIndex, candidate);
@@ -495,7 +495,7 @@ public class IndexGoal implements Comparator<IndexScan>
         return bestIndex;
     }
 
-    protected IndexScan betterIndex(IndexScan bestIndex, IndexScan candidate) {
+    protected SingleIndexScan betterIndex(SingleIndexScan bestIndex, SingleIndexScan candidate) {
         if (usable(candidate)) {
             if (bestIndex == null) {
                 logger.debug("Selecting {}", candidate);
