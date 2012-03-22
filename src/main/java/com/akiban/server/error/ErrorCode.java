@@ -343,6 +343,8 @@ public enum ErrorCode {
     AIS_MYSQL_SQL_EXCEPTION ("53", "007", Importance.DEBUG, AisSQLErrorException.class),
     AIS_CSV_ERROR           ("53", "008", Importance.DEBUG, AisCSVErrorException.class),
     TABLEDEF_MISMATCH       ("53", "009", Importance.DEBUG, TableDefinitionMismatchException.class), 
+    PROTOBUF_READ           ("53", "00A", Importance.ERROR, ProtobufReadException.class),
+    PROTOBUF_WRITE          ("53", "00B", Importance.ERROR, ProtobufWriteException.class),
     
     // Class 55 - Type conversion errors
     UNKNOWN_TYPE            ("55", "001", Importance.DEBUG, UnknownDataTypeException.class),    

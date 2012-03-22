@@ -763,6 +763,14 @@ public class
         table.setTreeName(group != null ? group.getGroupTable().getTreeName() : "");
     }
 
+    public int getTableIdOffset() {
+        return tableIdGenerator;
+    }
+    
+    public int getIndexIdOffset() {
+        return indexIdGenerator;
+    }
+
     // State
     static final class ColumnName {
         private final TableName table;

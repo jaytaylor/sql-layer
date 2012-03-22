@@ -107,6 +107,11 @@ public abstract class Index implements Traversable
         return constraint.equals(PRIMARY_KEY_CONSTRAINT);
     }
 
+    public boolean isAkibanForeignKey() {
+        return constraint.equals(FOREIGN_KEY_CONSTRAINT) &&
+               indexName.getName().startsWith(GROUPING_FK_PREFIX);
+    }
+
     public String getConstraint()
     {
         return constraint;
@@ -122,17 +127,30 @@ public abstract class Index implements Traversable
         indexName = name;
     }
 
+    /**
+     * Return columns declared as part of the index definition.
+     * @return list of columns
+     */
     public List<IndexColumn> getKeyColumns()
     {
         sortColumnsIfNeeded();
         return keyColumns;
     }
 
+    /**
+     * Return columns included in the index key but <b>were not</b> declared in
+     * the definition (e.g. HKey columns).
+     * @return list of columns
+     */
     public List<IndexColumn> getValueColumns()
     {
         return valueColumns;
     }
-    
+
+    /**
+     * Return all columns that make up the physical index key (declared and not).
+     * @return list of columns
+     */
     public List<IndexColumn> getAllColumns() {
         return allColumns;
     }
@@ -368,6 +386,8 @@ public abstract class Index implements Traversable
     public static final String PRIMARY_KEY_CONSTRAINT = "PRIMARY";
     public static final String UNIQUE_KEY_CONSTRAINT = "UNIQUE";
     public static final String KEY_CONSTRAINT = "KEY";
+    public static final String FOREIGN_KEY_CONSTRAINT = "FOREIGN KEY";
+    public static final String GROUPING_FK_PREFIX = "__akiban";
 
     private static final int INDEX_ID_BITS = 0x0000FFFF;
     private static final int IS_VALID_FLAG = INDEX_ID_BITS + 1;

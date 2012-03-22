@@ -54,6 +54,7 @@ public class IndexColumn
 
     public static IndexColumn create(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength) {
         index.checkMutability();
+        AISInvariants.checkNullField(column, "IndexColumn", "column", "Column");
         AISInvariants.checkDuplicateColumnsInIndex(index, column.getName());
         IndexColumn indexColumn = new IndexColumn(index, column, position, ascending, indexedLength);
         index.addColumn(indexColumn);
