@@ -122,4 +122,9 @@ public class OperatorCompiler extends SchemaRulesContext
         }
     }
 
+    @Override
+    public String getDefaultSchemaName() {
+        return binder.getDefaultSchemaName();
+    }
+
 }

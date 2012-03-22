@@ -18,12 +18,13 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
-import java.util.Collection;
 import java.util.List;
 
-public interface IndexIntersectionNode<C> {
+public interface IndexIntersectionNode<C, N extends IndexIntersectionNode<C,N>> {
     UserTable getLeafMostUTable();
     List<IndexColumn> getAllColumns();
-    boolean removeCoveredConditions(Collection<? super C> conditions, Collection<? super C> removeTo);
+    void incrementConditionsCounter(ConditionsCounter<? super C> counter);
+    boolean isUseful(ConditionsCount<? super C> counter);
+    UserTable findCommonAncestor(N other);
     int getPeggedCount();
 }

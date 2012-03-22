@@ -1,19 +1,19 @@
 SelectQuery@418a9fc8
   ResultSet@74002515[name, state, order_date, sku, ship_date, referral]
-    Project@3582c132[user.customers.name, user.addresses.state, user.orders.order_date, user.items.sku, user.shipments.ship_date, user.referrals.referral]
+    Project@3582c132[customers.name, addresses.state, orders.order_date, items.sku, shipments.ship_date, referrals.referral]
       Select@1b59d510[]
         Product@26b31b77
-          Flatten@38d0357a(user.customers INNER user.orders INNER user.shipments)
+          Flatten@38d0357a(customers INNER orders INNER shipments)
             GroupScan@6d66f9b9(Group(customers -> user._akiban_customers))
-              TableSource@5c74cb02(user.customers - TableGroup@39518cc(customers))
-              TableSource@7bafb0c7(user.orders - TableGroupJoin@318efaea(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@5117a20(user.shipments - TableGroupJoin@21fb3211(Join(user/orders/oid/user/user.shipments/oid: user.shipments -> user.orders, group(customers))))
-          Flatten@72940b84(user.customers INNER user.addresses)
-            BranchLookup@558041e0(user.customers -> user.addresses)
-              TableSource@77bc1fb9(user.addresses - TableGroupJoin@576504fa(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
-          Flatten@2929e5e9(user.customers INNER user.referrals)
-            BranchLookup@7db5391b(user.customers -> user.referrals)
-              TableSource@5fc6e818(user.referrals - TableGroupJoin@4b85c17(Join(user/customers/cid/user/user.referrals/cid: user.referrals -> user.customers, group(customers))))
-          Flatten@63a5ec6c(user.orders INNER user.items)
-            BranchLookup@2244d990(user.orders -> user.items)
-              TableSource@4b7f1841(user.items - TableGroupJoin@56278e83(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+              TableSource@5c74cb02(customers - TableGroup@39518cc(customers))
+              TableSource@7bafb0c7(orders - TableGroupJoin@318efaea(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              TableSource@5117a20(shipments - TableGroupJoin@21fb3211(Join(user/orders/oid/user/user.shipments/oid: user.shipments -> user.orders, group(customers))))
+          Flatten@72940b84(customers INNER addresses)
+            BranchLookup@558041e0(customers -> addresses)
+              TableSource@77bc1fb9(addresses - TableGroupJoin@576504fa(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+          Flatten@2929e5e9(customers INNER referrals)
+            BranchLookup@7db5391b(customers -> referrals)
+              TableSource@5fc6e818(referrals - TableGroupJoin@4b85c17(Join(user/customers/cid/user/user.referrals/cid: user.referrals -> user.customers, group(customers))))
+          Flatten@63a5ec6c(orders INNER items)
+            BranchLookup@2244d990(orders -> items)
+              TableSource@4b7f1841(items - TableGroupJoin@56278e83(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

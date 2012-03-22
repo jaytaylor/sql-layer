@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
@@ -26,7 +27,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     private IndexScan outputScan;
     private IndexScan selectorScan;
     private int comparisonColumns;
-    private List<ConditionExpression> conditions;
+    private List<ConditionExpression> coveringConditions;
 
     public MultiIndexIntersectScan(IndexScan outerScan, IndexScan selectorScan, int comparisonColumns)
     {
@@ -63,12 +64,26 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     private int getOrderingFields(IndexScan scan) {
-        return scan.getIndexColumns().size();
+        return scan.getAllColumns().size() - scan.getPeggedCount();
     }
 
     @Override
-    public void setConditions(List<ConditionExpression> newConditions) {
-        super.setConditions(newConditions); // promote visibility
+    public List<ConditionExpression> getGroupConditions() {
+        return coveringConditions;
+    }
+    
+    public void setGroupConditions(Collection<ConditionExpression> coveringConditions) {
+        this.coveringConditions = new ArrayList<ConditionExpression>(coveringConditions);
+    }
+
+    @Override
+    public List<ConditionExpression> getConditions() {
+        return outputScan.getConditions();
+    }
+
+    @Override
+    public List<ExpressionNode> getColumns() {
+        return outputScan.getColumns();
     }
 
     @Override
@@ -86,14 +101,15 @@ public final class MultiIndexIntersectScan extends IndexScan {
         return outputScan.getPeggedCount();
     }
 
+    @Override
+    public void incrementConditionsCounter(ConditionsCounter<? super ConditionExpression> counter) {
+        outputScan.incrementConditionsCounter(counter);
+        selectorScan.incrementConditionsCounter(counter);
+    }
 
     @Override
-    public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,
-                                           Collection<? super ConditionExpression> removeTo) {
-        // using a bitwise or on purpose here -- we do NOT want to short-circuit this, since even if the left
-        // covers some conditions, we want to know which ones the right covers.
-        return outputScan.removeCoveredConditions(conditions, removeTo)
-                | selectorScan.removeCoveredConditions(conditions, removeTo);
+    public boolean isUseful(ConditionsCount<? super ConditionExpression> count) {
+        return outputScan.isUseful(count) && selectorScan.isUseful(count);
     }
 
     @Override
@@ -103,7 +119,12 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
     @Override
     protected String summarizeIndex() {
-        return String.format("INTERSECT(%s AND %s)", outputScan, selectorScan);
+        StringBuilder sb = new StringBuilder("INTERSECT(");
+        outputScan.buildSummaryString(sb, false);
+        sb.append(" AND ");
+        selectorScan.buildSummaryString(sb, false);
+        sb.append(')');
+        return sb.toString();
     }
 
     @Override
@@ -111,15 +132,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
         return outputScan.isAscendingAt(i);
     }
 
-    private void buildConditions(IndexScan child, List<ConditionExpression> output) {
-        if (child instanceof SingleIndexScan) {
-            output.addAll(child.getConditions());
-        }
-        else if (child instanceof MultiIndexIntersectScan) {
-            MultiIndexIntersectScan miis = (MultiIndexIntersectScan) child;
-            buildConditions(miis.outputScan, output);
-            buildConditions(miis.selectorScan, output);
-        }
+    @Override
+    public UserTable findCommonAncestor(IndexScan other) {
+        return outputScan.findCommonAncestor(other);
     }
-    
 }

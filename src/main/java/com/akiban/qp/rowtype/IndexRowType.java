@@ -76,25 +76,11 @@ public class IndexRowType extends AisRowType
         }
         this.tableType = tableType;
         this.index = index;
-        // Types of declared columns
-        List<AkType> akTypeList = new ArrayList<AkType>();
-        List<IndexColumn> indexColumns = index.getKeyColumns();
-        IdentityHashMap<Column, Column> indexColumnMap = new IdentityHashMap<Column, Column>();
+        List<IndexColumn> indexColumns = index.getAllColumns();
+        akTypes = new AkType[indexColumns.size()];
         for (int i = 0; i < indexColumns.size(); i++) {
-            Column column = indexColumns.get(i).getColumn();
-            akTypeList.add(column.getType().akType());
-            indexColumnMap.put(column, column);
+            akTypes[i] = indexColumns.get(i).getColumn().getType().akType();
         }
-        // Types of undeclared hkey columns
-        for (HKeySegment segment : tableType.hKey().segments()) {
-            for (HKeyColumn hKeyColumn : segment.columns()) {
-                Column column = hKeyColumn.column();
-                if (!indexColumnMap.containsKey(column)) {
-                    akTypeList.add(column.getType().akType());
-                }
-            }
-        }
-        akTypes = akTypeList.toArray(new AkType[akTypeList.size()]);
     }
 
     // Object state

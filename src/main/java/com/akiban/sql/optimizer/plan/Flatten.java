@@ -81,7 +81,10 @@ public class Flatten extends BasePlanWithInput
                 str.append(joinTypes.get(i-1));
                 str.append(" ");
             }
-            str.append(tableNodes.get(i).getTable());
+            if (tableSources.get(i) != null)
+                str.append(tableSources.get(i).getName());
+            else
+                str.append(tableNodes.get(i));
         }
         str.append(")");
         return str.toString();

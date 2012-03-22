@@ -1,6 +1,6 @@
 SelectQuery@55ad6c98
   ResultSet@6cb49b19[cid, name]
-    Project@4532be10[user.customers.cid, user.customers.name]
+    Project@4532be10[customers.cid, customers.name]
       Select@65c2fee[]
         TableJoins@e4eb585(TableGroup@516f3619(customers) - IndexScan@5c48cd13(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith))
-          TableSource@50739aa3(user.customers - TableGroup@516f3619(customers))
+          TableSource@50739aa3(customers - TableGroup@516f3619(customers))

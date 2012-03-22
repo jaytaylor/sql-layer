@@ -3,8 +3,8 @@ SelectQuery@55d4ee7e
     Project@541b55f2[GROUP[0], divide(GROUP[1],GROUP[2])]
       Select@4ea7ae01[]
         AggregateSource@6290ebfe(1,[SUM, COUNT])
-          Project@1875a340[user.orders.order_date, user.items.quan, user.items.quan]
-            Select@5330cb4b[user.items.sku == $0]
-              JoinNode@2872d398(INNER[user.orders.oid == user.items.oid])
-                TableSource@3c0c74fe(user.items)
-                TableSource@228ab65(user.orders)
+          Project@1875a340[orders.order_date, items.quan, items.quan]
+            Select@5330cb4b[items.sku == $0]
+              JoinNode@2872d398(INNER[orders.oid == items.oid])
+                TableSource@3c0c74fe(items)
+                TableSource@228ab65(orders)

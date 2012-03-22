@@ -662,7 +662,14 @@ public class GroupJoinFinder extends BaseRule
             Group g2 = tg2.getGroup();
             if (g1 != g2)
                 return g1.getName().compareTo(g2.getName());
-            return tg1.getMinOrdinal() - tg2.getMinOrdinal();
+            int o1 = tg1.getMinOrdinal();
+            int o2 = tg2.getMinOrdinal();
+            if (o1 == o2) {
+                TableSource ts1 = tg1.findByOrdinal(o1);
+                TableSource ts2 = tg2.findByOrdinal(o2);
+                return ts1.getName().compareTo(ts2.getName());
+            }
+            return o1 - o2;
         }
     };
 
@@ -695,8 +702,11 @@ public class GroupJoinFinder extends BaseRule
         TableGroup tg2 = ts2.getGroup();
         if (g1 != g2)
             return g1.getName().compareTo(g2.getName());
-        if (tg1 == tg2)         // Including null because not yet computed.
+        if (tg1 == tg2) {       // Including null because not yet computed.
+            if (ut1 == ut2)
+                return ts1.getName().compareTo(ts2.getName());
             return t1.getOrdinal() - t2.getOrdinal();
+        }
         return tg1.getMinOrdinal() - tg2.getMinOrdinal();
     }
 

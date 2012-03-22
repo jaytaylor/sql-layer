@@ -1,9 +1,9 @@
 SelectQuery@7a3e72
   ResultSet@5999ae9c[cid, name, aid, cid, state, city]
-    Project@7896b1b8[user.customers.cid, user.customers.name, user.addresses.aid, user.addresses.cid, user.addresses.state, user.addresses.city]
+    Project@7896b1b8[customers.cid, customers.name, addresses.aid, addresses.cid, addresses.state, addresses.city]
       Select@6d6de4e1[]
-        JoinNode@49cda7e7(LEFT/NESTED_LOOPS[user.addresses.city != user.customers.name])
+        JoinNode@49cda7e7(LEFT/NESTED_LOOPS[addresses.city != customers.name])
           TableGroupJoinTree@11da5362(TableGroup@14985016(customers), customers - IndexScan@efe404(Index(user.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))
-            TableSource@5cca548b(user.customers - TableGroup@14985016(customers))
-          TableGroupJoinTree@1bb1deea(TableGroup@14985016(customers), addresses - IndexScan@79b0edb2(Index(user.addresses.__akiban_fk_2[IndexColumn(cid)]), NONE, =user.customers.cid, rows = 2, cost = 20.3492))
-            TableSource@6774a144(user.addresses - TableGroup@14985016(customers))
+            TableSource@5cca548b(customers - TableGroup@14985016(customers))
+          TableGroupJoinTree@1bb1deea(TableGroup@14985016(customers), addresses - IndexScan@79b0edb2(Index(user.addresses.__akiban_fk_2[IndexColumn(cid)]), NONE, =customers.cid, rows = 2, cost = 21.9940))
+            TableSource@6774a144(addresses - TableGroup@14985016(customers))

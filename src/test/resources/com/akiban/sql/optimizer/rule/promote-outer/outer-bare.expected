@@ -1,7 +1,7 @@
 SelectQuery@3dc286e2
   ResultSet@4cb533b8[cid, name, oid, cid, order_date]
-    Project@c569c60[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Project@c569c60[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
       Select@1fbbdd48[]
-        JoinNode@66bcb23e(LEFT[user.customers.cid == user.orders.cid])
-          TableSource@6e5a3923(user.customers)
-          TableSource@655d616e(user.orders)
+        JoinNode@66bcb23e(LEFT[customers.cid == orders.cid])
+          TableSource@6e5a3923(customers)
+          TableSource@655d616e(orders)

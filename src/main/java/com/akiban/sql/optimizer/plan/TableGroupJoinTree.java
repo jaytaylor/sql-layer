@@ -106,7 +106,7 @@ public class TableGroupJoinTree extends BaseJoinable
         @Override
         public String toString() {
             return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
-                "(" + table + ")";
+                "(" + table + ", " + state + ")";
         }
     }
 
@@ -255,7 +255,7 @@ public class TableGroupJoinTree extends BaseJoinable
                 str.append(node.getParentJoinType());
                 str.append(" ");
             }
-            str.append(node.getTable().getTable().getTable().getName().getTableName());
+            str.append(node.getTable().getName());
             if (node.getJoinConditions() != null) {
                 boolean first = true;
                 for (ConditionExpression joinCondition : node.getJoinConditions()) {

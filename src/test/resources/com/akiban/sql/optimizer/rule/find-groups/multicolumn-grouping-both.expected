@@ -1,8 +1,8 @@
 SelectQuery@207ff5b6
   ResultSet@30dc9065[bid1, bid2, title, bcol1, bcol2, cid, bfk1, bfk2, content, ccol1, ccol2]
-    Project@608beff2[user.blogs.bid1, user.blogs.bid2, user.blogs.title, user.blogs.bcol1, user.blogs.bcol2, user.comments.cid, user.comments.bfk1, user.comments.bfk2, user.comments.content, user.comments.ccol1, user.comments.ccol2]
+    Project@608beff2[blogs.bid1, blogs.bid2, blogs.title, blogs.bcol1, blogs.bcol2, comments.cid, comments.bfk1, comments.bfk2, comments.content, comments.ccol1, comments.ccol2]
       Select@3362a63[]
         TableJoins@5918cb3a(TableGroup@6ac67a88(blogs))
-          JoinNode@c96ad7c(INNER/GROUP[user.comments.bfk1 == user.blogs.bid1, user.comments.bfk2 == user.blogs.bid2] - TableGroupJoin@7857ae58(Join(user/blogs/bid1_bid2/user/user.comments/bfk1_bfk2: user.comments -> user.blogs, group(blogs))))
-            TableSource@10b914b3(user.blogs - TableGroup@6ac67a88(blogs))
-            TableSource@77fe4169(user.comments - TableGroupJoin@7857ae58(Join(user/blogs/bid1_bid2/user/user.comments/bfk1_bfk2: user.comments -> user.blogs, group(blogs))))
+          JoinNode@c96ad7c(INNER/GROUP[comments.bfk1 == blogs.bid1, comments.bfk2 == blogs.bid2] - TableGroupJoin@7857ae58(Join(user/blogs/bid1_bid2/user/user.comments/bfk1_bfk2: user.comments -> user.blogs, group(blogs))))
+            TableSource@10b914b3(blogs - TableGroup@6ac67a88(blogs))
+            TableSource@77fe4169(comments - TableGroupJoin@7857ae58(Join(user/blogs/bid1_bid2/user/user.comments/bfk1_bfk2: user.comments -> user.blogs, group(blogs))))

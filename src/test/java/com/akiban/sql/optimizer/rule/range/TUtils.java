@@ -101,7 +101,7 @@ final class TUtils {
             .ais();
         UserTable table = ais.getUserTable("s", "t1");
         TableNode node = new TableNode(table, new TableTree());
-        TableSource source = new TableSource(node, true);
+        TableSource source = new TableSource(node, true, "t1");
         lastName = new ColumnExpression(source, table.getColumn("first_name"));
         firstName = new ColumnExpression(source, table.getColumn("last_name"));
     }

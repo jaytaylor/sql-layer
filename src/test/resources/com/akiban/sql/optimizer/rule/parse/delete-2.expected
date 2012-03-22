@@ -1,3 +1,3 @@
-DeleteStatement@ad4d66b(user.child)
-  Select@1b49105b[user.child.name == Fred]
-    TableSource@59d0d45b(user.child)
+DeleteStatement@ad4d66b(child)
+  Select@1b49105b[child.name == Fred]
+    TableSource@59d0d45b(child)

@@ -76,6 +76,15 @@ public class TableGroup extends BasePlanElement
         return min;
     }
 
+    public TableSource findByOrdinal(int ordinal) {
+        for (TableSource table : tables) {
+            if (ordinal == table.getTable().getOrdinal()) {
+                return table;
+            }
+        }
+        return null;
+    }
+
     @Override
     public String toString() {
         return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +

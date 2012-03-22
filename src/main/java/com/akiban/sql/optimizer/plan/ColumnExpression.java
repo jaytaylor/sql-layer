@@ -84,7 +84,19 @@ public class ColumnExpression extends BaseExpression
     }
 
     public void markEquivalentTo(ColumnExpression other) {
+        if (equivalenceFinder == null) {
+            equivalenceFinder = other.equivalenceFinder;
+            assert equivalenceFinder != null;
+        } else if (other.equivalenceFinder == null) {
+            other.equivalenceFinder = equivalenceFinder;
+        } else if (other.equivalenceFinder != equivalenceFinder) {
+            throw new IllegalStateException("columns are in different equivalence scopes");
+        }
         equivalenceFinder.markEquivalent(this, other);
+    }
+    
+    public EquivalenceFinder<ColumnExpression> tryGetEquivalenceFinder() {
+        return equivalenceFinder;
     }
 
     public EquivalenceFinder<ColumnExpression> getEquivalenceFinder() {

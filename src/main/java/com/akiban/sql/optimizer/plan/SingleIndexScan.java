@@ -18,8 +18,8 @@ package com.akiban.sql.optimizer.plan;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
 
-import java.util.Collection;
 import java.util.List;
 
 public final class SingleIndexScan extends IndexScan {
@@ -66,6 +66,11 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
+    public List<ConditionExpression> getGroupConditions() {
+        return getConditions();
+    }
+
+    @Override
     public UserTable getLeafMostUTable() {
         return (UserTable) index.leafMostTable();
     }
@@ -80,20 +85,43 @@ public final class SingleIndexScan extends IndexScan {
         // Note! Really what we want are the *leading* equalities. But this method is only
         // used in the context of MultiIndexEnumerator, which will only put in leading
         // equalities.
-        return getEqualityComparands().size();
+        List<ExpressionNode> equalityComparands = getEqualityComparands();
+        return (equalityComparands == null) ? 0 : equalityComparands.size();
     }
 
     @Override
-    public boolean removeCoveredConditions(Collection<? super ConditionExpression> conditions,
-                                           Collection<? super ConditionExpression> removeTo) {
+    public void incrementConditionsCounter(ConditionsCounter<? super ConditionExpression> counter) {
+        for (ConditionExpression cond : getConditions())
+            counter.increment(cond);
+    }
 
-        boolean removedAny = false;
+    @Override
+    public boolean isUseful(ConditionsCount<? super ConditionExpression> count) {
         for (ConditionExpression cond : getConditions()) {
-            if(conditions.remove(cond)) {
-                removeTo.add(cond);
-                removedAny = true;
-            }
+            if (count.getCount(cond) == HowMany.ONE)
+                return true;
         }
-        return removedAny;
+        return false;
+    }
+
+    @Override
+    public UserTable findCommonAncestor(IndexScan otherScan) {
+        TableSource myTable = getLeafMostTable();
+        TableSource otherTable = otherScan.getLeafMostTable();
+        int myDepth = myTable.getTable().getDepth();
+        int otherDepth = otherTable.getTable().getDepth();
+        while (myDepth > otherDepth) {
+            myTable = myTable.getParentTable();
+            myDepth = myTable.getTable().getDepth();
+        }
+        while (otherDepth > myDepth) {
+            otherTable = otherTable.getParentTable();
+            otherDepth = otherTable.getTable().getDepth();
+        }
+        while (myTable != otherTable) {
+            myTable = myTable.getParentTable();
+            otherTable = otherTable.getParentTable();
+        }
+        return myTable.getTable().getTable();
     }
 }

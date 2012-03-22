@@ -23,7 +23,7 @@ import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.*;
 
-public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression>
+public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression,IndexScan>
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
@@ -60,6 +60,9 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
 
     // Estimated cost of using this index.
     private CostEstimate costEstimate;
+    
+    // The cost of just the scan of this index, not counting lookups, flattening, etc
+    private CostEstimate scanCostEstimate;
 
     public IndexScan(TableSource table) {
         rootMostTable = rootMostInnerTable = leafMostInnerTable = leafMostTable = table;
@@ -229,6 +232,14 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         this.requiredTables = requiredTables;
     }
 
+    public CostEstimate getScanCostEstimate() {
+        return scanCostEstimate;
+    }
+
+    public void setScanCostEstimate(CostEstimate scanCostEstimate) {
+        this.scanCostEstimate = scanCostEstimate;
+    }
+
     public CostEstimate getCostEstimate() {
         return costEstimate;
     }
@@ -261,18 +272,25 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     }
     
     public abstract List<IndexColumn> getIndexColumns();
-
+    public abstract List<ConditionExpression> getGroupConditions();
+    
     @Override
     public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
+        StringBuilder sb = new StringBuilder();
+        buildSummaryString(sb, true);
+        return sb.toString();
+    }
+     
+    protected void buildSummaryString(StringBuilder str, boolean full) {
+        str.append(super.summaryString());
         str.append("(");
         str.append(summarizeIndex());
         str.append(", ");
-        if (covering)
+        if (full && covering)
             str.append("covering/");
-        if (orderEffectiveness != null)
+        if (full && orderEffectiveness != null)
             str.append(orderEffectiveness);
-        if (ordering != null) {
+        if (full && ordering != null) {
             boolean anyReverse = false, allReverse = true;
             for (int i = 0; i < ordering.size(); i++) {
                 if (ordering.get(i).isAscending() != isAscendingAt(i))
@@ -311,18 +329,11 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
             str.append(", UNIONs of ");
             str.append(conditionRange.describeRanges());
         }
-        if (costEstimate != null) {
+        if (full && costEstimate != null) {
             str.append(", ");
             str.append(costEstimate);
         }
         str.append(")");
-        return str.toString();
-    }
-    
-    void setConditions(List<ConditionExpression> newConditions) {
-        if (conditions != null)
-            throw new IllegalStateException(conditions.toString());
-        conditions = newConditions;
     }
 
     protected abstract String summarizeIndex();

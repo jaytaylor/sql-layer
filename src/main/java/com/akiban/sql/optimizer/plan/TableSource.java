@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.error.InvalidOperationException;
 
+import java.util.List;
 import java.util.Set;
 
 /** A join to an actual table. */
@@ -26,11 +27,13 @@ public class TableSource extends BaseJoinable implements ColumnSource
     private TableGroup group;
     private TableGroupJoin parentJoin;
     private boolean required;
+    private String name;
 
-    public TableSource(TableNode table, boolean required) {
+    public TableSource(TableNode table, boolean required, String name) {
         this.table = table;
         table.addUse(this);
         this.required = required;
+        this.name = name;
     }
 
     public TableNode getTable() {
@@ -73,7 +76,7 @@ public class TableSource extends BaseJoinable implements ColumnSource
 
     @Override
     public String getName() {
-        return table.getTable().getName().toString();
+        return name;
     }
 
     @Override
@@ -90,7 +93,7 @@ public class TableSource extends BaseJoinable implements ColumnSource
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
-        str.append(table.toString());
+        str.append(name);
         if (parentJoin != null) {
             str.append(" - ");
             str.append(parentJoin);

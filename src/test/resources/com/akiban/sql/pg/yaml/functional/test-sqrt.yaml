@@ -1,0 +1,10 @@
+## Test SQRT
+## (To be continued!)
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(bigint_field, double_field) VALUES (4, 9);
+---
+- Statement: SELECT SQRT(4) from all_types;
+- output: [[2.0]]
+...

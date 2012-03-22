@@ -1,7 +1,7 @@
 SelectQuery@2330633a
   ResultSet@5a749436[cid, name]
-    Project@1bae939f[user.customers.cid, user.customers.name]
-      Select@2e257f1b[user.customers.name == user.parent.name]
+    Project@1bae939f[customers.cid, customers.name]
+      Select@2e257f1b[customers.name == parent.name]
         JoinNode@1fbbdd48(INNER)
-          TableSource@66bcb23e(user.customers)
-          TableSource@6e5a3923(user.parent)
+          TableSource@66bcb23e(customers)
+          TableSource@6e5a3923(parent)

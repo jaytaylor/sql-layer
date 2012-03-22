@@ -1,7 +1,7 @@
 SelectQuery@59e184cb
   ResultSet@6273305c[cid, name, oid, cid, order_date]
-    Project@786c1a82[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Project@786c1a82[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
       Select@72e8a021[]
         JoinNode@6691177(INNER)
-          TableSource@5bf99eea(user.customers)
-          TableSource@613043d2(user.orders)
+          TableSource@5bf99eea(customers)
+          TableSource@613043d2(orders)

@@ -1,8 +1,8 @@
 SelectQuery@361bb8ea
   ResultSet@56092666[name]
     Distinct@72b81eaa
-      Project@15e565bd[user.child.name]
-        Select@77a6686[user.parent.name != Smith]
-          JoinNode@74e0eb3f(INNER[user.parent.id == user.child.pid])
-            TableSource@5a74b10b(user.parent)
-            TableSource@23137792(user.child)
+      Project@15e565bd[child.name]
+        Select@77a6686[parent.name != Smith]
+          JoinNode@74e0eb3f(INNER[parent.id == child.pid])
+            TableSource@5a74b10b(parent)
+            TableSource@23137792(child)

@@ -138,7 +138,7 @@ public class DPhypEnumerateTest extends OptimizerTestBase
         }
 
         public List<String> evaluateJoin(long s1, List<String> p1, long s2, List<String> p2, long s, List<String> existing, 
-                                         JoinType joinType, Collection<JoinOperator> joins) {
+                                         JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             if (existing == null)
                 existing = new ArrayList<String>();
             String jstr = " " + joinType + " JOIN ";
