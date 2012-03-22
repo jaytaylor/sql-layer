@@ -129,9 +129,9 @@ public final class MultiIndexIntersectScan extends IndexScan {
             indent(sb, nextIndentation);
         }
         else {
-            sb.append("INTERSECT(").append(getComparisonFields()).append(", ");
+            sb.append("INTERSECT(compare ").append(getComparisonFields()).append(", ");
         }
-        outputScan.buildSummaryString(sb, nextIndentation, false);
+        summarizeChildIndex(outputScan, nextIndentation, sb);
         if (pretty) {
             sb.append(Strings.NL);
             indent(sb, nextIndentation);
@@ -139,10 +139,16 @@ public final class MultiIndexIntersectScan extends IndexScan {
         else {
             sb.append(" AND ");
         }
-        selectorScan.buildSummaryString(sb, nextIndentation, false);
+        summarizeChildIndex(selectorScan, nextIndentation, sb);
         if (!pretty)
             sb.append(')');
         return sb.toString();
+    }
+
+    private void summarizeChildIndex(IndexScan child, int indentation, StringBuilder sb) {
+        int skips = child.getAllColumns().size() - getOrderingFields(child);
+        sb.append("skip ").append(skips).append(": ");
+        child.buildSummaryString(sb, indentation, false);
     }
 
     @Override
