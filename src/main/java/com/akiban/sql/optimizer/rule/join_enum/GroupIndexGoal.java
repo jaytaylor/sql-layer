@@ -35,6 +35,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 
+import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,7 @@ import java.util.*;
 public class GroupIndexGoal implements Comparator<IndexScan>
 {
     private static final Logger logger = LoggerFactory.getLogger(GroupIndexGoal.class);
+    static volatile Function<? super IndexScan,Void> intersectionEnumerationHook = null;
 
     // The overall goal.
     private QueryIndexGoal queryGoal;
@@ -515,8 +517,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     iter.remove();
             }
         }
+        Function<? super IndexScan,Void> hook = intersectionEnumerationHook;
         for (Iterator<IndexScan> iterator = enumerator.iterator(); iterator.hasNext(); ) {
             IndexScan intersectedIndex = iterator.next();
+            if (hook != null)
+                hook.apply(intersectedIndex);
             setIntersectionConditions(intersectedIndex);
             setColumnsAndOrdering(intersectedIndex);
             intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
@@ -1080,5 +1085,4 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                      (subqueryDepth == 0)));
         }
     }
-
 }
