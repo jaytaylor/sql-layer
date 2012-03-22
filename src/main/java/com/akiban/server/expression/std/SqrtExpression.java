@@ -55,12 +55,17 @@ public class SqrtExpression extends AbstractUnaryExpression {
         @Override
         public ValueSource eval()
         {
-            if (operand().isNull() || (operand().getDouble() < 0) )
+            if (operand().isNull())
                 return NullValueSource.only();
+            if (operand().getDouble() < 0)
+            {
+                valueHolder().putDouble(Double.NaN);
+                return valueHolder();
+            }
             
             double sqrtResult = Math.sqrt(operand().getDouble());
             valueHolder().putDouble(sqrtResult);
-            
+
             return valueHolder();
         }
         
