@@ -98,11 +98,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
                                              Collection<JoinOperator> joins,
+                                             Collection<JoinOperator> outsideJoins,
                                              boolean sortAllowed) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
         setJoinConditions(joins);
-        updateRequiredColumns();
+        updateRequiredColumns(joins, outsideJoins);
         return conditionSources;
     }
 
@@ -134,13 +135,24 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
     }
 
-    public void updateRequiredColumns() {
+    public void updateRequiredColumns(Collection<JoinOperator> joins,
+                                      Collection<JoinOperator> outsideJoins) {
         requiredColumns.clear();
         Collection<PlanNode> orderings = (queryGoal.getOrdering() == null) ? 
             Collections.<PlanNode>emptyList() : 
             Collections.<PlanNode>singletonList(queryGoal.getOrdering());
-        queryGoal.getQuery().accept(new RequiredColumnsFiller(requiredColumns, 
-                                                              orderings, conditions));
+        RequiredColumnsFiller filler = new RequiredColumnsFiller(requiredColumns, 
+                                                                 orderings, conditions);
+        queryGoal.getQuery().accept(filler);
+        for (JoinOperator join : outsideJoins) {
+            if (joins.contains(join)) continue;
+            ConditionList joinConditions = join.getJoinConditions();
+            if (joinConditions != null) {
+                for (ConditionExpression condition : joinConditions) {
+                    condition.accept(filler);
+                }
+            }
+        }        
     }
 
     /** Populate given index usage according to goal.

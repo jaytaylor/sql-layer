@@ -95,7 +95,12 @@ public class DefaultNameGenerator implements NameGenerator {
 
     @Override
     public String generateGroupName(UserTable userTable) {
-        String startingName = userTable.getName().getTableName();
+        return generateGroupName(userTable.getName().getTableName());
+    }
+    
+    @Override
+    public String generateGroupName(final String tableName) {
+        String startingName = tableName;
         if (groupNames.add(startingName)) {
             return startingName;
         }

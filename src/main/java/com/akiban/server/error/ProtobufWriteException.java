@@ -1,5 +1,5 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
+ * Copyright (C) 2012 Akiban Technologies Inc.
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License, version 3,
  * as published by the Free Software Foundation.
@@ -13,17 +13,10 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.ais.model;
+package com.akiban.server.error;
 
-import java.util.List;
-
-public interface NameGenerator
-{
-    String generateColumnName(Column column);
-    String generateGroupIndexName(TableIndex userTableIndex);
-    String generateGroupName (UserTable userTable);
-    String generateGroupName (String tableName);
-    String generateGroupTableName (String groupName);
-    String generateIndexName (String indexName, String columnName, String constraint);
-    String generateJoinName (TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
+public class ProtobufWriteException extends InvalidOperationException {
+    public ProtobufWriteException(String protoMessageName, String errorDetail) {
+        super(ErrorCode.PROTOBUF_WRITE, protoMessageName, errorDetail);
+    }
 }

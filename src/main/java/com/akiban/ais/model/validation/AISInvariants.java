@@ -18,6 +18,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.server.error.AISNullReferenceException;
 import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateGroupNameException;
 import com.akiban.server.error.DuplicateIndexColumnException;
@@ -27,6 +28,12 @@ import com.akiban.server.error.NameIsNullException;
 
 public class AISInvariants {
 
+    public static void checkNullField (Object field, String owner, String fieldName, String reference) {
+        if (field == null) {
+            throw new AISNullReferenceException(owner, fieldName, reference);
+        }
+    }
+    
     public static void checkNullName (final String name, final String source, final String type) {
         if (name == null || name.length() == 0) {
             throw new NameIsNullException (source, type);

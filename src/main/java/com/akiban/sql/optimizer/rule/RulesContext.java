@@ -90,7 +90,10 @@ public class RulesContext
     public void endRule(BaseRule rule) {
     }
 
-    /** Get optimizer configuration property. */
+    /** Get optimizer configuration. */
+    public Properties getProperties() {
+        return properties;
+    }
     public String getProperty(String key) {
         return properties.getProperty(key);
     }

@@ -99,7 +99,10 @@ public class AISBBasedBuilder
 
         @Override
         public NewAISGroupIndexStarter groupIndex(String indexName, Index.JoinType joinType) {
-            return new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), defaultSchema).groupIndex(indexName, joinType);
+            ActualGroupIndexBuilder actual  = new ActualGroupIndexBuilder(aisb.akibanInformationSchema(), defaultSchema);
+            actual.aisb.setTableIdOffset(aisb.getTableIdOffset());
+            actual.aisb.setIndexIdOffset(aisb.getIndexIdOffset());
+            return actual.groupIndex(indexName, joinType);
         }
 
         // NewuserTableBuilder interface
