@@ -47,14 +47,14 @@ public class ProtobufReaderWriterTest {
         final AkibanInformationSchema inAIS = new AkibanInformationSchema();
         inAIS.freeze();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        compareAndAssert(inAIS, outAIS);
+        compareAndAssert(inAIS, outAIS, false);
     }
 
     @Test
     public void caoi() {
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        compareAndAssert(inAIS, outAIS);
+        compareAndAssert(inAIS, outAIS, false);
     }
     
     @Test
@@ -66,7 +66,7 @@ public class ProtobufReaderWriterTest {
         
         final AkibanInformationSchema inAIS = builder.ais();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        compareAndAssert(inAIS, outAIS);
+        compareAndAssert(inAIS, outAIS, false);
     }
 
     @Test
@@ -80,7 +80,7 @@ public class ProtobufReaderWriterTest {
         inAIS.freeze();
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        compareAndAssert(inAIS, outAIS);
+        compareAndAssert(inAIS, outAIS, false);
     }
 
     /*
@@ -105,7 +105,7 @@ public class ProtobufReaderWriterTest {
         JoinColumn.create(coJoin, cId, oCid);
 
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        compareAndAssert(inAIS, outAIS);
+        compareAndAssert(inAIS, outAIS, false);
     }
 
     /*
@@ -126,8 +126,15 @@ public class ProtobufReaderWriterTest {
         IndexColumn.create(iPayment, cPayment, 0, true, null);
         
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
-        compareAndAssert(inAIS, outAIS);
+        compareAndAssert(inAIS, outAIS, false);
 
+    }
+
+    @Test
+    public void caoiWithFullComparison() {
+        final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
+        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        compareAndAssert(inAIS, outAIS, true);
     }
 
     @Test(expected=ProtobufReadException.class)
@@ -176,16 +183,16 @@ public class ProtobufReaderWriterTest {
         return ByteBuffer.allocate(4096);
     }
 
-    private void compareAndAssert(AkibanInformationSchema lhs, AkibanInformationSchema rhs) {
+    private void compareAndAssert(AkibanInformationSchema lhs, AkibanInformationSchema rhs, boolean withIDs) {
         assertEquals("AIS charsets", lhs.getCharsetAndCollation().charset(), rhs.getCharsetAndCollation().charset());
         assertEquals("AIS collations", lhs.getCharsetAndCollation().collation(), rhs.getCharsetAndCollation().collation());
 
-        GroupMaps lhsGroups = new GroupMaps(lhs.getGroups().values());
-        GroupMaps rhsGroups = new GroupMaps(rhs.getGroups().values());
+        GroupMaps lhsGroups = new GroupMaps(lhs.getGroups().values(), withIDs);
+        GroupMaps rhsGroups = new GroupMaps(rhs.getGroups().values(), withIDs);
         lhsGroups.compareAndAssert(rhsGroups);
         
-        TableMaps lhsTables = new TableMaps(lhs.getUserTables().values());
-        TableMaps rhsTables = new TableMaps(rhs.getUserTables().values());
+        TableMaps lhsTables = new TableMaps(lhs.getUserTables().values(), withIDs);
+        TableMaps rhsTables = new TableMaps(rhs.getUserTables().values(), withIDs);
         lhsTables.compareAndAssert(rhsTables);
     }
 
@@ -193,11 +200,11 @@ public class ProtobufReaderWriterTest {
         public final Collection<String> names = new TreeSet<String>();
         public final Collection<String> indexes = new TreeSet<String>();
         
-        public GroupMaps(Collection<Group> groups) {
+        public GroupMaps(Collection<Group> groups, boolean withIDs) {
             for(Group group : groups) {
                 names.add(group.getName());
                 for(Index index : group.getIndexes()) {
-                    indexes.add(index.toString());
+                    indexes.add(index.toString() + (withIDs ? index.getIndexId() : ""));
                 }
             }
         }
@@ -214,14 +221,14 @@ public class ProtobufReaderWriterTest {
         public final Collection<String> columns = new TreeSet<String>();
         public final Collection<String> charAndCols = new TreeSet<String>();
         
-        public TableMaps(Collection<UserTable> tables) {
+        public TableMaps(Collection<UserTable> tables, boolean withIDs) {
             for(UserTable table : tables) {
-                names.add(table.getName().toString());
+                names.add(table.getName().toString() + (withIDs ? table.getTableId() : ""));
                 for(Column column : table.getColumns()) {
                     columns.add(column.toString() + " " + column.getTypeDescription() + " " + column.getCharsetAndCollation());
                 }
                 for(Index index : table.getIndexes()) {
-                    indexes.add(index.toString());
+                    indexes.add(index.toString() + (withIDs ? index.getIndexId() : ""));
                 }
                 charAndCols.add(table.getName() + " " + table.getCharsetAndCollation().toString());
             }
