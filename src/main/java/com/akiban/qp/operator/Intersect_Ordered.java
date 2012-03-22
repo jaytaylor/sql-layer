@@ -24,7 +24,11 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -85,6 +89,18 @@ import static java.lang.Math.min;
 
 class Intersect_Ordered extends Operator
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append("(");
+        str.append(Arrays.toString(fieldRankingExpressions));
+        str.append(")");
+        return str.toString();
+    }
+
     // Operator interface
 
     @Override
@@ -168,6 +184,7 @@ class Intersect_Ordered extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered next");
+    private static final Logger LOG = LoggerFactory.getLogger(Intersect_Ordered.class);
 
     // Object state
 
@@ -238,6 +255,9 @@ class Intersect_Ordered extends Operator
                         close();
                     }
                 }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Intersect_Ordered: yield {}", next);
+                }
                 return next;
             } finally {
                 TAP_NEXT.out();
@@ -276,12 +296,18 @@ class Intersect_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Intersect_Ordered: left {}", row);
+            }
         }
         
         private void nextRightRow()
         {
             Row row = rightInput.next();
             rightRow.hold(row);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Intersect_Ordered: right {}", row);
+            }
         }
         
         private long compareRows()
