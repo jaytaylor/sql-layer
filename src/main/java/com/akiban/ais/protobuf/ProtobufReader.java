@@ -96,17 +96,17 @@ public class ProtobufReader {
     private void loadSchemas(Collection<AISProtobuf.Schema> pbSchemas) {
         List<List<NewGroupInfo>> allNewGroups = new ArrayList<List<NewGroupInfo>>();
 
-        // Assume no ordering, create groups after all tables exist
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             hasRequiredFields(pbSchema);
+
             List<NewGroupInfo> newGroups = loadGroups(pbSchema.getSchemaName(), pbSchema.getGroupsList());
             allNewGroups.add(newGroups);
+
+            // Requires no tables, does not load indexes
+            loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
         }
 
-        for(AISProtobuf.Schema pbSchema : pbSchemas) {
-            loadTables( pbSchema.getSchemaName(), pbSchema.getTablesList());
-        }
-        
+        // Hook up groups, create group tables and indexes after all in place
         for(List<NewGroupInfo> newGroups : allNewGroups) {
             createGroupTablesAndIndexes(newGroups);
         }
@@ -159,7 +159,7 @@ public class ProtobufReader {
             joinsNeedingGroup.addAll(join.getChild().getCandidateChildJoins());
         }
 
-        // Final pass (GI creation requires everything else be created)
+        // Final pass (GI creation requires everything else be completed)
         for(NewGroupInfo newGroupInfo : newGroups) {
             loadGroupIndexes(newGroupInfo.group, newGroupInfo.pbGroup.getIndexesList());
         }
@@ -326,11 +326,11 @@ public class ProtobufReader {
      * @param message Message to check
      */
     private static void hasRequiredFields(AbstractMessage message) {
-        checkRequiredFields(message);
+        requireAllFieldsExcept(message);
     }
 
     private static void hasRequiredFields(AISProtobuf.Group pbGroup) {
-        checkRequiredFields(
+        requireAllFieldsExcept(
                 pbGroup,
                 AISProtobuf.Group.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Group.INDEXES_FIELD_NUMBER
@@ -338,7 +338,7 @@ public class ProtobufReader {
     }
 
     private static void hasRequiredFields(AISProtobuf.Schema pbSchema) {
-        checkRequiredFields(
+        requireAllFieldsExcept(
                 pbSchema,
                 AISProtobuf.Schema.TABLES_FIELD_NUMBER,
                 AISProtobuf.Schema.GROUPS_FIELD_NUMBER,
@@ -347,7 +347,7 @@ public class ProtobufReader {
     }
 
     private static void hasRequiredFields(AISProtobuf.Table pbTable) {
-        checkRequiredFields(
+        requireAllFieldsExcept(
                 pbTable,
                 AISProtobuf.Table.TABLEID_FIELD_NUMBER,
                 AISProtobuf.Table.ORDINAL_FIELD_NUMBER,
@@ -360,7 +360,7 @@ public class ProtobufReader {
     }
 
     private static void hasRequiredFields(AISProtobuf.Column pbColumn) {
-        checkRequiredFields(
+        requireAllFieldsExcept(
                 pbColumn,
                 AISProtobuf.Column.TYPEPARAM1_FIELD_NUMBER,
                 AISProtobuf.Column.TYPEPARAM2_FIELD_NUMBER,
@@ -371,7 +371,7 @@ public class ProtobufReader {
     }
 
     private static void hasRequiredFields(AISProtobuf.Index pbIndex) {
-        checkRequiredFields(
+        requireAllFieldsExcept(
                 pbIndex,
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER,
@@ -380,7 +380,7 @@ public class ProtobufReader {
     }
 
     private static void hasRequiredFieldsGI(AISProtobuf.Index pbIndex) {
-        checkRequiredFields(
+        requireAllFieldsExcept(
                 pbIndex,
                 AISProtobuf.Index.TREENAME_FIELD_NUMBER,
                 AISProtobuf.Index.DESCRIPTION_FIELD_NUMBER
@@ -388,13 +388,13 @@ public class ProtobufReader {
     }
 
     private static void hasRequiredFields(AISProtobuf.IndexColumn pbIndexColumn) {
-        checkRequiredFields(
+        requireAllFieldsExcept(
                 pbIndexColumn,
                 AISProtobuf.IndexColumn.TABLENAME_FIELD_NUMBER
         );
     }
 
-    private static void checkRequiredFields(AbstractMessage message, int... fieldNumbersNotRequired) {
+    private static void requireAllFieldsExcept(AbstractMessage message, int... fieldNumbersNotRequired) {
         Collection<Descriptors.FieldDescriptor> required = new ArrayList<Descriptors.FieldDescriptor>(message.getDescriptorForType().getFields());
         Collection<Descriptors.FieldDescriptor> actual = message.getAllFields().keySet();
         required.removeAll(actual);
