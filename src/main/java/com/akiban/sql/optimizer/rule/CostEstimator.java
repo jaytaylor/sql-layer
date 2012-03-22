@@ -115,7 +115,10 @@ public abstract class CostEstimator implements TableRowCounts
         return indexStatsArray;
     }
 
-    /* Settings */
+    /* Settings.
+     * Note: these are compiler properties, so they start with
+     * optimizer.cost. in the server.properties file. 
+     */
 
     protected final double DEFAULT_MISSING_STATS_SELECTIVITY = 0.85;
 
