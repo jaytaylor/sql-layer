@@ -128,8 +128,13 @@ public class SignExpression extends AbstractUnaryExpression
                 case U_BIGINT:                    
                     valueHolder().putInt(finalReturnValueOf( operand().getUBigInt().compareTo(BigInteger.ZERO) )); 
                     break;
+                case VARCHAR:
+                    double parsedStrInput = Double.parseDouble(operand().getString());
+                    valueHolder().putInt(finalReturnValueOf( Double.compare(parsedStrInput, 0.0d)));
+                    break;
                 default:
                     QueryContext context = queryContext();
+                    System.out.println(operand().getConversionType());
                     if (context != null)
                         context.warnClient(new InvalidArgumentTypeException("SIGN: " + operandType.name()));
                     return NullValueSource.only();

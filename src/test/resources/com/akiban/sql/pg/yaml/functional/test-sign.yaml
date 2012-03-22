@@ -70,11 +70,10 @@
 - Statement: SELECT SIGN(2.0 - 500.0) FROM all_types
 - output: [[-1]]
 # Parameters
-# TO DO - only this part is failing
 ---
 - Statement: SELECT SIGN(?) FROM all_types
-- params: [[0.0]]
-- output: [[0.0]]
+- params: [[100.25]]
+- output: [[1]]
 ---
 - Statement: SELECT SIGN(?) FROM all_types
 - params: [[-100.25]]
