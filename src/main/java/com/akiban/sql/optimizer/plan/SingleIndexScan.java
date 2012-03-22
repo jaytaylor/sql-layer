@@ -22,7 +22,6 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
-import com.sun.xml.internal.bind.v2.TODO;
 
 import java.util.ArrayList;
 import java.util.List;
