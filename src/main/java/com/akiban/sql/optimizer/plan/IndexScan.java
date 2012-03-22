@@ -20,6 +20,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
+import com.akiban.util.Strings;
 
 import java.util.*;
 
@@ -276,16 +277,30 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     
     @Override
     public String summaryString() {
+        return summaryString(-1);
+    }
+    
+    public String summaryString(boolean prettyFormat) {
+        return summaryString(prettyFormat ? 0 : -1);
+    }
+
+    private String summaryString(int indentation) {
         StringBuilder sb = new StringBuilder();
-        buildSummaryString(sb, true);
+        buildSummaryString(sb, indentation, true);
         return sb.toString();
     }
      
-    protected void buildSummaryString(StringBuilder str, boolean full) {
+    protected void buildSummaryString(StringBuilder str, int indentation, boolean full) {
         str.append(super.summaryString());
-        str.append("(");
-        str.append(summarizeIndex());
-        str.append(", ");
+        str.append('(');
+        str.append(summarizeIndex(indentation));
+        if (indentation < 0) {
+            str.append(", ");
+        }
+        else if (indentation == 0) {
+            str.append(Strings.NL);
+            indent(str, 1).append("-> ");
+        }
         if (full && covering)
             str.append("covering/");
         if (full && orderEffectiveness != null)
@@ -335,7 +350,18 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         }
         str.append(")");
     }
+    
+    protected static StringBuilder indent(int indentation) {
+        return indent(new StringBuilder(), indentation);
+    }
+    
+    protected static StringBuilder indent(StringBuilder str, int indentation) {
+        while (indentation --> 0) {
+            str.append("    ");
+        }
+        return str;
+    }
 
-    protected abstract String summarizeIndex();
+    protected abstract String summarizeIndex(int indentation);
     protected abstract boolean isAscendingAt(int index);
 }

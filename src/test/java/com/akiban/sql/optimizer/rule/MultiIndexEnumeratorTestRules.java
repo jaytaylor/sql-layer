@@ -66,7 +66,11 @@ public final class MultiIndexEnumeratorTestRules {
         }
 
         private PlanNode useHooks(final PlanNode plan, IntersectionViewer intersections) {
-            List<String> scanDescriptions = Strings.mapToString(intersections.indexScans);
+            List<String> scanDescriptions = new ArrayList<String>(intersections.indexScans.size());
+            for (IndexScan intersection : intersections.indexScans) {
+                String str = intersection.summaryString(true);
+                scanDescriptions.add(str);
+            }
             Collections.sort(scanDescriptions);
             final String summary = Strings.join(scanDescriptions);
             return new PlanNode() {

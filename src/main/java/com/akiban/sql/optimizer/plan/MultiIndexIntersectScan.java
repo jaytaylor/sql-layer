@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
+import com.akiban.util.Strings;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -118,12 +119,29 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    protected String summarizeIndex() {
-        StringBuilder sb = new StringBuilder("INTERSECT(");
-        outputScan.buildSummaryString(sb, false);
-        sb.append(" AND ");
-        selectorScan.buildSummaryString(sb, false);
-        sb.append(')');
+    protected String summarizeIndex(int indentation) {
+        boolean pretty = indentation >= 0;
+        int nextIndentation = pretty ? indentation + 1 : -1;
+
+        StringBuilder sb = indent(indentation);
+        if (pretty) {
+            sb.append(Strings.NL);
+            indent(sb, nextIndentation);
+        }
+        else {
+            sb.append("INTERSECT(");
+        }
+        outputScan.buildSummaryString(sb, nextIndentation, false);
+        if (pretty) {
+            sb.append(Strings.NL);
+            indent(sb, nextIndentation);
+        }
+        else {
+            sb.append(" AND ");
+        }
+        selectorScan.buildSummaryString(sb, nextIndentation, false);
+        if (!pretty)
+            sb.append(')');
         return sb.toString();
     }
 

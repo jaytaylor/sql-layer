@@ -56,7 +56,7 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    protected String summarizeIndex() {
+    protected String summarizeIndex(int indentation) {
         return String.valueOf(index);
     }
 

@@ -49,6 +49,8 @@ import java.util.jar.JarEntry;
  * String utils.
  */
 public abstract class Strings {
+    
+    public static String NL = nl();
 
     /**
      * Gets the system <tt>line.separator</tt> newline.
