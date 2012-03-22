@@ -71,7 +71,12 @@ public final class MultiIndexIntersectScan extends IndexScan {
     public List<ConditionExpression> getGroupConditions() {
         return coveringConditions;
     }
-    
+
+    @Override
+    public List<ExpressionNode> getEqualityComparands() {
+        return outputScan.getEqualityComparands();
+    }
+
     public void setGroupConditions(Collection<ConditionExpression> coveringConditions) {
         this.coveringConditions = new ArrayList<ConditionExpression>(coveringConditions);
     }

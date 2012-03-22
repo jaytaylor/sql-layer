@@ -248,8 +248,7 @@ public class IndexGoal implements Comparator<IndexScan>
 
     // Determine how well this index does against the target.
     // Also, correct traversal order to match sort if possible.
-    protected IndexScan.OrderEffectiveness
-        determineOrderEffectiveness(IndexScan index) {
+    protected IndexScan.OrderEffectiveness determineOrderEffectiveness(SingleIndexScan index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
         BitSet reverse = new BitSet(indexOrdering.size());
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
