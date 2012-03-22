@@ -143,14 +143,15 @@ public class JoinAndIndexPicker extends BaseRule
         // group.
         protected void pickIndex(TableGroupJoinTree tables) {
             GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
-            groupGoal.updateRequiredColumns(); // No more joins / bound tables.
+            List<JoinOperator> empty = Collections.emptyList(); // No more joins / bound tables.
+            groupGoal.updateRequiredColumns(empty, empty);
             PlanNode scan = groupGoal.pickBestScan();
             groupGoal.install(scan, null);
         }
 
         // General joins: run enumerator.
         protected void pickJoinsAndIndexes(JoinNode joins) {
-            Plan rootPlan = new JoinEnumerator(this).run(joins, queryGoal.getWhereConditions()).bestPlan();
+            Plan rootPlan = new JoinEnumerator(this).run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
             installPlan(rootPlan);
         }
 
@@ -169,22 +170,23 @@ public class JoinAndIndexPicker extends BaseRule
         // Subquery but as part of a larger plan tree. Return best
         // plan to be installed with it.
         public Plan subqueryPlan(Set<ColumnSource> subqueryBoundTables,
-                                 Collection<JoinOperator> subqueryJoins) {
+                                 Collection<JoinOperator> subqueryJoins,
+                                 Collection<JoinOperator> subqueryOutsideJoins) {
             if (queryGoal == null)
                 queryGoal = determineQueryIndexGoal(joinable);
             if (joinable instanceof TableGroupJoinTree) {
                 TableGroupJoinTree tables = (TableGroupJoinTree)joinable;
                 GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
-                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, subqueryJoins, true);
+                List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, subqueryJoins, subqueryOutsideJoins, true);
                 PlanNode scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
                 return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources);
             }
             if (joinable instanceof JoinNode) {
-                return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan();
+                return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins, subqueryOutsideJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
             }
             if (joinable instanceof SubquerySource) {
-                return subpicker((SubquerySource)joinable).subqueryPlan(subqueryBoundTables, subqueryJoins);
+                return subpicker((SubquerySource)joinable).subqueryPlan(subqueryBoundTables, subqueryJoins, subqueryOutsideJoins);
             }
             throw new AkibanInternalException("Unknown join element: " + joinable);
         }
@@ -218,10 +220,10 @@ public class JoinAndIndexPicker extends BaseRule
             this.bitset = bitset;
         }
 
-        public abstract Plan bestPlan();
+        public abstract Plan bestPlan(Collection<JoinOperator> outsideJoins);
 
-        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins) {
-            return bestPlan();  // By default, it doesn't matter.
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(outsideJoins); // By default, side doesn't matter.
         }
     }
     
@@ -265,22 +267,22 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan() {
-            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList());
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
+            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), outsideJoins);
         }
 
         @Override
-        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins) {
-            return bestPlan(outerPlan.bitset, joins);
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(outerPlan.bitset, joins, outsideJoins);
         }
 
-        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> joins) {
+        protected GroupPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             for (GroupPlan groupPlan : bestPlans) {
                 if (groupPlan.outerTables == outerTables) {
                     return groupPlan;
                 }
             }
-            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins.isEmpty());
+            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, outsideJoins, joins.isEmpty());
             PlanNode scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
             GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources);
@@ -338,22 +340,22 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan() {
-            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList());
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
+            return bestPlan(JoinableBitSet.empty(), Collections.<JoinOperator>emptyList(), outsideJoins);
         }
 
         @Override
-        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins) {
-            return bestPlan(outerPlan.bitset, joins);
+        public Plan bestNestedPlan(PlanClass outerPlan, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
+            return bestPlan(outerPlan.bitset, joins, outsideJoins);
         }
 
-        protected SubqueryPlan bestPlan(long outerTables, Collection<JoinOperator> joins) {
+        protected SubqueryPlan bestPlan(long outerTables, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             for (SubqueryPlan subqueryPlan : bestPlans) {
                 if (subqueryPlan.outerTables == outerTables) {
                     return subqueryPlan;
                 }
             }
-            Plan rootPlan = picker.subqueryPlan(enumerator.boundTables(outerTables), joins);
+            Plan rootPlan = picker.subqueryPlan(enumerator.boundTables(outerTables), joins, outsideJoins);
             CostEstimate costEstimate = rootPlan.costEstimate;
             SubqueryPlan subqueryPlan = new SubqueryPlan(subquery, picker,
                                                          outerTables, rootPlan, 
@@ -398,7 +400,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan() {
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
             return plan;
         }
     }
@@ -477,7 +479,7 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Plan bestPlan() {
+        public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
             return bestPlan;
         }
     }
@@ -485,16 +487,17 @@ public class JoinAndIndexPicker extends BaseRule
     static class JoinEnumerator extends DPhyp<PlanClass> {
         private Picker picker;
         private Set<ColumnSource> subqueryBoundTables;
-        private Collection<JoinOperator> subqueryJoins;
+        private Collection<JoinOperator> subqueryJoins, subqueryOutsideJoins;
 
         public JoinEnumerator(Picker picker) {
             this.picker = picker;
         }
 
-        public JoinEnumerator(Picker picker, Set<ColumnSource> subqueryBoundTables, Collection<JoinOperator> subqueryJoins) {
+        public JoinEnumerator(Picker picker, Set<ColumnSource> subqueryBoundTables, Collection<JoinOperator> subqueryJoins, Collection<JoinOperator> subqueryOutsideJoins) {
             this.picker = picker;
             this.subqueryBoundTables = subqueryBoundTables;
             this.subqueryJoins = subqueryJoins;
+            this.subqueryOutsideJoins = subqueryOutsideJoins;
         }
 
         @Override
@@ -520,7 +523,7 @@ public class JoinAndIndexPicker extends BaseRule
         public PlanClass evaluateJoin(long leftBitset, PlanClass left, 
                                       long rightBitset, PlanClass right, 
                                       long bitset, PlanClass existing,
-                                      JoinType joinType, Collection<JoinOperator> joins) {
+                                      JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins) {
             JoinPlanClass planClass = (JoinPlanClass)existing;
             if (planClass == null)
                 planClass = new JoinPlanClass(this, bitset);
@@ -531,9 +534,13 @@ public class JoinAndIndexPicker extends BaseRule
                 // be recognized to match an indexable column.
                 joins.addAll(subqueryJoins);
             }
+            if (subqueryOutsideJoins != null) {
+                outsideJoins.addAll(subqueryOutsideJoins);
+            }
+            outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
-            Plan leftPlan = left.bestPlan();
-            Plan rightPlan = right.bestNestedPlan(left, joins);
+            Plan leftPlan = left.bestPlan(outsideJoins);
+            Plan rightPlan = right.bestNestedPlan(left, joins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                                              joinType, JoinNode.Implementation.NESTED_LOOPS,
