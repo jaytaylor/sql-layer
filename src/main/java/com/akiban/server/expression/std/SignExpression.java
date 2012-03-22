@@ -85,17 +85,30 @@ public class SignExpression extends AbstractUnaryExpression
             AkType operandType = operand().getConversionType();
             switch (operandType)
             {
+                // If the input is NaN, return NULL for type simplicity
                 case DOUBLE:
-                    valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getDouble(), 0.0d))); 
+                    if ((new Double(operand().getDouble())).equals(new Double(Double.NaN)))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getDouble(), 0.0d)));
                     break;
                 case U_DOUBLE:
-                    valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getUDouble(), 0.0d))); 
+                    if ((new Double(operand().getUDouble())).equals(new Double(Double.NaN)))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getUDouble(), 0.0d))); 
                     break;
                 case FLOAT:
-                    valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getFloat(), 0.0f))); 
+                    if ((new Float(operand().getFloat())).equals(new Float(Float.NaN)))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getFloat(), 0.0f))); 
                     break;
                 case U_FLOAT:
-                    valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getUFloat(), 0.0f))); 
+                    if ((new Float(operand().getUFloat())).equals(new Float(Float.NaN)))
+                        return NullValueSource.only();
+                    else                    
+                        valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getUFloat(), 0.0f))); 
                     break;
                 case LONG:
                     Long longInput = new Long(operand().getLong());

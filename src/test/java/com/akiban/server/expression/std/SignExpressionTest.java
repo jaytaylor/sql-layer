@@ -51,6 +51,10 @@ public class SignExpressionTest extends ComposedExpressionTestBase {
         assertEquals(POS, posOutput.evaluation().eval().getInt());
         assertEquals(NEG, negOutput.evaluation().eval().getInt());
         assertEquals(ZERO, zeroOutput.evaluation().eval().getInt());
+        
+        // Test NaN
+        Expression nanOutput = new SignExpression(new LiteralExpression(testType, Double.NaN));
+        assertTrue(nanOutput.evaluation().eval().isNull());
     }
     
     @Test
@@ -63,7 +67,10 @@ public class SignExpressionTest extends ComposedExpressionTestBase {
         
         assertEquals(POS, posOutput.evaluation().eval().getInt());
         assertEquals(NEG, negOutput.evaluation().eval().getInt());
-        assertEquals(ZERO, zeroOutput.evaluation().eval().getInt());        
+        assertEquals(ZERO, zeroOutput.evaluation().eval().getInt()); 
+        
+        Expression nanOutput = new SignExpression(new LiteralExpression(testType, Float.NaN));
+        assertTrue(nanOutput.evaluation().eval().isNull());
     }
 
     
@@ -136,6 +143,9 @@ public class SignExpressionTest extends ComposedExpressionTestBase {
         
         assertEquals(POS, posOutput.evaluation().eval().getInt());
         assertEquals(ZERO, zeroOutput.evaluation().eval().getInt()); 
+
+        Expression nanOutput = new SignExpression(new LiteralExpression(testType, Float.NaN));
+        assertTrue(nanOutput.evaluation().eval().isNull());
     }
         
     @Test
@@ -147,6 +157,9 @@ public class SignExpressionTest extends ComposedExpressionTestBase {
         
         assertEquals(POS, posOutput.evaluation().eval().getInt());
         assertEquals(ZERO, zeroOutput.evaluation().eval().getInt()); 
+        
+        Expression nanOutput = new SignExpression(new LiteralExpression(testType, Double.NaN));
+        assertTrue(nanOutput.evaluation().eval().isNull());
     }
     
     @Test

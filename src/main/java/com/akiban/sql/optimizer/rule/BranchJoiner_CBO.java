@@ -104,6 +104,7 @@ public class BranchJoiner_CBO extends BaseRule
             requiredTables = indexScan.getRequiredTables();
         }
         markBranches(tableGroup, requiredTables);
+        top:
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             TableSource indexTable = indexScan.getLeafMostTable();
@@ -124,23 +125,29 @@ public class BranchJoiner_CBO extends BaseRule
                 // side branch.
                 PlanNode sideScan = trySideBranch(scan, leafTable, rootTable,
                                                   indexTable, ancestors);
-                if (sideScan != null)
-                    return sideScan;
+                if (sideScan != null) {
+                    scan = sideScan;
+                    break top;
+                }
             }
             if (!ancestors.isEmpty())
                 scan = new AncestorLookup(scan, indexTable, ancestors);
             scan = flatten(scan, leafTable, rootTable);
-            return fillSideBranches(scan, leafTable, rootTable);
+            scan = fillSideBranches(scan, leafTable, rootTable);
         }
         else if (scan instanceof GroupScan) {
             GroupScan groupScan = (GroupScan)scan;
             List<TableSource> tables = new ArrayList<TableSource>();
             groupScan.setTables(tables);
-            return fillBranch(scan, tables, rootTable, null);
+            scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");
         }
+        for (TableGroupJoinNode table : tableGroup) {
+            assert !isPending(table) : table;
+        }
+        return scan;
     }
 
     /** Try to switch from the main branch over to a side branch.
@@ -213,24 +220,22 @@ public class BranchJoiner_CBO extends BaseRule
                 scan = new AncestorLookup(scan, sideBranch.getTable(), ancestors);
         }
         // And flatten up through root-most ancestor.
-        return fillBranch(scan, tables, sideBranch, rootTable);
+        return fillBranch(scan, tables, sideBranch, rootTable, rootTable);
     }
 
     /** Given a <code>BranchLookup</code> / <code>GroupScan</code>,
-     * pick a primary branch, flatten it onto <code>input</code> and
-     * then <code>Product</code> that with any remaining branches.
+     * pick a primary branch under <code>underRoot</code>, flatten it
+     * up to <code>flattenRoot</code> onto <code>input</code> and then
+     * <code>Product</code> that with any remaining branches up to
+     * <code>sideRoot</code>.
      */
     protected PlanNode fillBranch(PlanNode input, List<TableSource> lookupTables,
-                                  TableGroupJoinNode rootTable, 
-                                  TableGroupJoinNode flattenRoot) {
-        TableGroupJoinNode leafTable = singleBranchPending(rootTable, lookupTables);
-        if (flattenRoot == null)
-            // If from a side-branch, we flatten up one extra level to
-            // get connected coverage of the graph. Otherwise, it's
-            // the same branch.
-            flattenRoot = rootTable;
+                                  TableGroupJoinNode underRoot, 
+                                  TableGroupJoinNode flattenRoot,
+                                  TableGroupJoinNode sideRoot) {
+        TableGroupJoinNode leafTable = singleBranchPending(underRoot, lookupTables);
         return fillSideBranches(flatten(input, leafTable, flattenRoot),
-                                leafTable, rootTable);
+                                leafTable, sideRoot);
     }
 
     /** Generate single branch <code>Flatten</code> joins from
@@ -286,13 +291,15 @@ public class BranchJoiner_CBO extends BaseRule
                 subplans.add(input);
                 for (TableGroupJoinNode sibling = parent.getFirstChild();
                      sibling != null; sibling = sibling.getNextSibling()) {
-                    if (sibling == branchTable) continue;
+                    if ((sibling == branchTable) ||
+                        (leafLeftMostPending(sibling) == null))
+                        continue;
                     List<TableSource> tables = new ArrayList<TableSource>();
                     PlanNode subplan = new BranchLookup(null, // no input means _Nested.
                                                         parent.getTable().getTable(),
                                                         sibling.getTable().getTable(), 
                                                         tables);
-                    subplan = fillBranch(subplan, tables, sibling, parent);
+                    subplan = fillBranch(subplan, tables, sibling, parent, sibling);
                     if (subplans == null)
                         subplans = new ArrayList<PlanNode>();
                     subplans.add(subplan);
