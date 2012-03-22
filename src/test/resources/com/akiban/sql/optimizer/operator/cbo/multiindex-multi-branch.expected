@@ -5,6 +5,6 @@ PhysicalSelect[cid:int[INT]]
         AncestorLookup_Default(user.addresses -> [user.customers])
           Select_HKeyOrdered(user.addresses, Field(2) == Literal(CA))
             BranchLookup_Default(_akiban_customers Index(user.orders.order_date[IndexColumn(order_date)]) -> user.addresses limit NO LIMIT)
-              Intersect_Ordered([Field(1) >=< Field(1)])
+              Intersect_Ordered(skip 1 from left, skip 1 from right, compare 1)
                 IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>=UnboundExpressions[Literal(2010-04-22)],<=UnboundExpressions[Literal(2010-04-22)]))
                 IndexScan_Default(Index(user.addresses.state[IndexColumn(state)]) (>=UnboundExpressions[Literal(CA)],<=UnboundExpressions[Literal(CA)]))

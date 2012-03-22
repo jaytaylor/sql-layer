@@ -94,11 +94,8 @@ class Intersect_Ordered extends Operator
     @Override
     public String toString()
     {
-        StringBuilder str = new StringBuilder(getClass().getSimpleName());
-        str.append("(");
-        str.append(Arrays.toString(fieldRankingExpressions));
-        str.append(")");
-        return str.toString();
+        return String.format("%s(skip %d from left, skip %d from right, compare %d)",
+                             getClass().getSimpleName(), leftSkip, rightSkip, fieldRankingExpressions.length);
     }
 
     // Operator interface
@@ -169,14 +166,12 @@ class Intersect_Ordered extends Operator
         this.outputLeft = intersectOutput == IntersectOutputOption.OUTPUT_LEFT;
         // Setup for row comparisons
         this.fieldRankingExpressions = new RankExpression[comparisonFields];
-        int leftField = leftRowType.nFields() - leftOrderingFields;
-        int rightField = rightRowType.nFields() - rightOrderingFields;
+        leftSkip = leftRowType.nFields() - leftOrderingFields;
+        rightSkip = rightRowType.nFields() - rightOrderingFields;
         for (int f = 0; f < comparisonFields; f++) {
             this.fieldRankingExpressions[f] =
-                new RankExpression(new FieldExpression(leftRowType, leftField),
-                                   new FieldExpression(rightRowType, rightField));
-            leftField++;
-            rightField++;
+                new RankExpression(new FieldExpression(leftRowType, leftSkip + f),
+                                   new FieldExpression(rightRowType, rightSkip + f));
         }
     }
 
@@ -190,6 +185,8 @@ class Intersect_Ordered extends Operator
 
     private final Operator left;
     private final Operator right;
+    private final int leftSkip;
+    private final int rightSkip;
     private final RankExpression[] fieldRankingExpressions;
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
