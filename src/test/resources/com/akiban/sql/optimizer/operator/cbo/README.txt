@@ -4,6 +4,8 @@ multiindex-single-branch: Intersection on single branch.
 
 multiindex-multi-branch: Intersection on two branches.
 
+multiindex-multi-duplicate: Intersection of two of the same index.
+
 single-table-1: covering index
 
 single-table-2: group scan required
