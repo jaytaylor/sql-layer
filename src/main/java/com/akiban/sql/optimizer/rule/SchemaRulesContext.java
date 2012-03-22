@@ -24,9 +24,6 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.util.SchemaCache;
 
-import java.util.List;
-import java.util.Properties;
-
 /** The context associated with an AIS schema. */
 public abstract class SchemaRulesContext extends RulesContext
 {

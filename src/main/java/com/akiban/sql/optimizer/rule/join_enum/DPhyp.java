@@ -41,7 +41,7 @@ public abstract class DPhyp<P>
     // possibly joins handled atomically wrt this phase.
     private List<Joinable> tables;
     // The join operators, from JOINs and WHERE clause.
-    private List<JoinOperator> operators, evaluateOperators;
+    private List<JoinOperator> operators, evaluateOperators, outsideOperators;
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
@@ -216,11 +216,21 @@ public abstract class DPhyp<P>
                 evaluateOperators.add(operator);
             }
         }
+        outsideOperators.clear();
+        for (JoinOperator operator : operators) {
+            if (JoinableBitSet.overlaps(operator.predicateTables, s) &&
+                !JoinableBitSet.isSubset(operator.predicateTables, s) &&
+                !evaluateOperators.contains(operator))
+                // An operator involving tables in this join with others.
+                outsideOperators.add(operator);
+        }
         P plan = getPlan(s);
         if (join12 != null)
-            plan = evaluateJoin(s1, p1, s2, p2, s, plan, join12, evaluateOperators);
+            plan = evaluateJoin(s1, p1, s2, p2, s, plan, 
+                                join12, evaluateOperators, outsideOperators);
         if (join21 != null)
-            plan = evaluateJoin(s2, p2, s1, p1, s, plan, join21, evaluateOperators);
+            plan = evaluateJoin(s2, p2, s1, p1, s, plan, 
+                                join21, evaluateOperators, outsideOperators);
         setPlan(s, plan);
     }
 
@@ -232,7 +242,7 @@ public abstract class DPhyp<P>
      * conditions taken from the given joins.
      */
     public abstract P evaluateJoin(long bitset1, P p1, long bitset2, P p2, long bitsetJoined, P existing,
-                                   JoinType joinType, Collection<JoinOperator> joins);
+                                   JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins);
 
     /** Return a leaf of the tree. */
     public Joinable getTable(int index) {
@@ -287,6 +297,7 @@ public abstract class DPhyp<P>
             }
         }
         evaluateOperators = new ArrayList<JoinOperator>(noperators);
+        outsideOperators = new ArrayList<JoinOperator>(noperators);
     }
 
     protected void addTables(Joinable n) {

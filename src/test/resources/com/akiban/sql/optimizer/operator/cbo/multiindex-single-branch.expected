@@ -3,6 +3,6 @@ PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR], aid:int[INT], cid:int[IN
     Flatten_HKeyOrdered(user.customers INNER user.addresses)
       Select_HKeyOrdered(user.customers, Field(1) == Literal(Awwyqrezr))
         AncestorLookup_Default(Index(user.addresses.state[IndexColumn(state)]) -> [user.customers, user.addresses])
-          Intersect_Ordered
+          Intersect_Ordered(skip 1 from left, skip 1 from right, compare 1)
             IndexScan_Default(Index(user.addresses.state[IndexColumn(state)]) (>=UnboundExpressions[Literal(CA)],<=UnboundExpressions[Literal(CA)]))
             IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Awwyqrezr)],<=UnboundExpressions[Literal(Awwyqrezr)]))

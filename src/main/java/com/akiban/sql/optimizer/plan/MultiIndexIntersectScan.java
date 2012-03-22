@@ -125,11 +125,11 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
         StringBuilder sb = indent(indentation);
         if (pretty) {
-            sb.append(Strings.NL);
+            sb.append("compare ").append(getComparisonFields()).append(Strings.NL);
             indent(sb, nextIndentation);
         }
         else {
-            sb.append("INTERSECT(");
+            sb.append("INTERSECT(").append(getComparisonFields()).append(", ");
         }
         outputScan.buildSummaryString(sb, nextIndentation, false);
         if (pretty) {
