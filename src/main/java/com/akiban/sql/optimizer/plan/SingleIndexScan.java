@@ -19,6 +19,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.sql.optimizer.plan.ConditionsCount.HowMany;
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 
 import java.util.ArrayList;
@@ -30,6 +31,11 @@ public final class SingleIndexScan extends IndexScan {
     private ColumnRanges conditionRange;
     // First equalities in the order of the index.
     private List<ExpressionNode> equalityComparands;
+
+    // This is how the indexed result will be ordered from using this index.
+    private List<OrderByExpression> ordering;
+
+    private OrderEffectiveness orderEffectiveness;
 
     public SingleIndexScan(Index index, TableSource table)
     {
@@ -81,6 +87,25 @@ public final class SingleIndexScan extends IndexScan {
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
         equalityComparands = duplicateList(equalityComparands, map);
+        ordering = duplicateList(ordering, map);
+    }
+
+    @Override
+    public List<OrderByExpression> getOrdering() {
+        return ordering;
+    }
+
+    public void setOrdering(List<OrderByExpression> ordering) {
+        this.ordering = ordering;
+    }
+
+    @Override
+    public OrderEffectiveness getOrderEffectiveness() {
+        return orderEffectiveness;
+    }
+
+    public void setOrderEffectiveness(OrderEffectiveness orderEffectiveness) {
+        this.orderEffectiveness = orderEffectiveness;
     }
 
     @Override

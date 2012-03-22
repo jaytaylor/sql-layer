@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -65,6 +66,16 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
     private int getOrderingFields(IndexScan scan) {
         return scan.getAllColumns().size() - scan.getPeggedCount();
+    }
+
+    @Override
+    public List<OrderByExpression> getOrdering() {
+        return outputScan.getOrdering();
+    }
+
+    @Override
+    public OrderEffectiveness getOrderEffectiveness() {
+        return outputScan.getOrderEffectiveness();
     }
 
     @Override

@@ -40,11 +40,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     // May need building of index keys in the expressions subsystem.
     private boolean lowInclusive, highInclusive;
 
-    // This is how the indexed result will be ordered from using this index.
-    private List<OrderByExpression> ordering;
-
-    private OrderEffectiveness orderEffectiveness;
-
     // Columns in order, should the index be used as covering.
     private List<ExpressionNode> columns;
     private boolean covering;
@@ -172,20 +167,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         this.columns = columns;
     }
 
-    public List<OrderByExpression> getOrdering() {
-        return ordering;
-    }
-    public void setOrdering(List<OrderByExpression> ordering) {
-        this.ordering = ordering;
-    }
-                              
-    public OrderEffectiveness getOrderEffectiveness() {
-        return orderEffectiveness;
-    }
-    public void setOrderEffectiveness(OrderEffectiveness orderEffectiveness) {
-        this.orderEffectiveness = orderEffectiveness;
-    }
-
     public boolean isCovering() {
         return covering;
     }
@@ -235,9 +216,10 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
             lowComparand = (ConditionExpression)lowComparand.duplicate(map);
         if (highComparand != null)
             highComparand = (ConditionExpression)highComparand.duplicate(map);
-        ordering = duplicateList(ordering, map);
     }
-    
+
+    public abstract List<OrderByExpression> getOrdering();
+    public abstract OrderEffectiveness getOrderEffectiveness();
     public abstract List<IndexColumn> getIndexColumns();
     public abstract List<ConditionExpression> getGroupConditions();
     public abstract List<ExpressionNode> getEqualityComparands();
@@ -262,12 +244,12 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         str.append(", ");
         if (full && covering)
             str.append("covering/");
-        if (full && orderEffectiveness != null)
-            str.append(orderEffectiveness);
-        if (full && ordering != null) {
+        if (full && getOrderEffectiveness() != null)
+            str.append(getOrderEffectiveness());
+        if (full && getOrdering() != null) {
             boolean anyReverse = false, allReverse = true;
-            for (int i = 0; i < ordering.size(); i++) {
-                if (ordering.get(i).isAscending() != isAscendingAt(i))
+            for (int i = 0; i < getOrdering().size(); i++) {
+                if (getOrdering().get(i).isAscending() != isAscendingAt(i))
                     anyReverse = true;
                 else
                     allReverse = false;
@@ -276,9 +258,9 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
                 if (allReverse)
                     str.append("/reverse");
                 else {
-                    for (int i = 0; i < ordering.size(); i++) {
+                    for (int i = 0; i < getOrdering().size(); i++) {
                         str.append((i == 0) ? "/" : ",");
-                        str.append(ordering.get(i).isAscending() ? "ASC" : "DESC");
+                        str.append(getOrdering().get(i).isAscending() ? "ASC" : "DESC");
                     }
                 }
             }
