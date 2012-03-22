@@ -42,13 +42,15 @@ import static java.lang.Math.round;
 public abstract class CostEstimator implements TableRowCounts
 {
     private final Schema schema;
+    private final Properties properties;
     private final CostModel model;
     private final Key key;
     private final PersistitKeyValueTarget keyTarget;
     private final Comparator<byte[]> bytesComparator;
 
-    protected CostEstimator(Schema schema) {
+    protected CostEstimator(Schema schema, Properties properties) {
         this.schema = schema;
+        this.properties = properties;
         model = CostModel.newCostModel(schema, this);
         key = new Key((Persistit)null);
         keyTarget = new PersistitKeyValueTarget();
@@ -56,7 +58,7 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected CostEstimator(SchemaRulesContext rulesContext) {
-        this(rulesContext.getSchema());
+        this(rulesContext.getSchema(), rulesContext.getProperties());
     }
 
     @Override

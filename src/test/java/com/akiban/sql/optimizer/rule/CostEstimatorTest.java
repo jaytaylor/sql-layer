@@ -55,7 +55,7 @@ public class CostEstimatorTest
         ais = OptimizerTestBase.parseSchema(new File(RESOURCE_DIR, "schema.ddl"));
         RulesTestHelper.ensureRowDefs(ais);
         tree = new TableTree();
-        costEstimator = new TestCostEstimator(ais, new Schema(ais), new File(RESOURCE_DIR, "stats.yaml"));
+        costEstimator = new TestCostEstimator(ais, new Schema(ais), new File(RESOURCE_DIR, "stats.yaml"), false, new Properties());
     }
 
     protected Table table(String name) {

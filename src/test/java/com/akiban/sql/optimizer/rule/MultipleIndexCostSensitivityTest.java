@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Properties;
 
 import static java.lang.Math.round;
 
@@ -59,7 +60,7 @@ public class MultipleIndexCostSensitivityTest
         schema = new Schema(ais);
         px = index("parent", "px");
         cy = index("child", "cy");
-        costEstimator = new TestCostEstimator(ais, schema, new File(RESOURCE_DIR, "stats.yaml"));
+        costEstimator = new TestCostEstimator(ais, schema, new File(RESOURCE_DIR, "stats.yaml"), false, new Properties());
         costModel = CostModel.newCostModel(schema, costEstimator);
     }
 

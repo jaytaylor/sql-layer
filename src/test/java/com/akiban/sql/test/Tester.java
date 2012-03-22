@@ -34,7 +34,6 @@ import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.optimizer.rule.TestCostEstimator;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
