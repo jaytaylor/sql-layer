@@ -24,7 +24,11 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -85,6 +89,15 @@ import static java.lang.Math.min;
 
 class Intersect_Ordered extends Operator
 {
+    // Object interface
+
+    @Override
+    public String toString()
+    {
+        return String.format("%s(skip %d from left, skip %d from right, compare %d)",
+                             getClass().getSimpleName(), leftSkip, rightSkip, fieldRankingExpressions.length);
+    }
+
     // Operator interface
 
     @Override
@@ -153,14 +166,12 @@ class Intersect_Ordered extends Operator
         this.outputLeft = intersectOutput == IntersectOutputOption.OUTPUT_LEFT;
         // Setup for row comparisons
         this.fieldRankingExpressions = new RankExpression[comparisonFields];
-        int leftField = leftRowType.nFields() - leftOrderingFields;
-        int rightField = rightRowType.nFields() - rightOrderingFields;
+        leftSkip = leftRowType.nFields() - leftOrderingFields;
+        rightSkip = rightRowType.nFields() - rightOrderingFields;
         for (int f = 0; f < comparisonFields; f++) {
             this.fieldRankingExpressions[f] =
-                new RankExpression(new FieldExpression(leftRowType, leftField),
-                                   new FieldExpression(rightRowType, rightField));
-            leftField++;
-            rightField++;
+                new RankExpression(new FieldExpression(leftRowType, leftSkip + f),
+                                   new FieldExpression(rightRowType, rightSkip + f));
         }
     }
 
@@ -168,11 +179,14 @@ class Intersect_Ordered extends Operator
 
     private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered open");
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered next");
+    private static final Logger LOG = LoggerFactory.getLogger(Intersect_Ordered.class);
 
     // Object state
 
     private final Operator left;
     private final Operator right;
+    private final int leftSkip;
+    private final int rightSkip;
     private final RankExpression[] fieldRankingExpressions;
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
@@ -238,6 +252,9 @@ class Intersect_Ordered extends Operator
                         close();
                     }
                 }
+                if (LOG.isDebugEnabled()) {
+                    LOG.debug("Intersect_Ordered: yield {}", next);
+                }
                 return next;
             } finally {
                 TAP_NEXT.out();
@@ -276,12 +293,18 @@ class Intersect_Ordered extends Operator
         {
             Row row = leftInput.next();
             leftRow.hold(row);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Intersect_Ordered: left {}", row);
+            }
         }
         
         private void nextRightRow()
         {
             Row row = rightInput.next();
             rightRow.hold(row);
+            if (LOG.isDebugEnabled()) {
+                LOG.debug("Intersect_Ordered: right {}", row);
+            }
         }
         
         private long compareRows()
