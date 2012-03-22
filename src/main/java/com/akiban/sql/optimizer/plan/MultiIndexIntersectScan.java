@@ -93,8 +93,33 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
+    public ExpressionNode getLowComparand() {
+        return outputScan.getLowComparand();
+    }
+
+    @Override
+    public boolean isLowInclusive() {
+        return outputScan.isLowInclusive();
+    }
+
+    @Override
+    public ExpressionNode getHighComparand() {
+        return outputScan.getHighComparand();
+    }
+
+    @Override
+    public boolean isHighInclusive() {
+        return outputScan.isHighInclusive();
+    }
+
+    @Override
     public List<ConditionExpression> getConditions() {
         return outputScan.getConditions();
+    }
+
+    @Override
+    public boolean hasConditions() {
+        return outputScan.hasConditions();
     }
 
     @Override

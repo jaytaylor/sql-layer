@@ -29,19 +29,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
 
     private TableSource rootMostTable, rootMostInnerTable, leafMostInnerTable, leafMostTable;
 
-    // Conditions subsumed by this index.
-    // TODO: any cases where a condition is only partially handled and
-    // still needs to be checked with Select?
-    private List<ConditionExpression> conditions;
-
-    // Followed by an optional inequality.
-    private ExpressionNode lowComparand, highComparand;
-    // TODO: This doesn't work for merging: consider x < ? AND x <= ?. 
-    // May need building of index keys in the expressions subsystem.
-    private boolean lowInclusive, highInclusive;
-
-    // Columns in order, should the index be used as covering.
-    private List<ExpressionNode> columns;
     private boolean covering;
 
     // Tables that would still need to be fetched if this index were used.
@@ -79,6 +66,7 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     public TableSource getLeafMostTable() {
         return leafMostTable;
     }
+
     /** Return tables included in the index, leafmost to rootmost. */
     public List<TableSource> getTables() {
         List<TableSource> tables = new ArrayList<TableSource>();
@@ -89,82 +77,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
             table = table.getParentTable();
         }
         return tables;
-    }
-
-    public List<ConditionExpression> getConditions() {
-        return conditions;
-    }
-    
-    public boolean hasConditions() {
-        return ((conditions != null) && !conditions.isEmpty());
-    }
-
-    public ExpressionNode getLowComparand() {
-        return lowComparand;
-    }
-    public boolean isLowInclusive() {
-        return lowInclusive;
-    }
-    public ExpressionNode getHighComparand() {
-        return highComparand;
-    }
-    public boolean isHighInclusive() {
-        return highInclusive;
-    }
-
-    public void addInequalityCondition(ConditionExpression condition, 
-                                       Comparison comparison,
-                                       ExpressionNode comparand) {
-        if ((comparison == Comparison.GT) || (comparison == Comparison.GE)) {
-            if (lowComparand == null) {
-                lowComparand = comparand;
-                lowInclusive = (comparison == Comparison.GE);
-            }
-            else if (lowInclusive == (comparison == Comparison.GE)) {
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
-                operands.add(lowComparand);
-                operands.add(comparand);
-                lowComparand = new FunctionExpression("max", 
-                                                      operands,
-                                                      lowComparand.getSQLtype(),
-                                                      null);
-            }
-            else
-                // TODO: Could do the MAX anyway and test the conditions later.
-                // Might take some refactoring to know which
-                // conditions are already there.
-                return;
-        }
-        else if ((comparison == Comparison.LT) || (comparison == Comparison.LE)) {
-            if (highComparand == null) {
-                highComparand = comparand;
-                highInclusive = (comparison == Comparison.LE);
-            }
-            else if (highInclusive == (comparison == Comparison.LE)) {
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
-                operands.add(highComparand);
-                operands.add(comparand);
-                highComparand = new FunctionExpression("min", 
-                                                      operands,
-                                                      highComparand.getSQLtype(),
-                                                      null);
-            }
-            else
-                // Not really an inequality.
-                return;
-        }
-        else {
-            return;
-        }
-
-        internalGetConditions().add(condition);
-    }
-
-    public List<ExpressionNode> getColumns() {
-        return columns;
-    }
-    public void setColumns(List<ExpressionNode> columns) {
-        this.columns = columns;
     }
 
     public boolean isCovering() {
@@ -212,17 +124,20 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        if (lowComparand != null)
-            lowComparand = (ConditionExpression)lowComparand.duplicate(map);
-        if (highComparand != null)
-            highComparand = (ConditionExpression)highComparand.duplicate(map);
     }
 
     public abstract List<OrderByExpression> getOrdering();
     public abstract OrderEffectiveness getOrderEffectiveness();
+    public abstract List<ExpressionNode> getColumns();
     public abstract List<IndexColumn> getIndexColumns();
     public abstract List<ConditionExpression> getGroupConditions();
     public abstract List<ExpressionNode> getEqualityComparands();
+    public abstract List<ConditionExpression> getConditions();
+    public abstract boolean hasConditions();
+    public abstract ExpressionNode getLowComparand();
+    public abstract boolean isLowInclusive();
+    public abstract ExpressionNode getHighComparand();
+    public abstract boolean isHighInclusive();
     
     @Override
     public String summaryString() {
@@ -230,12 +145,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
         buildSummaryString(sb, true);
         return sb.toString();
     }
-    
-    protected List<ConditionExpression> internalGetConditions() {
-        if (conditions == null)
-            conditions = new ArrayList<ConditionExpression>();
-        return conditions;
-    } 
      
     protected void buildSummaryString(StringBuilder str, boolean full) {
         str.append(super.summaryString());
@@ -266,15 +175,15 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
             }
         }
         describeEqualityComparands(str);
-        if (lowComparand != null) {
+        if (getLowComparand() != null) {
             str.append(", ");
-            str.append((lowInclusive) ? ">=" : ">");
-            str.append(lowComparand);
+            str.append((isLowInclusive()) ? ">=" : ">");
+            str.append(getLowComparand());
         }
-        if (highComparand != null) {
+        if (getHighComparand() != null) {
             str.append(", ");
-            str.append((highInclusive) ? "<=" : "<");
-            str.append(highComparand);
+            str.append((isHighInclusive()) ? "<=" : "<");
+            str.append(getHighComparand());
         }
         describeConditionRange(str);
         if (full && costEstimate != null) {

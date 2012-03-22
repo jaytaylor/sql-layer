@@ -193,8 +193,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds,
                                         IntersectionEnumerator enumerator)
     {
-        setColumns(index);
-        setOrdering(index);
+        setColumnsAndOrdering(index);
         int nequals = 0;
         List<ExpressionNode> indexExpressions = index.getColumns();
         int ncols = indexExpressions.size();
@@ -240,26 +239,18 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return nequals;
     }
 
-    private static void setColumns(IndexScan index) {
+    private static void setColumnsAndOrdering(SingleIndexScan index) {
         List<IndexColumn> indexColumns = index.getAllColumns();
         int ncols = indexColumns.size();
+        List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
         List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         for (IndexColumn indexColumn : indexColumns) {
             ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
             indexExpressions.add(indexExpression);
-        }
-        index.setColumns(indexExpressions);
-    }
-
-    private static void setOrdering(SingleIndexScan index) {
-        List<IndexColumn> indexColumns = index.getAllColumns();
-        int ncols = indexColumns.size();
-        List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
-        for (IndexColumn indexColumn : indexColumns) {
-            ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
             orderBy.add(new OrderByExpression(indexExpression,
                     indexColumn.isAscending()));
         }
+        index.setColumns(indexExpressions);
         index.setOrdering(orderBy);
     }
 
@@ -527,7 +518,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         for (Iterator<IndexScan> iterator = enumerator.iterator(); iterator.hasNext(); ) {
             IndexScan intersectedIndex = iterator.next();
             setIntersectionConditions(intersectedIndex);
-            setColumns(intersectedIndex);
             intersectedIndex.setCovering(determineCovering(intersectedIndex));
             intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));
             if (previousBest == null) {
