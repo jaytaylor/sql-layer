@@ -23,10 +23,11 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
 
-import java.util.Map;
-import java.util.Collections;
 import java.io.File;
 import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
+import java.util.Properties;
 
 public class TestCostEstimator extends CostEstimator
 {
@@ -34,20 +35,16 @@ public class TestCostEstimator extends CostEstimator
     private final Map<Index,IndexStatistics> stats;
 
     public TestCostEstimator(AkibanInformationSchema ais, Schema schema, 
-                             File statsFile, boolean statsIgnoreMissingIndexes) 
+                             File statsFile, boolean statsIgnoreMissingIndexes,
+                             Properties properties)
             throws IOException {
-        super(schema);
+        super(schema, properties);
         this.ais = ais;
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
         else
             stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA)
                 .load(statsFile, statsIgnoreMissingIndexes);
-    }
-
-    public TestCostEstimator(AkibanInformationSchema ais, Schema schema, File statsFile)
-            throws IOException {
-        this(ais, schema, statsFile, false);
     }
 
     @Override

@@ -42,13 +42,15 @@ import static java.lang.Math.round;
 public abstract class CostEstimator implements TableRowCounts
 {
     private final Schema schema;
+    private final Properties properties;
     private final CostModel model;
     private final Key key;
     private final PersistitKeyValueTarget keyTarget;
     private final Comparator<byte[]> bytesComparator;
 
-    protected CostEstimator(Schema schema) {
+    protected CostEstimator(Schema schema, Properties properties) {
         this.schema = schema;
+        this.properties = properties;
         model = CostModel.newCostModel(schema, this);
         key = new Key((Persistit)null);
         keyTarget = new PersistitKeyValueTarget();
@@ -56,7 +58,7 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected CostEstimator(SchemaRulesContext rulesContext) {
-        this(rulesContext.getSchema());
+        this(rulesContext.getSchema(), rulesContext.getProperties());
     }
 
     @Override
@@ -113,6 +115,29 @@ public abstract class CostEstimator implements TableRowCounts
         return indexStatsArray;
     }
 
+    /* Settings.
+     * Note: these are compiler properties, so they start with
+     * optimizer.cost. in the server.properties file. 
+     */
+
+    protected final double DEFAULT_MISSING_STATS_SELECTIVITY = 0.85;
+
+    protected double missingStatsSelectivity() {
+        String str = getProperty("cost.missingStatsSelectivity");
+        if (str != null)
+            return Double.valueOf(str);
+        else
+            return DEFAULT_MISSING_STATS_SELECTIVITY;
+    }
+
+    protected String getProperty(String key) {
+        return properties.getProperty(key);
+    }
+
+    protected String getProperty(String key, String defval) {
+        return properties.getProperty(key, defval);
+    }
+
     /** Estimate cost of scanning from this index. */
     public CostEstimate costIndexScan(Index index,
                                       List<ExpressionNode> equalityComparands,
@@ -148,13 +173,14 @@ public abstract class CostEstimator implements TableRowCounts
         }
         if ((lowComparand != null) || (highComparand != null))
             columnCount++;
+        if (columnCount == 0)
+            // Just for ordering.
+            return indexAccessCost(rowCount, index);
         Histogram histogram;
         if ((statsCount == 0) ||
-            (columnCount == 0) ||
             ((histogram = indexStats.getHistogram(columnCount)) == null)) {
-            // No stats or just used for ordering.
-            // TODO: Is this too conservative?
-            return indexAccessCost(rowCount, index);
+            // No stats.
+            return indexAccessCost((long)(rowCount * missingStatsSelectivity()), index);
         }
         boolean scaleCount = true;
         long nrows;
@@ -357,12 +383,11 @@ public abstract class CostEstimator implements TableRowCounts
     protected double fractionEqual(IndexStatistics[] indexStatsArray, int column, byte[] columnValue) {
         IndexStatistics indexStats = indexStatsArray[column];
         if (indexStats == null) {
-            // Assume the worst about index selectivity. Not sure this is wise.
-            return 1.0;
+            return missingStatsSelectivity();
         } else {
             Histogram histogram = indexStats.getHistogram(1);
             if ((histogram == null) || histogram.getEntries().isEmpty()) {
-                return 1;
+                return missingStatsSelectivity();
             }
             else if (columnValue == null) {
                 // Variable expression. Use average selectivity for histogram.
@@ -398,8 +423,7 @@ public abstract class CostEstimator implements TableRowCounts
                                      ExpressionNode hi, boolean highInclusive)
     {
         if (indexStats == null) {
-            // Assume the worst
-            return 1.0;
+            return missingStatsSelectivity();
         }
         keyTarget.attach(key);
         key.clear();
@@ -407,8 +431,7 @@ public abstract class CostEstimator implements TableRowCounts
         key.clear();
         byte[] hiBytes = encodeKeyValue(hi, indexStats.index(), 0) ? keyCopy() : null;
         if (loBytes == null && hiBytes == null) {
-            // Assume the worst
-            return 1.0;
+            return missingStatsSelectivity();
         }
         Histogram histogram = indexStats.getHistogram(1);
         boolean before = (loBytes != null);
