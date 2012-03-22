@@ -36,7 +36,7 @@ public class ServerCostEstimator extends CostEstimator
         super(compiler);
         this.session = session;
         indexStatistics = reqs.indexStatistics();
-        scaleIndexStatistics = Boolean.parseBoolean(compiler.getProperty("scaleIndexStatistics", "true"));
+        scaleIndexStatistics = Boolean.parseBoolean(getProperty("scaleIndexStatistics", "true"));
     }
 
     @Override
