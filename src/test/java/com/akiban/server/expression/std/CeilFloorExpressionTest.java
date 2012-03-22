@@ -126,8 +126,9 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
         BigDecimal posExpected = (funcName == CeilFloorName.CEIL) ? new BigDecimal("1235") : new BigDecimal("1234"); 
         BigDecimal negExpected = (funcName == CeilFloorName.CEIL) ? new BigDecimal("-543") : new BigDecimal("-544");
         
-        Assert.assertEquals(posExpected, sourceOfComposing(new LiteralExpression(AkType.DECIMAL, posInput)).getDecimal());
-        Assert.assertEquals(negExpected, sourceOfComposing(new LiteralExpression(AkType.DECIMAL, negInput)).getDecimal());        
+        // NOTE: BigDecimal comparison with .equals() checks if the scale is the same too, so we use compareTo()
+        Assert.assertEquals(0, posExpected.compareTo(sourceOfComposing(new LiteralExpression(AkType.DECIMAL, posInput)).getDecimal()));
+        Assert.assertEquals(0, negExpected.compareTo(sourceOfComposing(new LiteralExpression(AkType.DECIMAL, negInput)).getDecimal()));        
     }
     
     @Test (expected=WrongExpressionArityException.class)

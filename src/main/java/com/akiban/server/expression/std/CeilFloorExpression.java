@@ -25,6 +25,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 
 public class CeilFloorExpression extends AbstractUnaryExpression {
@@ -57,11 +58,18 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
             if (argc != 1)
                 throw new WrongExpressionArityException(1, argc);
             
+            ExpressionType firstExpType = argumentTypes.get(0);
             AkType firstAkType = argumentTypes.get(0).getType();
             if (firstAkType == AkType.VARCHAR)
+            {
                 argumentTypes.setType(0, AkType.DOUBLE);
-
-            return argumentTypes.get(0);
+                firstAkType = AkType.DOUBLE;
+            }
+            
+            // TODO - Scale is always zero, even on decimal-types with non-zero scales
+            System.out.println(firstExpType.getScale());
+            
+            return ExpressionTypes.newType(firstAkType, firstExpType.getPrecision(), firstExpType.getScale());
         }
 
         @Override
@@ -122,9 +130,18 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
                     valueHolder().putUFloat(finalUnsignedFValue);
                     break;
                 case DECIMAL:
+                    // NOTE: BigDecimal equality requires .compareTo(); using .equals() checks if scale is equal as well
+                    // In IT, this returns an integral value since its scale is zero.
+                    
                     BigDecimal decInput = firstOperand.getDecimal();
+                    /* Before the decimal input ever reaches this point, its scale is set to zero
+                     * This truncates any part of the decimal outside of it 
+                     * For example: CEIL(-2.634) -> System.out.println(decInput) -> "-2"
+                     */
+                    // System.out.println(decInput);
                     BigDecimal finalDecValue = (name == CeilFloorName.FLOOR) ? 
-                            decInput.setScale(0, RoundingMode.FLOOR) : decInput.setScale(0, RoundingMode.CEILING);
+                            decInput.setScale(0, RoundingMode.FLOOR) : 
+                            decInput.setScale(0, RoundingMode.CEILING);
                     valueHolder().putDecimal(finalDecValue);
                     break;
                 default:
