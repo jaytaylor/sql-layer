@@ -27,6 +27,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
 import java.util.List;
+import java.math.BigInteger;
 
 public class ExportSetExpression extends AbstractCompositeExpression
 {
@@ -38,7 +39,7 @@ public class ExportSetExpression extends AbstractCompositeExpression
         {   
             switch(argumentTypes.size())
             {
-                case 5:     argumentTypes.setType(4, AkType.LONG);     // fall thru
+                case 5:     argumentTypes.setType(4, AkType.U_BIGINT);     // fall thru
                 case 4:     argumentTypes.setType(3, AkType.VARCHAR); // fall thru
                 case 3:     argumentTypes.setType(2, AkType.VARCHAR);
                             argumentTypes.setType(1, AkType.VARCHAR);
@@ -68,6 +69,8 @@ public class ExportSetExpression extends AbstractCompositeExpression
 
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
+        private static final BigInteger MASK = new BigInteger("ffffffffffffffff", 16);
+        
         public InnerEvaluation (List<? extends ExpressionEvaluation> evals)
         {
             super(evals);
@@ -79,8 +82,8 @@ public class ExportSetExpression extends AbstractCompositeExpression
             for (ExpressionEvaluation child :children())
                 if (child.eval().isNull())
                     return NullValueSource.only();
-            
-            long num = children().get(0).eval().getLong() ;//& 0xffffffffffffffffL; // truncate bits
+
+            BigInteger num = children().get(0).eval().getUBigInt().and(MASK);
             String bits[] = new String[]{children().get(2).eval().getString(),
                                          children().get(1).eval().getString()};
             String delim = ",";
@@ -93,9 +96,9 @@ public class ExportSetExpression extends AbstractCompositeExpression
             }
             
             StringBuilder builder = new StringBuilder();
-            char digits[] = Long.toBinaryString(num).toCharArray();
+            char digits[] = num.toString(2).toCharArray();
             
-            // return value is needs to be in little-endian format
+            // return value needs to be in little-endian format
             int count = 0;
             for (int n = digits.length - 1; n >= 0 && count < len; --n, ++count)
                 builder.append(bits[digits[n]-'0']).append(delim);

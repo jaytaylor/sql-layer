@@ -28,6 +28,7 @@ import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.util.ValueHolder;
+import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
@@ -58,40 +59,44 @@ public class ExportSetExpressionTest extends ComposedExpressionTestBase
         
         // test 5 args
         param(pb, false, "0,0,0,0,0,0,1,0,0,0", 
-                lit(64L), lit("1"), lit("0"), lit(","),lit(10L));
+                bigInt("64"), lit("1"), lit("0"), lit(","),lit(10L));
         
         param(pb, false, "0000001000", 
-                lit(64L), lit("1"), lit("0"), lit(""),lit(10L));
+                bigInt("64"), lit("1"), lit("0"), lit(""),lit(10L));
         
         param(pb, false, "OFF-OFF-OFF-OFF-OFF-OFF-ON-OFF-OFF-OFF", 
-                lit(64L), lit("ON"), lit("OFF"), lit("-"), lit(10L));
+                bigInt("64"), lit("ON"), lit("OFF"), lit("-"), lit(10L));
         
         param(pb, false, "ON-ON-ON-ON-ON-ON-OFF-ON-ON-ON", 
-                lit(64L), lit("OFF"), lit("ON"), lit("-"), lit(10L));
+                bigInt("64"), lit("OFF"), lit("ON"), lit("-"), lit(10L));
       
         // test 4 args
         param(pb, false, "N-N-N-N-N-Y-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N-N",
-                lit(32L), lit("Y"), lit("N"), lit("-"));
+                bigInt("32"), lit("Y"), lit("N"), lit("-"));
         param(pb, false, "-_-_--__________________________________________________________",
-                lit(53L), lit("-"), lit("_"), lit(""));
+                bigInt("53"), lit("-"), lit("_"), lit(""));
         
         // test 3 args
         param(pb, false, "A,A,B,A,A,A,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B,B",
-                lit(59L), lit("A"), lit("B"));
+                bigInt("59"), lit("A"), lit("B"));
+        param(pb, false, "0,0,1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0",
+                bigInt("4"), lit("1"), lit("0"));
+        param(pb, false, "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1",
+                new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(2).pow(64).subtract(BigInteger.ONE)), lit("1"), lit("0"));
         
         // test negative value
         param(pb, false, "1,1,1,1,1,1,1,1,1,1", 
-                lit(-1L), lit("1"), lit("0"), lit(","), lit(10L));
+                bigInt("-1"), lit("1"), lit("0"), lit(","), lit(10L));
        
         // test upper limit
         param(pb, false, "1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1",
-                lit(0xffffffffffffffffL), lit("1"), lit("0"));
+                bigInt("ffffffffffffffff", 16), lit("1"), lit("0"));
         param(pb, false, "0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0", 
-                lit(0), lit("1"), lit("0"), lit(","), lit(67));
+                bigInt("0"), lit("1"), lit("0"), lit(","), lit(67));
         
         // test nulls
         param(pb, false, null, lit(null), lit("1"), lit("0"), lit(","), lit(10L));
-        param(pb, false, null, lit(2L), lit(null), lit("0"));
+        param(pb, false, null, bigInt("2"), lit(null), lit("0"));
         
         // test arity
         param(pb, true, null, lit(null));
@@ -151,5 +156,14 @@ public class ExportSetExpressionTest extends ComposedExpressionTestBase
     public boolean alreadyExc()
     {
         return alreadyExc;
+    }
+    
+    private static Expression bigInt (String st)
+    {
+        return bigInt(st, 10);
+    }
+    private static Expression bigInt (String st, int base)
+    {
+        return new LiteralExpression(AkType.U_BIGINT, new BigInteger(st, base));
     }
 }
