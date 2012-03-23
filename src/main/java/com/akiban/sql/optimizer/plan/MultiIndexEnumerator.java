@@ -161,10 +161,16 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         UserTable commonAncestor = first.findCommonAncestor(second);
         assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
         boolean isMultiBranch = true;
-        if (firstUTable != secondUTable && commonAncestor == firstUTable) {
-            isMultiBranch = false;
-            if (includesHKey(firstUTable, comparisonCols))
-                output.add(intersect(second, first, comparisonsLen));
+        if (firstUTable != secondUTable) {
+            if (commonAncestor == firstUTable) {
+                isMultiBranch = false;
+                if (includesHKey(firstUTable, comparisonCols))
+                    output.add(intersect(second, first, comparisonsLen));
+            }
+            else {
+                // in single-branch cases, we only want to output the leafmost's index
+                isMultiBranch = (commonAncestor != secondUTable);
+            }
         }
         if (isMultiBranch && includesHKey(commonAncestor, comparisonCols)) {
             output.add(intersect(first, second, comparisonsLen));

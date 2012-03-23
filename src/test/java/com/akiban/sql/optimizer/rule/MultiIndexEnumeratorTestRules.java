@@ -71,7 +71,6 @@ public final class MultiIndexEnumeratorTestRules {
                 String str = intersection.summaryString(true);
                 scanDescriptions.add(str);
             }
-            Collections.sort(scanDescriptions);
             final String summary = Strings.join(scanDescriptions);
             return new PlanNode() {
                 @Override
