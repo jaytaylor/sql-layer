@@ -36,7 +36,7 @@ public class ExportSetExpression extends AbstractCompositeExpression
     {
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
-        {   
+        {
             switch(argumentTypes.size())
             {
                 case 5:     argumentTypes.setType(4, AkType.LONG);     // fall thru

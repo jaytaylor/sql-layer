@@ -18,6 +18,7 @@ package com.akiban.server.types.extract;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
+import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
 
@@ -34,7 +35,7 @@ final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
         case VARCHAR:   return new BigInteger(source.getString());
         case INTERVAL_MILLIS:  return BigInteger.valueOf(source.getInterval_Millis());
         case INTERVAL_MONTH:   return BigInteger.valueOf(source.getInterval_Month());
-        case DECIMAL:   return source.getDecimal().round(MathContext.UNLIMITED).toBigInteger();
+        case DECIMAL:   return source.getDecimal().setScale(0, BigDecimal.ROUND_HALF_UP).toBigInteger();
         case U_DOUBLE:  return BigInteger.valueOf(Math.round(source.getUDouble()));
         case DOUBLE:    return BigInteger.valueOf(Math.round(source.getDouble()));
         case FLOAT:     return BigInteger.valueOf(Math.round(source.getFloat()));
