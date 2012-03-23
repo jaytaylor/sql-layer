@@ -54,6 +54,8 @@ public class HexExpressionTest extends ComposedExpressionTestBase
                 
         param(pb, lit("\n"), "0A");
         param(pb, lit("abc"), "616263");
+        param(pb, lit("☃"), "E29883");
+        
         return pb.asList();
     }
     

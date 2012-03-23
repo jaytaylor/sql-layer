@@ -26,6 +26,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
+import java.nio.charset.Charset;
 
 public class HexExpression extends AbstractUnaryExpression
 {
@@ -54,6 +55,9 @@ public class HexExpression extends AbstractUnaryExpression
     
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
+        private  Charset utf8 = Charset.forName("UTF-8"); // may change when actual charset
+                                                          // becomes availabe to expressions
+        
         public InnerEvaluation(ExpressionEvaluation eval)
         {
             super(eval);
@@ -71,8 +75,8 @@ public class HexExpression extends AbstractUnaryExpression
             else
             {
                 StringBuilder builder = new StringBuilder();
-                for (char ch : source.getString().toCharArray())
-                    builder.append(String.format("%02X", (int) ch));
+                for (byte ch : source.getString().getBytes(utf8))
+                    builder.append(String.format("%02X", ch));
                 valueHolder().putString(builder.toString());
             }
             
