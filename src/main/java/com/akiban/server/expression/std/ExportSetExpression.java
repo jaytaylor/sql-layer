@@ -39,11 +39,11 @@ public class ExportSetExpression extends AbstractCompositeExpression
         {   
             switch(argumentTypes.size())
             {
-                case 5:     argumentTypes.setType(4, AkType.U_BIGINT);     // fall thru
+                case 5:     argumentTypes.setType(4, AkType.LONG);     // fall thru
                 case 4:     argumentTypes.setType(3, AkType.VARCHAR); // fall thru
                 case 3:     argumentTypes.setType(2, AkType.VARCHAR);
                             argumentTypes.setType(1, AkType.VARCHAR);
-                            argumentTypes.setType(0, AkType.LONG);
+                            argumentTypes.setType(0, AkType.U_BIGINT);
                             break;
                 default:    throw new WrongExpressionArityException(3, argumentTypes.size());
             }
