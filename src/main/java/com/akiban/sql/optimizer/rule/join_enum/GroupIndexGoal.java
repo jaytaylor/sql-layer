@@ -18,7 +18,6 @@ package com.akiban.sql.optimizer.rule.join_enum;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.CostEstimator.IndexIntersectionCoster;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
@@ -427,7 +426,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         public boolean visit(ExpressionNode n) {
             if (n instanceof ColumnExpression) {
                 ColumnExpression columnExpression = (ColumnExpression)n;
-                enumerator.addEquivalencies(columnExpression.tryGetEquivalenceFinder());
                 if (!boundTables.contains(columnExpression.getTable())) {
                     found = true;
                     return false;
@@ -483,7 +481,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         // added the below that earlier, could count such a join as a
         // group join: p JOIN (SELECT fk) sq ON p.pk = sq.fk.
         ColumnExpression comparisonColumn = (ColumnExpression)comparisonOperand;
-        enumerator.addEquivalencies(comparisonColumn.tryGetEquivalenceFinder());
         ColumnSource comparisonTable = comparisonColumn.getTable();
         if (!(comparisonTable instanceof SubquerySource))
             return false;
@@ -569,40 +566,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     
     private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan,SingleIndexScan> {
 
-        private EquivalenceFinder<ColumnExpression> columnExpressionEquivs = null;
-        private EquivalenceFinder<Column> columnEquivs = null;
-
-        public void addEquivalencies(EquivalenceFinder<ColumnExpression> equivalenceFinder) {
-            if (equivalenceFinder == null)
-                return;
-            if (columnExpressionEquivs == null)
-                columnExpressionEquivs = equivalenceFinder;
-            else if (columnExpressionEquivs != equivalenceFinder)
-                throw new IllegalStateException(columnExpressionEquivs + " != " + equivalenceFinder);
-        }
-
         @Override
-        protected Collection<ConditionExpression> getLeafConditions(SingleIndexScan node) {
-            SingleIndexScan scan = (SingleIndexScan) node;
+        protected Collection<ConditionExpression> getLeafConditions(SingleIndexScan scan) {
             int skips = scan.getPeggedCount();
             List<ConditionExpression> conditions = scan.getConditions();
             if (conditions == null)
                 return null;
             int nconds = conditions.size();
             return ((skips) > 0 && (skips == nconds)) ? conditions : null;
-        }
-
-        @Override
-        protected boolean areEquivalent(Column one, Column two) {
-            if (columnEquivs == null) {
-                columnEquivs = new EquivalenceFinder<Column>();
-                for (Map.Entry<ColumnExpression, ColumnExpression> entry : columnExpressionEquivs.equivalencePairs()) {
-                    Column b = entry.getKey().getColumn();
-                    Column a = entry.getValue().getColumn();
-                    columnEquivs.markEquivalent(a, b);
-                }
-            }
-            return columnEquivs.areEquivalent(one, two);
         }
 
         @Override
