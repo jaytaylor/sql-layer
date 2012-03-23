@@ -30,17 +30,14 @@ public class ColumnExpression extends BaseExpression
     private ColumnSource table;
     private Column column;
     private int position;
-    private EquivalenceFinder<ColumnExpression> equivalenceFinder;
 
     public ColumnExpression(TableSource table, Column column, 
-                            DataTypeDescriptor sqlType, ValueNode sqlSource,
-                            EquivalenceFinder<ColumnExpression> equivalenceFinder) {
+                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, column.getType().akType(), sqlSource);
         this.table = table;
         assert (table.getTable().getTable() == column.getUserTable());
         this.column = column;
         this.position = column.getPosition();
-        this.equivalenceFinder = equivalenceFinder;
     }
 
     public ColumnExpression(ColumnSource table, int position,
@@ -64,7 +61,7 @@ public class ColumnExpression extends BaseExpression
 
     // Generated column references without an original SQL source.
     public ColumnExpression(TableSource table, Column column) {
-        this(table, column, null, null, null);
+        this(table, column, null, null);
     }
 
     public ColumnSource getTable() {
@@ -84,27 +81,29 @@ public class ColumnExpression extends BaseExpression
     }
 
     public void markEquivalentTo(ColumnExpression other) {
-        if (equivalenceFinder == null) {
-            equivalenceFinder = other.equivalenceFinder;
-            assert equivalenceFinder != null;
-        } else if (other.equivalenceFinder == null) {
-            other.equivalenceFinder = equivalenceFinder;
-        } else if (other.equivalenceFinder != equivalenceFinder) {
-            throw new IllegalStateException("columns are in different equivalence scopes");
-        }
-        equivalenceFinder.markEquivalent(this, other);
-    }
-    
-    public EquivalenceFinder<ColumnExpression> tryGetEquivalenceFinder() {
-        return equivalenceFinder;
+        getEquivalenceFinder().markEquivalent(this, other);
     }
 
-    public EquivalenceFinder<ColumnExpression> getEquivalenceFinder() {
-        if (equivalenceFinder == null)
-            throw new IllegalStateException("no equivalence finder");
-        return equivalenceFinder;
+
+    public EquivalenceFinder<ColumnExpression> tryGetEquivalenceFinder() {
+        if (table instanceof TableSource) {
+            return ((TableSource)table).getColumnEquivalences();
+        }
+        return null;
+
     }
     
+    public EquivalenceFinder<ColumnExpression> getEquivalenceFinder() {
+        EquivalenceFinder<ColumnExpression> result = tryGetEquivalenceFinder();
+        if (result == null)
+            throw new IllegalStateException("no equivalence finder");
+        return result;
+    }
+
+    public boolean isEquivalentTo(ColumnExpression other) {
+        return getEquivalenceFinder().areEquivalent(this, other);
+    }
+
     public Set<ColumnExpression> getEquivalents() {
         return getEquivalenceFinder().findEquivalents(this);
     }

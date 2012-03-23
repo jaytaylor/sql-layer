@@ -386,7 +386,7 @@ public class ASTStatementLoader extends BaseRule
                     else
                         name = userTable.getName().toString();
                 }
-                result = new TableSource(table, required, name);
+                result = new TableSource(table, required, name, columnEquivalencesStack.peek());
             }
             else if (fromTable instanceof com.akiban.sql.parser.JoinNode) {
                 com.akiban.sql.parser.JoinNode joinNode = 
@@ -1069,7 +1069,7 @@ public class ASTStatementLoader extends BaseRule
                 Column column = cb.getColumn();
                 if (column != null)
                     return new ColumnExpression(((TableSource)joinNode), column, 
-                                                type, valueNode, columnEquivalencesStack.peek());
+                                                type, valueNode);
                 else
                     return new ColumnExpression(((ColumnSource)joinNode), 
                                                 cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
