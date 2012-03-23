@@ -1,0 +1,9 @@
+## Test the export_set function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(bigint_field) VALUES (2);
+---
+- Statement: SELECT export_set(4, '1', '0') from all_types;
+- output: [['234']]
+...
