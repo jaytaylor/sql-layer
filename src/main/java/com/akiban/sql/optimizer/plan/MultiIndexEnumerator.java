@@ -16,7 +16,6 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeyColumn;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Table;

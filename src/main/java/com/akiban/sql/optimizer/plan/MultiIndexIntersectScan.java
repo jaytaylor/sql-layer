@@ -123,7 +123,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
         boolean pretty = indentation >= 0;
         int nextIndentation = pretty ? indentation + 1 : -1;
 
-        StringBuilder sb = indent(indentation);
+        StringBuilder sb = new StringBuilder();
         if (pretty) {
             sb.append("compare ").append(getComparisonFields()).append(Strings.NL);
             indent(sb, nextIndentation);
