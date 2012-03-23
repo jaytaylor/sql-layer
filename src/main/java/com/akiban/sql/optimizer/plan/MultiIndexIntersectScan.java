@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -68,17 +69,57 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
+    public List<OrderByExpression> getOrdering() {
+        return outputScan.getOrdering();
+    }
+
+    @Override
+    public OrderEffectiveness getOrderEffectiveness() {
+        return outputScan.getOrderEffectiveness();
+    }
+
+    @Override
     public List<ConditionExpression> getGroupConditions() {
         return coveringConditions;
     }
-    
+
+    @Override
+    public List<ExpressionNode> getEqualityComparands() {
+        return outputScan.getEqualityComparands();
+    }
+
     public void setGroupConditions(Collection<ConditionExpression> coveringConditions) {
         this.coveringConditions = new ArrayList<ConditionExpression>(coveringConditions);
     }
 
     @Override
+    public ExpressionNode getLowComparand() {
+        return outputScan.getLowComparand();
+    }
+
+    @Override
+    public boolean isLowInclusive() {
+        return outputScan.isLowInclusive();
+    }
+
+    @Override
+    public ExpressionNode getHighComparand() {
+        return outputScan.getHighComparand();
+    }
+
+    @Override
+    public boolean isHighInclusive() {
+        return outputScan.isHighInclusive();
+    }
+
+    @Override
     public List<ConditionExpression> getConditions() {
         return outputScan.getConditions();
+    }
+
+    @Override
+    public boolean hasConditions() {
+        return outputScan.hasConditions();
     }
 
     @Override

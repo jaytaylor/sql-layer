@@ -251,16 +251,16 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return nequals;
     }
 
-    private static void setColumnsAndOrdering(IndexScan index) {
+    private static void setColumnsAndOrdering(SingleIndexScan index) {
         List<IndexColumn> indexColumns = index.getAllColumns();
         int ncols = indexColumns.size();
-        List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         List<OrderByExpression> orderBy = new ArrayList<OrderByExpression>(ncols);
+        List<ExpressionNode> indexExpressions = new ArrayList<ExpressionNode>(ncols);
         for (IndexColumn indexColumn : indexColumns) {
             ExpressionNode indexExpression = getIndexExpression(index, indexColumn);
             indexExpressions.add(indexExpression);
             orderBy.add(new OrderByExpression(indexExpression,
-                                              indexColumn.isAscending()));
+                    indexColumn.isAscending()));
         }
         index.setColumns(indexExpressions);
         index.setOrdering(orderBy);
@@ -288,7 +288,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     // Determine how well this index does against the target.
     // Also, correct traversal order to match sort if possible.
     protected IndexScan.OrderEffectiveness
-        determineOrderEffectiveness(IndexScan index) {
+        determineOrderEffectiveness(SingleIndexScan index) {
         IndexScan.OrderEffectiveness result = IndexScan.OrderEffectiveness.NONE;
         if (!sortAllowed) return result;
         List<OrderByExpression> indexOrdering = index.getOrdering();
@@ -530,8 +530,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         for (Iterator<IndexScan> iterator = enumerator.iterator(); iterator.hasNext(); ) {
             IndexScan intersectedIndex = iterator.next();
             setIntersectionConditions(intersectedIndex);
-            setColumnsAndOrdering(intersectedIndex);
-            intersectedIndex.setOrderEffectiveness(determineOrderEffectiveness(intersectedIndex));
             intersectedIndex.setCovering(determineCovering(intersectedIndex));
             intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));
             if (previousBest == null) {
