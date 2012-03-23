@@ -55,7 +55,7 @@ public class HexExpression extends AbstractUnaryExpression
     
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private  Charset utf8 = Charset.forName("UTF-8"); // may change when actual charset
+        private  Charset charset = Charset.defaultCharset(); // may change when actual charset
                                                           // becomes availabe to expressions
         
         public InnerEvaluation(ExpressionEvaluation eval)
@@ -75,7 +75,7 @@ public class HexExpression extends AbstractUnaryExpression
             else
             {
                 StringBuilder builder = new StringBuilder();
-                for (byte ch : source.getString().getBytes(utf8))
+                for (byte ch : source.getString().getBytes(charset))
                     builder.append(String.format("%02X", ch));
                 valueHolder().putString(builder.toString());
             }
