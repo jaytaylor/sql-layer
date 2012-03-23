@@ -4,6 +4,9 @@
 ---
 - Statement: INSERT INTO all_types(bigint_field) VALUES (2);
 ---
-- Statement: SELECT export_set(4, '1', '0') from all_types;
-- output: [['234']]
+- Statement: SELECT export_set(9223372036854775808, '1', '0') from all_types;
+- output: [['abc']]
+---
+- Statement: SELECT export_set(12.5, '0', '1') from all_types;
+- output: [['0,1,0,0,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1']]
 ...

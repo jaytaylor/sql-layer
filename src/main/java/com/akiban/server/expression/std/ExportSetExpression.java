@@ -47,7 +47,7 @@ public class ExportSetExpression extends AbstractCompositeExpression
                             break;
                 default:    throw new WrongExpressionArityException(3, argumentTypes.size());
             }
-        
+            
              return ExpressionTypes.newType(AkType.VARCHAR, 
                            64 + 63 * (  Math.max(   argumentTypes.get(2).getPrecision(), 
                                                     argumentTypes.get(1).getPrecision()) 

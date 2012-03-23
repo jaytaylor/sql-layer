@@ -19,6 +19,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
 import java.math.BigInteger;
+import java.math.MathContext;
 
 final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
     @Override
@@ -33,11 +34,11 @@ final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
         case VARCHAR:   return new BigInteger(source.getString());
         case INTERVAL_MILLIS:  return BigInteger.valueOf(source.getInterval_Millis());
         case INTERVAL_MONTH:   return BigInteger.valueOf(source.getInterval_Month());
-        case DECIMAL:   return BigInteger.valueOf(source.getDecimal().longValueExact());
-        case U_DOUBLE:  return BigInteger.valueOf((long)source.getUDouble());
-        case DOUBLE:    return BigInteger.valueOf((long)source.getDouble());
-        case FLOAT:     return BigInteger.valueOf((long)source.getFloat());
-        case U_FLOAT:   return BigInteger.valueOf((long)source.getUFloat());
+        case DECIMAL:   return source.getDecimal().round(MathContext.UNLIMITED).toBigInteger();
+        case U_DOUBLE:  return BigInteger.valueOf(Math.round(source.getUDouble()));
+        case DOUBLE:    return BigInteger.valueOf(Math.round(source.getDouble()));
+        case FLOAT:     return BigInteger.valueOf(Math.round(source.getFloat()));
+        case U_FLOAT:   return BigInteger.valueOf(Math.round(source.getUFloat()));
         default: throw unsupportedConversion(type);
         }
     }

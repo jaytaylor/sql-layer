@@ -19,6 +19,7 @@ import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
+import java.math.MathContext;
 
 class ExtractorsForLong extends LongExtractor {
 
@@ -50,23 +51,23 @@ class ExtractorsForLong extends LongExtractor {
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
         case U_BIGINT:  return source.getUBigInt().longValue();
-        case FLOAT:     return (long)source.getFloat();
-        case U_FLOAT:   return (long)source.getUFloat();
-        case DOUBLE:    return (long)source.getDouble();
-        case U_DOUBLE:  return (long)source.getUDouble();
+        case FLOAT:     return Math.round(source.getFloat());
+        case U_FLOAT:   return Math.round(source.getUFloat());
+        case DOUBLE:    return Math.round(source.getDouble());
+        case U_DOUBLE:  return Math.round(source.getUDouble());
         case TEXT:
             try {
-                return (long)Double.parseDouble(source.getText());    
+                return Math.round(Double.parseDouble(source.getText()));    
             } catch (NumberFormatException ex) {
                 throw new InvalidCharToNumException (source.getText());
             }
         case VARCHAR:
             try {
-                return (long)Double.parseDouble(source.getString());               
+                return Math.round(Double.parseDouble(source.getString()));
             } catch (NumberFormatException ex) {
                 throw new InvalidCharToNumException (source.getString());
             }
-        case DECIMAL:   return source.getDecimal().longValue();
+        case DECIMAL:   return source.getDecimal().round(MathContext.UNLIMITED).longValueExact();
         case INTERVAL_MILLIS:  return source.getInterval_Millis();
         case INTERVAL_MONTH:  return source.getInterval_Month();
         default: throw unsupportedConversion(type);
