@@ -144,85 +144,6 @@ public abstract class CostEstimator implements TableRowCounts
                                       ExpressionNode lowComparand, boolean lowInclusive,
                                       ExpressionNode highComparand, boolean highInclusive)
     {
-        return 
-            System.getProperty("costIndexScan", "new").equals("new")
-            ? costIndexScanNew(index, equalityComparands, lowComparand, lowInclusive, highComparand, highInclusive)
-            : costIndexScanOld(index, equalityComparands, lowComparand, lowInclusive, highComparand, highInclusive);
-    }
-
-    public CostEstimate costIndexScanOld(Index index,
-                                         List<ExpressionNode> equalityComparands,
-                                         ExpressionNode lowComparand, boolean lowInclusive,
-                                         ExpressionNode highComparand, boolean highInclusive) {
-        if (index.isUnique()) {
-            if ((equalityComparands != null) &&
-                (equalityComparands.size() >= index.getKeyColumns().size())) {
-                // Exact match from unique index; probably one row.
-                return indexAccessCost(1, index);
-            }
-        }
-        long rowCount = getTableRowCount(index.leafMostTable());
-        long statsCount = 0;
-        IndexStatistics indexStats = getIndexStatistics(index);
-        if (indexStats != null)
-            statsCount = indexStats.getSampledCount();
-        int columnCount = 0;
-        if (equalityComparands != null) {
-            columnCount = Math.min(equalityComparands.size(), // No histogram for value cols.
-                                   index.getKeyColumns().size());
-        }
-        if ((lowComparand != null) || (highComparand != null))
-            columnCount++;
-        if (columnCount == 0)
-            // Just for ordering.
-            return indexAccessCost(rowCount, index);
-        Histogram histogram;
-        if ((statsCount == 0) ||
-            ((histogram = indexStats.getHistogram(columnCount)) == null)) {
-            // No stats.
-            return indexAccessCost((long)(rowCount * missingStatsSelectivity()), index);
-        }
-        boolean scaleCount = true;
-        long nrows;
-        if ((lowComparand == null) && (highComparand == null)) {
-            // Equality lookup.
-
-            // If a histogram is almost unique, and in particular unique but
-            // not so declared, then the result size doesn't scale up from
-            // when it was analyzed.
-            long totalDistinct = histogram.totalDistinctCount();
-            boolean mostlyDistinct = totalDistinct * 10 > statsCount * 9; // > 90% distinct
-            if (mostlyDistinct) scaleCount = false;
-            byte[] keyBytes = encodeKeyBytes(index, equalityComparands, null, false);
-            if (keyBytes == null) {
-                // Variable.
-                nrows = (mostlyDistinct) ? 1 : statsCount / totalDistinct;
-            }
-            else {
-                nrows = rowsEqual(histogram, keyBytes);
-            }
-        }
-        else {
-            byte[] lowBytes = encodeKeyBytes(index, equalityComparands, lowComparand, false);
-            byte[] highBytes = encodeKeyBytes(index, equalityComparands, highComparand, true);
-            if ((lowBytes == null) && (highBytes == null)) {
-                // Range completely unknown.
-                nrows = indexStats.getSampledCount();
-            }
-            else {
-                nrows = rowsBetween(histogram, lowBytes, lowInclusive, highBytes, highInclusive);
-            }
-        }
-        if (scaleCount)
-            nrows = simpleRound((nrows * rowCount), statsCount);
-        return indexAccessCost(nrows, index);
-    }
-
-    /** Estimate cost of scanning from this index. */
-    public CostEstimate costIndexScanNew(Index index,
-                                         List<ExpressionNode> equalityComparands,
-                                         ExpressionNode lowComparand, boolean lowInclusive,
-                                         ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
                 (equalityComparands.size() >= index.getKeyColumns().size())) {
@@ -244,7 +165,6 @@ public abstract class CostEstimator implements TableRowCounts
             columnCount++;
         if (columnCount == 0) {
             // Index just used for ordering.
-            // TODO: Is this too conservative?
             return indexAccessCost(rowCount, index);
         }
         boolean scaleCount = true;
@@ -294,75 +214,6 @@ public abstract class CostEstimator implements TableRowCounts
     private CostEstimate indexAccessCost(long nrows, Index index) {
         return new CostEstimate(nrows, 
                                 model.indexScan(schema.indexRowType(index), (int)nrows));
-    }
-
-    protected long rowsEqual(Histogram histogram, byte[] keyBytes) {
-        // TODO; Could use Collections.binarySearch if we had
-        // something that looked like a HistogramEntry.
-        List<HistogramEntry> entries = histogram.getEntries();
-        for (HistogramEntry entry : entries) {
-            int compare = bytesComparator.compare(keyBytes, entry.getKeyBytes());
-            if (compare == 0)
-                return entry.getEqualCount();
-            else if (compare < 0) {
-                long d = entry.getDistinctCount();
-                if (d == 0)
-                    return 1;
-                return simpleRound(entry.getLessCount(), d);
-            }
-        }
-        HistogramEntry lastEntry = entries.get(entries.size() - 1);
-        long d = lastEntry.getDistinctCount();
-        if (d == 0)
-            return 1;
-        d++;
-        return simpleRound(lastEntry.getLessCount(), d);
-    }
-    
-    protected long rowsBetween(Histogram histogram, 
-                               byte[] lowBytes, boolean lowInclusive,
-                               byte[] highBytes, boolean highInclusive) {
-        boolean before = (lowBytes != null);
-        long rowCount = 0;
-        byte[] entryStartBytes, entryEndBytes = null;
-        for (HistogramEntry entry : histogram.getEntries()) {
-            entryStartBytes = entryEndBytes;
-            entryEndBytes = entry.getKeyBytes();
-            long portionStart = 0;
-            if (before) {
-                int compare = bytesComparator.compare(lowBytes, entryEndBytes);
-                if (compare > 0)
-                    continue;
-                before = false;
-                if (compare == 0) {
-                    if (lowInclusive)
-                        rowCount += entry.getEqualCount();
-                    continue;
-                }
-                // TODO: This doesn't look right. If loBytes and hiBytes are not covered by the same entry,
-                // TODO: The uniformPortion contribution is computed for each entry past the one
-                // TODO: actually containing loBytes.
-                portionStart = uniformPortion(entryStartBytes, entryEndBytes, lowBytes,
-                                              entry.getLessCount());
-                // Fall through to check high in same entry.
-            }
-            if (highBytes != null) {
-                int compare = bytesComparator.compare(highBytes, entryEndBytes);
-                if (compare == 0) {
-                    rowCount += entry.getLessCount() - portionStart;
-                    if (highInclusive)
-                        rowCount += entry.getEqualCount();
-                    break;
-                }
-                if (compare < 0) {
-                    rowCount += uniformPortion(entryStartBytes, entryEndBytes, highBytes,
-                                               entry.getLessCount()) - portionStart;
-                    break;
-                }
-            }
-            rowCount += entry.getLessCount() + entry.getEqualCount() - portionStart;
-        }
-        return Math.max(rowCount, 1);
     }
 
     protected double fractionEqual(List<ExpressionNode> eqExpressions, 
@@ -839,8 +690,9 @@ public abstract class CostEstimator implements TableRowCounts
                     // Add cost of this index and of intersecting its rows with rows so far.
                     cost += singleCost + model.intersect((int)rowCount, (int)singleCount);
                     long totalRowCount = getTableRowCount(singleScan.getIndex().leafMostTable());
-                    // Apply this index's selectivity to cumulative row count.
-                    rowCount = simpleRound(rowCount * singleCount, totalRowCount);
+                    if (totalRowCount > singleCount)
+                        // Apply this index's selectivity to cumulative row count.
+                        rowCount = simpleRound(rowCount * singleCount, totalRowCount);
                 }
                 rowCount = Math.max(rowCount, 1);
             }
