@@ -225,8 +225,8 @@ public class AggregateMapper extends BaseRule
             }
             switch (setting) {
             case FIRST:
-                return new AggregateFunctionExpression("FIRST", column, false,
-                                                       column.getSQLtype(), null);
+                return addAggregate(new AggregateFunctionExpression("FIRST", column, false,
+                                                                    column.getSQLtype(), null));
             case ERROR:
             default:
                 throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY", column.getSQLsource());
@@ -252,6 +252,7 @@ public class AggregateMapper extends BaseRule
             }
             if (columns.isEmpty()) return false;
             // Find a unique index all of whose columns are in the GROUP BY.
+            // TODO: Use column equivalences.
             find_index:
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
                 if (!index.isUnique()) continue;
