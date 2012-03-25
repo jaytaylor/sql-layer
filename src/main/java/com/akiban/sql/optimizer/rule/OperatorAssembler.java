@@ -287,6 +287,7 @@ public class OperatorAssembler extends BaseRule
                     selectorScan.rowType,
                     index.getOutputOrderingFields(),
                     index.getSelectorOrderingFields(),
+                    // TODO: Need to indicate ASC/DESC ordering of comparison fields.
                     index.getComparisonFields(),
                     JoinType.INNER_JOIN,
                     IntersectOutputOption.OUTPUT_LEFT
