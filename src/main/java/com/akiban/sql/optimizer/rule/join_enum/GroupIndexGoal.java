@@ -266,22 +266,35 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         index.setOrdering(orderBy);
     }
 
-    // TODO: When we support ordering for a MultiIndexIntersectScan,
-    // this will need to take its ordering and work out the
-    // implications for the components. Right now, Intersect_Ordered
-    // only does ascending.
-    private static void resetOrdering(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getAllColumns();
-        List<OrderByExpression> orderBy = index.getOrdering();
-        if (orderBy != null) {
-            for (int i = 0; i < indexColumns.size(); i++) {
-                orderBy.get(i).setAscending(indexColumns.get(i).isAscending());
-            }        
+    // Take ordering from output index and adjust ordering of others to match.
+    private static void installOrdering(IndexScan index, 
+                                        List<OrderByExpression> outputOrdering,
+                                        int outputPeggedCount, int comparisonFields) {
+        if (index instanceof SingleIndexScan) {
+            List<OrderByExpression> indexOrdering = index.getOrdering();
+            if ((indexOrdering != null) && (indexOrdering != outputOrdering)) {
+                // Order comparison fields the same way as output.
+                // Try to avoid mixed mode: initial columns ordered
+                // like first comparison, trailing columns ordered
+                // like last comparison.
+                int i = 0;
+                while (i < index.getPeggedCount()) {
+                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount).isAscending());
+                }
+                for (int j = 0; j < comparisonFields; j++) {
+                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + j).isAscending());
+                }
+                while (i < indexOrdering.size()) {
+                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + comparisonFields - 1).isAscending());
+                }
+            }
         }
-        if (index instanceof MultiIndexIntersectScan) {
+        else if (index instanceof MultiIndexIntersectScan) {
             MultiIndexIntersectScan multiIndex = (MultiIndexIntersectScan)index;
-            resetOrdering(multiIndex.getOutputIndexScan());
-            resetOrdering(multiIndex.getSelectorIndexScan());
+            installOrdering(multiIndex.getOutputIndexScan(), 
+                            outputOrdering, outputPeggedCount, comparisonFields);
+            installOrdering(multiIndex.getSelectorIndexScan(), 
+                            outputOrdering, outputPeggedCount, comparisonFields);
         }
     }
 
@@ -888,7 +901,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             if (indexScan instanceof MultiIndexIntersectScan) {
-                resetOrdering(indexScan);
+                MultiIndexIntersectScan multiScan = (MultiIndexIntersectScan)indexScan;
+                installOrdering(indexScan, multiScan.getOrdering(), multiScan.getPeggedCount(), multiScan.getComparisonFields());
             }
             installConditions(indexScan, conditionSources);
             queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
