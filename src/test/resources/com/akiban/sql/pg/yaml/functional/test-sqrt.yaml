@@ -24,16 +24,12 @@
 ---
 - Statement: DELETE FROM all_types
 ---
-# TODO - Handle non-whole results (e.g. sqrt(5.5)) - eye-check shows that test results are working
-# TODO - Add back in real_field, which keeps being casted to float internally
 - Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
             integer_field, bigint_field, bigint_unsigned_field, decimal_field,
             numeric_field, real_field, varchar_field)
     VALUES (16.0, 16.0, 16, 16, 16, 16, 16.0, 16.0, null, '16'),
     (0.0, 0.0, 0, 0, 0, 0, 0.0, 0.0, null, '0.0'),
     (-2.0, -2.0, -2, -2, -2, null, -2.0, -2.0, null, '-2.0')
-    #(5.5, 5.5, 5, 5, 5, 5, 5.5, 5.0, null, '5.5'),
-
 ---
 - Statement: SELECT SQRT(double_field), SQRT(float_field),
     SQRT(smallint_field), SQRT(integer_field), SQRT(bigint_field),
@@ -42,9 +38,14 @@
 - output: [[4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, 4.0, null, 4.0],
            [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, null, 0.0],
            [NaN, NaN, NaN, NaN, NaN, null, NaN, NaN, null, NaN]]
-           #[2.34520788, 2.34520788, 2.23606798, null, 2.23606798, 
-              #2.23606798, 2.23606798, 2.23606798, null, 2.34520788],
-              
+---
+- Statement: DELETE FROM all_types
+---
+- Statement: INSERT INTO all_types (real_field) VALUES (16.0), (0.0), (-2.0)
+---
+- Statement: SELECT SQRT(real_field) FROM all_types
+- output: [[4.0], [0.0], [NaN]]
+
 # Infinity, NaN
 ---
 - Statement: DELETE FROM all_types
