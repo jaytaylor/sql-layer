@@ -29,23 +29,23 @@ import com.akiban.ais.model.Type;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.ProtobufWriteException;
+import com.akiban.util.GrowableByteBuffer;
 import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.MessageLite;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
 public class ProtobufWriter {
-    private final ByteBuffer buffer;
+    private final GrowableByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
     private Map<String,Schema> schemaMap = new TreeMap<String,Schema>();
 
 
-    public ProtobufWriter(ByteBuffer buffer) {
+    public ProtobufWriter(GrowableByteBuffer buffer) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
     }

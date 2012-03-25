@@ -30,9 +30,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.error.ProtobufWriteException;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
-
-import java.nio.ByteBuffer;
 
 import static com.akiban.ais.AISComparator.compareAndAssert;
 
@@ -142,7 +141,7 @@ public class ProtobufReaderWriterTest {
 
     @Test(expected=ProtobufReadException.class)
     public void readBufferTooSmall() {
-        ByteBuffer bb = ByteBuffer.allocate(4096);
+        GrowableByteBuffer bb = new GrowableByteBuffer(4096);
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
         ProtobufWriter writer = new ProtobufWriter(bb);
         writer.save(inAIS);
@@ -155,7 +154,7 @@ public class ProtobufReaderWriterTest {
 
     @Test(expected=ProtobufWriteException.class)
     public void writeBufferTooSmall() {
-        ByteBuffer bb = ByteBuffer.allocate(10);
+        GrowableByteBuffer bb = new GrowableByteBuffer(10);
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
         ProtobufWriter writer = new ProtobufWriter(bb);
         writer.save(inAIS);
@@ -163,7 +162,7 @@ public class ProtobufReaderWriterTest {
 
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
-        ByteBuffer bb = createByteBuffer();
+        GrowableByteBuffer bb = createByteBuffer();
 
         ProtobufWriter writer = new ProtobufWriter(bb);
         writer.save(inAIS);
@@ -175,7 +174,7 @@ public class ProtobufReaderWriterTest {
         return outAIS;
     }
 
-    private ByteBuffer createByteBuffer() {
-        return ByteBuffer.allocate(4096);
+    private GrowableByteBuffer createByteBuffer() {
+        return new GrowableByteBuffer(4096);
     }
 }

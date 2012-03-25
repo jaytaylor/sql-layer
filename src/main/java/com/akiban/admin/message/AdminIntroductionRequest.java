@@ -17,26 +17,26 @@ package com.akiban.admin.message;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.ByteBuffer;
 
 import com.akiban.message.MessageRequiredServices;
 import com.akiban.server.service.session.Session;
 import com.akiban.message.AkibanSendConnection;
 import com.akiban.message.Request;
+import com.akiban.util.GrowableByteBuffer;
 
 public class AdminIntroductionRequest extends Request
 {
     // Request interface
 
     @Override
-    public void read(ByteBuffer payload) throws Exception
+    public void read(GrowableByteBuffer payload) throws Exception
     {
         super.read(payload);
         adminInitializer = readString(payload);
     }
 
     @Override
-    public void write(ByteBuffer payload) throws Exception
+    public void write(GrowableByteBuffer payload) throws Exception
     {
         super.write(payload);
         writeString(payload, adminInitializer);

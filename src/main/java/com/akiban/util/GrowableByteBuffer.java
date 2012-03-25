@@ -40,6 +40,10 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     private ByteBuffer cached;
 
 
+    public GrowableByteBuffer(int initialSizeAndMax) {
+        this(initialSizeAndMax, initialSizeAndMax, initialSizeAndMax);
+    }
+
     public GrowableByteBuffer(int initialSize, int maxSize) {
         this(initialSize, maxSize, maxSize);
     }

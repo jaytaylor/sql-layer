@@ -15,7 +15,6 @@
 
 package com.akiban.util;
 
-import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 
 /*
@@ -24,9 +23,9 @@ import java.nio.ByteOrder;
 
 public class ByteBufferFactory
 {
-    public static ByteBuffer allocate(int n)
+    public static GrowableByteBuffer allocate(int n)
     {
-        ByteBuffer byteBuffer = ByteBuffer.allocate(n);
+        GrowableByteBuffer byteBuffer = new GrowableByteBuffer(n);
         byteBuffer.order(ByteOrder.LITTLE_ENDIAN);
         return byteBuffer;
     }

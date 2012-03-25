@@ -38,12 +38,12 @@ import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -66,7 +66,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
-    public boolean collectNextRow(ByteBuffer payload)
+    public boolean collectNextRow(GrowableByteBuffer payload)
     {
          // The handling of currentRow is slightly tricky: If writing to the payload results in BufferOverflowException,
          // then there is likely to be another call of this method, expecting to get the same row and write it into

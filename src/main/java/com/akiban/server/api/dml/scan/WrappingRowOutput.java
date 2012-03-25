@@ -19,10 +19,11 @@ import java.nio.ByteBuffer;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.GrowableByteBuffer;
 
 public class WrappingRowOutput implements LegacyRowOutput {
     private int markPos = -1;
-    protected final ByteBuffer wrapped;
+    protected final GrowableByteBuffer wrapped;
     private int rows;
 
     /**
@@ -30,13 +31,13 @@ public class WrappingRowOutput implements LegacyRowOutput {
      * @param buffer the ByteBuffer to wrap
      * @throws IllegalArgumentException is buffer if null
      */
-    public WrappingRowOutput(ByteBuffer buffer) {
+    public WrappingRowOutput(GrowableByteBuffer buffer) {
         ArgumentValidation.notNull("buffer", buffer);
         this.wrapped = buffer;
     }
 
     @Override
-    final public ByteBuffer getOutputBuffer() {
+    final public GrowableByteBuffer getOutputBuffer() {
         return wrapped;
     }
 

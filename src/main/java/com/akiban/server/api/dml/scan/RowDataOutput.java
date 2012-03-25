@@ -19,11 +19,11 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.ListUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -38,7 +38,7 @@ public class RowDataOutput implements LegacyRowOutput {
     }
 
     @Override
-    public ByteBuffer getOutputBuffer() {
+    public GrowableByteBuffer getOutputBuffer() {
         return null;
     }
 
