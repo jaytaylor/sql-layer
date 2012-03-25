@@ -245,6 +245,29 @@ public class GrowableByteBufferTest {
             assertEquals("put went to backing array, index i", (byte)i, gbb.get());
         }
     }
+    
+    @Test
+    public void prepareForSize() {
+        final GrowableByteBuffer gbb = new GrowableByteBuffer(50, 100, 200);
+        assertEquals("Can prepare size < current < cacheMax", true, gbb.prepareForSize(25));
+        assertEquals("Did not shrink buffer", 50, gbb.capacity());
+        
+        assertEquals("Can prepare current < size < cacheMax", true, gbb.prepareForSize(75));
+        assertEquals("Grew to exact size", 75, gbb.capacity());
+        assertEquals("Did not cache previous", true, gbb.getCached() == null);
+        
+        assertEquals("Can prepare cacheMax < size < burstMax", true, gbb.prepareForSize(150));
+        assertEquals("Grew to exact size", 150, gbb.capacity());
+        assertEquals("Did cache previous", true, gbb.getCached() != null);
+        assertEquals("Cached previous size", 75, gbb.getCached().capacity());
+
+        assertEquals("Cannot prepare size > burstMax", false, gbb.prepareForSize(250));
+
+        assertEquals("Currently have cached", true, gbb.getCached() != null);
+        assertEquals("Can prepare size < cacheMax < current", true, gbb.prepareForSize(70));
+        assertEquals("Used cached", true, gbb.getCached() == null);
+        assertEquals("Current capacity", 75, gbb.capacity());
+    }
 
     @Test(expected=IllegalArgumentException.class)
     public void negativeInitialSize() {

@@ -86,6 +86,20 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         return buffer;
     }
 
+    public boolean prepareForSize(int size) {
+        if(size <= buffer.capacity()) {
+            if(cached != null && size <= cached.capacity()) {
+                useCached();
+            }
+            return true;
+        }
+        if(size <= maxBurstSize) {
+            grow(size);
+            return true;
+        }
+        return false;
+    }
+
 
     @Override
     public String toString() {
@@ -155,8 +169,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
 
     public GrowableByteBuffer clear() {
         if(cached != null) {
-            buffer = cached;
-            cached = null;
+            useCached();
         }
         buffer.clear();
         return this;
@@ -438,6 +451,21 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         if(newSize > maxCacheSize && old.capacity() <= maxCacheSize) {
             cached = old;
         }
+    }
+
+    private void useCached() {
+        assert cached != null : this;
+        buffer = cached;
+        cached = null;
+    }
+
+
+    //
+    // Package private, for test
+    //
+
+    ByteBuffer getCached() {
+        return cached;
     }
 
     static int computeNewSize(int curSize, int maxCache, int maxBurst) {
