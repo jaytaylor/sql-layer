@@ -23,12 +23,10 @@ import com.akiban.server.expression.std.RankExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
@@ -136,7 +134,7 @@ class Intersect_Ordered extends Operator
                              RowType rightRowType,
                              int leftOrderingFields,
                              int rightOrderingFields,
-                             int comparisonFields,
+                             boolean[] ascending,
                              JoinType joinType,
                              IntersectOutputOption intersectOutput)
     {
@@ -149,8 +147,8 @@ class Intersect_Ordered extends Operator
         ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
         ArgumentValidation.isGTE("rightOrderingFields", rightOrderingFields, 0);
         ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
-        ArgumentValidation.isGTE("comparisonFields", comparisonFields, 0);
-        ArgumentValidation.isLTE("comparisonFields", comparisonFields, min(leftOrderingFields, rightOrderingFields));
+        ArgumentValidation.isGTE("ascending.length()", ascending.length, 0);
+        ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
         ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
         ArgumentValidation.notNull("intersectOutput", intersectOutput);
         ArgumentValidation.isTrue("joinType consistent with intersectOutput",
@@ -159,16 +157,17 @@ class Intersect_Ordered extends Operator
                                   joinType == JoinType.RIGHT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_RIGHT);
         this.left = left;
         this.right = right;
+        this.ascending = ascending;
         // outerjoins
         this.keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN;
         this.keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN;
         // output
         this.outputLeft = intersectOutput == IntersectOutputOption.OUTPUT_LEFT;
         // Setup for row comparisons
-        this.fieldRankingExpressions = new RankExpression[comparisonFields];
+        this.fieldRankingExpressions = new RankExpression[ascending.length];
         leftSkip = leftRowType.nFields() - leftOrderingFields;
         rightSkip = rightRowType.nFields() - rightOrderingFields;
-        for (int f = 0; f < comparisonFields; f++) {
+        for (int f = 0; f < fieldRankingExpressions.length; f++) {
             this.fieldRankingExpressions[f] =
                 new RankExpression(new FieldExpression(leftRowType, leftSkip + f),
                                    new FieldExpression(rightRowType, rightSkip + f));
@@ -191,6 +190,7 @@ class Intersect_Ordered extends Operator
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
     private final boolean outputLeft;
+    private final boolean[] ascending;
 
     // Inner classes
 
@@ -317,11 +317,15 @@ class Intersect_Ordered extends Operator
             } else if (rightRow.isEmpty()) {
                 c = -1;
             } else {
-                for (AbstractTwoArgExpressionEvaluation fieldRankingEvaluation : fieldRankingEvaluations) {
+                for (int f = 0; f < fieldRankingEvaluations.length; f++) {
+                    AbstractTwoArgExpressionEvaluation fieldRankingEvaluation = fieldRankingEvaluations[f];
                     fieldRankingEvaluation.leftEvaluation().of(leftRow.get());
                     fieldRankingEvaluation.rightEvaluation().of(rightRow.get());
                     c = fieldRankingEvaluation.eval().getInt();
                     if (c != 0) {
+                        if (!ascending[f]) {
+                            c = -c;
+                        }
                         break;
                     }
                 }

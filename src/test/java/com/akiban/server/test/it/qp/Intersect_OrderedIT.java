@@ -143,7 +143,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
         } catch (IllegalArgumentException e) {
@@ -155,7 +155,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -173,7 +173,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -186,7 +186,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               null,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -204,7 +204,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               null,
                               IntersectOutputOption.OUTPUT_LEFT);
         } catch (IllegalArgumentException e) {
@@ -216,7 +216,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.FULL_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
         } catch (IllegalArgumentException e) {
@@ -233,7 +233,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               null);
         } catch (IllegalArgumentException e) {
@@ -248,7 +248,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           parentYIndexRowType,
                           1,
                           1,
-                          1,
+                          ascending(true),
                           JoinType.INNER_JOIN,
                           IntersectOutputOption.OUTPUT_LEFT);
         intersect_Ordered(groupScan_Default(coi),
@@ -257,7 +257,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           parentYIndexRowType,
                           1,
                           1,
-                          1,
+                          ascending(true),
                           JoinType.INNER_JOIN,
                           IntersectOutputOption.OUTPUT_RIGHT);
         intersect_Ordered(groupScan_Default(coi),
@@ -266,7 +266,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           parentYIndexRowType,
                           1,
                           1,
-                          1,
+                          ascending(true),
                           JoinType.LEFT_JOIN,
                           IntersectOutputOption.OUTPUT_LEFT);
         try {
@@ -276,7 +276,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.LEFT_JOIN,
                               IntersectOutputOption.OUTPUT_RIGHT);
             fail();
@@ -289,7 +289,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.RIGHT_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -301,7 +301,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           parentYIndexRowType,
                           1,
                           1,
-                          1,
+                          ascending(true),
                           JoinType.RIGHT_JOIN,
                           IntersectOutputOption.OUTPUT_RIGHT);
     }
@@ -316,7 +316,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               -1,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -329,7 +329,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               3,
                               1,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -342,7 +342,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               -1,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -355,7 +355,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               3,
-                              1,
+                              ascending(true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -381,7 +381,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               parentYIndexRowType,
                               1,
                               1,
-                              2,
+                              ascending(true, true),
                               JoinType.INNER_JOIN,
                               IntersectOutputOption.OUTPUT_LEFT);
             fail();
@@ -394,8 +394,12 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test0x()
     {
-        Operator plan = intersectPxPy(0);
+        Operator plan = intersectPxPy(0, true);
         RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(0, false);
+        expected = new RowBase[]{
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -403,8 +407,12 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test1x()
     {
-        Operator plan = intersectPxPy(12);
+        Operator plan = intersectPxPy(12, true);
         RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(12, false);
+        expected = new RowBase[]{
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -412,8 +420,12 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test2x()
     {
-        Operator plan = intersectPxPy(22);
+        Operator plan = intersectPxPy(22, true);
         RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(22, false);
+        expected = new RowBase[]{
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -421,21 +433,33 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test3x()
     {
-        Operator plan = intersectPxPy(31);
+        Operator plan = intersectPxPy(31, true);
         RowBase[] expected = new RowBase[]{
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(32);
+        plan = intersectPxPy(32, true);
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(31, false);
+        expected = new RowBase[]{
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(32, true);
         compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test4x()
     {
-        Operator plan = intersectPxPy(44);
+        Operator plan = intersectPxPy(44, true);
         RowBase[] expected = new RowBase[]{
             row(parentXIndexRowType, 44L, 4001L),
             row(parentXIndexRowType, 44L, 4002L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(44, false);
+        expected = new RowBase[]{
+            row(parentXIndexRowType, 44L, 4002L),
+            row(parentXIndexRowType, 44L, 4001L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -443,10 +467,16 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test5x()
     {
-        Operator plan = intersectPxPy(55);
+        Operator plan = intersectPxPy(55, true);
         RowBase[] expected = new RowBase[]{
             row(parentXIndexRowType, 55L, 5001L),
             row(parentXIndexRowType, 55L, 5002L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(55, false);
+        expected = new RowBase[]{
+            row(parentXIndexRowType, 55L, 5002L),
+            row(parentXIndexRowType, 55L, 5001L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -454,10 +484,16 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test6x()
     {
-        Operator plan = intersectPxPy(66);
+        Operator plan = intersectPxPy(66, true);
         RowBase[] expected = new RowBase[]{
             row(parentXIndexRowType, 66L, 6002L),
             row(parentXIndexRowType, 66L, 6003L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(66, false);
+        expected = new RowBase[]{
+            row(parentXIndexRowType, 66L, 6003L),
+            row(parentXIndexRowType, 66L, 6002L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -465,8 +501,12 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test7x()
     {
-        Operator plan = intersectPxCz(70);
+        Operator plan = intersectPxCz(70, JoinType.INNER_JOIN, true);
         RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxCz(70, JoinType.INNER_JOIN, false);
+        expected = new RowBase[]{
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -474,7 +514,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test8x()
     {
-        Operator plan = intersectPxCz(88);
+        Operator plan = intersectPxCz(88, JoinType.INNER_JOIN, true);
         RowBase[] expected = new RowBase[]{
             row(childRowType, 88L, 8000L, 800000L),
             row(childRowType, 88L, 8001L, 800100L),
@@ -484,13 +524,27 @@ public class Intersect_OrderedIT extends OperatorITBase
             row(childRowType, 88L, 8002L, 800202L),
         };
         compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxCz(88, JoinType.INNER_JOIN, false);
+        expected = new RowBase[]{
+            row(childRowType, 88L, 8002L, 800202L),
+            row(childRowType, 88L, 8002L, 800201L),
+            row(childRowType, 88L, 8002L, 800200L),
+            row(childRowType, 88L, 8001L, 800101L),
+            row(childRowType, 88L, 8001L, 800100L),
+            row(childRowType, 88L, 8000L, 800000L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     @Test
     public void test9x()
     {
-        Operator plan = intersectPxCz(99);
+        Operator plan = intersectPxCz(99, JoinType.INNER_JOIN, true);
         RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxCz(99, JoinType.INNER_JOIN, false);
+        expected = new RowBase[]{
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -498,8 +552,13 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test12x()
     {
-        Operator plan = intersectPxCz(12, JoinType.RIGHT_JOIN);
+        Operator plan = intersectPxCz(12, JoinType.RIGHT_JOIN, true);
         RowBase[] expected = new RowBase[]{
+            row(childRowType, 12L, null, 1200000L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxCz(12, JoinType.RIGHT_JOIN, false);
+        expected = new RowBase[]{
             row(childRowType, 12L, null, 1200000L),
         };
         compareRows(expected, cursor(plan, queryContext));
@@ -599,51 +658,46 @@ public class Intersect_OrderedIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
-    private Operator intersectPxPy(int key)
+    private Operator intersectPxPy(int key, boolean ascending)
     {
         Operator plan =
             intersect_Ordered(
                 indexScan_Default(
                     parentXIndexRowType,
                     parentXEq(key),
-                    ordering(field(parentXIndexRowType, 1), true)),
+                    ordering(field(parentXIndexRowType, 1), ascending)),
                 indexScan_Default(
                     parentYIndexRowType,
                     parentYEq(key),
-                    ordering(field(parentYIndexRowType, 1), true)),
+                    ordering(field(parentYIndexRowType, 1), ascending)),
                 parentXIndexRowType,
                 parentYIndexRowType,
                 1,
                 1,
-                1,
+                ascending(ascending),
                 JoinType.INNER_JOIN,
                 IntersectOutputOption.OUTPUT_LEFT);
         return plan;
     }
 
-    private Operator intersectPxCz(int key)
-    {
-        return intersectPxCz(key, JoinType.INNER_JOIN);
-    }
-    
-    private Operator intersectPxCz(int key, JoinType joinType)
+    private Operator intersectPxCz(int key, JoinType joinType, boolean ascending)
     {
         Operator plan =
             intersect_Ordered(
                 indexScan_Default(
                     parentXIndexRowType,
                     parentXEq(key),
-                    ordering(field(parentXIndexRowType, 1), true)),
+                    ordering(field(parentXIndexRowType, 1), ascending)),
                 indexScan_Default(
                     childZIndexRowType,
                     childZEq(key),
-                    ordering(field(childZIndexRowType, 1), true,
-                             field(childZIndexRowType, 2), true)),
+                    ordering(field(childZIndexRowType, 1), ascending,
+                             field(childZIndexRowType, 2), ascending)),
                     parentXIndexRowType,
                     childZIndexRowType,
                     1,
                     2,
-                    1,
+                    ascending(ascending),
                     joinType,
                     IntersectOutputOption.OUTPUT_RIGHT);
         return plan;
@@ -677,5 +731,10 @@ public class Intersect_OrderedIT extends OperatorITBase
             ordering.append(expression, ascending);
         }
         return ordering;
+    }
+    
+    private boolean[] ascending(boolean ... ascending)
+    {
+        return ascending;
     }
 }
