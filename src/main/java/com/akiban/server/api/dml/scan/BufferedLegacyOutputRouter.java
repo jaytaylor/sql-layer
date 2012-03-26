@@ -24,13 +24,13 @@ import java.util.List;
  * Class for routing a legacy RowData to zero or more handlers. You can use this to route the data to just a single
  * handler (i.e., perform a conversion) or to multiple handlers (in which case it acts as a splitter).
  *
- * <p>This class requires a GrowableByteBuffer to accept each legacy row as it comes in. You can provide one, or have this
- * class allocate one of a given size. If you provide a GrowableByteBuffer, its position at the time that you instantiate this
+ * <p>This class requires a ByteBuffer to accept each legacy row as it comes in. You can provide one, or have this
+ * class allocate one of a given size. If you provide a ByteBuffer, its position at the time that you instantiate this
  * class is considered its base position. After each row is written and routed to all handlers, this class can
- * optionally reset the backing GrowableByteBuffer's position to the initial position. If you use that functionality, a single
+ * optionally reset the backing ByteBuffer's position to the initial position. If you use that functionality, a single
  * router can be used to process as many messages as you like, as long as each one fits within the buffer. Otherwise,
  * the buffer will keep filling. You can use this to efficiently split a LegacyRowData, using one of the outputs
- * as the backing GrowableByteBuffer.</p>
+ * as the backing ByteBuffer.</p>
  */
 public class BufferedLegacyOutputRouter extends WrappingRowOutput {
     public interface Handler {

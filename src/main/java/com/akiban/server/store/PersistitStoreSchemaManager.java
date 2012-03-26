@@ -613,8 +613,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             maxAISBufferSize = 0;
         }
         // 0 = unlimited, start off at 1MB in this case.
-        int size = maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20;
-        aisByteBuffer = new GrowableByteBuffer(size, size);
+        aisByteBuffer = new GrowableByteBuffer(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
         try {
             afterStart();
         } catch (PersistitException e) {
@@ -807,7 +806,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 if(maxAISBufferSize != 0 && newCapacity > maxAISBufferSize) {
                     newCapacity = maxAISBufferSize;
                 }
-                aisByteBuffer = new GrowableByteBuffer(newCapacity, newCapacity);
+                aisByteBuffer = new GrowableByteBuffer(newCapacity);
             }
         }
         return aisByteBuffer;
