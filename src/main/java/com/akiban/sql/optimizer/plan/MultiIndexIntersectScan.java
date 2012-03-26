@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
+import com.akiban.util.Strings;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import java.util.ArrayList;
@@ -167,15 +168,36 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    protected String summarizeIndex() {
-        StringBuilder sb = new StringBuilder("INTERSECT(");
-        sb.append(getComparisonFields());
-        sb.append(", ");
-        outputScan.buildSummaryString(sb, false);
-        sb.append(" AND ");
-        selectorScan.buildSummaryString(sb, false);
-        sb.append(')');
+    protected String summarizeIndex(int indentation) {
+        boolean pretty = indentation >= 0;
+        int nextIndentation = pretty ? indentation + 1 : -1;
+
+        StringBuilder sb = new StringBuilder();
+        if (pretty) {
+            sb.append("compare ").append(getComparisonFields()).append(Strings.NL);
+            indent(sb, nextIndentation);
+        }
+        else {
+            sb.append("INTERSECT(compare ").append(getComparisonFields()).append(", ");
+        }
+        summarizeChildIndex(outputScan, nextIndentation, sb);
+        if (pretty) {
+            sb.append(Strings.NL);
+            indent(sb, nextIndentation);
+        }
+        else {
+            sb.append(" AND ");
+        }
+        summarizeChildIndex(selectorScan, nextIndentation, sb);
+        if (!pretty)
+            sb.append(')');
         return sb.toString();
+    }
+
+    private void summarizeChildIndex(IndexScan child, int indentation, StringBuilder sb) {
+        int skips = child.getAllColumns().size() - getOrderingFields(child);
+        sb.append("skip ").append(skips).append(": ");
+        child.buildSummaryString(sb, indentation, false);
     }
 
     @Override

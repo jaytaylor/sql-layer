@@ -62,6 +62,7 @@ public class ScaleDecimalExpression extends AbstractUnaryExpression
 
         @Override
         public ValueSource eval() {
+            
             ValueSource operandSource = operand();
             if (operandSource.isNull())
                 return NullValueSource.only();

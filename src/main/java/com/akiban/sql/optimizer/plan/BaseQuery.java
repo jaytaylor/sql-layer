@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+
 import java.util.Collections;
 import java.util.Set;
 
@@ -22,8 +24,11 @@ import java.util.Set;
  */
 public class BaseQuery extends BasePlanWithInput
 {
-    protected BaseQuery(PlanNode query) {
+    private EquivalenceFinder<ColumnExpression> columnEquivalencies;
+    
+    protected BaseQuery(PlanNode query, EquivalenceFinder<ColumnExpression> columnEquivalencies) {
         super(query);
+        this.columnEquivalencies = columnEquivalencies;
     }
 
     public PlanNode getQuery() {
@@ -34,4 +39,7 @@ public class BaseQuery extends BasePlanWithInput
         return Collections.<ColumnSource>emptySet();
     }
 
+    public EquivalenceFinder<ColumnExpression> getColumnEquivalencies() {
+        return columnEquivalencies;
+    }
 }

@@ -22,6 +22,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
 
 import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -463,15 +464,17 @@ abstract class ExtractorsForDates extends LongExtractor {
             AkType type = source.getConversionType();
             switch (type){
                 case INTERVAL_MILLIS:  return source.getInterval_Millis();
-                case DECIMAL:   return source.getDecimal().longValue();
-                case DOUBLE:    return (long)source.getDouble();
+                case DECIMAL:   return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
+                case DOUBLE:    return Math.round(source.getDouble());
                 case U_BIGINT:  return source.getUBigInt().longValue();
                 case VARCHAR:   return getLong(source.getString());
                 case TEXT:      return getLong(source.getText());
                 case LONG:      return source.getLong();
                 case INT:       return source.getInt();
                 case U_INT:     return source.getUInt();
-                case U_DOUBLE:  return (long)source.getUDouble();
+                case U_DOUBLE:  return Math.round(source.getUDouble());
+                case FLOAT:     return Math.round(source.getFloat());
+                case U_FLOAT:   return Math.round(source.getUFloat());
                 default:        throw unsupportedConversion(type);
             }
         }
@@ -531,15 +534,17 @@ abstract class ExtractorsForDates extends LongExtractor {
             AkType type = source.getConversionType();
             switch (type){
                 case INTERVAL_MONTH:  return source.getInterval_Month();
-                case DECIMAL:   return source.getDecimal().longValue();
-                case DOUBLE:    return (long)source.getDouble();
+                case DECIMAL:   return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
+                case DOUBLE:    return Math.round(source.getDouble());
                 case U_BIGINT:  return source.getUBigInt().longValue();
                 case VARCHAR:   return getLong(source.getString());
                 case TEXT:      return getLong(source.getText());
                 case LONG:      return source.getLong();
                 case INT:       return source.getInt();
                 case U_INT:     return source.getUInt();
-                case U_DOUBLE:  return (long)source.getUDouble();
+                case U_DOUBLE:  return Math.round(source.getUDouble());
+                case FLOAT:     return Math.round(source.getFloat());
+                case U_FLOAT:   return Math.round(source.getUFloat());
                 default:        throw unsupportedConversion(type);
             }
         }
@@ -669,7 +674,7 @@ abstract class ExtractorsForDates extends LongExtractor {
         case FLOAT:     return Math.round(source.getFloat());
         case DOUBLE:    return Math.round(source.getDouble());
         case U_DOUBLE:  return Math.round(source.getUDouble());
-        case DECIMAL:   return source.getDecimal().round(MathContext.UNLIMITED).longValue();
+        case DECIMAL:   return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
         default: throw unsupportedConversion(type);
         }
     }

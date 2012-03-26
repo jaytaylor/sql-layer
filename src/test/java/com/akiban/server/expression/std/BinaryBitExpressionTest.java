@@ -108,7 +108,7 @@ public class BinaryBitExpressionTest
     {
         Expression leftEx = new LiteralExpression(AkType.VARCHAR, "2");
         Expression rightEx = new LiteralExpression(AkType.DOUBLE, 3.5);
-        assertEquals(functor[op.ordinal()].calc(BigInteger.valueOf(2), BigInteger.valueOf(3)), getActual(leftEx,rightEx));
+        assertEquals(functor[op.ordinal()].calc(BigInteger.valueOf(2), BigInteger.valueOf(4)), getActual(leftEx,rightEx));
     }
 
     @Test

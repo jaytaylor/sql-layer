@@ -1,6 +1,6 @@
 # test the LTRIM, RTRIM and TRIM functions
 # bug 940687: trim, rtrim, ltrim not syntactically supported (fix committed)
-# bug 942142: LENGTH should not trim
+# bug 942142: LENGTH should not trim: fix released
 ---
 - Include: all-types-schema.yaml
 ---
@@ -29,19 +29,19 @@
 ---
 - Statement: SELECT TRIM(TRAILING '1' from '111abc11') from all_types;
 - output: [['111abc'], ['111abc'], ['111abc']]
-####### BUG 942142: LENGTH SHOULD NOT TRIM
-#--- # test LTRIM and TRIM in SELECT and WHERE clause
-#- Statement: SELECT LTRIM(varchar_field) from all_types WHERE LENGTH(LTRIM(varchar_field)) = LENGTH(TRIM(varchar_field));
-#- output: [['ltrim']]
-#--- # test RTRIM and TRIM in SELECT and WHERE clause
-#- Statement: SELECT RTRIM(varchar_field) from all_types WHERE LENGTH(RTRIM(varchar_field)) = LENGTH(TRIM(varchar_field));
-#- output: [['rtrim']]
-#--- # test TRIM, LTRIM, and RTRIM in SELECT and WHERE clause
-#- Statement: SELECT TRIM(varchar_field) from all_types WHERE LENGTH(TRIM(varchar_field))) > LENGTH(LTRIM(varchar_field)) and LENGTH(TRIM(varchar_field)) > LENGTH(RTRIM(varchar_field));
-#- output: [['trim']]
-#---
-#- Statement: SELECT varchar_field from all_types WHERE LENGTH(TRIM(varchar_field)) = LENGTH(LTRIM(RTRIM(varchar_field)));
-#- row_count: 3
+###### BUG 942142: LENGTH SHOULD NOT TRIM
+--- # test LTRIM and TRIM in SELECT and WHERE clause
+- Statement: SELECT LTRIM(varchar_field) from all_types WHERE LENGTH(LTRIM(varchar_field)) = LENGTH(TRIM(varchar_field));
+- output: [['ltrim']]
+--- # test RTRIM and TRIM in SELECT and WHERE clause
+- Statement: SELECT RTRIM(varchar_field) from all_types WHERE LENGTH(RTRIM(varchar_field)) = LENGTH(TRIM(varchar_field));
+- output: [['rtrim']]
+--- # test TRIM, LTRIM, and RTRIM in SELECT and WHERE clause
+- Statement: SELECT TRIM(varchar_field) from all_types WHERE LENGTH(TRIM(varchar_field)) < LENGTH(LTRIM(varchar_field)) and LENGTH(TRIM(varchar_field)) < LENGTH(RTRIM(varchar_field));
+- output: [['trim']]
+---
+- Statement: SELECT varchar_field from all_types WHERE LENGTH(TRIM(varchar_field)) = LENGTH(LTRIM(RTRIM(varchar_field)));
+- row_count: 3
 --- # test wrong arity: empty list
 - Statement: SELECT LTRIM() from all_types;
 - error: [42000]
