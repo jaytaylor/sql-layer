@@ -17,6 +17,7 @@ package com.akiban.util;
 
 import org.junit.Test;
 
+import java.nio.BufferOverflowException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
@@ -267,6 +268,27 @@ public class GrowableByteBufferTest {
         assertEquals("Can prepare size < cacheMax < current", true, gbb.prepareForSize(70));
         assertEquals("Used cached", true, gbb.getCached() == null);
         assertEquals("Current capacity", 75, gbb.capacity());
+    }
+
+    @Test
+    public void noGrowWithUserDefinedLimit() {
+        final int SIZE = 10;
+        final int MAX = 11;
+        final int LIMIT = 8;
+        final GrowableByteBuffer gbb = gbb(SIZE, MAX);
+        gbb.limit(LIMIT);
+        putByteIncrementally(gbb, LIMIT);
+        
+        try {
+            gbb.put((byte)0);
+            fail("Expected BufferOverflowException");
+        } catch(BufferOverflowException e) {
+            // Expected
+        }
+
+        // Restore no limit, can grow again
+        gbb.limit(gbb.capacity());
+        putByteIncrementally(gbb, MAX - LIMIT);
     }
 
     @Test(expected=IllegalArgumentException.class)

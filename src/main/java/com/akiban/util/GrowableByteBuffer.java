@@ -414,11 +414,15 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     }
     
     private void checkPut(int index, int length) {
-        final int required = buffer.position() + length;
-        if(index < 0 || (required <= buffer.capacity())) {
+        if(index < 0 || (length <= buffer.remaining())) {
             return; // Invalid or fits, ByteBuffer methods will handle it
         }
 
+        if(buffer.limit() != buffer.capacity()) {
+            return; // User set limit and not enough space, let BufferOverflow be thrown
+        }
+
+        final int required = buffer.position() + length;
         final int newSize = computeNewSize(buffer.capacity(), required, maxCacheSize, maxBurstSize);
         if(newSize == buffer.capacity()) {
             throw new GrowableByteBufferIsFullException();
