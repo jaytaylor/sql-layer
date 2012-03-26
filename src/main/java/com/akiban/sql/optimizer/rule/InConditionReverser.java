@@ -139,7 +139,7 @@ public class InConditionReverser extends BaseRule
         // works if put on the outer side of a nested loop join as
         // well. If it stays on the inside, the subquery will be
         // elided later.
-        EquivalenceFinder<ColumnExpression> emptyEquivs = new EquivalenceFinder<ColumnExpression>();
+        EquivalenceFinder<ColumnExpression> emptyEquivs = any.getSubquery().getColumnEquivalencies();
         SubquerySource subquerySource = new SubquerySource(new Subquery(project, emptyEquivs), "ANY");
         projectFields.clear();
         for (ConditionExpression cond : joinConditions) {
