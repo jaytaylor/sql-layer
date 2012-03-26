@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 
 import java.util.*;
 
@@ -25,8 +26,8 @@ public class InsertStatement extends BaseUpdateStatement
     private List<Column> targetColumns;
 
     public InsertStatement(PlanNode query, TableNode targetTable,
-                           List<Column> targetColumns) {
-        super(query, targetTable);
+                           List<Column> targetColumns, EquivalenceFinder<ColumnExpression> columnEquivalencies) {
+        super(query, targetTable, columnEquivalencies);
         this.targetColumns = targetColumns;
     }
 

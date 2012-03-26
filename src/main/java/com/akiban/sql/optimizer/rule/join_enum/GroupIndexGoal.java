@@ -465,14 +465,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     protected boolean indexExpressionMatches(ExpressionNode indexExpression,
                                              ExpressionNode comparisonOperand,
                                              IntersectionEnumerator enumerator) {
-        if (indexExpression.equals(comparisonOperand)) {
-            if ((indexExpression instanceof ColumnExpression) && (comparisonOperand instanceof ColumnExpression)) {
-                ColumnExpression iCol = (ColumnExpression) indexExpression;
-                ColumnExpression cCol = (ColumnExpression) comparisonOperand;
-                iCol.markEquivalentTo(cCol);
-            }
+        if (indexExpression.equals(comparisonOperand))
             return true;
-        }
         if (!(comparisonOperand instanceof ColumnExpression))
             return false;
         // See if comparing against a result column of the subquery,
@@ -588,8 +582,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (int i=0; i < ncols; ++i) {
                 ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
                 ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
-                if (!firstCol.isEquivalentTo(secondCol))
-                    break;
+                if (true) throw new UnsupportedOperationException("TODO"); // TODO
+//                if (!firstCol.isEquivalentTo(secondCol))
+//                    break;
                 result.add(firstCol.getColumn());
             }
             return result;

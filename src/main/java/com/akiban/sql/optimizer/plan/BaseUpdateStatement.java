@@ -15,14 +15,17 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+
 /** A statement that modifies the database and returns row counts.
  */
 public class BaseUpdateStatement extends BaseStatement
 {
     private TableNode targetTable;
 
-    protected BaseUpdateStatement(PlanNode query, TableNode targetTable) {
-        super(query);
+    protected BaseUpdateStatement(PlanNode query, TableNode targetTable,
+                                  EquivalenceFinder<ColumnExpression> columnEquivalencies) {
+        super(query, columnEquivalencies);
         this.targetTable = targetTable;
     }
 

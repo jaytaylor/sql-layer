@@ -16,13 +16,10 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Column;
-
-import java.util.Set;
 
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
@@ -78,34 +75,6 @@ public class ColumnExpression extends BaseExpression
 
     public void setPosition(int position) {
         this.position = position;
-    }
-
-    public void markEquivalentTo(ColumnExpression other) {
-        getEquivalenceFinder().markEquivalent(this, other);
-    }
-
-
-    public EquivalenceFinder<ColumnExpression> tryGetEquivalenceFinder() {
-        if (table instanceof TableSource) {
-            return ((TableSource)table).getColumnEquivalences();
-        }
-        return null;
-
-    }
-    
-    public EquivalenceFinder<ColumnExpression> getEquivalenceFinder() {
-        EquivalenceFinder<ColumnExpression> result = tryGetEquivalenceFinder();
-        if (result == null)
-            throw new IllegalStateException("no equivalence finder");
-        return result;
-    }
-
-    public boolean isEquivalentTo(ColumnExpression other) {
-        return getEquivalenceFinder().areEquivalent(this, other);
-    }
-
-    public Set<ColumnExpression> getEquivalents() {
-        return getEquivalenceFinder().findEquivalents(this);
     }
 
     @Override

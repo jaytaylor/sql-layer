@@ -15,6 +15,8 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+
 import java.util.Set;
 
 /** A marker node around some subquery.
@@ -23,8 +25,8 @@ public class Subquery extends BaseQuery
 {
     private Set<ColumnSource> outerTables;
 
-    public Subquery(PlanNode inside) {
-        super(inside);
+    public Subquery(PlanNode inside, EquivalenceFinder<ColumnExpression> columnEquivalencies) {
+        super(inside, columnEquivalencies);
     }
 
     @Override

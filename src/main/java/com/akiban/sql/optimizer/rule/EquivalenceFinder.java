@@ -19,7 +19,6 @@ import com.akiban.util.ArgumentValidation;
 import com.google.common.collect.HashMultimap;
 import com.google.common.collect.Multimap;
 
-import java.util.AbstractMap.SimpleEntry;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -29,6 +28,10 @@ import java.util.Map.Entry;
 import java.util.Set;
 
 public class EquivalenceFinder<T> {
+
+    public void copyEquivalences(EquivalenceFinder<? extends T> source) {
+        equivalences.putAll(source.equivalences);
+    }
 
     public void markEquivalent(T one, T two) {
         ArgumentValidation.notNull("first arg", one);

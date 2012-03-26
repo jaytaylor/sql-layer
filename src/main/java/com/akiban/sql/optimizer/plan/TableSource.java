@@ -15,8 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-
 /** A join to an actual table. */
 public class TableSource extends BaseJoinable implements ColumnSource
 {
@@ -25,21 +23,13 @@ public class TableSource extends BaseJoinable implements ColumnSource
     private TableGroupJoin parentJoin;
     private boolean required;
     private String name;
-    private EquivalenceFinder<ColumnExpression> columnEquivalencies;
 
     public TableSource(TableNode table, boolean required, String name)
-    {
-        this(table, required, name, null);
-    }
-
-    public TableSource(TableNode table, boolean required, String name,
-                       EquivalenceFinder<ColumnExpression> columnEquivalencies)
     {
         this.table = table;
         table.addUse(this);
         this.required = required;
         this.name = name;
-        this.columnEquivalencies = columnEquivalencies;
     }
 
     public TableNode getTable() {
@@ -78,10 +68,6 @@ public class TableSource extends BaseJoinable implements ColumnSource
     }
     public void setRequired(boolean required) {
         this.required = required;
-    }
-
-    public EquivalenceFinder<ColumnExpression> getColumnEquivalences() {
-        return columnEquivalencies;
     }
 
     @Override
