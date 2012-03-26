@@ -331,6 +331,7 @@ public enum ErrorCode {
     QUERY_LOG_CLOSE_FAIL    ("52", "00E", Importance.ERROR, QueryLogCloseException.class),
     INVALID_PORT            ("52", "00F", Importance.ERROR, InvalidPortException.class), 
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
+    INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),
