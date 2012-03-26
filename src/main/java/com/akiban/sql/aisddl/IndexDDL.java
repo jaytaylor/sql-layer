@@ -220,7 +220,7 @@ public class IndexDDL
             if (tableCol == null) {
                 throw new NoSuchColumnException (col.getColumnName());
             }          
-            builder.indexColumn(tableName.getSchemaName(), tableName.getTableName(), indexName, tableCol.getName(), i, col.isAscending(), 0);
+            builder.indexColumn(tableName.getSchemaName(), tableName.getTableName(), indexName, tableCol.getName(), i, col.isAscending(), null);
             i++;
         }
         builder.basicSchemaIsComplete();
