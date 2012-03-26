@@ -73,11 +73,13 @@ public abstract class OperatorBasedRowCollector implements RowCollector
          // then there is likely to be another call of this method, expecting to get the same row and write it into
          // another payload with room, (resulting from a ScanRowsMoreRequest). currentRow is used only to hold onto
          // the current row across these two invocations.
+        boolean wasHeld = false;
         boolean wroteToPayload = false;
         PersistitGroupRow row;
         if (currentRow.isEmpty()) {
             row = (PersistitGroupRow) cursor.next();
         } else {
+            wasHeld = true;
             row = (PersistitGroupRow) currentRow.get();
             currentRow.release();
         }
@@ -88,7 +90,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             RowData rowData = row.rowData();
 
             // Only grow past cache size if we haven't written a single row
-            if (rowCount == 0 || (payload.position() + rowData.getRowSize() < payload.getMaxCacheSize())) {
+            if (rowCount == 0 || wasHeld || (payload.position() + rowData.getRowSize() < payload.getMaxCacheSize())) {
                 try {
                     payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
                     wroteToPayload = true;
