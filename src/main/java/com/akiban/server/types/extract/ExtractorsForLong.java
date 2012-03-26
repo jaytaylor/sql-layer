@@ -68,7 +68,7 @@ class ExtractorsForLong extends LongExtractor {
             } catch (NumberFormatException ex) {
                 throw new InvalidCharToNumException (source.getString());
             }
-        case DECIMAL:   return source.getDecimal().setScale(0, BigDecimal.ROUND_HALF_UP).longValueExact();
+        case DECIMAL: return source.getDecimal().setScale(0, BigDecimal.ROUND_HALF_UP).longValue();
         case INTERVAL_MILLIS:  return source.getInterval_Millis();
         case INTERVAL_MONTH:  return source.getInterval_Month();
         default: throw unsupportedConversion(type);
