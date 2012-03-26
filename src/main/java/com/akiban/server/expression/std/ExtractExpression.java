@@ -506,6 +506,7 @@ public class ExtractExpression extends AbstractUnaryExpression
                                    break;
                         
                     default:       long raw = Extractors.getLongExtractor(targetType).getLong(operand());
+                                   javax.swing.JOptionPane.showMessageDialog(null, "raw: " + raw + "\noptype: " + argType);
                                    if (targetType == AkType.TIMESTAMP) return null;
                                    else if (targetType == AkType.DATE )
                                    {
@@ -515,7 +516,6 @@ public class ExtractExpression extends AbstractUnaryExpression
                                    }
                                    l = Extractors.getLongExtractor(targetType).getLong(Extractors.getLongExtractor(targetType).asString(raw)); break;
                 }
-               
                 return l;
             }
             catch (InconvertibleTypesException ex)

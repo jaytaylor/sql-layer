@@ -20,13 +20,14 @@ import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import java.util.Arrays;
 import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 class DateTimeConverter implements AbstractConverter<MutableDateTime>
 {
     @Override
-    public  MutableDateTime get(ValueSource source) 
+    public  MutableDateTime get(ValueSource source)
     {
         if (source.isNull()) return null;
         long [] ymd_hms;
@@ -40,16 +41,17 @@ class DateTimeConverter implements AbstractConverter<MutableDateTime>
                                 getYearMonthDayHourMinuteSecond(source.getDateTime());
                             checkArgs(ymd_hms);
                             break;
-            case TIMESTAMP: return new MutableDateTime(source.getTimestamp() * 1000); 
+            case TIMESTAMP: return new MutableDateTime(source.getTimestamp() * 1000);
             case TIME:      ymd_hms =  Extractors.getLongExtractor(AkType.TIME).
                                 getYearMonthDayHourMinuteSecond(source.getTime()); break;
             case VARCHAR:   return get(source.getString());
             case TEXT:      return get(source.getText());
             case YEAR:      throw new InvalidParameterValueException("Invalid Date Value");
-            default:        throw new InconvertibleTypesException(source.getConversionType(), 
+            default:        throw new InconvertibleTypesException(source.getConversionType(),
                                                                     AkType.DATETIME);
         }
-        
+        javax.swing.JOptionPane.showMessageDialog(null, "Type = " + source.getConversionType() +
+                "\nval " + ymd_hms[2]);
         return new MutableDateTime((int)ymd_hms[0], (int)ymd_hms[1], (int)ymd_hms[2],
                 (int)ymd_hms[3], (int)ymd_hms[4], (int)ymd_hms[5], 0, DateTimeZone.getDefault());
     }
@@ -60,10 +62,10 @@ class DateTimeConverter implements AbstractConverter<MutableDateTime>
     }
 
     @Override
-    public MutableDateTime get(String source) 
+    public MutableDateTime get(String source)
     {
         return MutableDateTime.parse(source);
     }
-    
+
     protected DateTimeConverter () {}
 }

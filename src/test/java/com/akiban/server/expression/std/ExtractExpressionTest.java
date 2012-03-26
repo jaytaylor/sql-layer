@@ -64,6 +64,14 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     }
     //-----------------------------LAST DAY------------------------------------
     @Test
+    public void testDayOfYearFromDouble()
+    {
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 20081231.5d);
+        Expression top = ExtractExpression.DAY_YEAR_COMPOSER.compose(Arrays.asList(arg));
+        
+        assertTrue("Top should be null: ", top.evaluation().eval().isNull());
+    }
+    @Test
     public void testLastDayNull()
     {
         Expression in = ExprUtil.lit(20091231.6);
