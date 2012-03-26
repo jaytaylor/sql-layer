@@ -78,7 +78,7 @@ public final class LiteralExpression implements Expression {
     
     private LiteralExpression(InternalEvaluation evaluation) {
         this.evaluation = evaluation;
-    }
+      }
     
     public static Expression forNull() {
         return NULL_EXPRESSION;

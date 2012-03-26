@@ -125,7 +125,7 @@ public class UnaryBitExpressionTest extends ComposedExpressionTestBase
     {
         Expression arg = new LiteralExpression(AkType.DOUBLE, 15.5);
         
-        assertEquals(functor[op.ordinal()].calc(BigInteger.valueOf(15L)), getActualSource(arg));
+        assertEquals(functor[op.ordinal()].calc(BigInteger.valueOf(16L)), getActualSource(arg));
     }
     
     @Test

@@ -16,7 +16,8 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 
@@ -32,7 +33,6 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
 
     protected abstract Collection<? extends C> getLeafConditions(L node);
     protected abstract N intersect(N first, N second, int comparisonCount);
-    protected abstract boolean areEquivalent(Column one, Column two);
     protected abstract List<Column> getComparisonColumns(N first, N second);
 
     // becomes null when we start enumerating
@@ -160,56 +160,37 @@ public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N
         UserTable commonAncestor = first.findCommonAncestor(second);
         assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
         boolean isMultiBranch = true;
-        if (firstUTable != secondUTable && commonAncestor == firstUTable) {
-            isMultiBranch = false;
-            if (includesHKey(firstUTable, comparisonCols))
-                output.add(intersect(second, first, comparisonsLen));
+        if (firstUTable != secondUTable) {
+            if (commonAncestor == firstUTable) {
+                isMultiBranch = false;
+                if (includesHKey(firstUTable, comparisonCols))
+                    output.add(intersect(second, first, comparisonsLen));
+            }
+            else {
+                // in single-branch cases, we only want to output the leafmost's index
+                isMultiBranch = (commonAncestor != secondUTable);
+            }
         }
-        if (isMultiBranch) {
-            Collection<Column> ancestorHKeys = ancestorHKeys(commonAncestor);
-            // check if commonTrailing contains all ancestorHKeys, using equivalence
-            for (Column hkeyCol : ancestorHKeys) {
+        if (isMultiBranch && includesHKey(commonAncestor, comparisonCols)) {
+            output.add(intersect(first, second, comparisonsLen));
+        }
+    }
+
+    private boolean includesHKey(UserTable table, List<Column> columns) {
+        // TODO this seems horridly inefficient, but the data set is going to be quite small
+        for (HKeySegment segment : table.hKey().segments()) {
+            for (HKeyColumn hKeyCol : segment.columns()) {
                 boolean found = false;
-                for (Column commonCol : comparisonCols) {
-                    if (areEquivalent(commonCol, hkeyCol)) {
+                for (Column equiv : hKeyCol.equivalentColumns()) {
+                    if (columns.contains(equiv)) {
                         found = true;
                         break;
                     }
                 }
                 if (!found)
-                    return;
+                    return false;
             }
-            output.add(intersect(first, second, comparisonsLen));
-        }
-    }
-
-    private Collection<Column> ancestorHKeys(UserTable ancefoo) {
-        // find most common ancestor
-        HKey hkey = ancefoo.hKey();
-        int ncols = hkey.nColumns();
-        List<Column> results = new ArrayList<Column>(ncols);
-        for (int i=0; i < ncols; ++i) {
-            results.add(hkey.column(i));
-        }
-        return results;
-    }
-
-    private boolean includesHKey(UserTable table, List<Column> columns) {
-        HKey hkey = table.hKey();
-        int ncols = hkey.nColumns();
-        // no overhead, but O(N) per hkey segment. assuming ncols and columns is very small
-        for (int i = 0; i < ncols; ++i) {
-            if (!containsEquivalent(columns, hkey.column(i)))
-                return false;
         }
         return true;
-    }
-
-    private boolean containsEquivalent(List<Column> cols, Column tgt) {
-        for (Column col : cols) {
-            if (areEquivalent(col, tgt))
-                return true;
-        }
-        return false;
     }
 }

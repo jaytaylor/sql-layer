@@ -35,6 +35,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.std.Comparison;
 
+import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -44,6 +45,7 @@ import java.util.*;
 public class GroupIndexGoal implements Comparator<IndexScan>
 {
     private static final Logger logger = LoggerFactory.getLogger(GroupIndexGoal.class);
+    static volatile Function<? super IndexScan,Void> intersectionEnumerationHook = null;
 
     // The overall goal.
     private QueryIndexGoal queryGoal;
@@ -425,7 +427,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         public boolean visit(ExpressionNode n) {
             if (n instanceof ColumnExpression) {
                 ColumnExpression columnExpression = (ColumnExpression)n;
-                enumerator.addEquivalencies(columnExpression.tryGetEquivalenceFinder());
                 if (!boundTables.contains(columnExpression.getTable())) {
                     found = true;
                     return false;
@@ -465,14 +466,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     protected boolean indexExpressionMatches(ExpressionNode indexExpression,
                                              ExpressionNode comparisonOperand,
                                              IntersectionEnumerator enumerator) {
-        if (indexExpression.equals(comparisonOperand)) {
-            if ((indexExpression instanceof ColumnExpression) && (comparisonOperand instanceof ColumnExpression)) {
-                ColumnExpression iCol = (ColumnExpression) indexExpression;
-                ColumnExpression cCol = (ColumnExpression) comparisonOperand;
-                iCol.markEquivalentTo(cCol);
-            }
+        if (indexExpression.equals(comparisonOperand))
             return true;
-        }
         if (!(comparisonOperand instanceof ColumnExpression))
             return false;
         // See if comparing against a result column of the subquery,
@@ -481,7 +476,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         // added the below that earlier, could count such a join as a
         // group join: p JOIN (SELECT fk) sq ON p.pk = sq.fk.
         ColumnExpression comparisonColumn = (ColumnExpression)comparisonOperand;
-        enumerator.addEquivalencies(comparisonColumn.tryGetEquivalenceFinder());
         ColumnSource comparisonTable = comparisonColumn.getTable();
         if (!(comparisonTable instanceof SubquerySource))
             return false;
@@ -527,8 +521,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     iter.remove();
             }
         }
+        Function<? super IndexScan,Void> hook = intersectionEnumerationHook;
         for (Iterator<IndexScan> iterator = enumerator.iterator(); iterator.hasNext(); ) {
             IndexScan intersectedIndex = iterator.next();
+            if (hook != null)
+                hook.apply(intersectedIndex);
             setIntersectionConditions(intersectedIndex);
             intersectedIndex.setCovering(determineCovering(intersectedIndex));
             intersectedIndex.setCostEstimate(estimateCost(intersectedIndex));
@@ -562,21 +559,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     
     private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan,SingleIndexScan> {
 
-        private EquivalenceFinder<ColumnExpression> columnExpressionEquivs = null;
-        private EquivalenceFinder<Column> columnEquivs = null;
-
-        public void addEquivalencies(EquivalenceFinder<ColumnExpression> equivalenceFinder) {
-            if (equivalenceFinder == null)
-                return;
-            if (columnExpressionEquivs == null)
-                columnExpressionEquivs = equivalenceFinder;
-            else if (columnExpressionEquivs != equivalenceFinder)
-                throw new IllegalStateException(columnExpressionEquivs + " != " + equivalenceFinder);
-        }
-
         @Override
-        protected Collection<ConditionExpression> getLeafConditions(SingleIndexScan node) {
-            SingleIndexScan scan = (SingleIndexScan) node;
+        protected Collection<ConditionExpression> getLeafConditions(SingleIndexScan scan) {
             int skips = scan.getPeggedCount();
             List<ConditionExpression> conditions = scan.getConditions();
             if (conditions == null)
@@ -586,25 +570,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         @Override
-        protected boolean areEquivalent(Column one, Column two) {
-            if (columnEquivs == null) {
-                columnEquivs = new EquivalenceFinder<Column>();
-                for (Map.Entry<ColumnExpression, ColumnExpression> entry : columnExpressionEquivs.equivalencePairs()) {
-                    Column b = entry.getKey().getColumn();
-                    Column a = entry.getValue().getColumn();
-                    columnEquivs.markEquivalent(a, b);
-                }
-            }
-            return columnEquivs.areEquivalent(one, two);
-        }
-
-        @Override
         protected IndexScan intersect(IndexScan first, IndexScan second, int comparisons) {
             return new MultiIndexIntersectScan(first, second, comparisons);
         }
 
         @Override
         protected List<Column> getComparisonColumns(IndexScan first, IndexScan second) {
+            EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
             List<ExpressionNode> firstOrdering = orderingCols(first);
             List<ExpressionNode> secondOrdering = orderingCols(second);
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
@@ -612,7 +584,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (int i=0; i < ncols; ++i) {
                 ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
                 ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
-                if (!areEquivalent(firstCol.getColumn(), secondCol.getColumn()))
+                if (!equivs.areEquivalent(firstCol, secondCol))
                     break;
                 result.add(firstCol.getColumn());
             }
@@ -1090,5 +1062,4 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                      (subqueryDepth == 0)));
         }
     }
-
 }

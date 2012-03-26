@@ -21,12 +21,14 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.types.util.ValueHolder;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
@@ -50,24 +52,42 @@ public class TreeScanCT extends CostModelBase
         this.indexedColumn = indexedColumn;
         createSchema();
         populateDB(ROWS);
-        run(WARMUP_RUNS, 1, null);
+        runSequential(WARMUP_RUNS, 1, null);
         String label = indexedColumn.description();
-        run(MEASURED_RUNS, 1000, label);
-        run(MEASURED_RUNS, 500, label);
-        run(MEASURED_RUNS, 250, label);
-        run(MEASURED_RUNS, 100, label);
-        run(MEASURED_RUNS, 50, label);
-        run(MEASURED_RUNS, 25, label);
-        run(MEASURED_RUNS, 10, label);
-        run(MEASURED_RUNS, 9, label);
-        run(MEASURED_RUNS, 8, label);
-        run(MEASURED_RUNS, 7, label);
-        run(MEASURED_RUNS, 6, label);
-        run(MEASURED_RUNS, 5, label);
-        run(MEASURED_RUNS, 4, label);
-        run(MEASURED_RUNS, 3, label);
-        run(MEASURED_RUNS, 2, label);
-        run(MEASURED_RUNS, 1, label);
+        runSequential(MEASURED_RUNS, 1000, label);
+        runRandom(MEASURED_RUNS, 1000, label);
+        runSequential(MEASURED_RUNS, 500, label);
+        runRandom(MEASURED_RUNS, 500, label);
+        runSequential(MEASURED_RUNS, 250, label);
+        runRandom(MEASURED_RUNS, 250, label);
+        runSequential(MEASURED_RUNS, 100, label);
+        runRandom(MEASURED_RUNS, 100, label);
+        runSequential(MEASURED_RUNS, 50, label);
+        runRandom(MEASURED_RUNS, 50, label);
+        runSequential(MEASURED_RUNS, 25, label);
+        runRandom(MEASURED_RUNS, 25, label);
+        runSequential(MEASURED_RUNS, 10, label);
+        runRandom(MEASURED_RUNS, 10, label);
+        runSequential(MEASURED_RUNS, 9, label);
+        runRandom(MEASURED_RUNS, 9, label);
+        runSequential(MEASURED_RUNS, 8, label);
+        runRandom(MEASURED_RUNS, 8, label);
+        runSequential(MEASURED_RUNS, 7, label);
+        runRandom(MEASURED_RUNS, 7, label);
+        runSequential(MEASURED_RUNS, 6, label);
+        runRandom(MEASURED_RUNS, 6, label);
+        runSequential(MEASURED_RUNS, 5, label);
+        runRandom(MEASURED_RUNS, 5, label);
+        runSequential(MEASURED_RUNS, 4, label);
+        runRandom(MEASURED_RUNS, 4, label);
+        runSequential(MEASURED_RUNS, 3, label);
+        runRandom(MEASURED_RUNS, 3, label);
+        runSequential(MEASURED_RUNS, 2, label);
+        runRandom(MEASURED_RUNS, 2, label);
+        runSequential(MEASURED_RUNS, 1, label);
+        runRandom(MEASURED_RUNS, 1, label);
+        runSequential(MEASURED_RUNS, 100, label);
+        runRandom(MEASURED_RUNS, 100, label);
     }
 
     private void createSchema() throws InvalidOperationException
@@ -89,13 +109,19 @@ public class TreeScanCT extends CostModelBase
 
     protected void populateDB(int rows)
     {
-        for (int id = 0; id < rows; id++) {
-            dml().writeRow(session(), createNewRow(t, id, indexedColumn.valueFor(id)));
-        }
         start = rows / 2;
+        keys = new Object[MAX_SCAN];
+        int k = 0;
+        for (int id = 0; id < rows; id++) {
+            Object key = indexedColumn.valueFor(id);
+            dml().writeRow(session(), createNewRow(t, id, key));
+            if (id >= start && k < keys.length) {
+                keys[k++] = key;
+            }
+        }
     }
 
-    private void run(int runs, int sequentialAccessesPerRandom, String label)
+    private void runSequential(int runs, int sequentialAccessesPerRandom, String label)
     {
         IndexBound lo = new IndexBound(row(idxRowType, indexedColumn.valueFor(start)),
                                        new SetColumnSelector(0));
@@ -118,18 +144,54 @@ public class TreeScanCT extends CostModelBase
         long end = System.nanoTime();
         if (label != null) {
             double averageUsec = (end - start) / (1000.0 * runs * sequentialAccessesPerRandom);
-            System.out.println(String.format("%s - %s:  %s usec/row", label, sequentialAccessesPerRandom, averageUsec));
+            System.out.println(String.format("SEQUENTIAL %s - %s:  %s usec/row", label, sequentialAccessesPerRandom, averageUsec));
+        }
+    }
+
+    // Do random accesses instead of sequential. Nearby random accesses are potentially faster.
+    private void runRandom(int runs, int sequentialAccessesPerRandom, String label)
+    {
+        ValuesHolderRow boundRow = new ValuesHolderRow(idxRowType);
+        ValueHolder valueHolder = boundRow.holderAt(0);
+        queryContext.setRow(0, boundRow);
+        IndexBound bound = new IndexBound(boundRow, new SetColumnSelector(0));
+        IndexKeyRange keyRange = IndexKeyRange.bounded(idxRowType, bound, true, bound, true);
+        Ordering ordering = new Ordering();
+        ordering.append(new FieldExpression(idxRowType, 0), true);
+        Operator plan = indexScan_Default(idxRowType, keyRange, ordering);
+        Cursor cursor = cursor(plan, queryContext);
+        long startTime = System.nanoTime();
+        for (int r = 0; r < runs; r++) {
+            for (int s = 0; s < sequentialAccessesPerRandom; s++) {
+                Object key = keys[s];
+                if (key instanceof Integer) {
+                    valueHolder.putInt((long) ((Integer) key).intValue());
+                } else {
+                    valueHolder.putString((String) key);
+                }
+                cursor.open();
+                Row row = cursor.next();
+                assert row != null;
+                cursor.close();
+            }
+        }
+        long endTime = System.nanoTime();
+        if (label != null) {
+            double averageUsec = (endTime - startTime) / (1000.0 * runs * sequentialAccessesPerRandom);
+            System.out.println(String.format("RANDOM %s - %s:  %s usec/row", label, sequentialAccessesPerRandom, averageUsec));
         }
     }
 
     private static final int ROWS = 2000000; // Should create 3-level trees
     private static final int WARMUP_RUNS = 20000;
     private static final int MEASURED_RUNS = 10000;
+    private static final int MAX_SCAN = 1000;
 
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
     private GroupTable group;
     private int start;
+    private Object[] keys;
     private CostModelColumn indexedColumn;
 }

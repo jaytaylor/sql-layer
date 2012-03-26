@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 
 import java.util.*;
 
@@ -45,8 +46,9 @@ public class UpdateStatement extends BaseUpdateStatement
     private List<UpdateColumn> updateColumns;
 
     public UpdateStatement(PlanNode query, TableNode targetTable,
-                           List<UpdateColumn> updateColumns) {
-        super(query, targetTable);
+                           List<UpdateColumn> updateColumns,
+                           EquivalenceFinder<ColumnExpression> columnEquivalencies) {
+        super(query, targetTable, columnEquivalencies);
         this.updateColumns = updateColumns;
     }
 

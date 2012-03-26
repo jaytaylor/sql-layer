@@ -1,0 +1,8 @@
+MultiIndexIntersectScan@6dec35f0(compare 1
+    skip 1: SingleIndexScan@2ec957f1(Index(user.items.sku[IndexColumn(sku)]), =1234)
+    skip 1: SingleIndexScan@24aca736(Index(user.items.sku[IndexColumn(sku)]), =4567)
+    -> NONE, rows = 1, cost = 401.345)
+MultiIndexIntersectScan@4315dd09(compare 1
+    skip 1: SingleIndexScan@24aca736(Index(user.items.sku[IndexColumn(sku)]), =4567)
+    skip 1: SingleIndexScan@2ec957f1(Index(user.items.sku[IndexColumn(sku)]), =1234)
+    -> NONE, rows = 1, cost = 401.345)

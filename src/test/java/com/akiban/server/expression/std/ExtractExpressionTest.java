@@ -14,6 +14,7 @@
  */
 package com.akiban.server.expression.std;
 
+import java.math.BigDecimal;
 import java.text.DateFormatSymbols;
 import java.util.Locale;
 import com.akiban.server.types.ValueSource;
@@ -32,7 +33,7 @@ import static org.junit.Assert.assertTrue;
 public class ExtractExpressionTest extends ComposedExpressionTestBase
 {
     private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
-
+      
     @Test
     public void testNull() // test null for Extract functions
     {
@@ -62,7 +63,17 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         
         assertEquals("QUATER(" + date + "): ", expected, top.evaluation().eval().getInt());        
     }
+    
     //-----------------------------LAST DAY------------------------------------
+    @Test
+    public void testDayOfYearFromDecimal()
+    {
+        Expression arg = new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(20081231.5d));
+        Expression top = ExtractExpression.DAY_YEAR_COMPOSER.compose(Arrays.asList(arg));
+        
+        assertTrue("Top should be null: ", top.evaluation().eval().isNull());
+    }
+
     @Test
     public void testLastDayNull()
     {
