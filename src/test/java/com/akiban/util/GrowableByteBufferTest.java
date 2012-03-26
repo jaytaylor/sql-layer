@@ -291,6 +291,41 @@ public class GrowableByteBufferTest {
         putByteIncrementally(gbb, MAX - LIMIT);
     }
 
+    @Test
+    public void noPutPastReservedSize() {
+        final int START_SIZE = 5;
+        final int MAX_SIZE = 15;
+        final int RESERVED = 3;
+        final GrowableByteBuffer gbb = gbb(START_SIZE, MAX_SIZE);
+
+        assertEquals("initial reserved space", 0, gbb.reservedSpace());
+        gbb.reservedSpace(RESERVED);
+        assertEquals("stored reserved space", RESERVED, gbb.reservedSpace());
+
+        putByteIncrementally(gbb, MAX_SIZE - RESERVED);
+        cannotPutByte(gbb);
+        
+        gbb.reservedSpace(0);
+        putByteIncrementally(gbb, RESERVED);
+
+        cannotPutByte(gbb);
+        
+        gbb.position(MAX_SIZE - RESERVED);
+        gbb.reservedSpace(RESERVED);
+        gbb.clear();
+        assertEquals("clear resets reserved", 0, gbb.reservedSpace());
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void negativeReserved() {
+        gbb(10).reservedSpace(-1);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void reservedGreaterThanRemaining() {
+        gbb(10).reservedSpace(15);
+    }
+
     @Test(expected=IllegalArgumentException.class)
     public void negativeInitialSize() {
         new GrowableByteBuffer(-1, 10, 15);

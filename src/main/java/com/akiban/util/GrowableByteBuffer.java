@@ -36,6 +36,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     private final int initialSize;
     private final int maxCacheSize;
     private final int maxBurstSize;
+    private int reservedSpace = 0;
     private ByteBuffer buffer;
     private ByteBuffer cached;
 
@@ -100,6 +101,16 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
             return true;
         }
         return false;
+    }
+
+    public int reservedSpace() {
+        return reservedSpace;
+    }
+
+    public void reservedSpace(int reservedSpace) {
+        ArgumentValidation.isNotNegative("reservedSpace", reservedSpace);
+        ArgumentValidation.isTrue("reservedSpace >= remaining", reservedSpace <= remaining());
+        this.reservedSpace = reservedSpace;
     }
 
 
@@ -174,6 +185,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
             useCached();
         }
         buffer.clear();
+        reservedSpace = 0;
         return this;
     }
 
@@ -414,7 +426,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     }
     
     private void checkPut(int index, int length) {
-        if(index < 0 || (length <= buffer.remaining())) {
+        if(index < 0 || (length <= (buffer.remaining() - reservedSpace))) {
             return; // Invalid or fits, ByteBuffer methods will handle it
         }
 
