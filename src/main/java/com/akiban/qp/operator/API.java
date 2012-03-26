@@ -30,10 +30,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 
 public class API
 {
@@ -445,6 +442,7 @@ public class API
     
     // Intersect
     
+    /** deprecated */
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                             RowType leftRowType, RowType rightRowType,
                                             int leftOrderingFields,
@@ -453,11 +451,33 @@ public class API
                                             JoinType joinType,
                                             IntersectOutputOption intersectOutput)
     {
+        if (comparisonFields < 0) {
+            throw new IllegalArgumentException();
+        }
+        boolean[] ascending = new boolean[comparisonFields];
+        Arrays.fill(ascending, true);
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
                                      leftOrderingFields,
                                      rightOrderingFields,
-                                     comparisonFields,
+                                     ascending,
+                                     joinType,
+                                     intersectOutput);
+    }
+    
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
+                                            RowType leftRowType, RowType rightRowType,
+                                            int leftOrderingFields,
+                                            int rightOrderingFields,
+                                            boolean[] ascending,
+                                            JoinType joinType,
+                                            IntersectOutputOption intersectOutput)
+    {
+        return new Intersect_Ordered(leftInput, rightInput,
+                                     leftRowType, rightRowType,
+                                     leftOrderingFields,
+                                     rightOrderingFields,
+                                     ascending,
                                      joinType,
                                      intersectOutput);
     }
