@@ -18,6 +18,7 @@ package com.akiban.sql.optimizer.rule.join_enum;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.CostEstimator.IndexIntersectionCoster;
+import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
@@ -575,6 +576,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         @Override
         protected List<Column> getComparisonColumns(IndexScan first, IndexScan second) {
+            EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
             List<ExpressionNode> firstOrdering = orderingCols(first);
             List<ExpressionNode> secondOrdering = orderingCols(second);
             int ncols = Math.min(firstOrdering.size(), secondOrdering.size());
@@ -582,9 +584,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (int i=0; i < ncols; ++i) {
                 ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
                 ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
-                if (true) throw new UnsupportedOperationException("TODO"); // TODO
-//                if (!firstCol.isEquivalentTo(secondCol))
-//                    break;
+                if (!equivs.areEquivalent(firstCol, secondCol))
+                    break;
                 result.add(firstCol.getColumn());
             }
             return result;

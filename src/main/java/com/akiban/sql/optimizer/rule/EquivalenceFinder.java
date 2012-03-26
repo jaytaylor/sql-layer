@@ -88,6 +88,16 @@ public class EquivalenceFinder<T> {
         return normalized.entrySet();
     }
 
+    public Set<T> findParticipants() {
+        Set<Entry<T,T>> pairs = equivalencePairs();
+        Set<T> results = new HashSet<T>(pairs.size() * 2);
+        for (Entry<T,T> pair : pairs) {
+            results.add(pair.getKey());
+            results.add(pair.getValue());
+        }
+        return results;
+    }
+
     @Override
     public String toString() {
         Set<Entry<T, T>> normalizedEntries = equivalencePairs();

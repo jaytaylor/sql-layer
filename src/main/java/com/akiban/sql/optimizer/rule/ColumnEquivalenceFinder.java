@@ -16,6 +16,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.sql.optimizer.plan.BaseQuery;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConditionExpression;
@@ -30,6 +31,8 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.List;
 
 public final class ColumnEquivalenceFinder extends BaseRule {
@@ -42,13 +45,17 @@ public final class ColumnEquivalenceFinder extends BaseRule {
     
     private static class ColumnEquivalenceVisitor implements PlanVisitor, ExpressionVisitor {
 
+        private ColumnEquivalenceStack equivs = new ColumnEquivalenceStack();
+
         @Override
         public boolean visitEnter(PlanNode n) {
+            equivs.enterNode(n);
             return visit(n);
         }
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            equivs.leaveNode(n);
             return true;
         }
 
@@ -100,7 +107,7 @@ public final class ColumnEquivalenceFinder extends BaseRule {
                     if (!left.equals(right)) {
                         markNotNull(left);
                         markNotNull(right);
-                        left.markEquivalentTo(right); // also implies right.equivalentTo(left)
+                        equivs.get().markEquivalent(left, right); // also implies right.equivalentTo(left)
                     }
                 }
             }
