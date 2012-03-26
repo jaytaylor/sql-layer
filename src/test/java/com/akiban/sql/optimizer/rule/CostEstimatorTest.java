@@ -48,8 +48,6 @@ public class CostEstimatorTest
     protected TableTree tree;
     protected CostEstimator costEstimator;
 
-    private static final boolean NEW_COST_ESTIMATOR = System.getProperty("costIndexScan", "new").equals("new");
-
     @Before
     public void loadSchema() throws Exception {
         ais = OptimizerTestBase.parseSchema(new File(RESOURCE_DIR, "schema.ddl"));
