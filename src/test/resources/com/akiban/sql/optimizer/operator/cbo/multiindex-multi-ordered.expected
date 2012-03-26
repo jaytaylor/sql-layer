@@ -1,0 +1,13 @@
+PhysicalSelect[quan:int[INT], quan:int[INT]]
+  project([Field(5), Field(12)])
+    Product_NestedLoops(flatten(user.customers, user.items) x flatten(flatten(user.customers, user.orders), user.items))
+      Flatten_HKeyOrdered(user.customers INNER user.items)
+        AncestorLookup_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]) -> [user.customers, user.items])
+          Intersect_Ordered(skip 1 from left, skip 1 from right, compare 4)
+            IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]) (>=UnboundExpressions[Literal(1234)],<=UnboundExpressions[Literal(1234)]) (Field(0) DESC, Field(1) DESC, Field(2) DESC, Field(3) DESC, Field(4) DESC))
+            IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]) (>=UnboundExpressions[Literal(4567)],<=UnboundExpressions[Literal(4567)]) (Field(0) DESC, Field(1) DESC, Field(2) DESC, Field(3) DESC, Field(4) DESC))
+      Filter_Default([flatten(flatten(user.customers, user.orders), user.items)])
+        Flatten_HKeyOrdered(flatten(user.customers, user.orders) INNER user.items)
+          Flatten_HKeyOrdered(user.customers INNER user.orders)
+            Select_HKeyOrdered(user.items, Field(2) == Literal(4567))
+              BranchLookup_Nested(_akiban_customers user.customers -> user.orders)

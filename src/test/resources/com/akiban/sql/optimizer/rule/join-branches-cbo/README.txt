@@ -14,6 +14,8 @@ multiindex-multi-branch: Intersection on two branches.
 
 multiindex-multi-duplicate: Intersection of two of the same index.
 
+multiindex-multi-ordered: With ORDER BY.
+
 no-index: Group scan and flatten.
 
 no-index-branch: Group scan and flatten along one branch and then
