@@ -329,7 +329,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         indexColumn = null; // Index sorts by unknown column.
                 }
                 if ((indexColumn != null) && 
-                    indexColumn.getExpression().equals(targetExpression)) {
+                    orderingExpressionMatches(indexColumn.getExpression(), 
+                                              targetExpression)) {
                     if (indexColumn.isAscending() != targetColumn.isAscending()) {
                         // To avoid mixed mode as much as possible,
                         // defer changing the index order until
@@ -418,6 +419,18 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 return IndexScan.OrderEffectiveness.SORTED;
         }
         return result;
+    }
+
+    protected boolean orderingExpressionMatches(ExpressionNode columnExpression,
+                                                ExpressionNode targetExpression) {
+        if (columnExpression.equals(targetExpression))
+            return true;
+        if (!(columnExpression instanceof ColumnExpression) ||
+            !(targetExpression instanceof ColumnExpression))
+            return false;
+        EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
+        return equivs.areEquivalent((ColumnExpression)columnExpression,
+                                    (ColumnExpression)targetExpression);
     }
 
     protected class UnboundFinder implements ExpressionVisitor {
