@@ -15,11 +15,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.error.InvalidOperationException;
-
-import java.util.List;
-import java.util.Set;
-
 /** A join to an actual table. */
 public class TableSource extends BaseJoinable implements ColumnSource
 {
@@ -29,7 +24,8 @@ public class TableSource extends BaseJoinable implements ColumnSource
     private boolean required;
     private String name;
 
-    public TableSource(TableNode table, boolean required, String name) {
+    public TableSource(TableNode table, boolean required, String name)
+    {
         this.table = table;
         table.addUse(this);
         this.required = required;

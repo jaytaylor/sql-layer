@@ -13,21 +13,17 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.akiban.sql.optimizer.rule.join_enum;
 
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import com.akiban.sql.optimizer.plan.IndexScan;
+import com.google.common.base.Function;
 
-/** A SQL DELETE statement.
- */
-public class DeleteStatement extends BaseUpdateStatement
-{
-    public DeleteStatement(PlanNode query, TableNode targetTable,
-                           EquivalenceFinder<ColumnExpression> columnEquivalencies) {
-        super(query, targetTable, columnEquivalencies);
+public final class GroupIndexGoalHooks {
+    public static void hookIntersectedIndexes(Function<? super IndexScan,Void> visitor) {
+        GroupIndexGoal.intersectionEnumerationHook = visitor;
     }
-
-    @Override
-    public String summaryString() {
-        return super.summaryString() + "(" + getTargetTable() + ")";
+    
+    public static void unhookIntersectedIndexes() {
+        hookIntersectedIndexes(null);
     }
 }
