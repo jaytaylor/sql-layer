@@ -27,6 +27,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -83,12 +84,23 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (row == null) {
             close();
         } else {
+            boolean doHold = false;
             RowData rowData = row.rowData();
-            try {
-                payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
-                wroteToPayload = true;
-                rowCount++;
-            } catch (BufferOverflowException e) {
+
+            // Only grow past cache size if we haven't written a single row
+            if (rowCount == 0 || (payload.position() + rowData.getRowSize() < payload.getMaxCacheSize())) {
+                try {
+                    payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+                    wroteToPayload = true;
+                    rowCount++;
+                } catch (GrowableByteBuffer.GrowableByteBufferIsFullException e) {
+                    doHold = true;
+                }
+            } else {
+                doHold = true;
+            }
+
+            if (doHold) {
                 assert !wroteToPayload;
                 currentRow.hold(row);
             }
