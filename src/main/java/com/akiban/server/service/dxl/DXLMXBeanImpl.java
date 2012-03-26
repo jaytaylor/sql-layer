@@ -26,6 +26,8 @@ import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
+import com.akiban.ais.protobuf.AISProtobuf;
+import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.ais.util.AISPrinter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -35,8 +37,13 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
 import com.akiban.server.util.GroupIndexCreator;
+import com.googlecode.protobuf.format.JsonFormat;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.DumperOptions.FlowStyle;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
@@ -190,7 +197,16 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public String printAIS() {
-        return AISPrinter.toString(ais());
+        DumperOptions options = new DumperOptions();
+        options.setDefaultFlowStyle(FlowStyle.BLOCK);
+        AISProtobuf.AkibanInformationSchema aisp = new ProtobufWriter().save(ais());
+        try {
+            String json = JsonFormat.printToString(aisp);
+            JSONObject object = new JSONObject(json);
+            return object.toString(3);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public List<String> getGrouping(String schema) {
