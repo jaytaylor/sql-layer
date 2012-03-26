@@ -1,6 +1,6 @@
 # test the LTRIM, RTRIM and TRIM functions
 # bug 940687: trim, rtrim, ltrim not syntactically supported (fix committed)
-# bug 942142: LENGTH should not trim
+# bug 942142: LENGTH should not trim: fix released
 ---
 - Include: all-types-schema.yaml
 ---
