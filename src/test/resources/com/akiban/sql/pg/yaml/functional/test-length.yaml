@@ -5,6 +5,9 @@
 - Statement: INSERT INTO all_types
     (integer_field, varchar_field)
     VALUES (3, 'one'), (4, 'four'), (0, ''), (8, 'six-teen'), (null, null)
+--- ## length shouldn't trim
+- Statement: SELECT LENGTH('abc  ') from all_types WHERE integer_field = 3;
+- output: [[5]]
 ---
 - Statement: SELECT integer_field FROM all_types;
 - row_count: 5
