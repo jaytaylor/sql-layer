@@ -228,6 +228,7 @@ public final class Converters {
         );
 
         builder.legalConversions(INTERVAL_MILLIS,
+                FLOAT,
                 DOUBLE,
                 DECIMAL,
                 U_BIGINT,                
@@ -236,6 +237,7 @@ public final class Converters {
         );
 
         builder.legalConversions(INTERVAL_MONTH,
+                FLOAT,
                 DOUBLE,
                 DECIMAL,
                 U_BIGINT,

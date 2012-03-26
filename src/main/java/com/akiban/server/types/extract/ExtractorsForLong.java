@@ -20,6 +20,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
 import java.math.BigDecimal;
+import java.math.MathContext;
+import java.math.RoundingMode;
 
 class ExtractorsForLong extends LongExtractor {
 
@@ -67,7 +69,7 @@ class ExtractorsForLong extends LongExtractor {
             } catch (NumberFormatException ex) {
                 throw new InvalidCharToNumException (source.getString());
             }
-        case DECIMAL: return source.getDecimal().setScale(0, BigDecimal.ROUND_HALF_UP).longValue();
+        case DECIMAL: return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
         case INTERVAL_MILLIS:  return source.getInterval_Millis();
         case INTERVAL_MONTH:  return source.getInterval_Month();
         default: throw unsupportedConversion(type);

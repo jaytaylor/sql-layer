@@ -550,7 +550,7 @@ public class ExtractExpression extends AbstractUnaryExpression
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            return ExpressionTypes.newType(type.underlying, 0, 0);
+            return ExpressionTypes.newType(type.underlying, argumentTypes.get(0).getPrecision(), argumentTypes.get(0).getScale());
         }        
     }
             

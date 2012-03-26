@@ -9,9 +9,9 @@
 - Statement: SELECT DAYOFYEAR(20081231) from all_types;
 - output_types: [INTEGER]
 - output: [[366]]
-#--- # literal decimal gets truncated *automatically*
-#- Statement: SELECT DAYOFYEAR(20081231.5) from all_types;
-#- output: [[null]]
+--- 
+- Statement: SELECT DAYOFYEAR(20081231.5) from all_types;
+- output: [[null]]
 ---
 - Statement: SELECT DAYOFYEAR(NULL) from all_types;
 - output: [[null]]
@@ -21,9 +21,9 @@
 ---
 - Statement: SELECT double_field from all_types WHERE DAYOFYEAR(double_field) IS NULL;
 - output: [[19001231.5]]
-#--- # literal decimal gets truncated *automatically*
-#- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
-#- output: [[19001231]]
+---
+- Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(19960228.5) = 60;
+- output: [[19001231]]
 ---
 - Statement: SELECT bigint_field from all_types WHERE DAYOFYEAR(null) IS NULL;
 - output: [[19001231]]
