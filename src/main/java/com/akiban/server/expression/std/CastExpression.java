@@ -63,15 +63,7 @@ public class CastExpression extends AbstractUnaryExpression
             {
                 return Converters.convert(operandSource, valueHolder());
             }
-            catch (InvalidDateFormatException e)
-            {
-                return errorCase(e);
-            }
-            catch (InconvertibleTypesException e)
-            {
-                return errorCase(e);
-            }
-            catch (InvalidCharToNumException e)
+            catch (InvalidDateFormatException | InconvertibleTypesException | InvalidCharToNumException e)
             {
                 return errorCase(e);
             }
@@ -90,7 +82,8 @@ public class CastExpression extends AbstractUnaryExpression
                 case LONG:
                 case U_INT:
                 case INT:        valueHolder().putRaw(type, 0L); break;
-                case DOUBLE:     valueHolder().putDouble(0.0); break;
+                case U_DOUBLE:
+                case DOUBLE:     valueHolder().putRaw(type, 0.0d); break;
                 case U_FLOAT:
                 case FLOAT:      valueHolder().putRaw(type, 0.0f); break;
                 case TIME:       valueHolder().putTime(0L);

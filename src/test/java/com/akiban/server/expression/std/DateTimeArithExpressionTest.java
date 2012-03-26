@@ -128,22 +128,24 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         assertTrue("top is null", top.evaluation().eval().isNull());
     }
 
-    @Test(expected = InvalidArgumentTypeException.class)
+    @Test()
     public void testInvalidArgumenTypeDateDiff ()
     {
         Expression l = new LiteralExpression(AkType.DATE, 1234L);
         Expression r = new LiteralExpression(AkType.DATETIME, 1234L);
 
-         Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l, r));
+        Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l, r));
+        assertTrue("Top should be NULL ", top.evaluation().eval().isNull());
     }
 
-    @Test(expected = InvalidArgumentTypeException.class)
+    @Test()
     public void testInvalidArgumenTypeTimeDiff ()
     {
         Expression l = new LiteralExpression(AkType.DATE, 1234L);
         Expression r = new LiteralExpression(AkType.DATETIME, 1234L);
 
-         Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l, r));
+        Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l, r));
+        assertTrue("Top should be NULL ", top.evaluation().eval().isNull());
     }
 
     @Override
