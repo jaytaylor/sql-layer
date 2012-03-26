@@ -89,6 +89,8 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     public boolean prepareForSize(int size) {
         if(size <= buffer.capacity()) {
             if(cached != null && size <= cached.capacity()) {
+                cached.clear();
+                copyBufferState(buffer, cached);
                 useCached();
             }
             return true;
@@ -412,11 +414,12 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     }
     
     private void checkPut(int index, int length) {
-        if(index < 0 || (buffer.position() + length <= buffer.capacity())) {
+        final int required = buffer.position() + length;
+        if(index < 0 || (required <= buffer.capacity())) {
             return; // Invalid or fits, ByteBuffer methods will handle it
         }
 
-        final int newSize = computeNewSize(buffer.capacity(), maxCacheSize, maxBurstSize);
+        final int newSize = computeNewSize(buffer.capacity(), required, maxCacheSize, maxBurstSize);
         if(newSize == buffer.capacity()) {
             throw new GrowableByteBufferIsFullException();
         }
@@ -425,29 +428,9 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     }
 
     private void grow(int newSize) {
-        int saveMark = -1;
-        try {
-            int savePos = buffer.position();
-            buffer.reset();
-            saveMark = buffer.position();
-            buffer.position(savePos);
-        } catch(InvalidMarkException e) {
-            // Was no mark to save
-        }
-
         ByteBuffer old = buffer;
         buffer = ByteBuffer.allocate(newSize);
-        old.flip();
-        buffer.put(old);
-        buffer.order(old.order());
-
-        if(saveMark != -1) {
-            int curPos = buffer.position();
-            buffer.position(saveMark);
-            buffer.mark();
-            buffer.position(curPos);
-        }
-
+        copyBufferState(old, buffer);
         if(newSize > maxCacheSize && old.capacity() <= maxCacheSize) {
             cached = old;
         }
@@ -459,6 +442,29 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         cached = null;
     }
 
+    private static void copyBufferState(ByteBuffer oldBB, ByteBuffer newBB) {
+        int saveMark = -1;
+        try {
+            int savePos = oldBB.position();
+            oldBB.reset();
+            saveMark = oldBB.position();
+            oldBB.position(savePos);
+        } catch(InvalidMarkException e) {
+            // Was no mark to save
+        }
+
+        oldBB.flip();
+        newBB.put(oldBB);
+        newBB.order(oldBB.order());
+
+        if(saveMark != -1) {
+            int curPos = newBB.position();
+            newBB.position(saveMark);
+            newBB.mark();
+            newBB.position(curPos);
+        }
+    }
+
 
     //
     // Package private, for test
@@ -468,17 +474,17 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         return cached;
     }
 
-    static int computeNewSize(int curSize, int maxCache, int maxBurst) {
+    static int computeNewSize(int curSize, int required, int maxCache, int maxBurst) {
         assert maxCache <= maxBurst : curSize + ", " + maxCache + " <= " + maxBurst;
         final int doubled = curSize * 2;
-        if(curSize == 0) {
+        if(curSize == 0 && required <= GROW_SIZE_FROM_ZERO) {
             return Math.min(GROW_SIZE_FROM_ZERO, maxCache);
         }
-        if(curSize < maxCache) {
-            return Math.min(doubled,  maxCache);
+        if(curSize < maxCache && required <= maxCache) {
+            return Math.min(Math.max(doubled, required),  maxCache);
         }
-        if(curSize < maxBurst) {
-            return Math.min(doubled,  maxBurst);
+        if(curSize < maxBurst && required <= maxBurst) {
+            return Math.min(Math.max(doubled, required),  maxBurst);
         }
         return curSize;
     }

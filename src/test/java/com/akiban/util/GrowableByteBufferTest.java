@@ -219,10 +219,10 @@ public class GrowableByteBufferTest {
 
     @Test
     public void growSizeComputation() {
-        assertEquals("grow from 0 is capped to maxCache", 5, computeNewSize(0, 5, 6));
-        assertEquals("grow from non-0 is capped to maxCache", 5, computeNewSize(4, 5, 6));
-        assertEquals("grow from maxCache is capped to maxBurst", 6, computeNewSize(5, 5, 6));
-        assertEquals("grow from maxBurst is capped to maxBurst", 6, computeNewSize(6, 5, 6));
+        assertEquals("grow from 0 is capped to maxCache", 5, computeNewSize(0, 1, 5, 6));
+        assertEquals("grow from non-0 is capped to maxCache", 5, computeNewSize(4, 5, 5, 6));
+        assertEquals("grow from maxCache is capped to maxBurst", 6, computeNewSize(5, 6, 5, 6));
+        assertEquals("grow from maxBurst is capped to maxBurst", 6, computeNewSize(6, 7, 5, 6));
     }
     
     @Test
