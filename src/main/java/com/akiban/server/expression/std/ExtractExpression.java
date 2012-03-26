@@ -506,7 +506,6 @@ public class ExtractExpression extends AbstractUnaryExpression
                                    break;
                         
                     default:       long raw = Extractors.getLongExtractor(targetType).getLong(operand());
-                                   javax.swing.JOptionPane.showMessageDialog(null, "raw: " + raw + "\noptype: " + argType);
                                    if (targetType == AkType.TIMESTAMP) return null;
                                    else if (targetType == AkType.DATE )
                                    {

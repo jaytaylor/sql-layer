@@ -20,7 +20,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
 import java.math.BigDecimal;
-import java.math.MathContext;
 
 class ExtractorsForLong extends LongExtractor {
 

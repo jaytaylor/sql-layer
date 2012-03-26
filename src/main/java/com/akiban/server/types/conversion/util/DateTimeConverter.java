@@ -50,8 +50,6 @@ class DateTimeConverter implements AbstractConverter<MutableDateTime>
             default:        throw new InconvertibleTypesException(source.getConversionType(),
                                                                     AkType.DATETIME);
         }
-        javax.swing.JOptionPane.showMessageDialog(null, "Type = " + source.getConversionType() +
-                "\nval " + ymd_hms[2]);
         return new MutableDateTime((int)ymd_hms[0], (int)ymd_hms[1], (int)ymd_hms[2],
                 (int)ymd_hms[3], (int)ymd_hms[4], (int)ymd_hms[5], 0, DateTimeZone.getDefault());
     }
