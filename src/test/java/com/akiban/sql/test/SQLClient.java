@@ -26,34 +26,61 @@ public class SQLClient
             System.out.println("e.g. 'org.postgresql.Driver' 'jdbc:postgresql://localhost:15432/" + uname + "' '" + uname + "' '" + uname + "' 'SELECT * FROM customers'");
             System.exit(1);
         }
-        Class.forName(args[0]);
-        Connection conn = DriverManager.getConnection(args[1], args[2], args[3]);
-        String sql = args[4];
+        int argi = 0;
+        Class.forName(args[argi++]);
+        Connection conn = DriverManager.getConnection(args[argi++], args[argi++], args[argi++]);
+        String sql = args[argi++];
         System.out.println(sql);
+        int repeat = 0;
+        while (argi < args.length) {
+            if ("--repeat".equals(args[argi])) {
+                repeat = Integer.valueOf(args[argi+1]);
+                argi += 2;
+            }
+            else if ("--cbo".equals(args[argi])) {
+                Statement stmt = conn.createStatement();
+                stmt.execute("SET cbo TO '" + args[argi+1] + "'");
+                stmt.close();
+                argi += 2;
+            }
+            else
+                break;
+        }
         PreparedStatement stmt = conn.prepareStatement(sql);
-        for (int i = 5; i < args.length; i++) {
-            stmt.setString(i - 4, args[i]);
+        long startTime = -1, endTime;
+        for (int i = argi; i < args.length; i++) {
+            stmt.setString(i - argi + 1, args[i]);
         }
-        if (stmt.execute()) {
-            ResultSet rs = stmt.getResultSet();
-            ResultSetMetaData md = rs.getMetaData();
-            for (int i = 1; i <= md.getColumnCount(); i++) {
-                if (i > 1) System.out.print("\t");
-                System.out.print(md.getColumnName(i));
-            }
-            System.out.println();
-            while (rs.next()) {
-                for (int i = 1; i <= md.getColumnCount(); i++) {
-                    if (i > 1) System.out.print("\t");
-                    System.out.print(rs.getString(i));
+        for (int pass = 0; pass <= repeat; pass++) {
+            if (pass == 1) startTime = System.currentTimeMillis();
+            if (stmt.execute()) {
+                ResultSet rs = stmt.getResultSet();
+                ResultSetMetaData md = rs.getMetaData();
+                if (pass == 0) {
+                    for (int i = 1; i <= md.getColumnCount(); i++) {
+                        if (i > 1) System.out.print("\t");
+                        System.out.print(md.getColumnName(i));
+                    }
+                    System.out.println();
                 }
-                System.out.println();
+                while (rs.next()) {
+                    if (pass > 0) continue;
+                    for (int i = 1; i <= md.getColumnCount(); i++) {
+                        if (i > 1) System.out.print("\t");
+                        System.out.print(rs.getString(i));
+                    }
+                    System.out.println();
+                }
+            }
+            else {
+                int count = stmt.getUpdateCount();
+                if (pass == 0)
+                    System.out.println(count + " rows updated.");
             }
         }
-        else {
-            int count = stmt.getUpdateCount();
-            System.out.println(count + " rows updated.");
-        }
+        endTime =  System.currentTimeMillis();
+        if (repeat > 0) 
+            System.out.println((endTime - startTime) + " ms.");
         stmt.close();
         conn.close();
     }
