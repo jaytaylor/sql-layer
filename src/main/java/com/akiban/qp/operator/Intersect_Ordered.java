@@ -49,7 +49,9 @@ import static java.lang.Math.min;
 <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
 <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
 <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
-<li><b>int comparisonFields:</b> Number of ordering fields to be compared.
+<li><b>boolean[] ascending:</b> The length of this arrays specifies the number of fields to be compared in the merge,
+ (<= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field is ascending, false
+ if it is descending.
 <li><b>JoinType joinType:</b>
    <ul>
      <li>INNER_JOIN: An ordinary intersection is computed.
