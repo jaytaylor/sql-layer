@@ -56,6 +56,14 @@ public final class MultiIndexIntersectScan extends IndexScan {
         return comparisonColumns;
     }
 
+    public boolean[] getComparisonFieldDirections() {
+        boolean[] ascending = new boolean[comparisonColumns];
+        for (int i = 0; i < comparisonColumns; i++) {
+            ascending[i] = getOrdering().get(getPeggedCount() + i).isAscending();
+        }
+        return ascending;
+    }
+
     public int getOutputOrderingFields() {
         return getOrderingFields(outputScan);
     }
