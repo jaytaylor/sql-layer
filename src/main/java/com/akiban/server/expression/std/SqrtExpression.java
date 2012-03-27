@@ -42,7 +42,7 @@ public class SqrtExpression extends AbstractUnaryExpression {
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            
+
             argumentTypes.setType(0, AkType.DOUBLE);
             return ExpressionTypes.DOUBLE;
         }
@@ -55,12 +55,18 @@ public class SqrtExpression extends AbstractUnaryExpression {
         @Override
         public ValueSource eval()
         {
-            if (operand().isNull() || (operand().getDouble() < 0) )
+            if (operand().isNull())
                 return NullValueSource.only();
+            
+            if (operand().getDouble() < 0)
+            {
+                valueHolder().putDouble(Double.NaN);
+                return valueHolder();
+            }
             
             double sqrtResult = Math.sqrt(operand().getDouble());
             valueHolder().putDouble(sqrtResult);
-            
+
             return valueHolder();
         }
         

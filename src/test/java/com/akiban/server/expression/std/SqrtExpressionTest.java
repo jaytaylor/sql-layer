@@ -43,7 +43,7 @@ public class SqrtExpressionTest extends ComposedExpressionTestBase {
         Expression negLiteral = new SqrtExpression(ExprUtil.lit(-4.0d));
         ValueSource sqrtOfNegValueSource = negLiteral.evaluation().eval();
 
-        Assert.assertTrue(sqrtOfNegValueSource.isNull());
+        Assert.assertTrue((new Double(sqrtOfNegValueSource.getDouble())).equals(Double.NaN));
     }
     
     @Test
