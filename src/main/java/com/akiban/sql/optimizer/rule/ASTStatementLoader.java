@@ -368,6 +368,7 @@ public class ASTStatementLoader extends BaseRule
                 input = joins;
             }
             else {
+                // No FROM list means one row with presumably constant Projects.
                 input = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
             }
             ConditionList conditions = toConditions(selectNode.getWhereClause());
