@@ -488,16 +488,16 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testCreateTableErrorRightErrorMessage() throws Exception {
 	testYaml(
 	    "---\n" +
-	    "- Statement: SELECT * FR\n" +
+	    "- CreateTable: a (i int\n" +
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
+	    "    ERROR: ERROR: Encountered \"<EOF>\" at line 1, column 21." +
 	    "    Was expecting one of:\n" +
-	    "        \"from\" ...\n" +
+	    "        \")\" ...\n" +
 	    "        \",\" ...\n" +
 	    "        \n" +
-	    "      Position: 10");
+	    "      Position: 21");
     }
 
     @Test
@@ -1474,9 +1474,23 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
+ 	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
 	    "    Was expecting one of:\n" +
+	    "        <EOF> \n" +
+	    "        \"except\" ...\n" +
+	    "        \"fetch\" ...\n" +
+	    "        \"for\" ...\n" +
 	    "        \"from\" ...\n" +
+	    "        \"group\" ...\n" +
+	    "        \"having\" ...\n" +
+	    "        \"intersect\" ...\n" +
+	    "        \"order\" ...\n" +
+	    "        \"union\" ...\n" +
+	    "        \"where\" ...\n" +
+	    "        \"window\" ...\n" +
+	    "        \"with\" ...\n" +
+	    "        \"offset\" ...\n" +
+	    "        \"limit\" ...\n" +
 	    "        \",\" ...\n" +
 	    "        \n" +
 	    "      Position: 10");
