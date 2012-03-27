@@ -69,7 +69,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public boolean collectNextRow(GrowableByteBuffer payload)
     {
-         // The handling of currentRow is slightly tricky: If writing to the payload results in BufferOverflowException,
+         // The handling of currentRow is slightly tricky: If writing to the payload results in GrowableByteBufferIsFullException,
          // then there is likely to be another call of this method, expecting to get the same row and write it into
          // another payload with room, (resulting from a ScanRowsMoreRequest). currentRow is used only to hold onto
          // the current row across these two invocations.
