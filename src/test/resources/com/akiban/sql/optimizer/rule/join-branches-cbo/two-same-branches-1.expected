@@ -1,10 +1,10 @@
-SelectQuery@454c8132
-  ResultSet@21b61d29[name]
-    Project@3b348009[customers.name]
-      Select@73c1ed3c[o2.order_date == 2012-01-01]
-        Flatten@1d735691(customers INNER o2)
-          BranchLookup@4c470db7(customers -> orders)
-            AncestorLookup@7f3858b1(orders -> [customers])
-              IndexScan@4cd59080(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =2011-12-31, rows = 10, cost = 904.378)
-              TableSource@31b3cd19(customers - TableGroup@58959802(customers))
-            TableSource@590a46e2(o2 - TableGroupJoin@5901eae8(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+SelectQuery@6f1bbecc
+  ResultSet@68b7c11[name]
+    Project@2f7e4372[customers.name]
+      Select@a7e09ba[o2.order_date == 2012-01-01]
+        Flatten@2a744425(customers INNER o2)
+          BranchLookup@3725eee9(customers -> orders)
+            AncestorLookup@1b681f48(orders -> [customers])
+              MultiIndexIntersectScan@50ddbe06(INTERSECT(2, SingleIndexScan@de6a564(Index(user.orders.order_date[IndexColumn(order_date)]), , =2011-12-31) AND SingleIndexScan@21744f5d(Index(user.orders.order_date[IndexColumn(order_date)]), , =2012-01-01)), NONE, rows = 10, cost = 902.770)
+              TableSource@71e21b14(customers - TableGroup@31ad665e(customers))
+            TableSource@61b0e3ac(o2 - TableGroupJoin@5b0673d3(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
