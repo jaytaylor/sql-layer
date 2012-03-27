@@ -70,7 +70,15 @@ public abstract class QueryContextBase implements QueryContext
         {
             Converters.convert(value, holder);
         }
-        catch (InvalidDateFormatException | InconvertibleTypesException | InvalidCharToNumException e)
+        catch (InvalidDateFormatException e)
+        {
+            errorCase(e, holder);
+        }
+        catch (InconvertibleTypesException e)
+        {
+            errorCase(e, holder);
+        }
+        catch (InvalidCharToNumException e)
         {
             errorCase(e, holder);
         }

@@ -63,7 +63,15 @@ public class CastExpression extends AbstractUnaryExpression
             {
                 return Converters.convert(operandSource, valueHolder());
             }
-            catch (InvalidDateFormatException | InconvertibleTypesException | InvalidCharToNumException e)
+            catch (InvalidDateFormatException e)
+            {
+                return errorCase(e);
+            }
+            catch (InconvertibleTypesException e)
+            {
+                return errorCase(e);
+            }
+            catch (InvalidCharToNumException e)
             {
                 return errorCase(e);
             }
