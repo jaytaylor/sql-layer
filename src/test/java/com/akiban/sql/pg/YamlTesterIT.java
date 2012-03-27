@@ -492,7 +492,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: ERROR: Encountered \"<EOF>\" at line 1, column 21." +
+	    "    ERROR: Encountered \"<EOF>\" at line 1, column 21.\n" +
 	    "    Was expecting one of:\n" +
 	    "        \")\" ...\n" +
 	    "        \",\" ...\n" +
