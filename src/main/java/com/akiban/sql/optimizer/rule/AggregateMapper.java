@@ -15,12 +15,17 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.error.InvalidOptimizerPropertyException;
 import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.sql.optimizer.plan.*;
+
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,7 +48,7 @@ public class AggregateMapper extends BaseRule
     public void apply(PlanContext plan) {
         List<AggregateSource> sources = new AggregateSourceFinder().find(plan.getPlan());
         for (AggregateSource source : sources) {
-            Mapper m = new Mapper(source);
+            Mapper m = new Mapper(plan.getRulesContext(), source);
             m.remap(source);
         }
     }
@@ -86,11 +91,33 @@ public class AggregateMapper extends BaseRule
     }
 
     static class Mapper implements ExpressionRewriteVisitor {
+        private RulesContext rulesContext;
         private AggregateSource source;
         private Map<ExpressionNode,ExpressionNode> map = 
             new HashMap<ExpressionNode,ExpressionNode>();
+        private enum ImplicitAggregateSetting {
+            ERROR, FIRST, FIRST_IF_UNIQUE
+        };
+        private ImplicitAggregateSetting implicitAggregateSetting;
+        private Set<TableSource> uniqueGroupedTables;
 
-        public Mapper(AggregateSource source) {
+        protected ImplicitAggregateSetting getImplicitAggregateSetting() {
+            if (implicitAggregateSetting == null) {
+                String setting = rulesContext.getProperty("implicitAggregate", "error");
+                if ("error".equals(setting))
+                    implicitAggregateSetting = ImplicitAggregateSetting.ERROR;
+                else if ("first".equals(setting))
+                    implicitAggregateSetting = ImplicitAggregateSetting.FIRST;
+                else if ("firstIfUnique".equals(setting))
+                    implicitAggregateSetting = ImplicitAggregateSetting.FIRST_IF_UNIQUE;
+                else
+                    throw new InvalidOptimizerPropertyException("implicitAggregate", setting);
+            }
+            return implicitAggregateSetting;
+        }
+
+        public Mapper(RulesContext rulesContext, AggregateSource source) {
+            this.rulesContext = rulesContext;
             this.source = source;
             // Map all the group by expressions at the start.
             // This means that if you GROUP BY x+1, you can ORDER BY
@@ -150,9 +177,9 @@ public class AggregateMapper extends BaseRule
                 return addAggregate((AggregateFunctionExpression)expr);
             }
             if (expr instanceof ColumnExpression) {
-                if (((ColumnExpression)expr).getTable() != source) {
-                    // MySQL adds an implicit FIRST (not first not-null) aggregate function.
-                    throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY", expr.getSQLsource());
+                ColumnExpression column = (ColumnExpression)expr;
+                if (column.getTable() != source) {
+                    return nonAggregate(column);
                 }
             }
             return expr;
@@ -185,6 +212,59 @@ public class AggregateMapper extends BaseRule
             }
             // TODO: {VAR,STDDEV}_{POP,SAMP}
             return null;
+        }
+
+        // Use of a column not in GROUP BY without aggregate function.
+        protected ExpressionNode nonAggregate(ColumnExpression column) {
+            ImplicitAggregateSetting setting = getImplicitAggregateSetting();
+            if (setting == ImplicitAggregateSetting.FIRST_IF_UNIQUE) {
+                if (isUniqueGroupedTable(column.getTable()))
+                    setting = ImplicitAggregateSetting.FIRST;
+                else
+                    setting = ImplicitAggregateSetting.ERROR;
+            }
+            switch (setting) {
+            case FIRST:
+                return addAggregate(new AggregateFunctionExpression("FIRST", column, false,
+                                                                    column.getSQLtype(), null));
+            case ERROR:
+            default:
+                throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY", column.getSQLsource());
+            }
+        }
+
+        protected boolean isUniqueGroupedTable(ColumnSource columnSource) {
+            if (!(columnSource instanceof TableSource))
+                return false;
+            TableSource table = (TableSource)columnSource;
+            if (uniqueGroupedTables == null)
+                uniqueGroupedTables = new HashSet<TableSource>();
+            if (uniqueGroupedTables.contains(table))
+                return true;
+            Set<Column> columns = new HashSet<Column>();
+            for (ExpressionNode groupBy : source.getGroupBy()) {
+                if (groupBy instanceof ColumnExpression) {
+                    ColumnExpression groupColumn = (ColumnExpression)groupBy;
+                    if (groupColumn.getTable() == table) {
+                        columns.add(groupColumn.getColumn());
+                    }
+                }
+            }
+            if (columns.isEmpty()) return false;
+            // Find a unique index all of whose columns are in the GROUP BY.
+            // TODO: Use column equivalences.
+            find_index:
+            for (TableIndex index : table.getTable().getTable().getIndexes()) {
+                if (!index.isUnique()) continue;
+                for (IndexColumn indexColumn : index.getKeyColumns()) {
+                    if (!columns.contains(indexColumn.getColumn())) {
+                        continue find_index;
+                    }
+                }
+                uniqueGroupedTables.add(table);
+                return true;
+            }
+            return false;
         }
     }
 

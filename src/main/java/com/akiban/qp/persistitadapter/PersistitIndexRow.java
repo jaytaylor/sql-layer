@@ -94,9 +94,7 @@ public class PersistitIndexRow extends AbstractRow
                 eqSegments++;
             }
         }
-        if (c == 0) {
-            c = thisByteCount - thatByteCount;
-        }
+        // If c == 0 then thisPosition == thisStop and the two subarrays must match.
         if (c < 0) {
             c = -(eqSegments + 1);
         } else if (c > 0) {

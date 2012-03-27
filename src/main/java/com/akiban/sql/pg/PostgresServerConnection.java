@@ -25,6 +25,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserException;
+import com.akiban.sql.parser.SQLParserFeature;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
@@ -601,15 +602,18 @@ public class PostgresServerConnection extends ServerSessionBase
         aisTimestamp = currentTimestamp;
         ais = ddl.getAIS(session);
 
-        parser = new SQLParser();
-
-        defaultSchemaName = getProperty("database");
-        // TODO: Any way / need to ask AIS if schema exists and report error?
-
         rebuildCompiler();
     }
 
     protected void rebuildCompiler() {
+        parser = new SQLParser();
+        Set<SQLParserFeature> features = parser.getFeatures();
+        if (false)
+            features.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
+
+        defaultSchemaName = getProperty("database");
+        // TODO: Any way / need to ask AIS if schema exists and report error?
+
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
         if (format.equals("json"))

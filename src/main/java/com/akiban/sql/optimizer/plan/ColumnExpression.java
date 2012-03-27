@@ -16,13 +16,10 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
 import com.akiban.ais.model.Column;
-
-import java.util.Set;
 
 /** An expression evaluating a column in an actual table. */
 public class ColumnExpression extends BaseExpression 
@@ -30,17 +27,14 @@ public class ColumnExpression extends BaseExpression
     private ColumnSource table;
     private Column column;
     private int position;
-    private EquivalenceFinder<ColumnExpression> equivalenceFinder;
 
     public ColumnExpression(TableSource table, Column column, 
-                            DataTypeDescriptor sqlType, ValueNode sqlSource,
-                            EquivalenceFinder<ColumnExpression> equivalenceFinder) {
+                            DataTypeDescriptor sqlType, ValueNode sqlSource) {
         super(sqlType, column.getType().akType(), sqlSource);
         this.table = table;
         assert (table.getTable().getTable() == column.getUserTable());
         this.column = column;
         this.position = column.getPosition();
-        this.equivalenceFinder = equivalenceFinder;
     }
 
     public ColumnExpression(ColumnSource table, int position,
@@ -64,7 +58,7 @@ public class ColumnExpression extends BaseExpression
 
     // Generated column references without an original SQL source.
     public ColumnExpression(TableSource table, Column column) {
-        this(table, column, null, null, null);
+        this(table, column, null, null);
     }
 
     public ColumnSource getTable() {
@@ -81,32 +75,6 @@ public class ColumnExpression extends BaseExpression
 
     public void setPosition(int position) {
         this.position = position;
-    }
-
-    public void markEquivalentTo(ColumnExpression other) {
-        if (equivalenceFinder == null) {
-            equivalenceFinder = other.equivalenceFinder;
-            assert equivalenceFinder != null;
-        } else if (other.equivalenceFinder == null) {
-            other.equivalenceFinder = equivalenceFinder;
-        } else if (other.equivalenceFinder != equivalenceFinder) {
-            throw new IllegalStateException("columns are in different equivalence scopes");
-        }
-        equivalenceFinder.markEquivalent(this, other);
-    }
-    
-    public EquivalenceFinder<ColumnExpression> tryGetEquivalenceFinder() {
-        return equivalenceFinder;
-    }
-
-    public EquivalenceFinder<ColumnExpression> getEquivalenceFinder() {
-        if (equivalenceFinder == null)
-            throw new IllegalStateException("no equivalence finder");
-        return equivalenceFinder;
-    }
-    
-    public Set<ColumnExpression> getEquivalents() {
-        return getEquivalenceFinder().findEquivalents(this);
     }
 
     @Override

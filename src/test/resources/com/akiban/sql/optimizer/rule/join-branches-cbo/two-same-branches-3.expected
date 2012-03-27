@@ -5,7 +5,7 @@ SelectQuery@4ed357ce
         Product@4bc1ae26(customers)
           Flatten@189067a5(customers INNER o1)
             AncestorLookup@30848e3c(orders -> [customers, orders])
-              MultiIndexIntersectScan@4e961e06(INTERSECT(2, SingleIndexScan@618d4438(Index(user.orders.order_date[IndexColumn(order_date)]), , =2011-12-31) AND SingleIndexScan@179ea91(Index(user.orders.order_date[IndexColumn(order_date)]), , =2012-01-01)), NONE, rows = 10, cost = 999.161)
+              MultiIndexIntersectScan@34e8774e(INTERSECT(compare 1, skip 1: SingleIndexScan@9f0bd05(Index(user.orders.order_date[IndexColumn(order_date)]), , =2011-12-31) AND skip 1: SingleIndexScan@1c09985c(Index(user.orders.order_date[IndexColumn(order_date)]), , =2012-01-01)), NONE, rows = 10, cost = 999.161)
               TableSource@32fe03ae(customers - TableGroup@11800a9(customers))
               TableSource@42a3aea9(o1 - TableGroupJoin@6b16d658(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
           Flatten@28526255(customers INNER o2)

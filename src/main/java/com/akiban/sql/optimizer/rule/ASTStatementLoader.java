@@ -93,7 +93,7 @@ public class ASTStatementLoader extends BaseRule
         }
 
         private void pushEquivalenceFinder() {
-            columnEquivalencesStack.push(new EquivalenceFinder<ColumnExpression>() {
+            columnEquivalences.push(new EquivalenceFinder<ColumnExpression>() {
                 @Override
                 protected String describeElement(ColumnExpression element) {
                     return element.getSQLsource().getTableName() + "." + element.getColumn().getName();
@@ -102,7 +102,11 @@ public class ASTStatementLoader extends BaseRule
         }
 
         private void popEquivalenceFinder() {
-            columnEquivalencesStack.pop();
+            columnEquivalences.pop();
+        }
+        
+        private EquivalenceFinder<ColumnExpression> peekEquivalenceFinder() {
+            return columnEquivalences.element();
         }
 
         /** Convert given statement into appropriate intermediate form. */
@@ -131,7 +135,7 @@ public class ASTStatementLoader extends BaseRule
                                               cursorNode.getFetchFirstClause());
             if (cursorNode.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
                 throw new UnsupportedSQLException("FOR UPDATE", cursorNode);
-            return new SelectQuery(query);
+            return new SelectQuery(query, peekEquivalenceFinder());
         }
 
         // UPDATE
@@ -149,7 +153,7 @@ public class ASTStatementLoader extends BaseRule
                 ExpressionNode value = toExpression(result.getExpression());
                 updateColumns.add(new UpdateColumn(column, value));
             }
-            return new UpdateStatement(query, targetTable, updateColumns);
+            return new UpdateStatement(query, targetTable, updateColumns, peekEquivalenceFinder());
         }
 
         // INSERT
@@ -186,7 +190,7 @@ public class ASTStatementLoader extends BaseRule
                     targetColumns.add(aisColumns.get(i));
                 }
             }
-            return new InsertStatement(query, targetTable, targetColumns);
+            return new InsertStatement(query, targetTable, targetColumns, peekEquivalenceFinder());
         }
     
         // DELETE
@@ -194,7 +198,7 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             PlanNode query = toQuery((SelectNode)deleteNode.getResultSetNode());
             TableNode targetTable = getTargetTable(deleteNode);
-            return new DeleteStatement(query, targetTable);
+            return new DeleteStatement(query, targetTable, peekEquivalenceFinder());
         }
 
         /** The query part of SELECT / INSERT, which might be VALUES / UNION */
@@ -419,7 +423,7 @@ public class ASTStatementLoader extends BaseRule
                                                      fromSubquery.getOrderByList(),
                                                      fromSubquery.getOffset(),
                                                      fromSubquery.getFetchFirst());
-                result = new SubquerySource(new Subquery(subquery), 
+                result = new SubquerySource(new Subquery(subquery, peekEquivalenceFinder()),
                                             fromSubquery.getExposedName());
             }
             else
@@ -608,7 +612,7 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
             fields.add(cond);
             PlanNode subquery = new Project(source, fields);
-            conditions.add(new AnyCondition(new Subquery(subquery), in.getType(), in));
+            conditions.add(new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in));
         }
     
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
@@ -735,11 +739,11 @@ public class ASTStatementLoader extends BaseRule
                 if (distinct)
                     // See InConditionReverser#convert(Select,AnyCondition).
                     subquery = new Distinct(subquery);
-                condition = new AnyCondition(new Subquery(subquery), 
+                condition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()),
                                              subqueryNode.getType(), subqueryNode);
             }
             else {
-                condition = new ExistsCondition(new Subquery(subquery), 
+                condition = new ExistsCondition(new Subquery(subquery, peekEquivalenceFinder()),
                                                 subqueryNode.getType(), subqueryNode);
             }
             if (negate) {
@@ -1020,7 +1024,7 @@ public class ASTStatementLoader extends BaseRule
         }
     
         protected Map<Group,TableTree> groups = new HashMap<Group,TableTree>();
-        protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalencesStack
+        protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalences
                 = new ArrayDeque<EquivalenceFinder<ColumnExpression>>(1);
 
         protected TableNode getTableNode(UserTable table)
@@ -1069,7 +1073,7 @@ public class ASTStatementLoader extends BaseRule
                 Column column = cb.getColumn();
                 if (column != null)
                     return new ColumnExpression(((TableSource)joinNode), column, 
-                                                type, valueNode, columnEquivalencesStack.peek());
+                                                type, valueNode);
                 else
                     return new ColumnExpression(((ColumnSource)joinNode), 
                                                 cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
@@ -1173,8 +1177,8 @@ public class ASTStatementLoader extends BaseRule
                                                            subqueryNode.getOrderByList(),
                                                            subqueryNode.getOffset(),
                                                            subqueryNode.getFetchFirst());
+                Subquery subquery = new Subquery(subquerySelect, peekEquivalenceFinder());
                 popEquivalenceFinder();
-                Subquery subquery = new Subquery(subquerySelect);
                 if ((subqueryNode.getType() != null) &&
                     subqueryNode.getType().getTypeId().isRowMultiSet())
                     return new SubqueryResultSetExpression(subquery,

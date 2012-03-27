@@ -1,0 +1,7 @@
+SelectQuery@3739491b
+  ResultSet@11eea7f0[cid, name]
+    Project@4b5386c2[GROUP[0], GROUP[1]]
+      Select@58b45130[]
+        AggregateSource@263e53cf([customers.cid],[FIRST(customers.name)])
+          Select@45f04ea6[]
+            TableSource@30b5ac2c(customers)
