@@ -134,7 +134,6 @@ public class SignExpression extends AbstractUnaryExpression
                     break;
                 default:
                     QueryContext context = queryContext();
-                    System.out.println(operand().getConversionType());
                     if (context != null)
                         context.warnClient(new InvalidArgumentTypeException("SIGN: " + operandType.name()));
                     return NullValueSource.only();
