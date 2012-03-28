@@ -119,11 +119,11 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     }
 
     @Test
-    public void longDivideLong ()
+    public void longDivLong ()
     {
         Expression left = new LiteralExpression (AkType.LONG, 2L);
         Expression right = new LiteralExpression(AkType.LONG, 5L);
-        Expression top = new ArithExpression(left, ex = ArithOps.DIVIDE, right);
+        Expression top = new ArithExpression(left, ex = ArithOps.DIV, right);
 
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -131,6 +131,17 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         assertEquals("actual == expected", expected, actual);
     }
 
+    @Test
+    public void longDivideLong()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 2L);
+        Expression right = new LiteralExpression(AkType.LONG, 5L);
+        Expression top = new ArithExpression(left, ex = ArithOps.DIVIDE, right);
+
+        assertEquals("Top Type", AkType.DOUBLE, top.valueType());
+        assertEquals("value ", 0.4d, top.evaluation().eval().getDouble(), 0.0000001);
+    }
+    
     @Test
     public void bigIntPlusBigInt ()
     {

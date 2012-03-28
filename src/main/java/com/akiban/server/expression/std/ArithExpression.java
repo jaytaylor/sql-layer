@@ -184,14 +184,22 @@ public class ArithExpression extends AbstractBinaryExpression
             {
                AkType interval = l2 == 0 ? SUPPORTED_TYPES.get(l) : SUPPORTED_TYPES.get(r);
                char opName = op.opName();
-               if ((opName == '/' || opName == '%')&& l2 == 0 || opName == '*') return interval;
+               if ((opName == '/' || opName == '%' || opName == 'd')&& l2 == 0 || opName == '*') return interval;
                else throw new InvalidArgumentTypeException(msg);
             }
         }
         else if (prod2 > 0) // both are supported and none is an interval
         {
             if (prod2 % 2 == 1) // odd => numeric values only
+            {
+                int f = SUPPORTED_TYPES.get(AkType.FLOAT);
+                switch(op.opName())
+                {
+                    case '/': if(r > f && l > f) return AkType.DOUBLE; break;// turn all exact type to DOUBLE
+                    case 'd': if (r <= f || l <= f) return AkType.U_BIGINT; // turn all approx. type to U_BIGINT
+                }
                 return SUPPORTED_TYPES.get(l < r ? l : r);
+            }
             else // even => at least one is datetime
             {
                 if (l == r && op.opName() == '-') return AkType.INTERVAL_MILLIS;

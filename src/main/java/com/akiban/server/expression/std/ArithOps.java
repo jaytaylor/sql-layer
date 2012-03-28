@@ -158,6 +158,67 @@ public class ArithOps
         }
     };
 
+    /**
+     * "INTEGER DIVISION"
+     * 
+     *  The return type is:
+     *          U_BIGINT if either of the two has approximate type
+     *          whichever operands' type with higher precedence if both operands have exact type
+     */
+    @Scalar("div")
+    public static final ArithOpComposer DIV = new ArithOpComposer('d')
+    {
+       @Override
+       public long evaluate (long one, long two)
+       {
+           if (two == 0)
+                throw new DivisionByZeroException();
+           return one / two;
+       }
+       
+       @Override
+       public double evaluate (double one, double two) 
+       {
+           if (two == 0)
+                throw new DivisionByZeroException();
+           return one / two;
+       }
+       
+       @Override
+       public BigDecimal evaluate (BigDecimal one, BigDecimal two)
+       {
+           if (two.equals(BigDecimal.ZERO))
+                throw new DivisionByZeroException();
+           return one.divide(two);
+       }
+       
+       @Override
+       public BigInteger evaluate (BigInteger one, BigInteger two)
+       {
+           if (two.equals(BigInteger.ZERO))
+                throw new DivisionByZeroException();
+           return one.divide(two);
+       } 
+       
+        @Override
+        protected void adjustVarchar(TypesList args, int index) throws StandardException
+        {
+            if (index == 0)
+                return; // INTERVAL can only be the rhs in a division
+            AkType type = args.get(index).getType();
+
+            if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
+                args.setType(1 - index, AkType.DOUBLE);
+        }
+    };
+    
+    /**
+     * "REGULAR DIVISION"
+     * 
+     * The return type is 
+     *      DOUBLE if both operands are either of type DOUBLE or BIGINT/LONG/INT
+     *      same as both operands' types, otherwise
+     */
     @Scalar("divide")
     public static final ArithOpComposer DIVIDE = new ArithOpComposer('/')
     {
@@ -318,9 +379,21 @@ public class ArithOps
                 second = arguments.get(1);
             }
             
-            top = ArithExpression.getTopType(first.getType(), second.getType(), this);
             int scale = first.getScale() + second.getScale();
             int pre = first.getPrecision() + second.getPrecision();
+            
+            switch(name)
+            {
+                case '/':  // in case we have 2 LONG/INT/BIGINT values dividing each other, 
+                  scale = Math.max(scale, 9); //sum of their precision isn't gonna be good enough
+                  pre = Math.max(pre, pre - scale + 9);
+                  break;
+                case 'd':
+                  scale = 0;
+            }
+            
+            top = ArithExpression.getTopType(first.getType(), second.getType(), this);
+            
             return ExpressionTypes.newType(top, pre, scale);
         }
 
