@@ -27,7 +27,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
-import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -69,7 +68,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     @Override
     public boolean collectNextRow(GrowableByteBuffer payload)
     {
-         // The handling of currentRow is slightly tricky: If writing to the payload results in GrowableByteBufferIsFullException,
+         // The handling of currentRow is slightly tricky: If writing to the payload results in BufferOverflowException,
          // then there is likely to be another call of this method, expecting to get the same row and write it into
          // another payload with room, (resulting from a ScanRowsMoreRequest). currentRow is used only to hold onto
          // the current row across these two invocations.
@@ -95,7 +94,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
                     wroteToPayload = true;
                     rowCount++;
-                } catch (GrowableByteBuffer.GrowableByteBufferIsFullException e) {
+                } catch (BufferOverflowException e) {
                     doHold = true;
                 }
             } else {

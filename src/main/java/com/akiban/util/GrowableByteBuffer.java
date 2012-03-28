@@ -20,9 +20,6 @@ import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 
 public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
-    public static final class GrowableByteBufferIsFullException extends RuntimeException {
-    }
-
     private static final int BYTE_LEN   = 1;
     private static final int CHAR_LEN   = 2;
     private static final int SHORT_LEN  = 2;
@@ -32,11 +29,15 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     private static final int DOUBLE_LEN = 8;
     private static final int GROW_SIZE_FROM_ZERO = 4096;
 
+    private static enum PreserveLimit {
+        NONE,
+        ABSOLUTE,
+        RELATIVE
+    }
 
     private final int initialSize;
     private final int maxCacheSize;
     private final int maxBurstSize;
-    private int reservedSpace = 0;
     private ByteBuffer buffer;
     private ByteBuffer cached;
 
@@ -91,26 +92,16 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         if(size <= buffer.capacity()) {
             if(cached != null && size <= cached.capacity()) {
                 cached.clear();
-                copyBufferState(buffer, cached);
+                copyBufferState(PreserveLimit.ABSOLUTE, buffer, cached);
                 useCached();
             }
             return true;
         }
         if(size <= maxBurstSize) {
-            grow(size);
+            grow(PreserveLimit.ABSOLUTE, size);
             return true;
         }
         return false;
-    }
-
-    public int reservedSpace() {
-        return reservedSpace;
-    }
-
-    public void reservedSpace(int reservedSpace) {
-        ArgumentValidation.isNotNegative("reservedSpace", reservedSpace);
-        ArgumentValidation.isTrue("reservedSpace >= remaining", reservedSpace <= remaining());
-        this.reservedSpace = reservedSpace;
     }
 
 
@@ -185,7 +176,6 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
             useCached();
         }
         buffer.clear();
-        reservedSpace = 0;
         return this;
     }
 
@@ -426,27 +416,24 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     }
     
     private void checkPut(int index, int length) {
-        if(index < 0 || (length <= (buffer.remaining() - reservedSpace))) {
+        if(index < 0 || (length <= buffer.remaining())) {
             return; // Invalid or fits, ByteBuffer methods will handle it
         }
 
-        if(buffer.limit() != buffer.capacity()) {
-            return; // User set limit and not enough space, let BufferOverflow be thrown
-        }
-
-        final int required = buffer.position() + length;
+        final int slack = buffer.capacity() - buffer.limit();
+        final int required = buffer.position() + length + slack;
         final int newSize = computeNewSize(buffer.capacity(), required, maxCacheSize, maxBurstSize);
         if(newSize == buffer.capacity()) {
-            throw new GrowableByteBufferIsFullException();
+            return; // Can't grow anymore, BOE will be thrown by put
         }
 
-        grow(newSize);
+        grow(PreserveLimit.RELATIVE, newSize);
     }
 
-    private void grow(int newSize) {
+    private void grow(PreserveLimit preserve, int newSize) {
         ByteBuffer old = buffer;
         buffer = ByteBuffer.allocate(newSize);
-        copyBufferState(old, buffer);
+        copyBufferState(preserve, old, buffer);
         if(newSize > maxCacheSize && old.capacity() <= maxCacheSize) {
             cached = old;
         }
@@ -458,7 +445,7 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         cached = null;
     }
 
-    private static void copyBufferState(ByteBuffer oldBB, ByteBuffer newBB) {
+    private static void copyBufferState(PreserveLimit preserve, ByteBuffer oldBB, ByteBuffer newBB) {
         int saveMark = -1;
         try {
             int savePos = oldBB.position();
@@ -469,9 +456,17 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
             // Was no mark to save
         }
 
+        final int oldLimit = oldBB.limit();
         oldBB.flip();
         newBB.put(oldBB);
         newBB.order(oldBB.order());
+
+        if(preserve == PreserveLimit.ABSOLUTE) {
+            newBB.limit(oldLimit);
+        } else if(preserve == PreserveLimit.RELATIVE) {
+            final int slack = oldBB.capacity() - oldLimit;
+            newBB.limit(newBB.capacity() - slack);
+        }
 
         if(saveMark != -1) {
             int curPos = newBB.position();

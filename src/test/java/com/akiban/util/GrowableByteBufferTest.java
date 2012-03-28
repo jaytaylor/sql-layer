@@ -21,7 +21,6 @@ import java.nio.BufferOverflowException;
 import java.nio.ByteOrder;
 import java.util.Arrays;
 
-import static com.akiban.util.GrowableByteBuffer.GrowableByteBufferIsFullException;
 import static com.akiban.util.GrowableByteBuffer.computeNewSize;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
@@ -271,59 +270,22 @@ public class GrowableByteBufferTest {
     }
 
     @Test
-    public void noGrowWithUserDefinedLimit() {
+    public void growWithUserDefinedLimitIsPreserved() {
         final int SIZE = 10;
         final int MAX = 11;
         final int LIMIT = 8;
         final GrowableByteBuffer gbb = gbb(SIZE, MAX);
         gbb.limit(LIMIT);
         putByteIncrementally(gbb, LIMIT);
-        
-        try {
-            gbb.put((byte)0);
-            fail("Expected BufferOverflowException");
-        } catch(BufferOverflowException e) {
-            // Expected
-        }
 
-        // Restore no limit, can grow again
-        gbb.limit(gbb.capacity());
-        putByteIncrementally(gbb, MAX - LIMIT);
-    }
+        assertEquals("space remaining", 0, gbb.remaining());
+        assertEquals("capacity - limit", SIZE - LIMIT, gbb.capacity() - gbb.limit());
 
-    @Test
-    public void noPutPastReservedSize() {
-        final int START_SIZE = 5;
-        final int MAX_SIZE = 15;
-        final int RESERVED = 3;
-        final GrowableByteBuffer gbb = gbb(START_SIZE, MAX_SIZE);
-
-        assertEquals("initial reserved space", 0, gbb.reservedSpace());
-        gbb.reservedSpace(RESERVED);
-        assertEquals("stored reserved space", RESERVED, gbb.reservedSpace());
-
-        putByteIncrementally(gbb, MAX_SIZE - RESERVED);
-        cannotPutByte(gbb);
-        
-        gbb.reservedSpace(0);
-        putByteIncrementally(gbb, RESERVED);
-
-        cannotPutByte(gbb);
-        
-        gbb.position(MAX_SIZE - RESERVED);
-        gbb.reservedSpace(RESERVED);
-        gbb.clear();
-        assertEquals("clear resets reserved", 0, gbb.reservedSpace());
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void negativeReserved() {
-        gbb(10).reservedSpace(-1);
-    }
-
-    @Test(expected=IllegalArgumentException.class)
-    public void reservedGreaterThanRemaining() {
-        gbb(10).reservedSpace(15);
+        gbb.put((byte)0);
+        assertEquals("limit after growth", MAX - (SIZE - LIMIT), gbb.limit());
+        assertEquals("capacity after growth", MAX, gbb.capacity());
+        assertEquals("space remaining after put", 0, gbb.remaining());
+        assertEquals("capacity - limit after put", MAX - LIMIT - 1, gbb.capacity() - gbb.limit());
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -341,46 +303,46 @@ public class GrowableByteBufferTest {
         new GrowableByteBuffer(10, 20, 15);
     }
 
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromByte() {
         gbbWithRemaining(0).put(TEST_BYTE);
     }
 
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromChar() {
         gbbWithRemaining(1).putChar(TEST_CHAR);
     }
 
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromShort() {
         gbbWithRemaining(1).putShort(TEST_SHORT);
     }
 
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromInt() {
         gbbWithRemaining(3).putInt(TEST_INT);
     }
 
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromLong() {
         gbbWithRemaining(7).putLong(TEST_LONG);
     }
 
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromFloat() {
         gbbWithRemaining(3).putFloat(TEST_FLOAT);
     }
 
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromDouble() {
         gbbWithRemaining(7).putDouble(TEST_DOUBLE);
     }
     
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromArray() {
         gbbWithRemaining(TEST_ARRAY.length - 1).put(TEST_ARRAY);
     }
-    @Test(expected=GrowableByteBufferIsFullException.class)
+    @Test(expected=BufferOverflowException.class)
     public void cannotGrowFromSubArray() {
         gbbWithRemaining(SUB_ARRAY_LEN - 1).put(TEST_ARRAY, SUB_ARRAY_OFF, SUB_ARRAY_LEN);
     }
@@ -418,7 +380,7 @@ public class GrowableByteBufferTest {
         try {
             gbb.put((byte)-1);
             fail("Expected is full exception!: " + gbb);
-        } catch(GrowableByteBufferIsFullException e) {
+        } catch(BufferOverflowException e) {
             // Expected
         }
     }
