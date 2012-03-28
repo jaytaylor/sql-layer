@@ -34,6 +34,9 @@ import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
+import java.io.FileWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.*;
 import java.io.File;
 import java.io.IOException;
@@ -207,7 +210,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Override
     public void dumpIndexStatistics(Session session, 
-                                    String schema, File file) throws IOException {
+                                    String schema, Writer file) throws IOException {
         List<Index> indexes = new ArrayList<Index>();
         Set<Group> groups = new HashSet<Group>();
         AkibanInformationSchema ais = schemaManager.getAis(session);
@@ -250,8 +253,28 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             Session session = sessionService.createSession();
             try {
                 File file = new File(toFile);
-                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, file);
+                FileWriter writer = new FileWriter(file);
+                try {
+                    IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                }
+                finally {
+                    writer.close();
+                }
                 return file.getAbsolutePath();
+            }
+            finally {
+                session.close();
+            }
+        }
+
+        @Override
+        public String dumpIndexStatisticsToString(String schema) throws IOException {
+            Session session = sessionService.createSession();
+            try {
+                StringWriter writer = new StringWriter();
+                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                writer.close();
+                return writer.toString();
             }
             finally {
                 session.close();
