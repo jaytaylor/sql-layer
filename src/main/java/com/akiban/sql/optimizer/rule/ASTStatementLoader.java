@@ -356,18 +356,26 @@ public class ASTStatementLoader extends BaseRule
         /** The common top-level join and select part of all statements. */
         protected PlanNode toQuery(SelectNode selectNode)
                 throws StandardException {
-            Joinable joins = null;
-            for (FromTable fromTable : selectNode.getFromList()) {
-                if (joins == null)
-                    joins = toJoinNode(fromTable, true);
-                else
-                    joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
+            PlanNode input;
+            if (!selectNode.getFromList().isEmpty()) {
+                Joinable joins = null;
+                for (FromTable fromTable : selectNode.getFromList()) {
+                    if (joins == null)
+                        joins = toJoinNode(fromTable, true);
+                    else
+                        joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
+                }
+                input = joins;
+            }
+            else {
+                // No FROM list means one row with presumably constant Projects.
+                input = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
             }
             ConditionList conditions = toConditions(selectNode.getWhereClause());
             if (hasAggregateFunction(conditions))
                 throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                                                   selectNode.getWhereClause());
-            return new Select(joins, conditions);
+            return new Select(input, conditions);
         }
 
         protected Map<FromTable,Joinable> joinNodes =

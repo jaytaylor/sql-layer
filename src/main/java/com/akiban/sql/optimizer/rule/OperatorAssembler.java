@@ -283,8 +283,8 @@ public class OperatorAssembler extends BaseRule
             intersect = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
-                    outputScan.rowType,
-                    selectorScan.rowType,
+                    (IndexRowType) outputScan.rowType,
+                    (IndexRowType) selectorScan.rowType,
                     index.getOutputOrderingFields(),
                     index.getSelectorOrderingFields(),
                     index.getComparisonFieldDirections(),
