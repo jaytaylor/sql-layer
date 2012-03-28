@@ -19,6 +19,43 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.nio.InvalidMarkException;
 
+/**
+ * <p>
+ * An API compatible, drop-in replacement for {@link ByteBuffer} that provides
+ * dynamic growth on put operations. This is useful for situations where the
+ * ByteBuffer interface is useful/required, but the final size of the buffer
+ * is not known in advance.
+ * </p>
+ * <p>
+ * Most methods delegate in a trivially to the underlying ByteBuffer, which is
+ * always a buffer that {@link java.nio.ByteBuffer#hasArray()}, without any
+ * intervention. The various put() methods are checked before passing onto the
+ * underlying buffer to ensure adequate room is available. If there isn't, a 
+ * new underlying buffer will be allocated, the existing state copied over, and
+ * then the put is performed. If the growth bounds were to be exceeded for the
+ * required size, no growth is performed and the standard
+ * {@link java.nio.BufferOverflowException} will be thrown.
+ * </p>
+ * <p>
+ * Certain methods cannot be trivially or transparently wrapped, such as 
+ * {@link java.nio.ByteBuffer#asCharBuffer()}, so they are not exposed directly
+ * through the GrowableByteBuffer interface. Instead, the underlying buffer
+ * can be acquired through the {@link #getInternalBuffer()} and accessed as
+ * needed. Note that only one interface, Growable or the internal, should be
+ * modified at a time. Since any put on the Growable could cause the internal
+ * buffer to be reallocated, <i>mixing puts will quickly lead towards working
+ * on disparate buffers</i>.
+ * </p>
+ * <p>
+ * There are three distinct sizes available for parametrization at construction
+ * time. These are the initial size, maximum size to cache, and maximum size
+ * to allow growth to (now refereed to as burst size). Initial is how big the
+ * underlying buffer starts at (allowed to be <code>0</code>). Maximum cache
+ * is how big the buffer can grow and still be retained for. Burst is how big
+ * the buffer can grow, but will be discarded for the previous buffer on the
+ * next reset ({@link #clear()} or {@link #prepareForSize(int)}).
+ * </p>
+ */
 public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     private static final int BYTE_LEN   = 1;
     private static final int CHAR_LEN   = 2;
@@ -42,14 +79,44 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
     private ByteBuffer cached;
 
 
+    /**
+     * New instance where the initial, maximum cache, and maximum burst
+     * are all the same size. Note that this creates an un-growable buffer,
+     * but is provided for convenience.
+     *
+     * @param initialSizeAndMax size for all parameters
+     */
     public GrowableByteBuffer(int initialSizeAndMax) {
         this(initialSizeAndMax, initialSizeAndMax, initialSizeAndMax);
     }
 
+    /**
+     * New instance where the maximum cache and maximum burst are the same
+     * size. This buffer will grow from the given initial size up to the max.
+     *
+     * @param initialSize starting size of the buffer
+     * @param maxSize maximum size for cache and burst
+     *
+     * @throws IllegalArgumentException if either parameter is negative or
+     * initialSize is less than maxSize
+     */
     public GrowableByteBuffer(int initialSize, int maxSize) {
         this(initialSize, maxSize, maxSize);
     }
 
+    /**
+     * New instance where all parameters size parameters are specified
+     * individually. The buffer will grow from initial up to the maximum
+     * burst, but only hold onto a buffer <= maximum cache size across
+     * {@link #clear()}s.
+     *
+     * @param initialSize starting size of the buffer
+     * @param maxCacheSize maximum size buffer to hold onto
+     * @param maxBurstSize maximum size the buffer can ever grow to
+     *
+     * @throws IllegalArgumentException if initial size is negative, maximum
+     * cache is less than initial, or maximum burst is less than maximum cache.
+     */
     public GrowableByteBuffer(int initialSize, int maxCacheSize, int maxBurstSize) {
         ArgumentValidation.isNotNegative("initialSize", initialSize);
         ArgumentValidation.isTrue("maxCacheSize >= initialSize", maxCacheSize >= initialSize);
@@ -68,6 +135,16 @@ public class GrowableByteBuffer implements Comparable<GrowableByteBuffer> {
         this.buffer = buffer;
     }
 
+    /**
+     * New instance that is backed by the given array. This is trivially
+     * serviced by {@link ByteBuffer#wrap(byte[])} method. The maximum
+     * cache and maximum burst size of this buffer will be
+     * <code>array.length</code> so no growth is possible.
+     *
+     * @param array array to wrap
+     *
+     * @return New instance backed by array
+     */
     public static GrowableByteBuffer wrap(byte[] array) {
         return new GrowableByteBuffer(ByteBuffer.wrap(array));
     }
