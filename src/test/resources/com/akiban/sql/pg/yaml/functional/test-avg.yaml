@@ -38,12 +38,12 @@
      double_field, float_field, integer_field, numeric_field,
      real_field, smallint_field)
     VALUES (1, 1, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0, 1)
----
+--- # command 9
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
     AVG(boolean_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
-- output: [[1, 1, 1, 1, 1.0, 1.0, 1, 1, 1.0, 1]]
+- output: [[1, 1.0, 1, 1, 1.0, 1.0, 1, 1, 1.0, 1]]
 
 # Insert duplicate row
 ---
@@ -52,12 +52,12 @@
      double_field, float_field, integer_field, numeric_field,
      real_field, smallint_field)
     VALUES (1, 1, 1, 1.0, 1.0, 1.0, 1, 1.0, 1.0, 1)
----
+--- # command 11
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
     AVG(boolean_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
-- output: [[1, 1, 1, 1, 1.0, 1.0, 1, 1, 1.0, 1]]
+- output: [[1, 1.0, 1, 1, 1.0, 1.0, 1, 1, 1.0, 1]]
 
 # Rounding (1+1+2+2)/4 = 6/4 = 1.5
 ---
@@ -67,13 +67,13 @@
     VALUES
     (2, 2, 2.0, 2.0, 2.0, 2, 2.0, 2.0, 2),
     (2, 2, 2.0, 2.0, 2.0, 2, 2.0, 2.0, 2)
----
+--- # command 13
 - Statement: SELECT AVG(bigint_field), AVG(bigint_unsigned_field),
     AVG(decimal_field), AVG(double_field), AVG(float_field),
     AVG(integer_field), AVG(numeric_field), AVG(real_field),
     AVG(smallint_field)
     FROM all_types
-- output: [[1, 1, 1.5, 1.5, 1.5, 1, 1.5, 1.5, 1]]
+- output: [[1, 1.5, 1.5, 1.5, 1.5, 1, 1.5, 1.5, 1]]
 
 # Back to zero
 ---
@@ -82,7 +82,7 @@
      integer_field, numeric_field, real_field, smallint_field)
     VALUES
     (-6, -6.0, -6.0, -6.0, -6, -6.0, -6.0, -6)
----
+--- # command 15
 - Statement: SELECT AVG(bigint_field), AVG(decimal_field),
     AVG(double_field), AVG(float_field), AVG(integer_field),
     AVG(numeric_field), AVG(real_field), AVG(smallint_field) FROM all_types
@@ -108,7 +108,7 @@
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
     VALUES (4.9E-324, 4.9E-324), (0.0E1, 0.0E1)
----
+--- # command 18
 - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
 - output: [[0.0, 0.0]]
 
@@ -122,7 +122,7 @@
 ---
 - Statement: INSERT INTO all_types (double_field, float_field)
     VALUES ('Infinity', 'Infinity')
----
+--- 
 - Statement: SELECT AVG(double_field), AVG(float_field) FROM all_types
 - output: [[Infinity, Infinity]]
 ---
