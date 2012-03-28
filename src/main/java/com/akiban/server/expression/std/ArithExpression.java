@@ -20,6 +20,7 @@ import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
@@ -33,7 +34,7 @@ import java.util.List;
 public class ArithExpression extends AbstractBinaryExpression
 {
     protected final ArithOp op;
-    protected final AkType topT;
+    protected AkType topT;
 
     /**
      * SUPPORTED_TYPES: contains all types that are supported in ArithExpression.
@@ -88,10 +89,11 @@ public class ArithExpression extends AbstractBinaryExpression
     protected ArithExpression (Expression lhs, ArithOp op, Expression rhs, AkType top)
     {
         super(top, lhs, rhs);
-        getTopType(lhs.valueType(), rhs.valueType(), op); // this is to issue an exception, if any.
-                                                          // the output is not used         
         this.op = op;
-        topT = top;
+        if (lhs.valueType() != rhs.valueType()) // mis-matched arguments result in NULL
+            topT = AkType.NULL;
+        else
+            topT = top;
     }
     @Override
     protected void describe(StringBuilder sb)
@@ -238,6 +240,8 @@ public class ArithExpression extends AbstractBinaryExpression
         @Override
         public ValueSource eval() 
         {  
+            if (valueSource.getConversionType() == AkType.NULL)
+                return NullValueSource.only();
             valueSource.setOperands(left(), right());
             return valueSource;
         }
