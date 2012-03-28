@@ -16,11 +16,10 @@
 package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.rowdata.RowData;
-
-import java.nio.ByteBuffer;
+import com.akiban.util.GrowableByteBuffer;
 
 public interface LegacyRowOutput {
-    ByteBuffer getOutputBuffer();
+    GrowableByteBuffer getOutputBuffer();
 
     /**
      * Signals that a row has been written into the buffer. It could be that the row actually caused the scan's

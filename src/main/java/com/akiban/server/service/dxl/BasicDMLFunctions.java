@@ -72,6 +72,7 @@ import com.akiban.server.store.RowCollector;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.util.ArgumentValidation;
+import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.google.inject.Inject;
@@ -452,7 +453,7 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
         {
             RowCollector rc = cursor.getRowCollector();
             rc.outputToMessage(true);
-            ByteBuffer buffer = output.getOutputBuffer();
+            GrowableByteBuffer buffer = output.getOutputBuffer();
             if (!buffer.hasArray()) {
                 throw new IllegalArgumentException("buffer must have array");
             }

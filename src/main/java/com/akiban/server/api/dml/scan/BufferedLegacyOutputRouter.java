@@ -15,11 +15,10 @@
 
 package com.akiban.server.api.dml.scan;
 
-import java.nio.ByteBuffer;
+import com.akiban.util.GrowableByteBuffer;
+
 import java.util.ArrayList;
 import java.util.List;
-
-import com.akiban.server.error.RowOutputException;
 
 /**
  * Class for routing a legacy RowData to zero or more handlers. You can use this to route the data to just a single
@@ -45,16 +44,16 @@ public class BufferedLegacyOutputRouter extends WrappingRowOutput {
     private final List<Handler> handlers = new ArrayList<Handler>();
 
     public BufferedLegacyOutputRouter(int capacity, boolean resetPosition) {
-        this( byteBuffer(capacity), resetPosition);
+        this( GrowableByteBuffer(capacity), resetPosition);
     }
 
-    private static ByteBuffer byteBuffer(int capacity) {
-        ByteBuffer ret = ByteBuffer.allocate(capacity);
+    private static GrowableByteBuffer GrowableByteBuffer(int capacity) {
+        GrowableByteBuffer ret = new GrowableByteBuffer(capacity, capacity);
         ret.mark();
         return ret;
     }
 
-    public BufferedLegacyOutputRouter(ByteBuffer buffer, boolean resetPosition) {
+    public BufferedLegacyOutputRouter(GrowableByteBuffer buffer, boolean resetPosition) {
         super(buffer);
         if (!buffer.hasArray()) {
             throw new RuntimeException("Buffer needs an array");

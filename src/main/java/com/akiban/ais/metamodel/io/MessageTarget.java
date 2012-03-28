@@ -15,12 +15,12 @@
 
 package com.akiban.ais.metamodel.io;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.metamodel.Target;
+import com.akiban.util.GrowableByteBuffer;
 
 public class MessageTarget extends Target
 {
@@ -44,7 +44,7 @@ public class MessageTarget extends Target
 
     // PersistitTarget interface
 
-    public MessageTarget(ByteBuffer payload)
+    public MessageTarget(GrowableByteBuffer payload)
     {
         this.payload = payload;
     }
@@ -132,5 +132,5 @@ public class MessageTarget extends Target
     private static byte IS_NULL = (byte) 1;
     private static byte IS_NOT_NULL = (byte) 0;
 
-    private ByteBuffer payload;
+    private GrowableByteBuffer payload;
 }

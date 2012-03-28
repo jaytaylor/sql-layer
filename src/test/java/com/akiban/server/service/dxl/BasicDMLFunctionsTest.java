@@ -27,6 +27,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.BufferFullException;
 import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.util.GrowableByteBuffer;
 import com.persistit.exception.PersistitException;
 import org.junit.Assert;
 import org.junit.Test;
@@ -67,7 +68,7 @@ public final class BasicDMLFunctionsTest {
         }
 
         @Override
-        public boolean collectNextRow(ByteBuffer payload) {
+        public boolean collectNextRow(GrowableByteBuffer payload) {
             checkOpen();
             if (strings.isEmpty()) {
                 return false;
@@ -149,15 +150,15 @@ public final class BasicDMLFunctionsTest {
     }
 
     private static class StringRowOutput implements LegacyRowOutput {
-        private final ByteBuffer buffer;
+        private final GrowableByteBuffer buffer;
         
         private StringRowOutput() {
-            buffer = ByteBuffer.allocate(2048); // should be plenty
+            buffer = new GrowableByteBuffer(2048); // should be plenty
             buffer.putInt(0);
         }
 
         @Override
-        public ByteBuffer getOutputBuffer() {
+        public GrowableByteBuffer getOutputBuffer() {
             return buffer;
         }
 

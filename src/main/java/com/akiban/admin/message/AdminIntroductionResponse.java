@@ -15,25 +15,24 @@
 
 package com.akiban.admin.message;
 
-import java.nio.ByteBuffer;
-
 import com.akiban.message.MessageRequiredServices;
 import com.akiban.server.service.session.Session;
 import com.akiban.message.AkibanSendConnection;
 import com.akiban.message.Request;
+import com.akiban.util.GrowableByteBuffer;
 
 public class AdminIntroductionResponse extends Request
 {
     // Request interface
 
     @Override
-    public void read(ByteBuffer payload) throws Exception
+    public void read(GrowableByteBuffer payload) throws Exception
     {
         super.read(payload);
     }
 
     @Override
-    public void write(ByteBuffer payload) throws Exception
+    public void write(GrowableByteBuffer payload) throws Exception
     {
         super.write(payload);
     }

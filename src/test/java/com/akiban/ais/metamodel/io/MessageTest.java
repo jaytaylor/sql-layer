@@ -17,15 +17,12 @@ package com.akiban.ais.metamodel.io;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.rowdata.SchemaFactory;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
-
-import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -43,7 +40,7 @@ public final class MessageTest {
     }
 
     private static void serializeAndCompare(AkibanInformationSchema ais) throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocate(1 << 19);
+        GrowableByteBuffer buffer = new GrowableByteBuffer(1 << 19);
         new Writer(new MessageTarget(buffer)).save(ais);
         buffer.flip();
         AkibanInformationSchema newAis = new Reader(new MessageSource(buffer)).load();

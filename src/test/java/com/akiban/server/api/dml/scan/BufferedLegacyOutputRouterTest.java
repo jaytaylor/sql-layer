@@ -23,6 +23,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
 import com.akiban.server.error.RowOutputException;
@@ -76,7 +77,7 @@ public final class BufferedLegacyOutputRouterTest {
     @Test
     public void withoutResettingPosition() throws Exception {
         List<Integer> expectedInts = Arrays.asList(27, 23, 8);
-        ByteBuffer actualBuffer = ByteBuffer.allocate(bytesPerInt * expectedInts.size());
+        GrowableByteBuffer actualBuffer = new GrowableByteBuffer(bytesPerInt * expectedInts.size());
         // each int is one row. If we construct this router without reset, it'll overflow
         BufferedLegacyOutputRouter router = new BufferedLegacyOutputRouter(actualBuffer, false);
         IntegersSeeingHandler h1 = router.addHandler( new IntegersSeeingHandler() );

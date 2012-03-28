@@ -17,8 +17,8 @@ package com.akiban.admin;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.nio.ByteBuffer;
 
+import com.akiban.util.GrowableByteBuffer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +45,7 @@ public class Address implements Sendable
     // Sendable interface
 
     @Override
-    public void read(ByteBuffer payload)
+    public void read(GrowableByteBuffer payload)
     {
         String hostAddress = null;
         try {
@@ -58,7 +58,7 @@ public class Address implements Sendable
     }
 
     @Override
-    public void write(ByteBuffer payload)
+    public void write(GrowableByteBuffer payload)
     {
         Message.writeString(payload, host.getHostAddress());
         payload.putInt(port);
