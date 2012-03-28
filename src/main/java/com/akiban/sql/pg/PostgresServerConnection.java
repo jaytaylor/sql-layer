@@ -608,8 +608,13 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void rebuildCompiler() {
         parser = new SQLParser();
         Set<SQLParserFeature> features = parser.getFeatures();
-        if (false)
+        if (false) {
+            // TODO: Need some kind of MySQL compatibility setting(s).
+            // These are the ones not currently on by default.
+            features.add(SQLParserFeature.INFIX_BIT_OPERATORS);
+            features.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
             features.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
+        }
 
         defaultSchemaName = getProperty("database");
         // TODO: Any way / need to ask AIS if schema exists and report error?
