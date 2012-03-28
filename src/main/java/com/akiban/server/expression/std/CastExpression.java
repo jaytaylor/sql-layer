@@ -101,7 +101,8 @@ public class CastExpression extends AbstractUnaryExpression
                 case LONG:
                 case U_INT:
                 case INT:        valueHolder().putRaw(type, 0L); break;
-                case DOUBLE:     valueHolder().putDouble(0.0); break;
+                case U_DOUBLE:
+                case DOUBLE:     valueHolder().putRaw(type, 0.0d); break;
                 case U_FLOAT:
                 case FLOAT:      valueHolder().putRaw(type, 0.0f); break;
                 case TIME:       valueHolder().putTime(0L);

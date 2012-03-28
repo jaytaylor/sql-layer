@@ -72,6 +72,8 @@ order-by-1: ORDER BY expressions
 
 order-by-2: ORDER BY column numbers
 
+select-0: no FROM list
+
 select-1: wildcard single table
 
 select-2: explicit join, condition

@@ -27,10 +27,8 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.expression.std.RankExpression;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -43,6 +41,7 @@ import java.util.Set;
 
 import static com.akiban.qp.operator.API.IntersectOutputOption;
 import static com.akiban.qp.operator.API.JoinType;
+import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
 /**
@@ -106,7 +105,7 @@ class Intersect_Ordered extends Operator
     public String toString()
     {
         return String.format("%s(skip %d from left, skip %d from right, compare %d)",
-                             getClass().getSimpleName(), leftSkip, rightSkip, fieldRankingExpressions.length);
+                             getClass().getSimpleName(), leftSkip, rightSkip, ascending.length);
     }
 
     // Operator interface
@@ -143,8 +142,8 @@ class Intersect_Ordered extends Operator
 
     public Intersect_Ordered(Operator left,
                              Operator right,
-                             RowType leftRowType,
-                             RowType rightRowType,
+                             IndexRowType leftRowType,
+                             IndexRowType rightRowType,
                              int leftOrderingFields,
                              int rightOrderingFields,
                              boolean[] ascending,
@@ -177,14 +176,8 @@ class Intersect_Ordered extends Operator
         // output
         this.outputLeft = intersectOutput == IntersectOutputOption.OUTPUT_LEFT;
         // Setup for row comparisons
-        this.fieldRankingExpressions = new RankExpression[ascending.length];
         leftSkip = leftRowType.nFields() - leftOrderingFields;
         rightSkip = rightRowType.nFields() - rightOrderingFields;
-        for (int f = 0; f < fieldRankingExpressions.length; f++) {
-            this.fieldRankingExpressions[f] =
-                new RankExpression(new FieldExpression(leftRowType, leftSkip + f),
-                                   new FieldExpression(rightRowType, rightSkip + f));
-        }
     }
 
     // Class state
@@ -199,7 +192,6 @@ class Intersect_Ordered extends Operator
     private final Operator right;
     private final int leftSkip;
     private final int rightSkip;
-    private final RankExpression[] fieldRankingExpressions;
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
     private final boolean outputLeft;
@@ -293,11 +285,6 @@ class Intersect_Ordered extends Operator
             super(context);
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
-            fieldRankingEvaluations = new AbstractTwoArgExpressionEvaluation[fieldRankingExpressions.length];
-            for (int f = 0; f < fieldRankingEvaluations.length; f++) {
-                fieldRankingEvaluations[f] = 
-                    (AbstractTwoArgExpressionEvaluation) fieldRankingExpressions[f].evaluation();
-            }
         }
         
         // For use by this class
@@ -330,16 +317,11 @@ class Intersect_Ordered extends Operator
             } else if (rightRow.isEmpty()) {
                 c = -1;
             } else {
-                for (int f = 0; f < fieldRankingEvaluations.length; f++) {
-                    AbstractTwoArgExpressionEvaluation fieldRankingEvaluation = fieldRankingEvaluations[f];
-                    fieldRankingEvaluation.leftEvaluation().of(leftRow.get());
-                    fieldRankingEvaluation.rightEvaluation().of(rightRow.get());
-                    c = fieldRankingEvaluation.eval().getInt();
-                    if (c != 0) {
-                        if (!ascending[f]) {
-                            c = -c;
-                        }
-                        break;
+                c = leftRow.get().compareTo(rightRow.get(), leftSkip, rightSkip, ascending.length);
+                if (c != 0) {
+                    int fieldThatDiffers = (int) abs(c) - 1;
+                    if (!ascending[fieldThatDiffers]) {
+                        c = -c;
                     }
                 }
             }
@@ -356,6 +338,5 @@ class Intersect_Ordered extends Operator
         private final Cursor rightInput;
         private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
         private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
-        private final AbstractTwoArgExpressionEvaluation[] fieldRankingEvaluations;
     }
 }

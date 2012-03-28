@@ -68,7 +68,7 @@ public interface CostModelMeasurements
     // From DistinctCT
     final double DISTINCT_PER_ROW = 6;
     // From IntersectCT
-    final double INTERSECT_PER_ROW = 1.5;
+    final double INTERSECT_PER_ROW = 0.25;
     // From HKeyUnionCT
     final double HKEY_UNION_PER_ROW = 2;
 }

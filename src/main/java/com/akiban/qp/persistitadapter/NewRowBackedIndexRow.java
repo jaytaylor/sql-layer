@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -57,6 +58,14 @@ public class NewRowBackedIndexRow implements RowBase
         for (int f = 0; f < rowType.nFields(); f++) {
             this.sources[f] = new FromObjectValueSource();
         }
+    }
+
+    // BoundExpressions interface
+
+    @Override
+    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    {
+        throw new UnsupportedOperationException();
     }
 
     // RowBase interface

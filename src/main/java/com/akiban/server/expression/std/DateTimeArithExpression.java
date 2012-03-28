@@ -75,7 +75,7 @@ public class DateTimeArithExpression extends ArithExpression
             {
                 adjustType(argumentTypes, 0);
                 adjustType(argumentTypes, 1);
-            }            
+            }
             return ExpressionTypes.TIME;
         }
 

@@ -28,15 +28,21 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.InvalidCharToNumException;
+import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.SparseArray;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 public abstract class QueryContextBase implements QueryContext
@@ -69,8 +75,44 @@ public abstract class QueryContextBase implements QueryContext
             holder = new ValueHolder();
             bindings.set(index, holder);
         }
+        
         holder.expectType(type);
-        Converters.convert(value, holder);
+        try
+        {
+            Converters.convert(value, holder);
+        }
+        catch (InvalidDateFormatException e)
+        {
+            errorCase(e, holder);
+        }
+        catch (InconvertibleTypesException e)
+        {
+            errorCase(e, holder);
+        }
+        catch (InvalidCharToNumException e)
+        {
+            errorCase(e, holder);
+        }
+    }
+    
+    private void errorCase (InvalidOperationException e, ValueHolder holder)
+    {
+        warnClient(e);
+        switch(holder.getConversionType())
+        {
+            case DECIMAL:   holder.putDecimal(BigDecimal.ZERO); break;
+            case U_BIGINT:  holder.putUBigInt(BigInteger.ZERO); break;
+            case LONG:
+            case U_INT:
+            case INT:        holder.putRaw(holder.getConversionType(), 0L); break;
+            case U_DOUBLE:   
+            case DOUBLE:     holder.putRaw(holder.getConversionType(), 0.0d);
+            case U_FLOAT:
+            case FLOAT:      holder.putRaw(holder.getConversionType(), 0.0f); break;
+            case TIME:       holder.putTime(0L);
+            default:         holder.putNull();
+
+        }
     }
 
     @Override

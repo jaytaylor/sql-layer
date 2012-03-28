@@ -289,6 +289,21 @@ public class OperatorITBase extends ITBase
         dumpToAssertion(cursor(plan, queryContext));
     }
 
+    protected void dump(Cursor cursor)
+    {
+        cursor.open();
+        Row row;
+        while ((row = cursor.next()) != null) {
+            System.out.println(String.valueOf(row));
+        }
+        cursor.close();
+    }
+    
+    protected void dump(Operator plan)
+    {
+        dump(cursor(plan, queryContext));
+    }
+
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
     {
         int count;

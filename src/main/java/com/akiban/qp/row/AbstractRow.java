@@ -27,6 +27,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
@@ -34,6 +35,14 @@ import com.akiban.util.ShareHolder;
 
 public abstract class AbstractRow implements Row
 {
+    // BoundExpressions interface
+
+    @Override
+    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    {
+        throw new UnsupportedOperationException();
+    }
+
     // Row interface
 
     @Override

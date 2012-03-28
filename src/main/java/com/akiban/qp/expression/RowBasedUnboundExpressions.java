@@ -65,6 +65,12 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
             return expressionRow.eval(index);
         }
 
+        @Override
+        public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        {
+            throw new UnsupportedOperationException();
+        }
+
         ExpressionsAndBindings(RowType rowType, List<Expression> expressions, QueryContext context) {
             expressionRow = new ExpressionRow(rowType, context, expressions);
         }

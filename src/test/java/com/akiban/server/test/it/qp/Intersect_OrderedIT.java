@@ -451,10 +451,10 @@ public class Intersect_OrderedIT extends OperatorITBase
         plan = intersectPxPy(32, true);
         compareRows(expected, cursor(plan, queryContext));
         plan = intersectPxPy(31, false);
-        expected = new RowBase[]{
-        };
         compareRows(expected, cursor(plan, queryContext));
         plan = intersectPxPy(32, true);
+        compareRows(expected, cursor(plan, queryContext));
+        plan = intersectPxPy(32, false);
         compareRows(expected, cursor(plan, queryContext));
     }
 
@@ -620,51 +620,6 @@ public class Intersect_OrderedIT extends OperatorITBase
             row(parentPidIndexRowType, 8000L),
             row(parentPidIndexRowType, 8001L),
             row(parentPidIndexRowType, 8002L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
-    }
-    
-    @Test
-    public void testRowIntersection()
-    {
-        Operator parentProject =
-            project_Default(
-                filter_Default(
-                    groupScan_Default(coi),
-                    Collections.singleton(parentRowType)),
-                parentRowType,
-                Arrays.asList((Expression) new FieldExpression(parentRowType, 1),
-                              (Expression) new FieldExpression(parentRowType, 2),
-                              (Expression) new FieldExpression(parentRowType, 0)));
-        Operator childProject =
-            project_Default(
-                filter_Default(
-                    groupScan_Default(coi),
-                    Collections.singleton(childRowType)),
-                childRowType,
-                Arrays.asList((Expression) new FieldExpression(childRowType, 2),
-                              (Expression) new FieldExpression(childRowType, 1),
-                              (Expression) new FieldExpression(childRowType, 0)));
-        Operator plan =
-            intersect_Ordered(
-                parentProject,
-                childProject,
-                parentProject.rowType(),
-                childProject.rowType(),
-                1,
-                2,
-                1,
-                JoinType.RIGHT_JOIN,
-                IntersectOutputOption.OUTPUT_RIGHT);
-        RowBase[] expected = new RowBase[]{
-            row(childRowType, 12L, null, 1200000L),
-            row(childRowType, 88L, 8000L, 800000L),
-            row(childRowType, 88L, 8001L, 800100L),
-            row(childRowType, 88L, 8001L, 800101L),
-            row(childRowType, 88L, 8002L, 800200L),
-            row(childRowType, 88L, 8002L, 800201L),
-            row(childRowType, 88L, 8002L, 800202L),
-            row(childRowType, 99L, 9000L, 900000L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
