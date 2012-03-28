@@ -366,13 +366,13 @@ public class ArithOps
                     // if one of the operands is VARCHAR and the other date/time/interval
                     // adjust the varchar to appropriate type
                     adjustVarchar(arguments, index);
-                else if (   first.getType() == AkType.UNSUPPORTED &&
+                else if (   (first.getType() == AkType.UNSUPPORTED || first.getType() == AkType.VARCHAR)&&
                                 ArithExpression.isNumeric(arguments.get(index = 1).getType()) ||
-                            second.getType() == AkType.UNSUPPORTED && 
+                            (second.getType() == AkType.UNSUPPORTED || second.getType() == AkType.VARCHAR)&& 
                                 ArithExpression.isNumeric(arguments.get(index = 0).getType()))
-                    // if one of the operands is param and the other numeric
-                    // expect the parameter argument to have the same type as the other
-                    arguments.setType(1- index, arguments.get(index).getType());
+                    // if one of the operands is param/varchar and the other numeric
+                    // expect the parameter argument to have type DOUBLE
+                    arguments.setType(1- index, AkType.DOUBLE);
                 
                 // update first, second
                 first = arguments.get(0);
