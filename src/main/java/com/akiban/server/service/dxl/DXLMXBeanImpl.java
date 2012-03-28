@@ -26,7 +26,7 @@ import com.akiban.ais.model.staticgrouping.Group;
 import com.akiban.ais.model.staticgrouping.Grouping;
 import com.akiban.ais.model.staticgrouping.GroupingVisitorStub;
 import com.akiban.ais.model.staticgrouping.GroupsBuilder;
-import com.akiban.ais.util.AISPrinter;
+import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -190,7 +190,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
     @Override
     public String printAIS() {
-        return AISPrinter.toString(ais());
+        return new ProtobufWriter().save(ais()).toString();
     }
 
     public List<String> getGrouping(String schema) {

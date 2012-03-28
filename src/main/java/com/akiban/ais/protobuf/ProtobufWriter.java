@@ -40,17 +40,21 @@ import java.util.Map;
 import java.util.TreeMap;
 
 public class ProtobufWriter {
+    private static final GrowableByteBuffer NO_BUFFER = new GrowableByteBuffer(0);
     private final GrowableByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
     private Map<String,Schema> schemaMap = new TreeMap<String,Schema>();
 
+    public ProtobufWriter() {
+        this(NO_BUFFER);
+    }
 
     public ProtobufWriter(GrowableByteBuffer buffer) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
     }
 
-    public void save(AkibanInformationSchema ais) {
+    public AISProtobuf.AkibanInformationSchema save(AkibanInformationSchema ais) {
         // Collect into schemas until that it is a top level AIS object
         for(Group group : ais.getGroups().values()) {
             String schemaName = group.getGroupTable().getRoot().getName().getSchemaName();
@@ -74,7 +78,9 @@ public class ProtobufWriter {
         }
 
         pbAIS = aisBuilder.build();
-        writeMessageLite(pbAIS);
+        if (buffer != NO_BUFFER)
+            writeMessageLite(pbAIS);
+        return pbAIS;
     }
 
     private Schema getSchemaFromName(String schemaName) {

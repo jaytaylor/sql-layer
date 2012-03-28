@@ -67,6 +67,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NodeTypes.SQRT_OPERATOR_NODE:
         case NodeTypes.UNARY_PLUS_OPERATOR_NODE:
         case NodeTypes.UNARY_MINUS_OPERATOR_NODE:
+        case NodeTypes.UNARY_BITNOT_OPERATOR_NODE:
             return unaryOperatorFunction((UnaryOperatorNode)node);
         case NodeTypes.LIKE_OPERATOR_NODE:
         case NodeTypes.LOCATE_FUNCTION_NODE:
@@ -80,6 +81,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NodeTypes.BINARY_PLUS_OPERATOR_NODE:
         case NodeTypes.BINARY_TIMES_OPERATOR_NODE:
         case NodeTypes.MOD_OPERATOR_NODE:
+        case NodeTypes.BINARY_BIT_OPERATOR_NODE:
             return binaryOperatorFunction((BinaryOperatorNode)node);
         default:
             return super.computeType(node);
