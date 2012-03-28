@@ -1,28 +1,28 @@
-MultiIndexIntersectScan@16d3536(compare 1
-    skip 1: SingleIndexScan@c08593(Index(user.addresses.state[IndexColumn(state)]), =MA)
-    skip 1: SingleIndexScan@2f1e75(Index(user.customers.name[IndexColumn(name)]), =Foo B. Ar)
-    -> NONE, rows = 1, cost = 215.293)
-MultiIndexIntersectScan@58e2a1(compare 1
-    skip 1: SingleIndexScan@186f3b3(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
-    skip 1: SingleIndexScan@2f1e75(Index(user.customers.name[IndexColumn(name)]), =Foo B. Ar)
-    -> NONE, rows = 1, cost = 215.359)
-MultiIndexIntersectScan@e9aa13(compare 1
-    skip 1: SingleIndexScan@c08593(Index(user.addresses.state[IndexColumn(state)]), =MA)
-    skip 1: SingleIndexScan@186f3b3(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
-    -> NONE, rows = 1, cost = 215.342)
-MultiIndexIntersectScan@9ce4a3(compare 1
-    skip 1: SingleIndexScan@186f3b3(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
-    skip 1: SingleIndexScan@c08593(Index(user.addresses.state[IndexColumn(state)]), =MA)
-    -> NONE, rows = 1, cost = 215.342)
-MultiIndexIntersectScan@6691da(compare 1
-    skip 1: MultiIndexIntersectScan@16d3536(compare 1
-        skip 1: SingleIndexScan@c08593(Index(user.addresses.state[IndexColumn(state)]), =MA)
-        skip 1: SingleIndexScan@2f1e75(Index(user.customers.name[IndexColumn(name)]), =Foo B. Ar))
-    skip 1: SingleIndexScan@186f3b3(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
-    -> NONE, rows = 1, cost = 223.565)
-MultiIndexIntersectScan@1f195fc(compare 1
-    skip 1: MultiIndexIntersectScan@58e2a1(compare 1
-        skip 1: SingleIndexScan@186f3b3(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
-        skip 1: SingleIndexScan@2f1e75(Index(user.customers.name[IndexColumn(name)]), =Foo B. Ar))
-    skip 1: SingleIndexScan@c08593(Index(user.addresses.state[IndexColumn(state)]), =MA)
-    -> NONE, rows = 1, cost = 223.565)
+MultiIndexIntersectScan@4eaeab7a(compare 1
+    skip 1: SingleIndexScan@2d7bfef1(Index(user.addresses.state[IndexColumn(state)]), =MA)
+    skip 1: SingleIndexScan@279e978b(Index(user.customers.name[IndexColumn(name)]), =Foo B. Ar)
+    -> NONE, rows = 1, cost = 212.793)
+MultiIndexIntersectScan@1cef3aff(compare 1
+    skip 1: SingleIndexScan@1e0a4a30(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
+    skip 1: SingleIndexScan@279e978b(Index(user.customers.name[IndexColumn(name)]), =Foo B. Ar)
+    -> NONE, rows = 1, cost = 212.859)
+MultiIndexIntersectScan@358ca4b8(compare 1
+    skip 1: SingleIndexScan@2d7bfef1(Index(user.addresses.state[IndexColumn(state)]), =MA)
+    skip 1: SingleIndexScan@1e0a4a30(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
+    -> NONE, rows = 1, cost = 212.842)
+MultiIndexIntersectScan@2492477f(compare 1
+    skip 1: SingleIndexScan@1e0a4a30(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
+    skip 1: SingleIndexScan@2d7bfef1(Index(user.addresses.state[IndexColumn(state)]), =MA)
+    -> NONE, rows = 1, cost = 212.842)
+MultiIndexIntersectScan@7f93f59a(compare 1
+    skip 1: MultiIndexIntersectScan@4eaeab7a(compare 1
+        skip 1: SingleIndexScan@2d7bfef1(Index(user.addresses.state[IndexColumn(state)]), =MA)
+        skip 1: SingleIndexScan@279e978b(Index(user.customers.name[IndexColumn(name)]), =Foo B. Ar))
+    skip 1: SingleIndexScan@1e0a4a30(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
+    -> NONE, rows = 1, cost = 218.565)
+MultiIndexIntersectScan@4ae192e5(compare 1
+    skip 1: MultiIndexIntersectScan@1cef3aff(compare 1
+        skip 1: SingleIndexScan@1e0a4a30(Index(user.orders.order_date[IndexColumn(order_date)]), =2001-02-03)
+        skip 1: SingleIndexScan@279e978b(Index(user.customers.name[IndexColumn(name)]), =Foo B. Ar))
+    skip 1: SingleIndexScan@2d7bfef1(Index(user.addresses.state[IndexColumn(state)]), =MA)
+    -> NONE, rows = 1, cost = 218.565)
