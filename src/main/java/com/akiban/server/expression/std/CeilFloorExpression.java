@@ -58,19 +58,14 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
             if (argc != 1)
                 throw new WrongExpressionArityException(1, argc);
             
-            ExpressionType firstExpType = argumentTypes.get(0);
             AkType firstAkType = argumentTypes.get(0).getType();
-            // TODO - Temporary handling of UNSUPPORTED types case
+
             if (firstAkType == AkType.VARCHAR || firstAkType == AkType.UNSUPPORTED)
             {
                 argumentTypes.setType(0, AkType.DOUBLE);
-                firstAkType = AkType.DOUBLE;
             }
-            
-            // TODO - Scale is always zero, even on decimal-types with non-zero scales
-            System.out.println(firstExpType.getScale());
-            
-            return ExpressionTypes.newType(firstAkType, firstExpType.getPrecision(), firstExpType.getScale());
+                        
+            return argumentTypes.get(0);
         }
 
         @Override
@@ -135,11 +130,6 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
                     // In IT, this returns an integral value since its scale is zero.
                     
                     BigDecimal decInput = firstOperand.getDecimal();
-                    /* Before the decimal input ever reaches this point, its scale is set to zero
-                     * This truncates any part of the decimal outside of it 
-                     * For example: CEIL(-2.634) -> System.out.println(decInput) -> "-2"
-                     */
-                    // System.out.println(decInput);
                     BigDecimal finalDecValue = (name == CeilFloorName.FLOOR) ? 
                             decInput.setScale(0, RoundingMode.FLOOR) : 
                             decInput.setScale(0, RoundingMode.CEILING);
