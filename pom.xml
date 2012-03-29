@@ -378,6 +378,7 @@
                     <exclude>conf/config/jvm.options</exclude>
                     <exclude>packages-common/jvm.options</exclude>
                     <exclude>doc/release_notes.txt</exclude>
+                    <exclude>src/main/antlr3/com/akiban/server/service/memcache/hapi.g</exclude>
                     <!-- Files requiring a specific format (packaging control, test output, etc) -->
                     <exclude>debian/*</exclude>
                     <exclude>redhat/*</exclude>

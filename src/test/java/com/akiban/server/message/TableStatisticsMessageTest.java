@@ -34,6 +34,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.rowdata.SchemaFactory;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
@@ -73,7 +74,7 @@ public class TableStatisticsMessageTest {
         }
         ts.addHistogram(hs);
 
-        final ByteBuffer payload = ByteBuffer.allocate(65536);
+        final GrowableByteBuffer payload = new GrowableByteBuffer(65536);
         final GetTableStatisticsResponse message = new GetTableStatisticsResponse(
                 123, ts);
 

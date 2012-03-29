@@ -51,10 +51,10 @@ import com.akiban.server.test.mt.mtutil.TimedCallable;
 import com.akiban.server.test.mt.mtutil.TimedResult;
 import com.akiban.server.test.mt.mtutil.Timing;
 import com.akiban.server.service.session.Session;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.EnumSet;
@@ -299,7 +299,7 @@ public final class ConcurrentDMLAtomicsMT extends ConcurrentAtomicsBase {
     }
 
     private int findOneRowBufferSize(int tableId, int indexId) throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocate(1024); // should be plenty
+        GrowableByteBuffer buffer = new GrowableByteBuffer(1024); // should be plenty
         buffer.mark();
         LegacyRowOutput output = new WrappingRowOutput(buffer);
 

@@ -30,6 +30,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.ais.model.Index;
 import com.persistit.exception.PersistitInterruptedException;
 
+import java.io.Writer;
 import java.util.Collection;
 import java.io.File;
 import java.io.IOException;
@@ -59,7 +60,7 @@ public interface IndexStatisticsService
 
     /** Dump statistics to a YAML file. */
     public void dumpIndexStatistics(Session session, 
-                                    String schema, File file) throws IOException;
+                                    String schema, Writer file) throws IOException;
 
     /** Clear the in-memory cache. */
     public void clearCache();

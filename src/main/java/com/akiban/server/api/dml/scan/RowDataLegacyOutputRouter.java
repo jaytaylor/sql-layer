@@ -27,8 +27,8 @@
 package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.rowdata.RowData;
+import com.akiban.util.GrowableByteBuffer;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -56,7 +56,7 @@ public final class RowDataLegacyOutputRouter implements LegacyRowOutput {
     }
 
     @Override
-    public ByteBuffer getOutputBuffer() {
+    public GrowableByteBuffer getOutputBuffer() {
         throw new UnsupportedOperationException();
     }
 

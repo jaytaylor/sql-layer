@@ -34,6 +34,7 @@ import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.sql.parser.SQLParserException;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
@@ -187,10 +188,8 @@ public class AtomicSchemaChangesIT extends ITBase
 
     private void checkInitialAIS() throws Exception
     {
-        ByteBuffer copy = expectedAIS.duplicate();
-        ByteBuffer ais = serialize(ais());
+        GrowableByteBuffer ais = serialize(ais());
         assertEquals(expectedAIS, ais);
-        expectedAIS = copy;
     }
 
     private void checkInitialDDL() throws Exception
@@ -213,9 +212,9 @@ public class AtomicSchemaChangesIT extends ITBase
         return ddl().getAIS(session());
     }
 
-    private ByteBuffer serialize(AkibanInformationSchema ais) throws Exception
+    private GrowableByteBuffer serialize(AkibanInformationSchema ais) throws Exception
     {
-        ByteBuffer buffer = ByteBuffer.allocate(BUFFER_SIZE);
+        GrowableByteBuffer buffer = new GrowableByteBuffer(BUFFER_SIZE);
         new Writer(new MessageTarget(buffer)).save(ais);
         buffer.flip();
         return buffer;
@@ -232,5 +231,5 @@ public class AtomicSchemaChangesIT extends ITBase
     private static final String CHILD_DDL =
         "create table `s`.`child`(`cid` int NOT NULL, `pid` int, PRIMARY KEY(`cid`), "+
             "CONSTRAINT `__akiban_cp` FOREIGN KEY `__akiban_cp`(`pid`) REFERENCES `parent`(`pid`)) engine=akibandb";
-    private ByteBuffer expectedAIS;
+    private GrowableByteBuffer expectedAIS;
 }

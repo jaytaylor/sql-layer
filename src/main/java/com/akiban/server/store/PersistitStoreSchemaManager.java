@@ -30,7 +30,6 @@ import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -59,7 +58,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.validation.AISValidation;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
@@ -80,6 +78,7 @@ import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
 import org.slf4j.Logger;
@@ -124,7 +123,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final ConfigurationService config;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
-    private ByteBuffer aisByteBuffer;
+    private GrowableByteBuffer aisByteBuffer;
 
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
@@ -625,7 +624,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             maxAISBufferSize = 0;
         }
         // 0 = unlimited, start off at 1MB in this case.
-        aisByteBuffer = ByteBuffer.allocate(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
+        aisByteBuffer = new GrowableByteBuffer(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
         try {
             afterStart();
         } catch (PersistitException e) {
@@ -759,7 +758,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                                              ex.clear().append(BY_AIS);
                                              if(ex.isValueDefined()) {
                                                  byte[] storedAIS = ex.fetch().getValue().getByteArray();
-                                                 ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
+                                                 GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
                                                  new Reader(new MessageSource(buffer)).load(newAIS);
                                              }
                                          }
@@ -793,7 +792,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * @return ByteBuffer
      * @throws Exception For any error during serialization or if the buffer is too small.
      */
-    private ByteBuffer trySerializeAIS(final AkibanInformationSchema newAIS, final String volumeName) {
+    private GrowableByteBuffer trySerializeAIS(final AkibanInformationSchema newAIS, final String volumeName) {
         boolean finishedSerializing = false;
         while(!finishedSerializing) {
             try {
@@ -818,7 +817,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 if(maxAISBufferSize != 0 && newCapacity > maxAISBufferSize) {
                     newCapacity = maxAISBufferSize;
                 }
-                aisByteBuffer = ByteBuffer.allocate(newCapacity);
+                aisByteBuffer = new GrowableByteBuffer(newCapacity);
             }
         }
         return aisByteBuffer;
@@ -841,7 +840,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             throws PersistitException {
 
         //TODO: Verify the newAIS.isFrozen(), if not throw an exception. 
-        ByteBuffer buffer = trySerializeAIS(newAIS, getVolumeForSchemaTree(schemaName));
+        GrowableByteBuffer buffer = trySerializeAIS(newAIS, getVolumeForSchemaTree(schemaName));
         final TreeLink schemaTreeLink =  treeService.treeLink(schemaName, SCHEMA_TREE_NAME);
         final Exchange schemaEx = treeService.getExchange(session, schemaTreeLink);
         

@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.store;
 
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.SortedMap;
@@ -41,6 +40,7 @@ import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
 
@@ -125,7 +125,7 @@ public abstract class AbstractScanBase extends ITSuiteBase {
         }
         rc.open();
         while (rc.hasMore()) {
-            final ByteBuffer payload = ByteBufferFactory.allocate(65536);
+            final GrowableByteBuffer payload = ByteBufferFactory.allocate(65536);
             while (rc.collectNextRow(payload))
                 ;
             payload.flip();

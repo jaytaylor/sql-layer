@@ -49,12 +49,12 @@ import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -77,29 +77,42 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
-    public boolean collectNextRow(ByteBuffer payload)
+    public boolean collectNextRow(GrowableByteBuffer payload)
     {
          // The handling of currentRow is slightly tricky: If writing to the payload results in BufferOverflowException,
          // then there is likely to be another call of this method, expecting to get the same row and write it into
          // another payload with room, (resulting from a ScanRowsMoreRequest). currentRow is used only to hold onto
          // the current row across these two invocations.
+        boolean wasHeld = false;
         boolean wroteToPayload = false;
         PersistitGroupRow row;
         if (currentRow.isEmpty()) {
             row = (PersistitGroupRow) cursor.next();
         } else {
+            wasHeld = true;
             row = (PersistitGroupRow) currentRow.get();
             currentRow.release();
         }
         if (row == null) {
             close();
         } else {
+            boolean doHold = false;
             RowData rowData = row.rowData();
-            try {
-                payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
-                wroteToPayload = true;
-                rowCount++;
-            } catch (BufferOverflowException e) {
+
+            // Only grow past cache size if we haven't written a single row
+            if (rowCount == 0 || wasHeld || (payload.position() + rowData.getRowSize() < payload.getMaxCacheSize())) {
+                try {
+                    payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+                    wroteToPayload = true;
+                    rowCount++;
+                } catch (BufferOverflowException e) {
+                    doHold = true;
+                }
+            } else {
+                doHold = true;
+            }
+
+            if (doHold) {
                 assert !wroteToPayload;
                 currentRow.hold(row);
             }

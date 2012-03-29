@@ -26,13 +26,13 @@
 
 package com.akiban.ais.metamodel.io;
 
-import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
 
 import com.akiban.ais.metamodel.MetaModel;
 import com.akiban.ais.metamodel.ModelObject;
 import com.akiban.ais.metamodel.Source;
+import com.akiban.util.GrowableByteBuffer;
 
 public class MessageSource extends Source
 {
@@ -45,7 +45,7 @@ public class MessageSource extends Source
 
     // MessageSource interface
 
-    public MessageSource(ByteBuffer payload)
+    public MessageSource(GrowableByteBuffer payload)
     {
         this.payload = payload;
     }
@@ -137,5 +137,5 @@ public class MessageSource extends Source
 
     // State
 
-    private final ByteBuffer payload;
+    private final GrowableByteBuffer payload;
 }

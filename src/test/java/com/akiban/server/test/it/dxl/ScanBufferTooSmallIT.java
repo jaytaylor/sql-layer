@@ -39,10 +39,10 @@ import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.api.dml.scan.WrappingRowOutput;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
@@ -102,7 +102,7 @@ public final class ScanBufferTooSmallIT extends ITBase {
     private void doTest(Table table, int indexId) throws InvalidOperationException, BufferFullException {
         Set<Integer> columns = allColumns(table);
         int size = sizeForOneRow(table.getTableId(), indexId, columns);
-        LegacyRowOutput tooSmallOutput = new WrappingRowOutput( ByteBuffer.allocate(size) );
+        LegacyRowOutput tooSmallOutput = new WrappingRowOutput( new GrowableByteBuffer(size) );
         tooSmallOutput.getOutputBuffer().mark();
 
         ScanRequest request = new ScanAllRequest(
@@ -127,7 +127,7 @@ public final class ScanBufferTooSmallIT extends ITBase {
     }
 
     private int sizeForOneRow(int tableId, int indexId, Set<Integer> columns) throws InvalidOperationException {
-        LegacyRowOutput output = new WrappingRowOutput( ByteBuffer.allocate(1024) ); // plenty of space!
+        LegacyRowOutput output = new WrappingRowOutput( new GrowableByteBuffer(1024) ); // plenty of space!
         output.getOutputBuffer().mark();
 
         ScanRequest request = new ScanAllRequest(

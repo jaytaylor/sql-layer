@@ -33,6 +33,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 
+import java.io.StringWriter;
 import java.util.*;
 import java.io.File;
 
@@ -65,10 +66,11 @@ public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase
         service.loadIndexStatistics(session(), SCHEMA_NAME, YAML_FILE);
         service.clearCache();
         File tempFile = File.createTempFile("stats", ".yaml");
-        service.dumpIndexStatistics(session(), SCHEMA_NAME, tempFile);
+        StringWriter tempWriter = new StringWriter();
+        service.dumpIndexStatistics(session(), SCHEMA_NAME, tempWriter);
         assertEquals("dump matches load", 
                      fileContents(YAML_FILE).replace("\r", ""),
-                     fileContents(tempFile).replace("\r", ""));
+                tempWriter.toString().replace("\r", ""));
     }
 
 }

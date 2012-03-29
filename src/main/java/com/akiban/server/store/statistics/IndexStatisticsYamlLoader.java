@@ -182,19 +182,12 @@ public class IndexStatisticsYamlLoader
         return key;
     }
 
-    public void dump(Map<Index,IndexStatistics> stats, File file) throws IOException {
+    public void dump(Map<Index,IndexStatistics> stats, Writer writer) throws IOException {
         List<Object> docs = new ArrayList<Object>(stats.size());
         for (Map.Entry<Index,IndexStatistics> stat : stats.entrySet()) {
             docs.add(buildStatistics(stat.getKey(), stat.getValue()));
         }
-        Yaml yaml = new Yaml();
-        FileWriter ostr = new FileWriter(file);
-        try {
-            yaml.dumpAll(docs.iterator(), ostr);
-        }
-        finally {
-            ostr.close();
-        }
+        new Yaml().dumpAll(docs.iterator(), writer);
     }
 
     protected Object buildStatistics(Index index, IndexStatistics indexStatistics) {

@@ -26,18 +26,18 @@
 
 package com.akiban.server.loader;
 
-import java.nio.ByteBuffer;
 import java.sql.Date;
 
 import com.akiban.message.Message;
 import com.akiban.message.Sendable;
+import com.akiban.util.GrowableByteBuffer;
 
 public class Event implements Sendable
 {
     // Sendable interface
 
     @Override
-    public void read(ByteBuffer payload)
+    public void read(GrowableByteBuffer payload)
     {
         eventId = payload.getInt();
         timestamp = new Date(payload.getLong());
@@ -46,7 +46,7 @@ public class Event implements Sendable
     }
 
     @Override
-    public void write(ByteBuffer payload)
+    public void write(GrowableByteBuffer payload)
     {
         payload.putInt(eventId);
         payload.putLong(timestamp.getTime());

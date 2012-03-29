@@ -31,14 +31,12 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
-
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
@@ -77,8 +75,8 @@ public class TableSubsetWriterTest {
 
     @Test
     public void allTables() throws Exception {
-        ByteBuffer buffer1 = ByteBuffer.allocate(4096);
-        ByteBuffer buffer2 = ByteBuffer.allocate(4096);
+        GrowableByteBuffer buffer1 = new GrowableByteBuffer(4096);
+        GrowableByteBuffer buffer2 = new GrowableByteBuffer(4096);
 
         new Writer(new MessageTarget(buffer1)).save(srcAIS);
 

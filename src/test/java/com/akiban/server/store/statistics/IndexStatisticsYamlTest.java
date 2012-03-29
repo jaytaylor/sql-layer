@@ -36,6 +36,7 @@ import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 
+import java.io.StringWriter;
 import java.util.*;
 import java.io.File;
 
@@ -59,10 +60,11 @@ public class IndexStatisticsYamlTest
         IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "user");
         Map<Index,IndexStatistics> stats = loader.load(YAML_FILE);
         File tempFile = File.createTempFile("stats", ".yaml");
-        loader.dump(stats, tempFile);
+        StringWriter tempWriter = new StringWriter();
+        loader.dump(stats, tempWriter);
         assertEquals("dump matches load", 
                      fileContents(YAML_FILE).replace("\r", ""),
-                     fileContents(tempFile).replace("\r", ""));
+                     tempWriter.toString().replace("\r", ""));
     }
 
 }

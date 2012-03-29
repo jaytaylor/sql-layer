@@ -26,13 +26,12 @@
 
 package com.akiban.server.store;
 
-import java.nio.ByteBuffer;
-
 import com.akiban.ais.metamodel.io.CSVTarget;
 import com.akiban.ais.metamodel.io.MessageSource;
 import com.akiban.ais.metamodel.io.Reader;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.util.GrowableByteBuffer;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Management.DisplayFilter;
@@ -56,7 +55,7 @@ class RowDataDisplayFilter implements DisplayFilter {
                 final Key key = exchange.getKey();
                 if(key.decodeString().equals("byAIS")) {
                     byte[] storedAIS = exchange.fetch().getValue().getByteArray();
-                    ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
+                    GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
                     AkibanInformationSchema ais = new Reader(new MessageSource(buffer)).load();
                     return CSVTarget.toString(ais);
                 }

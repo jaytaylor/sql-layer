@@ -43,22 +43,22 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.ProtobufReadException;
+import com.akiban.util.GrowableByteBuffer;
 import com.google.protobuf.AbstractMessage;
 import com.google.protobuf.CodedInputStream;
 import com.google.protobuf.Descriptors;
 
 import java.io.IOException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class ProtobufReader {
-    private final ByteBuffer buffer;
+    private final GrowableByteBuffer buffer;
     private final AkibanInformationSchema destAIS;
     private AISProtobuf.AkibanInformationSchema pbAIS;
 
-    public ProtobufReader(ByteBuffer buffer) {
+    public ProtobufReader(GrowableByteBuffer buffer) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
         this.destAIS = new AkibanInformationSchema();

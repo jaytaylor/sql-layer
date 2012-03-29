@@ -28,8 +28,7 @@ package com.akiban.server.store;
 
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
-
-import java.nio.ByteBuffer;
+import com.akiban.util.GrowableByteBuffer;
 
 public interface RowCollector {
 
@@ -51,11 +50,12 @@ public interface RowCollector {
 
     /**
      * Place the next row into payload if there is another row, and if there is room in payload.
+     *
      * @param payload
      * @return true if a row was placed into payload, false otherwise
      * @throws Exception
      */
-    public boolean collectNextRow(ByteBuffer payload);
+    public boolean collectNextRow(GrowableByteBuffer payload);
 
     public RowData collectNextRow();
 

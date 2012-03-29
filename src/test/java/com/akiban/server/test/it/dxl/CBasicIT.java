@@ -41,6 +41,7 @@ import com.akiban.server.error.TableDefinitionMismatchException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.NoRowsUpdatedException;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
 import java.nio.ByteBuffer;
@@ -195,7 +196,7 @@ public final class CBasicIT extends ITBase {
 
         // request a partial scan
         ScanRequest request = new ScanAllRequest(tableId, ColumnSet.ofPositions(0), 0, null, new FixedCountLimit(1));
-        LegacyRowOutput output = new WrappingRowOutput(ByteBuffer.allocate(1024 * 1024));
+        LegacyRowOutput output = new WrappingRowOutput(new GrowableByteBuffer(1024 * 1024));
         CursorId cursorId = dml().openCursor(session(), aisGeneration(), request);
 
         dml().scanSome(session(), cursorId, output);
