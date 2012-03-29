@@ -30,7 +30,6 @@ import java.util.Date;
  *  <b>TODO</b>: 
  *       1) remove commented-out test cases when INTERVAL type becomes available
  *       2) add test for BOOLEAN
- *
  */
 public class ArithTypeTestGenerator
 {
@@ -125,15 +124,19 @@ public class ArithTypeTestGenerator
                 {
                     writeSelectStmt(numerics[left], op, numerics[right], out);
                     writeOutput("output_types",
-                             numerics[left < right ? left : right].replace("_field", "").toUpperCase(),
+                             numerics[op.equals("/") 
+                                        ? (left == 0 || right == 0 ? 0 :1)
+                                        :(left < right ? left : right)]
+                                .replace("_field", "").toUpperCase(),
                              out);
                 }
 
-                // numeric and varchar
+                // numeric and varchar == numeric and double
                 reverseLeftRight(numerics[left], op, text, out, false,
                         "output_types", 
-                        numerics[left == 0 ? 0].replace("_field", "").toUpperCase());
+                        numerics[left == 0 ? 0 : 1].replace("_field", "").toUpperCase());
             }
+            
             // numeric and interval
             // These tests are *temporarily* commented  out due to the lack
             // of interval type
