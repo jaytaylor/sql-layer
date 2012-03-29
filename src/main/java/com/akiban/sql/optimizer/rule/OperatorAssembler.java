@@ -287,7 +287,7 @@ public class OperatorAssembler extends BaseRule
                     (IndexRowType) selectorScan.rowType,
                     index.getOutputOrderingFields(),
                     index.getSelectorOrderingFields(),
-                    index.getComparisonFields(),
+                    index.getComparisonFieldDirections(),
                     JoinType.INNER_JOIN,
                     IntersectOutputOption.OUTPUT_LEFT
             );
