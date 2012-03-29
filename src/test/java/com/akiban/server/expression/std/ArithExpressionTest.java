@@ -143,6 +143,28 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     }
     
     @Test
+    public void doubleDivFloat()
+    {
+        Expression left = new LiteralExpression(AkType.DOUBLE, 5.0d);
+        Expression right = new LiteralExpression(AkType.FLOAT, 2f);
+        Expression top = new ArithExpression(left, ArithOps.DIV, right);
+        
+        assertEquals("Top type ", AkType.DOUBLE, top.valueType());
+        assertEquals("value ", 2.0d, top.evaluation().eval().getDouble(), 0.00001);
+    }
+    
+    @Test
+    public void doubleDivDecimal()
+    {
+        Expression left = new LiteralExpression(AkType.DOUBLE, 10.0d);
+        Expression right = new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(3));
+        Expression top = new ArithExpression(left, ArithOps.DIV, right);
+        
+        assertEquals("Top type ", AkType.DECIMAL, top.valueType());
+        assertEquals("value ", BigDecimal.valueOf(3), top.evaluation().eval().getDecimal());
+    }
+    
+    @Test
     public void bigIntPlusBigInt ()
     {
         Expression left = new LiteralExpression (AkType.U_BIGINT, BigInteger.ONE);

@@ -58,28 +58,11 @@ public class TypeDeterminationTest
         ParameterizationBuilder pb = new ParameterizationBuilder();
 
         // ------------------ numeric types only -------------------------------
-        // test div (integer division) 
-        ArithOp operation = ArithOps.DIV; 
+        // test / (regular division)
+        ArithOp operation = ArithOps.DIVIDE; 
         List<AkType> approx = Arrays.asList(AkType.DOUBLE, AkType.FLOAT, AkType.DECIMAL);
         List<AkType> exact = Arrays.asList(AkType.INT, AkType.U_BIGINT, AkType.LONG);
         
-        for (AkType left : approx)
-            for (AkType right : approx)
-                paramNonSym(pb, left, operation, right, AkType.U_BIGINT);
-        
-        for (AkType left : exact)
-            for (AkType right : approx)
-                paramSym(pb, left, operation, right, AkType.U_BIGINT);
-
-        paramSym(pb, AkType.U_BIGINT, operation, AkType.LONG, AkType.U_BIGINT);
-        paramSym(pb, AkType.LONG, operation, AkType.INT, AkType.LONG);
-        paramSym(pb, AkType.INT, operation, AkType.U_BIGINT, AkType.U_BIGINT);
-        
-        for (AkType t : exact)
-            paramNonSym(pb, t, operation, t, t);
-        
-        // test / (regular division)
-        operation = ArithOps.DIVIDE;
         for (AkType left : exact)
             for (AkType right : exact)
                 paramNonSym(pb, left, operation, right, AkType.DOUBLE);
@@ -93,7 +76,7 @@ public class TypeDeterminationTest
         paramSym(pb, AkType.FLOAT, operation, AkType.DECIMAL, AkType.DECIMAL);
         
         // test other operations
-        for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.MINUS, ArithOps.MOD, ArithOps.MULTIPLY))
+        for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.MINUS, ArithOps.MOD, ArithOps.MULTIPLY, ArithOps.DIV))
         {
             // decimal
             paramNonSym(pb, AkType.DECIMAL, op, AkType.DECIMAL, AkType.DECIMAL);

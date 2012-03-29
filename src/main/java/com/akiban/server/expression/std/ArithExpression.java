@@ -72,7 +72,6 @@ public class ArithExpression extends AbstractBinaryExpression
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
     {
         super(getTopType(lhs.valueType(), rhs.valueType(), op),lhs, rhs);
-        
         this.op = op; 
         topT = super.valueType();
     }
@@ -193,12 +192,9 @@ public class ArithExpression extends AbstractBinaryExpression
             if (prod2 % 2 == 1) // odd => numeric values only
             {
                 int f = SUPPORTED_TYPES.get(AkType.FLOAT);
-                switch(op.opName())
-                {
-                    case '/': if(r > f && l > f) return AkType.DOUBLE; break;// turn all exact type to DOUBLE
-                    case 'd': if (r <= f || l <= f) return AkType.U_BIGINT; // turn all approx. type to U_BIGINT
-                }
-                return SUPPORTED_TYPES.get(l < r ? l : r);
+                return op.opName() == '/' && r > f && l > f // turn any exact type 
+                        ? AkType.DOUBLE                     // into DOUBLE
+                        : SUPPORTED_TYPES.get(l < r ? l : r);
             }
             else // even => at least one is datetime
             {

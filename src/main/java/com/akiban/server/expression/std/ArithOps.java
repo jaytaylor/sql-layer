@@ -26,6 +26,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.List;
 
 public class ArithOps 
@@ -181,7 +182,7 @@ public class ArithOps
        {
            if (two == 0)
                 throw new DivisionByZeroException();
-           return one / two;
+           return Math.floor(one / two);
        }
        
        @Override
@@ -189,7 +190,7 @@ public class ArithOps
        {
            if (two.equals(BigDecimal.ZERO))
                 throw new DivisionByZeroException();
-           return one.divide(two);
+           return one.divide(two, 0, RoundingMode.FLOOR);
        }
        
        @Override
@@ -393,7 +394,6 @@ public class ArithOps
             }
             
             top = ArithExpression.getTopType(first.getType(), second.getType(), this);
-            
             return ExpressionTypes.newType(top, pre, scale);
         }
 

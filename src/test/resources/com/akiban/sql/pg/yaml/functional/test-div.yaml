@@ -1,0 +1,14 @@
+## test div
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(numeric_field, double_field, bigint_field)
+              VALUES (2.5, 3.5, 4);
+---
+- Statement: SELECT 2 div 3 from all_types;
+- output: [[0]]
+---
+- Statement: SELECT double_field div numeric_field from all_types;
+- output_types: [BIGINT]
+- output: [[1]]
+...
