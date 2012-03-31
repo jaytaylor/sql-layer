@@ -1,0 +1,1 @@
+SELECT cid, (SELECT DISTINCT oid + 1 FROM orders WHERE orders.cid = customers.cid) FROM customers
