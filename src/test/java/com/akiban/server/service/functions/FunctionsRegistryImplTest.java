@@ -139,6 +139,12 @@ public final class FunctionsRegistryImplTest {
         {
             throw new UnsupportedOperationException();
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
 
     static Map<String, Map<AkType, AggregatorFactory>> expectedAggregatorFactories() {
