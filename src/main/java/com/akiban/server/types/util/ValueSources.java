@@ -26,6 +26,7 @@
 
 package com.akiban.server.types.util;
 
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -44,7 +45,7 @@ public class ValueSources
 {
    
     
-    private static final Map<AkType, Map<AkType, Comparator<ValueSource>>> map;
+    public static final Map<AkType, Map<AkType, Comparator<ValueSource>>> map;
     private static final long MULS[] = {60L * 60 * 1000 , 60 * 1000, 1000};
     
     static
@@ -52,13 +53,13 @@ public class ValueSources
         map = new EnumMap(AkType.class);
         
         // date 
-        EnumSet<AkType> date = EnumSet.of(DATE);
+        EnumSet<AkType> date = EnumSet.of(DATE, YEAR);
         // time
         EnumSet<AkType> time = EnumSet.of(TIME);
         // datetime, timestamp
         EnumSet<AkType> datetime = EnumSet.of(DATETIME, TIMESTAMP);
         // year
-        EnumSet<AkType> year = EnumSet.of(YEAR);
+       // EnumSet<AkType> year = EnumSet.of(YEAR);
         // millis
         EnumSet<AkType> millis = EnumSet.of(INTERVAL_MILLIS);
         //month
@@ -70,7 +71,7 @@ public class ValueSources
         // exact
         EnumSet<AkType> exact = EnumSet.of(U_INT, INT, LONG);
         // float
-        EnumSet<AkType> floating = EnumSet.of(DOUBLE, U_DOUBLE, U_FLOAT);
+        EnumSet<AkType> floating = EnumSet.of(DOUBLE, U_DOUBLE, U_FLOAT, FLOAT);
         // bigInt
         EnumSet<AkType> bigInt = EnumSet.of(U_BIGINT);
         // bigDec
@@ -88,16 +89,11 @@ public class ValueSources
             @Override
             public int compare(ValueSource left, ValueSource right)
             {
-                // TODO: deal with overflow
-                
-                // if right is varchar
-                // parse it into double
-                AkType rightT = right.getConversionType();
+                // TODO: deal with overflow in U_BIGINT
+                // actually, overflow implies inequality
                 
                 return Double.compare(Extractors.getDoubleExtractor().getDouble(left),
-                                        rightT == AkType.VARCHAR || rightT == TEXT
-                                            ? Double.parseDouble(Extractors.getStringExtractor().getObject(right))
-                                            : Extractors.getLongExtractor(rightT).getLong(right));
+                                      Extractors.getDoubleExtractor().getDouble(right));
             }
             
         };
@@ -110,9 +106,7 @@ public class ValueSources
             public int compare(ValueSource left, ValueSource right)
             {
                 ObjectExtractor<BigDecimal> extractor = Extractors.getDecimalExtractor();
-                
-                return extractor.getObject(left).compareTo(
-                        BigDecimal.valueOf(Extractors.getLongExtractor(right.getConversionType()).getLong(right)));
+                return extractor.getObject(left).compareTo(extractor.getObject(right));
             }
             
         };
@@ -120,12 +114,13 @@ public class ValueSources
         Map<AkType, Comparator<ValueSource>> m2Double = new EnumMap(AkType.class);
         Map<AkType, Comparator<ValueSource>> m2Decimal = new EnumMap(AkType.class);
         
+        //TODO: add BOOL
         for (AkType right : Iterables.concat(floating, exact, date, time, datetime, month, millis, text))
         {
             m2Double.put(right, d_c2);
             m2Decimal.put(right, dec_c2);
         }
-        
+
         for (AkType right : Iterables.concat(bigInt, bigDec))
         {
             m2Double.put(right, dec_c2);
@@ -137,7 +132,7 @@ public class ValueSources
         
         for (AkType left : Iterables.concat(bigInt, bigDec))
             map.put(left, m2Decimal);
-        
+    
         //------------------------------
         // map 3)
         Map<AkType, Comparator<ValueSource>> m3 = new EnumMap(AkType.class);
@@ -155,7 +150,7 @@ public class ValueSources
             
         };
         
-        for (AkType right : Iterables.concat(date, time, datetime, year, month, millis))
+        for (AkType right : Iterables.concat(date, time, datetime, month, millis))
             m3.put(right, l_c3);
         map.put(BOOL, m3);
         
@@ -255,7 +250,7 @@ public class ValueSources
                     return Double.compare(val, 
                             Extractors.getLongExtractor(right.getConversionType()).getLong(right));
                 }
-                catch (NumberFormatException e)
+                catch (InvalidCharToNumException e)
                 {
                     
                 }
@@ -276,14 +271,17 @@ public class ValueSources
             
         };
         
-        for (AkType right : Iterables.concat(date, time, datetime, year))
+        for (AkType right : Iterables.concat(date, time, datetime))
             m8_9_10.put(right, c10);
                 
         map.put(VARCHAR, m8_9_10);
         map.put(TEXT, m8_9_10);
         
-        // otherwise compare as text
-
+        // left == right
+        // dec
+        
+        
+        
         
         
     }
@@ -301,7 +299,7 @@ public class ValueSources
      * 
      *      - Two valuesources have different types:
      *          1) {Both are nulls} 
-     *              => return false; (two nulls are equal iff they have the same type)
+     *              => return false; (two nulls are equals iff they have the same type)
      * 
      *          2) {numeric, (boolean | date/time | intervals | varchar)}
      *              => cast the non-numeric to DOUBLE and compare the two values
@@ -347,14 +345,49 @@ public class ValueSources
      *          11) {date, time}
      *              => date/time are not compatible
      * 
-     *          + otherwise, compare all as text
+     *          + otherwise, return false
      * 
      * @param v1
      * @param v2
      * @return 
      */
-    public static boolean equal (ValueSource v1, ValueSource v2)
+    public static boolean equals (ValueSource v1, ValueSource v2)
     {
-        return false;
+        AkType left = v1.getConversionType();
+        AkType right = v2.getConversionType();
+        
+        Comparator<ValueSource> c = get(left, right);
+     
+//            ObjectExtractor<String> ex = Extractors.getStringExtractor();
+//            boolean r = ex.getObject(v1).equals(ex.getObject(v2));
+     
+        Map<AkType, Comparator<ValueSource>> v;
+        Comparator<ValueSource> c1 = null, c2 = null;
+
+        if ((v = map.get(right)) != null)
+            c1 = v.get(left);
+
+        if ((v = map.get(left)) != null)
+            c2 = v.get(right);
+            
+        return c1 == null 
+                ? (c2 == null ? false : c2.compare(v1, v2) == 0)
+                : (c1.compare(v2, v1) == 0);
+     
+    }
+    
+    // for testing
+    static Comparator<ValueSource> get (AkType left, AkType right)
+    {
+        Map<AkType, Comparator<ValueSource>> v;
+        Comparator<ValueSource> c1 = null, c2 = null;
+
+        if ((v = map.get(right)) != null)
+            c1 = v.get(left);
+
+        if ((v = map.get(left)) != null)
+            c2 = v.get(right);
+
+        return c1 == null ? c2 : c1;
     }
 }

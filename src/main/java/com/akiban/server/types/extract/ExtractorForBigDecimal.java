@@ -52,6 +52,11 @@ final class ExtractorForBigDecimal extends ObjectExtractor<BigDecimal> {
             case INTERVAL_MILLIS:  return new BigDecimal(source.getInterval_Millis());
             case INTERVAL_MONTH:   return new BigDecimal(source.getInterval_Month());
             case U_BIGINT:  return new BigDecimal(source.getUBigInt());
+            case DATE:      return new BigDecimal(source.getDate());
+            case DATETIME:  return new BigDecimal(source.getDateTime());
+            case TIME:      return new BigDecimal(source.getTime());
+            case TIMESTAMP: return new BigDecimal(source.getTimestamp());
+            case YEAR:      return new BigDecimal(source.getYear());
             default: throw unsupportedConversion(type);
             }
         }
