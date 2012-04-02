@@ -343,6 +343,8 @@ public class ValueSources
      */
     public static boolean equals (ValueSource v1, ValueSource v2)
     {
+        if (v1.isNull() || v2.isNull()) return false;
+        
         AkType left = v1.getConversionType();
         AkType right = v2.getConversionType();
         
