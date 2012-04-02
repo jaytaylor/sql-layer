@@ -43,8 +43,6 @@ import static com.akiban.server.types.AkType.*;
 
 public class ValueSources
 {
-   
-    
     public static final Map<AkType, Map<AkType, Comparator<ValueSource>>> map;
     private static final long MULS[] = {60L * 60 * 1000 , 60 * 1000, 1000};
     
@@ -184,7 +182,7 @@ public class ValueSources
         
         //------------------------------
         // map 6)
-        // null throw incompatible
+        // null throw incompatible ?
         
         //------------------------------
         // map 7)
@@ -276,14 +274,6 @@ public class ValueSources
                 
         map.put(VARCHAR, m8_9_10);
         map.put(TEXT, m8_9_10);
-        
-        // left == right
-        // dec
-        
-        
-        
-        
-        
     }
     
     /**
@@ -356,11 +346,10 @@ public class ValueSources
         AkType left = v1.getConversionType();
         AkType right = v2.getConversionType();
         
+        if (left == right)
+            return compareSameType(v1, v2) == 0;
+        
         Comparator<ValueSource> c = get(left, right);
-     
-//            ObjectExtractor<String> ex = Extractors.getStringExtractor();
-//            boolean r = ex.getObject(v1).equals(ex.getObject(v2));
-     
         Map<AkType, Comparator<ValueSource>> v;
         Comparator<ValueSource> c1 = null, c2 = null;
 
@@ -374,6 +363,37 @@ public class ValueSources
                 ? (c2 == null ? false : c2.compare(v1, v2) == 0)
                 : (c1.compare(v2, v1) == 0);
      
+    }
+    
+    
+    
+    private static int compareSameType (ValueSource l, ValueSource r)
+    {
+        switch(l.getConversionType())
+        {
+            case DECIMAL:   return l.getDecimal().compareTo(r.getDecimal());
+            case U_BIGINT:  return l.getUBigInt().compareTo(r.getUBigInt());
+            case DOUBLE:    return Double.compare(l.getDouble(), r.getDouble());
+            case U_DOUBLE:  return Double.compare(l.getUDouble(), r.getUDouble());
+            case FLOAT:     return Double.compare(l.getFloat(), r.getFloat());
+            case U_FLOAT:   return Double.compare(l.getUFloat(), r.getUFloat());
+            case INT:       
+            case U_INT:     
+            case LONG:
+            case DATE:
+            case TIME:
+            case DATETIME:
+            case TIMESTAMP:
+            case YEAR:      LongExtractor ex = Extractors.getLongExtractor(l.getConversionType());
+                            return (int)(ex.getLong(l) - ex.getLong(r));
+            case BOOL:      return l.getBool() ^ r.getBool() ? 0 : 1;
+            case VARCHAR:
+            case TEXT:
+                            ObjectExtractor<String> ext = Extractors.getStringExtractor();
+                            return ext.getObject(l).compareTo(ext.getObject(r));
+            case NULL:      return 1;
+            default:        return 0;
+        }
     }
     
     // for testing

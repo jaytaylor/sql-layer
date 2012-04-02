@@ -103,7 +103,7 @@ public class ValueSourcesTest
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-
+        
         // MAP 2) {numeric, (DATE | TIME | NUMERICS | BOOL | TEXT)}
         for (AkType l : Iterables.concat(DATES, TEXTS, INTERVALS)) // TODO: add BOOL
         {
@@ -130,7 +130,11 @@ public class ValueSourcesTest
                 paramSym(pb, get(l, 6.0), get(r, 6), true);
             }
         }
-
+       
+        for (AkType l : EXACT)
+            for (AkType r : EXACT)
+                param(pb, get(l, 10), get(r, 10), true);
+        
         // MAP 3) {boolean, (date/time | interval)}
         // TODO: BOOLEAN isn't convertible to anything other than itself and VARCHAR
 //        for (AkType right : Iterables.concat(DATES, INTERVALS))
