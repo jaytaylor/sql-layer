@@ -47,7 +47,8 @@ public class ArithExpression extends AbstractBinaryExpression
 {
     protected final ArithOp op;
     protected AkType topT;
-
+    protected ExpressionType top;
+    
     /**
      * SUPPORTED_TYPES: contains all types that are supported in ArithExpression.
      *
@@ -61,6 +62,9 @@ public class ArithExpression extends AbstractBinaryExpression
      */
     protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(10, 0.5f);
     private static final int HIGHEST_KEY;
+    protected static final int DEFAULT_PRECISION = 20; 
+    protected static final int DEFAULT_SCALE = 9;
+    
     static
     {
         // date/time types : key is even
@@ -81,7 +85,14 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.INT, 11);
     }
     
-    
+    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType topT)
+    {
+        super(getTopType(lhs.valueType(), rhs.valueType(), op), lhs, rhs);
+        this.op = op;
+        this.topT = super.valueType();
+        assert this.topT == topT.getType() : "mismatched top type";
+        top = topT;
+    }
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
     {
@@ -89,6 +100,7 @@ public class ArithExpression extends AbstractBinaryExpression
         
         this.op = op; 
         topT = super.valueType();
+        top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
 
     /**
@@ -108,7 +120,9 @@ public class ArithExpression extends AbstractBinaryExpression
             topT = AkType.NULL;
         else
             topT = top;
+        this.top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
+    
     @Override
     protected void describe(StringBuilder sb)
     {
