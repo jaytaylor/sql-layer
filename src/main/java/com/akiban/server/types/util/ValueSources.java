@@ -234,7 +234,7 @@ public class ValueSources
             
         });
         
-        // 10) {varhcar, date/tme}
+        // 10) [varhcar, date/tme]
         Comparator<ValueSource> c10 = new Comparator<ValueSource>()
         {
 
@@ -249,8 +249,7 @@ public class ValueSources
                             Extractors.getLongExtractor(right.getConversionType()).getLong(right));
                 }
                 catch (InvalidCharToNumException e)
-                {
-                    
+                {   
                 }
                 
                 // attempt#2
@@ -279,43 +278,45 @@ public class ValueSources
     /**
      * Compare two instances of ValueSource.
      * Equality is defined as:
-     *      - Two valuesources are of the same type
-     *          => compare them in the "natural way"
      *        
      *        TODO:
-     *          - when extra attributes (ie., timezone) becomes available
+     *          - when extra attributes [ie., timezone] becomes available
      *              , take that into account when comparing two dates/times
      *              For instance '12:00:00' in GMT should be equals to '19:00:00' in GMT +7
      * 
      *      - Two valuesources have different types:
-     *          1) {Both are nulls} 
-     *              => return false; (two nulls are equals iff they have the same type)
+     *          0] (Both have the same type)
+     *              => do "regular comparison"
      * 
-     *          2) {numeric, (boolean | date/time | intervals | varchar)}
+     *          1] (Both are nulls) 
+     *              => return false; 
+     * 
+     *          2] (numeric, [boolean | date/time | intervals | varchar])
      *              => cast the non-numeric to DOUBLE and compare the two values
      *
-     *          3) {boolean, (date/time | interval)}
+     *          3] (boolean, [date/time | interval])
      *              => cast them all to LONG and do the comparison
      * 
-     *          4) {interval_month, interval_millis}
-     *              => Soln #1: Throw incompatible exception
-     *              => Soln #1: Turn interval_month to interval_millis by multilying it with
-     *                          some fixed factors (ie., 1 month = 4 weeks = .... = n MILLIS_SEC)
-     *              => Soln #3: Compares the raw long value (not a good choice)
+     *          4] (interval_month, interval_millis)
+     *              => <b>Soln #1</b>: Turn interval_month to interval_millis by multilying it with
+     *                                 some fixed factors [ie., 1 month = 4 weeks = .... = n MILLIS_SEC]
+     *              // to consider:
+     *              => Soln #2: Throw incompatible exception 
+     *              => Soln #3: Compares the raw long value [not a good choice]
      * 
-     *          5) {interval_millis, time}
+     *          5] (interval_millis, time)
      *              => Assume "TIME" means duration. Thus turn the value into millis_sec
      * 
-     *          6) {interval_month, time}
+     *          6] (interval_month, time)
      *              => depends on the choice for comparison btw the 2 intervals
      * 
-     *          7) {intervals, date/time}
+     *          7] (intervals, date/time)
      *              => Throw incompatible Exception
      * 
-     *          8) {varchar, (boolean | interval_month)}
-     *              => cast both to DOUBLE (to avoid losing precision) then do comparison
+     *          8] (varchar, [boolean | interval_month])
+     *              => cast both to DOUBLE [to avoid losing precision] then do comparison
      * 
-     *          9) {varchar, interval_millis}
+     *          9] (varchar, interval_millis)
      *              => attempt#1: cast varchar to DOUBLE and do comparison
      *                       if cast failed, goto attempt#2
      *                       else return return rst
@@ -323,7 +324,7 @@ public class ValueSources
      *                       if cast failed, return false;
      *                       else return rst;
      * 
-     *          10) {varhcar, date/tme}
+     *          10] (varhcar, date/tme)
      *              => attempt #1: cast varchar to DOUBLE and do comparison
      *                       if cast failed, go to attempt#2
      *                       else return rst
@@ -332,7 +333,7 @@ public class ValueSources
      *                       if cast failed, return false;
      *                       else return rst
      * 
-     *          11) {date, time}
+     *          11] (date, time)
      *              => date/time are not compatible
      * 
      *          + otherwise, return false
@@ -395,8 +396,8 @@ public class ValueSources
                             return ext.getObject(l).compareTo(ext.getObject(r));
             case NULL:      return 1;
             default:        return 0;
-        }
     }
+}
     
     // for testing
     static Comparator<ValueSource> get (AkType left, AkType right)
