@@ -298,11 +298,8 @@ public class ValueSources
      *              => cast them all to LONG and do the comparison
      * 
      *          4] (interval_month, interval_millis)
-     *              => <b>Soln #1</b>: Turn interval_month to interval_millis by multilying it with
-     *                                 some fixed factors [ie., 1 month = 4 weeks = .... = n MILLIS_SEC]
-     *              // to consider:
-     *              => Soln #2: Throw incompatible exception 
-     *              => Soln #3: Compares the raw long value [not a good choice]
+     *              => Soln #1: Throw incompatible exception 
+     *              => Soln #2: Compares the raw long value [not a good choice]
      * 
      *          5] (interval_millis, time)
      *              => Assume "TIME" means duration. Thus turn the value into millis_sec
@@ -336,7 +333,7 @@ public class ValueSources
      *          11] (date, time)
      *              => date/time are not compatible
      * 
-     *          + otherwise, return false
+     *          12] otherwise, return false
      * 
      * @param v1
      * @param v2
