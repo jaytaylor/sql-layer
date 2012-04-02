@@ -324,7 +324,7 @@ public class ArithExpression extends AbstractBinaryExpression
         protected double rawDouble()
         {
             return op.evaluate(Extractors.getDoubleExtractor().getDouble(left),
-                    Extractors.getDoubleExtractor().getDouble(right));
+                    Extractors.getDoubleExtractor().getDouble(right), top);
         }  
 
         @Override
