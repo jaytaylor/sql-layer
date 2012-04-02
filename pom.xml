@@ -93,7 +93,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit-core</artifactId>
-            <version>3.0.6-SNAPSHOT</version>
+            <version>3.0.7-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
@@ -350,13 +350,6 @@
             <version>1.10.b1</version>
             <configuration>
                 <header>src/etc/header.txt</header>
-                <headerSections>
-                    <headerSection>
-                        <key>__YEAR_SECTION__</key>
-                        <defaultValue>2012</defaultValue>
-                        <ensureMatch>2011|2012|2011-2012</ensureMatch>
-                    </headerSection>
-                </headerSections>
                 <strictCheck>true</strictCheck>
                 <failIfMissing>true</failIfMissing>
                 <excludes>
@@ -385,11 +378,12 @@
                     <exclude>conf/config/jvm.options</exclude>
                     <exclude>packages-common/jvm.options</exclude>
                     <exclude>doc/release_notes.txt</exclude>
+                    <exclude>src/main/antlr3/com/akiban/server/service/memcache/hapi.g</exclude>
                     <!-- Files requiring a specific format (packaging control, test output, etc) -->
                     <exclude>debian/*</exclude>
                     <exclude>redhat/*</exclude>
                     <exclude>windows/**</exclude>
-                    <exclude>LICENSE.txt</exclude> 
+                    <exclude>LICENSE.txt</exclude>
                     <exclude>src/main/resources/version/akserver_version</exclude> 
                     <exclude>src/test/resources/com/akiban/**/README*</exclude> 
                     <exclude>src/test/resources/com/akiban/**/*.properties</exclude>

@@ -6,6 +6,8 @@ multiindex-multi-branch: Intersection on two branches.
 
 multiindex-multi-duplicate: Intersection of two of the same index.
 
+multiindex-multi-ordered: With ORDER BY.
+
 single-table-1: covering index
 
 single-table-2: group scan required
