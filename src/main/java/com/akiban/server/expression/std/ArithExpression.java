@@ -132,7 +132,7 @@ public class ArithExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(op, this,childrenEvaluations());
+        return new InnerEvaluation(op, this,childrenEvaluations(), top);
     }
 
     /**
@@ -270,17 +270,19 @@ public class ArithExpression extends AbstractBinaryExpression
         {  
             if (valueSource.getConversionType() == AkType.NULL)
                 return NullValueSource.only();
-            valueSource.setOperands(left(), right());
+            valueSource.setOperands(left(), right(), top);
             return valueSource;
         }
         
         protected InnerEvaluation (ArithOp op, ArithExpression ex,
-                List<? extends ExpressionEvaluation> children)
+                List<? extends ExpressionEvaluation> children, ExpressionType t)
         {
             super(children);
             valueSource = ex.getValueSource(op);
+            top = t;
         }
         
+        private final ExpressionType top;
         protected final InnerValueSource valueSource;
     }
 
@@ -290,18 +292,20 @@ public class ArithExpression extends AbstractBinaryExpression
        protected ValueSource left;
        protected ValueSource right;
        private AkType topT;
+       private ExpressionType top;
        public InnerValueSource (ArithOp op,  AkType topT )
        {
            this.op = op;
            this.topT = topT;
        }
        
-       public void setOperands (ValueSource left, ValueSource right)
+       public void setOperands (ValueSource left, ValueSource right, ExpressionType t)
        {
            ArgumentValidation.notNull("Left", left);
            ArgumentValidation.notNull("Right", right);
            this.left = left;
            this.right = right;
+           top = t;
        }
        
        @Override
@@ -317,7 +321,8 @@ public class ArithExpression extends AbstractBinaryExpression
                     Extractors.getLongExtractor(
                         (left.getConversionType() == AkType.VARCHAR ? topT : left.getConversionType())).getLong(left),
                     Extractors.getLongExtractor(
-                        (right.getConversionType() == AkType.VARCHAR ? topT : right.getConversionType())).getLong(right));
+                        (right.getConversionType() == AkType.VARCHAR ? topT : right.getConversionType())).getLong(right),
+                    top);
         }
 
         @Override
@@ -331,14 +336,14 @@ public class ArithExpression extends AbstractBinaryExpression
         protected BigInteger rawBigInteger() 
         {                   
            return op.evaluate(Extractors.getUBigIntExtractor().getObject(left),
-                   Extractors.getUBigIntExtractor().getObject(right));
+                   Extractors.getUBigIntExtractor().getObject(right), top);
         }
 
         @Override
         protected BigDecimal rawDecimal() 
         {
             return op.evaluate(Extractors.getDecimalExtractor().getObject(left),
-                    Extractors.getDecimalExtractor().getObject(right));
+                    Extractors.getDecimalExtractor().getObject(right), top);
         }
 
         @Override
@@ -381,7 +386,7 @@ public class ArithExpression extends AbstractBinaryExpression
             long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
             long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
             return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos)). 
-                    unixToStdLong(op.evaluate(leftUnix, rightUnix));
+                    unixToStdLong(op.evaluate(leftUnix, rightUnix, top));
         }
         
      
