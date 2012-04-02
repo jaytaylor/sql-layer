@@ -4,6 +4,8 @@ case-2: CASE only partially worked out.
 
 counts: COUNT(NOT NULL column) turns into COUNT(*) but not NULL.
 
+current-date-time: Current date / time is not a constant.
+
 extra-true: true conditions are ignored in WHERE clause.
 
 failing-condition: false conditions kill the whole SELECT.
