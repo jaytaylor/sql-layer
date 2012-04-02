@@ -93,7 +93,13 @@ public class LogExpression extends AbstractCompositeExpression
         public String toString ()
         {
             return "LOG";
-        }        
+        }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
     
     private static class InnerComposer extends UnaryComposer

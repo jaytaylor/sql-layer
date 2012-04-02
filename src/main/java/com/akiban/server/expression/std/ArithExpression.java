@@ -30,6 +30,7 @@ import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -79,6 +80,8 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.LONG, 9);
         SUPPORTED_TYPES.put(AkType.INT, 11);
     }
+    
+    
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
     {

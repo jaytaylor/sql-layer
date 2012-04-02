@@ -85,6 +85,12 @@ public class LocateExpression extends AbstractCompositeExpression
 
             return ExpressionTypes.LONG;
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
         
     };
     

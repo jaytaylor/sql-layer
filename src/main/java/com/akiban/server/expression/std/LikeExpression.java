@@ -86,6 +86,12 @@ public class LikeExpression extends AbstractCompositeExpression
 
             return ExpressionTypes.BOOL;
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation

@@ -61,6 +61,12 @@ public class SubStringExpression extends AbstractCompositeExpression
                 argumentTypes.setType(i, AkType.LONG);
             return  argumentTypes.get(0);
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
     
     @Scalar("substr")

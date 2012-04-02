@@ -336,6 +336,18 @@ public class ArithOps
         }
 
         @Override
+        public Expression compose(List<? extends Expression> args, List<ExpressionType> typesList)
+        {
+            switch(args.size())
+            {
+                case 2:   return new ArithExpression(args.get(0), this, args.get(1), ExpressionType topExpType);
+                case 1:   if (ArithExpression.isNumeric(args.get(0).valueType()))      // INT has the lowest precedence
+                              return new ArithExpression(ZERO_INT, this, args.get(0), ExpressionType topExpType); // as far as ArithExp concerns
+                default:  throw new WrongExpressionArityException(2, args.size());
+            }
+        }
+        
+        @Override
         public String toString ()
         {
             return (name + "");

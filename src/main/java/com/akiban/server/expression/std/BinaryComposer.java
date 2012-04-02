@@ -30,12 +30,31 @@ import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 
+import com.akiban.server.expression.ExpressionType;
 import java.util.List;
 
 abstract class BinaryComposer implements ExpressionComposer {
 
     protected abstract Expression compose(Expression first, Expression second);
 
+    // Most expessions don't need access to types list
+    // Those that do need to override this
+    protected Expression compose (List<? extends Expression> arguments,
+                                ExpressionType first, ExpressionType second, ExpressionType top)
+    {
+        throw new UnsupportedOperationException("not supported");
+    }
+    
+    @Override
+    public Expression compose (List<? extends Expression> arguments, List<ExpressionType> typesList)
+    {
+        if (arguments.size() != 2)
+            throw new WrongExpressionArityException(2, arguments.size());
+        if (arguments.size() + 1 != typesList.size())
+            throw new IllegalArgumentException("unexpected argc");
+        return compose(arguments, typesList.get(0), typesList.get(1), typesList.get(2));
+    }
+    
     @Override
     public Expression compose(List<? extends Expression> arguments) {
         if (arguments.size() != 2)
