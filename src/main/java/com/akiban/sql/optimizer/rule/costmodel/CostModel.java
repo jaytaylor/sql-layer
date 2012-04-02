@@ -90,9 +90,9 @@ public class CostModel
         return SORT_SETUP + SORT_PER_ROW * nRows * (mixedMode ? 1 : SORT_MIXED_MODE_FACTOR);
     }
 
-    public double sortWithLimit(int limit, int sortFields)
+    public double sortWithLimit(int nRows, int sortFields)
     {
-        return limit * SORT_LIMIT_PER_ROW * (1 + sortFields * SORT_LIMIT_PER_FIELD_FACTOR);
+        return nRows * SORT_LIMIT_PER_ROW * (1 + sortFields * SORT_LIMIT_PER_FIELD_FACTOR);
     }
 
     public double select(int nRows)
