@@ -4,6 +4,8 @@ choose-condition-2: wide and narrow
 
 covering-or-group-scan: covering index or group scan?
 
+distinct-sorted: DISTINCT + ORDER BY from index.
+
 group-equals: two equals on group index
 
 in-index: IN that can use index
