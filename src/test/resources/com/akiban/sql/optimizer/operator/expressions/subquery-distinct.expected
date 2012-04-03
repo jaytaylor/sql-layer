@@ -1,0 +1,3 @@
+PhysicalSelect[cid:int[INT], _SQL_COL_1:INTEGER]
+  project([Field(0), VALUE(Sort_Tree(project([Arith(+ -> Field(0), Literal(1) -> LONG)]), SUPPRESS_DUPLICATES))])
+    IndexScan_Default(Index(user.customers.PRIMARY[IndexColumn(cid)]) (,))
