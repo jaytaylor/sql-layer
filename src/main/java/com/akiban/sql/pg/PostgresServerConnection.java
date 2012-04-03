@@ -176,6 +176,7 @@ public class PostgresServerConnection extends ServerSessionBase
                         continue;
                     ignoreUntilSync = false;
                 }
+                long startNsec = System.nanoTime();
                 try {
                     sessionTracer.beginEvent(EventTypes.PROCESS);
                     switch (type) {
@@ -227,6 +228,10 @@ public class PostgresServerConnection extends ServerSessionBase
                 }
                 finally {
                     sessionTracer.endEvent();
+                    long stopNsec = System.nanoTime();
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Executed {}: {} usec", type, (stopNsec - startNsec) / 1000);
+                    }
                 }
                 PROCESS_MESSAGE.out();
             }
