@@ -181,7 +181,7 @@ public class ArithOps
     public static final ArithOpComposer DIV = new ArithOpComposer('d')
     {
        @Override
-       public long evaluate (long one, long two)
+       public long evaluate (long one, long two, ExpressionType exp)
        {
            if (two == 0)
                 throw new DivisionByZeroException();
@@ -189,7 +189,7 @@ public class ArithOps
        }
        
        @Override
-       public double evaluate (double one, double two) 
+       public double evaluate (double one, double two, ExpressionType exp) 
        {
            if (two == 0)
                 throw new DivisionByZeroException();
@@ -197,7 +197,7 @@ public class ArithOps
        }
        
        @Override
-       public BigDecimal evaluate (BigDecimal one, BigDecimal two)
+       public BigDecimal evaluate (BigDecimal one, BigDecimal two, ExpressionType exp)
        {
            if (two.equals(BigDecimal.ZERO))
                 throw new DivisionByZeroException();
@@ -205,7 +205,7 @@ public class ArithOps
        }
        
        @Override
-       public BigInteger evaluate (BigInteger one, BigInteger two)
+       public BigInteger evaluate (BigInteger one, BigInteger two, ExpressionType exp)
        {
            if (two.equals(BigInteger.ZERO))
                 throw new DivisionByZeroException();
@@ -393,12 +393,12 @@ public class ArithOps
             
             int scale = first.getScale() + second.getScale();
             int pre = first.getPrecision() + second.getPrecision();
-            
+
             switch(name)
             {
                 case '/':  // in case we have 2 LONG/INT/BIGINT values dividing each other, 
-                  scale = Math.max(scale, 9); //sum of their precision isn't gonna be good enough
-                  pre = Math.max(pre, pre - scale + 9);
+                  scale = Math.max(scale, ArithExpression.DEFAULT_SCALE); //sum of their precision isn't gonna be good enough
+                  pre = Math.max(pre, pre - first.getScale() - second.getScale() + ArithExpression.DEFAULT_SCALE);
                   break;
                 case 'd':
                   scale = 0;
