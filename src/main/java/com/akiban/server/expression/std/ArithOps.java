@@ -37,6 +37,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.math.RoundingMode;
 import java.util.List;
 
 public class ArithOps 
@@ -45,25 +46,25 @@ public class ArithOps
     public static final ArithOpComposer MULTIPLY = new ArithOpComposer('*')
     {
        @Override
-       public long evaluate (long one, long two)
+       public long evaluate (long one, long two, ExpressionType exp)
        {
            return one * two;
        }
        
        @Override
-       public double evaluate (double one, double two)
+       public double evaluate (double one, double two, ExpressionType exp)
        {
            return one * two;
        }
        
        @Override
-       public BigDecimal evaluate (BigDecimal one, BigDecimal two)
+       public BigDecimal evaluate (BigDecimal one, BigDecimal two, ExpressionType exp)
        {
            return one.multiply(two);
        }
        
        @Override
-       public BigInteger evaluate (BigInteger one, BigInteger two)
+       public BigInteger evaluate (BigInteger one, BigInteger two, ExpressionType exp)
        {
            return one.multiply(two);
        }
@@ -82,25 +83,25 @@ public class ArithOps
     public static final ArithOpComposer MINUS = new ArithOpComposer('-')
     {
        @Override
-       public long evaluate (long one, long two)
+       public long evaluate (long one, long two, ExpressionType exp)
        {
            return one - two;
        }
        
        @Override
-       public double evaluate (double one, double two)
+       public double evaluate (double one, double two, ExpressionType exp)
        {
            return one - two;
        }
        
        @Override
-       public BigDecimal evaluate (BigDecimal one, BigDecimal two)
+       public BigDecimal evaluate (BigDecimal one, BigDecimal two, ExpressionType exp)
        {
            return one.subtract(two);
        }
        
        @Override
-       public BigInteger evaluate (BigInteger one, BigInteger two)
+       public BigInteger evaluate (BigInteger one, BigInteger two, ExpressionType exp)
        {
            return one.subtract(two);
        }        
@@ -131,7 +132,7 @@ public class ArithOps
     public static final ArithOpComposer MOD = new ArithOpComposer ('%')
     {
         @Override
-        public long evaluate(long one, long two)
+        public long evaluate(long one, long two, ExpressionType exp)
         {
             if (two == 0)
                 throw new DivisionByZeroException();
@@ -139,7 +140,7 @@ public class ArithOps
         }
 
         @Override
-        public double evaluate(double one, double two)
+        public double evaluate(double one, double two, ExpressionType exp)
         {
             if (two == 0)
                 throw new DivisionByZeroException();
@@ -147,7 +148,7 @@ public class ArithOps
         }
 
         @Override
-        public BigDecimal evaluate(BigDecimal one, BigDecimal two)
+        public BigDecimal evaluate(BigDecimal one, BigDecimal two, ExpressionType exp)
         {
             if (two.equals(BigDecimal.ZERO))
                 throw new DivisionByZeroException();
@@ -155,7 +156,7 @@ public class ArithOps
         }
 
         @Override
-        public BigInteger evaluate(BigInteger one, BigInteger two)
+        public BigInteger evaluate(BigInteger one, BigInteger two, ExpressionType exp)
         {
             if (two.equals(BigInteger.ZERO))
                 throw new DivisionByZeroException();
@@ -173,7 +174,7 @@ public class ArithOps
     public static final ArithOpComposer DIVIDE = new ArithOpComposer('/')
     {
        @Override
-       public long evaluate (long one, long two)
+       public long evaluate (long one, long two, ExpressionType exp)
        {
            if (two == 0)
                 throw new DivisionByZeroException();
@@ -181,7 +182,7 @@ public class ArithOps
        }
        
        @Override
-       public double evaluate (double one, double two) 
+       public double evaluate (double one, double two, ExpressionType exp) 
        {
            if (two == 0)
                 throw new DivisionByZeroException();
@@ -189,15 +190,15 @@ public class ArithOps
        }
        
        @Override
-       public BigDecimal evaluate (BigDecimal one, BigDecimal two)
+       public BigDecimal evaluate (BigDecimal one, BigDecimal two, ExpressionType exp)
        {
            if (two.equals(BigDecimal.ZERO))
                 throw new DivisionByZeroException();
-           return one.divide(two);
+           return one.divide(two, exp.getScale(), RoundingMode.HALF_UP);
        }
        
        @Override
-       public BigInteger evaluate (BigInteger one, BigInteger two)
+       public BigInteger evaluate (BigInteger one, BigInteger two, ExpressionType exp)
        {
            if (two.equals(BigInteger.ZERO))
                 throw new DivisionByZeroException();
@@ -221,25 +222,25 @@ public class ArithOps
     {
         
        @Override
-       public long evaluate (long one, long two)
+       public long evaluate (long one, long two, ExpressionType exp)
        {  
            return one + two;
        }
        
        @Override
-       public double evaluate (double one, double two)
+       public double evaluate (double one, double two, ExpressionType exp)
        {
            return one + two;
        }
        
        @Override
-       public BigDecimal evaluate (BigDecimal one, BigDecimal two)
+       public BigDecimal evaluate (BigDecimal one, BigDecimal two, ExpressionType exp)
        {
            return one.add(two);
        }
        
        @Override
-       public BigInteger evaluate (BigInteger one, BigInteger two)
+       public BigInteger evaluate (BigInteger one, BigInteger two, ExpressionType exp)
        {
            return one.add(two);                                       
        }  
@@ -335,6 +336,18 @@ public class ArithOps
             return ExpressionTypes.newType(top, pre, scale);
         }
 
+        @Override
+        public Expression compose(List<? extends Expression> args, List<ExpressionType> typesList)
+        {
+            switch(args.size())
+            {
+                case 2:   return new ArithExpression(args.get(0), this, args.get(1), typesList.get(2));
+                case 1:   if (ArithExpression.isNumeric(args.get(0).valueType()))      // INT has the lowest precedence
+                              return new ArithExpression(ZERO_INT, this, args.get(0), typesList.get(1)); // as far as ArithExp concerns
+                default:  throw new WrongExpressionArityException(2, args.size());
+            }
+        }
+        
         @Override
         public String toString ()
         {
