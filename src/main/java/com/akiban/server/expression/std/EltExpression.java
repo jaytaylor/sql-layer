@@ -70,6 +70,12 @@ public class EltExpression extends AbstractCompositeExpression
         {
             return new EltExpression(arguments);
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
         
     };
     

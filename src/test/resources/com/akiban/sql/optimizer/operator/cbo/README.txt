@@ -1,5 +1,7 @@
 duplicate-child: same child table twice
 
+index-value-columns: Condition on hkey column.
+
 multiindex-single-branch: Intersection on single branch.
 
 multiindex-multi-branch: Intersection on two branches.

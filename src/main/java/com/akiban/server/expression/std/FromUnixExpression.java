@@ -68,6 +68,12 @@ public class FromUnixExpression extends AbstractCompositeExpression
                 default: throw new WrongExpressionArityException(1, s);
             }
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
 
     @Override

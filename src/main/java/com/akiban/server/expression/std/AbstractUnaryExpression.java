@@ -28,7 +28,9 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
+import java.util.List;
 
 public abstract class AbstractUnaryExpression implements Expression {
 
@@ -53,6 +55,7 @@ public abstract class AbstractUnaryExpression implements Expression {
     public AkType valueType() {
         return type;
     }
+
 
     // for use by subclasses
 

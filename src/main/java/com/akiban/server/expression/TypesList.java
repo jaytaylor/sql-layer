@@ -36,5 +36,6 @@ public abstract class TypesList extends ArrayList<ExpressionType>
     {
         super(size);
     }
+    
     abstract public void setType(int index, AkType newType) throws StandardException;
 }
