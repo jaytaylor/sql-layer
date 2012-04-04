@@ -326,7 +326,26 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (queryGoal.getOrdering() != null) {
             int idx = nequals;
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
-                ExpressionNode targetExpression = getTargetExpression(targetColumn);
+                // Get the expression by which this is ordering, recognizing the
+                // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
+                ExpressionNode targetExpression = targetColumn.getExpression();
+                if (targetExpression.isColumn()) {
+                    ColumnExpression column = (ColumnExpression)targetExpression;
+                    ColumnSource table = column.getTable();
+                    if (table == queryGoal.getGrouping()) {
+                        targetExpression = queryGoal.getGrouping()
+                            .getField(column.getPosition());
+                    }
+                    else if (table instanceof Project) {
+                        // Cf. ASTStatementLoader.sortsForDistinct().
+                        Project project = (Project)table;
+                        if ((project.getOutput() == queryGoal.getOrdering()) &&
+                            (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
+                            targetExpression = project.getFields()
+                                .get(column.getPosition());
+                        }
+                    }
+                }
                 OrderByExpression indexColumn = null;
                 if (idx < indexOrdering.size()) {
                     indexColumn = indexOrdering.get(idx);
@@ -424,28 +443,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 return IndexScan.OrderEffectiveness.SORTED;
         }
         return result;
-    }
-
-    // Get the expression by which this is ordering, recognizing the
-    // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
-    protected ExpressionNode getTargetExpression(OrderByExpression targetColumn) {
-        ExpressionNode targetExpression = targetColumn.getExpression();
-        if (targetExpression.isColumn()) {
-            ColumnExpression column = (ColumnExpression)targetExpression;
-            ColumnSource table = column.getTable();
-            if (table == queryGoal.getGrouping()) {
-                return queryGoal.getGrouping().getField(column.getPosition());
-            }
-            else if (table instanceof Project) {
-                // Cf. ASTStatementLoader.sortsForDistinct().
-                Project project = (Project)table;
-                if ((project.getOutput() == queryGoal.getOrdering()) &&
-                    (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
-                    return project.getFields().get(column.getPosition());
-                }
-            }
-        }
-        return targetExpression;
     }
 
     // Does the column expression coming from the index match the ORDER BY target,
