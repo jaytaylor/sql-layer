@@ -121,6 +121,12 @@ public class TrigExpression extends AbstractCompositeExpression
                 argumentTypes.setType(i, AkType.DOUBLE);
             return ExpressionTypes.DOUBLE;
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation

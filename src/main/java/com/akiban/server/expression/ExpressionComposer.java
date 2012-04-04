@@ -58,4 +58,14 @@ public interface ExpressionComposer {
      * Otherwise, it can use one of the {@link com.akiban.server.types.extract.Extractors}.
      */
     Expression compose(List<? extends Expression> arguments);
+    
+    /**
+     * typesList.size() should be (arguments.size() + 1), where the last element 
+     * in typesList is the return type, and the rest is the arguments' type
+     * 
+     * @param arguments
+     * @param typesList: arguments' type AND the return type.
+     * @return 
+     */
+    Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList);
 }

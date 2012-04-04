@@ -30,6 +30,7 @@ import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
@@ -46,7 +47,8 @@ public class ArithExpression extends AbstractBinaryExpression
 {
     protected final ArithOp op;
     protected AkType topT;
-
+    protected ExpressionType top;
+    
     /**
      * SUPPORTED_TYPES: contains all types that are supported in ArithExpression.
      *
@@ -60,6 +62,9 @@ public class ArithExpression extends AbstractBinaryExpression
      */
     protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(10, 0.5f);
     private static final int HIGHEST_KEY;
+    protected static final int DEFAULT_PRECISION = 20; 
+    protected static final int DEFAULT_SCALE = 9;
+    
     static
     {
         // date/time types : key is even
@@ -79,6 +84,15 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.LONG, 9);
         SUPPORTED_TYPES.put(AkType.INT, 11);
     }
+    
+    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType topT)
+    {
+        super(getTopType(lhs.valueType(), rhs.valueType(), op), lhs, rhs);
+        this.op = op;
+        this.topT = super.valueType();
+        assert this.topT == topT.getType() : "mismatched top type";
+        top = topT;
+    }
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
     {
@@ -86,6 +100,7 @@ public class ArithExpression extends AbstractBinaryExpression
         
         this.op = op; 
         topT = super.valueType();
+        top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
 
     /**
@@ -105,7 +120,9 @@ public class ArithExpression extends AbstractBinaryExpression
             topT = AkType.NULL;
         else
             topT = top;
+        this.top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
+    
     @Override
     protected void describe(StringBuilder sb)
     {
@@ -115,7 +132,7 @@ public class ArithExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(op, this,childrenEvaluations());
+        return new InnerEvaluation(op, this,childrenEvaluations(), top);
     }
 
     /**
@@ -253,17 +270,19 @@ public class ArithExpression extends AbstractBinaryExpression
         {  
             if (valueSource.getConversionType() == AkType.NULL)
                 return NullValueSource.only();
-            valueSource.setOperands(left(), right());
+            valueSource.setOperands(left(), right(), top);
             return valueSource;
         }
         
         protected InnerEvaluation (ArithOp op, ArithExpression ex,
-                List<? extends ExpressionEvaluation> children)
+                List<? extends ExpressionEvaluation> children, ExpressionType t)
         {
             super(children);
             valueSource = ex.getValueSource(op);
+            top = t;
         }
         
+        private final ExpressionType top;
         protected final InnerValueSource valueSource;
     }
 
@@ -273,18 +292,20 @@ public class ArithExpression extends AbstractBinaryExpression
        protected ValueSource left;
        protected ValueSource right;
        private AkType topT;
+       private ExpressionType top;
        public InnerValueSource (ArithOp op,  AkType topT )
        {
            this.op = op;
            this.topT = topT;
        }
        
-       public void setOperands (ValueSource left, ValueSource right)
+       public void setOperands (ValueSource left, ValueSource right, ExpressionType t)
        {
            ArgumentValidation.notNull("Left", left);
            ArgumentValidation.notNull("Right", right);
            this.left = left;
            this.right = right;
+           top = t;
        }
        
        @Override
@@ -300,28 +321,29 @@ public class ArithExpression extends AbstractBinaryExpression
                     Extractors.getLongExtractor(
                         (left.getConversionType() == AkType.VARCHAR ? topT : left.getConversionType())).getLong(left),
                     Extractors.getLongExtractor(
-                        (right.getConversionType() == AkType.VARCHAR ? topT : right.getConversionType())).getLong(right));
+                        (right.getConversionType() == AkType.VARCHAR ? topT : right.getConversionType())).getLong(right),
+                    top);
         }
 
         @Override
         protected double rawDouble()
         {
             return op.evaluate(Extractors.getDoubleExtractor().getDouble(left),
-                    Extractors.getDoubleExtractor().getDouble(right));
+                    Extractors.getDoubleExtractor().getDouble(right), top);
         }  
 
         @Override
         protected BigInteger rawBigInteger() 
         {                   
            return op.evaluate(Extractors.getUBigIntExtractor().getObject(left),
-                   Extractors.getUBigIntExtractor().getObject(right));
+                   Extractors.getUBigIntExtractor().getObject(right), top);
         }
 
         @Override
         protected BigDecimal rawDecimal() 
         {
             return op.evaluate(Extractors.getDecimalExtractor().getObject(left),
-                    Extractors.getDecimalExtractor().getObject(right));
+                    Extractors.getDecimalExtractor().getObject(right), top);
         }
 
         @Override
@@ -364,7 +386,7 @@ public class ArithExpression extends AbstractBinaryExpression
             long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
             long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
             return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos)). 
-                    unixToStdLong(op.evaluate(leftUnix, rightUnix));
+                    unixToStdLong(op.evaluate(leftUnix, rightUnix, top));
         }
         
      

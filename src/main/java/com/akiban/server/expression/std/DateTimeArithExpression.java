@@ -285,6 +285,6 @@ public class DateTimeArithExpression extends ArithExpression
     @Override
     public ExpressionEvaluation evaluation ()
     {
-        return new InnerEvaluation(op, this, childrenEvaluations());
+        return new InnerEvaluation(op, this, childrenEvaluations(), top);
     }    
 }
