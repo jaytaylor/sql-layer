@@ -67,11 +67,43 @@ public class FieldFunctionExpressionTest
         param(pb, 4L, lit(3.6), lit(3.0), lit(3.59), lit(3.7), lit(3.6));
         param(pb, 4L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit("00.1"));
         param(pb, 0L, lit(true), lit(false));
+        param(pb, 2L, new LiteralExpression(DATETIME, 20091107123010L),
+                      new LiteralExpression(DATETIME, 20091107123009L),
+                      new LiteralExpression(DATETIME, 20091107123010L),
+                      new LiteralExpression(DATETIME, 20091107123011L));
+        
+        param(pb, 0L, new LiteralExpression(TIME, 123010L),
+                      new LiteralExpression(TIME, 123011L));
         
         // heterogeneous types
         param(pb, 2L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit(true));
         param(pb, 0L, lit("00.1"), lit("666"), lit("0.11"), lit("777"), lit(true));
         param(pb, 2L, lit("12:30:10"), lit(123010L), new LiteralExpression(TIME, 123010L));
+        param(pb, 3L, new LiteralExpression(TIME, 123010L), 
+                      lit(12345L),
+                      lit("123010.1"),
+                      lit("123010"));
+        param(pb, 2L, new LiteralExpression(INTERVAL_MILLIS, 1000L),
+                      lit(1000.2),
+                      lit("00:00:01"));
+        param(pb, 0L, new LiteralExpression(INTERVAL_MILLIS, 1000L),
+                      lit(1000.2),
+                      lit("00:00:02"));
+        param(pb, 2L, new LiteralExpression(INTERVAL_MILLIS, 1000L),
+                      lit(1000.2),
+                      lit(1000L));
+        
+        param(pb, 1L, new LiteralExpression(DATETIME, 19910510073010L),
+                      lit ("19910510073010"));
+        
+        param(pb, 1L, new LiteralExpression(DATETIME, 19910510073010L),
+                      lit("1991-05-10 07:30:10"));
+        
+        // this returns 0L
+        // but probably should returns 1L
+        param(pb, 0L, lit("1991-05-10 07:30:10"),
+                      lit("19910510073010"),
+                      lit(1L));
         
         return pb.asList();
     }
