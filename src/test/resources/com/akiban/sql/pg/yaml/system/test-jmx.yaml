@@ -9,6 +9,7 @@
 ---
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
+- split_result: true
 - params: ['test']
 - output: [
 ['Index: idx1'],
@@ -50,6 +51,7 @@
 ---
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
+- split_result: true
 - params: ['test']
 - output: [
 ['Index: idx1'],
@@ -120,7 +122,7 @@
 ---
 - JMX: com.akiban:type=AKSERVER
 - get: VersionString
-- output: [[!re '.*SNAPSHOT.*']]
+- output: [[!dc dc]]
 ---
 - JMX: com.akiban:type=Configuration
 - set: QueryTimeoutSec
@@ -129,13 +131,4 @@
 - JMX: com.akiban:type=Configuration
 - get: QueryTimeoutSec
 - output: [['2']]
----
-- JMX: com.persistit:type=Persistit,class=IOMeter
-- set: LogFile
-- params: ['aa']
----
-- JMX: com.persistit:type=Persistit,class=IOMeter
-- get: LogFile
-- output: [['aa']]
-
 ...

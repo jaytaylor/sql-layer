@@ -1592,7 +1592,9 @@ class YamlTester {
                 } else if ("get".equals(attribute)) {
                     get = String.valueOf(attributeValue).trim();
                 } else if ("output".equals(attribute)) {
-                    parseOutput(attributeValue); 
+                    parseOutput(attributeValue);
+                } else if ("split_result".equals(attribute)) {
+                    // skip
                 } else {
                     fail("The '" + attribute + "' attribute name was not"
                             + " recognized");
@@ -1614,6 +1616,7 @@ class YamlTester {
 
         private void parseOutput(Object value) {
             if (value == null) {
+                output = null;
                 return;
             }
             assertNull("The output attribute must not appear more than once",
@@ -1629,23 +1632,23 @@ class YamlTester {
                 if (method != null) {
                     result = conn.makeBeanCall("localhost", "8082", objectName, 
                             method, params, "method");
-                    if (DEBUG) {
-                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+method+")");
-                        System.out.println(result);
-                    }
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+method+")");
+//                        System.out.println(result);
+//                    }
                 }
                 if (set != null) {
                     conn.makeBeanCall("localhost", "8082", objectName, set, params, "set");
-                    if (DEBUG) {
-                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+set+")");
-                    }
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+set+")");
+//                    }
                 }
                 if (get != null) {
                     result = conn.makeBeanCall("localhost", "8082", objectName, get, params, "get");
-                    if (DEBUG) {
-                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+get+")");
-                        System.out.println(result);
-                    }
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+get+")");
+//                        System.out.println(result);
+//                    }
 
                 }
                 
