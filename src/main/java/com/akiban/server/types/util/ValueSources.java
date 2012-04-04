@@ -398,7 +398,7 @@ public class ValueSources
             case TIMESTAMP:
             case YEAR:      LongExtractor ex = Extractors.getLongExtractor(l.getConversionType());
                             return (int)(ex.getLong(l) - ex.getLong(r));
-            case BOOL:      return l.getBool() ^ r.getBool() ? 0 : 1;
+            case BOOL:      return l.getBool() ^ r.getBool() ? 1 : 0;
             case VARCHAR:
             case TEXT:
                             ObjectExtractor<String> ext = Extractors.getStringExtractor();

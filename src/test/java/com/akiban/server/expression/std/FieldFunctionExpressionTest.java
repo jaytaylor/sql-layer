@@ -63,13 +63,15 @@ public class FieldFunctionExpressionTest
         ParameterizationBuilder pb = new ParameterizationBuilder();
         
         // easy cases: all args have the same type
-//        param(pb, 0L, lit(2L), lit(1L));
-//        param(pb, 4L, lit(3.6), lit(3.0), lit(3.59), lit(3.7), lit(3.6));
-//        param(pb, 4L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit("00.1"));
+        param(pb, 0L, lit(2L), lit(1L));
+        param(pb, 4L, lit(3.6), lit(3.0), lit(3.59), lit(3.7), lit(3.6));
+        param(pb, 4L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit("00.1"));
         param(pb, 0L, lit(true), lit(false));
         
-        // hexterogeneous types
-//        param(pb, 2L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit(true));
+        // heterogeneous types
+        param(pb, 2L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit(true));
+        param(pb, 0L, lit("00.1"), lit("666"), lit("0.11"), lit("777"), lit(true));
+        param(pb, 2L, lit("12:30:10"), lit(123010L), new LiteralExpression(TIME, 123010L));
         
         return pb.asList();
     }
