@@ -202,10 +202,10 @@ final class UnionAll_Default extends Operator {
         @Override
         public void close() {
             inputOperatorsIndex = -1;
-            if (currentCursor != null)
+            if (currentCursor != null) {
                 currentCursor.close();
-            else
                 currentCursor = null;
+            }
             currentInputRowType = null;
             rowHolder.release();
         }
