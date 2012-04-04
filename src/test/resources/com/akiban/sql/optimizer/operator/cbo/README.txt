@@ -1,10 +1,14 @@
 duplicate-child: same child table twice
 
+index-value-columns: Condition on hkey column.
+
 multiindex-single-branch: Intersection on single branch.
 
 multiindex-multi-branch: Intersection on two branches.
 
 multiindex-multi-duplicate: Intersection of two of the same index.
+
+multiindex-multi-ordered: With ORDER BY.
 
 single-table-1: covering index
 

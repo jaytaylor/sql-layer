@@ -1,0 +1,314 @@
+Index: idx_a_orderby
+RowCount: 16777215
+SampledCount: 16777215
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [0]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 4
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 8
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 16
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 32
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 64
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 128
+    key: [7]
+    lt: 0
+  - distinct: 0
+    eq: 256
+    key: [8]
+    lt: 0
+  - distinct: 0
+    eq: 512
+    key: [9]
+    lt: 0
+  - distinct: 0
+    eq: 1024
+    key: [10]
+    lt: 0
+  - distinct: 0
+    eq: 2048
+    key: [11]
+    lt: 0
+  - distinct: 0
+    eq: 4096
+    key: [12]
+    lt: 0
+  - distinct: 0
+    eq: 8192
+    key: [13]
+    lt: 0
+  - distinct: 0
+    eq: 16384
+    key: [14]
+    lt: 0
+  - distinct: 0
+    eq: 32768
+    key: [15]
+    lt: 0
+  - distinct: 0
+    eq: 65536
+    key: [16]
+    lt: 0
+  - distinct: 0
+    eq: 131072
+    key: [17]
+    lt: 0
+  - distinct: 0
+    eq: 262144
+    key: [18]
+    lt: 0
+  - distinct: 0
+    eq: 524288
+    key: [19]
+    lt: 0
+  - distinct: 0
+    eq: 1048576
+    key: [20]
+    lt: 0
+  - distinct: 0
+    eq: 2097152
+    key: [21]
+    lt: 0
+  - distinct: 0
+    eq: 4194304
+    key: [22]
+    lt: 0
+  - distinct: 0
+    eq: 8388608
+    key: [23]
+    lt: 0
+Table: t
+Timestamp: 2012-01-18T00:24:08.679Z
+---
+Index: idx_b
+RowCount: 16777215
+SampledCount: 16777215
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [0]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 4
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 8
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 16
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 32
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 64
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 128
+    key: [7]
+    lt: 0
+  - distinct: 0
+    eq: 256
+    key: [8]
+    lt: 0
+  - distinct: 0
+    eq: 512
+    key: [9]
+    lt: 0
+  - distinct: 0
+    eq: 1024
+    key: [10]
+    lt: 0
+  - distinct: 0
+    eq: 2048
+    key: [11]
+    lt: 0
+  - distinct: 0
+    eq: 4096
+    key: [12]
+    lt: 0
+  - distinct: 0
+    eq: 8192
+    key: [13]
+    lt: 0
+  - distinct: 0
+    eq: 16384
+    key: [14]
+    lt: 0
+  - distinct: 0
+    eq: 32768
+    key: [15]
+    lt: 0
+  - distinct: 0
+    eq: 65536
+    key: [16]
+    lt: 0
+  - distinct: 0
+    eq: 131072
+    key: [17]
+    lt: 0
+  - distinct: 0
+    eq: 262144
+    key: [18]
+    lt: 0
+  - distinct: 0
+    eq: 524288
+    key: [19]
+    lt: 0
+  - distinct: 0
+    eq: 1048576
+    key: [20]
+    lt: 0
+  - distinct: 0
+    eq: 2097152
+    key: [21]
+    lt: 0
+  - distinct: 0
+    eq: 4194304
+    key: [22]
+    lt: 0
+  - distinct: 0
+    eq: 8388608
+    key: [23]
+    lt: 0
+Table: t
+Timestamp: 2012-01-18T00:24:08.679Z
+---
+Index: idx_c
+RowCount: 16777215
+SampledCount: 16777215
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [0]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 4
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 8
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 16
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 32
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 64
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 128
+    key: [7]
+    lt: 0
+  - distinct: 0
+    eq: 256
+    key: [8]
+    lt: 0
+  - distinct: 0
+    eq: 512
+    key: [9]
+    lt: 0
+  - distinct: 0
+    eq: 1024
+    key: [10]
+    lt: 0
+  - distinct: 0
+    eq: 2048
+    key: [11]
+    lt: 0
+  - distinct: 0
+    eq: 4096
+    key: [12]
+    lt: 0
+  - distinct: 0
+    eq: 8192
+    key: [13]
+    lt: 0
+  - distinct: 0
+    eq: 16384
+    key: [14]
+    lt: 0
+  - distinct: 0
+    eq: 32768
+    key: [15]
+    lt: 0
+  - distinct: 0
+    eq: 65536
+    key: [16]
+    lt: 0
+  - distinct: 0
+    eq: 131072
+    key: [17]
+    lt: 0
+  - distinct: 0
+    eq: 262144
+    key: [18]
+    lt: 0
+  - distinct: 0
+    eq: 524288
+    key: [19]
+    lt: 0
+  - distinct: 0
+    eq: 1048576
+    key: [20]
+    lt: 0
+  - distinct: 0
+    eq: 2097152
+    key: [21]
+    lt: 0
+  - distinct: 0
+    eq: 4194304
+    key: [22]
+    lt: 0
+  - distinct: 0
+    eq: 8388608
+    key: [23]
+    lt: 0
+Table: t
+Timestamp: 2012-01-18T00:24:08.679Z

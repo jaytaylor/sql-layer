@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2012 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule.join_enum;
@@ -268,22 +279,35 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         index.setOrdering(orderBy);
     }
 
-    // TODO: When we support ordering for a MultiIndexIntersectScan,
-    // this will need to take its ordering and work out the
-    // implications for the components. Right now, Intersect_Ordered
-    // only does ascending.
-    private static void resetOrdering(IndexScan index) {
-        List<IndexColumn> indexColumns = index.getAllColumns();
-        List<OrderByExpression> orderBy = index.getOrdering();
-        if (orderBy != null) {
-            for (int i = 0; i < indexColumns.size(); i++) {
-                orderBy.get(i).setAscending(indexColumns.get(i).isAscending());
-            }        
+    // Take ordering from output index and adjust ordering of others to match.
+    private static void installOrdering(IndexScan index, 
+                                        List<OrderByExpression> outputOrdering,
+                                        int outputPeggedCount, int comparisonFields) {
+        if (index instanceof SingleIndexScan) {
+            List<OrderByExpression> indexOrdering = index.getOrdering();
+            if ((indexOrdering != null) && (indexOrdering != outputOrdering)) {
+                // Order comparison fields the same way as output.
+                // Try to avoid mixed mode: initial columns ordered
+                // like first comparison, trailing columns ordered
+                // like last comparison.
+                int i = 0;
+                while (i < index.getPeggedCount()) {
+                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount).isAscending());
+                }
+                for (int j = 0; j < comparisonFields; j++) {
+                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + j).isAscending());
+                }
+                while (i < indexOrdering.size()) {
+                    indexOrdering.get(i++).setAscending(outputOrdering.get(outputPeggedCount + comparisonFields - 1).isAscending());
+                }
+            }
         }
-        if (index instanceof MultiIndexIntersectScan) {
+        else if (index instanceof MultiIndexIntersectScan) {
             MultiIndexIntersectScan multiIndex = (MultiIndexIntersectScan)index;
-            resetOrdering(multiIndex.getOutputIndexScan());
-            resetOrdering(multiIndex.getSelectorIndexScan());
+            installOrdering(multiIndex.getOutputIndexScan(), 
+                            outputOrdering, outputPeggedCount, comparisonFields);
+            installOrdering(multiIndex.getSelectorIndexScan(), 
+                            outputOrdering, outputPeggedCount, comparisonFields);
         }
     }
 
@@ -316,7 +340,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         indexColumn = null; // Index sorts by unknown column.
                 }
                 if ((indexColumn != null) && 
-                    indexColumn.getExpression().equals(targetExpression)) {
+                    orderingExpressionMatches(indexColumn.getExpression(), 
+                                              targetExpression)) {
                     if (indexColumn.isAscending() != targetColumn.isAscending()) {
                         // To avoid mixed mode as much as possible,
                         // defer changing the index order until
@@ -405,6 +430,18 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 return IndexScan.OrderEffectiveness.SORTED;
         }
         return result;
+    }
+
+    protected boolean orderingExpressionMatches(ExpressionNode columnExpression,
+                                                ExpressionNode targetExpression) {
+        if (columnExpression.equals(targetExpression))
+            return true;
+        if (!(columnExpression instanceof ColumnExpression) ||
+            !(targetExpression instanceof ColumnExpression))
+            return false;
+        EquivalenceFinder<ColumnExpression> equivs = queryGoal.getQuery().getColumnEquivalencies();
+        return equivs.areEquivalent((ColumnExpression)columnExpression,
+                                    (ColumnExpression)targetExpression);
     }
 
     protected class UnboundFinder implements ExpressionVisitor {
@@ -860,7 +897,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             if (indexScan instanceof MultiIndexIntersectScan) {
-                resetOrdering(indexScan);
+                MultiIndexIntersectScan multiScan = (MultiIndexIntersectScan)indexScan;
+                installOrdering(indexScan, multiScan.getOrdering(), multiScan.getPeggedCount(), multiScan.getComparisonFields());
             }
             installConditions(indexScan, conditionSources);
             queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
