@@ -85,7 +85,7 @@ public class FieldFunctionExcpression extends AbstractCompositeExpression
             if (!first.isNull())
             {
             
-                int n = 1;
+                int n = 0;
                 boolean homogeneous = true;
                 Iterator<? extends ExpressionEvaluation> iter = children().iterator();
                 iter.next();

@@ -62,16 +62,24 @@ public class FieldFunctionExpressionTest
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
         
-        param(pb, 0L, lit(2L), lit(1L));
+        // easy cases: all args have the same type
+//        param(pb, 0L, lit(2L), lit(1L));
+//        param(pb, 4L, lit(3.6), lit(3.0), lit(3.59), lit(3.7), lit(3.6));
+//        param(pb, 4L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit("00.1"));
+        param(pb, 0L, lit(true), lit(false));
+        
+        // hexterogeneous types
+//        param(pb, 2L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit(true));
+        
         return pb.asList();
     }
     
     private static void param(ParameterizationBuilder pb, Long exp, Expression...args)
     {
         List<? extends Expression> argsList = Arrays.asList(args);
-        pb.add("FIELD(", args +") expcted: " + (exp == null ? "NULL" : exp),
-                exp,
-                argsList);
+        pb.add("FIELD("+ argsList +") expcted: " + (exp == null ? "NULL" : exp),
+                argsList,
+                exp);
     }
     
     @OnlyIfNot("expectArityException()")

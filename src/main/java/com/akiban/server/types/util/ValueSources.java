@@ -345,23 +345,26 @@ public class ValueSources
         
         AkType left = v1.getConversionType();
         AkType right = v2.getConversionType();
+        boolean ret;
         
         if (left == right)
-            return compareSameType(v1, v2) == 0;
-        
-        Comparator<ValueSource> c = get(left, right);
-        Map<AkType, Comparator<ValueSource>> v;
-        Comparator<ValueSource> c1 = null, c2 = null;
+            ret = compareSameType(v1, v2) == 0;
+        else
+        {
+            Comparator<ValueSource> c = get(left, right);
+            Map<AkType, Comparator<ValueSource>> v;
+            Comparator<ValueSource> c1 = null, c2 = null;
 
-        if ((v = map.get(right)) != null)
-            c1 = v.get(left);
+            if ((v = map.get(right)) != null)
+                c1 = v.get(left);
 
-        if ((v = map.get(left)) != null)
-            c2 = v.get(right);
-            
-        boolean ret = c1 == null 
-                    ? (c2 == null ? false : c2.compare(v1, v2) == 0)
-                    : (c1.compare(v2, v1) == 0);
+            if ((v = map.get(left)) != null)
+                c2 = v.get(right);
+
+            ret = c1 == null 
+                        ? (c2 == null ? false : c2.compare(v1, v2) == 0)
+                        : (c1.compare(v2, v1) == 0);
+        }
         
         if (!ret && textAsNumeric && left == AkType.VARCHAR 
                                   && right == AkType.VARCHAR)
