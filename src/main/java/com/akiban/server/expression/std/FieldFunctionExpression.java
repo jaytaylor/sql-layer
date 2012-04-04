@@ -43,7 +43,7 @@ import com.akiban.sql.StandardException;
 import java.util.Iterator;
 import java.util.List;
 
-public class FieldFunctionExcpression extends AbstractCompositeExpression
+public class FieldFunctionExpression extends AbstractCompositeExpression
 {
     // probably needs another name
     // either that or change the FieldExpression to something else
@@ -63,7 +63,7 @@ public class FieldFunctionExcpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments)
         {
-            return new FieldFunctionExcpression(arguments);
+            return new FieldFunctionExpression(arguments);
         }
         
     };
@@ -146,7 +146,7 @@ public class FieldFunctionExcpression extends AbstractCompositeExpression
     }
     
     
-    FieldFunctionExcpression(List<? extends Expression> args)
+    FieldFunctionExpression(List<? extends Expression> args)
     {
         super(AkType.LONG, checkArgs(args));
     }

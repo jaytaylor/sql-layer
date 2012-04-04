@@ -28,6 +28,7 @@ package com.akiban.server.expression.std;
 
 import com.akiban.junit.OnlyIf;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.expression.ExpressionComposer;
 import org.junit.Test;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.NamedParameterizedRunner;
@@ -35,7 +36,6 @@ import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
@@ -46,8 +46,10 @@ import static com.akiban.server.expression.std.ExprUtil.*;
 import static com.akiban.server.types.AkType.*;
 
 @RunWith(NamedParameterizedRunner.class)
-public class FieldFunctionExpressionTest 
+public class FieldFunctionExpressionTest extends ComposedExpressionTestBase
 {
+    private static boolean alreadyExc = false;
+    
     private List<? extends Expression> args;
     private Long expected;
     
@@ -132,12 +134,31 @@ public class FieldFunctionExpressionTest
     
     private void doTest()
     {
-        Expression top = new FieldFunctionExcpression(args);
+        alreadyExc = true;
+        Expression top = new FieldFunctionExpression(args);
         assertEquals(expected.longValue(), top.evaluation().eval().getLong());
     }
     
     public boolean expectArityException ()
     {
         return expected == null;
+    }
+
+    @Override
+    protected CompositionTestInfo getTestInfo()
+    {
+        return new CompositionTestInfo(2, VARCHAR, false);
+    }
+
+    @Override
+    protected ExpressionComposer getComposer()
+    {
+        return FieldFunctionExpression.COMPOSER;
+    }
+
+    @Override
+    public boolean alreadyExc()
+    {
+        return alreadyExc;
     }
 }
