@@ -74,8 +74,9 @@ public class UnionAll_DefaultIT extends OperatorITBase
 
     // TODO: This test is really incomplete. Putting just enough in place to investigate bug 972748
 
+    // Inspired by bug972748
     @Test
-    public void bug972748()
+    public void testUADReuse()
     {
         IndexBound eight = new IndexBound(row(txIndexRowType, 8), new SetColumnSelector(0));
         IndexBound nine = new IndexBound(row(txIndexRowType, 9), new SetColumnSelector(0));
