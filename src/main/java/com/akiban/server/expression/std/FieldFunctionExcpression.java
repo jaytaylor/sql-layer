@@ -27,6 +27,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
@@ -80,24 +81,30 @@ public class FieldFunctionExcpression extends AbstractCompositeExpression
             ValueSource first = children().get(0).eval();
             
             long ret = 0;
-            
+              
             if (!first.isNull())
             {
-                
+            
                 int n = 1;
+                boolean homogeneous = true;
                 Iterator<? extends ExpressionEvaluation> iter = children().iterator();
                 iter.next();
                 while (iter.hasNext())
-                {
+                    if (!(homogeneous = first.getConversionType() == iter.next().eval().getConversionType()))
+                        break;
+                
+                iter = children().iterator();
+                iter.next();
+                while (iter.hasNext())
                     try
                     {
-                        if (ValueSources.equals(iter.next().eval(), first))
+                        ValueSource source = iter.next().eval();
+                        ++n;
+                        if (ValueSources.equals(source, first, !homogeneous))
                         {
-                            ret = ++n;
+                            ret = n;
                             break;
                         } 
-                        else
-                            ++n;
                     }
                     catch (InvalidOperationException e)
                     {
@@ -105,7 +112,13 @@ public class FieldFunctionExcpression extends AbstractCompositeExpression
                         if (qc != null)
                             qc.warnClient(e);
                     }
-                }
+                    catch (NumberFormatException e) // when trying to compare 2 VARCHAR as double
+                    {
+                        QueryContext qc = queryContext();
+                        if (qc != null)
+                            qc.warnClient(new InvalidCharToNumException(e.getMessage()));
+                    }
+                
             }
             
             valueHolder().putLong(ret);

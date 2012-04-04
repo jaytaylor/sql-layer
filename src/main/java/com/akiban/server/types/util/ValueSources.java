@@ -339,7 +339,7 @@ public class ValueSources
      * @param v2
      * @return 
      */
-    public static boolean equals (ValueSource v1, ValueSource v2)
+    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric)
     {
         if (v1.isNull() || v2.isNull()) return false;
         
@@ -359,13 +359,22 @@ public class ValueSources
         if ((v = map.get(left)) != null)
             c2 = v.get(right);
             
-        return c1 == null 
-                ? (c2 == null ? false : c2.compare(v1, v2) == 0)
-                : (c1.compare(v2, v1) == 0);
-     
+        boolean ret = c1 == null 
+                    ? (c2 == null ? false : c2.compare(v1, v2) == 0)
+                    : (c1.compare(v2, v1) == 0);
+        
+        if (!ret && textAsNumeric && left == AkType.VARCHAR 
+                                  && right == AkType.VARCHAR)
+                // try compare as double
+                return Double.compare(Extractors.getDoubleExtractor().getDouble(v1),
+                                     Extractors.getDoubleExtractor().getDouble(v2))
+                        == 0;
+                // TODO: fi test failed (again!) could try to compare v1, va2 
+                // as DATES  select field ('9-12-12', '0009-12-12', 2);
+                // or time, etc ...
+        
+        return ret;
     }
-    
-    
     
     private static int compareSameType (ValueSource l, ValueSource r)
     {
