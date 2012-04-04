@@ -124,15 +124,15 @@
 ---
 - JMX: com.akiban:type=Configuration
 - set: QueryTimeoutSec
-- set_value: 2
+- params: ['2']
 ---
 - JMX: com.akiban:type=Configuration
 - get: QueryTimeoutSec
-- output: [[2]]
+- output: [['2']]
 ---
 - JMX: com.persistit:type=Persistit,class=IOMeter
 - set: LogFile
-- set_value: 'aa'
+- params: ['aa']
 ---
 - JMX: com.persistit:type=Persistit,class=IOMeter
 - get: LogFile

@@ -108,7 +108,7 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
                     SERVER_JMX_PORT, 
                     "com.akiban:type=IndexStatistics", 
                     "dumpIndexStatisticsToString", 
-                    parameters, "method", null );
+                    parameters, "method");
             System.out.println(""+data);
             
         } catch (IOException e) {

@@ -170,7 +170,6 @@ import com.akiban.server.store.statistics.IndexStatisticsMXBean;
    - method: <method>
    - get: <get method>
    
-   - set_value: <value to set> ONLY WORKS WITH set:
    - params: [<parameter value>, ...]
    - output: [[<output value>, ...], ...]
 
@@ -1570,7 +1569,6 @@ class YamlTester {
         String method = null;
         String set = null;
         String get = null;
-        String set_value = null;
         
         public JMXCommand(Object value, List<Object> sequence) {
             super(string(value, "JMX value"));
@@ -1595,8 +1593,6 @@ class YamlTester {
                     get = String.valueOf(attributeValue).trim();
                 } else if ("output".equals(attribute)) {
                     parseOutput(attributeValue); 
-                } else if ("set_value".equals(attribute)) {
-                    set_value = String.valueOf(attributeValue).trim();
                 } else {
                     fail("The '" + attribute + "' attribute name was not"
                             + " recognized");
@@ -1632,20 +1628,20 @@ class YamlTester {
             try {
                 if (method != null) {
                     result = conn.makeBeanCall("localhost", "8082", objectName, 
-                            method, params, "method", "");
+                            method, params, "method");
                     if (DEBUG) {
-                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+method+", "+params+")");
+                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+method+")");
                         System.out.println(result);
                     }
                 }
                 if (set != null) {
-                    conn.makeBeanCall("localhost", "8082", objectName, set, params, "set", set_value);
+                    conn.makeBeanCall("localhost", "8082", objectName, set, params, "set");
                     if (DEBUG) {
-                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+set+", "+set_value+")");
+                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+set+")");
                     }
                 }
                 if (get != null) {
-                    result = conn.makeBeanCall("localhost", "8082", objectName, get, params, "get", "");
+                    result = conn.makeBeanCall("localhost", "8082", objectName, get, params, "get");
                     if (DEBUG) {
                         System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+get+")");
                         System.out.println(result);

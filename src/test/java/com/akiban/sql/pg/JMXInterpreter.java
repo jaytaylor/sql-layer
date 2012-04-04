@@ -256,7 +256,7 @@ public class JMXInterpreter {
 
     
     public Object makeBeanCall(String host, String port, String objectName, 
-            String method, Object[] paramters, String callType, String setvalue) throws Exception {
+            String method, Object[] paramters, String callType) throws Exception {
         setup(host, port);
         final MBeanServerConnection mbs = connector
                 .getMBeanServerConnection();
@@ -288,14 +288,15 @@ public class JMXInterpreter {
             Attribute attrib = null;
             for (int x=0;x < info.getAttributes().length;x++) {
                 if (method.equalsIgnoreCase(info.getAttributes()[x].getName())) {
+                    
                     if (debug) {
                         System.out.println(info.getAttributes()[x].getType()+" vs "+long.class.getName());
                     }
                     if (info.getAttributes()[x].getType().equalsIgnoreCase(long.class.getName())) {
-                        attrib = new Attribute(method, new Integer(setvalue));
+                        attrib = new Attribute(method, new Integer(String.valueOf(paramters[0])));
                     }
                     if (info.getAttributes()[x].getType().equalsIgnoreCase(String.class.getName())) {
-                        attrib = new Attribute(method, new String(setvalue));
+                        attrib = new Attribute(method, new String(String.valueOf(paramters[0])));
                     }
                 }
             }
