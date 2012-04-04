@@ -148,6 +148,13 @@ public class FieldFunctionExcpression extends AbstractCompositeExpression
     
     FieldFunctionExcpression(List<? extends Expression> args)
     {
-        super(AkType.LONG, args);
+        super(AkType.LONG, checkArgs(args));
+    }
+    
+    private static List<? extends Expression> checkArgs (List<? extends Expression> args)
+    {
+        if (args.size() < 2)
+            throw new WrongExpressionArityException(2, args.size());
+        return args;
     }
 }
