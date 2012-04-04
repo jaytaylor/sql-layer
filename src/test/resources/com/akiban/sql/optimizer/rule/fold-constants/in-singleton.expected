@@ -1,9 +1,5 @@
-SelectQuery@2bbd2158
-  ResultSet@dd82ed7[name]
-    Project@6beb2c5a[customers.name]
-      Select@1cad0010[ANY(Subquery@21df2925)]
-        TableSource@3ef04b6(customers)
-
-Subquery@21df2925
-  Project@42064d82[customers.cid == VALUES[0]]
-    ExpressionsSource@411e4abe([[2], [8]])
+electQuery@5639cf44
+  ResultSet@6d56a595[name]
+    Project@53911147[customers.name]
+      Select@5905772d[customers.cid == 2]
+        TableSource@1f8aad2f(customers)
