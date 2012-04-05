@@ -1,0 +1,23 @@
+## test div
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(numeric_field, double_field, bigint_field)
+              VALUES (2.5, 3.5, 4);
+---
+- Statement: SELECT 2 div 3 from all_types;
+- output: [[0]]
+---
+- Statement: SELECT double_field div numeric_field from all_types;
+- output_types: [DOUBLE]
+- output: [[1.0]]
+---
+- Statement: SELECT 2.5 div 2 from all_types;
+- output: [[1]]
+---
+- Statement: SELECT INTERVAL 2 MONTH div 2 + '2009-10-12' from all_types;
+- output: [['2009-11-12']]
+---
+- Statement: SELECT INTERVAL 3.0 DAY / 2 + '2009-12-12 00:30:10' from all_types;
+- output: [[!re '2009-12-13 12:30:10([.]0)?']]
+...
