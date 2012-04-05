@@ -238,6 +238,9 @@ class IfEmpty_Default extends Operator
         public void destroy()
         {
             input.destroy();
+            for (ExpressionEvaluation evaluation : evaluations) {
+                evaluation.destroy();
+            }
         }
 
         @Override

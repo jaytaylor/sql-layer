@@ -210,6 +210,7 @@ class Sort_Tree extends Operator
         {
             close();
             input.destroy();
+            output.destroy();
             destroyed = true;
         }
 

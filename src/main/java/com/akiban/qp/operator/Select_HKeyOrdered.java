@@ -217,6 +217,7 @@ class Select_HKeyOrdered extends Operator
         {
             close();
             input.destroy();
+            evaluation.destroy();
         }
 
         @Override

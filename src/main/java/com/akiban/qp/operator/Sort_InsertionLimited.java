@@ -273,6 +273,9 @@ class Sort_InsertionLimited extends Operator
         {
             close();
             input.destroy();
+            for (ExpressionEvaluation evaluation : evaluations) {
+                evaluation.destroy();
+            }
             state = State.DESTROYED;
         }
 
