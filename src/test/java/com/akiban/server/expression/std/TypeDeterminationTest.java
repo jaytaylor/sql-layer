@@ -27,6 +27,7 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.List;
 import java.util.EnumSet;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.junit.OnlyIf;
@@ -68,8 +69,25 @@ public class TypeDeterminationTest
         ParameterizationBuilder pb = new ParameterizationBuilder();
 
         // ------------------ numeric types only -------------------------------
-        for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.MINUS,
-                ArithOps.DIVIDE, ArithOps.MOD, ArithOps.MULTIPLY))
+        // test / (regular division)
+        ArithOp operation = ArithOps.DIVIDE; 
+        List<AkType> approx = Arrays.asList(AkType.DOUBLE, AkType.FLOAT, AkType.DECIMAL);
+        List<AkType> exact = Arrays.asList(AkType.INT, AkType.U_BIGINT, AkType.LONG);
+        
+        for (AkType left : exact)
+            for (AkType right : exact)
+                paramNonSym(pb, left, operation, right, AkType.DOUBLE);
+        
+        for (AkType left : exact)
+            for (AkType right : approx)
+                paramSym(pb, left, operation, right, right); // approximate types always have higher precedence
+        
+        paramSym(pb, AkType.DOUBLE, operation, AkType.DECIMAL, AkType.DECIMAL);
+        paramSym(pb, AkType.DOUBLE, operation, AkType.FLOAT, AkType.DOUBLE);
+        paramSym(pb, AkType.FLOAT, operation, AkType.DECIMAL, AkType.DECIMAL);
+        
+        // test other operations
+        for (ArithOp op : Arrays.asList(ArithOps.ADD, ArithOps.MINUS, ArithOps.MOD, ArithOps.MULTIPLY, ArithOps.DIV))
         {
             // decimal
             paramNonSym(pb, AkType.DECIMAL, op, AkType.DECIMAL, AkType.DECIMAL);
