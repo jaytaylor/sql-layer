@@ -26,17 +26,8 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.error.InvalidOptimizerPropertyException;
-import com.akiban.server.error.UnsupportedSQLException;
-
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-
 import com.akiban.sql.optimizer.plan.*;
-
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.TableIndex;
+import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -115,8 +106,9 @@ public class AggregateToDistinctMapper extends BaseRule
 
         public void remap() {
             project = new Project(source.getInput(), source.getGroupBy());
-            PlanNode n = new Distinct(project);
-            source.getOutput().replaceInput(source, n);
+            Distinct distinct = new Distinct(project);
+            source.getOutput().replaceInput(source, distinct);
+            PlanNode n = distinct;
             while (true) {
                 // Keep going as long as we're feeding something we understand.
                 n = n.getOutput();
@@ -124,7 +116,44 @@ public class AggregateToDistinctMapper extends BaseRule
                     remap(((Select)n).getConditions());
                 }
                 else if (n instanceof Sort) {
-                    remapA(((Sort)n).getOrderBy());
+                    Sort sort = (Sort)n;
+                    List<OrderByExpression> sorts = sort.getOrderBy();
+                    List<ExpressionNode> exprs = project.getFields();
+                    remapA(sorts);
+                    // Try to do the Sort for new Distinct at the same time.
+                    // Cf. ASTStatementLoader.Loader.adjustSortsForDistinct
+                    boolean merge = true;
+                    BitSet used = new BitSet(exprs.size());
+                    for (OrderByExpression orderBy : sorts) {
+                        ExpressionNode expr = orderBy.getExpression();
+                        if (!(expr instanceof ColumnExpression)) {
+                            merge = false;
+                            break;
+                        }
+                        ColumnExpression column = (ColumnExpression)expr;
+                        if (column.getTable() != project) {
+                            merge = false;
+                            break;
+                        }
+                        used.set(column.getPosition());
+                    }
+                    if (merge) {
+                        for (int i = 0; i < exprs.size(); i++) {
+                            if (!used.get(i)) {
+                                ExpressionNode expr = exprs.get(i);
+                                ExpressionNode cexpr = new ColumnExpression(project, i,
+                                                                            expr.getSQLtype(),
+                                                                            expr.getSQLsource());
+                                OrderByExpression orderBy = new OrderByExpression(cexpr,
+                                                                                  sorts.get(0).isAscending());
+                                sorts.add(orderBy);
+                            }
+                        }
+                        n = sort.getInput();
+                        sort.getOutput().replaceInput(sort, n);
+                        sort.replaceInput(n, distinct.getInput());
+                        distinct.replaceInput(distinct.getInput(), sort);
+                    }
                 }
                 else if (n instanceof Project) {
                     // This will commonly be equivalent to the project we just added.

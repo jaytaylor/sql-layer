@@ -26,13 +26,13 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.error.InvalidOptimizerPropertyException;
-import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.sql.optimizer.plan.*;
 
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
-import com.akiban.sql.optimizer.plan.*;
+import com.akiban.server.error.InvalidOptimizerPropertyException;
+import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
