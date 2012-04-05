@@ -87,25 +87,25 @@ public class SignExpression extends AbstractUnaryExpression
             {
                 // If the input is NaN, return NULL for type simplicity
                 case DOUBLE:
-                    if ((new Double(operand().getDouble())).equals(new Double(Double.NaN)))
+                    if (Double.isNaN(operand().getDouble()))
                         return NullValueSource.only();
                     else
                         valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getDouble(), 0.0d)));
                     break;
                 case U_DOUBLE:
-                    if ((new Double(operand().getUDouble())).equals(new Double(Double.NaN)))
+                    if (Double.isNaN(operand().getUDouble()))
                         return NullValueSource.only();
                     else
                         valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getUDouble(), 0.0d))); 
                     break;
                 case FLOAT:
-                    if ((new Float(operand().getFloat())).equals(new Float(Float.NaN)))
+                    if (Float.isNaN(operand().getFloat()))
                         return NullValueSource.only();
                     else
                         valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getFloat(), 0.0f))); 
                     break;
                 case U_FLOAT:
-                    if ((new Float(operand().getUFloat())).equals(new Float(Float.NaN)))
+                    if (Float.isNaN(operand().getUFloat()))
                         return NullValueSource.only();
                     else                    
                         valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getUFloat(), 0.0f))); 
