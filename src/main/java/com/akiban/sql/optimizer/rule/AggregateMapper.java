@@ -200,7 +200,7 @@ public class AggregateMapper extends BaseRule
             ExpressionNode nexpr = rewrite(expr);
             if (nexpr != null)
                 return nexpr.accept(this);
-            int position = source.addAggregate((AggregateFunctionExpression)expr);
+            int position = source.addAggregate(expr);
             nexpr = new ColumnExpression(source, position,
                                          expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
             map.put(expr, nexpr);
@@ -225,23 +225,29 @@ public class AggregateMapper extends BaseRule
             return null;
         }
 
+        protected ExpressionNode addKey(ExpressionNode expr) {
+            int position = source.getGroupBy().size();
+            source.getGroupBy().add(expr);
+            ColumnExpression nexpr = new ColumnExpression(source, position,
+                                                          expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+            map.put(expr, nexpr);
+            return nexpr;
+        }
+
         // Use of a column not in GROUP BY without aggregate function.
         protected ExpressionNode nonAggregate(ColumnExpression column) {
+            boolean isUnique = isUniqueGroupedTable(column.getTable());
             ImplicitAggregateSetting setting = getImplicitAggregateSetting();
-            if (setting == ImplicitAggregateSetting.FIRST_IF_UNIQUE) {
-                if (isUniqueGroupedTable(column.getTable()))
-                    setting = ImplicitAggregateSetting.FIRST;
-                else
-                    setting = ImplicitAggregateSetting.ERROR;
-            }
-            switch (setting) {
-            case FIRST:
+            if ((setting == ImplicitAggregateSetting.ERROR) ||
+                ((setting == ImplicitAggregateSetting.FIRST_IF_UNIQUE) && !isUnique))
+                throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY", column.getSQLsource());
+            if (isUnique && source.getAggregates().isEmpty())
+                // Add unique as another key in hopes of turning the
+                // whole things into a distinct.
+                return addKey(column);
+            else
                 return addAggregate(new AggregateFunctionExpression("FIRST", column, false,
                                                                     column.getSQLtype(), null));
-            case ERROR:
-            default:
-                throw new UnsupportedSQLException("Column cannot be used outside aggregate function or GROUP BY", column.getSQLsource());
-            }
         }
 
         protected boolean isUniqueGroupedTable(ColumnSource columnSource) {
