@@ -1,0 +1,194 @@
+/**
+ * END USER LICENSE AGREEMENT (“EULA”)
+ *
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
+ *
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
+ */
+
+package com.akiban.sql.optimizer.rule;
+
+import com.akiban.server.error.InvalidOptimizerPropertyException;
+import com.akiban.server.error.UnsupportedSQLException;
+
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
+
+import com.akiban.sql.optimizer.plan.*;
+
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.TableIndex;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.*;
+
+/** Turn aggregate with only keys into distinct.
+ */
+public class AggregateToDistinctMapper extends BaseRule
+{
+    private static final Logger logger = LoggerFactory.getLogger(AggregateToDistinctMapper.class);
+
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
+
+    @Override
+    public void apply(PlanContext plan) {
+        List<AggregateSource> sources = new AggregateSourceFinder().find(plan.getPlan());
+        for (AggregateSource source : sources) {
+            Mapper m = new Mapper(plan.getRulesContext(), source);
+            m.remap();
+        }
+    }
+
+    static class AggregateSourceFinder implements PlanVisitor, ExpressionVisitor {
+        List<AggregateSource> result = new ArrayList<AggregateSource>();
+
+        public List<AggregateSource> find(PlanNode root) {
+            root.accept(this);
+            return result;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+        @Override
+        public boolean visit(PlanNode n) {
+            if (n instanceof AggregateSource) {
+                AggregateSource a = (AggregateSource)n;
+                if (a.getAggregates().isEmpty())
+                    result.add(a);
+            }
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+        @Override
+        public boolean visit(ExpressionNode n) {
+            return true;
+        }
+    }
+
+    static class Mapper implements ExpressionRewriteVisitor {
+        private RulesContext rulesContext;
+        private AggregateSource source;
+        private Project project;
+
+        public Mapper(RulesContext rulesContext, AggregateSource source) {
+            this.rulesContext = rulesContext;
+            this.source = source;
+        }
+
+        public void remap() {
+            project = new Project(source.getInput(), source.getGroupBy());
+            PlanNode n = new Distinct(project);
+            n.getOutput().replaceInput(source, n);
+            while (true) {
+                // Keep going as long as we're feeding something we understand.
+                n = n.getOutput();
+                if (n instanceof Select) {
+                    remap(((Select)n).getConditions());
+                }
+                else if (n instanceof Sort) {
+                    remapA(((Sort)n).getOrderBy());
+                }
+                else if (n instanceof Project) {
+                    // This will commonly be equivalent to the project we just added.
+                    List<ExpressionNode> fields = ((Project)n).getFields();
+                    boolean unnecessary = fields.size() == project.getFields().size();
+                    if (unnecessary) {
+                        for (int i = 0; i < fields.size(); i++) {
+                            ExpressionNode expr = fields.get(i);
+                            if (!(expr instanceof ColumnExpression)) {
+                                unnecessary = false;
+                                break;
+                            }
+                            ColumnExpression column = (ColumnExpression)expr;
+                            if (!((column.getTable() == source) &&
+                                  (column.getPosition() == i))) {
+                                unnecessary = false;
+                                break;
+                            }
+                        }
+                    }
+                    if (unnecessary) {
+                        Project project2 = (Project)n;
+                        n = project2.getInput();
+                        project2.getOutput().replaceInput(project2, n);
+                    }
+                    else
+                        remap(fields);
+                }
+                else if (n instanceof Limit) {
+                    // Understood not but mapped.
+                }
+                else
+                    break;
+            }
+        }
+
+        protected <T extends ExpressionNode> void remap(List<T> exprs) {
+            for (int i = 0; i < exprs.size(); i++) {
+                exprs.set(i, (T)exprs.get(i).accept(this));
+            }
+        }
+
+        protected void remapA(List<? extends AnnotatedExpression> exprs) {
+            for (AnnotatedExpression expr : exprs) {
+                expr.setExpression(expr.getExpression().accept(this));
+            }
+        }
+
+        @Override
+        public boolean visitChildrenFirst(ExpressionNode expr) {
+            return false;
+        }
+
+        @Override
+        public ExpressionNode visit(ExpressionNode expr) {
+            if (expr instanceof ColumnExpression) {
+                ColumnExpression column = (ColumnExpression)expr;
+                if (column.getTable() == source) {
+                    return new ColumnExpression(column.getTable(), column.getPosition(),
+                                                expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
+                }
+            }
+            return expr;
+        }
+    }
+
+}
