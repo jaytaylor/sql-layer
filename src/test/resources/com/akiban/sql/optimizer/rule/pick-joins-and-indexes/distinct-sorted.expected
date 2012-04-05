@@ -1,0 +1,8 @@
+SelectQuery@3954e1b1
+  ResultSet@73ad48de[cid, name]
+    Distinct@758b2226
+      Project@663cb570[customers.cid, customers.name]
+        Select@16f2914[]
+          TableGroupJoinTree@28f1e0c8(TableGroup@1fdc7f78(customers), customers INNER orders - SingleIndexScan@4534af9f(Index(user.customers.name[IndexColumn(name)]), SORTED, rows = 1000, cost = 105259))
+            TableSource@57f59a7f(customers - TableGroup@1fdc7f78(customers))
+              TableSource@3d7234f6(orders - TableGroupJoin@5f61338(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
