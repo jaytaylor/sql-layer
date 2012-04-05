@@ -110,7 +110,9 @@ final class UnionAll_Default extends Operator {
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type) {
         ArgumentValidation.notNull("first input", input1);
+        ArgumentValidation.notNull("first input type", input1Type);
         ArgumentValidation.notNull("second input", input2);
+        ArgumentValidation.notNull("second input type", input2Type);
         this.outputRowType = rowType(input1Type, input2Type);
         this.inputs = Arrays.asList(input1, input2);
         this.inputTypes = Arrays.asList(input1Type, input2Type);
