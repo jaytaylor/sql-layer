@@ -139,35 +139,5 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
         }
     }
     
-//    @Test
-//    public void testCallToAkServer() {
-//        JMXInterpreter conn = new JMXInterpreter();
-//        try {
-//            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-//            Assert.assertNotNull(conn);
-//            JMXConnector connector = conn.getConnector();
-//            Assert.assertNotNull(connector);
-//            ManageMXBean bean = conn.getAkServer(connector);
-//
-//            Assert.assertNotNull(bean);
-//            Assert.assertNotNull(bean.getVersionString());
-//        } finally {
-//            conn.close();
-//        }
-//    }
-//
-//    @Test
-//    public void testCalltoIndexStatisticsMXBean() throws IOException {
-//        JMXInterpreter conn = new JMXInterpreter();
-//        try {
-//            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-//            IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
-//                    .getConnector());
-//            Assert.assertNotNull(bean);
-//            bean.dumpIndexStatistics("test", "/tmp/test.dmp");
-//        } finally {
-//            conn.close();
-//        }
-//    }
 
 }

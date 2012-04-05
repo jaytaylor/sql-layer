@@ -247,7 +247,7 @@ public class JMXInterpreter {
                 }
 
                 if (p < params.length - 1) {
-                    System.out.print(',');
+                    System.out.print(", ");
                 }
             }
             System.out.println(") | ");
@@ -272,10 +272,11 @@ public class JMXInterpreter {
             MBeanOperationInfo[] ops = info.getOperations();
             for (int x=0;x < ops.length;x++) {
                 if (method.equalsIgnoreCase(ops[x].getDescription())) {
+                    signature = new String[ops[x].getSignature().length];
                     for (int a=0;a < ops[x].getSignature().length;a++) {
-                        signature = new String[ops[x].getSignature().length];
                         signature[a] = ops[x].getSignature()[a].getType();
-                    }    
+                    }
+                    break;
                 }
             }    
         }
@@ -288,7 +289,6 @@ public class JMXInterpreter {
             Attribute attrib = null;
             for (int x=0;x < info.getAttributes().length;x++) {
                 if (method.equalsIgnoreCase(info.getAttributes()[x].getName())) {
-                    
                     if (debug) {
                         System.out.println(info.getAttributes()[x].getType()+" vs "+long.class.getName());
                     }
@@ -296,8 +296,9 @@ public class JMXInterpreter {
                         attrib = new Attribute(method, new Integer(String.valueOf(paramters[0])));
                     }
                     if (info.getAttributes()[x].getType().equalsIgnoreCase(String.class.getName())) {
-                        attrib = new Attribute(method, new String(String.valueOf(paramters[0])));
+                        attrib = new Attribute(method, String.valueOf(paramters[0]));
                     }
+                    break;
                 }
             }
             mbs.setAttribute(mxbeanName, attrib);
