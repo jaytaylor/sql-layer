@@ -31,6 +31,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
@@ -52,6 +53,7 @@ class SortCursorUnidirectional extends SortCursor
     @Override
     public void open()
     {
+        super.open();
         exchange.clear();
         if (bounded) {
             evaluateBoundaries(context);
@@ -77,6 +79,7 @@ class SortCursorUnidirectional extends SortCursor
     @Override
     public Row next()
     {
+        CursorLifecycle.checkIdleOrActive(this);
         Row next = null;
         if (exchange != null) {
             try {
