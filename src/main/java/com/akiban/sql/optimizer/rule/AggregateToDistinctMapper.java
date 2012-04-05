@@ -183,7 +183,7 @@ public class AggregateToDistinctMapper extends BaseRule
             if (expr instanceof ColumnExpression) {
                 ColumnExpression column = (ColumnExpression)expr;
                 if (column.getTable() == source) {
-                    return new ColumnExpression(column.getTable(), column.getPosition(),
+                    return new ColumnExpression(project, column.getPosition(),
                                                 expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
                 }
             }
