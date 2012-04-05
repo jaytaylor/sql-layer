@@ -311,7 +311,7 @@ public class ASTStatementLoader extends BaseRule
                         break do_distinct;
                     }
                     else {
-                        query = new AggregateSource(query, projects);
+                        query = new AggregateSource(query, new ArrayList<ExpressionNode>((projects)));
                         // Don't break: treat like non-distinct case.
                     }
                 }
