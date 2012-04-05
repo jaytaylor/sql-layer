@@ -326,7 +326,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
                 }
             }
         } finally {
-            cursor.close();
+            cursor.destroy();
         }
     }
 
