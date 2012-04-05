@@ -36,6 +36,7 @@ public class DefaultRules
         // These aren't singletons because someday they will have options.
         new ASTStatementLoader(),
         new AggregateMapper(),
+        new AggregateToDistinctMapper(),
         new ConstantFolder(),
         new OuterJoinPromoter(),
         new ColumnEquivalenceFinder(),
@@ -57,6 +58,7 @@ public class DefaultRules
         // These aren't singletons because someday they will have options.
         new ASTStatementLoader(),
         new AggregateMapper(),
+        new AggregateToDistinctMapper(),
         new ConstantFolder(),
         new OuterJoinPromoter(),
         new ColumnEquivalenceFinder(),

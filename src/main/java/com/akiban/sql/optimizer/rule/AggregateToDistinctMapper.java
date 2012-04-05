@@ -116,7 +116,7 @@ public class AggregateToDistinctMapper extends BaseRule
         public void remap() {
             project = new Project(source.getInput(), source.getGroupBy());
             PlanNode n = new Distinct(project);
-            n.getOutput().replaceInput(source, n);
+            source.getOutput().replaceInput(source, n);
             while (true) {
                 // Keep going as long as we're feeding something we understand.
                 n = n.getOutput();
