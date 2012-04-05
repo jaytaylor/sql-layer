@@ -1,6 +1,6 @@
 # Test the ABS function
 ---
-- Include: all-types-precise-decimal.yaml
+- Include: all-types-schema.yaml
 ---
 # Test arity
 - Statement: SELECT ABS() FROM all_types
@@ -26,15 +26,15 @@
 - Statement: INSERT INTO all_types (float_field, double_field, smallint_field,
             integer_field, bigint_field, bigint_unsigned_field, decimal_field,
             numeric_field, real_field, varchar_field)
-    VALUES (16.0, 16.0, 16, 16, 16, 16, 16.55, 16.55, 16.5, '16'),
-    (-2.0, -2.0, -2, -2, -2, null, -2.55, -2.55, -2.5, '-2.0')
+    VALUES (16.0, 16.0, 16, 16, 16, 16, 16, 16, 16.5, '16'),
+    (-2.0, -2.0, -2, -2, -2, null, -2, -2, -2.5, '-2.0')
 ---
 - Statement: SELECT ABS(float_field), ABS(double_field),
     ABS(smallint_field), ABS(integer_field), ABS(bigint_field),
     ABS(bigint_unsigned_field), ABS(decimal_field), ABS(numeric_field), 
     ABS(real_field), ABS(varchar_field) FROM all_types
-- output: [[16.0, 16.0, 16, 16, 16, 16, 16.55, 16.55, 16.5, 16.0],
-           [2.0, 2.0, 2, 2, 2, null, 2.55, 2.55, 2.5, 2.0]]
+- output: [[16.0, 16.0, 16, 16, 16, 16, 16, 16, 16.5, 16.0],
+           [2.0, 2.0, 2, 2, 2, null, 2, 2, 2.5, 2.0]]
 # Infinity and NaN
 ---
 - Statement: DELETE FROM all_types
