@@ -60,7 +60,7 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
             return doEval();
         }
         finally {
-            cursor.destroy();
+            cursor.close();
         }
     }
 

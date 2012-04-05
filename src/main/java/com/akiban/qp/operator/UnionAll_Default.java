@@ -226,7 +226,11 @@ final class UnionAll_Default extends Operator {
         public void destroy()
         {
             close();
-            currentCursor.destroy();
+            for (Cursor cursor : cursors) {
+                if (cursor != null) {
+                    cursor.destroy();
+                }
+            }
             destroyed = true;
         }
 
@@ -251,6 +255,7 @@ final class UnionAll_Default extends Operator {
         private Execution(QueryContext context)
         {
             super(context);
+            cursors = new Cursor[inputs.size()];
         }
 
         /**
@@ -261,7 +266,7 @@ final class UnionAll_Default extends Operator {
          */
         private Row nextCursorFirstRow() {
             while (++inputOperatorsIndex < inputs.size()) {
-                Cursor nextCursor = inputs.get(inputOperatorsIndex).cursor(context);
+                Cursor nextCursor = cursor(inputOperatorsIndex);
                 nextCursor.open();
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
@@ -296,8 +301,17 @@ final class UnionAll_Default extends Operator {
             return row;
         }
 
+        private Cursor cursor(int i)
+        {
+            if (cursors[i] == null) {
+                cursors[i] = inputs.get(i).cursor(context);
+            }
+            return cursors[i];
+        }
+
         private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<MasqueradingRow>();
         private int inputOperatorsIndex = -1; // right before the first operator
+        private Cursor[] cursors;
         private Cursor currentCursor;
         private RowType currentInputRowType;
         private boolean idle = true;

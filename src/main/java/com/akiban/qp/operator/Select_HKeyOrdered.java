@@ -215,19 +215,20 @@ class Select_HKeyOrdered extends Operator
         @Override
         public void destroy()
         {
+            close();
             input.destroy();
         }
 
         @Override
         public boolean isIdle()
         {
-            return idle;
+            return !input.isDestroyed() && idle;
         }
 
         @Override
         public boolean isActive()
         {
-            return !idle;
+            return !input.isDestroyed() && !idle;
         }
 
         @Override

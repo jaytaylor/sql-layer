@@ -210,6 +210,47 @@ public class UnionAll_DefaultIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            unionAll(
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.compare(
+                        Expressions.field(tRowType, 1),
+                        Comparison.EQ,
+                        Expressions.literal(8))),
+                tRowType,
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.compare(
+                        Expressions.field(tRowType, 1),
+                        Comparison.EQ,
+                        Expressions.literal(9))),
+                tRowType);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(tRowType, 1000L, 8L),
+                    row(tRowType, 1002L, 8L),
+                    row(tRowType, 1004L, 8L),
+                    row(tRowType, 1006L, 8L),
+                    row(tRowType, 1001L, 9L),
+                    row(tRowType, 1003L, 9L),
+                    row(tRowType, 1005L, 9L),
+                    row(tRowType, 1007L, 9L),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     // Inspired by bug972748. Also tests handling of index rows
     @Test
     public void testUADReuse()
