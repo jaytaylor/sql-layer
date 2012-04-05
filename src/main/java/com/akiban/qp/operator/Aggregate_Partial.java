@@ -37,8 +37,6 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -176,12 +174,7 @@ final class Aggregate_Partial extends Operator
         }
         return new AggregateCursor(
                 context,
-                inputOperator.cursor(context),
-                inputRowType,
-                aggregatorFactories,
-                aggregators,
-                inputsIndex,
-                outputType
+                aggregators
         );
     }
 
@@ -274,17 +267,17 @@ final class Aggregate_Partial extends Operator
 
     // nested classes
 
-    private static class AggregateCursor extends OperatorExecutionBase implements Cursor
+    private class AggregateCursor extends OperatorExecutionBase implements Cursor
     {
 
         // Cursor interface
 
         @Override
         public void open() {
-            if (cursorState != CursorState.CLOSED)
-                throw new IllegalStateException("can't open cursor: already open");
             TAP_OPEN.in();
             try {
+                if (cursorState != CursorState.CLOSED)
+                    throw new IllegalStateException("can't open cursor: already open");
                 inputCursor.open();
                 cursorState = CursorState.OPENING;
             } finally {
@@ -296,6 +289,7 @@ final class Aggregate_Partial extends Operator
         public Row next() {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 if (cursorState == CursorState.CLOSED)
                     throw new IllegalStateException("cursor not open");
@@ -338,11 +332,38 @@ final class Aggregate_Partial extends Operator
 
         @Override
         public void close() {
+            CursorLifecycle.checkIdleOrActive(this);
             if (cursorState != CursorState.CLOSED) {
                 holder.release();
                 inputCursor.close();
                 cursorState = CursorState.CLOSED;
             }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            inputCursor.destroy();
+            cursorState = CursorState.DESTROYED;
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return cursorState == CursorState.CLOSED;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return cursorState != CursorState.DESTROYED && cursorState != CursorState.CLOSED;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return cursorState == CursorState.DESTROYED;
         }
 
         // for use in this class
@@ -435,25 +456,16 @@ final class Aggregate_Partial extends Operator
         }
 
         private ValuesHolderRow unsharedOutputRow() {
-            return new ValuesHolderRow(outputRowType); // TODO row sharing, etc
+            return new ValuesHolderRow(outputType); // TODO row sharing, etc
         }
 
         // AggregateCursor interface
 
         private AggregateCursor(QueryContext context,
-                                Cursor inputCursor,
-                                RowType inputRowType,
-                                List<AggregatorFactory> aggregatorFactories,
-                                List<Aggregator> aggregators,
-                                int inputsIndex,
-                                AggregatedRowType outputRowType) {
+                                List<Aggregator> aggregators) {
             super(context);
-            this.inputCursor = inputCursor;
-            this.inputRowType = inputRowType;
-            this.aggregatorFactories = aggregatorFactories;
+            this.inputCursor = inputOperator.cursor(context);
             this.aggregators = aggregators;
-            this.inputsIndex = inputsIndex;
-            this.outputRowType = outputRowType;
             keyValues = new ArrayList<ValueHolder>();
             for (int i = 0; i < inputsIndex; ++i) {
                 keyValues.add(new ValueHolder());
@@ -464,11 +476,7 @@ final class Aggregate_Partial extends Operator
         // object state
 
         private final Cursor inputCursor;
-        private final RowType inputRowType;
-        private final List<AggregatorFactory> aggregatorFactories;
         private final List<Aggregator> aggregators;
-        private final int inputsIndex;
-        private final AggregatedRowType outputRowType;
         private final List<ValueHolder> keyValues;
         private final ValueHolder scratchValueHolder = new ValueHolder();
         private final ShareHolder<Row> holder = new ShareHolder<Row>();
@@ -493,7 +501,11 @@ final class Aggregate_Partial extends Operator
         /**
          * The cursor is closed.
          */
-        CLOSED
+        CLOSED,
+        /**
+         * The cursor is destroyed.
+         */
+        DESTROYED
     }
 
 }

@@ -26,8 +26,61 @@
 
 package com.akiban.qp.operator;
 
-public abstract class OperatorExecutionBase
+import com.akiban.qp.row.Row;
+import com.akiban.server.error.QueryCanceledException;
+
+public abstract class OperatorExecutionBase /* TODO: Temporary */ implements CursorBase<Row>
 {
+    // TODO: Implementation of new cursor methods is temporary, so that I don't have to add them to
+    // TODO: all Cursor implementations before testing any of them.
+
+
+    @Override
+    public void destroy()
+    {
+        assert false : this;
+    }
+
+    @Override
+    public boolean isIdle()
+    {
+        assert false : this;
+        return false;
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        assert false : this;
+        return false;
+    }
+
+    @Override
+    public boolean isDestroyed()
+    {
+        assert false : this;
+        return false;
+    }
+
+    @Override
+    public void open()
+    {
+        assert false : this;
+    }
+
+    @Override
+    public Row next()
+    {
+        assert false : this;
+        return null;
+    }
+
+    @Override
+    public void close()
+    {
+        assert false : this;
+    }
+
     // Operators that implement cursors have a context at construction time
     protected OperatorExecutionBase(QueryContext context)
     {
@@ -46,10 +99,15 @@ public abstract class OperatorExecutionBase
 
     protected void checkQueryCancelation()
     {
-        adapter().checkQueryCancelation(context.getStartTime());
+        try {
+            adapter().checkQueryCancelation(context.getStartTime());
+        } catch (QueryCanceledException e) {
+            close();
+            throw e;
+        }
     }
 
-   protected StoreAdapter adapter()
+    protected StoreAdapter adapter()
     {
         return context.getStore();
     }

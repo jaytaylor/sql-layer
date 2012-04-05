@@ -158,12 +158,12 @@ class Sort_Tree extends Operator
         @Override
         public void open()
         {
-            assert closed;
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 closed = false;
-            } catch (Exception e) {
+            } finally {
                 TAP_OPEN.out();
             }
         }
@@ -172,6 +172,7 @@ class Sort_Tree extends Operator
         public Row next()
         {
             checkQueryCancelation();
+            CursorLifecycle.checkIdleOrActive(this);
             if (output == null) {
                 output = adapter().sort(context, input, sortType, ordering, sortOption, TAP_LOAD);
             }
@@ -193,6 +194,7 @@ class Sort_Tree extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 input.close();
                 if (output != null) {
@@ -201,6 +203,32 @@ class Sort_Tree extends Operator
                 }
                 closed = true;
             }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+            destroyed = true;
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return !destroyed && closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !destroyed && !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return destroyed;
         }
 
         // Execution interface
@@ -216,5 +244,6 @@ class Sort_Tree extends Operator
         private final Cursor input;
         private Cursor output;
         private boolean closed = true;
+        private boolean destroyed = false;
     }
 }

@@ -538,6 +538,34 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
+                SortOption.PRESERVE_DUPLICATES,
+                4);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(orderRowType, 31L, 3L, "david"),
+                    row(orderRowType, 21L, 2L, "david"),
+                    row(orderRowType, 12L, 1L, "david"),
+                    row(orderRowType, 22L, 2L, "jack"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     private Ordering ordering(Object... objects)
     {
         Ordering ordering = API.ordering();

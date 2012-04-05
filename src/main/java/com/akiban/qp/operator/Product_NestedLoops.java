@@ -207,6 +207,7 @@ class Product_NestedLoops extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 this.outerInput.open();
                 this.closed = false;
             } finally {
@@ -219,6 +220,7 @@ class Product_NestedLoops extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row outputRow = null;
                 while (!closed && outputRow == null) {
@@ -260,10 +262,37 @@ class Product_NestedLoops extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 closeOuter();
                 closed = true;
             }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            outerInput.destroy();
+            innerRows.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return outerInput.isDestroyed();
         }
 
         // Execution interface
@@ -309,7 +338,7 @@ class Product_NestedLoops extends Operator
         private final ShareHolder<Row> outerRow = new ShareHolder<Row>();
         private final ShareHolder<Row> outerBranchRow = new ShareHolder<Row>();
         private final InnerRows innerRows;
-        private boolean closed = false;
+        private boolean closed = true;
 
         // Inner classes
 
@@ -346,6 +375,12 @@ class Product_NestedLoops extends Operator
             public void close()
             {
                 innerInput.close();
+            }
+
+            public void destroy()
+            {
+                close();
+                innerInput.destroy();
             }
 
             private final Cursor innerInput;

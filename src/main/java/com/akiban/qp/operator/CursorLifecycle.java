@@ -26,54 +26,51 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.Row;
-
-public class ChainedCursor extends OperatorExecutionBase implements Cursor
+public final class CursorLifecycle
 {
-    protected final Cursor input;
-
-    protected ChainedCursor(QueryContext context, Cursor input) {
-        super(context);
-        this.input = input;
-    }
-
-    @Override
-    public void open() {
-        input.open();
-    }
-
-    @Override
-    public Row next()
+    public static void checkIdle(CursorBase cursor)
     {
-        return input.next();
+        if (!cursor.isIdle()) {
+            throw new WrongStateException(IDLE, cursor);
+        }
     }
 
-    @Override
-    public void close() {
-        input.close();
-    }
-
-    @Override
-    public void destroy()
+    public static void checkActive(CursorBase cursor)
     {
-        input.destroy();
+        if (!cursor.isActive()) {
+            throw new WrongStateException(ACTIVE, cursor);
+        }
     }
 
-    @Override
-    public boolean isIdle()
+    public static void checkIdleOrActive(CursorBase cursor)
     {
-        return input.isIdle();
+        if (cursor.isDestroyed()) {
+            throw new WrongStateException(IDLE_OR_ACTIVE, cursor);
+        }
     }
 
-    @Override
-    public boolean isActive()
+    public static void checkDestroyed(CursorBase cursor)
     {
-        return input.isActive();
+        if (!cursor.isDestroyed()) {
+            throw new WrongStateException(DESTROYED, cursor);
+        }
     }
 
-    @Override
-    public boolean isDestroyed()
+    private static String cursorState(CursorBase cursor)
     {
-        return input.isDestroyed();
+        return cursor.isIdle() ? IDLE : cursor.isActive() ? ACTIVE : DESTROYED;
+    }
+
+    private static String IDLE = "IDLE";
+    private static String ACTIVE = "ACTIVE";
+    private static String DESTROYED = "DESTROYED";
+    private static String IDLE_OR_ACTIVE = IDLE + " or " + ACTIVE;
+
+    public static class WrongStateException extends RuntimeException
+    {
+        WrongStateException(String expectedState, CursorBase cursor)
+        {
+            super(String.format("Cursor should be %s but is actually %s", expectedState, cursorState(cursor)));
+        }
     }
 }

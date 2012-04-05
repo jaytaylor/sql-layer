@@ -39,6 +39,37 @@ import com.persistit.exception.PersistitException;
 
 public abstract class SortCursor implements Cursor
 {
+    // TODO: TEMPORARY
+
+    @Override
+    public void destroy()
+    {
+        assert false;
+    }
+
+    @Override
+    public boolean isIdle()
+    {
+        assert false;
+        return false;
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        assert false;
+        return false;
+    }
+
+    @Override
+    public boolean isDestroyed()
+    {
+        assert false;
+        return false;
+    }
+
+    // TODO: END TEMPORARY
+
     // Cursor interface
 
     @Override

@@ -105,7 +105,7 @@ final class UnionAll_Default extends Operator {
 
     @Override
     protected Cursor cursor(QueryContext context) {
-        return new Execution(context, inputs, inputTypes, outputRowType);
+        return new Execution(context);
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type) {
@@ -114,6 +114,7 @@ final class UnionAll_Default extends Operator {
         this.outputRowType = rowType(input1Type, input2Type);
         this.inputs = Arrays.asList(input1, input2);
         this.inputTypes = Arrays.asList(input1Type, input2Type);
+        ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
     }
 
     // for use in this package (in ctor and unit tests)
@@ -165,19 +166,25 @@ final class UnionAll_Default extends Operator {
     private final List<? extends RowType> inputTypes;
     private final RowType outputRowType;
 
-    private static final class Execution implements Cursor {
+    private class Execution extends OperatorExecutionBase implements Cursor {
 
 
         @Override
         public void open() {
             TAP_OPEN.in();
-            TAP_OPEN.out();
+            try {
+                CursorLifecycle.checkIdle(this);
+                idle = false;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next() {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 Row outputRow;
                 if (currentCursor == null) {
                     outputRow = nextCursorFirstRow();
@@ -191,6 +198,7 @@ final class UnionAll_Default extends Operator {
                 }
                 if (outputRow == null) {
                     close();
+                    idle = true;
                     return null;
                 }
                 return wrapped(outputRow);
@@ -201,6 +209,7 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public void close() {
+            CursorLifecycle.checkIdleOrActive(this);
             inputOperatorsIndex = -1;
             if (currentCursor != null)
                 currentCursor.close();
@@ -208,19 +217,38 @@ final class UnionAll_Default extends Operator {
                 currentCursor = null;
             currentInputRowType = null;
             rowHolder.release();
+            idle = true;
         }
 
-        private Execution(QueryContext context,
-                          List<? extends Operator> inputOperators,
-                          List<? extends RowType> inputRowTypes,
-                          RowType outputType)
+        @Override
+        public void destroy()
         {
-            this.context = context;
-            this.inputOperators = inputOperators;
-            this.inputRowTypes = inputRowTypes;
-            this.outputRowType = outputType;
-            assert this.inputOperators.size() == this.inputRowTypes.size()
-                    : this.inputOperators + ".size() != " + this.inputRowTypes.size() + ".size()";
+            close();
+            currentCursor.destroy();
+            destroyed = true;
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return !destroyed && idle;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !destroyed && !idle;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return destroyed;
+        }
+
+        private Execution(QueryContext context)
+        {
+            super(context);
         }
 
         /**
@@ -230,8 +258,8 @@ final class UnionAll_Default extends Operator {
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
-            while (++inputOperatorsIndex < inputOperators.size()) {
-                Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(context);
+            while (++inputOperatorsIndex < inputs.size()) {
+                Cursor nextCursor = inputs.get(inputOperatorsIndex).cursor(context);
                 nextCursor.open();
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
@@ -239,7 +267,7 @@ final class UnionAll_Default extends Operator {
                 }
                 else {
                     currentCursor = nextCursor;
-                    this.currentInputRowType = inputRowTypes.get(inputOperatorsIndex);
+                    this.currentInputRowType = inputTypes.get(inputOperatorsIndex);
                     return nextRow;
                 }
             }
@@ -266,14 +294,12 @@ final class UnionAll_Default extends Operator {
             return row;
         }
 
-        private final QueryContext context;
-        private final List<? extends Operator> inputOperators;
-        private final List<? extends RowType> inputRowTypes;
-        private final RowType outputRowType;
         private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<MasqueradingRow>();
         private int inputOperatorsIndex = -1; // right before the first operator
         private Cursor currentCursor;
         private RowType currentInputRowType;
+        private boolean idle = true;
+        private boolean destroyed = false;
     }
 
     static class WrongRowTypeException extends AkibanInternalException {

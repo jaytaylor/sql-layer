@@ -178,6 +178,7 @@ class IfEmpty_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 this.input.open();
                 this.closed = false;
                 this.inputState = InputState.UNKNOWN;
@@ -191,6 +192,7 @@ class IfEmpty_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 Row row = null;
                 checkQueryCancelation();
                 switch (inputState) {
@@ -225,10 +227,35 @@ class IfEmpty_Default extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 input.close();
                 closed = true;
             }
+        }
+
+        @Override
+        public void destroy()
+        {
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // Execution interface
@@ -276,7 +303,7 @@ class IfEmpty_Default extends Operator
         private final Cursor input;
         private final List<ExpressionEvaluation> evaluations;
         private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<ValuesHolderRow>();
-        private boolean closed;
+        private boolean closed = true;
         private InputState inputState;
     }
 }

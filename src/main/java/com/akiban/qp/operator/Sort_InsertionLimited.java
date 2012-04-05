@@ -26,8 +26,8 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ProjectedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -36,8 +36,6 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 
 import java.util.*;
 
@@ -162,7 +160,7 @@ class Sort_InsertionLimited extends Operator
 
     // Inner classes
 
-    private enum State { CLOSED, FILLING, EMPTYING }
+    private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
 
     private class Execution extends OperatorExecutionBase implements Cursor
     {
@@ -173,6 +171,7 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 state = State.FILLING;
                 for (ExpressionEvaluation eval : evaluations)
@@ -188,6 +187,7 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 switch (state) {
                 case FILLING:
@@ -239,6 +239,10 @@ class Sort_InsertionLimited extends Operator
                         return null;
                     }
                 case CLOSED:
+                    return null;
+                case DESTROYED:
+                    assert false;
+                    return null;
                 default:
                     return null;
                 }
@@ -250,6 +254,7 @@ class Sort_InsertionLimited extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             input.close();
             if (sorted != null) {
                 if (iterator == null)
@@ -261,6 +266,32 @@ class Sort_InsertionLimited extends Operator
                 sorted = null;
             }
             state = State.CLOSED;
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+            state = State.DESTROYED;
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return state == State.CLOSED;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return state == State.FILLING || state == State.EMPTYING;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return state == State.DESTROYED;
         }
 
         // Execution interface
@@ -281,7 +312,7 @@ class Sort_InsertionLimited extends Operator
 
         private final Cursor input;
         private final List<ExpressionEvaluation> evaluations;
-        private State state;
+        private State state = State.CLOSED;
         private SortedSet<Holder> sorted;
         private Iterator<Holder> iterator;
     }

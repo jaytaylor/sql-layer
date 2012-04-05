@@ -208,6 +208,7 @@ class Intersect_Ordered extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 leftInput.open();
                 rightInput.open();
                 nextLeftRow();
@@ -223,6 +224,7 @@ class Intersect_Ordered extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 Row next = null;
                 while (!closed && next == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -269,6 +271,7 @@ class Intersect_Ordered extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 leftRow.release();
                 rightRow.release();
@@ -276,6 +279,33 @@ class Intersect_Ordered extends Operator
                 rightInput.close();
                 closed = true;
             }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            leftInput.destroy();
+            rightInput.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            assert leftInput.isDestroyed() == rightInput.isDestroyed();
+            return leftInput.isDestroyed();
         }
 
         // Execution interface
@@ -333,7 +363,7 @@ class Intersect_Ordered extends Operator
         // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
         // ShareHolders, so they are needed here.
 
-        private boolean closed = false;
+        private boolean closed = true;
         private final Cursor leftInput;
         private final Cursor rightInput;
         private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
