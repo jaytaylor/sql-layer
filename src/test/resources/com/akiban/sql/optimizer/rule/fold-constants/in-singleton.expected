@@ -1,4 +1,4 @@
-electQuery@5639cf44
+SelectQuery@5639cf44
   ResultSet@6d56a595[name]
     Project@53911147[customers.name]
       Select@5905772d[customers.cid == 2]
