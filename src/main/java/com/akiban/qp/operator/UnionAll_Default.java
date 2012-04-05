@@ -211,10 +211,10 @@ final class UnionAll_Default extends Operator {
         public void close() {
             CursorLifecycle.checkIdleOrActive(this);
             inputOperatorsIndex = -1;
-            if (currentCursor != null)
+            if (currentCursor != null) {
                 currentCursor.close();
-            else
                 currentCursor = null;
+            }
             currentInputRowType = null;
             rowHolder.release();
             idle = true;

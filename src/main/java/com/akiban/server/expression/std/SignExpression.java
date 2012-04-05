@@ -72,6 +72,9 @@ public class SignExpression extends AbstractUnaryExpression
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
 
+            if (argumentTypes.get(0).getType() == AkType.VARCHAR)
+                argumentTypes.setType(0, AkType.DOUBLE);
+            
             return ExpressionTypes.INT;
         }
         
@@ -93,17 +96,30 @@ public class SignExpression extends AbstractUnaryExpression
             AkType operandType = operand().getConversionType();
             switch (operandType)
             {
+                // If the input is NaN, return NULL for type simplicity
                 case DOUBLE:
-                    valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getDouble(), 0.0d))); 
+                    if (Double.isNaN(operand().getDouble()))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getDouble(), 0.0d)));
                     break;
                 case U_DOUBLE:
-                    valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getUDouble(), 0.0d))); 
+                    if (Double.isNaN(operand().getUDouble()))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getUDouble(), 0.0d))); 
                     break;
                 case FLOAT:
-                    valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getFloat(), 0.0f))); 
+                    if (Float.isNaN(operand().getFloat()))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getFloat(), 0.0f))); 
                     break;
                 case U_FLOAT:
-                    valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getUFloat(), 0.0f))); 
+                    if (Float.isNaN(operand().getUFloat()))
+                        return NullValueSource.only();
+                    else                    
+                        valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getUFloat(), 0.0f))); 
                     break;
                 case LONG:
                     Long longInput = new Long(operand().getLong());
@@ -122,6 +138,10 @@ public class SignExpression extends AbstractUnaryExpression
                     break;
                 case U_BIGINT:                    
                     valueHolder().putInt(finalReturnValueOf( operand().getUBigInt().compareTo(BigInteger.ZERO) )); 
+                    break;
+                case VARCHAR:
+                    double parsedStrInput = Double.parseDouble(operand().getString());
+                    valueHolder().putInt(finalReturnValueOf( Double.compare(parsedStrInput, 0.0d)));
                     break;
                 default:
                     QueryContext context = queryContext();

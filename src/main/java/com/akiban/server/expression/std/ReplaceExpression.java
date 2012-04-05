@@ -63,6 +63,12 @@ public class ReplaceExpression extends AbstractTernaryExpression
             }
             return ExpressionTypes.varchar(length);
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
 
     private static final class InnerEvaluation extends AbstractThreeArgExpressionEvaluation

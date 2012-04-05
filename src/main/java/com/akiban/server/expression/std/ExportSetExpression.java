@@ -75,6 +75,12 @@ public class ExportSetExpression extends AbstractCompositeExpression
                 throw new WrongExpressionArityException(3, arguments.size());
             return new ExportSetExpression(arguments);
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
         
     };
 

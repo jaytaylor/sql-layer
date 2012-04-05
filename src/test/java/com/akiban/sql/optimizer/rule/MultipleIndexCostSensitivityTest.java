@@ -49,7 +49,7 @@ import static java.lang.Math.round;
 @Ignore
 public class MultipleIndexCostSensitivityTest
 {
-    public static final File RESOURCE_DIR = new File(OptimizerTestBase.RESOURCE_DIR, "costing_sensitivity");
+    public static final File RESOURCE_DIR = new File(OptimizerTestBase.RESOURCE_DIR, "1_vs_2_indexes");
     public static final String SCHEMA = OptimizerTestBase.DEFAULT_SCHEMA;
 
     private final int MAX_KEY = 16;

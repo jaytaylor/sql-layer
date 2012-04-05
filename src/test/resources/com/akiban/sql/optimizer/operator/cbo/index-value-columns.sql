@@ -1,0 +1,1 @@
+SELECT * FROM customers WHERE name = 'Smith' AND cid = 1

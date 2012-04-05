@@ -70,6 +70,12 @@ public class CoalesceExpression extends AbstractCompositeExpression {
             
             return ExpressionTypes.newType(top, maxPre, maxScale);
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
 
     @Override

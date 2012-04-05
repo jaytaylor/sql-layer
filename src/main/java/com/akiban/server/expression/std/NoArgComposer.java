@@ -41,6 +41,21 @@ abstract class NoArgComposer implements ExpressionComposer {
 
     protected abstract ExpressionType composeType();
 
+    protected Expression compose (ExpressionType type)
+    {
+        throw new UnsupportedOperationException("not supported");
+    }
+    
+    @Override
+    public Expression compose (List<? extends Expression> arguments, List<ExpressionType> typesList)
+    {
+        if (!arguments.isEmpty())
+            throw new WrongExpressionArityException(0, arguments.size());
+        if (typesList.size() != 1)
+            throw new IllegalArgumentException("invalid argc");
+        return compose(typesList.get(0));
+    }
+    
     @Override
     public Expression compose(List<? extends Expression> arguments) {
         if (arguments.size() != 0)

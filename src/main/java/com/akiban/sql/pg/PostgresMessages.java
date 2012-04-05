@@ -109,6 +109,14 @@ public enum PostgresMessages {
     public static boolean writeTypeCorrect (final int type) { return writeMessages.containsKey(type); }
     
     public static PostgresMessages messageType (final int typeCode) { return readMessages.get(typeCode); }
+
+    public String toString()
+    {
+        char messageType =
+            code == 0 ? '0' :
+            code == -1 ? '-' : (char) code;
+        return String.format("[%c]", messageType);
+    }
     
     static {
         readMessages = new HashMap<Integer,PostgresMessages>();

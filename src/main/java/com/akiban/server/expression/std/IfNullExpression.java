@@ -52,6 +52,12 @@ public class IfNullExpression extends CoalesceExpression
         {
             return new IfNullExpression(arguments);
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
     
     protected IfNullExpression (List< ? extends Expression> children)

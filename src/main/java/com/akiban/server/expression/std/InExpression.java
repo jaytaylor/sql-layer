@@ -61,6 +61,12 @@ public final class InExpression extends AbstractCompositeExpression {
                 argumentTypes.setType(i, firstArg);
             return ExpressionTypes.BOOL;
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
 
     @Override

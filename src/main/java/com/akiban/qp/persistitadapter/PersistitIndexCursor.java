@@ -96,6 +96,7 @@ class PersistitIndexCursor implements Cursor
     {
         adapter.returnExchange(exchange);
         exchange = null;
+        sortCursor = null;
     }
 
     @Override
@@ -145,11 +146,6 @@ class PersistitIndexCursor implements Cursor
             row.hold(adapter.newIndexRow(indexRowType));
         }
         return row;
-    }
-
-    private Index index()
-    {
-        return indexRowType.index();
     }
 
     // Object state
