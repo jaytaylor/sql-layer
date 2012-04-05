@@ -27,6 +27,7 @@
 package com.akiban.ais.protobuf;
 
 import com.akiban.ais.CAOIBuilderFiller;
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
@@ -38,13 +39,17 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.error.ProtobufWriteException;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
 import static com.akiban.ais.AISComparator.compareAndAssert;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class ProtobufReaderWriterTest {
     private final String SCHEMA = "test";
@@ -169,6 +174,32 @@ public class ProtobufReaderWriterTest {
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
         ProtobufWriter writer = new ProtobufWriter(bb);
         writer.save(inAIS);
+    }
+
+    // bug971833
+    @Test
+    public void tableWithNoDeclaredPK() {
+        // CREATE TABLE t1(valid BOOLEAN, state CHAR(2))
+        final String TABLE = "t1";
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, TABLE);
+        builder.column(SCHEMA, TABLE, "valid", 0, "TINYINT", null, null, true, false, null, null);
+        builder.column(SCHEMA, TABLE, "state", 1, "CHAR", 2L, null, true, false, null, null);
+        builder.createGroup(TABLE, SCHEMA, "akiban_"+TABLE);
+        builder.addTableToGroup(TABLE, SCHEMA, TABLE);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+        final AkibanInformationSchema inAIS = builder.akibanInformationSchema();
+        UserTable t1Table = inAIS.getUserTable(SCHEMA, TABLE);
+        assertNull("Has no declared PK", t1Table.getPrimaryKey());
+        assertNotNull("Has internal PK", t1Table.getPrimaryKeyIncludingInternal());
+
+        inAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        inAIS.freeze();
+        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+
+        compareAndAssert(inAIS, outAIS, false);
     }
 
 
