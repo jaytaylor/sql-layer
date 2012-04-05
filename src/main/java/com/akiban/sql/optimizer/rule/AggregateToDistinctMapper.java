@@ -153,6 +153,7 @@ public class AggregateToDistinctMapper extends BaseRule
                         sort.getOutput().replaceInput(sort, n);
                         sort.replaceInput(n, distinct.getInput());
                         distinct.replaceInput(distinct.getInput(), sort);
+                        distinct.setImplementation(Distinct.Implementation.EXPLICIT_SORT);
                     }
                 }
                 else if (n instanceof Project) {
