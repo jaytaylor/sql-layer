@@ -160,7 +160,7 @@ final class ExprUtil {
 
         private final AkType type;
 
-        private static final ExpressionEvaluation KILLER = new ExpressionEvaluation() {
+        private static final ExpressionEvaluation KILLER = new ExpressionEvaluation.Base() {
             @Override
             public void of(Row row) {
             }
