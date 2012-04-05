@@ -1,8 +1,8 @@
 SelectQuery@788390b0
   ResultSet@29b22d99[iid, oid, sku, quan]
-    Project@70cfad31[user.items.iid, user.items.oid, user.items.sku, user.items.quan]
-      Select@559b808a[user.items.quan > 100]
-        Flatten@18f63055(user.items)
-          AncestorLookup@54140fee(user.items -> [user.items])
+    Project@70cfad31[items.iid, items.oid, items.sku, items.quan]
+      Select@559b808a[items.quan > 100]
+        Flatten@18f63055(items)
+          AncestorLookup@54140fee(items -> [items])
             IndexScan@7121fd61(Index(user.items.sku[IndexColumn(sku)]), SORTED)
-            TableSource@174323d5(user.items - TableGroup@10c789fb(customers))
+            TableSource@174323d5(items - TableGroup@10c789fb(customers))

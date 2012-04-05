@@ -1,0 +1,153 @@
+Index: px
+RowCount: 131071
+SampledCount: 131071
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [0]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 4
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 8
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 16
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 32
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 64
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 128
+    key: [7]
+    lt: 0
+  - distinct: 0
+    eq: 256
+    key: [8]
+    lt: 0
+  - distinct: 0
+    eq: 512
+    key: [9]
+    lt: 0
+  - distinct: 0
+    eq: 1024
+    key: [10]
+    lt: 0
+  - distinct: 0
+    eq: 2048
+    key: [11]
+    lt: 0
+  - distinct: 0
+    eq: 4096
+    key: [12]
+    lt: 0
+  - distinct: 0
+    eq: 8192
+    key: [13]
+    lt: 0
+  - distinct: 0
+    eq: 16384
+    key: [14]
+    lt: 0
+  - distinct: 0
+    eq: 32678
+    key: [15]
+    lt: 0
+  - distinct: 0
+    eq: 65536
+    key: [16]
+    lt: 0
+Table: parent
+Timestamp: 2012-01-18T00:24:08.679Z
+---
+Index: cy
+RowCount: 131071
+SampledCount: 131071
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [0]
+    lt: 0
+  - distinct: 0
+    eq: 2
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 4
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 8
+    key: [3]
+    lt: 0
+  - distinct: 0
+    eq: 16
+    key: [4]
+    lt: 0
+  - distinct: 0
+    eq: 32
+    key: [5]
+    lt: 0
+  - distinct: 0
+    eq: 64
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 128
+    key: [7]
+    lt: 0
+  - distinct: 0
+    eq: 256
+    key: [8]
+    lt: 0
+  - distinct: 0
+    eq: 512
+    key: [9]
+    lt: 0
+  - distinct: 0
+    eq: 1024
+    key: [10]
+    lt: 0
+  - distinct: 0
+    eq: 2048
+    key: [11]
+    lt: 0
+  - distinct: 0
+    eq: 4096
+    key: [12]
+    lt: 0
+  - distinct: 0
+    eq: 8192
+    key: [13]
+    lt: 0
+  - distinct: 0
+    eq: 16384
+    key: [14]
+    lt: 0
+  - distinct: 0
+    eq: 32678
+    key: [15]
+    lt: 0
+  - distinct: 0
+    eq: 65536
+    key: [16]
+    lt: 0
+Table: child
+Timestamp: 2012-01-18T00:24:08.679Z

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.store;
@@ -19,7 +30,6 @@ import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
 import java.io.IOException;
 import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -48,7 +58,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.validation.AISValidation;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
@@ -69,6 +78,7 @@ import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
 import org.slf4j.Logger;
@@ -113,7 +123,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final ConfigurationService config;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
-    private ByteBuffer aisByteBuffer;
+    private GrowableByteBuffer aisByteBuffer;
 
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
@@ -614,7 +624,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             maxAISBufferSize = 0;
         }
         // 0 = unlimited, start off at 1MB in this case.
-        aisByteBuffer = ByteBuffer.allocate(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
+        aisByteBuffer = new GrowableByteBuffer(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
         try {
             afterStart();
         } catch (PersistitException e) {
@@ -748,7 +758,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                                              ex.clear().append(BY_AIS);
                                              if(ex.isValueDefined()) {
                                                  byte[] storedAIS = ex.fetch().getValue().getByteArray();
-                                                 ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
+                                                 GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
                                                  new Reader(new MessageSource(buffer)).load(newAIS);
                                              }
                                          }
@@ -782,7 +792,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * @return ByteBuffer
      * @throws Exception For any error during serialization or if the buffer is too small.
      */
-    private ByteBuffer trySerializeAIS(final AkibanInformationSchema newAIS, final String volumeName) {
+    private GrowableByteBuffer trySerializeAIS(final AkibanInformationSchema newAIS, final String volumeName) {
         boolean finishedSerializing = false;
         while(!finishedSerializing) {
             try {
@@ -807,7 +817,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 if(maxAISBufferSize != 0 && newCapacity > maxAISBufferSize) {
                     newCapacity = maxAISBufferSize;
                 }
-                aisByteBuffer = ByteBuffer.allocate(newCapacity);
+                aisByteBuffer = new GrowableByteBuffer(newCapacity);
             }
         }
         return aisByteBuffer;
@@ -830,7 +840,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             throws PersistitException {
 
         //TODO: Verify the newAIS.isFrozen(), if not throw an exception. 
-        ByteBuffer buffer = trySerializeAIS(newAIS, getVolumeForSchemaTree(schemaName));
+        GrowableByteBuffer buffer = trySerializeAIS(newAIS, getVolumeForSchemaTree(schemaName));
         final TreeLink schemaTreeLink =  treeService.treeLink(schemaName, SCHEMA_TREE_NAME);
         final Exchange schemaEx = treeService.getExchange(session, schemaTreeLink);
         

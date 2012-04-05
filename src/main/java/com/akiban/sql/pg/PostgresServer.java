@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
@@ -63,7 +74,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     // AIS-dependent state
     private final Object aisLock = new Object();
     private volatile long aisTimestamp = -1;
-    private volatile ServerStatementCache<PostgresStatement> statementCache;
+    private volatile int statementCacheCapacity;
+    private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
     private final Map<String, LoadablePlan<?>> loadablePlans = new HashMap<String, LoadablePlan<?>>();
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
@@ -80,9 +92,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             throw new InvalidPortException(port);
         
         String capacityString = properties.getProperty("statementCacheCapacity");
-        int statementCacheCapacity = Integer.parseInt(capacityString);
-        if (statementCacheCapacity > 0)
-            statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
+        statementCacheCapacity = Integer.parseInt(capacityString);
     }
 
     public Properties getProperties() {
@@ -200,7 +210,18 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return getConnection(pid).getRemoteAddress();
     }
 
-    public ServerStatementCache<PostgresStatement> getStatementCache() {
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
+        if (statementCacheCapacity <= 0) 
+            return null;
+
+        ServerStatementCache<PostgresStatement> statementCache;
+        synchronized (statementCaches) {
+            statementCache = statementCaches.get(key);
+            if (statementCache == null) {
+                statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
+                statementCaches.put(key, statementCache);
+            }
+        }
         return statementCache;
     }
 
@@ -209,9 +230,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     /** This is the version for use by connections. */
-    // TODO: This could create a new one if we didn't want to share them.
-    public ServerStatementCache<PostgresStatement> getStatementCache(long timestamp)
-    {
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
+        ServerStatementCache<PostgresStatement> statementCache = getStatementCache(key);
         synchronized (aisLock) {
             if (aisTimestamp != timestamp) {
                 assert aisTimestamp < timestamp : timestamp;
@@ -227,37 +247,42 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public int getStatementCacheCapacity() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getCapacity();
+        return statementCacheCapacity;
     }
 
     @Override
     public void setStatementCacheCapacity(int capacity) {
-        if (capacity <= 0) {
-            statementCache = null;
+        statementCacheCapacity = capacity;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                statementCache.setCapacity(capacity);
+            }
+            if (capacity <= 0) {
+                statementCaches.clear();
+            }
         }
-        else if (statementCache == null)
-            statementCache = new ServerStatementCache<PostgresStatement>(capacity);
-        else
-            statementCache.setCapacity(capacity);
     }
 
     @Override
     public int getStatementCacheHits() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getHits();
+        int total = 0;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                total += statementCache.getHits();
+            }        
+        }
+        return total;
     }
 
     @Override
     public int getStatementCacheMisses() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getMisses();
+        int total = 0;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                total += statementCache.getMisses();
+            }        
+        }
+        return total;
     }
     
     @Override

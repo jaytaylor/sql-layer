@@ -1,9 +1,9 @@
 SelectQuery@7dc21ece
   ResultSet@5374a6e2[sku, name]
-    Project@f786a3c[user.items.sku, user.books.name]
-      Select@2a869113[user.items.quan > user.books.bid]
+    Project@f786a3c[items.sku, books.name]
+      Select@2a869113[items.quan > books.bid]
         JoinNode@689e8c34(INNER/NESTED_LOOPS)
           TableJoins@2a63b2e6(TableGroup@77762fc7(books) - GroupScan@5898bbf6(Group(books -> user._akiban_books)))
-            TableSource@6a40afb9(user.books - TableGroup@77762fc7(books))
+            TableSource@6a40afb9(books - TableGroup@77762fc7(books))
           TableJoins@703aef16(TableGroup@2d26c6ea(customers) - GroupScan@135c40eb(Group(customers -> user._akiban_customers)))
-            TableSource@106df95(user.items - TableGroup@2d26c6ea(customers))
+            TableSource@106df95(items - TableGroup@2d26c6ea(customers))

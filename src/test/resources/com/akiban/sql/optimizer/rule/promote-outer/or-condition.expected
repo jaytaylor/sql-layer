@@ -1,7 +1,7 @@
 SelectQuery@2d82ef6b
   ResultSet@5dde45e2[cid, name, oid, cid, order_date]
-    Project@2bbe2893[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
-      Select@5bf02b85[or(user.orders.order_date < Cast(2000-01-01 AS DATE NOT NULL),user.orders.order_date > Cast(2011-12-31 AS DATE NOT NULL))]
-        JoinNode@74b957ea(INNER[user.customers.cid == user.orders.cid])
-          TableSource@343aff84(user.customers)
-          TableSource@d5d4de6(user.orders)
+    Project@2bbe2893[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
+      Select@5bf02b85[or(orders.order_date < Cast(2000-01-01 AS DATE NOT NULL),orders.order_date > Cast(2011-12-31 AS DATE NOT NULL))]
+        JoinNode@74b957ea(INNER[customers.cid == orders.cid])
+          TableSource@343aff84(customers)
+          TableSource@d5d4de6(orders)

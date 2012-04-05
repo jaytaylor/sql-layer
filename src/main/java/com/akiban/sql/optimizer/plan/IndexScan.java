@@ -1,29 +1,37 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.expression.std.Comparison;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-
-import com.akiban.sql.optimizer.rule.range.ColumnRanges;
-
+import com.akiban.util.Strings;
 import java.util.*;
 
-public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression>
+public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression,IndexScan>
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
@@ -31,28 +39,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
 
     private TableSource rootMostTable, rootMostInnerTable, leafMostInnerTable, leafMostTable;
 
-    // Conditions subsumed by this index.
-    // TODO: any cases where a condition is only partially handled and
-    // still needs to be checked with Select?
-    private List<ConditionExpression> conditions;
-
-    // First equalities in the order of the index.
-    private List<ExpressionNode> equalityComparands;
-    // Followed by an optional inequality.
-    private ExpressionNode lowComparand, highComparand;
-    // TODO: This doesn't work for merging: consider x < ? AND x <= ?. 
-    // May need building of index keys in the expressions subsystem.
-    private boolean lowInclusive, highInclusive;
-
-    private ColumnRanges conditionRange;
-
-    // This is how the indexed result will be ordered from using this index.
-    private List<OrderByExpression> ordering;
-
-    private OrderEffectiveness orderEffectiveness;
-
-    // Columns in order, should the index be used as covering.
-    private List<ExpressionNode> columns;
     private boolean covering;
 
     // Tables that would still need to be fetched if this index were used.
@@ -60,6 +46,9 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
 
     // Estimated cost of using this index.
     private CostEstimate costEstimate;
+    
+    // The cost of just the scan of this index, not counting lookups, flattening, etc
+    private CostEstimate scanCostEstimate;
 
     public IndexScan(TableSource table) {
         rootMostTable = rootMostInnerTable = leafMostInnerTable = leafMostTable = table;
@@ -87,6 +76,7 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     public TableSource getLeafMostTable() {
         return leafMostTable;
     }
+
     /** Return tables included in the index, leafmost to rootmost. */
     public List<TableSource> getTables() {
         List<TableSource> tables = new ArrayList<TableSource>();
@@ -97,122 +87,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
             table = table.getParentTable();
         }
         return tables;
-    }
-
-    public List<ConditionExpression> getConditions() {
-        return conditions;
-    }
-
-    public ColumnRanges getConditionRange() {
-        return conditionRange;
-    }
-
-    public boolean hasConditions() {
-        return ((conditions != null) && !conditions.isEmpty());
-    }
-
-    public List<ExpressionNode> getEqualityComparands() {
-        return equalityComparands;
-    }
-    public ExpressionNode getLowComparand() {
-        return lowComparand;
-    }
-    public boolean isLowInclusive() {
-        return lowInclusive;
-    }
-    public ExpressionNode getHighComparand() {
-        return highComparand;
-    }
-    public boolean isHighInclusive() {
-        return highInclusive;
-    }
-
-    public void addEqualityCondition(ConditionExpression condition, 
-                                     ExpressionNode comparand) {
-        if (equalityComparands == null)
-            equalityComparands = new ArrayList<ExpressionNode>();
-        equalityComparands.add(comparand);
-        if (conditions == null)
-            conditions = new ArrayList<ConditionExpression>();
-        conditions.add(condition);
-    }
-
-    public void addInequalityCondition(ConditionExpression condition, 
-                                       Comparison comparison,
-                                       ExpressionNode comparand) {
-        if ((comparison == Comparison.GT) || (comparison == Comparison.GE)) {
-            if (lowComparand == null) {
-                lowComparand = comparand;
-                lowInclusive = (comparison == Comparison.GE);
-            }
-            else if (lowInclusive == (comparison == Comparison.GE)) {
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
-                operands.add(lowComparand);
-                operands.add(comparand);
-                lowComparand = new FunctionExpression("max", 
-                                                      operands,
-                                                      lowComparand.getSQLtype(),
-                                                      null);
-            }
-            else
-                // TODO: Could do the MAX anyway and test the conditions later.
-                // Might take some refactoring to know which
-                // conditions are already there.
-                return;
-        }
-        else if ((comparison == Comparison.LT) || (comparison == Comparison.LE)) {
-            if (highComparand == null) {
-                highComparand = comparand;
-                highInclusive = (comparison == Comparison.LE);
-            }
-            else if (highInclusive == (comparison == Comparison.LE)) {
-                List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
-                operands.add(highComparand);
-                operands.add(comparand);
-                highComparand = new FunctionExpression("min", 
-                                                      operands,
-                                                      highComparand.getSQLtype(),
-                                                      null);
-            }
-            else
-                // Not really an inequality.
-                return;
-        }
-        else {
-            return;
-        }
-        if (conditions == null)
-            conditions = new ArrayList<ConditionExpression>();
-        conditions.add(condition);
-    }
-
-    public void addRangeCondition(ColumnRanges range) {
-        assert conditionRange == null : conditionRange;
-        conditionRange = range;
-        if (conditions == null)
-            conditions = new ArrayList<ConditionExpression>();
-        conditions.addAll(range.getConditions());
-    }
-
-    public List<ExpressionNode> getColumns() {
-        return columns;
-    }
-    public void setColumns(List<ExpressionNode> columns) {
-        this.columns = columns;
-    }
-
-    public List<OrderByExpression> getOrdering() {
-        return ordering;
-    }
-    public void setOrdering(List<OrderByExpression> ordering) {
-        this.ordering = ordering;
-    }
-                              
-    public OrderEffectiveness getOrderEffectiveness() {
-        return orderEffectiveness;
-    }
-    public void setOrderEffectiveness(OrderEffectiveness orderEffectiveness) {
-        this.orderEffectiveness = orderEffectiveness;
     }
 
     public boolean isCovering() {
@@ -227,6 +101,14 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     }
     public void setRequiredTables(Set<TableSource> requiredTables) {
         this.requiredTables = requiredTables;
+    }
+
+    public CostEstimate getScanCostEstimate() {
+        return scanCostEstimate;
+    }
+
+    public void setScanCostEstimate(CostEstimate scanCostEstimate) {
+        this.scanCostEstimate = scanCostEstimate;
     }
 
     public CostEstimate getCostEstimate() {
@@ -252,30 +134,55 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     @Override
     protected void deepCopy(DuplicateMap map) {
         super.deepCopy(map);
-        equalityComparands = duplicateList(equalityComparands, map);
-        if (lowComparand != null)
-            lowComparand = (ConditionExpression)lowComparand.duplicate(map);
-        if (highComparand != null)
-            highComparand = (ConditionExpression)highComparand.duplicate(map);
-        ordering = duplicateList(ordering, map);
     }
-    
-    public abstract List<IndexColumn> getIndexColumns();
 
+    public abstract List<OrderByExpression> getOrdering();
+    public abstract OrderEffectiveness getOrderEffectiveness();
+    public abstract List<ExpressionNode> getColumns();
+    public abstract List<IndexColumn> getIndexColumns();
+    public abstract List<ConditionExpression> getGroupConditions();
+    public abstract List<ExpressionNode> getEqualityComparands();
+    public abstract List<ConditionExpression> getConditions();
+    public abstract boolean hasConditions();
+    public abstract ExpressionNode getLowComparand();
+    public abstract boolean isLowInclusive();
+    public abstract ExpressionNode getHighComparand();
+    public abstract boolean isHighInclusive();
+    
     @Override
     public String summaryString() {
-        StringBuilder str = new StringBuilder(super.summaryString());
-        str.append("(");
-        str.append(summarizeIndex());
-        str.append(", ");
-        if (covering)
+        return summaryString(-1);
+    }
+    
+    public String summaryString(boolean prettyFormat) {
+        return summaryString(prettyFormat ? 0 : -1);
+    }
+
+    private String summaryString(int indentation) {
+        StringBuilder sb = new StringBuilder();
+        buildSummaryString(sb, indentation, true);
+        return sb.toString();
+    }
+     
+    protected void buildSummaryString(StringBuilder str, int indentation, boolean full) {
+        str.append(super.summaryString());
+        str.append('(');
+        str.append(summarizeIndex(indentation));
+        if (indentation < 0) {
+            str.append(", ");
+        }
+        else if (indentation == 0) {
+            str.append(Strings.NL);
+            indent(str, 1).append("-> ");
+        }
+        if (full && covering)
             str.append("covering/");
-        if (orderEffectiveness != null)
-            str.append(orderEffectiveness);
-        if (ordering != null) {
+        if (full && getOrderEffectiveness() != null)
+            str.append(getOrderEffectiveness());
+        if (full && getOrdering() != null) {
             boolean anyReverse = false, allReverse = true;
-            for (int i = 0; i < ordering.size(); i++) {
-                if (ordering.get(i).isAscending() != isAscendingAt(i))
+            for (int i = 0; i < getOrdering().size(); i++) {
+                if (getOrdering().get(i).isAscending() != isAscendingAt(i))
                     anyReverse = true;
                 else
                     allReverse = false;
@@ -284,47 +191,45 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
                 if (allReverse)
                     str.append("/reverse");
                 else {
-                    for (int i = 0; i < ordering.size(); i++) {
+                    for (int i = 0; i < getOrdering().size(); i++) {
                         str.append((i == 0) ? "/" : ",");
-                        str.append(ordering.get(i).isAscending() ? "ASC" : "DESC");
+                        str.append(getOrdering().get(i).isAscending() ? "ASC" : "DESC");
                     }
                 }
             }
         }
-        if (equalityComparands != null) {
-            for (ExpressionNode expression : equalityComparands) {
-                str.append(", =");
-                str.append(expression);
-            }
-        }
-        if (lowComparand != null) {
+        describeEqualityComparands(str);
+        if (getLowComparand() != null) {
             str.append(", ");
-            str.append((lowInclusive) ? ">=" : ">");
-            str.append(lowComparand);
+            str.append((isLowInclusive()) ? ">=" : ">");
+            str.append(getLowComparand());
         }
-        if (highComparand != null) {
+        if (getHighComparand() != null) {
             str.append(", ");
-            str.append((highInclusive) ? "<=" : "<");
-            str.append(highComparand);
+            str.append((isHighInclusive()) ? "<=" : "<");
+            str.append(getHighComparand());
         }
-        if (conditionRange != null) {
-            str.append(", UNIONs of ");
-            str.append(conditionRange.describeRanges());
-        }
-        if (costEstimate != null) {
+        describeConditionRange(str);
+        if (full && costEstimate != null) {
             str.append(", ");
             str.append(costEstimate);
         }
         str.append(")");
-        return str.toString();
     }
     
-    void setConditions(List<ConditionExpression> newConditions) {
-        if (conditions != null)
-            throw new IllegalStateException(conditions.toString());
-        conditions = newConditions;
+    protected static StringBuilder indent(int indentation) {
+        return indent(new StringBuilder(), indentation);
+    }
+    
+    protected static StringBuilder indent(StringBuilder str, int indentation) {
+        while (indentation --> 0) {
+            str.append("    ");
+        }
+        return str;
     }
 
-    protected abstract String summarizeIndex();
+    protected abstract String summarizeIndex(int indentation);
+    protected void describeConditionRange(StringBuilder output) {}
+    protected void describeEqualityComparands(StringBuilder output) {}
     protected abstract boolean isAscendingAt(int index);
 }

@@ -1,88 +1,49 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.store;
 
+import com.akiban.ais.CAOIBuilderFiller;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.session.Session;
+
+import static com.akiban.ais.CAOIBuilderFiller.*;
 
 public class DataDictionaryDDL {
     public final static String SCHEMA = "data_dictionary_test";
-    public final static String CUSTOMER_TABLE = "customer";
-    public final static String ADDRESS_TABLE = "address";
-    public final static String ORDER_TABLE = "order";
-    public final static String ITEM_TABLE = "item";
-    public final static String COMPONENT_TABLE = "component";
-
-    private static NewAISBuilder createAndFillBuilder(String schema) {
-        NewAISBuilder builder = AISBBasedBuilder.create(schema);
-        
-        builder.userTable(CUSTOMER_TABLE).
-                colBigInt("customer_id", false).
-                colString("customer_name", 100, false).
-                pk("customer_id");
-        
-        builder.userTable(ADDRESS_TABLE).
-                colBigInt("customer_id", false).
-                colLong("instance_id", false).
-                colString("address_line1", 60, false).
-                colString("address_line2", 60, false).
-                colString("address_line3", 60, false).
-                pk("customer_id", "instance_id").
-                joinTo("customer").on("customer_id", "customer_id");
-
-        builder.userTable(ORDER_TABLE).
-                colBigInt("order_id", false).
-                colBigInt("customer_id", false).
-                colLong("order_date", false).
-                pk("order_id").
-                joinTo("customer").on("customer_id", "customer_id");
-        
-        builder.userTable(ITEM_TABLE).
-                colBigInt("order_id", false).
-                colBigInt("part_id", false).
-                colLong("quantity", false).
-                colLong("unit_price", false).
-                pk("part_id").
-                joinTo("order").on("order_id", "order_id");
-
-        builder.userTable(COMPONENT_TABLE).
-                colBigInt("part_id", false).
-                colBigInt("component_id", false).
-                colLong("supplier_id", false).
-                colLong("unique_id", false).
-                colString("description", 50, true).
-                pk("component_id").
-                uniqueKey("uk", "unique_id").
-                key("xk", "supplier_id").
-                joinTo("item").on("part_id", "part_id");
-                
-        return builder;
-    }
 
     public static void createTables(Session session, DDLFunctions ddl) throws InvalidOperationException {
         createTables(session, ddl, SCHEMA);
     }
 
     public static void createTables(Session session, DDLFunctions ddl, String schema) throws InvalidOperationException {
-        NewAISBuilder builder = createAndFillBuilder(schema);
+        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder(schema);
         AkibanInformationSchema tempAIS = builder.ais();
 
         ddl.createTable(session, tempAIS.getUserTable(schema, CUSTOMER_TABLE));

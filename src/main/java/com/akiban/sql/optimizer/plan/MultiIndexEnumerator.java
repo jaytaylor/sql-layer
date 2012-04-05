@@ -1,257 +1,207 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
-import com.akiban.sql.optimizer.plan.MultiIndexEnumerator.BranchInfo;
-import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
+import java.util.NoSuchElementException;
 import java.util.Set;
 
-/**
- * <p>An enumerator which, given an Index and a set of conditions, will produce a collection of
- * {@link MultiIndexCandidate} which represent valid multi-index intersection pairs.</p>
- * 
- * <p>Like {@link MultiIndexCandidate}, this class is generic and abstract; its only abstract method is one for
- * creating an empty {@link MultiIndexCandidate}. Also like that class, the expectation is that there will be two
- * subclasses for this class: one for unit testing, and one for production.</p>
- * @param <C> the condition type.
- */
-public abstract class MultiIndexEnumerator<C,B extends BranchInfo<C>, N extends IndexIntersectionNode<? extends C>> {
-    
-    public interface BranchInfo<C> {
-        Column columnFromCondition(C condition);
-        Collection<? extends Index> getIndexes();
-        Set<C> getConditions();
-    }
-    
-    Logger log = LoggerFactory.getLogger(MultiIndexEnumerator.class);
+public abstract class MultiIndexEnumerator<C,N extends IndexIntersectionNode<C,N>,L extends N> implements Iterable<N> {
 
-    protected abstract N buildLeaf(MultiIndexCandidate<C> candidate, B branchInfo);
+    protected abstract Collection<? extends C> getLeafConditions(L node);
     protected abstract N intersect(N first, N second, int comparisonCount);
+    protected abstract List<Column> getComparisonColumns(N first, N second);
 
-    private List<N> results = new ArrayList<N>();
+    // becomes null when we start enumerating
+    private List<L> leaves = new ArrayList<L>();
     private Set<C> conditions = new HashSet<C>();
     
-    public void addBranch(B branchInfo)
-    {
-        Set<C> branchConditions = branchInfo.getConditions();
-        conditions.addAll(branchConditions);
-        Map<Column,C> colsToConds = new HashMap<Column,C>(branchConditions.size());
-        for (C cond : branchConditions) {
-            Column column = branchInfo.columnFromCondition(cond);
-            if (column == null) {
-                log.warn("couldn't map <{}> to Column", cond);
-                continue;
-            }
-            C old = colsToConds.put(column, cond);
-            if (old != null) {
-                handleDuplicateCondition(); // test hook
-            }
-        }
-        
-        
-        // Seed the results with single-index scans. Remember how many there are, so that we can later crop those out.
-        for (Index index : branchInfo.getIndexes()) {
-            MultiIndexCandidate<C> candidate = createCandidate(index, colsToConds);
-            if (candidate.anyPegged()) {
-                N leaf = buildLeaf(candidate, branchInfo);
-                results.add(leaf);
-            }
-        }
+    public void addLeaf(L leaf) {
+        leaves.add(leaf);
     }
     
-    public Collection<N> getCombinations(EquivalenceFinder<Column> columnEquivalences) {
-        if (results.isEmpty())
-            return Collections.emptyList(); // return early if there's nothing here, cause why not.
-        final int leaves = results.size();
+    public Iterator<L> leavesIterator() {
+        return leaves.iterator();
+    }
+    
+    private class ComboIterator implements Iterator<N> {
         
-        List<N> freshNodes = results;
-        List<N> oldNodes = results;
-        List<N> newNodes = new ArrayList<N>(leaves);
-        Set<C> conditionsCopy = new HashSet<C>(conditions);
-        List<C> outerRecycle = new ArrayList<C>(conditions.size());
-        List<C> innerRecycle = new ArrayList<C>(conditions.size());
-        do {
-            newNodes.clear();
-            for (N outer : freshNodes) {
-                if (outer.removeCoveredConditions(conditionsCopy, outerRecycle) && (!conditionsCopy.isEmpty())) {
-                    for (N inner : oldNodes) {
-                        if (inner != outer && inner.removeCoveredConditions(conditionsCopy, innerRecycle)) { // TODO if outer pegs [A] and inner pegs [A,B], this will emit, but it shouldn't.
-                            emit(outer, inner, newNodes, columnEquivalences);
-                            emptyInto(innerRecycle,conditionsCopy);
+        private boolean done = false;
+        private List<N> current = new ArrayList<N>();
+        private Iterator<N> currentIter;
+
+        // These are only used in advancePhase, but we cache them to save on allocations
+        private List<N> previous = new ArrayList<N>();
+        private ConditionsCounter<C> outerCounter = new ConditionsCounter<C>(conditions.size());
+        private ConditionsCounter<C> innerCounter = new ConditionsCounter<C>(conditions.size());
+        private ConditionsCount<C> bothCount = new OverlayedConditionsCount<C>(outerCounter, innerCounter);
+
+        private ComboIterator() {
+            current.addAll(leaves);
+            advancePhase();
+        }
+
+        @Override
+        public boolean hasNext() {
+            if (done)
+                return false;
+            if (currentIter.hasNext())
+                return true;
+            advancePhase();
+            return !done;
+        }
+
+        @Override
+        public N next() {
+            if (done)
+                throw new NoSuchElementException();
+            if (!currentIter.hasNext())
+                advancePhase();
+            return currentIter.next();
+        }
+
+        @Override
+        public void remove() {
+            currentIter.remove();
+        }
+
+        private void advancePhase() {
+            assert (currentIter == null) || (!currentIter.hasNext()) : "internal iterator not exhausted";
+            if (current.isEmpty()) {
+                done = true;
+                return;
+            }
+
+            previous.clear();
+            previous.addAll(current);
+            current.clear();
+            int conditionsCount = conditions.size();
+            for (N outer : previous) {
+                outer.incrementConditionsCounter(outerCounter);
+                int counted = outerCounter.conditionsCounted();
+                // only try the leaves if the outer counted some conditions, but not all of them.
+                if (counted > 0 && counted < conditionsCount) {
+                    // at this point, "outer" satisfies some conditions, and more conditions are left
+                    for (L inner : leaves) {
+                        if (inner == outer)
+                            continue; // fast path, we know there's full overlap
+                        inner.incrementConditionsCounter(innerCounter);
+                        if (inner.isUseful(bothCount) && outer.isUseful(bothCount)) {
+                            emit(outer, inner, current);
                         }
+                        innerCounter.clear();
                     }
                 }
-                emptyInto(outerRecycle, conditionsCopy);
+                outerCounter.clear();
             }
-            int oldCount = results.size();
-            results.addAll(newNodes);
-            oldNodes = results.subList(0, oldCount);
-            freshNodes = results.subList(oldCount, results.size());
-        } while (!newNodes.isEmpty());
-        
-        return results.subList(leaves, results.size());
-    }
-    
-    private static <T> void emptyInto(Collection<? extends T> source, Collection<? super T> target) {
-        target.addAll(source);
-        source.clear();
-    }
-
-    protected void handleDuplicateCondition() {
-    }
-
-    private MultiIndexCandidate<C> createCandidate(Index index, Map<Column, C> colsToConds) {
-        MultiIndexCandidate<C> result = new MultiIndexCandidate<C>(index);
-        while(true) {
-            Column nextCol = result.getNextFreeColumn();
-            if (nextCol == null)
-                break;
-            C condition = colsToConds.get(nextCol);
-            if (condition == null)
-                break;
-            result.peg(condition);
+            if (current.isEmpty()) {
+                done = true;
+                currentIter = null;
+            }
+            else {
+                currentIter = current.iterator();
+            }
         }
-        return result;
     }
 
-    private void emit(N first, N second, Collection<N> output, EquivalenceFinder<Column> columnEquivalences)
+    @Override
+    public Iterator<N> iterator() {
+        filterLeaves();
+        return new ComboIterator();
+    }
+
+    private void filterLeaves() {
+        for (Iterator<L> iter = leaves.iterator(); iter.hasNext(); ) {
+            L leaf = iter.next();
+            Collection<? extends C> nodeConditions = getLeafConditions(leaf);
+            if ( (nodeConditions != null) && (!nodeConditions.isEmpty()) ) {
+                conditions.addAll(nodeConditions);
+            }
+            else {
+                iter.remove();
+            }
+        }
+    }
+
+    private void emit(N first, N second, Collection<N> output)
     {
         Table firstTable = first.getLeafMostUTable();
         Table secondTable = second.getLeafMostUTable();
-        List<IndexColumn> commonTrailing = getCommonTrailing(first, second, columnEquivalences);
-        if (commonTrailing.isEmpty())
+        List<Column> comparisonCols = getComparisonColumns(first, second);
+        if (comparisonCols.isEmpty())
             return;
         UserTable firstUTable = (UserTable) firstTable;
         UserTable secondUTable = (UserTable) secondTable;
-        // handle the two single-branch cases
-        boolean onSameBranch = false;
-        int comparisonsLen = commonTrailing.size();
-        if (firstUTable.isDescendantOf(secondUTable)
-                && includesHKey(secondUTable, commonTrailing, columnEquivalences)) {
+        int comparisonsLen = comparisonCols.size();
+        // find the UserTable associated with the common N. This works for multi- as well as single-branch
+        UserTable commonAncestor = first.findCommonAncestor(second);
+        assert commonAncestor == second.findCommonAncestor(first) : first + "'s ancestor not reflexive with " + second;
+        boolean isMultiBranch = true;
+        if (firstUTable != secondUTable) {
+            if (commonAncestor == firstUTable) {
+                isMultiBranch = false;
+                if (includesHKey(firstUTable, comparisonCols))
+                    output.add(intersect(second, first, comparisonsLen));
+            }
+            else {
+                // in single-branch cases, we only want to output the leafmost's index
+                isMultiBranch = (commonAncestor != secondUTable);
+            }
+        }
+        if (isMultiBranch && includesHKey(commonAncestor, comparisonCols)) {
             output.add(intersect(first, second, comparisonsLen));
-            onSameBranch = true;
         }
-        if (secondUTable.isDescendantOf(firstUTable)
-                && includesHKey(firstUTable, commonTrailing, columnEquivalences)) {
-            output.add(intersect(second, first, comparisonsLen));
-            onSameBranch = true;
-        }
-        if (!onSameBranch) {
-            Collection<Column> ancestorHKeys = ancestorHKeys(firstUTable, secondUTable);
-            List<Column> commonCols = indexColsToCols(commonTrailing);
-            // check if commonTrailing contains all ancestorHKeys, using equivalence
-            for (Column hkeyCol : ancestorHKeys) {
+    }
+
+    private boolean includesHKey(UserTable table, List<Column> columns) {
+        // TODO this seems horridly inefficient, but the data set is going to be quite small
+        for (HKeySegment segment : table.hKey().segments()) {
+            for (HKeyColumn hKeyCol : segment.columns()) {
                 boolean found = false;
-                for (Column commonCol : commonCols) {
-                    if (columnEquivalences.areEquivalent(commonCol, hkeyCol)) {
+                for (Column equiv : hKeyCol.equivalentColumns()) {
+                    if (columns.contains(equiv)) {
                         found = true;
                         break;
                     }
                 }
                 if (!found)
-                    return;
+                    return false;
             }
-            output.add(intersect(first, second, comparisonsLen));
-            output.add(intersect(second, first, comparisonsLen));
-        }
-    }
-
-    private List<Column> indexColsToCols(List<IndexColumn> inList) {
-        List<Column> results = new ArrayList<Column>(inList.size());
-        for (IndexColumn iCol : inList)
-            results.add(iCol.getColumn());
-        return results;
-    }
-
-    private Collection<Column> ancestorHKeys(UserTable first, UserTable second) {
-        // find most common ancestor
-        List<UserTable> firstAncestors = first.getAncestors();
-        List<UserTable> secondAncestors = second.getAncestors();
-        int ntables = Math.min(firstAncestors.size(), secondAncestors.size());
-        List<Column> results = new ArrayList<Column>(ntables); // size assuming one pk per table
-        for (int i=0; i < ntables; ++i) {
-            UserTable firstAncestor = firstAncestors.get(i);
-            UserTable secondAncestor = secondAncestors.get(i);
-            if (firstAncestor != secondAncestor)
-                break;
-            List<IndexColumn> pk = firstAncestor.getPrimaryKey().getIndex().getAllColumns();
-            for (IndexColumn iCol : pk)
-                results.add(iCol.getColumn());
-        }
-        return results;
-    }
-
-    private boolean includesHKey(UserTable table, List<IndexColumn> columns, EquivalenceFinder<Column> columnEquivalences) {
-        HKey hkey = table.hKey();
-        int ncols = hkey.nColumns();
-        // no overhead, but O(N) per hkey segment. assuming ncols and columns is very small
-        for (int i = 0; i < ncols; ++i) {
-            if (!containsEquivalent(columns, hkey.column(i), columnEquivalences))
-                return false;
         }
         return true;
-    }
-
-    private boolean containsEquivalent(List<IndexColumn> cols, Column tgt, EquivalenceFinder<Column> columnEquivalences) {
-        for (IndexColumn indexCol : cols) {
-            Column col = indexCol.getColumn();
-            if (columnEquivalences.areEquivalent(col, tgt))
-                return true;
-        }
-        return false;
-    }
-
-    private List<IndexColumn> getCommonTrailing(N first, N second, EquivalenceFinder<Column> columnEquivalences)
-    {
-        List<IndexColumn> firstTrailing = orderingColumns(first);
-        if (firstTrailing.isEmpty())
-            return Collections.emptyList();
-        List<IndexColumn> secondTrailing = orderingColumns(second);
-        if (secondTrailing.isEmpty())
-            return Collections.emptyList();
-        
-        int maxTrailing = Math.min(firstTrailing.size(), secondTrailing.size());
-        int commonCount;
-        for (commonCount = 0; commonCount < maxTrailing; ++commonCount) {
-            Column firstCol = firstTrailing.get(commonCount).getColumn();
-            Column secondCol = secondTrailing.get(commonCount).getColumn();
-            if (!columnEquivalences.areEquivalent(firstCol, secondCol))
-                break;
-        }
-        return firstTrailing.subList(0, commonCount);
-    }
-
-    private List<IndexColumn> orderingColumns(N scan) {
-        List<IndexColumn> allCols = scan.getAllColumns();
-        return allCols.subList(scan.getPeggedCount(), allCols.size());
     }
 }

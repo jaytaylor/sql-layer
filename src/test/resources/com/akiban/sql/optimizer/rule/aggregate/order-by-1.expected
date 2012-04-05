@@ -3,8 +3,8 @@ SelectQuery@6855a338
     Project@4e4ee70b[GROUP[0], GROUP[1]]
       Sort@1e22ab57[GROUP[0] DESC]
         Select@761eec35[]
-          AggregateSource@6825c828([user.orders.order_date],[SUM(times(user.items.price,user.items.quan))])
+          AggregateSource@6825c828([orders.order_date],[SUM(times(items.price,items.quan))])
             Select@877ef83[]
-              JoinNode@7a0d85cc(INNER[user.orders.oid == user.items.oid])
-                TableSource@2eb1074a(user.items)
-                TableSource@276a38b5(user.orders)
+              JoinNode@7a0d85cc(INNER[orders.oid == items.oid])
+                TableSource@2eb1074a(items)
+                TableSource@276a38b5(orders)

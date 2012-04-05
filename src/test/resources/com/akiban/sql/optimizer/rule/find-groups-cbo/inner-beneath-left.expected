@@ -1,15 +1,15 @@
 SelectQuery@2be26d42
   ResultSet@1e731e90[cid, name, cid, name, id, pid, name, id, name, state]
-    Project@17db8f8e[user.customers.cid, user.customers.name, user.customers.cid, user.customers.name, user.child.id, user.child.pid, user.child.name, user.parent.id, user.parent.name, user.parent.state]
+    Project@17db8f8e[c1.cid, c1.name, c2.cid, c2.name, child.id, child.pid, child.name, parent.id, parent.name, parent.state]
       Select@4fadbfde[]
-        JoinNode@180fb0b0(LEFT[user.parent.name == user.customers.name])
-          JoinNode@2e18ff27(INNER[user.child.name == user.customers.name])
-            JoinNode@6b177115(INNER[user.customers.name == user.customers.name, user.customers.cid != user.customers.cid])
-              TableGroupJoinTree@500150a0(TableGroup@6546169(customers), customers)
-                TableSource@4fff395a(user.customers - TableGroup@6546169(customers))
-              TableGroupJoinTree@dc737be(TableGroup@121ca203(customers), customers)
-                TableSource@7d0e6cbd(user.customers - TableGroup@121ca203(customers))
+        JoinNode@180fb0b0(LEFT[parent.name == c1.name])
+          JoinNode@2e18ff27(INNER[child.name == c2.name])
+            JoinNode@6b177115(INNER[c2.name == c1.name, c2.cid != c1.cid])
+              TableGroupJoinTree@500150a0(TableGroup@6546169(customers), c1)
+                TableSource@4fff395a(c1 - TableGroup@6546169(customers))
+              TableGroupJoinTree@dc737be(TableGroup@121ca203(customers), c2)
+                TableSource@7d0e6cbd(c2 - TableGroup@121ca203(customers))
             TableGroupJoinTree@15d07c3f(TableGroup@2a8d1749(parent), child)
-              TableSource@3e052c6f(user.child - TableGroup@2a8d1749(parent))
+              TableSource@3e052c6f(child - TableGroup@2a8d1749(parent))
           TableGroupJoinTree@14f3cf72(TableGroup@12b8501d(parent), parent)
-            TableSource@45a84b38(user.parent - TableGroup@12b8501d(parent))
+            TableSource@45a84b38(parent - TableGroup@12b8501d(parent))

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -77,7 +88,7 @@ public class ASTStatementLoader extends BaseRule
         plan.putWhiteboard(MARKER, ast);
         DMLStatementNode stmt = ast.getStatement();
         try {
-            plan.setPlan(new Loader(plan.getRulesContext()).toStatement(stmt));
+            plan.setPlan(new Loader((SchemaRulesContext)plan.getRulesContext()).toStatement(stmt));
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
@@ -85,15 +96,15 @@ public class ASTStatementLoader extends BaseRule
     }
 
     static class Loader {
-        private RulesContext rulesContext;
+        private SchemaRulesContext rulesContext;
 
-        Loader(RulesContext rulesContext) {
+        Loader(SchemaRulesContext rulesContext) {
             this.rulesContext = rulesContext;
             pushEquivalenceFinder();
         }
 
         private void pushEquivalenceFinder() {
-            columnEquivalencesStack.push(new EquivalenceFinder<ColumnExpression>() {
+            columnEquivalences.push(new EquivalenceFinder<ColumnExpression>() {
                 @Override
                 protected String describeElement(ColumnExpression element) {
                     return element.getSQLsource().getTableName() + "." + element.getColumn().getName();
@@ -102,7 +113,11 @@ public class ASTStatementLoader extends BaseRule
         }
 
         private void popEquivalenceFinder() {
-            columnEquivalencesStack.pop();
+            columnEquivalences.pop();
+        }
+        
+        private EquivalenceFinder<ColumnExpression> peekEquivalenceFinder() {
+            return columnEquivalences.element();
         }
 
         /** Convert given statement into appropriate intermediate form. */
@@ -131,7 +146,7 @@ public class ASTStatementLoader extends BaseRule
                                               cursorNode.getFetchFirstClause());
             if (cursorNode.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
                 throw new UnsupportedSQLException("FOR UPDATE", cursorNode);
-            return new SelectQuery(query);
+            return new SelectQuery(query, peekEquivalenceFinder());
         }
 
         // UPDATE
@@ -149,7 +164,7 @@ public class ASTStatementLoader extends BaseRule
                 ExpressionNode value = toExpression(result.getExpression());
                 updateColumns.add(new UpdateColumn(column, value));
             }
-            return new UpdateStatement(query, targetTable, updateColumns);
+            return new UpdateStatement(query, targetTable, updateColumns, peekEquivalenceFinder());
         }
 
         // INSERT
@@ -186,7 +201,7 @@ public class ASTStatementLoader extends BaseRule
                     targetColumns.add(aisColumns.get(i));
                 }
             }
-            return new InsertStatement(query, targetTable, targetColumns);
+            return new InsertStatement(query, targetTable, targetColumns, peekEquivalenceFinder());
         }
     
         // DELETE
@@ -194,7 +209,7 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             PlanNode query = toQuery((SelectNode)deleteNode.getResultSetNode());
             TableNode targetTable = getTargetTable(deleteNode);
-            return new DeleteStatement(query, targetTable);
+            return new DeleteStatement(query, targetTable, peekEquivalenceFinder());
         }
 
         /** The query part of SELECT / INSERT, which might be VALUES / UNION */
@@ -352,18 +367,26 @@ public class ASTStatementLoader extends BaseRule
         /** The common top-level join and select part of all statements. */
         protected PlanNode toQuery(SelectNode selectNode)
                 throws StandardException {
-            Joinable joins = null;
-            for (FromTable fromTable : selectNode.getFromList()) {
-                if (joins == null)
-                    joins = toJoinNode(fromTable, true);
-                else
-                    joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
+            PlanNode input;
+            if (!selectNode.getFromList().isEmpty()) {
+                Joinable joins = null;
+                for (FromTable fromTable : selectNode.getFromList()) {
+                    if (joins == null)
+                        joins = toJoinNode(fromTable, true);
+                    else
+                        joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
+                }
+                input = joins;
+            }
+            else {
+                // No FROM list means one row with presumably constant Projects.
+                input = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
             }
             ConditionList conditions = toConditions(selectNode.getWhereClause());
             if (hasAggregateFunction(conditions))
                 throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                                                   selectNode.getWhereClause());
-            return new Select(joins, conditions);
+            return new Select(input, conditions);
         }
 
         protected Map<FromTable,Joinable> joinNodes =
@@ -377,8 +400,16 @@ public class ASTStatementLoader extends BaseRule
                 if (tb == null)
                     throw new UnsupportedSQLException("FROM table",
                                                       fromTable);
-                TableNode table = getTableNode((UserTable)tb.getTable());
-                result = new TableSource(table, required);
+                UserTable userTable = (UserTable)tb.getTable();
+                TableNode table = getTableNode(userTable);
+                String name = fromTable.getCorrelationName();
+                if (name == null) {
+                    if (userTable.getName().getSchemaName().equals(rulesContext.getDefaultSchemaName()))
+                        name = userTable.getName().getTableName();
+                    else
+                        name = userTable.getName().toString();
+                }
+                result = new TableSource(table, required, name);
             }
             else if (fromTable instanceof com.akiban.sql.parser.JoinNode) {
                 com.akiban.sql.parser.JoinNode joinNode = 
@@ -411,7 +442,7 @@ public class ASTStatementLoader extends BaseRule
                                                      fromSubquery.getOrderByList(),
                                                      fromSubquery.getOffset(),
                                                      fromSubquery.getFetchFirst());
-                result = new SubquerySource(new Subquery(subquery), 
+                result = new SubquerySource(new Subquery(subquery, peekEquivalenceFinder()),
                                             fromSubquery.getExposedName());
             }
             else
@@ -600,7 +631,7 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
             fields.add(cond);
             PlanNode subquery = new Project(source, fields);
-            conditions.add(new AnyCondition(new Subquery(subquery), in.getType(), in));
+            conditions.add(new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in));
         }
     
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
@@ -727,11 +758,11 @@ public class ASTStatementLoader extends BaseRule
                 if (distinct)
                     // See InConditionReverser#convert(Select,AnyCondition).
                     subquery = new Distinct(subquery);
-                condition = new AnyCondition(new Subquery(subquery), 
+                condition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()),
                                              subqueryNode.getType(), subqueryNode);
             }
             else {
-                condition = new ExistsCondition(new Subquery(subquery), 
+                condition = new ExistsCondition(new Subquery(subquery, peekEquivalenceFinder()),
                                                 subqueryNode.getType(), subqueryNode);
             }
             if (negate) {
@@ -1012,7 +1043,7 @@ public class ASTStatementLoader extends BaseRule
         }
     
         protected Map<Group,TableTree> groups = new HashMap<Group,TableTree>();
-        protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalencesStack
+        protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalences
                 = new ArrayDeque<EquivalenceFinder<ColumnExpression>>(1);
 
         protected TableNode getTableNode(UserTable table)
@@ -1061,7 +1092,7 @@ public class ASTStatementLoader extends BaseRule
                 Column column = cb.getColumn();
                 if (column != null)
                     return new ColumnExpression(((TableSource)joinNode), column, 
-                                                type, valueNode, columnEquivalencesStack.peek());
+                                                type, valueNode);
                 else
                     return new ColumnExpression(((ColumnSource)joinNode), 
                                                 cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
@@ -1165,8 +1196,8 @@ public class ASTStatementLoader extends BaseRule
                                                            subqueryNode.getOrderByList(),
                                                            subqueryNode.getOffset(),
                                                            subqueryNode.getFetchFirst());
+                Subquery subquery = new Subquery(subquerySelect, peekEquivalenceFinder());
                 popEquivalenceFinder();
-                Subquery subquery = new Subquery(subquerySelect);
                 if ((subqueryNode.getType() != null) &&
                     subqueryNode.getType().getTypeId().isRowMultiSet())
                     return new SubqueryResultSetExpression(subquery,

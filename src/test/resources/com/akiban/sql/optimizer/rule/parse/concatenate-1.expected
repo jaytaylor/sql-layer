@@ -1,9 +1,9 @@
 SelectQuery@6f1a7e7f
   ResultSet@3466fcd5[_SQL_COL_1]
-    Project@55611ed3[concatenate(user.items.sku,user.addresses.state)]
-      Select@5b2eda6f[user.orders.oid == user.items.oid, user.addresses.cid == user.orders.cid]
+    Project@55611ed3[concatenate(items.sku,addresses.state)]
+      Select@5b2eda6f[orders.oid == items.oid, addresses.cid == orders.cid]
         JoinNode@6106dc2d(INNER)
           JoinNode@961401f(INNER)
-            TableSource@4fb8b808(user.items)
-            TableSource@683a3e1b(user.addresses)
-          TableSource@47c39412(user.orders)
+            TableSource@4fb8b808(items)
+            TableSource@683a3e1b(addresses)
+          TableSource@47c39412(orders)

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2012 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
- * 
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
- * 
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * END USER LICENSE AGREEMENT (“EULA”)
+ *
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
+ *
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.expression.std;
@@ -61,6 +72,9 @@ public class SignExpression extends AbstractUnaryExpression
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
 
+            if (argumentTypes.get(0).getType() == AkType.VARCHAR)
+                argumentTypes.setType(0, AkType.DOUBLE);
+            
             return ExpressionTypes.INT;
         }
         
@@ -82,17 +96,30 @@ public class SignExpression extends AbstractUnaryExpression
             AkType operandType = operand().getConversionType();
             switch (operandType)
             {
+                // If the input is NaN, return NULL for type simplicity
                 case DOUBLE:
-                    valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getDouble(), 0.0d))); 
+                    if (Double.isNaN(operand().getDouble()))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getDouble(), 0.0d)));
                     break;
                 case U_DOUBLE:
-                    valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getUDouble(), 0.0d))); 
+                    if (Double.isNaN(operand().getUDouble()))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Double.compare(operand().getUDouble(), 0.0d))); 
                     break;
                 case FLOAT:
-                    valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getFloat(), 0.0f))); 
+                    if (Float.isNaN(operand().getFloat()))
+                        return NullValueSource.only();
+                    else
+                        valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getFloat(), 0.0f))); 
                     break;
                 case U_FLOAT:
-                    valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getUFloat(), 0.0f))); 
+                    if (Float.isNaN(operand().getUFloat()))
+                        return NullValueSource.only();
+                    else                    
+                        valueHolder().putInt(finalReturnValueOf(Float.compare(operand().getUFloat(), 0.0f))); 
                     break;
                 case LONG:
                     Long longInput = new Long(operand().getLong());
@@ -111,6 +138,10 @@ public class SignExpression extends AbstractUnaryExpression
                     break;
                 case U_BIGINT:                    
                     valueHolder().putInt(finalReturnValueOf( operand().getUBigInt().compareTo(BigInteger.ZERO) )); 
+                    break;
+                case VARCHAR:
+                    double parsedStrInput = Double.parseDouble(operand().getString());
+                    valueHolder().putInt(finalReturnValueOf( Double.compare(parsedStrInput, 0.0d)));
                     break;
                 default:
                     QueryContext context = queryContext();

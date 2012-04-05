@@ -1,10 +1,10 @@
 SelectQuery@3979c7cf
   ResultSet@6a2d0483[name, _SQL_COL_1]
-    Project@31836aea[user.customers.name, MIN(user.orders.order_date)]
+    Project@31836aea[customers.name, MIN(orders.order_date)]
       Select@2ae0420b[]
-        AggregateSource@690ff62a(PRESORTED,[user.customers.name],[])
+        AggregateSource@690ff62a(PRESORTED,[customers.name],[])
           Select@16ea7549[]
             TableJoins@7aba175f(TableGroup@4f549ceb(customers) - IndexScan@3c0a30fd(Index(user.customers.name[IndexColumn(name)]), GROUPED))
-              JoinNode@411650d6(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@201532fc(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-                TableSource@464d28c7(user.customers - TableGroup@4f549ceb(customers))
-                TableSource@73b044df(user.orders - TableGroupJoin@201532fc(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+              JoinNode@411650d6(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@201532fc(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                TableSource@464d28c7(customers - TableGroup@4f549ceb(customers))
+                TableSource@73b044df(orders - TableGroupJoin@201532fc(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
