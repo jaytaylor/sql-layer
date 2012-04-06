@@ -81,6 +81,7 @@ class SorterToCursorAdapter implements Cursor
     @Override
     public void destroy()
     {
+        close();
         destroyed = true;
     }
 
