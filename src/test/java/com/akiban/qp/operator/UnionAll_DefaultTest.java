@@ -178,7 +178,7 @@ public final class UnionAll_DefaultTest {
         new UnionAll_Default(null, first.rowType(), new TestOperator(second), second.rowType());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void firstRowTypeIsNull() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
@@ -194,7 +194,7 @@ public final class UnionAll_DefaultTest {
         new UnionAll_Default(new TestOperator(first), first.rowType(), null, second.rowType());
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void secondRowTypeIsNull() {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);

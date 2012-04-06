@@ -31,6 +31,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -58,6 +59,7 @@ import java.util.List;
 
 import static com.akiban.qp.operator.API.cursor;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
@@ -147,6 +149,83 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 222L, 22L)};
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+    }
+
+    protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase)
+    {
+        Cursor cursor = cursor(scan, queryContext);
+        // Check idle following creation
+        assertTrue(cursor.isIdle());
+        // Check active following open
+        testCase.firstSetup();
+        cursor.open();
+        assertTrue(cursor.isActive());
+        // Check idle following close
+        cursor.close();
+        assertTrue(cursor.isIdle());
+        // Check active following re-open
+        testCase.firstSetup();
+        cursor.open();
+        assertTrue(cursor.isActive());
+        cursor.close();
+        // Check active during iteration
+        testCase.firstSetup();
+        if (testCase.hKeyComparison()) {
+            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor);
+        } else {
+            compareRows(testCase.firstExpectedRows(), cursor);
+        }
+        assertTrue(cursor.isIdle());
+        // Check close during iteration.
+        if (testCase.hKeyComparison()
+            ? testCase.firstExpectedHKeys().length > 1
+            : testCase.firstExpectedRows().length > 1) {
+            testCase.firstSetup();
+            cursor.open();
+            cursor.next();
+            assertTrue(cursor.isActive());
+            cursor.close();
+            assertTrue(cursor.isIdle());
+        }
+        // Check that a second execution works
+        testCase.secondSetup();
+        if (testCase.hKeyComparison()) {
+            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor);
+        } else {
+            compareRows(testCase.secondExpectedRows(), cursor);
+        }
+        assertTrue(cursor.isIdle());
+        // Check close of idle cursor is permitted
+        try {
+            cursor.close();
+        } catch (CursorLifecycle.WrongStateException e) {
+            fail();
+        }
+        // Check destroyed following destroy
+        cursor.destroy();
+        assertTrue(cursor.isDestroyed());
+        // Check open after destroy disallowed
+        try {
+            testCase.firstSetup();
+            cursor.open();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
+        // Check next after destroy disallowed
+        try {
+            cursor.next();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
+        // Check close after destroy disallowed
+        try {
+            cursor.close();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
     }
 
     protected void use(NewRow[] db)
@@ -356,4 +435,40 @@ public class OperatorITBase extends ITBase
     protected int orderOrdinal;
     protected int itemOrdinal;
     protected int addressOrdinal;
+
+    protected static abstract class CursorLifecycleTestCase
+    {
+        public boolean hKeyComparison()
+        {
+            return false;
+        }
+
+        public void firstSetup()
+        {}
+
+        public RowBase[] firstExpectedRows()
+        {
+            fail();
+            return null;
+        }
+
+        public String[] firstExpectedHKeys()
+        {
+            fail();
+            return null;
+        }
+
+        public void secondSetup()
+        {}
+
+        public RowBase[] secondExpectedRows()
+        {
+            return firstExpectedRows();
+        }
+
+        public String[] secondExpectedHKeys()
+        {
+            return firstExpectedHKeys();
+        }
+    }
 }

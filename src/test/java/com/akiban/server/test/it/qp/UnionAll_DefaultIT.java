@@ -36,11 +36,14 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
+import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class UnionAll_DefaultIT extends OperatorITBase
 {
@@ -72,9 +75,183 @@ public class UnionAll_DefaultIT extends OperatorITBase
         use(db);
     }
 
-    // TODO: This test is really incomplete. Putting just enough in place to investigate bug 972748
+    // Test argument validation
 
-    // Inspired by bug972748
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullInput1()
+    {
+        unionAll(null, tRowType, groupScan_Default(groupTable), tRowType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullInput1Type()
+    {
+        unionAll(groupScan_Default(groupTable), null, groupScan_Default(groupTable), tRowType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullInput2()
+    {
+        unionAll(groupScan_Default(groupTable), tRowType, null, tRowType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testNullInput2Type()
+    {
+        unionAll(groupScan_Default(groupTable), tRowType, groupScan_Default(groupTable), null);
+    }
+
+    // Test operator execution
+
+    @Test
+    public void testBothEmpty()
+    {
+        Operator plan =
+            unionAll(
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.literal(false)),
+                tRowType,
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.literal(false)),
+                tRowType);
+        RowBase[] expected = new RowBase[]{};
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testLeftEmpty()
+    {
+        Operator plan =
+            unionAll(
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.literal(false)),
+                tRowType,
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.compare(
+                        Expressions.field(tRowType, 1),
+                        Comparison.EQ,
+                        Expressions.literal(9))),
+                    tRowType);
+        RowBase[] expected = new RowBase[]{
+            row(tRowType, 1001L, 9L),
+            row(tRowType, 1003L, 9L),
+            row(tRowType, 1005L, 9L),
+            row(tRowType, 1007L, 9L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testRightEmpty()
+    {
+        Operator plan =
+            unionAll(
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.compare(
+                        Expressions.field(tRowType, 1),
+                        Comparison.EQ,
+                        Expressions.literal(8))),
+                tRowType,
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.literal(false)),
+                    tRowType);
+        RowBase[] expected = new RowBase[]{
+            row(tRowType, 1000L, 8L),
+            row(tRowType, 1002L, 8L),
+            row(tRowType, 1004L, 8L),
+            row(tRowType, 1006L, 8L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testBothNonEmpty()
+    {
+        Operator plan =
+            unionAll(
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.compare(
+                        Expressions.field(tRowType, 1),
+                        Comparison.EQ,
+                        Expressions.literal(8))),
+                tRowType,
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.compare(
+                        Expressions.field(tRowType, 1),
+                        Comparison.EQ,
+                        Expressions.literal(9))),
+                    tRowType);
+        RowBase[] expected = new RowBase[]{
+            row(tRowType, 1000L, 8L),
+            row(tRowType, 1002L, 8L),
+            row(tRowType, 1004L, 8L),
+            row(tRowType, 1006L, 8L),
+            row(tRowType, 1001L, 9L),
+            row(tRowType, 1003L, 9L),
+            row(tRowType, 1005L, 9L),
+            row(tRowType, 1007L, 9L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            unionAll(
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.compare(
+                        Expressions.field(tRowType, 1),
+                        Comparison.EQ,
+                        Expressions.literal(8))),
+                tRowType,
+                select_HKeyOrdered(
+                    groupScan_Default(groupTable),
+                    tRowType,
+                    Expressions.compare(
+                        Expressions.field(tRowType, 1),
+                        Comparison.EQ,
+                        Expressions.literal(9))),
+                tRowType);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(tRowType, 1000L, 8L),
+                    row(tRowType, 1002L, 8L),
+                    row(tRowType, 1004L, 8L),
+                    row(tRowType, 1006L, 8L),
+                    row(tRowType, 1001L, 9L),
+                    row(tRowType, 1003L, 9L),
+                    row(tRowType, 1005L, 9L),
+                    row(tRowType, 1007L, 9L),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
+    // Inspired by bug972748. Also tests handling of index rows
     @Test
     public void testUADReuse()
     {

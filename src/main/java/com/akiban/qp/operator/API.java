@@ -536,7 +536,7 @@ public class API
     public static Cursor cursor(Operator root, QueryContext context)
     {
         // if all they need is the wrapped cursor, create it directly
-        return new TopLevelWrappingCursor(context, root.cursor(context));
+        return new ChainedCursor(context, root.cursor(context));
     }
 
     // Options

@@ -303,8 +303,10 @@ public class BranchLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 inputCursor.open();
                 advanceInput();
+                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -315,6 +317,7 @@ public class BranchLookup_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row nextRow = null;
                 while (nextRow == null && inputRow.isHolding()) {
@@ -354,10 +357,40 @@ public class BranchLookup_Default extends Operator
         @Override
         public void close()
         {
-            inputCursor.close();
-            inputRow.release();
-            lookupCursor.close();
-            lookupRow.release();
+            CursorLifecycle.checkIdleOrActive(this);
+            if (!idle) {
+                inputCursor.close();
+                inputRow.release();
+                lookupCursor.close();
+                lookupRow.release();
+                idle = true;
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            inputCursor.destroy();
+            lookupCursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return idle;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !idle;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return inputCursor.isDestroyed();
         }
 
         // Execution interface
@@ -425,6 +458,7 @@ public class BranchLookup_Default extends Operator
         private final ShareHolder<Row> lookupRow = new ShareHolder<Row>();
         private final HKey lookupRowHKey;
         private LookupState lookupState;
+        private boolean idle = true;
     }
 
     // Inner classes

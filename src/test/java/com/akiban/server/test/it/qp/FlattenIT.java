@@ -591,6 +591,45 @@ public class FlattenIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            flatten_HKeyOrdered(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Arrays.asList(customerRowType, orderRowType, itemRowType)),
+                orderRowType,
+                itemRowType,
+                FULL_JOIN);
+        final RowType oiRowType = plan.rowType();
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                row(customerRowType, 1L, "northbridge"),
+                    row(oiRowType, 11L, 1L, "ori", 111L, 11L),
+                    row(oiRowType, 11L, 1L, "ori", 112L, 11L),
+                    row(oiRowType, 12L, 1L, "david", 121L, 12L),
+                    row(oiRowType, 12L, 1L, "david", 122L, 12L),
+                    row(customerRowType, 2L, "foundation"),
+                    row(oiRowType, 21L, 2L, "tom", 211L, 21L),
+                    row(oiRowType, 21L, 2L, "tom", 212L, 21L),
+                    row(oiRowType, 22L, 2L, "jack", 221L, 22L),
+                    row(oiRowType, 22L, 2L, "jack", 222L, 22L),
+                    row(oiRowType, 31L, 3L, "peter", 311L, 31L),
+                    row(oiRowType, 31L, 3L, "peter", 312L, 31L),
+                    row(customerRowType, 4L, "highland"),
+                    row(customerRowType, 5L, "matrix"),
+                    row(oiRowType, 51L, 5L, "yuval", null, null)
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     private String cKey(Long cid)
     {
         return String.format("{%d,%s}", customerOrdinal, hKeyValue(cid));

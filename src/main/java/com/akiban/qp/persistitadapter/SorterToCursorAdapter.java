@@ -24,21 +24,21 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.persistitadapter.sort.Sorter;
 import com.akiban.qp.row.Row;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-import com.persistit.Exchange;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.util.tap.InOutTap;
 import com.persistit.exception.PersistitException;
 
-public abstract class SortCursor implements Cursor
+// Cursors are reusable but Sorters are not. This class creates a new Sorter each time a new cursor scan is started.
+
+class SorterToCursorAdapter implements Cursor
 {
     // Cursor interface
 
@@ -46,40 +46,55 @@ public abstract class SortCursor implements Cursor
     public void open()
     {
         CursorLifecycle.checkIdle(this);
-        idle = false;
+        try {
+            sorter = new Sorter(context, input, rowType, ordering, sortOption, loadTap);
+            cursor = sorter.sort();
+            cursor.open();
+        } catch (PersistitException e) {
+            adapter.handlePersistitException(e);
+        }
     }
 
     @Override
     public Row next()
     {
         CursorLifecycle.checkIdleOrActive(this);
-        return null;
+        return cursor == null ? null : cursor.next();
     }
 
     @Override
-    public final void close()
+    public void close()
     {
         CursorLifecycle.checkIdleOrActive(this);
-        iterationHelper.close();
-        idle = true;
+        if (cursor != null) {
+            cursor.close();
+            // Destroy here because Sorters can only be used once.
+            cursor.destroy();
+            cursor = null;
+        }
+        if (sorter != null) {
+            sorter.close();
+            sorter = null;
+        }
     }
 
     @Override
     public void destroy()
     {
+        close();
         destroyed = true;
     }
 
     @Override
     public boolean isIdle()
     {
-        return !destroyed && idle;
+        return !destroyed && cursor == null;
     }
 
     @Override
     public boolean isActive()
     {
-        return !destroyed && !idle;
+        return !destroyed && cursor != null;
     }
 
     @Override
@@ -88,44 +103,33 @@ public abstract class SortCursor implements Cursor
         return destroyed;
     }
 
-    // SortCursor interface
+    // SorterToCursorAdapter interface
 
-    public static SortCursor create(QueryContext context,
-                                    IndexKeyRange keyRange,
-                                    API.Ordering ordering,
-                                    IterationHelper iterationHelper)
+    public SorterToCursorAdapter(PersistitAdapter adapter,
+                                 QueryContext context,
+                                 Cursor input,
+                                 RowType rowType,
+                                 API.Ordering ordering,
+                                 API.SortOption sortOption,
+                                 InOutTap loadTap)
     {
-        return
-            ordering.allAscending() || ordering.allDescending()
-            ? (keyRange != null && keyRange.lexicographic()
-               ? SortCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering)
-               : SortCursorUnidirectional.create(context, iterationHelper, keyRange, ordering))
-            : SortCursorMixedOrder.create(context, iterationHelper, keyRange, ordering);
-    }
-
-    // For use by subclasses
-
-    protected SortCursor(QueryContext context, IterationHelper iterationHelper)
-    {
+        this.adapter = adapter;
         this.context = context;
-        this.adapter = (PersistitAdapter)context.getStore();
-        this.iterationHelper = iterationHelper;
-        this.exchange = iterationHelper.exchange();
+        this.input = input;
+        this.rowType = rowType;
+        this.ordering = ordering;
+        this.sortOption = sortOption;
+        this.loadTap = loadTap;
     }
 
-    protected Row row() throws PersistitException
-    {
-        return iterationHelper.row();
-    }
-
-    // Object state
-
-    protected final QueryContext context;
-    protected final PersistitAdapter adapter;
-    protected final Exchange exchange;
-    protected final IterationHelper iterationHelper;
-    private boolean idle = true;
+    private final PersistitAdapter adapter;
+    private final QueryContext context;
+    private final Cursor input;
+    private final RowType rowType;
+    private final API.Ordering ordering;
+    private final API.SortOption sortOption;
+    private final InOutTap loadTap;
+    private Sorter sorter;
+    private Cursor cursor;
     private boolean destroyed = false;
-
-    static final PointTap SORT_TRAVERSE = Tap.createCount("traverse_sort");
 }

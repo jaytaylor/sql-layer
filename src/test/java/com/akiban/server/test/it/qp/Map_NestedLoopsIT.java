@@ -229,6 +229,40 @@ public class Map_NestedLoopsIT extends OperatorITBase
     }
 
     @Test
+    public void testCursor()
+    {
+        Operator plan =
+            map_NestedLoops(
+                indexScan_Default(itemOidIndexRowType, false),
+                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
+                0);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(itemRowType, 1000L, 100L),
+                    row(itemRowType, 1001L, 100L),
+                    row(itemRowType, 1010L, 101L),
+                    row(itemRowType, 1011L, 101L),
+                    row(itemRowType, 2000L, 200L),
+                    row(itemRowType, 2001L, 200L),
+                    row(itemRowType, 2010L, 201L),
+                    row(itemRowType, 2011L, 201L),
+                    row(itemRowType, 3000L, 300L),
+                    row(itemRowType, 3001L, 300L),
+                    row(itemRowType, 4000L, 400L),
+                    row(itemRowType, 4001L, 400L),
+                    row(itemRowType, 4010L, 401L),
+                    row(itemRowType, 4011L, 401L),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
+    @Test
     // Inspired by bug 869396
     public void testIndexScanUnderMapNestedLoopsUsedAsInnerLoopOfAnotherMapNestedLoops()
     {

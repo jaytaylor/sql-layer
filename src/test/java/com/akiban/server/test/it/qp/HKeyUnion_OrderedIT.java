@@ -414,6 +414,31 @@ public class HKeyUnion_OrderedIT extends OperatorITBase
         compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator plan = unionPxCz(88);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public boolean hKeyComparison()
+            {
+                return true;
+            }
+
+            @Override
+            public String[] firstExpectedHKeys()
+            {
+                return new String[] {
+                    pKey(8000L),
+                    pKey(8001L),
+                    pKey(8002L),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     private Operator unionPxPy(int key)
     {
         Operator plan =

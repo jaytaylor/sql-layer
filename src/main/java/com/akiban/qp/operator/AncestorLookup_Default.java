@@ -263,6 +263,7 @@ class AncestorLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 advance();
             } finally {
@@ -275,6 +276,7 @@ class AncestorLookup_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 while (pending.isEmpty() && inputRow.isHolding()) {
                     advance();
@@ -292,9 +294,37 @@ class AncestorLookup_Default extends Operator
         @Override
         public void close()
         {
-            input.close();
-            ancestorRow.release();
-            pending.clear();
+            CursorLifecycle.checkIdleOrActive(this);
+            if (input.isActive()) {
+                input.close();
+                ancestorRow.release();
+                pending.clear();
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return input.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return input.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // For use by this class

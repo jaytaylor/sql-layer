@@ -37,6 +37,7 @@ import com.akiban.server.types.ValueSource;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
 import static junit.framework.Assert.assertEquals;
@@ -162,6 +163,28 @@ public class GroupScanIT extends OperatorITBase
         assertEquals(11L, v0.getInt());
         assertEquals(1L, v1.getInt());
         assertEquals("ori", v2.getString());
+    }
+
+    @Test
+    public void testCursor()
+    {
+        use(db);
+        Operator plan =
+            filter_Default(
+                groupScan_Default(coi),
+                Collections.singleton(customerRowType));
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(customerRowType, 1L, "xyz"),
+                    row(customerRowType, 2L, "abc"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     private IndexBound orderSalesmanIndexBound(String salesman)

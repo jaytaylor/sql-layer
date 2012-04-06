@@ -156,6 +156,30 @@ class GroupScan_Default extends Operator
             cursor.close();
         }
 
+        @Override
+        public void destroy()
+        {
+            cursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return cursor.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return cursor.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return cursor.isDestroyed();
+        }
+
         // Execution interface
 
         Execution(QueryContext context, GroupCursorCreator cursorCreator)

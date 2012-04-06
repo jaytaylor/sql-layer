@@ -134,4 +134,22 @@ public class LimitIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator plan = limit_Default(groupScan_Default(coi), 3);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(customerRowType, 1L, "northbridge"),
+                    row(customerRowType, 2L, "foundation"),
+                    row(customerRowType, 4L, "highland"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
 }

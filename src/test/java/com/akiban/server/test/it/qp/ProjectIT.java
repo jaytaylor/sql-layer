@@ -193,4 +193,49 @@ public class ProjectIT extends OperatorITBase
         };
         compareRows(expected, cursor);
     }
+
+    @Test
+    public void testCursor()
+    {
+        // Tests projection of null too
+        Operator flattenCO = flatten_HKeyOrdered(groupScan_Default(coi),
+                                                         customerRowType,
+                                                         orderRowType,
+                                                         FULL_JOIN);
+        RowType coType = flattenCO.rowType();
+        Operator flattenCOI = flatten_HKeyOrdered(flattenCO,
+                                                          coType,
+                                                          itemRowType,
+                                                          FULL_JOIN);
+        RowType coiType = flattenCOI.rowType();
+        Operator plan =
+            project_Default(flattenCOI,
+                            coiType,
+                            Arrays.asList(
+                                field(coiType, 1), // customer name
+                                field(coiType, 4), // salesman
+                                field(coiType, 5))); // iid
+        final RowType projectedRowType = plan.rowType();
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(projectedRowType, "northbridge", "ori", 111L),
+                    row(projectedRowType, "northbridge", "ori", 112L),
+                    row(projectedRowType, "northbridge", "david", 121L),
+                    row(projectedRowType, "northbridge", "david", 122L),
+                    row(projectedRowType, "foundation", "tom", 211L),
+                    row(projectedRowType, "foundation", "tom", 212L),
+                    row(projectedRowType, "foundation", "jack", 221L),
+                    row(projectedRowType, "foundation", "jack", 222L),
+                    row(projectedRowType, null, "peter", 311L),
+                    row(projectedRowType, null, "peter", 312L),
+                    row(projectedRowType, "highland", null, null)
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
 }

@@ -109,7 +109,7 @@ public class Sorter
         return cursor();
     }
 
-    void close()
+    public void close()
     {
         if (exchange != null) {
             try {
@@ -162,9 +162,7 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        SortCursor cursor = SortCursor.create(context, null, ordering, new SorterIterationHelper());
-        cursor.open();
-        return cursor;
+        return SortCursor.create(context, null, ordering, new SorterIterationHelper());
     }
 
     private void createKey(Row row)
