@@ -69,10 +69,7 @@ public class Sorter
         this.rowType = rowType;
         this.ordering = ordering.copy();
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
-        this.exchange =
-            SORT_USING_TEMP_VOLUME
-            ? exchange(adapter, sortTreeName)
-            : adapter.takeExchangeForSorting(new SortTreeLink(sortTreeName));
+        this.exchange = exchange(adapter, sortTreeName);
         this.key = exchange.getKey();
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(this.key);
@@ -113,16 +110,12 @@ public class Sorter
     {
         if (exchange != null) {
             try {
-                if (SORT_USING_TEMP_VOLUME) {
-                    TempVolumeState tempVolumeState = adapter.session().get(TEMP_VOLUME_STATE);
-                    int sortsInProgress = tempVolumeState.endSort();
-                    if (sortsInProgress == 0) {
-                        // Returns disk space used by the volume
-                        tempVolumeState.volume().close();
-                        adapter.session().remove(TEMP_VOLUME_STATE);
-                    }
-                } else {
-                    exchange.removeTree();
+                TempVolumeState tempVolumeState = adapter.session().get(TEMP_VOLUME_STATE);
+                int sortsInProgress = tempVolumeState.endSort();
+                if (sortsInProgress == 0) {
+                    // Returns disk space used by the volume
+                    tempVolumeState.volume().close();
+                    adapter.session().remove(TEMP_VOLUME_STATE);
                 }
             } catch (PersistitException e) {
                 adapter.handlePersistitException(e);
@@ -217,8 +210,6 @@ public class Sorter
     private static final Expression DUMMY_EXPRESSION = LiteralExpression.forNull();
     private static final String SORT_TREE_NAME_PREFIX = "sort.";
     private static final AtomicLong SORTER_ID_GENERATOR = new AtomicLong(0);
-    private static final boolean SORT_USING_TEMP_VOLUME =
-        System.getProperty("sorttemp", "true").toLowerCase().equals("true");
     private static final Session.Key<TempVolumeState> TEMP_VOLUME_STATE = Session.Key.named("TEMP_VOLUME_STATE");
 
     // Object state
