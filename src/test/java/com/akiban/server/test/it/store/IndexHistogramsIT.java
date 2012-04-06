@@ -267,6 +267,18 @@ public final class IndexHistogramsIT extends ITBase {
         validateHistogram("customers", PK, 1, expected);
     }
 
+    @Test
+    public void oversampleNotEvenlyDistributed() {
+        int cTable = getUserTable(SCHEMA, "customers").getTableId();
+        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        double interval = 2.02;
+        double oversamples = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR;
+        int maxCid = (int) Math.round(interval * oversamples);
+        insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
+
+        validateHistogram("customers", PK, 1, (HistogramEntryDescription)null);
+    }
+
     /**
      * <p>Initializes and populates the database.</p>
      *
@@ -373,14 +385,16 @@ public final class IndexHistogramsIT extends ITBase {
                     Collections.singleton(index.getIndexName().getName())
             );
         }
-            
-        IndexStatistics stats = statsService.getIndexStatistics(session(), index);
-        IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
 
-        assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
-        List<IndexStatistics.HistogramEntry> actualEntries = histogram.getEntries();
-        List<HistogramEntryDescription> expectedList = Arrays.asList(entries);
-        AssertUtils.assertCollectionEquals("entries", expectedList, actualEntries);
+        if (entries != null) {
+            IndexStatistics stats = statsService.getIndexStatistics(session(), index);
+            IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
+
+            assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
+            List<IndexStatistics.HistogramEntry> actualEntries = histogram.getEntries();
+            List<HistogramEntryDescription> expectedList = Arrays.asList(entries);
+            AssertUtils.assertCollectionEquals("entries", expectedList, actualEntries);
+        }
     }
     
     private HistogramEntryDescription entry(String keyString, long equalCount, long lessCount,
