@@ -28,6 +28,14 @@ package com.akiban.sql.pg;
 
 import java.io.IOException;
 
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanInfo;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
 import javax.management.remote.JMXConnector;
 
 import junit.framework.Assert;
@@ -44,12 +52,44 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
     private static final String SERVER_ADDRESS = "localhost";
 
     @Test
-    public void testForBasicConstructor() {
+    public void testForBasicConstructor()  {
         JMXInterpreter conn = null;
         try {
-            conn = new JMXInterpreter();
+            conn = new JMXInterpreter(true);
             conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
+            System.out.println(conn.serviceURL);
             Assert.assertNotNull(conn);
+            
+            final MBeanServerConnection mbs = conn.getConnector()
+                    .getMBeanServerConnection();
+            MBeanInfo info = null;
+            ObjectName mxbeanName = null;
+            try {
+                mxbeanName = new ObjectName(
+                        "com.akiban:type=IndexStatistics");
+            } catch (MalformedObjectNameException e1) {
+                e1.printStackTrace();
+                Assert.fail(e1.getMessage());
+            } catch (NullPointerException e1) {
+                e1.printStackTrace();
+                Assert.fail(e1.getMessage());   
+            }
+            try {
+                info = mbs.getMBeanInfo(mxbeanName);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
+            MBeanOperationInfo[] ops = info.getOperations();
+            for (int x=0;x < ops.length;x++) {
+                System.out.println(x+" Return type("+ops[x].getDescription()+"): "+ ops[x].getReturnType());
+                for (int a=0;a < ops[x].getSignature().length;a++) {
+                  System.out.println("  "+ops[x].getSignature()[a].getDescription()+":"+ops[x].getSignature()[a].getType());
+                }
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());   
         } finally {
             if (conn != null) {
                 conn.close();
@@ -58,34 +98,46 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
     }
 
     @Test
-    public void testCallToAkServer() {
-        JMXInterpreter conn = new JMXInterpreter();
+    public void testCall()  {
+        JMXInterpreter conn = null;
         try {
-            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-            Assert.assertNotNull(conn);
-            JMXConnector connector = conn.getConnector();
-            Assert.assertNotNull(connector);
-            ManageMXBean bean = conn.getAkServer(connector);
-
-            Assert.assertNotNull(bean);
-            Assert.assertNotNull(bean.getVersionString());
+            conn = new JMXInterpreter(true);
+            Object[] parameters = { new String("user") };
+            Object data = conn.makeBeanCall( 
+                    SERVER_ADDRESS, 
+                    SERVER_JMX_PORT, 
+                    "com.akiban:type=IndexStatistics", 
+                    "dumpIndexStatisticsToString", 
+                    parameters, "method");
+            System.out.println(""+data);
+            
+        } catch (IOException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());   
+        } catch (InstanceNotFoundException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());   
+        } catch (MBeanException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());   
+        } catch (ReflectionException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());   
+        } catch (MalformedObjectNameException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
+        } catch (NullPointerException e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            Assert.fail(e.getMessage());
         } finally {
-            conn.close();
+            if (conn != null) {
+                conn.close();
+            }
         }
     }
-
-    @Test
-    public void testCalltoIndexStatisticsMXBean() throws IOException {
-        JMXInterpreter conn = new JMXInterpreter();
-        try {
-            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-            IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
-                    .getConnector());
-            Assert.assertNotNull(bean);
-            bean.dumpIndexStatistics("test", "/tmp/test.dmp");
-        } finally {
-            conn.close();
-        }
-    }
+    
 
 }

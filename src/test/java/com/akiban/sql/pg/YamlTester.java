@@ -165,8 +165,15 @@ import com.akiban.server.store.statistics.IndexStatisticsMXBean;
    if used, please suppress the IT level calls or place tests in AAS directly
    
    - JMX: <objectName>   (i.e com.akiban:type=IndexStatistics)
+   ** Only one allowed of the following three (3) per command set
+   - set: <set method>
+   - method: <method>
+   - get: <get method>
+   
    - params: [<parameter value>, ...]
-   - output: [<output value>, ...]
+   - output: [[<output value>, ...], ...]
+
+
 
 */
 class YamlTester {
@@ -1037,29 +1044,6 @@ class YamlTester {
 			outputTypes.get(i - 1), columnTypeName);
 	    }
 	}
-
-	private void debugPrintResults(ResultSet rs) throws SQLException {
-	    System.err.println(context() + "Result output:");
-	    ResultSetMetaData md = rs.getMetaData();
-	    int nc = md.getColumnCount();
-	    for (int i = 1; i <= nc; i++) {
-		if (i != 1) {
-		    System.err.print(", ");
-		}
-		System.err.print(md.getColumnName(i));
-	    }
-	    System.err.println();
-	    while (rs.next()) {
-		for (int i = 1; i <= nc; i++) {
-		    if (i != 1) {
-			System.err.print(", ");
-		    }
-		    System.err.print(rs.getObject(i));
-		}
-		System.err.println();
-	    }
-	    rs.beforeFirst();
-	}
     }
 
     static void checkExpectedList(String description, List<?> expected,
@@ -1581,9 +1565,11 @@ class YamlTester {
 
         ArrayList<Object> output = null;
         String objectName = null;
-        ArrayList<String> params = null;
+        Object[] params = null;
         String method = null;
-
+        String set = null;
+        String get = null;
+        
         public JMXCommand(Object value, List<Object> sequence) {
             super(string(value, "JMX value"));
             if (value != null & String.valueOf(value).trim().length() > 1) {
@@ -1591,7 +1577,7 @@ class YamlTester {
             } else {
                 fail("Must provide an Object name");
             }
-
+            
             for (int i = 1; i < sequence.size(); i++) {
                 Entry<Object, Object> map = onlyEntry(sequence.get(i),
                         "JMX attribute");
@@ -1601,8 +1587,14 @@ class YamlTester {
                     parseParams(attributeValue);
                 } else if ("method".equals(attribute)) {
                     method = String.valueOf(attributeValue).trim();
+                } else if ("set".equals(attribute)) {
+                    set = String.valueOf(attributeValue).trim();
+                } else if ("get".equals(attribute)) {
+                    get = String.valueOf(attributeValue).trim();
                 } else if ("output".equals(attribute)) {
                     parseOutput(attributeValue);
+                } else if ("split_result".equals(attribute)) {
+                    // skip
                 } else {
                     fail("The '" + attribute + "' attribute name was not"
                             + " recognized");
@@ -1617,12 +1609,14 @@ class YamlTester {
             }
             assertNull("The params attribute must not appear more than once",
                     params);
-            params = new ArrayList<String>(
+            ArrayList<Object> list = new ArrayList<Object>(
                     stringSequence(value, "params value"));
+            params = list.toArray(new Object[list.size()]);
         }
 
         private void parseOutput(Object value) {
             if (value == null) {
+                output = null;
                 return;
             }
             assertNull("The output attribute must not appear more than once",
@@ -1631,73 +1625,50 @@ class YamlTester {
             output = (ArrayList<Object>) row;
         }
 
-        protected boolean rowsEqual(List<Object> pattern, List<Object> row) {
-            
-            int size = pattern.size();
-            if (size != row.size()) {
-            return false;
-            }
-            for (int i = 0; i < size; i++) {
-            Object patternElem = pattern.get(i);
-            Object rowElem = row.get(i);
-            if (patternElem instanceof OutputComparator) {
-                return ((OutputComparator) patternElem)
-                        .compareOutput(rowElem);
-            } else if (patternElem == null) {
-                if (rowElem != null) {
-                    return false;
-                }
-            } else if (!objectToString(patternElem).equals(
-                objectToString(rowElem))) {
-                return false;
-            }
-            }
-            return true;
-        }
-        
         public void execute() {
-            JMXInterpreter conn = new JMXInterpreter();
-            conn.openConnection("localhost", "8082");
-            if (objectName.equalsIgnoreCase("com.akiban:type=IndexStatistics")) {
-                IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
-                        .getConnector());
-                assertNotNull(bean);
-                if (method.equalsIgnoreCase("dumpIndexStatistics")) {
-                    try {
-                        bean.dumpIndexStatistics(params.get(0), params.get(1));
-                    } catch (IOException e) {
-                        System.out.println("Error: " + e.getMessage());
-                        fail("Error: " + e.getMessage());
-                    }
-                } else {
-                    fail("Method not supported");
+            JMXInterpreter conn = new JMXInterpreter(DEBUG);
+            Object result = null;
+            try {
+                if (method != null) {
+                    result = conn.makeBeanCall("localhost", "8082", objectName, 
+                            method, params, "method");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+method+")");
+//                        System.out.println(result);
+//                    }
                 }
-            } else if (objectName.equalsIgnoreCase("com.akiban:type=AKSERVER")) {
-                try {
-                    ManageMXBean bean = conn.getAkServer(conn
-                            .getConnector());
-                    assertNotNull("bean is null", bean);
-                    if (method.equalsIgnoreCase("getVersionString")) {
-                        if (output != null) {
-                            List<Object> row = new ArrayList<Object>();
-
-                            row.add(bean.getVersionString());
-                            if (!rowsEqual(output.subList(0, 1), row)) {
-                                fail("Version does not match");
-                            }
-                        } else {
-                              System.out.println(bean.getVersionString());
-                        }
-                    } else {
-                        fail("Method not supported");
-                    }
-                } catch (java.lang.reflect.UndeclaredThrowableException e) {
-                    fail("error: " + e.getCause());
+                if (set != null) {
+                    conn.makeBeanCall("localhost", "8082", objectName, set, params, "set");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+set+")");
+//                    }
                 }
+                if (get != null) {
+                    result = conn.makeBeanCall("localhost", "8082", objectName, get, params, "get");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+get+")");
+//                        System.out.println(result);
+//                    }
 
-            } else {
-                fail("JMX call not supported currently");
+                }
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error: " + e.getMessage());
+                fail("Error: " + e.getMessage());
+            }
+            
+            if (output != null) {
+                
+                String[] output_list = result.toString().split("\n");
+                for (int x=0;x < output.size();x++) {
+                    if (!expected(output.get(x), output_list[x])) {
+                        fail("Error: '" + output.get(x).toString()+"' does not equal '"+output_list[x]+"'");
+                        System.out.println("Actual results: "+result.toString());
+                    }
+                }
             }
         }
+
     }
 }
