@@ -41,7 +41,7 @@ public class PostgresServerSessionIT extends PostgresServerFilesITBase {
 
     @Before
     public void createSimpleSchema() throws SQLException {
-        String sqlCreate = "CREATE TABLE test.T1 (c1 integer not null primary key)";
+        String sqlCreate = "CREATE TABLE user.T1 (c1 integer not null primary key)";
         connection.createStatement().execute(sqlCreate);
     }
     
@@ -58,7 +58,7 @@ public class PostgresServerSessionIT extends PostgresServerFilesITBase {
 
     @Test 
     public void goodUseSchema() throws SQLException {
-        String use = "SET SCHEMA test";
+        String use = "SET SCHEMA user";
         connection.createStatement().execute(use);
         
         String create = "CREATE TABLE t2 (c2 integer not null primary key)";
@@ -84,7 +84,7 @@ public class PostgresServerSessionIT extends PostgresServerFilesITBase {
         
         connection.createStatement().execute("SET SCHEMA TEST");
         
-        connection.createStatement().execute("SET SCHEMA USER");
+        connection.createStatement().execute("SET SCHEMA "+PostgresServerITBase.SCHEMA_NAME);
         
     }
     
