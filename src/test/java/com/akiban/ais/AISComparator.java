@@ -87,7 +87,7 @@ public class AISComparator {
         public TableMaps(Collection<UserTable> tables, boolean withIDs) {
             for(UserTable table : tables) {
                 names.add(table.getName().toString() + (withIDs ? table.getTableId() : ""));
-                for(Column column : table.getColumns()) {
+                for(Column column : table.getColumnsIncludingInternal()) {
                     columns.add(column.toString() + " " + column.getTypeDescription() + " " + column.getCharsetAndCollation());
                 }
                 for(Index index : table.getIndexesIncludingInternal()) {
