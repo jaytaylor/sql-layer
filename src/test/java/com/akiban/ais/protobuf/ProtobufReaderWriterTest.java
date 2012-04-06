@@ -187,17 +187,30 @@ public class ProtobufReaderWriterTest {
         builder.column(SCHEMA, TABLE, "state", 1, "CHAR", 2L, null, true, false, null, null);
         builder.createGroup(TABLE, SCHEMA, "akiban_"+TABLE);
         builder.addTableToGroup(TABLE, SCHEMA, TABLE);
-        builder.basicSchemaIsComplete();
-        builder.groupingIsComplete();
 
+        // AIS does not have to be validate-able to be serialized (this is how it comes from adapter)
         final AkibanInformationSchema inAIS = builder.akibanInformationSchema();
-        UserTable t1Table = inAIS.getUserTable(SCHEMA, TABLE);
-        assertNull("Has no declared PK", t1Table.getPrimaryKey());
-        assertNotNull("Has internal PK", t1Table.getPrimaryKeyIncludingInternal());
+        final UserTable t1_1 = inAIS.getUserTable(SCHEMA, TABLE);
+        assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
+        assertNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
 
-        inAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-        inAIS.freeze();
-        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        // Serialized AIS did not create an internal column, PK
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        UserTable t1_2 = outAIS.getUserTable(SCHEMA, TABLE);
+        assertNull("Deserialized should not have declared PK", t1_2.getPrimaryKey());
+        assertNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
+
+        compareAndAssert(inAIS, outAIS, false);
+
+        // Now add an internal PK and run through again
+        t1_1.endTable();
+        assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
+        assertNotNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
+
+        outAIS = writeAndRead(inAIS);
+        t1_2 = outAIS.getUserTable(SCHEMA, TABLE);
+        assertNull("Deserialized should not have declared PK", t1_2.getPrimaryKey());
+        assertNotNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
 
         compareAndAssert(inAIS, outAIS, false);
     }
