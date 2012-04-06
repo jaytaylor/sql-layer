@@ -276,7 +276,7 @@ public final class IndexHistogramsIT extends ITBase {
         int maxCid = (int) Math.round(interval * oversamples);
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
 
-        validateHistogram("customers", PK, 1, (HistogramEntryDescription)null);
+        validateHistogram("customers", PK, 1, (HistogramEntryDescription[])null);
     }
 
     /**
