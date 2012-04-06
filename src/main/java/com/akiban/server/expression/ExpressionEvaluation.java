@@ -94,4 +94,17 @@ public interface ExpressionEvaluation extends Shareable {
      * @return a possibly-lazy, possibly-mutable representation of this evaluation's value
      */
     ValueSource eval();
+
+    /**
+     * Release resources used by this ExpressionEvaluation. No further uses of this are permitted.
+     */
+    void destroy();
+
+    public abstract static class Base implements ExpressionEvaluation
+    {
+        @Override
+        public void destroy()
+        {
+        }
+    }
 }

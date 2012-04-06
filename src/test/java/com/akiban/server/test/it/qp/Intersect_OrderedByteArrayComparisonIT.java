@@ -187,6 +187,25 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
+    @Test
+    public void testCursor()
+    {
+        plan = intersectPlan(3, IntersectOutputOption.OUTPUT_LEFT, true);
+        expected = new RowBase[]{
+            row(idxRowType, 3L, 0L, 500L, "x", 902L, 1017L),
+            row(idxRowType, 3L, 0L, 500L, "x", 902L, 1018L),
+        };
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return expected;
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     private Operator intersectPlan(int testId, IntersectOutputOption side, boolean k2Ascending)
     {
         Ordering ordering = ordering(field(idxRowType, 0), true,  // test

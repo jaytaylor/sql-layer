@@ -35,7 +35,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public abstract class AbstractCompositeExpressionEvaluation implements ExpressionEvaluation {
+public abstract class AbstractCompositeExpressionEvaluation extends ExpressionEvaluation.Base {
 
     // ExpressionEvaluation interface
 
@@ -52,6 +52,14 @@ public abstract class AbstractCompositeExpressionEvaluation implements Expressio
             child.of(context);
         }
         this.context = context;
+    }
+
+    @Override
+    public void destroy()
+    {
+        for (ExpressionEvaluation child : children) {
+            child.destroy();
+        }
     }
 
     public AbstractCompositeExpressionEvaluation(List<? extends ExpressionEvaluation> children) {

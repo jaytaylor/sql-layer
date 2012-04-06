@@ -288,6 +288,30 @@ public class AncestorLookup_NestedIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            map_NestedLoops(
+                indexScan_Default(aValueIndexRowType),
+                ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.singleton(aRowType), 0),
+                0);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(aRowType, 13L, 1L, "a13"),
+                    row(aRowType, 14L, 1L, "a14"),
+                    row(aRowType, 23L, 2L, "a23"),
+                    row(aRowType, 24L, 2L, "a24"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     private IndexKeyRange aValueRange(String lo, String hi)
     {
         return IndexKeyRange.bounded(aValueIndexRowType, aValueBound(lo), true, aValueBound(hi), true);

@@ -122,7 +122,7 @@ public final class LiteralExpression implements Expression {
     
     // nested classes
     
-    private static class InternalEvaluation implements  ExpressionEvaluation {
+    private static class InternalEvaluation extends ExpressionEvaluation.Base {
         @Override
         public void of(Row row) {
         }

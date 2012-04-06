@@ -64,7 +64,7 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
     }
 
     // TODO: Could refactor SubqueryExpressionEvaluation into a common piece.
-    private static final class InnerEvaluation implements ExpressionEvaluation {
+    private static final class InnerEvaluation extends ExpressionEvaluation.Base {
         @Override
         public void of(QueryContext context) {
             this.context = context;

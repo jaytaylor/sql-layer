@@ -288,6 +288,7 @@ public class BranchLookup_Nested extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("BranchLookup_Nested: open using {}", rowFromBindings);
@@ -301,6 +302,7 @@ public class BranchLookup_Nested extends Operator
                 cursor.rebind(hKey, true);
                 cursor.open();
                 inputRow.hold(rowFromBindings);
+                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -311,6 +313,7 @@ public class BranchLookup_Nested extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row;
                 if (keepInput && inputPrecedesBranch && inputRow.isHolding()) {
@@ -330,6 +333,7 @@ public class BranchLookup_Nested extends Operator
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("BranchLookup_Nested: yield {}", row);
                 }
+                idle = row == null;
                 return row;
             } finally {
                 TAP_NEXT.out();
@@ -339,7 +343,34 @@ public class BranchLookup_Nested extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             cursor.close();
+            idle = true;
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            cursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return idle;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !idle;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return cursor.isDestroyed();
         }
 
         // Execution interface
@@ -356,5 +387,6 @@ public class BranchLookup_Nested extends Operator
         private final GroupCursor cursor;
         private final HKey hKey;
         private ShareHolder<Row> inputRow = new ShareHolder<Row>();
+        private boolean idle = true;
     }
 }

@@ -77,7 +77,7 @@ public final class BoundFieldExpression implements Expression {
     private final int rowBindingPosition;
     private final FieldExpression fieldExpression;
 
-    private static class InnerEvaluation implements ExpressionEvaluation {
+    private static class InnerEvaluation extends ExpressionEvaluation.Base {
         @Override
         public void of(Row row) {
         }
@@ -90,6 +90,11 @@ public final class BoundFieldExpression implements Expression {
         @Override
         public ValueSource eval() {
             return fieldExpressionEvaluation.eval();
+        }
+
+        @Override
+        public void destroy() {
+            fieldExpressionEvaluation.destroy();
         }
 
         @Override

@@ -44,10 +44,10 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void open()
     {
-        assert exchange == null;
-        exchange = adapter.takeExchange(indexRowType.index());
+        CursorLifecycle.checkIdle(this);
         sortCursor = SortCursor.create(context, keyRange, ordering, new IndexScanIterationHelper());
         sortCursor.open();
+        idle = false;
     }
 
     @Override
@@ -55,6 +55,7 @@ class PersistitIndexCursor implements Cursor
     {
         Row next;
         try {
+            CursorLifecycle.checkIdleOrActive(this);
             boolean needAnother;
             do {
                 if ((next = sortCursor.next()) != null) {
@@ -76,19 +77,44 @@ class PersistitIndexCursor implements Cursor
             adapter.handlePersistitException(e);
             throw new AssertionError();
         }
-        assert (next == null) == (exchange == null);
+        assert (next == null) == idle;
         return next;
     }
 
     @Override
     public void close()
     {
-        if (exchange != null) {
-            adapter.returnExchange(exchange);
-            exchange = null;
-            sortCursor = null;
+        CursorLifecycle.checkIdleOrActive(this);
+        if (!idle) {
             row.release();
+            idle = true;
         }
+    }
+
+    @Override
+    public void destroy()
+    {
+        adapter.returnExchange(exchange);
+        exchange = null;
+        sortCursor = null;
+    }
+
+    @Override
+    public boolean isIdle()
+    {
+        return exchange != null && idle;
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        return exchange != null && !idle;
+    }
+
+    @Override
+    public boolean isDestroyed()
+    {
+        return exchange == null;
     }
 
     // For use by this package
@@ -108,6 +134,8 @@ class PersistitIndexCursor implements Cursor
         this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
         this.isTableIndex = indexRowType.index().isTableIndex();
         this.selector = selector;
+        this.exchange = adapter.takeExchange(indexRowType.index());
+        this.idle = true;
     }
 
     // For use by this class
@@ -132,7 +160,7 @@ class PersistitIndexCursor implements Cursor
     private IndexScanSelector selector;
     private Exchange exchange;
     private SortCursor sortCursor;
-    private boolean first = true;
+    private boolean idle;
 
     // Inner classes
 

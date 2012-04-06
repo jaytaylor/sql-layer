@@ -1,0 +1,15 @@
+#Test bug 975270
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(bigint_field, bigint_unsigned_field) VALUES (1, 1);
+---
+- Statement: INSERT INTO all_types(bigint_field, bigint_unsigned_field) VALUES (2, 2);
+---
+- Statement: SELECT SUM(bigint_field) / COUNT(bigint_field) from all_types;
+- output: [[1.5]]
+---
+- Statement: SELECT  AVG(bigint_field), AVG(bigint_unsigned_field) from all_types;
+- output: [[1, 1.5]]
+# should be: output:[[1.5, 1.5]]
+...

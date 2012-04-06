@@ -535,6 +535,27 @@ public class IndexScanIT extends OperatorITBase
         compareRenderedHKeys(expected, cursor);
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, false, 125, false));
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public boolean hKeyComparison()
+            {
+                return true;
+            }
+
+            @Override
+            public String[] firstExpectedHKeys()
+            {
+                return new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
+            }
+        };
+        testCursorLifecycle(indexScan, testCase);
+    }
+
     // Inspired by bug 898013
     @Test
     public void testAliasingOfPersistitIndexRowFields()
