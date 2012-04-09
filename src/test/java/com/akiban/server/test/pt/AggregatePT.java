@@ -66,8 +66,8 @@ import org.junit.Test;
 import java.util.*;
 
 public class AggregatePT extends ApiTestBase {
-    public static final int ROW_COUNT = 10000;
-    public static final int WARMUPS = 10, REPEATS = 10;
+    public static final int ROW_COUNT = 100000;
+    public static final int WARMUPS = 100, REPEATS = 10;
 
     public AggregatePT() {
         super("PT");
