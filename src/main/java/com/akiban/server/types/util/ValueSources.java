@@ -104,8 +104,40 @@ public class ValueSources
             @Override
             public int compare(ValueSource left, ValueSource right)
             {
+                // BigDecimal is incapable of converting [Double|Float].[NaN | INFINITY] to BigDecimal. 
+                // It'd throw NumberFormatException, instead.
+                // So if those values appear, we'll compare them as Double (or Float)
+                if (isBad(left))
+                {
+                    if (left.getConversionType() == DOUBLE || left.getConversionType() == U_DOUBLE)
+                        return Double.compare(Extractors.getDoubleExtractor().getDouble(left), right.getDecimal().doubleValue());
+                    else
+                        return Float.compare((float)Extractors.getDoubleExtractor().getDouble(left), right.getDecimal().floatValue());
+                }
+                else if (isBad(right))
+                {
+                    if (right.getConversionType() == DOUBLE || right.getConversionType() == U_DOUBLE)
+                        return Double.compare(Extractors.getDoubleExtractor().getDouble(right), left.getDecimal().doubleValue());
+                    else
+                        return Float.compare((float)Extractors.getDoubleExtractor().getDouble(right), left.getDecimal().floatValue());
+                    
+                }
+                
                 ObjectExtractor<BigDecimal> extractor = Extractors.getDecimalExtractor();
                 return extractor.getObject(left).compareTo(extractor.getObject(right));
+            }
+            
+            private boolean isBad(ValueSource source)
+            {
+                switch(source.getConversionType())
+                {
+                    case DOUBLE:    return Double.isInfinite(source.getDouble()) || Double.isNaN(source.getDouble());
+                    case U_DOUBLE:  return Double.isInfinite(source.getUDouble()) || Double.isNaN(source.getUDouble());
+                    case FLOAT:     return Float.isInfinite(source.getFloat()) || Float.isNaN(source.getFloat());
+                    case U_FLOAT:   return Float.isInfinite(source.getUFloat()) || Float.isNaN(source.getUFloat());
+                    default: return false;
+                        
+                }
             }
             
         };
@@ -388,13 +420,13 @@ public class ValueSources
         }
     }
     
-    public static int compare (ValueSource left, ValueSource right)
+    public static long compare (ValueSource left, ValueSource right)
     {
         AkType l = left.getConversionType();
         AkType r = right.getConversionType();
         int ret;
         
-        if (l == r)
+        if (l == r || isText(l) && isText(r))
             return compareSameType(left, right);
         else
         {
@@ -419,6 +451,11 @@ public class ValueSources
         }
     }
 
+    private static boolean isText(AkType t)
+    {
+        return t == AkType.VARCHAR || t == AkType.TEXT;
+    }
+    
     private static Comparator<ValueSource> getOp (AkType left, AkType right)
     {
         Map<AkType, Comparator<ValueSource>> v;
@@ -432,7 +469,7 @@ public class ValueSources
         
         return c1 == null? c2 : c1;
     }
-    private static int compareSameType (ValueSource l, ValueSource r)
+    private static long compareSameType (ValueSource l, ValueSource r)
     {
         switch(l.getConversionType())
         {
@@ -440,8 +477,8 @@ public class ValueSources
             case U_BIGINT:  return l.getUBigInt().compareTo(r.getUBigInt());
             case DOUBLE:    return Double.compare(l.getDouble(), r.getDouble());
             case U_DOUBLE:  return Double.compare(l.getUDouble(), r.getUDouble());
-            case FLOAT:     return Double.compare(l.getFloat(), r.getFloat());
-            case U_FLOAT:   return Double.compare(l.getUFloat(), r.getUFloat());
+            case FLOAT:     return Float.compare(l.getFloat(), r.getFloat());
+            case U_FLOAT:   return Float.compare(l.getUFloat(), r.getUFloat());
             case INT:       
             case U_INT:     
             case LONG:
@@ -450,7 +487,10 @@ public class ValueSources
             case DATETIME:
             case TIMESTAMP:
             case YEAR:      LongExtractor ex = Extractors.getLongExtractor(l.getConversionType());
-                            return (int)(ex.getLong(l) - ex.getLong(r));
+                            return ex.getLong(l) - ex.getLong(r);
+//                            return ret == Integer.MAX_VALUE || ret == Integer.MAX_VALUE 
+//                                    ? (int)ret
+//                                    : (int)(ret % Integer.MAX_VALUE);
             case BOOL:      return Boolean.valueOf(l.getBool()).compareTo(r.getBool());
             case VARCHAR:
             case TEXT:
