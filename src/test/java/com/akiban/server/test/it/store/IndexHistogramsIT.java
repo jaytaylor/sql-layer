@@ -254,16 +254,14 @@ public final class IndexHistogramsIT extends ITBase {
         int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR+1;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
 
-        HistogramEntryDescription[] expected = new HistogramEntryDescription[33];
-        // there are 1600 customers and 32 buckets, so 50 histograms per bucket. Each bucket is defined by its
-        // *last* entry, and we're 0 based. So it's 0049, 0099, 0149...
-        // In this case, we'll have 32 normal buckets, plus a "caboose" for the last entry
-        for (int i=0; i < expected.length-1; ++i) {
-            int entryCid = 49 + 50*i;
+        HistogramEntryDescription[] expected = new HistogramEntryDescription[32];
+        // there are 1600 customers and 32 buckets, so 50 histograms per bucket. First bucket rounds up to 51.
+        for (int i=0; i < expected.length; ++i) {
+            int entryCid = 50*(i+1);
             String entryString = String.format("{\"%04d\"}", entryCid);
-            expected[i] = entry(entryString, 1, 49, 49);
+            int lessThans = i == 0 ? 50 : 49;
+            expected[i] = entry(entryString, 1, lessThans, lessThans);
         }
-        expected[32] = entry("{\"1600\"}", 1, 0, 0);
         validateHistogram("customers", PK, 1, expected);
     }
 
