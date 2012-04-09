@@ -289,14 +289,20 @@ public class JMXInterpreter {
             Attribute attrib = null;
             for (int x=0;x < info.getAttributes().length;x++) {
                 if (method.equalsIgnoreCase(info.getAttributes()[x].getName())) {
-                    if (debug) {
-                        System.out.println(info.getAttributes()[x].getType()+" vs "+long.class.getName());
+                    if (info.getAttributes()[x].getType().equalsIgnoreCase(double.class.getName())) {
+                        attrib = new Attribute(method, new Double(String.valueOf(paramters[0])));
                     }
                     if (info.getAttributes()[x].getType().equalsIgnoreCase(long.class.getName())) {
+                        attrib = new Attribute(method, new Long(String.valueOf(paramters[0])));
+                    }
+                    if (info.getAttributes()[x].getType().equalsIgnoreCase(int.class.getName())) {
                         attrib = new Attribute(method, new Integer(String.valueOf(paramters[0])));
                     }
                     if (info.getAttributes()[x].getType().equalsIgnoreCase(String.class.getName())) {
                         attrib = new Attribute(method, String.valueOf(paramters[0]));
+                    }
+                    if (info.getAttributes()[x].getType().equalsIgnoreCase(Boolean.class.getName())) {
+                        attrib = new Attribute(method, new Boolean(String.valueOf(paramters[0])));
                     }
                     break;
                 }
