@@ -41,7 +41,7 @@ public class PostgresServerSessionIT extends PostgresServerFilesITBase {
 
     @Before
     public void createSimpleSchema() throws SQLException {
-        String sqlCreate = "CREATE TABLE user.T1 (c1 integer not null primary key)";
+        String sqlCreate = "CREATE TABLE "+SCHEMA_NAME+".T1 (c1 integer not null primary key)";
         connection.createStatement().execute(sqlCreate);
     }
     
@@ -51,21 +51,21 @@ public class PostgresServerSessionIT extends PostgresServerFilesITBase {
         connection.createStatement().execute(create);
         
         AkibanInformationSchema ais = ddlServer().getAIS(session());
-        assertNotNull (ais.getUserTable("user", "t1"));
-        assertNotNull (ais.getUserTable("test", "t1"));
+        assertNotNull (ais.getUserTable(SCHEMA_NAME, "t1"));
+        assertNotNull (ais.getUserTable(SCHEMA_NAME, "t1"));
 
     }
 
     @Test 
     public void goodUseSchema() throws SQLException {
-        String use = "SET SCHEMA user";
+        String use = "SET SCHEMA "+SCHEMA_NAME;
         connection.createStatement().execute(use);
         
         String create = "CREATE TABLE t2 (c2 integer not null primary key)";
         connection.createStatement().execute(create);
         AkibanInformationSchema ais = ddlServer().getAIS(session());
-        assertNotNull (ais.getUserTable("test", "t2"));
-        assertNotNull (ais.getUserTable("test", "t1"));
+        assertNotNull (ais.getUserTable(SCHEMA_NAME, "t2"));
+        assertNotNull (ais.getUserTable(SCHEMA_NAME, "t1"));
     }
     
     @Test (expected=PSQLException.class)
