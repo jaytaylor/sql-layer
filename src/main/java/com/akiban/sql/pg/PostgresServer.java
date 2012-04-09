@@ -72,7 +72,6 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Thread thread;
     private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
     // AIS-dependent state
-    private final Object aisLock = new Object();
     private volatile long aisTimestamp = -1;
     private volatile int statementCacheCapacity;
     private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
@@ -231,18 +230,17 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     /** This is the version for use by connections. */
     public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
-        ServerStatementCache<PostgresStatement> statementCache = getStatementCache(key);
-        synchronized (aisLock) {
+        synchronized (statementCaches) {
             if (aisTimestamp != timestamp) {
                 assert aisTimestamp < timestamp : timestamp;
-                if (statementCache != null) {
+                for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
                     statementCache.invalidate();
                 }
                 clearPlans();
                 aisTimestamp = timestamp;
             }
         }
-        return statementCache;
+        return getStatementCache(key);
     }
 
     @Override

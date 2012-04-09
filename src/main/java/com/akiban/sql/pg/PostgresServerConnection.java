@@ -649,7 +649,7 @@ public class PostgresServerConnection extends ServerSessionBase
         
         // Statement cache depends on some connection settings.
         statementCache = server.getStatementCache(Arrays.asList(format,
-                                                                getProperty("cbo")),
+                                                                Boolean.valueOf(getProperty("cbo"))),
                                                   aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
