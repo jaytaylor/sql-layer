@@ -125,7 +125,7 @@ public class AbsExpressionTest extends ComposedExpressionTestBase
     public void testDecimal()
     {
         AkType testType = AkType.DECIMAL;
-        BigDecimal posLiteral = new BigDecimal("123454321"), negLiteral = new BigDecimal("-123454321");
+        BigDecimal posLiteral = new BigDecimal("123454321.123"), negLiteral = new BigDecimal("-123454321.123");
         
         Expression posOutput = new AbsExpression(new LiteralExpression(testType, posLiteral) );
         Expression negOutput = new AbsExpression(new LiteralExpression(testType, negLiteral) );

@@ -104,7 +104,7 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
             }
         }
         finally {
-            cursor.close();
+            cursor.destroy();
         }
         encoder.appendString("]");
     }

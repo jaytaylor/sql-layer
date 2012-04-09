@@ -37,6 +37,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
 
@@ -354,6 +355,36 @@ public class BranchLookup_DefaultIT extends OperatorITBase
             row(addressRowType, 1002L, 1L, "111 2222 st"),
         };
         compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            branchLookup_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(customerRowType)),
+                coi,
+                customerRowType,
+                addressRowType,
+                LookupOption.DISCARD_INPUT);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(addressRowType, 1001L, 1L, "111 1111 st"),
+                    row(addressRowType, 1002L, 1L, "111 2222 st"),
+                    row(addressRowType, 2001L, 2L, "222 1111 st"),
+                    row(addressRowType, 2002L, 2L, "222 2222 st"),
+                    row(addressRowType, 4001L, 4L, "444 1111 st"),
+                    row(addressRowType, 4002L, 4L, "444 2222 st"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     // For use by this class

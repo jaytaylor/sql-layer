@@ -85,6 +85,12 @@ public class YearWeekExpression extends AbstractCompositeExpression
 
             }
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     };
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation

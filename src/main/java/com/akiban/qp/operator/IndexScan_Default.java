@@ -201,8 +201,6 @@ class IndexScan_Default extends Operator
 
     private class Execution extends OperatorExecutionBase implements Cursor
     {
-        // OperatorExecution interface
-
         // Cursor interface
 
         @Override
@@ -239,6 +237,30 @@ class IndexScan_Default extends Operator
         public void close()
         {
             cursor.close();
+        }
+
+        @Override
+        public void destroy()
+        {
+            cursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return cursor.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return cursor.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return cursor.isDestroyed();
         }
 
         // Execution interface

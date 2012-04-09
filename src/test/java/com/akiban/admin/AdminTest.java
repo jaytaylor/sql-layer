@@ -42,6 +42,7 @@ public class AdminTest
     @Before
     public void setUp() throws Exception
     {
+        Admin.forget();
         File configDir = new File(TEST_CONFIG_DIR, DEFAULT_CONFIG);
         System.setProperty(AKIBAN_ADMIN, configDir.getAbsolutePath());
     }
@@ -49,7 +50,7 @@ public class AdminTest
     @AfterClass
     static public void tearDown() throws Exception
     {
-        Admin.only().close();
+        Admin.forget();
         System.clearProperty(AKIBAN_ADMIN);
     }
 

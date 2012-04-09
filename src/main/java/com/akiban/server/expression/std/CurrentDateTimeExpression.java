@@ -94,7 +94,7 @@ public class CurrentDateTimeExpression extends AbstractNoArgExpression
 
     @Override
     public boolean isConstant() {
-        return true;
+        return false;
     }
 
     @Override

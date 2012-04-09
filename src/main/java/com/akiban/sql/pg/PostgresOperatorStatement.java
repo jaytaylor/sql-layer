@@ -87,7 +87,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         }
         finally {
             if (cursor != null) {
-                cursor.close();
+                cursor.destroy();
             }
             unlock(session, UNSPECIFIED_DML_READ);
         }

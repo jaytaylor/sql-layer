@@ -244,6 +244,7 @@ class AncestorLookup_Nested extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
@@ -251,6 +252,7 @@ class AncestorLookup_Nested extends Operator
                 assert rowFromBindings.rowType() == rowType : rowFromBindings;
                 rowFromBindings.hKey().copyTo(hKey);
                 findAncestors();
+                closed = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -261,6 +263,7 @@ class AncestorLookup_Nested extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row = pending.take();
                 if (LOG.isDebugEnabled()) {
@@ -278,8 +281,37 @@ class AncestorLookup_Nested extends Operator
         @Override
         public void close()
         {
-            pending.clear();
-            ancestorCursor.close();
+            CursorLifecycle.checkIdleOrActive(this);
+            if (!closed) {
+                pending.clear();
+                ancestorCursor.close();
+                closed = true;
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            ancestorCursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return ancestorCursor.isDestroyed();
         }
 
         // Execution interface
@@ -329,5 +361,6 @@ class AncestorLookup_Nested extends Operator
         private final GroupCursor ancestorCursor;
         private final PendingRows pending;
         private final HKey hKey;
+        private boolean closed = true;
     }
 }

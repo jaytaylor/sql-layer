@@ -326,11 +326,24 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (queryGoal.getOrdering() != null) {
             int idx = nequals;
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
+                // Get the expression by which this is ordering, recognizing the
+                // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
                 ExpressionNode targetExpression = targetColumn.getExpression();
-                if (targetExpression.isColumn() &&
-                    (queryGoal.getGrouping() != null)) {
-                    if (((ColumnExpression)targetExpression).getTable() == queryGoal.getGrouping()) {
-                        targetExpression = queryGoal.getGrouping().getField(((ColumnExpression)targetExpression).getPosition());
+                if (targetExpression.isColumn()) {
+                    ColumnExpression column = (ColumnExpression)targetExpression;
+                    ColumnSource table = column.getTable();
+                    if (table == queryGoal.getGrouping()) {
+                        targetExpression = queryGoal.getGrouping()
+                            .getField(column.getPosition());
+                    }
+                    else if (table instanceof Project) {
+                        // Cf. ASTStatementLoader.sortsForDistinct().
+                        Project project = (Project)table;
+                        if ((project.getOutput() == queryGoal.getOrdering()) &&
+                            (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
+                            targetExpression = project.getFields()
+                                .get(column.getPosition());
+                        }
                     }
                 }
                 OrderByExpression indexColumn = null;
@@ -432,6 +445,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return result;
     }
 
+    // Does the column expression coming from the index match the ORDER BY target,
+    // allowing for column equivalences?
     protected boolean orderingExpressionMatches(ExpressionNode columnExpression,
                                                 ExpressionNode targetExpression) {
         if (columnExpression.equals(targetExpression))

@@ -148,6 +148,59 @@ public class IfEmptyIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
+    @Test
+    public void testCursorNonEmpty()
+    {
+        Operator plan =
+            ifEmpty_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderCidIndexRowType, cidKeyRange(2), asc()),
+                    coi,
+                    orderCidIndexRowType,
+                    Collections.singleton(orderRowType),
+                    API.LookupOption.DISCARD_INPUT),
+                orderRowType,
+                Arrays.asList(literal(999), literal(999), literal("herman")));
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(orderRowType, 200L, 2L, "david"),
+                    row(orderRowType, 201L, 2L, "david"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
+    @Test
+    public void testCursorEmpty()
+    {
+        Operator plan =
+            ifEmpty_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
+                    coi,
+                    orderCidIndexRowType,
+                    Collections.singleton(orderRowType),
+                    API.LookupOption.DISCARD_INPUT),
+                orderRowType,
+                Arrays.asList(literal(999), literal(999), literal("herman")));
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(orderRowType, 999L, 999L, "herman"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     private IndexKeyRange cidKeyRange(int cid)
     {
         IndexBound bound = new IndexBound(row(orderCidIndexRowType, cid), new SetColumnSelector(0));

@@ -147,9 +147,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!closed) {
             currentRow.release();
             if (cursor != null) {
-                cursor.close();
+                cursor.destroy();
+                cursor = null;
             }
-            cursor = null;
             closed = true;
         }
     }

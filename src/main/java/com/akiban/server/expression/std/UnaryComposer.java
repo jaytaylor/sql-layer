@@ -37,7 +37,26 @@ import java.util.List;
 abstract class UnaryComposer implements ExpressionComposer {
 
     protected abstract Expression compose(Expression argument);
-
+    
+    // Most expressions don't need to access the ExpressionType
+    // But those that do should override this method.
+    protected Expression compose (Expression argument, 
+                                  ExpressionType argType, 
+                                  ExpressionType returnType)
+    {
+        throw new UnsupportedOperationException("not supported");
+    }
+        
+    @Override
+    public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+    {
+        if (arguments.size() != 1)
+            throw new WrongExpressionArityException(1, arguments.size());
+        if (arguments.size() + 1 != typesList.size())
+            throw new IllegalArgumentException("invalid argc");
+        return compose(arguments.get(0), typesList.get(0), typesList.get(1));
+    }
+    
     @Override
     public Expression compose(List<? extends Expression> arguments) {
         if (arguments.size() != 1)

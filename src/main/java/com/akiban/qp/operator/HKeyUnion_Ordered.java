@@ -194,8 +194,10 @@ class HKeyUnion_Ordered extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 leftInput.open();
                 rightInput.open();
+                previousHKey = null;
                 nextLeftRow();
                 nextRightRow();
                 closed = leftRow.isEmpty() && rightRow.isEmpty();
@@ -209,6 +211,7 @@ class HKeyUnion_Ordered extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 Row nextRow = null;
                 while (!closed && nextRow == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -250,6 +253,7 @@ class HKeyUnion_Ordered extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 leftRow.release();
                 rightRow.release();
@@ -257,6 +261,33 @@ class HKeyUnion_Ordered extends Operator
                 rightInput.close();
                 closed = true;
             }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            leftInput.destroy();
+            rightInput.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            assert leftInput.isDestroyed() == rightInput.isDestroyed();
+            return leftInput.isDestroyed();
         }
 
         // Execution interface
@@ -334,6 +365,6 @@ class HKeyUnion_Ordered extends Operator
         private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
         private final AbstractTwoArgExpressionEvaluation[] fieldRankingEvaluations;
         private HKey previousHKey;
-        private boolean closed = false;
+        private boolean closed = true;
     }
 }

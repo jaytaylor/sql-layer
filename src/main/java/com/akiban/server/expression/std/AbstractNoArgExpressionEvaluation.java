@@ -31,7 +31,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.util.ValueHolder;
 
-public abstract class AbstractNoArgExpressionEvaluation implements ExpressionEvaluation {
+public abstract class AbstractNoArgExpressionEvaluation extends ExpressionEvaluation.Base {
     @Override
     public void of(Row row) {
     }

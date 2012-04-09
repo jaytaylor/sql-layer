@@ -1,0 +1,5 @@
+SelectQuery@753ef605
+  ResultSet@7889fe65[oid]
+    Project@2b9cd6b6[orders.oid]
+      Select@45d45d18[orders.order_date > minus(current_date(),604800000)]
+        TableSource@7aa5f9b(orders)

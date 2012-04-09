@@ -83,7 +83,7 @@ public final class ColumnExpression implements Expression {
 
     // nested classes
 
-    private static class InnerEvaluation implements ExpressionEvaluation {
+    private static class InnerEvaluation extends ExpressionEvaluation.Base {
 
         // ExpressionEvaluation interface
 

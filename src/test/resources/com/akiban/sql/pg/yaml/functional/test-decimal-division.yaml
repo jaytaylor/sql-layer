@@ -1,0 +1,12 @@
+## test bug 965382: Non-terminating decimal scale
+---
+- CreateTable: t (decimal_field decimal)
+---
+- Statement: INSERT INTO t VALUES (10), (6), (4), (9)
+---
+- Statement: SELECT MAX(decimal_field) FROM t
+- output: [[10]]
+---
+- Statement: SELECT MAX(decimal_field / 3.0) FROM t
+- output: [[3.333333333]]
+...

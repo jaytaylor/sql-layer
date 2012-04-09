@@ -39,11 +39,12 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import static com.akiban.qp.operator.API.*;
 
-public class AncestorLookupIT extends OperatorITBase
+public class AncestorLookup_DefaultIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -342,6 +343,34 @@ public class AncestorLookupIT extends OperatorITBase
             row(orderRowType, 22L, 2L, "jack"),
         };
         compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            ancestorLookup_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                coi,
+                orderRowType,
+                Collections.singleton(customerRowType),
+                LookupOption.DISCARD_INPUT);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(customerRowType, 1L, "northbridge"),
+                    row(customerRowType, 1L, "northbridge"),
+                    row(customerRowType, 2L, "foundation"),
+                    row(customerRowType, 2L, "foundation"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     // For use by this class
