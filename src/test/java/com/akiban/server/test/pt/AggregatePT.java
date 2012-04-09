@@ -49,6 +49,13 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
+import com.akiban.qp.operator.OperatorExecutionBase;
+import com.akiban.qp.row.ValuesHolderRow;
+import com.akiban.qp.rowtype.DerivedTypesSchema;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
+
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
@@ -56,8 +63,7 @@ import com.persistit.exception.PersistitException;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Random;
+import java.util.*;
 
 public class AggregatePT extends ApiTestBase {
     public static final int ROW_COUNT = 10000;
@@ -139,6 +145,41 @@ public class AggregatePT extends ApiTestBase {
         PersistitAdapter adapter = persistitAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
         
+        System.out.println("NORMAL OPERATORS");
+        double time = 0.0;
+        for (int i = 0; i < WARMUPS+REPEATS; i++) {
+            long start = System.nanoTime();
+            Cursor cursor = API.cursor(plan, queryContext);
+            cursor.open();
+            while (true) {
+                Row row = cursor.next();
+                if (row == null) break;
+                if (i == 0) System.out.println(row);
+            }
+            cursor.close();
+            long end = System.nanoTime();
+            if (i >= WARMUPS)
+                time += (end - start) / 1.0e6;
+        }
+        System.out.println(String.format("%g ms", time / REPEATS));
+    }
+
+    @Test
+    public void bespokeOperator() {
+        Schema schema = new Schema(rowDefCache().ais());;
+        IndexRowType indexType = schema.indexRowType(index);
+        IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
+        API.Ordering ordering = new API.Ordering();
+        ordering.append(new FieldExpression(indexType, 0), true);
+        
+        Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
+        RowType rowType = indexType;
+        plan = new BespokeOperator(plan);
+
+        PersistitAdapter adapter = persistitAdapter(schema);
+        QueryContext queryContext = queryContext(adapter);
+        
+        System.out.println("BESPOKE OPERATOR");
         double time = 0.0;
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
@@ -159,6 +200,7 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void pojoAggregator() throws PersistitException {
+        System.out.println("POJO");
         double time = 0.0;
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
@@ -179,9 +221,201 @@ public class AggregatePT extends ApiTestBase {
         System.out.println(String.format("%g ms", time / REPEATS));
     }
 
-    private static class POJOAggregator {
-        private boolean reset = true;
+    static class BespokeOperator extends Operator {
+        private Operator inputOperator;
+        private RowType outputType;
+
+        public BespokeOperator(Operator inputOperator) {
+            this.inputOperator = inputOperator;
+            outputType = new BespokeRowType();
+        }
+
+        @Override
+        protected Cursor cursor(QueryContext context) {
+            return new BespokeCursor(context, API.cursor(inputOperator, context), outputType);
+        }
+
+        @Override
+        public void findDerivedTypes(Set<RowType> derivedTypes) {
+            inputOperator.findDerivedTypes(derivedTypes);
+            derivedTypes.add(outputType);
+        }
+
+        @Override
+        public List<Operator> getInputOperators() {
+            return Collections.singletonList(inputOperator);
+        }
+
+        @Override
+        public RowType rowType() {
+            return outputType;
+        }
+    }
+
+    static class BespokeCursor extends OperatorExecutionBase implements Cursor {
+        private Cursor inputCursor;
+        private RowType outputType;
+        private ValuesHolderRow outputRow;
+        private BespokeAggregator aggregator;
+
+        public BespokeCursor(QueryContext context, Cursor inputCursor, RowType outputType) {
+            super(context);
+            this.inputCursor = inputCursor;
+            this.outputType = outputType;
+        }
+
+        @Override
+        public void open() {
+            inputCursor.open();
+            outputRow = new ValuesHolderRow(outputType);
+            aggregator = new BespokeAggregator();
+        }
+
+        @Override
+        public void close() {
+            inputCursor.close();
+            aggregator = null;
+        }
+
+        @Override
+        public void destroy() {
+            close();
+            inputCursor = null;
+        }
+
+        @Override
+        public boolean isIdle() {
+            return ((inputCursor != null) && (aggregator == null));
+        }
+
+        @Override
+        public boolean isActive() {
+            return ((inputCursor != null) && (aggregator != null));
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return (inputCursor == null);
+        }
+
+        @Override
+        public Row next() {
+            if (aggregator == null)
+                return null;
+            while (true) {
+                Row inputRow = inputCursor.next();
+                if (inputRow == null) {
+                    if (aggregator.isEmpty()) {
+                        close();
+                        return null;
+                    }
+                    aggregator.fill(outputRow);
+                    close();
+                    return outputRow;
+                }
+                if (aggregator.aggregate(inputRow, outputRow)) {
+                    return outputRow;
+                }
+            }
+        }
+    }
+
+    static final AkType[] TYPES = { 
+        AkType.LONG, AkType.LONG, AkType.LONG, AkType.LONG
+    };
+
+    static class BespokeRowType extends RowType {
+        public BespokeRowType() {
+            super(-1);
+        }
+
+        @Override
+        public DerivedTypesSchema schema() {
+            return null;
+        }
+
+        public int nFields() {
+            return TYPES.length;
+        }
         
+        public AkType typeAt(int index) {
+            return TYPES[index];
+        }
+    }
+
+    static class BespokeAggregator {
+        private boolean key_init;
+        private long key;
+        private long count1;
+        private boolean sum1_init;
+        private long sum1;
+        private boolean sum2_init;
+        private long sum2;
+
+        public boolean isEmpty() {
+            return !key_init;
+        }
+
+        public boolean aggregate(Row inputRow, ValuesHolderRow outputRow) {
+            // The select part.
+            String sval = inputRow.eval(1).getString();
+            if (("M".compareTo(sval) > 0) ||
+                ("Y".compareTo(sval) < 0))
+                return false;
+            long flag = inputRow.eval(2).getInt();
+            if (flag == 1)
+                return false;
+
+            // The actual aggregate part.
+            boolean emit = false, reset = false;
+            long nextKey = inputRow.eval(0).getInt();
+            if (!key_init) {
+                key_init = reset = true;
+                key = nextKey;
+            }
+            else if (key != nextKey) {
+                fill(outputRow);
+                emit = reset = true;
+                key = nextKey;
+            }
+            if (reset) {
+                sum1_init = sum2_init = false;
+                count1 = sum1 = sum2 = 0;
+            }
+            ValueSource value = inputRow.eval(3);
+            if (!value.isNull()) {
+                count1++;
+            }
+            value = inputRow.eval(4);
+            if (!value.isNull()) {
+                if (!sum1_init)
+                    sum1_init = true;
+                sum1 += value.getInt();
+            }
+            value = inputRow.eval(5);
+            if (!value.isNull()) {
+                if (!sum2_init)
+                    sum2_init = true;
+                sum2 += value.getInt();
+            }
+            return emit;
+        }
+
+        public void fill(ValuesHolderRow row) {
+            row.holderAt(0).putLong(key);
+            row.holderAt(1).putLong(count1);
+            row.holderAt(2).putLong(sum1);
+            row.holderAt(3).putLong(sum2);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%d: [%d %d %d]", key, count1, sum1, sum2);
+        }
+
+    }
+
+    static class POJOAggregator {
         private boolean key_init;
         private long key;
         private long count1;
@@ -207,20 +441,20 @@ public class AggregatePT extends ApiTestBase {
             if (flag == 1)
                 return;
             row.indexTo(0);
+            boolean reset = false;
             long nextKey = row.decodeLong();
             if (!key_init) {
-                key_init = true;
+                key_init = reset = true;
                 key = nextKey;
             }
             else if (key != nextKey) {
                 emit();
-                key = nextKey;
                 reset = true;
+                key = nextKey;
             }
             if (reset) {
                 sum1_init = sum2_init = false;
                 count1 = sum1 = sum2 = 0;
-                reset = false;
             }
             row.indexTo(3);
             if (!row.isNull()) {
