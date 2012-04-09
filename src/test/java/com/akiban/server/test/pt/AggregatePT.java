@@ -49,6 +49,10 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
+import com.persistit.Exchange;
+import com.persistit.Key;
+import com.persistit.exception.PersistitException;
+
 import org.junit.Before;
 import org.junit.Test;
 
@@ -56,8 +60,8 @@ import java.util.Arrays;
 import java.util.Random;
 
 public class AggregatePT extends ApiTestBase {
-    public static final int ROW_COUNT = 1000;
-    public static final int WARMUPS = 10;
+    public static final int ROW_COUNT = 10000;
+    public static final int WARMUPS = 10, REPEATS = 10;
 
     public AggregatePT() {
         super("PT");
@@ -79,7 +83,7 @@ public class AggregatePT extends ApiTestBase {
         for (int i = 0; i < ROW_COUNT; i++) {
             writeRow(t, i,
                      rand.nextInt(10),
-                     (rand.nextInt(100) < 80) ? 1 : 0,
+                     (rand.nextInt(100) < 80) ? 0 : 1,
                      randString(rand, 20),
                      rand.nextInt(100),
                      rand.nextInt(1000),
@@ -135,20 +139,117 @@ public class AggregatePT extends ApiTestBase {
         PersistitAdapter adapter = persistitAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
         
-        long start = 0, end = 0;
-        for (int i = 0; i <= WARMUPS; i++) {
-            start = System.nanoTime();
+        double time = 0.0;
+        for (int i = 0; i < WARMUPS+REPEATS; i++) {
+            long start = System.nanoTime();
             Cursor cursor = API.cursor(plan, queryContext);
             cursor.open();
             while (true) {
                 Row row = cursor.next();
-                if (i == 0) System.out.println(row);
                 if (row == null) break;
+                if (i == 0) System.out.println(row);
             }
             cursor.close();
-            end = System.nanoTime();
+            long end = System.nanoTime();
+            if (i >= WARMUPS)
+                time += (end - start) / 1.0e6;
         }
-        System.out.println(String.format("%g ms", (double)(end - start) / 1.0e6));
+        System.out.println(String.format("%g ms", time / REPEATS));
+    }
+
+    @Test
+    public void pojoAggregator() throws PersistitException {
+        double time = 0.0;
+        for (int i = 0; i < WARMUPS+REPEATS; i++) {
+            long start = System.nanoTime();
+            POJOAggregator aggregator = new POJOAggregator(i == 0);
+            Exchange exchange = persistitStore().getExchange(session(), index);
+            exchange.clear();
+            exchange.append(Key.BEFORE);
+            while (exchange.traverse(Key.GT, true)) {
+                Key key = exchange.getKey();
+                aggregator.aggregate(key);
+            }
+            aggregator.emit();
+            persistitStore().releaseExchange(session(), exchange);
+            long end = System.nanoTime();
+            if (i >= WARMUPS)
+                time += (end - start) / 1.0e6;
+        }
+        System.out.println(String.format("%g ms", time / REPEATS));
+    }
+
+    private static class POJOAggregator {
+        private boolean reset = true;
+        
+        private boolean key_init;
+        private long key;
+        private long count1;
+        private boolean sum1_init;
+        private long sum1;
+        private boolean sum2_init;
+        private long sum2;
+
+        private final boolean doPrint;
+
+        public POJOAggregator(boolean doPrint) {
+            this.doPrint = doPrint;
+        }
+
+        public void aggregate(Key row) {
+            row.indexTo(1);
+            String sval = row.decodeString();
+            if (("M".compareTo(sval) > 0) ||
+                ("Y".compareTo(sval) < 0))
+                return;
+            row.indexTo(2);
+            long flag = row.decodeLong();
+            if (flag == 1)
+                return;
+            row.indexTo(0);
+            long nextKey = row.decodeLong();
+            if (!key_init) {
+                key_init = true;
+                key = nextKey;
+            }
+            else if (key != nextKey) {
+                emit();
+                key = nextKey;
+                reset = true;
+            }
+            if (reset) {
+                sum1_init = sum2_init = false;
+                count1 = sum1 = sum2 = 0;
+                reset = false;
+            }
+            row.indexTo(3);
+            if (!row.isNull()) {
+                count1++;
+            }
+            row.indexTo(4);
+            if (!row.isNull()) {
+                if (!sum1_init)
+                    sum1_init = true;
+                sum1 += row.decodeLong();
+            }
+            row.indexTo(5);
+            if (!row.isNull()) {
+                if (!sum2_init)
+                    sum2_init = true;
+                sum2 += row.decodeLong();
+            }
+        }
+
+        public void emit() {
+            if (doPrint)
+                System.out.println(this);
+        }
+
+        @Override
+        public String toString() {
+            return String.format("%d: [%d %d %d]", key, count1, sum1, sum2);
+        }
+
     }
 
 }
