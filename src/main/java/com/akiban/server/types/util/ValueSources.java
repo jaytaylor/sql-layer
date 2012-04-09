@@ -26,6 +26,7 @@
 
 package com.akiban.server.types.util;
 
+import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.AkType;
@@ -270,9 +271,32 @@ public class ValueSources
         
         for (AkType right : Iterables.concat(date, time, datetime))
             m8_9_10.put(right, c10);
-                
+           
         map.put(VARCHAR, m8_9_10);
         map.put(TEXT, m8_9_10);
+        
+        // 11) (date/time)
+        Comparator<ValueSource> c11 = new Comparator<ValueSource>()
+        {
+            /**
+             * left is DATE | DATETIME , right is datetime/timestamp
+             */
+            @Override
+            public int compare(ValueSource v1, ValueSource v2)
+            {
+                LongExtractor ext = Extractors.getLongExtractor(v2.getConversionType());
+                return (int)(ext.getLong(v1) - ext.getLong(v2));
+            }
+            
+        };
+        
+        Map<AkType, Comparator<ValueSource>> m11 = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
+        m11.put(DATETIME, c11);
+        m11.put(TIMESTAMP, c11);
+        
+        map.put(DATE, m11);
+        map.put(DATETIME, m11);
+        map.put(TIMESTAMP, m11);
     }
     
     /**
@@ -342,43 +366,72 @@ public class ValueSources
     public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric)
     {
         if (v1.isNull() || v2.isNull()) return false;
+        try
+        {
+            boolean ret = compare(v1, v2) == 0;
+            
+            if (!ret && textAsNumeric && v1.getConversionType() == AkType.VARCHAR 
+                                      && v2.getConversionType() == AkType.VARCHAR)
+                    // try compare as double
+                    return Double.compare(Extractors.getDoubleExtractor().getDouble(v1),
+                                         Extractors.getDoubleExtractor().getDouble(v2))
+                            == 0;
+                    // TODO: fi test failed (again!) could try to compare v1, va2 
+                    // as DATES  select field ('9-12-12', '0009-12-12', 2);
+                    // or time, etc ...
+
+            return ret;
+        }
+        catch (InconvertibleTypesException e)
+        {
+            return false;
+        }
+    }
+    
+    public static int compare (ValueSource left, ValueSource right)
+    {
+        AkType l = left.getConversionType();
+        AkType r = right.getConversionType();
+        int ret;
         
-        AkType left = v1.getConversionType();
-        AkType right = v2.getConversionType();
-        boolean ret;
-        
-        if (left == right)
-            ret = compareSameType(v1, v2) == 0;
+        if (l == r)
+            return compareSameType(left, right);
         else
         {
-            Comparator<ValueSource> c = get(left, right);
             Map<AkType, Comparator<ValueSource>> v;
             Comparator<ValueSource> c1 = null, c2 = null;
 
-            if ((v = map.get(right)) != null)
-                c1 = v.get(left);
+            if ((v = map.get(r)) != null)
+                c1 = v.get(l);
 
-            if ((v = map.get(left)) != null)
-                c2 = v.get(right);
+            if ((v = map.get(l)) != null)
+                c2 = v.get(r);
 
-            ret = c1 == null 
-                        ? (c2 == null ? false : c2.compare(v1, v2) == 0)
-                        : (c1.compare(v2, v1) == 0);
+            if (c1 == null)
+            {
+                if (c2 == null)
+                    throw new InconvertibleTypesException(l, r);
+                else
+                    return c2.compare(left, right);
+            }
+            else
+                return -c1.compare(right, left);
         }
-        
-        if (!ret && textAsNumeric && left == AkType.VARCHAR 
-                                  && right == AkType.VARCHAR)
-                // try compare as double
-                return Double.compare(Extractors.getDoubleExtractor().getDouble(v1),
-                                     Extractors.getDoubleExtractor().getDouble(v2))
-                        == 0;
-                // TODO: fi test failed (again!) could try to compare v1, va2 
-                // as DATES  select field ('9-12-12', '0009-12-12', 2);
-                // or time, etc ...
-        
-        return ret;
     }
-    
+
+    private static Comparator<ValueSource> getOp (AkType left, AkType right)
+    {
+        Map<AkType, Comparator<ValueSource>> v;
+        Comparator<ValueSource> c1 = null, c2 = null;
+        
+        if ((v = map.get(right)) != null)
+            c1 = v.get(left);
+        
+        if ((v = map.get(left)) != null)
+            c2 = v.get(right);
+        
+        return c1 == null? c2 : c1;
+    }
     private static int compareSameType (ValueSource l, ValueSource r)
     {
         switch(l.getConversionType())
@@ -398,7 +451,7 @@ public class ValueSources
             case TIMESTAMP:
             case YEAR:      LongExtractor ex = Extractors.getLongExtractor(l.getConversionType());
                             return (int)(ex.getLong(l) - ex.getLong(r));
-            case BOOL:      return l.getBool() ^ r.getBool() ? 1 : 0;
+            case BOOL:      return Boolean.valueOf(l.getBool()).compareTo(r.getBool());
             case VARCHAR:
             case TEXT:
                             ObjectExtractor<String> ext = Extractors.getStringExtractor();

@@ -112,15 +112,6 @@ public class ValueSourcesTypeTest
            for (AkType right : DATES)
                paramSym(pb, left, right, false);
         
-        // MAP 11) {date, time}
-        for (AkType left : DATES)
-        {
-            //param(pb, left, left, false); check later
-            for (AkType right : DATES)
-                if (left == right) continue;
-                else param(pb, left, right, true); // incompatible
-        }
-        
         return pb.asList();
     }
     
@@ -139,8 +130,5 @@ public class ValueSourcesTypeTest
     public void test()
     {
         assertEquals("Is null? ", isNull, ValueSources.get(left, right) == null);
-        
-       
-       
     }
 }
