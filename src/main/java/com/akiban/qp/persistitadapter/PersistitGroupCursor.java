@@ -57,7 +57,7 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void rebind(HKey hKey, boolean deep)
     {
-        CursorLifecycle.checkIdle(this);
+        // CursorLifecycle.checkIdle(this);
         this.hKey = (PersistitHKey) hKey;
         this.hKeyDeep = deep;
     }
@@ -69,7 +69,7 @@ class PersistitGroupCursor implements GroupCursor
     public void open()
     {
         try {
-            CursorLifecycle.checkIdle(this);
+            // CursorLifecycle.checkIdle(this);
             exchange.clear();
             groupScan =
                 hKey == null ? new FullScan() :
@@ -84,7 +84,7 @@ class PersistitGroupCursor implements GroupCursor
     public Row next()
     {
         try {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             boolean next = !idle;
             if (next) {
                 groupScan.advance();
@@ -109,7 +109,7 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void close()
     {
-        CursorLifecycle.checkIdleOrActive(this);
+        // CursorLifecycle.checkIdleOrActive(this);
         if (!idle) {
             groupScan = null;
             idle = true;

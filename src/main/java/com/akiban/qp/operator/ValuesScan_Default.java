@@ -122,7 +122,7 @@ public class ValuesScan_Default extends Operator
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             iter = null;
         }
 
@@ -130,7 +130,7 @@ public class ValuesScan_Default extends Operator
         public Row next() {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 if (iter != null && iter.hasNext()) {
                     return iter.next().bind(context);
                 } else {
@@ -145,7 +145,7 @@ public class ValuesScan_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 iter = rows.iterator();
             } finally {
                 TAP_OPEN.out();

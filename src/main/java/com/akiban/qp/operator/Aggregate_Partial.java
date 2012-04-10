@@ -289,7 +289,7 @@ final class Aggregate_Partial extends Operator
         public Row next() {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 if (cursorState == CursorState.CLOSED)
                     throw new IllegalStateException("cursor not open");
@@ -332,7 +332,7 @@ final class Aggregate_Partial extends Operator
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             if (cursorState != CursorState.CLOSED) {
                 holder.release();
                 inputCursor.close();

@@ -207,7 +207,7 @@ class Product_NestedLoops extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 this.outerInput.open();
                 this.closed = false;
             } finally {
@@ -220,7 +220,7 @@ class Product_NestedLoops extends Operator
         {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row outputRow = null;
                 while (!closed && outputRow == null) {
@@ -262,7 +262,7 @@ class Product_NestedLoops extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 closeOuter();
                 closed = true;

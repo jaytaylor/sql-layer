@@ -278,7 +278,7 @@ class Flatten_HKeyOrdered extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 input.open();
                 idle = false;
             } finally {
@@ -291,7 +291,7 @@ class Flatten_HKeyOrdered extends Operator
         {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row outputRow = pending.take();
                 Row inputRow;
