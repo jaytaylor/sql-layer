@@ -28,10 +28,11 @@ package com.akiban.server.types.util;
 
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.AkType;
+import static com.akiban.server.types.AkType.*;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.google.common.collect.Iterables;
 import java.math.BigDecimal;
@@ -39,8 +40,6 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
-
-import static com.akiban.server.types.AkType.*;
 
 public class ValueSources
 {
@@ -100,48 +99,40 @@ public class ValueSources
         // decimal comparator
         Comparator<ValueSource> dec_c2 = new Comparator<ValueSource>()
         {
-
             @Override
-            public int compare(ValueSource left, ValueSource right)
-            {
+            public int compare(ValueSource l, ValueSource r)
+            {                
                 // BigDecimal is incapable of converting [Double|Float].[NaN | INFINITY] to BigDecimal. 
                 // It'd throw NumberFormatException, instead.
-                // So if those values appear, we'll compare them as Double (or Float)
-                if (isBad(left))
+                // So if those values appear, we'll compare them as Double                
+                switch(l.getConversionType())
                 {
-                    if (left.getConversionType() == DOUBLE || left.getConversionType() == U_DOUBLE)
-                        return Double.compare(Extractors.getDoubleExtractor().getDouble(left), right.getDecimal().doubleValue());
-                    else
-                        return Float.compare((float)Extractors.getDoubleExtractor().getDouble(left), right.getDecimal().floatValue());
+                    case DOUBLE:
+                    case U_DOUBLE:
+                    case FLOAT:
+                    case U_FLOAT:
+                        double left = Extractors.getDoubleExtractor().getDouble(l);
+                        if (Double.isInfinite(left) || Double.isNaN(left))
+                            return Double.compare(left, r.getDecimal().doubleValue());
                 }
-                else if (isBad(right))
+                
+                switch(r.getConversionType())
                 {
-                    if (right.getConversionType() == DOUBLE || right.getConversionType() == U_DOUBLE)
-                        return Double.compare(Extractors.getDoubleExtractor().getDouble(right), left.getDecimal().doubleValue());
-                    else
-                        return Float.compare((float)Extractors.getDoubleExtractor().getDouble(right), left.getDecimal().floatValue());
+                    case DOUBLE:
+                    case U_DOUBLE:
+                    case FLOAT:
+                    case U_FLOAT:
+                        double right = Extractors.getDoubleExtractor().getDouble(r);                                
+                        if (Double.isInfinite(right) || Double.isNaN(right))
+                            return Double.compare(right, l.getDecimal().doubleValue());
                     
                 }
                 
                 ObjectExtractor<BigDecimal> extractor = Extractors.getDecimalExtractor();
-                return extractor.getObject(left).compareTo(extractor.getObject(right));
-            }
-            
-            private boolean isBad(ValueSource source)
-            {
-                switch(source.getConversionType())
-                {
-                    case DOUBLE:    return Double.isInfinite(source.getDouble()) || Double.isNaN(source.getDouble());
-                    case U_DOUBLE:  return Double.isInfinite(source.getUDouble()) || Double.isNaN(source.getUDouble());
-                    case FLOAT:     return Float.isInfinite(source.getFloat()) || Float.isNaN(source.getFloat());
-                    case U_FLOAT:   return Float.isInfinite(source.getUFloat()) || Float.isNaN(source.getUFloat());
-                    default: return false;
-                        
-                }
-            }
-            
+                return extractor.getObject(l).compareTo(extractor.getObject(r));
+            }                        
         };
-        
+
         Map<AkType, Comparator<ValueSource>> m2Double = new EnumMap(AkType.class);
         Map<AkType, Comparator<ValueSource>> m2Decimal = new EnumMap(AkType.class);
         
@@ -298,7 +289,6 @@ public class ValueSources
                     return 1;
                 }
             }
-            
         };
         
         for (AkType right : Iterables.concat(date, time, datetime))
@@ -402,13 +392,13 @@ public class ValueSources
         {
             boolean ret = compare(v1, v2) == 0;
             
-            if (!ret && textAsNumeric && v1.getConversionType() == AkType.VARCHAR 
-                                      && v2.getConversionType() == AkType.VARCHAR)
+            if (!ret && textAsNumeric && isText(v1.getConversionType())
+                                      && isText(v2.getConversionType()))
                     // try compare as double
                     return Double.compare(Extractors.getDoubleExtractor().getDouble(v1),
-                                         Extractors.getDoubleExtractor().getDouble(v2))
+                                          Extractors.getDoubleExtractor().getDouble(v2))
                             == 0;
-                    // TODO: fi test failed (again!) could try to compare v1, va2 
+                    // TODO: if test failed (again!) could try to compare v1, va2 
                     // as DATES  select field ('9-12-12', '0009-12-12', 2);
                     // or time, etc ...
 
@@ -423,8 +413,7 @@ public class ValueSources
     public static long compare (ValueSource left, ValueSource right)
     {
         AkType l = left.getConversionType();
-        AkType r = right.getConversionType();
-        int ret;
+        AkType r = right.getConversionType();    
         
         if (l == r || isText(l) && isText(r))
             return compareSameType(left, right);
@@ -456,19 +445,6 @@ public class ValueSources
         return t == AkType.VARCHAR || t == AkType.TEXT;
     }
     
-    private static Comparator<ValueSource> getOp (AkType left, AkType right)
-    {
-        Map<AkType, Comparator<ValueSource>> v;
-        Comparator<ValueSource> c1 = null, c2 = null;
-        
-        if ((v = map.get(right)) != null)
-            c1 = v.get(left);
-        
-        if ((v = map.get(left)) != null)
-            c2 = v.get(right);
-        
-        return c1 == null? c2 : c1;
-    }
     private static long compareSameType (ValueSource l, ValueSource r)
     {
         switch(l.getConversionType())
@@ -488,13 +464,9 @@ public class ValueSources
             case TIMESTAMP:
             case YEAR:      LongExtractor ex = Extractors.getLongExtractor(l.getConversionType());
                             return ex.getLong(l) - ex.getLong(r);
-//                            return ret == Integer.MAX_VALUE || ret == Integer.MAX_VALUE 
-//                                    ? (int)ret
-//                                    : (int)(ret % Integer.MAX_VALUE);
             case BOOL:      return Boolean.valueOf(l.getBool()).compareTo(r.getBool());
             case VARCHAR:
-            case TEXT:
-                            ObjectExtractor<String> ext = Extractors.getStringExtractor();
+            case TEXT:      ObjectExtractor<String> ext = Extractors.getStringExtractor();
                             return ext.getObject(l).compareTo(ext.getObject(r));
             case NULL:      return 1;
             default:        return 0;

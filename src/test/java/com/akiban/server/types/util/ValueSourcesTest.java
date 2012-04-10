@@ -250,7 +250,10 @@ public class ValueSourcesTest
         
         //--------------- test HUGE number -------------------------------------
         param(pb, new ValueHolder(AkType.LONG,20081012000000L), LT, new ValueHolder(AkType.LONG, 20110504000000L), true);
-        
+//        param(pb, new ValueHolder(AkType.U_BIGINT, BigInteger.valueOf(Long.MAX_VALUE).pow(Integer.MAX_VALUE))
+//                , EQ
+//                , new ValueHolder(AkType.DOUBLE, 1.2)
+//                , false);
         param(pb, new ValueHolder(AkType.DOUBLE, Double.POSITIVE_INFINITY), EQ, new ValueHolder(AkType.DECIMAL, BigDecimal.ZERO), false);
         return pb.asList();
     }
