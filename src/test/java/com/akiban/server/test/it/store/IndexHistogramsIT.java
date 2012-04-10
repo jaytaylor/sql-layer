@@ -78,41 +78,42 @@ public final class IndexHistogramsIT extends ITBase {
         // 320 customers with 4 names, evenly distributed, is 80 customers per name
         // dob is 1983 if cid is divisible by 4, otherwise  it's 1900 + (cid / 2).
         // Since both patterns have 4, that means all 80 null-names will have 1983 (they're all with cids divisible by
-        // 4), and the rest will be striped evenly. Each bucket will represent 8 entries: itself, and the 7 below it.
+        // 4), and the rest will be striped evenly. Each bucket will represent 7 or 8 entries.
         // This algorithm is a bit tricky to pin down, so I'm putting the results in manually
-        HistogramEntryDescription[] expected = new HistogramEntryDescription[31];
+        HistogramEntryDescription[] expected = new HistogramEntryDescription[32];
         int i = 0;
         expected[i++] = entry("{null,\"1983\"}", 80, 0, 0);
         expected[i++] = entry("{\"Bob\",\"1914\"}", 1, 7, 7);
         expected[i++] = entry("{\"Bob\",\"1930\"}", 1, 7, 7);
         expected[i++] = entry("{\"Bob\",\"1946\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Bob\",\"1962\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Bob\",\"1978\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Bob\",\"1994\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Bob\",\"2010\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Bob\",\"2026\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Bob\",\"2042\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Bob\",\"2058\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"1915\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"1931\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"1947\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"1963\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"1979\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"1995\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"2011\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"2027\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"2043\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Carla\",\"2059\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"1915\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"1931\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"1947\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"1963\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"1979\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"1995\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"2011\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"2027\"}", 1, 7, 7);
-        expected[i++] = entry("{\"Dot\",\"2043\"}", 1, 7, 7);
-        expected[i] = entry("{\"Dot\",\"2059\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Bob\",\"1960\"}", 1, 6, 6);
+        expected[i++] = entry("{\"Bob\",\"1976\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Bob\",\"1992\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Bob\",\"2008\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Bob\",\"2022\"}", 1, 6, 6);
+        expected[i++] = entry("{\"Bob\",\"2038\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Bob\",\"2054\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Carla\",\"1911\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Carla\",\"1925\"}", 1, 6, 6);
+        expected[i++] = entry("{\"Carla\",\"1941\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Carla\",\"1957\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Carla\",\"1973\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Carla\",\"1987\"}", 1, 6, 6);
+        expected[i++] = entry("{\"Carla\",\"2003\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Carla\",\"2019\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Carla\",\"2035\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Carla\",\"2049\"}", 1, 6, 6);
+        expected[i++] = entry("{\"Dot\",\"1905\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Dot\",\"1921\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Dot\",\"1937\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Dot\",\"1951\"}", 1, 6, 6);
+        expected[i++] = entry("{\"Dot\",\"1967\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Dot\",\"1983\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Dot\",\"1999\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Dot\",\"2013\"}", 1, 6, 6);
+        expected[i++] = entry("{\"Dot\",\"2029\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Dot\",\"2045\"}", 1, 7, 7);
+        expected[i++] = entry("{\"Dot\",\"2059\"}", 1, 6, 6);
         validateHistogram("customers", "name_dob", 2, expected);
     }
     
@@ -131,32 +132,23 @@ public final class IndexHistogramsIT extends ITBase {
     
     @Test
     public void ordersPlaced() {
-        // "placed" is 0 if oid divisible by 5, 50 if divisible by 7 but not 5, oid otherwise.
-        // There are 320+3=960 orders, of which:
-        //   - 192 are divisible by 5
-        //   - 137 are divisible by 7, but
-        //   - 27 are divisible by 35, so
-        //   - 137-27 = 110 are divisible by 7 but not 5
-        // This leaves 658 values of the 10+oid class. These each have ~21 entries (658/32), and are spaced 30-32
-        // elements apart (the difference in 20 entries and 30 values difference being due to the /5s and /7s.
-        // There's not a simple equation for figuring out each entry, so we'll build up the expecteds algorithmically.
         List<HistogramEntryDescription> expected = new ArrayList<HistogramEntryDescription>();
 
         // div-by-5s first
-        expected.add(entry("{\"0000\"}", 192, 0, 0));
+        expected.add(entry("{\"0000\"}", 120, 0, 0));
         // build up every 20 entries, plus an entry for the end
         int lessThans = 0;
         int lessThansOffset = 0;
         int max = CUSTOMERS_COUNT * ORDERS_COUNT;
         for(int oid=0; oid < max; ++oid) {
-            if (oid == 50) {
-                expected.add(entry("{\"0050\"}", 110, lessThans, lessThans));
+            if (oid == 5) {
+                expected.add(entry("{\"0005\"}", 121, lessThans, lessThans));
                 lessThansOffset = lessThans;
                 continue;
             }
-            if (divisibleBy(oid, 5) || divisibleBy(oid, 7))
+            if (divisibleBy(oid, 4))
                 continue;
-            boolean hasEntry = (oid  == 958) || lessThans == 21; // last value is 559, but it's divisible by 7
+            boolean hasEntry = (oid  == 959) || lessThans == 23; // last value is 559, but it's divisible by 7
             if (hasEntry) {
                 int lessCount = lessThans - lessThansOffset;
                 expected.add(entry(String.format("{\"%04d\"}", oid), 1, lessCount, lessCount));
@@ -183,49 +175,40 @@ public final class IndexHistogramsIT extends ITBase {
 
     @Test
     public void namePlacedGI_2() {
-        // 320 customers with 4 names, evenly distributed, is 80 customers per name
-        // See ordersPlaced() for analysis for "placed"
-        // Each name will have placed=0 192/4 = 48 times.
-        // It will have placed=50 110/4=27.5 times
-        // There are 658 remaining "placed" values, distributed evenly among the remaining buckets.
-        // There are 32 buckets originally, minus the 8 for all the (name,0)s and (name,50)s, so 24 buckets. This means
-        // the remaining buckets should each represent about 658/24 = ~27 buckets, plus or minus due to some buckets
-        // being included in the less-thans of (name,0)s and (name,50)s.
         // I ran the tested, eyeballed the results, and copied them here.
         validateHistogram(namePlacedGi, 2,
-                entry("{null,\"0000\"}", 48, 0, 0),     // important to get this right!
-                entry("{null,\"0050\"}", 28, 10, 10),   // important to get this right!
-                entry("{null,\"0156\"}", 1, 16, 16),
-                entry("{null,\"0314\"}", 1, 26, 26),
-                entry("{null,\"0458\"}", 1, 26, 26),
-                entry("{null,\"0626\"}", 1, 26, 26),
-                entry("{null,\"0792\"}", 1, 26, 26),
-                entry("{null,\"0937\"}", 1, 26, 26),
-                entry("{\"Bob\",\"0000\"}", 48, 2, 2),      // important to get this right!
-                entry("{\"Bob\",\"0050\"}", 28, 8, 8),      // important to get this right!
-                entry("{\"Bob\",\"0148\"}", 1, 16, 16),
-                entry("{\"Bob\",\"0293\"}", 1, 26, 26),
-                entry("{\"Bob\",\"0459\"}", 1, 26, 26),
-                entry("{\"Bob\",\"0627\"}", 1, 26, 26),
-                entry("{\"Bob\",\"0771\"}", 1, 26, 26),
-                entry("{\"Bob\",\"0929\"}", 1, 26, 26),
-                entry("{\"Carla\",\"0000\"}", 48, 4, 4),    // important to get this right!
-                entry("{\"Carla\",\"0050\"}", 28, 8, 8),    // important to get this right!
-                entry("{\"Carla\",\"0138\"}", 1, 14, 14),
-                entry("{\"Carla\",\"0283\"}", 1, 26, 26),
-                entry("{\"Carla\",\"0451\"}", 1, 26, 26),
-                entry("{\"Carla\",\"0606\"}", 1, 26, 26),
-                entry("{\"Carla\",\"0762\"}", 1, 26, 26),
-                entry("{\"Carla\",\"0919\"}", 1, 26, 26),
-                entry("{\"Dot\",\"0000\"}", 48, 6, 6),      // important to get this right!
-                entry("{\"Dot\",\"0050\"}", 26, 8, 8),      // important to get this right!
-                entry("{\"Dot\",\"0117\"}", 1, 12, 12),
-                entry("{\"Dot\",\"0274\"}", 1, 26, 26),
-                entry("{\"Dot\",\"0442\"}", 1, 26, 26),
-                entry("{\"Dot\",\"0587\"}", 1, 26, 26),
-                entry("{\"Dot\",\"0753\"}", 1, 26, 26),
-                entry("{\"Dot\",\"0909\"}", 1, 26, 26),
-                entry("{\"Dot\",\"0958\"}", 1, 9, 9)
+                entry("{null,\"0000\"}", 40, 0, 0),
+                entry("{null,\"0005\"}", 40, 2, 2),
+                entry("{null,\"0158\"}", 1, 25, 25),
+                entry("{null,\"0326\"}", 1, 27, 27),
+                entry("{null,\"0493\"}", 1, 26, 26),
+                entry("{null,\"0661\"}", 1, 27, 27),
+                entry("{null,\"0829\"}", 1, 27, 27),
+                entry("{\"Bob\",\"0000\"}", 40, 21, 21),
+                entry("{\"Bob\",\"0005\"}", 41, 1, 1),
+                entry("{\"Bob\",\"0039\"}", 1, 4, 4),
+                entry("{\"Bob\",\"0207\"}", 1, 27, 27),
+                entry("{\"Bob\",\"0375\"}", 1, 27, 27),
+                entry("{\"Bob\",\"0533\"}", 1, 26, 26),
+                entry("{\"Bob\",\"0701\"}", 1, 27, 27),
+                entry("{\"Bob\",\"0869\"}", 1, 27, 27),
+                entry("{\"Carla\",\"0000\"}", 40, 14, 14),
+                entry("{\"Carla\",\"0005\"}", 40, 0, 0),
+                entry("{\"Carla\",\"0078\"}", 1, 12, 12),
+                entry("{\"Carla\",\"0246\"}", 1, 27, 27),
+                entry("{\"Carla\",\"0414\"}", 1, 27, 27),
+                entry("{\"Carla\",\"0571\"}", 1, 26, 26),
+                entry("{\"Carla\",\"0739\"}", 1, 27, 27),
+                entry("{\"Carla\",\"0907\"}", 1, 27, 27),
+                entry("{\"Dot\",\"0081\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0190\"}", 1, 27, 27),
+                entry("{\"Dot\",\"0299\"}", 1, 27, 27),
+                entry("{\"Dot\",\"0407\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0525\"}", 1, 27, 27),
+                entry("{\"Dot\",\"0634\"}", 1, 27, 27),
+                entry("{\"Dot\",\"0742\"}", 1, 26, 26),
+                entry("{\"Dot\",\"0851\"}", 1, 27, 27),
+                entry("{\"Dot\",\"0959\"}", 1, 26, 26)
         );
     }
 
@@ -254,17 +237,27 @@ public final class IndexHistogramsIT extends ITBase {
         int maxCid = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR+1;
         insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
 
-        HistogramEntryDescription[] expected = new HistogramEntryDescription[33];
-        // there are 1600 customers and 32 buckets, so 50 histograms per bucket. Each bucket is defined by its
-        // *last* entry, and we're 0 based. So it's 0049, 0099, 0149...
-        // In this case, we'll have 32 normal buckets, plus a "caboose" for the last entry
-        for (int i=0; i < expected.length-1; ++i) {
-            int entryCid = 49 + 50*i;
+        HistogramEntryDescription[] expected = new HistogramEntryDescription[32];
+        // there are 1600 customers and 32 buckets, so 50 histograms per bucket. First bucket rounds up to 51.
+        for (int i=0; i < expected.length; ++i) {
+            int entryCid = 50*(i+1);
             String entryString = String.format("{\"%04d\"}", entryCid);
-            expected[i] = entry(entryString, 1, 49, 49);
+            int lessThans = i == 0 ? 50 : 49;
+            expected[i] = entry(entryString, 1, lessThans, lessThans);
         }
-        expected[32] = entry("{\"1600\"}", 1, 0, 0);
         validateHistogram("customers", PK, 1, expected);
+    }
+
+    @Test
+    public void oversampleNotEvenlyDistributed() {
+        int cTable = getUserTable(SCHEMA, "customers").getTableId();
+        int oTable = getUserTable(SCHEMA, "orders").getTableId();
+        double interval = 2.02;
+        double oversamples = PersistitIndexStatisticsVisitor.BUCKETS_COUNT * Sampler.OVERSAMPLE_FACTOR;
+        int maxCid = (int) Math.round(interval * oversamples);
+        insertRows(cTable, oTable, CUSTOMERS_COUNT, maxCid);
+
+        validateHistogram("customers", PK, 1, (HistogramEntryDescription[])null);
     }
 
     /**
@@ -322,10 +315,10 @@ public final class IndexHistogramsIT extends ITBase {
             for (int orderNum=0; orderNum < ORDERS_COUNT; ++orderNum) {
                 long oid = oidCounter++;
                 long placed;
-                if (divisibleBy(oid, 5))
+                if (divisibleBy(oid, 8))
                     placed = 0;
-                else if (divisibleBy(oid, 7))
-                    placed = 50;
+                else if (divisibleBy(oid, 4))
+                    placed = 5;
                 else
                     placed = oid;
                 writeRow(oTable, oid, s(cid), s(placed));
@@ -373,14 +366,16 @@ public final class IndexHistogramsIT extends ITBase {
                     Collections.singleton(index.getIndexName().getName())
             );
         }
-            
-        IndexStatistics stats = statsService.getIndexStatistics(session(), index);
-        IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
 
-        assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
-        List<IndexStatistics.HistogramEntry> actualEntries = histogram.getEntries();
-        List<HistogramEntryDescription> expectedList = Arrays.asList(entries);
-        AssertUtils.assertCollectionEquals("entries", expectedList, actualEntries);
+        if (entries != null) {
+            IndexStatistics stats = statsService.getIndexStatistics(session(), index);
+            IndexStatistics.Histogram histogram = stats.getHistogram(expectedColumns);
+
+            assertEquals("histogram column count", expectedColumns, histogram.getColumnCount());
+            List<IndexStatistics.HistogramEntry> actualEntries = histogram.getEntries();
+            List<HistogramEntryDescription> expectedList = Arrays.asList(entries);
+            AssertUtils.assertCollectionEquals("entries", expectedList, actualEntries);
+        }
     }
     
     private HistogramEntryDescription entry(String keyString, long equalCount, long lessCount,

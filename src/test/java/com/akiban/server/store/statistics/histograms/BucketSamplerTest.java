@@ -53,15 +53,15 @@ public final class BucketSamplerTest {
     }
 
     @Test
-    public void medianPointNotAtEnd() {
+    public void medianPointNotEvenlyDistributed() {
         check(
                 4,
-                "a b c d   e f g h   i j k l   m n",
+                "a b c d   e f g   h i j k   l m n",
                 bucketsList(
                         bucket("d", 1, 3, 3),
-                        bucket("h", 1, 3, 3),
-                        bucket("l", 1, 3, 3),
-                        bucket("n", 1, 1, 1)
+                        bucket("g", 1, 2, 2),
+                        bucket("k", 1, 3, 3),
+                        bucket("n", 1, 2, 2)
                 )
         );
     }
