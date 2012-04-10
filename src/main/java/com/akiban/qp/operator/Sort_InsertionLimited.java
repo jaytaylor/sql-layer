@@ -171,7 +171,7 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 input.open();
                 state = State.FILLING;
                 for (ExpressionEvaluation eval : evaluations)
@@ -187,7 +187,7 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 switch (state) {
                 case FILLING:
@@ -254,7 +254,7 @@ class Sort_InsertionLimited extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             input.close();
             if (sorted != null) {
                 if (iterator == null)

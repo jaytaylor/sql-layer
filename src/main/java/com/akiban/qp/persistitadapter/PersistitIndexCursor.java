@@ -44,7 +44,7 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void open()
     {
-        CursorLifecycle.checkIdle(this);
+        // CursorLifecycle.checkIdle(this);
         sortCursor = SortCursor.create(context, keyRange, ordering, new IndexScanIterationHelper());
         sortCursor.open();
         idle = false;
@@ -55,7 +55,7 @@ class PersistitIndexCursor implements Cursor
     {
         Row next;
         try {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             boolean needAnother;
             do {
                 if ((next = sortCursor.next()) != null) {
@@ -84,7 +84,7 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void close()
     {
-        CursorLifecycle.checkIdleOrActive(this);
+        // CursorLifecycle.checkIdleOrActive(this);
         if (!idle) {
             row.release();
             idle = true;

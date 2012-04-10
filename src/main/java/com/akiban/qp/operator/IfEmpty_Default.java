@@ -178,7 +178,7 @@ class IfEmpty_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 this.input.open();
                 this.closed = false;
                 this.inputState = InputState.UNKNOWN;
@@ -192,7 +192,7 @@ class IfEmpty_Default extends Operator
         {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 Row row = null;
                 checkQueryCancelation();
                 switch (inputState) {
@@ -227,7 +227,7 @@ class IfEmpty_Default extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 input.close();
                 closed = true;

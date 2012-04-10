@@ -79,7 +79,7 @@ class SortCursorUnidirectional extends SortCursor
     @Override
     public Row next()
     {
-        CursorLifecycle.checkIdleOrActive(this);
+        // CursorLifecycle.checkIdleOrActive(this);
         Row next = null;
         if (exchange != null) {
             try {
