@@ -1,0 +1,1 @@
+SELECT AVG(quan) FROM items
