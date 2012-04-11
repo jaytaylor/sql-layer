@@ -26,11 +26,13 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
 import com.akiban.server.expression.std.Comparison;
 
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 
@@ -197,6 +199,7 @@ public class ConstantFolder extends BaseRule
 
         protected ExpressionNode functionExpression(FunctionExpression fun) {
             String fname = fun.getFunction();
+
             if ("isNull".equals(fname) || 
                 "isUnknown".equals(fname))
                 return isNullExpression(fun);
@@ -208,7 +211,7 @@ public class ConstantFolder extends BaseRule
                 return coalesceExpression(fun);
             else if ("if".equals(fname))
                 return ifFunction(fun);
-
+            
             boolean allConstant = true, anyNull = false;
             for (ExpressionNode operand : fun.getOperands()) {
                 switch (isConstant(operand)) {
@@ -223,7 +226,8 @@ public class ConstantFolder extends BaseRule
             if (allConstant && isIdempotent(fun))
                 return evalNow(fun);
             // All the functions that treat NULL specially are caught before we get here.
-            if (anyNull)
+            if (anyNull &&
+                    expressionAssembler.getFunctionRegistry().composer(fname).nullIsContaminating())
                 return new BooleanConstantExpression(null, 
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());

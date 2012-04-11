@@ -63,6 +63,11 @@ public class ExpressionAssembler
                                   rulesContext).getFunctionsRegistry();
     }
 
+    public FunctionsRegistry getFunctionRegistry()
+    {
+        return functionsRegistry;
+    }
+    
     public interface ColumnExpressionToIndex {
         /** Return the field position of the given column in the target row. */
         public int getIndex(ColumnExpression column);
