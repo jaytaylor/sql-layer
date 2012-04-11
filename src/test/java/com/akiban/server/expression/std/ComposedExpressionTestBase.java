@@ -84,6 +84,21 @@ public abstract class ComposedExpressionTestBase {
 
     @OnlyIfNot("alreadyExc()")
     @Test
+    public void isNullSpecial() // make sure two two methods in ExpressionComposer and Expression match
+    {        
+        List<Expression> children = new ArrayList<Expression>();
+        List<String> messages = new ArrayList<String>();
+        children.add(new DummyExpression(messages, getTestInfo().getChildrenType(), new ExpressionAttribute[]{IS_CONSTANT}));
+        for (int i = 1; i < getTestInfo().getChildrenCount(); ++i)
+            children.add(new DummyExpression(messages, getTestInfo().getChildrenType(), IS_CONSTANT));
+        
+        Expression expression = getComposer().compose(children);
+        assertTrue ("ExpressionComposer.nullIsContaminating() and Expression.nullIsContaminating() should match",
+                    getComposer().nullIsContaminating() == expression.nullIsContaminating());
+    }
+    
+    @OnlyIfNot("alreadyExc()")
+    @Test
     public void childrenAreConst() {
         ExpressionEvaluation evaluation = evaluation(IS_CONSTANT);
         expectEvalSuccess(evaluation);
@@ -315,6 +330,12 @@ public abstract class ComposedExpressionTestBase {
         private final Set<ExpressionAttribute> requirements;
         private final List<String> messages;
         private final AkType type;
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
     }
 
     private static class DummyExpressionEvaluation implements ExpressionEvaluation {

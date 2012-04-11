@@ -76,6 +76,13 @@ public class EltExpression extends AbstractCompositeExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return false; // This is a special case. NULL only makes the top NULL 
+                                                   // if it's the first arg
+        }
         
     };
     
@@ -98,7 +105,7 @@ public class EltExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return false; // This is a fun case. NULL is only contaminating if it is        
     }                 // the first arg.

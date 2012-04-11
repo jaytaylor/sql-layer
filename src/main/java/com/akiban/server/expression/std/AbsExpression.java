@@ -35,9 +35,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
-import java.util.List;
 
 public class AbsExpression extends AbstractUnaryExpression 
 {    

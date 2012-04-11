@@ -30,7 +30,6 @@ import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.types.AkType;
 
 import java.util.List;
 
@@ -45,6 +44,14 @@ abstract class UnaryComposer implements ExpressionComposer {
                                   ExpressionType returnType)
     {
         throw new UnsupportedOperationException("not supported");
+    }
+    
+    // For most expressions, NULL is contaminating
+    // Any expressions that treat NULL specially should override this
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
     }
         
     @Override

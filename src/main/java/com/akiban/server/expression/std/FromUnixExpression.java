@@ -74,10 +74,16 @@ public class FromUnixExpression extends AbstractCompositeExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
     };
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

@@ -83,6 +83,12 @@ public final class FieldExpression implements Expression {
     private final RowType rowType;
     private final int fieldIndex;
 
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
+
     // nested classes
 
     private static class InnerEvaluation implements ExpressionEvaluation {

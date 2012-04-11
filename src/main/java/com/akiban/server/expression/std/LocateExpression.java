@@ -91,6 +91,12 @@ public class LocateExpression extends AbstractCompositeExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
         
     };
     
@@ -143,7 +149,7 @@ public class LocateExpression extends AbstractCompositeExpression
     }
     
     @Override
-    protected boolean nullIsContaminating() 
+    public boolean nullIsContaminating() 
     {
         return true;
     }

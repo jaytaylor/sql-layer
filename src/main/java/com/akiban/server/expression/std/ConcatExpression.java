@@ -76,6 +76,12 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
     }
 
     @Scalar("concatenate")
@@ -95,7 +101,7 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     }
 
     @Override
-    protected boolean nullIsContaminating() {
+    public boolean nullIsContaminating() {
         return true;
     }
 

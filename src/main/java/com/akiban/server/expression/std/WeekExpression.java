@@ -111,6 +111,12 @@ public class WeekExpression extends AbstractCompositeExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
@@ -250,7 +256,7 @@ public class WeekExpression extends AbstractCompositeExpression
         else return c;
     }
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

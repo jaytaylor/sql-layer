@@ -67,6 +67,12 @@ public final class InExpression extends AbstractCompositeExpression {
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return false;
+        }
     };
 
     @Override
@@ -80,7 +86,7 @@ public final class InExpression extends AbstractCompositeExpression {
     }
 
     @Override
-    protected boolean nullIsContaminating() {
+    public boolean nullIsContaminating() {
         return false;
     }
 

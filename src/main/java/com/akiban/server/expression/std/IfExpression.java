@@ -79,6 +79,12 @@ public class IfExpression extends AbstractCompositeExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return false;
+        }
     };
     protected static final EnumSet<AkType> STRING = EnumSet.of(AkType.VARCHAR, AkType.TEXT);
 
@@ -111,7 +117,7 @@ public class IfExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return false;
     }

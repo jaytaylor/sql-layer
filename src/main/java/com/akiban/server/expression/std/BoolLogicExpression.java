@@ -57,7 +57,7 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
     }
 
     @Override
-    protected boolean nullIsContaminating() {
+    public boolean nullIsContaminating() {
         return false;
     }
     
@@ -126,6 +126,11 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
 
         private final BooleanLogic logic;
 
+    
+        @Override
+        public boolean nullIsContaminating() {
+            return false;
+        }
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {

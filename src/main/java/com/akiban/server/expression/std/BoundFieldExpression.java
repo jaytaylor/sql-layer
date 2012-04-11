@@ -77,6 +77,12 @@ public final class BoundFieldExpression implements Expression {
     private final int rowBindingPosition;
     private final FieldExpression fieldExpression;
 
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
+
     private static class InnerEvaluation implements ExpressionEvaluation {
         @Override
         public void of(Row row) {

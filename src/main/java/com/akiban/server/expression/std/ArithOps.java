@@ -276,6 +276,12 @@ public class ArithOps
         }
         
         @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
+        
+        @Override
         public Expression compose (List<? extends Expression> args)
         {        
             switch(args.size())

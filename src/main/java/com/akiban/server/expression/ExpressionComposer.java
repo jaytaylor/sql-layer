@@ -68,4 +68,11 @@ public interface ExpressionComposer {
      * @return 
      */
     Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList);
+    
+    /**
+     * 
+     * @return whether one or more null arguments would make the top expression NULL
+     *         
+     */
+    boolean nullIsContaminating();
 }

@@ -58,6 +58,12 @@ public class IfNullExpression extends CoalesceExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return false;
+        }
     };
     
     protected IfNullExpression (List< ? extends Expression> children)

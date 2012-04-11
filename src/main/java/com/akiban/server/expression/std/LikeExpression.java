@@ -92,6 +92,12 @@ public class LikeExpression extends AbstractCompositeExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
@@ -293,7 +299,7 @@ public class LikeExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

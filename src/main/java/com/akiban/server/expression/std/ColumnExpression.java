@@ -81,6 +81,12 @@ public final class ColumnExpression implements Expression {
     private final Column column;
     private final int position;
 
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
+
     // nested classes
 
     private static class InnerEvaluation implements ExpressionEvaluation {

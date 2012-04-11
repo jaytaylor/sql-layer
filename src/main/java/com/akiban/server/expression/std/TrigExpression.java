@@ -127,6 +127,12 @@ public class TrigExpression extends AbstractCompositeExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
     }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
@@ -231,7 +237,7 @@ public class TrigExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

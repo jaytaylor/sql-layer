@@ -45,11 +45,11 @@ public abstract class TernaryComposer implements ExpressionComposer
         return compose(arguments.get(0), arguments.get(1), arguments.get(2));
     }
 
-//    @Override
-//    public ExpressionType composeType(List<? extends ExpressionType> arguments)
-//    {
-//        if (arguments.size() != 3)
-//            throw new WrongExpressionArityException(3, arguments.size());
-//        return composeType(arguments.get(0), arguments.get(1), arguments.get(2));
-//    }
+    // For most expressions, NULL is contaminating
+    // Any expressions that treat NULL specially should override this
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
 }

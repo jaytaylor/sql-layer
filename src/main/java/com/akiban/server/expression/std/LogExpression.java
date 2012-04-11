@@ -68,6 +68,11 @@ public class LogExpression extends AbstractCompositeExpression
     public static final ExpressionComposer LOG = new  ExpressionComposer ()
     {
         @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
+        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int size = argumentTypes.size();
@@ -172,7 +177,7 @@ public class LogExpression extends AbstractCompositeExpression
         this.name = name;
     }
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

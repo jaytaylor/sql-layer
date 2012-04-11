@@ -79,6 +79,12 @@ public final class VariableExpression implements Expression {
     private final AkType type;
     private final int position;
 
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
+
     private static class InnerEvaluation implements ExpressionEvaluation {
         @Override
         public void of(Row row) {

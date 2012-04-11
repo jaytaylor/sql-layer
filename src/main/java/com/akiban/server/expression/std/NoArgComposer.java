@@ -47,6 +47,13 @@ abstract class NoArgComposer implements ExpressionComposer {
     }
     
     @Override
+    public boolean nullIsContaminating()
+    {
+        // NULL would be contaminating, if there were one.
+        return true;
+    }
+    
+    @Override
     public Expression compose (List<? extends Expression> arguments, List<ExpressionType> typesList)
     {
         if (!arguments.isEmpty())

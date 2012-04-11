@@ -76,6 +76,12 @@ public class CoalesceExpression extends AbstractCompositeExpression {
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return false;
+        }
     };
 
     @Override
@@ -89,7 +95,7 @@ public class CoalesceExpression extends AbstractCompositeExpression {
     }
 
     @Override
-    protected boolean nullIsContaminating() {
+    public boolean nullIsContaminating() {
         return false;
     }
 

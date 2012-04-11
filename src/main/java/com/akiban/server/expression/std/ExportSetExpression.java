@@ -81,6 +81,12 @@ public class ExportSetExpression extends AbstractCompositeExpression
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
         
     };
 
@@ -131,8 +137,9 @@ public class ExportSetExpression extends AbstractCompositeExpression
         }
         
     }
+    
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

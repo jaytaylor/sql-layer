@@ -29,13 +29,15 @@ package com.akiban.server.expression.subquery;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
 
 public abstract class SubqueryExpression implements Expression {
 
+    @Override
+    public boolean nullIsContaminating() {
+        return true;
+    }
+    
     @Override
     public boolean isConstant() {
         return false;

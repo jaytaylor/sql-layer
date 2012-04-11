@@ -100,7 +100,7 @@ public class ReplaceExpression extends AbstractTernaryExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }
