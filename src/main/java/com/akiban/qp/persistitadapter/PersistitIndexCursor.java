@@ -45,6 +45,7 @@ class PersistitIndexCursor implements Cursor
     public void open()
     {
         // CursorLifecycle.checkIdle(this);
+        exchange = adapter.takeExchange(indexRowType.index());
         sortCursor = SortCursor.create(context, keyRange, ordering, new IndexScanIterationHelper());
         sortCursor.open();
         idle = false;
@@ -87,6 +88,8 @@ class PersistitIndexCursor implements Cursor
         // CursorLifecycle.checkIdleOrActive(this);
         if (!idle) {
             row.release();
+            adapter.returnExchange(exchange);
+            exchange = null;
             idle = true;
         }
     }
@@ -94,8 +97,6 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void destroy()
     {
-        adapter.returnExchange(exchange);
-        exchange = null;
         sortCursor = null;
     }
 
@@ -134,7 +135,6 @@ class PersistitIndexCursor implements Cursor
         this.row = new ShareHolder<PersistitIndexRow>(adapter.newIndexRow(indexRowType));
         this.isTableIndex = indexRowType.index().isTableIndex();
         this.selector = selector;
-        this.exchange = adapter.takeExchange(indexRowType.index());
         this.idle = true;
     }
 
