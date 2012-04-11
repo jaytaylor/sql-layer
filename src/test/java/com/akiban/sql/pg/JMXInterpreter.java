@@ -55,9 +55,7 @@ public class JMXInterpreter {
     
 
     public JMXInterpreter(boolean debug) {
-        super();
         this.debug = debug;
-        // TODO Auto-generated constructor stub
     }
 
     void openConnection() {
@@ -291,18 +289,16 @@ public class JMXInterpreter {
                 if (method.equalsIgnoreCase(info.getAttributes()[x].getName())) {
                     if (info.getAttributes()[x].getType().equalsIgnoreCase(double.class.getName())) {
                         attrib = new Attribute(method, new Double(String.valueOf(paramters[0])));
-                    }
-                    if (info.getAttributes()[x].getType().equalsIgnoreCase(long.class.getName())) {
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(long.class.getName())) {
                         attrib = new Attribute(method, new Long(String.valueOf(paramters[0])));
-                    }
-                    if (info.getAttributes()[x].getType().equalsIgnoreCase(int.class.getName())) {
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(int.class.getName())) {
                         attrib = new Attribute(method, new Integer(String.valueOf(paramters[0])));
-                    }
-                    if (info.getAttributes()[x].getType().equalsIgnoreCase(String.class.getName())) {
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(String.class.getName())) {
                         attrib = new Attribute(method, String.valueOf(paramters[0]));
-                    }
-                    if (info.getAttributes()[x].getType().equalsIgnoreCase(Boolean.class.getName())) {
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(Boolean.class.getName())) {
                         attrib = new Attribute(method, new Boolean(String.valueOf(paramters[0])));
+                    } else {
+                        throw new Exception("Unknown Attribute type found as "+info.getAttributes()[x].getType());
                     }
                     break;
                 }
