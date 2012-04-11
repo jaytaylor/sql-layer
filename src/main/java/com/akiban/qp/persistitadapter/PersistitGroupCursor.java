@@ -70,6 +70,7 @@ class PersistitGroupCursor implements GroupCursor
     {
         try {
             // CursorLifecycle.checkIdle(this);
+            this.exchange = adapter.takeExchange(groupTable);
             exchange.clear();
             groupScan =
                 hKey == null ? new FullScan() :
@@ -112,6 +113,8 @@ class PersistitGroupCursor implements GroupCursor
         // CursorLifecycle.checkIdleOrActive(this);
         if (!idle) {
             groupScan = null;
+            adapter.returnExchange(exchange);
+            exchange = null;
             idle = true;
         }
     }
@@ -119,8 +122,6 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void destroy()
     {
-        adapter.returnExchange(exchange);
-        exchange = null;
     }
 
     @Override
@@ -150,7 +151,6 @@ class PersistitGroupCursor implements GroupCursor
         this.groupTable = groupTable;
         this.row = new ShareHolder<PersistitGroupRow>(adapter.newGroupRow());
         this.controllingHKey = adapter.newKey();
-        this.exchange = adapter.takeExchange(groupTable);
         this.idle = true;
     }
 
