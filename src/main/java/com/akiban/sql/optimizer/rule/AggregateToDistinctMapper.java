@@ -184,7 +184,16 @@ public class AggregateToDistinctMapper extends BaseRule
                         remap(fields);
                 }
                 else if (n instanceof Limit) {
-                    // Understood not but mapped.
+                    Limit limit = (Limit)n;
+                    if (limit.getInput() instanceof Project) {
+                        Project project2 = (Project)limit.getInput();
+                        // One that was necessary above. Swap places
+                        // so that Limit can apply to Distinct.
+                        limit.getOutput().replaceInput(limit, project2);
+                        PlanNode next = project2.getInput();
+                        limit.replaceInput(project2, next);
+                        project2.replaceInput(next, limit);
+                    }
                 }
                 else
                     break;
