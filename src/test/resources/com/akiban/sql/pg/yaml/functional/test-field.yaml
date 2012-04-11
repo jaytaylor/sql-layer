@@ -1,0 +1,56 @@
+## test the field function 
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT into all_types(bigint_field, double_field) VALUES (1, 1.0);
+## Test with literals
+---
+- Statement: SELECT field ('00.1', '666', '0.1', '777', '00.1') from all_types;
+- output: [[4]]
+---       
+- Statement: SELECT FIELD('2009-11-07 11:30:10', '2009-11-07 12:30:09', '2009-11-07 11:30:10', '2009-11-07 12:30:11');
+- output: [[2]]
+---
+- Statement: SELECT Field (TIME('12:30:10'), TIME('12:30:11'), time('23:20:10'));
+- output: [[0]]
+---
+- Statement: SELECT field (3.6, 3.0, 3.59, 3.7, 3.6);
+- output: [[4]]
+---
+- Statement: SELECT field ('00.1', '666', '0.1', '777', 1);
+- output: [[2]]
+---
+- Statement: SELECT field (TIME('12:30:10'), 12345, '123010.1', '123010');
+- output: [[3]]
+---
+- Statement: SELECT FIELD (TIME('12:30:10') - TIME('12:30:09'), 1000.2, '00:00:01');
+- output: [[2]]
+---
+- Statement: SELECT FIELD (TIME('12:30:10') - TIME('12:30:09'), 1000.2, '00:00:02');
+- output: [[0]]
+---
+- Statement: SELECT FIELD (DATETIME('1991-05-10 07:30:10'), '19910510073010');
+- output: [[1]]
+--- # This returns 0 'coz FIELD isn't smart enough (just yet) to realise the first arg is a datetime string)
+- Statement: SELECT FIELD ('1991-05-10 07:30:10', '19910510073010');
+- output: [[0]]
+## Test with params
+---
+- Statement: SELECT FIELD ('124.4', 124, ?);
+- params: [[124.4]]
+- output: [[2]]
+---
+- Statement: SELECT FIELD (?, 20110411, '2006-11-07', DATE('2012-04-11'), 20120310);
+- params: [['2012-04-11']]
+- output: [[3]]
+#---
+#- Statement: SELECT FIELD(123, null, '123.1', 123);
+#- output: [[3]]
+## Test in WHERE
+---
+- Statement: SELECT bigint_field from all_types WHERE FIELD(123, 2, '123.1', 123) = 3;
+- output: [[1]]
+---
+- Statement: SELECT field (bigint_field, double_field, bigint_field) from all_types;
+- output: [[1]]
+...
