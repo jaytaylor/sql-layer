@@ -235,4 +235,5 @@ public class Distinct_PartialTest {
         OperatorTestHelper.check(plan, expected);
     }
 
+    // TODO: testCursor
 }
