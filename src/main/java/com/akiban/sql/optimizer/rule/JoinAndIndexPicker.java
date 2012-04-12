@@ -102,6 +102,7 @@ public class JoinAndIndexPicker extends BaseRule
             Sort ordering = null;
             AggregateSource grouping = null;
             Project projectDistinct = null;
+            Limit limit = null;
             input = input.getOutput();
             if (input instanceof Select) {
                 ConditionList conds = ((Select)input).getConditions();
@@ -146,7 +147,7 @@ public class JoinAndIndexPicker extends BaseRule
                     ordering = (Sort)input;
             }
             return new QueryIndexGoal(query, costEstimator, whereConditions, 
-                                      grouping, ordering, projectDistinct);
+                                      grouping, ordering, projectDistinct, limit);
         }
 
         // Only a single group of tables. Don't need to run general

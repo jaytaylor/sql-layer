@@ -53,6 +53,7 @@ public class QueryIndexGoal
     private AggregateSource grouping;
     private Sort ordering;
     private Project projectDistinct;
+    private Limit limit;
 
     private TableNode updateTarget;
 
@@ -61,13 +62,15 @@ public class QueryIndexGoal
                           ConditionList whereConditions,
                           AggregateSource grouping,
                           Sort ordering,
-                          Project projectDistinct) {
+                          Project projectDistinct,
+                          Limit limit) {
         this.query = query;
         this.costEstimator = costEstimator;
         this.whereConditions = whereConditions;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
+        this.limit = limit;
 
         if ((query instanceof UpdateStatement) ||
             (query instanceof DeleteStatement))
