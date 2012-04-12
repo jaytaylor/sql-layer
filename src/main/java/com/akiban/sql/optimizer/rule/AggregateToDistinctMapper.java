@@ -149,10 +149,7 @@ public class AggregateToDistinctMapper extends BaseRule
                                 sorts.add(orderBy);
                             }
                         }
-                        n = sort.getInput();
-                        sort.getOutput().replaceInput(sort, n);
-                        sort.replaceInput(n, distinct.getInput());
-                        distinct.replaceInput(distinct.getInput(), sort);
+                        n = moveBeneath(sort, distinct);
                         distinct.setImplementation(Distinct.Implementation.EXPLICIT_SORT);
                     }
                 }
@@ -196,6 +193,9 @@ public class AggregateToDistinctMapper extends BaseRule
             }
         }
 
+        // Move the given node beneath a new output. Returns a node
+        // whose output is what the original's was, so that traversal
+        // can continue.
         protected PlanNode moveBeneath(BasePlanWithInput node, 
                                        BasePlanWithInput output) {
             PlanNode next = node.getInput();    // Where to continue.
