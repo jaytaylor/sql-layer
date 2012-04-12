@@ -27,34 +27,20 @@
 package com.akiban.server.test.it.keyupdate;
 
 import com.akiban.ais.model.Index;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.error.ErrorCode;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.util.tap.Tap;
 import com.akiban.util.tap.TapReport;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.TreeMap;
+import java.util.*;
 import java.util.concurrent.Callable;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
-import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertTrue;
-import static junit.framework.Assert.fail;
+import static junit.framework.Assert.*;
 
 public abstract class KeyUpdateBase extends ITBase {
     @Before

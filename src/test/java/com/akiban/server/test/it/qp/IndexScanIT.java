@@ -26,22 +26,33 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.cursor;
-import static com.akiban.qp.operator.API.groupScan_Default;
-import static com.akiban.qp.operator.API.indexScan_Default;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import static com.akiban.qp.operator.API.*;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -589,5 +600,19 @@ public class IndexScanIT extends OperatorITBase
     private String hkey(int cid, int oid, int iid)
     {
         return String.format("{1,(long)%s,2,(long)%s,3,(long)%s}", cid, oid, iid);
+    }
+
+    private Row intRow(RowType rowType, int x)
+    {
+        return new ExpressionRow(rowType, queryContext,
+                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
+    }
+
+    private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
+        List<BindableRow> result = new ArrayList<BindableRow>();
+        for (Row row : rows) {
+            result.add(BindableRow.of(row));
+        }
+        return result;
     }
 }

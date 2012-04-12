@@ -207,7 +207,7 @@ public class IndexKeyRange
         ColumnSelector hiSelector = hi.columnSelector();
         boolean selected = true;
         int boundColumns = 0;
-        for (int i = 0; i < indexRowType.declaredFields(); i++) {
+        for (int i = 0; i < indexRowType.nFields(); i++) {
             if (loSelector.includesColumn(i) != hiSelector.includesColumn(i)) {
                 throw new IllegalArgumentException(
                     String.format("IndexBound arguments specify different fields of index %s", indexRowType));
@@ -234,7 +234,7 @@ public class IndexKeyRange
         ColumnSelector selector = bound.columnSelector();
         boolean selected = true;
         int boundColumns = 0;
-        for (int i = 0; i < indexRowType.declaredFields(); i++) {
+        for (int i = 0; i < indexRowType.nFields(); i++) {
             if (selected) {
                 if (selector.includesColumn(i)) {
                     boundColumns++;
