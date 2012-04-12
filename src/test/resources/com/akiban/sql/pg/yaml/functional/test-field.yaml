@@ -46,7 +46,7 @@
 ---
 - Statement: SELECT FIELD(123, null, '123.1', 123);
 - output: [[3]]
---- # null can never matches null
+--- # null can never match null
 - Statement: SELECT FIELD(null, null, null, null);
 - output: [[0]]
 ---
@@ -60,3 +60,4 @@
 - Statement: SELECT field (bigint_field, double_field, bigint_field) from all_types;
 - output: [[1]]
 ...
+
