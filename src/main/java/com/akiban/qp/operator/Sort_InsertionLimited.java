@@ -212,12 +212,17 @@ class Sort_InsertionLimited extends Operator
                                 Holder last = sorted.last();
                                 if (last.compareTo(holder) > 0) {
                                     // New row is less, so keep it
-                                    // instead.
-                                    sorted.remove(last);
-                                    last.empty();
-                                    holder.freeze();
+                                    // instead unless it's already in
+                                    // there (in suppress dups case).
                                     boolean added = sorted.add(holder);
-                                    assert added;
+                                    if (added) {
+                                        sorted.remove(last);
+                                        last.empty();
+                                        holder.freeze();
+                                    }
+                                    else {
+                                        assert !preserveDuplicates;
+                                    }
                                 }
                                 else {
                                     // Will not be using new row.
