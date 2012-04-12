@@ -153,13 +153,22 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costIndexScan(Index index,
                                       List<ExpressionNode> equalityComparands,
                                       ExpressionNode lowComparand, boolean lowInclusive,
-                                      ExpressionNode highComparand, boolean highInclusive)
-    {
+                                      ExpressionNode highComparand, boolean highInclusive) {
+        return costIndexScan(index, sizeIndexScan(index, equalityComparands,
+                                                  lowComparand, lowInclusive,
+                                                  highComparand, highInclusive));
+    }
+
+    /** Estimate number of rows returned from this index. */
+    public long sizeIndexScan(Index index,
+                              List<ExpressionNode> equalityComparands,
+                              ExpressionNode lowComparand, boolean lowInclusive,
+                              ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
                 (equalityComparands.size() >= index.getKeyColumns().size())) {
                 // Exact match from unique index; probably one row.
-                return indexAccessCost(1, index);
+                return 1;
             }
         }
         UserTable indexedTable = (UserTable) index.leafMostTable();
@@ -176,7 +185,7 @@ public abstract class CostEstimator implements TableRowCounts
             columnCount++;
         if (columnCount == 0) {
             // Index just used for ordering.
-            return indexAccessCost(rowCount, index);
+            return rowCount;
         }
         boolean scaleCount = true;
         double selectivity = 1.0;
@@ -200,7 +209,7 @@ public abstract class CostEstimator implements TableRowCounts
         long nrows = Math.max(1, round(selectivity * statsCount));
         if (scaleCount)
             nrows = simpleRound((nrows * rowCount), statsCount);
-        return indexAccessCost(nrows, index);
+        return nrows;
     }
 
     private long rowsInTableAccordingToIndex(UserTable indexedTable, IndexStatistics[] indexStatsArray)
@@ -219,10 +228,11 @@ public abstract class CostEstimator implements TableRowCounts
         return -1;
     }
     
-    // Estimate cost of fetching nrows from index.
-    // One random access to get there, then nrows-1 sequential accesses following,
-    // Plus a surcharge for copying something as wide as the index.
-    private CostEstimate indexAccessCost(long nrows, Index index) {
+    /** Estimate cost of scanning given number of rows from this index. 
+     * One random access to get there, then nrows-1 sequential accesses following,
+     * Plus a surcharge for copying something as wide as the index.
+     */
+    public CostEstimate costIndexScan(Index index, long nrows) {
         return new CostEstimate(nrows, 
                                 model.indexScan(schema.indexRowType(index), (int)nrows));
     }
