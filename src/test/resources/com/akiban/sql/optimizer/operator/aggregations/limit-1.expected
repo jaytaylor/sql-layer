@@ -1,0 +1,9 @@
+PhysicalSelect[cid:int[INT]]
+  project([Field(0)])
+    Limit_Default(limit=10: Sort_InsertionLimited(project([Field(0), Field(1)]), 10, SUPPRESS_DUPLICATES))
+      Sort_InsertionLimited(project([Field(0), Field(1)]), 10, SUPPRESS_DUPLICATES)
+        project([Field(0), Field(1)])
+          Filter_Default([flatten(user.customers, user.orders)])
+            Flatten_HKeyOrdered(user.customers INNER user.orders)
+              Select_HKeyOrdered(user.orders, Field(2) > Literal(2000-01-01))
+                GroupScan_Default(full scan on _akiban_customers)
