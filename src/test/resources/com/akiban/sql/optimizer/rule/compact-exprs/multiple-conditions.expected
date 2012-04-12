@@ -1,11 +1,10 @@
 SelectQuery@7297e3a5
   ResultSet@51e2a069[name, order_date, quan, sku]
     Project@7591777e[customers.name, orders.order_date, items.quan, items.sku]
-      Select@213c2d7f[]
-        Flatten@3202a2cc(customers INNER orders INNER items)
-          Select@4b0e18ba[customers.name != Smith, items.quan > 1000]
-            AncestorLookup@a7981d5(items -> [customers, orders, items])
-              IndexScan@2f3acc52(Index(user.items.sku[IndexColumn(sku)]), NONE, UNIONs of [NULL < % < 1234, 1234 < % ])
-              TableSource@3d2a416a(customers - TableGroup@12183272(customers))
-              TableSource@212cb585(orders - TableGroupJoin@3d3c33b7(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@7e413fc6(items - TableGroupJoin@3b6752c9(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+      Flatten@3202a2cc(customers INNER orders INNER items)
+        Select@4b0e18ba[customers.name != Smith, items.quan > 1000]
+          AncestorLookup@a7981d5(items -> [customers, orders, items])
+            IndexScan@2f3acc52(Index(user.items.sku[IndexColumn(sku)]), NONE, UNIONs of [NULL < % < 1234, 1234 < % ])
+            TableSource@3d2a416a(customers - TableGroup@12183272(customers))
+            TableSource@212cb585(orders - TableGroupJoin@3d3c33b7(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            TableSource@7e413fc6(items - TableGroupJoin@3b6752c9(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
