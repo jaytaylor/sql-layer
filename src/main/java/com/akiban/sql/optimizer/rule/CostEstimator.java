@@ -653,6 +653,12 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(size, model.sort((int)size, false));
     }
 
+    /** Estimate the cost of a sort of the given size and limit. */
+    public CostEstimate costSortWithLimit(long size, long limit, int nfields) {
+        return new CostEstimate(Math.min(size, limit),
+                                model.sortWithLimit((int)size, nfields));
+    }
+
     /** Estimate cost of scanning the whole group. */
     // TODO: Need to account for tables actually wanted?
     public CostEstimate costGroupScan(Group group) {

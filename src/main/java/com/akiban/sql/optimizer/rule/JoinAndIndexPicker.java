@@ -137,7 +137,7 @@ public class JoinAndIndexPicker extends BaseRule
                             }
                         }
                     }
-                    if (ordering != null)
+                    if (ordering != null) // No limit if sort lost.
                         input = input.getOutput();
                 }
                 if (input instanceof Project)
@@ -153,6 +153,8 @@ public class JoinAndIndexPicker extends BaseRule
                 else if (input instanceof Sort) {
                     ordering = (Sort)input;
                     input = input.getOutput();
+                    if (input instanceof Distinct)
+                        input = input.getOutput(); // Not projectDistinct (already marked as explicitly sorted).
                 }
             }
             if (input instanceof Limit)

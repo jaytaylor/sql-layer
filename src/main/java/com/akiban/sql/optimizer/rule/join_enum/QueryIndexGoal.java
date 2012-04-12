@@ -150,4 +150,11 @@ public class QueryIndexGoal
         }
     }
 
+    public long getLimit() {
+        if ((limit == null) || limit.isOffsetParameter() || limit.isLimitParameter())
+            return -1;
+        // The number of rows that must be processed before you are done.
+        return (limit.getOffset() + limit.getLimit());
+    }
+
 }
