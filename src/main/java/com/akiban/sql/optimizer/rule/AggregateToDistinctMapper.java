@@ -186,18 +186,26 @@ public class AggregateToDistinctMapper extends BaseRule
                 else if (n instanceof Limit) {
                     Limit limit = (Limit)n;
                     if (limit.getInput() instanceof Project) {
-                        Project project2 = (Project)limit.getInput();
                         // One that was necessary above. Swap places
                         // so that Limit can apply to Distinct.
-                        limit.getOutput().replaceInput(limit, project2);
-                        PlanNode next = project2.getInput();
-                        limit.replaceInput(project2, next);
-                        project2.replaceInput(next, limit);
+                        n = moveBeneath(limit, (Project)limit.getInput());
                     }
                 }
                 else
                     break;
             }
+        }
+
+        protected PlanNode moveBeneath(BasePlanWithInput node, 
+                                       BasePlanWithInput output) {
+            PlanNode next = node.getInput();    // Where to continue.
+            // Remove from current position.
+            node.getOutput().replaceInput(node, next);
+            // Splice below current input to desired output.
+            PlanNode input = output.getInput();
+            node.replaceInput(next, input);
+            output.replaceInput(input, node);
+            return next;
         }
 
         protected <T extends ExpressionNode> void remap(List<T> exprs) {
