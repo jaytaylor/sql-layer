@@ -113,6 +113,7 @@ public class JoinAndIndexPicker extends BaseRule
             input = input.getOutput();
             if (input instanceof Sort) {
                 ordering = (Sort)input;
+                input = input.getOutput();
             }
             else if (input instanceof AggregateSource) {
                 grouping = (AggregateSource)input;
@@ -136,16 +137,26 @@ public class JoinAndIndexPicker extends BaseRule
                             }
                         }
                     }
+                    if (ordering != null)
+                        input = input.getOutput();
                 }
+                if (input instanceof Project)
+                    input = input.getOutput();
             }
             else if (input instanceof Project) {
                 Project project = (Project)input;
                 input = project.getOutput();
-                if (input instanceof Distinct)
+                if (input instanceof Distinct) {
                     projectDistinct = project;
-                else if (input instanceof Sort)
+                    input = input.getOutput();
+                }
+                else if (input instanceof Sort) {
                     ordering = (Sort)input;
+                    input = input.getOutput();
+                }
             }
+            if (input instanceof Limit)
+                limit = (Limit)input;
             return new QueryIndexGoal(query, costEstimator, whereConditions, 
                                       grouping, ordering, projectDistinct, limit);
         }
