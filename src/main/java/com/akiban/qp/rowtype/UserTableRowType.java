@@ -52,7 +52,7 @@ public class UserTableRowType extends AisRowType
     @Override
     public int nFields()
     {
-        return table.getColumns().size();
+        return table.getColumnsIncludingInternal().size();
     }
 
     @Override
@@ -113,10 +113,10 @@ public class UserTableRowType extends AisRowType
         super(schema, table.getTableId());
         this.table = table;
         typeComposition(new SingleBranchTypeComposition(this, table));
-        List<Column> columns = table.getColumns();
+        List<Column> columns = table.getColumnsIncludingInternal();
         akTypes = new AkType[columns.size()];
         for (int i = 0; i < columns.size(); i++) {
-            akTypes[i] = table.getColumn(i).getType().akType();
+            akTypes[i] = table.getColumnsIncludingInternal().get(i).getType().akType();
         }
     }
 
