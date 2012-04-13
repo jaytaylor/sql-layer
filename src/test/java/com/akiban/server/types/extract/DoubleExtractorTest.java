@@ -65,7 +65,7 @@ public class DoubleExtractorTest {
     }
 
     
-    @Test(expected = InconvertibleTypesException.class)
+    @Test
     public void testDateToDouble() {
         HOLDER.putDate(111);
         EXTRACTOR.getDouble(HOLDER);

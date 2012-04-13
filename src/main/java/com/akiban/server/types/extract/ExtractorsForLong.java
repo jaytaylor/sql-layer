@@ -80,7 +80,12 @@ class ExtractorsForLong extends LongExtractor {
             } catch (NumberFormatException ex) {
                 throw new InvalidCharToNumException (source.getString());
             }
-        case DECIMAL: return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
+        case DECIMAL:   return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
+        case DATE:      return source.getDate();
+        case DATETIME:  return source.getDateTime();
+        case TIME:      return source.getTime();
+        case TIMESTAMP: return source.getTimestamp();
+        case YEAR:      return source.getYear();
         case INTERVAL_MILLIS:  return source.getInterval_Millis();
         case INTERVAL_MONTH:  return source.getInterval_Month();
         default: throw unsupportedConversion(type);

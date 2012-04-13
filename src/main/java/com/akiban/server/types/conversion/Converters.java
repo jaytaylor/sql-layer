@@ -129,6 +129,11 @@ public final class Converters {
                 VARBINARY
         );
         builder.legalConversions(U_BIGINT,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 FLOAT,
                 DOUBLE,
                 DECIMAL,
@@ -139,6 +144,11 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(DECIMAL,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 U_BIGINT,
                 VARCHAR,
                 LONG,
@@ -148,6 +158,11 @@ public final class Converters {
                 DOUBLE
         );
         builder.legalConversions(DOUBLE,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 FLOAT,
                 DECIMAL,
                 LONG,
@@ -157,6 +172,11 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(FLOAT,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 DOUBLE,
                 DECIMAL,
                 LONG,
@@ -166,6 +186,11 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(LONG,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 DOUBLE,
                 FLOAT,
                 U_BIGINT,
