@@ -1,0 +1,11 @@
+## Test the RAND function
+---
+- Statement: SELECT RAND();
+- output_types: [DOUBLE]
+---
+- Statement: SELECT RAND() < 1.0;
+- output: [[true]]
+---
+- Statement: SELECT RAND(3) < 1.0;
+- output: [[true]]
+...
