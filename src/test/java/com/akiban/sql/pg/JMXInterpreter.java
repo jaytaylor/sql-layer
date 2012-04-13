@@ -317,9 +317,5 @@ public class JMXInterpreter {
         public void close() {
             // nothing to do
         }
-
-        private MBeanServer beans() {
-            return ManagementFactory.getPlatformMBeanServer();
-        }
     }
 }
