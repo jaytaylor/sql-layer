@@ -1848,6 +1848,212 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n");
     }
 
+    @Test
+    public void testNegativeColumnCount_too_small() throws Exception {
+        testYamlFail("---\n" +
+                    "- CreateTable: testA (c1 int)\n"+
+                    "---\n"+
+                    "- Statement: INSERT INTO testA values (1)\n"+
+                    "---\n"+
+            "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                    "- output: [[1,5,7,8,9,1,2]]");
+    }
+    
+    @Test
+    public void testNegativeColumnCount_too_many() throws Exception {
+        testYamlFail("---\n" +
+                    "- CreateTable: testA (c1 int)\n"+
+                    "---\n"+
+                    "- Statement: INSERT INTO testA values (1)\n"+
+                    "---\n"+
+            "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                    "- output: [[1,5,7,8,9,1,2,6,99]]");
+    }
+    
+    @Test
+    public void testRowCount_post() throws Exception {
+        testYaml("---\n" +
+                    "- CreateTable: testA (c1 int)\n"+
+                    "---\n"+
+                    "- Statement: INSERT INTO testA values (1)\n"+
+                    "---\n"+
+                    "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                    "- output: [[1,5,7,8,9,1,2,6]]\n"+
+                    "- row_count: 1");
+    } 
+    
+    @Test
+    public void testRowCount_pre() throws Exception {
+        testYaml("---\n" +
+                "- CreateTable: testA (c1 int)\n"+
+                "---\n"+
+                "- Statement: INSERT INTO testA values (1)\n"+
+                "---\n"+
+        "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                "- row_count: 1\n"+
+                "- output: [[1,5,7,8,9,1,2,6]]\n");
+    }
+     
+    @Test
+    public void testRowCount_negative_pre() throws Exception {
+        testYamlFail("---\n" +
+                "- CreateTable: testA (c1 int)\n"+
+                "---\n"+
+                "- Statement: INSERT INTO testA values (1)\n"+
+                "---\n"+
+        "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                "- row_count: 8\n"+
+                "- output: [[1,5,7,8,9,1,2,6]]\n");
+    }
+    
+    @Test
+    public void testRowCount() throws Exception {
+        testYamlFail("---\n" +
+                "- CreateTable: testA (c1 int)\n"+
+                "---\n"+
+                "- Statement: INSERT INTO testA values (1)\n"+
+                "---\n"+
+                "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                "- row_count: 8\n");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: testA (c1 int)\n"+
+                "---\n"+
+                "- Statement: INSERT INTO testA values (1)\n"+
+                "---\n"+
+        "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                "- output: [[1,5,7,8,9,1,2,6]]\n" +
+                "- row_count: 8\n");
+    }
+    
+    @Test
+    public void testOutput() throws Exception {
+        testYaml("---\n" +
+            "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+            "---\n" +
+            "- Statement: SELECT * from test2 order by c1\n" +
+            "- output: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output: [[-4, 'abc', 'fake'],[1, 'A'],[234,'Z']]");
+
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output: [[-4],[1, 'A'],[234,'Z']]");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output: [[-4, 'abc'],[1, 'A'],[234,'Z'],[999,'abba']]");
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output: [[-4, 'abc'],[1, 'A']]");
+    }
+    
+    @Test
+    public void testOrderedOutput() throws Exception {
+        testYaml("---\n" +
+            "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+            "---\n" +
+            "- Statement: SELECT * from test2 order by c1\n" +
+            "- output_ordered: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output_ordered: [[-4, 'abc', 'fake'],[1, 'A'],[234,'Z']]");
+
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output_ordered: [[-4],[1, 'A'],[234,'Z']]");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output_ordered: [[-4, 'abc'],[1, 'A'],[234,'Z'],[999,'abba']]");
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output_ordered: [[-4, 'abc'],[1, 'A']]");
+    }
+    
+    
+    
+    
+    
     /* Other methods */
 
     private void testYaml(String yaml) throws Exception {
