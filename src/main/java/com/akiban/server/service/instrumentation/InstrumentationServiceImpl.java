@@ -161,7 +161,7 @@ public class InstrumentationServiceImpl implements
          * # execution_time=3132589
          * select * from groups;
          * #
-         * Execution time is output in nano-seconds
+         * Execution time is output in milliseconds
          */
         StringBuilder buffer = new StringBuilder();
         buffer.append("# ");
