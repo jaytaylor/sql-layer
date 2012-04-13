@@ -26,9 +26,9 @@
 
 package com.akiban.sql.pg;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Set;
@@ -40,6 +40,7 @@ import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
+import javax.management.MBeanServer;
 import javax.management.MBeanServerConnection;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
@@ -50,106 +51,38 @@ import javax.management.remote.JMXServiceURL;
 public class JMXInterpreter {
 
     public JMXServiceURL serviceURL;
-    private JMXConnector connector;
+    private JmxAdapter adapter;
     private boolean debug;
-    
 
     public JMXInterpreter(boolean debug) {
         this.debug = debug;
     }
 
-    void openConnection() {
-        try {
-            connector = JMXConnectorFactory.connect(serviceURL);
-            if (debug) {
-                System.out.println("Opening connection to "+serviceURL);
+    void ensureConnection(String host, int port) {
+        if (adapter == null) {
+            adapter = new RemoteJmxAdapter(host, port);
+            if (!adapter.tryOpen()) {
+                if (debug)
+                    System.out.println("Couldn't connect to remote JMX adapter: " + adapter.describeConnection());
+                adapter = new LocalJmxAdapter();
+                if ((!adapter.tryOpen()) && debug)
+                    System.out.println("Couldn't connect to local JMX adapter: " + adapter.describeConnection());
             }
-        } catch (IOException e) {
-            System.out.println(serviceURL);
-            System.out.println("Error "+e.getMessage());
         }
-    }
-
-    void openConnection(String host, String port) {
-        try {
-            setServiceURL(host, port);
-            openConnection();
-        } catch (MalformedURLException e) {
-            System.out.println(e.getMessage());
-        }
-    }
-
-    public String remoteRuntime() throws IOException {
-        //Get an MBeanServerConnection on the remote VM.
-        final MBeanServerConnection remote = connector
-                .getMBeanServerConnection();
-
-        final RuntimeMXBean remoteRuntime = ManagementFactory
-                .newPlatformMXBeanProxy(remote,
-                        ManagementFactory.RUNTIME_MXBEAN_NAME,
-                        RuntimeMXBean.class);
-
-        return "Target VM is: " + remoteRuntime.getName()
-                + System.getProperty("line.separator") + "Started since: "
-                + remoteRuntime.getUptime()
-                + System.getProperty("line.separator") + "With Classpath: "
-                + remoteRuntime.getClassPath()
-                + System.getProperty("line.separator") + "And args: "
-                + remoteRuntime.getInputArguments();
     }
 
     public void close() {
         try {
-            if (connector != null) {
-                connector.close();
+            if (adapter != null) {
+                adapter.close();
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    public MBeanServerConnection setup(JMXConnector connector) {
-        MBeanServerConnection mbsc = null;
-        try {
-            mbsc = connector.getMBeanServerConnection();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        return mbsc;
-    }
-    
-    public MBeanServerConnection setup(String host, String port) {
-        openConnection(host, port);
-        MBeanServerConnection mbsc = null;
-        try {
-            mbsc = connector.getMBeanServerConnection();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        return mbsc;
-    }
-
-    public JMXServiceURL getServiceURL() {
-        return serviceURL;
-    }
-
-    //service:jmx:rmi:///jndi/rmi://localhost:8082/jmxrmi
-    public void setServiceURL(String host, String port)
-            throws MalformedURLException {
-        this.serviceURL = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://"
-                + host + ":" + port + "/jmxrmi");
-    }
-
-    public void setServiceURL(JMXServiceURL serviceURL) {
-        this.serviceURL = serviceURL;
-    }
-
-    public JMXConnector getConnector() {
-        return connector;
-    }
-
-    public void setConnector(JMXConnector connector) {
-        this.connector = connector;
+    public JmxAdapter getAdapter() {
+        return adapter;
     }
 
     /* Used for generating documentation for the wiki */
@@ -253,18 +186,16 @@ public class JMXInterpreter {
     }
 
     
-    public Object makeBeanCall(String host, String port, String objectName, 
-            String method, Object[] paramters, String callType) throws Exception {
-        setup(host, port);
-        final MBeanServerConnection mbs = connector
-                .getMBeanServerConnection();
-        if (mbs == null) { 
+    public Object makeBeanCall(String host, int port, String objectName,
+            String method, Object[] parameters, String callType) throws Exception {
+        ensureConnection(host, port);
+        if (adapter == null) {
             throw new Exception("Can't connect");
         }
         ObjectName mxbeanName = null;
             mxbeanName = new ObjectName(objectName);
         
-        MBeanInfo info = mbs.getMBeanInfo(mxbeanName);
+        MBeanInfo info = adapter.getMBeanInfo(mxbeanName);
         String[] signature = null;
         if (callType.equalsIgnoreCase("method")) {
             MBeanOperationInfo[] ops = info.getOperations();
@@ -280,34 +211,155 @@ public class JMXInterpreter {
         }
         Object data = null;
         if (callType.equalsIgnoreCase("method")) {
-            data = mbs.invoke(mxbeanName, method, paramters , signature);
+            data = adapter.invoke(mxbeanName, method, parameters , signature);
         } else if (callType.equalsIgnoreCase("get")) {
-            data = mbs.getAttribute(mxbeanName, method);
+            data = adapter.getAttribute(mxbeanName, method);
         } else {
             Attribute attrib = null;
             for (int x=0;x < info.getAttributes().length;x++) {
                 if (method.equalsIgnoreCase(info.getAttributes()[x].getName())) {
                     if (info.getAttributes()[x].getType().equalsIgnoreCase(double.class.getName())) {
-                        attrib = new Attribute(method, new Double(String.valueOf(paramters[0])));
+                        attrib = new Attribute(method, new Double(String.valueOf(parameters[0])));
                     } else if (info.getAttributes()[x].getType().equalsIgnoreCase(long.class.getName())) {
-                        attrib = new Attribute(method, new Long(String.valueOf(paramters[0])));
+                        attrib = new Attribute(method, new Long(String.valueOf(parameters[0])));
                     } else if (info.getAttributes()[x].getType().equalsIgnoreCase(int.class.getName())) {
-                        attrib = new Attribute(method, new Integer(String.valueOf(paramters[0])));
+                        attrib = new Attribute(method, new Integer(String.valueOf(parameters[0])));
                     } else if (info.getAttributes()[x].getType().equalsIgnoreCase(String.class.getName())) {
-                        attrib = new Attribute(method, String.valueOf(paramters[0]));
+                        attrib = new Attribute(method, String.valueOf(parameters[0]));
                     } else if (info.getAttributes()[x].getType().equalsIgnoreCase(Boolean.class.getName())) {
-                        attrib = new Attribute(method, new Boolean(String.valueOf(paramters[0])));
+                        attrib = new Attribute(method, new Boolean(String.valueOf(parameters[0])));
                     } else {
                         throw new Exception("Unknown Attribute type found as "+info.getAttributes()[x].getType());
                     }
                     break;
                 }
             }
-            mbs.setAttribute(mxbeanName, attrib);
+            adapter.setAttribute(mxbeanName, attrib);
         }
         
         return data;
     }
 
+    public interface JmxAdapter extends Closeable {
+        boolean tryOpen();
+        String describeConnection();
+        MBeanInfo getMBeanInfo(ObjectName objectName) throws Exception;
+        Object invoke(ObjectName objectName, String method, Object[] parameters, String[] arguments) throws Exception;
+        Object getAttribute(ObjectName objectName, String attribute) throws Exception;
+        void setAttribute(ObjectName objectName, Attribute attribute) throws Exception;
+    }
 
+    private static class RemoteJmxAdapter implements JmxAdapter {
+
+        @Override
+        public boolean tryOpen() {
+            JMXServiceURL serviceUrl;
+            //service:jmx:rmi:///jndi/rmi://localhost:8082/jmxrmi
+            try {
+                serviceUrl = new JMXServiceURL(urlString);
+            }
+            catch (MalformedURLException e) {
+                System.err.println("Malformed JMX connection string: " + urlString);
+                return false;
+            }
+            try {
+                connector = JMXConnectorFactory.connect(serviceUrl);
+                connection = connector.getMBeanServerConnection();
+            }
+            catch (IOException e) {
+                return false;
+            }
+            assert connection != null;
+            return true;
+        }
+
+        @Override
+        public String describeConnection() {
+            return urlString;
+        }
+
+        @Override
+        public MBeanInfo getMBeanInfo(ObjectName objectName) throws Exception {
+            return connection().getMBeanInfo(objectName);
+        }
+
+        @Override
+        public Object invoke(ObjectName objectName, String method, Object[] parameters, String[] arguments)
+        throws Exception
+        {
+            return connection().invoke(objectName, method, parameters, arguments);
+        }
+
+        @Override
+        public Object getAttribute(ObjectName objectName, String method) throws Exception {
+            return connection().getAttribute(objectName, method);
+        }
+
+        @Override
+        public void setAttribute(ObjectName objectName, Attribute attribute) throws Exception {
+            connection().setAttribute(objectName, attribute);
+        }
+
+        @Override
+        public void close() throws IOException {
+            connector.close();
+        }
+
+        public RemoteJmxAdapter(String host, int port) {
+            urlString = "service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi";
+        }
+
+        private MBeanServerConnection connection() {
+            if (connection == null)
+                throw new IllegalStateException("not connected: " + describeConnection());
+            return connection;
+        }
+
+        private final String urlString;
+        private JMXConnector connector;
+        private MBeanServerConnection connection;
+    }
+
+    private static class LocalJmxAdapter implements JmxAdapter {
+        @Override
+        public boolean tryOpen() {
+            return true;
+        }
+
+        @Override
+        public String describeConnection() {
+            return "local VM connection";
+        }
+
+        @Override
+        public MBeanInfo getMBeanInfo(ObjectName objectName) throws Exception {
+            return beans().getMBeanInfo(objectName);
+        }
+
+        @Override
+        public Object invoke(ObjectName objectName, String method, Object[] parameters, String[] arguments)
+        throws Exception
+        {
+            return beans().invoke(objectName, method, parameters, arguments);
+        }
+
+        @Override
+        public Object getAttribute(ObjectName objectName, String attribute) throws Exception {
+            return beans().getAttribute(objectName, attribute);
+        }
+
+        @Override
+        public void setAttribute(ObjectName objectName, Attribute attribute) throws Exception {
+            beans().setAttribute(objectName, attribute);
+        }
+
+        @Override
+        public void close() {
+            // nothing to do
+        }
+
+        private MBeanServer beans() {
+            return ManagementFactory.getPlatformMBeanServer();
+        }
+    }
 }

@@ -1630,7 +1630,7 @@ class YamlTester {
             Object result = null;
             try {
                 if (method != null) {
-                    result = conn.makeBeanCall("localhost", "8082", objectName, 
+                    result = conn.makeBeanCall("localhost", 8082, objectName,
                             method, params, "method");
 //                    if (DEBUG) {
 //                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+method+")");
@@ -1638,13 +1638,13 @@ class YamlTester {
 //                    }
                 }
                 if (set != null) {
-                    conn.makeBeanCall("localhost", "8082", objectName, set, params, "set");
+                    conn.makeBeanCall("localhost", 8082, objectName, set, params, "set");
 //                    if (DEBUG) {
 //                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+set+")");
 //                    }
                 }
                 if (get != null) {
-                    result = conn.makeBeanCall("localhost", "8082", objectName, get, params, "get");
+                    result = conn.makeBeanCall("localhost", 8082, objectName, get, params, "get");
 //                    if (DEBUG) {
 //                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+get+")");
 //                        System.out.println(result);
