@@ -1871,16 +1871,19 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     }
     
     @Test
-    public void testRowCount() throws Exception {
+    public void testRowCount_post() throws Exception {
         testYaml("---\n" +
                     "- CreateTable: testA (c1 int)\n"+
                     "---\n"+
                     "- Statement: INSERT INTO testA values (1)\n"+
                     "---\n"+
-            "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                    "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
                     "- output: [[1,5,7,8,9,1,2,6]]\n"+
                     "- row_count: 1");
-        
+    } 
+    
+    @Test
+    public void testRowCount_pre() throws Exception {
         testYaml("---\n" +
                 "- CreateTable: testA (c1 int)\n"+
                 "---\n"+
@@ -1889,7 +1892,10 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
         "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
                 "- row_count: 1\n"+
                 "- output: [[1,5,7,8,9,1,2,6]]\n");
-        
+    }
+     
+    @Test
+    public void testRowCount_negative_pre() throws Exception {
         testYamlFail("---\n" +
                 "- CreateTable: testA (c1 int)\n"+
                 "---\n"+
@@ -1898,7 +1904,10 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
         "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
                 "- row_count: 8\n"+
                 "- output: [[1,5,7,8,9,1,2,6]]\n");
-        
+    }
+    
+    @Test
+    public void testRowCount() throws Exception {
         testYamlFail("---\n" +
                 "- CreateTable: testA (c1 int)\n"+
                 "---\n"+
