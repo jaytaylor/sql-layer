@@ -24,4 +24,6 @@ order-by-2: ORDER BY accumulated result
 
 sum-all: aggregate without GROUP BY
 
+update: UPDATE to aggregate subexpression
+
 user-aggregate: non-standard aggregate function
