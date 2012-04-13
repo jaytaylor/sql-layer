@@ -34,33 +34,39 @@ import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.management.JMX;
+import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
-import com.akiban.server.manage.ManageMXBean;
-import com.akiban.server.manage.ManageMXBeanImpl;
-import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /* Provides a JMX interface to the server in the test framework  */
 public class JMXInterpreter {
 
-    private JMXServiceURL serviceURL;
+    public JMXServiceURL serviceURL;
     private JMXConnector connector;
+    private boolean debug;
+    
+
+    public JMXInterpreter(boolean debug) {
+        this.debug = debug;
+    }
 
     void openConnection() {
         try {
             connector = JMXConnectorFactory.connect(serviceURL);
+            if (debug) {
+                System.out.println("Opening connection to "+serviceURL);
+            }
         } catch (IOException e) {
-            System.out.println(e.getMessage());
+            System.out.println(serviceURL);
+            System.out.println("Error "+e.getMessage());
         }
     }
 
@@ -103,6 +109,17 @@ public class JMXInterpreter {
     }
 
     public MBeanServerConnection setup(JMXConnector connector) {
+        MBeanServerConnection mbsc = null;
+        try {
+            mbsc = connector.getMBeanServerConnection();
+        } catch (IOException e) {
+            System.out.println(e.getMessage());
+        }
+        return mbsc;
+    }
+    
+    public MBeanServerConnection setup(String host, String port) {
+        openConnection(host, port);
         MBeanServerConnection mbsc = null;
         try {
             mbsc = connector.getMBeanServerConnection();
@@ -228,47 +245,69 @@ public class JMXInterpreter {
                 }
 
                 if (p < params.length - 1) {
-                    System.out.print(',');
+                    System.out.print(", ");
                 }
             }
             System.out.println(") | ");
         }
     }
 
-    /*
-     * Actual Bean implementations 
-     */
-    public ManageMXBean getAkServer(JMXConnector connector) {
-        MBeanServerConnection mbsc = setup(connector);
-        ManageMXBean mxbeanProxy = null;
-
+    
+    public Object makeBeanCall(String host, String port, String objectName, 
+            String method, Object[] paramters, String callType) throws Exception {
+        setup(host, port);
+        final MBeanServerConnection mbs = connector
+                .getMBeanServerConnection();
+        if (mbs == null) { 
+            throw new Exception("Can't connect");
+        }
         ObjectName mxbeanName = null;
-        try {
-            mxbeanName = new ObjectName(ManageMXBeanImpl.BEAN_NAME);
-        } catch (MalformedObjectNameException e) {
-            System.out.println(e.getMessage());
-        } catch (NullPointerException e) {
-            System.out.println(e.getMessage());
+            mxbeanName = new ObjectName(objectName);
+        
+        MBeanInfo info = mbs.getMBeanInfo(mxbeanName);
+        String[] signature = null;
+        if (callType.equalsIgnoreCase("method")) {
+            MBeanOperationInfo[] ops = info.getOperations();
+            for (int x=0;x < ops.length;x++) {
+                if (method.equalsIgnoreCase(ops[x].getDescription())) {
+                    signature = new String[ops[x].getSignature().length];
+                    for (int a=0;a < ops[x].getSignature().length;a++) {
+                        signature[a] = ops[x].getSignature()[a].getType();
+                    }
+                    break;
+                }
+            }    
         }
-        mxbeanProxy = (ManageMXBean) JMX.newMXBeanProxy(mbsc, mxbeanName,
-                ManageMXBean.class);
-
-        return mxbeanProxy;
+        Object data = null;
+        if (callType.equalsIgnoreCase("method")) {
+            data = mbs.invoke(mxbeanName, method, paramters , signature);
+        } else if (callType.equalsIgnoreCase("get")) {
+            data = mbs.getAttribute(mxbeanName, method);
+        } else {
+            Attribute attrib = null;
+            for (int x=0;x < info.getAttributes().length;x++) {
+                if (method.equalsIgnoreCase(info.getAttributes()[x].getName())) {
+                    if (info.getAttributes()[x].getType().equalsIgnoreCase(double.class.getName())) {
+                        attrib = new Attribute(method, new Double(String.valueOf(paramters[0])));
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(long.class.getName())) {
+                        attrib = new Attribute(method, new Long(String.valueOf(paramters[0])));
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(int.class.getName())) {
+                        attrib = new Attribute(method, new Integer(String.valueOf(paramters[0])));
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(String.class.getName())) {
+                        attrib = new Attribute(method, String.valueOf(paramters[0]));
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(Boolean.class.getName())) {
+                        attrib = new Attribute(method, new Boolean(String.valueOf(paramters[0])));
+                    } else {
+                        throw new Exception("Unknown Attribute type found as "+info.getAttributes()[x].getType());
+                    }
+                    break;
+                }
+            }
+            mbs.setAttribute(mxbeanName, attrib);
+        }
+        
+        return data;
     }
 
-    public IndexStatisticsMXBean getIndexStatisticsMXBean(JMXConnector connector) {
-        MBeanServerConnection mbsc = setup(connector);
-        IndexStatisticsMXBean mxbeanProxy = null;
-        try {
-            ObjectName mxbeanName = new ObjectName(
-                    "com.akiban:type=IndexStatistics");
-            mxbeanProxy = JMX.newMXBeanProxy(mbsc, mxbeanName,
-                    IndexStatisticsMXBean.class);
-
-        } catch (MalformedObjectNameException e) {
-            System.out.println(e.getMessage());
-        }
-        return (IndexStatisticsMXBean) mxbeanProxy;
-    }
 
 }

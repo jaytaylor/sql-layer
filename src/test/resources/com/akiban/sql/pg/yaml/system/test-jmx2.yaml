@@ -1,5 +1,5 @@
 ---
-- Properties: it
+- Properties: sys-aksql
 - suppressed: true
 ---
 - CreateTable: t1 (c1 int);
@@ -13,7 +13,7 @@
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - split_result: true
-- params: ['test']
+- params: ['user']
 - output: [
 ['Index: idx1'],
 ['RowCount: 6'],
@@ -55,7 +55,7 @@
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - split_result: true
-- params: ['test']
+- params: ['user']
 - output: [
 ['Index: idx1'],
 ['RowCount: 6'],
