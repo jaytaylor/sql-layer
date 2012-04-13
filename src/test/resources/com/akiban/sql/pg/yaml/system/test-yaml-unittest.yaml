@@ -1,0 +1,81 @@
+--- # these tests are meant to test the test system and not the server
+- CreateTable: testA (c1 int)
+---
+- Statement: INSERT INTO testA values (1)
+---
+- CreateTable: test1 (c1 int)
+---
+- Statement: INSERT INTO test1 values (1)
+---
+- Statement: INSERT INTO test1 values (22)
+---
+- Statement: INSERT INTO test1 values (45)
+---
+- Statement: INSERT INTO test1 values (5)
+---
+- Statement: INSERT INTO test1 values (9)
+---
+- Statement: INSERT INTO test1 values (12)
+---
+- Statement: INSERT INTO test1 values (556)
+---
+- Statement: INSERT INTO test1 values (1024)
+--- # positive cases 
+- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA
+- output: [[1,5,7,8,9,1,2,6]]
+---
+- Statement: SELECT c1 FROM test1
+- output_ordered: [[1],[22],[45],[5],[9],[12],[556],[1024]]
+---
+- Statement: SELECT c1 FROM test1 order by c1 ASC
+- output: [[1],[5],[9],[12],[22],[45],[556],[1024]]
+---
+- CreateTable: test2 (c1 int, c2 varchar(25))
+---
+- Statement: INSERT INTO test2 values (1, 'A')
+---
+- Statement: INSERT INTO test2 values (-4, 'abc')
+---
+- Statement: INSERT INTO test2 values (234, 'Z')
+---
+- Statement: INSERT INTO test2 values (8, null)
+---
+- Statement: INSERT INTO test2 values (11, '')
+---
+- Statement: INSERT INTO test2 values (12, 'Abra')
+---
+- Statement: INSERT INTO test2 values (94, 'cadbra')
+---
+- Statement: INSERT INTO test2 values (654, 'a')
+---
+- Statement: SELECT c1, c2 FROM test2
+- output_ordered: [[1, 'A'],[-4, 'abc'],[234, 'Z'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[654, 'a']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c1 ASC
+#- output: [[1, 'A'],[-4, 'abc'],[234, 'Z'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[654, 'a']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c1 DESC
+#- output: [[1, 'A'],[-4, 'abc'],[234, 'Z'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[654, 'a']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c1, c2 ASC
+#- output: [[1, 'A'],[-4, 'abc'],[234, 'Z'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[654, 'a']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c2, c1 ASC
+#- output: [[1, 'A'],[-4, 'abc'],[234, 'Z'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[654, 'a']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c2 DESC, c1 ASC
+#- output: [[1, 'A'],[-4, 'abc'],[234, 'Z'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[654, 'a']]
+---
+- Statement: SELECT c1, c2 FROM test2 order by c1 DESC, c2 ASC
+#- output: [[1, 'A'],[-4, 'abc'],[234, 'Z'],[8, null],[11, ''],[12, 'Abra'],[94, 'cadbra'],[654, 'a']]
+
+
+#--- # negative cases
+#- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA
+#- output: [[1,5,7,8,9,1,2]]
+#- error: ['java.lang.AssertionError: Unexpected number of columns in output: expected:<7> but was:<8>']
+#---
+#- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA
+#- output: [[1,5,7,8,9,1,2,6,99]]
+#- error: ['java.lang.AssertionError: Unexpected number of columns in output: expected:<9> but was:<8>']
+...
