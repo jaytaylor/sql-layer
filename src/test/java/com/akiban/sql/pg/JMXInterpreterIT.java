@@ -54,7 +54,7 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
             System.out.println(conn.serviceURL);
             Assert.assertNotNull(conn);
             
-            final JmxAdapter adapter = conn.getAdapter();
+            final MBeanServerConnection mbs = conn.getAdapter().getConnection();
             MBeanInfo info = null;
             ObjectName mxbeanName = null;
             try {
@@ -68,7 +68,7 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
                 Assert.fail(e1.getMessage());   
             }
             try {
-                info = adapter.getMBeanInfo(mxbeanName);
+                info = mbs.getMBeanInfo(mxbeanName);
             } catch (Exception e) {
                 e.printStackTrace();
                 return;

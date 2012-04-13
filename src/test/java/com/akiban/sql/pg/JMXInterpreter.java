@@ -192,10 +192,11 @@ public class JMXInterpreter {
         if (adapter == null) {
             throw new Exception("Can't connect");
         }
+        MBeanServerConnection mbs = adapter.getConnection();
         ObjectName mxbeanName = null;
             mxbeanName = new ObjectName(objectName);
         
-        MBeanInfo info = adapter.getMBeanInfo(mxbeanName);
+        MBeanInfo info = mbs.getMBeanInfo(mxbeanName);
         String[] signature = null;
         if (callType.equalsIgnoreCase("method")) {
             MBeanOperationInfo[] ops = info.getOperations();
@@ -211,9 +212,9 @@ public class JMXInterpreter {
         }
         Object data = null;
         if (callType.equalsIgnoreCase("method")) {
-            data = adapter.invoke(mxbeanName, method, parameters , signature);
+            data = mbs.invoke(mxbeanName, method, parameters , signature);
         } else if (callType.equalsIgnoreCase("get")) {
-            data = adapter.getAttribute(mxbeanName, method);
+            data = mbs.getAttribute(mxbeanName, method);
         } else {
             Attribute attrib = null;
             for (int x=0;x < info.getAttributes().length;x++) {
@@ -234,7 +235,7 @@ public class JMXInterpreter {
                     break;
                 }
             }
-            adapter.setAttribute(mxbeanName, attrib);
+            mbs.setAttribute(mxbeanName, attrib);
         }
         
         return data;
@@ -243,10 +244,7 @@ public class JMXInterpreter {
     public interface JmxAdapter extends Closeable {
         boolean tryOpen();
         String describeConnection();
-        MBeanInfo getMBeanInfo(ObjectName objectName) throws Exception;
-        Object invoke(ObjectName objectName, String method, Object[] parameters, String[] arguments) throws Exception;
-        Object getAttribute(ObjectName objectName, String attribute) throws Exception;
-        void setAttribute(ObjectName objectName, Attribute attribute) throws Exception;
+        MBeanServerConnection getConnection();
     }
 
     private static class RemoteJmxAdapter implements JmxAdapter {
@@ -274,30 +272,15 @@ public class JMXInterpreter {
         }
 
         @Override
+        public MBeanServerConnection getConnection() {
+            if (connection == null)
+                throw new IllegalStateException("not connected: " + describeConnection());
+            return connection;
+        }
+
+        @Override
         public String describeConnection() {
             return urlString;
-        }
-
-        @Override
-        public MBeanInfo getMBeanInfo(ObjectName objectName) throws Exception {
-            return connection().getMBeanInfo(objectName);
-        }
-
-        @Override
-        public Object invoke(ObjectName objectName, String method, Object[] parameters, String[] arguments)
-        throws Exception
-        {
-            return connection().invoke(objectName, method, parameters, arguments);
-        }
-
-        @Override
-        public Object getAttribute(ObjectName objectName, String method) throws Exception {
-            return connection().getAttribute(objectName, method);
-        }
-
-        @Override
-        public void setAttribute(ObjectName objectName, Attribute attribute) throws Exception {
-            connection().setAttribute(objectName, attribute);
         }
 
         @Override
@@ -307,12 +290,6 @@ public class JMXInterpreter {
 
         public RemoteJmxAdapter(String host, int port) {
             urlString = "service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi";
-        }
-
-        private MBeanServerConnection connection() {
-            if (connection == null)
-                throw new IllegalStateException("not connected: " + describeConnection());
-            return connection;
         }
 
         private final String urlString;
@@ -332,25 +309,8 @@ public class JMXInterpreter {
         }
 
         @Override
-        public MBeanInfo getMBeanInfo(ObjectName objectName) throws Exception {
-            return beans().getMBeanInfo(objectName);
-        }
-
-        @Override
-        public Object invoke(ObjectName objectName, String method, Object[] parameters, String[] arguments)
-        throws Exception
-        {
-            return beans().invoke(objectName, method, parameters, arguments);
-        }
-
-        @Override
-        public Object getAttribute(ObjectName objectName, String attribute) throws Exception {
-            return beans().getAttribute(objectName, attribute);
-        }
-
-        @Override
-        public void setAttribute(ObjectName objectName, Attribute attribute) throws Exception {
-            beans().setAttribute(objectName, attribute);
+        public MBeanServerConnection getConnection() {
+            return ManagementFactory.getPlatformMBeanServer();
         }
 
         @Override
