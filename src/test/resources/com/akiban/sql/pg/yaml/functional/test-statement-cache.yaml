@@ -27,8 +27,8 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['project([Field(0)])'],
-           ['  Filter_Default([test.t])'],
-           ['    Select_HKeyOrdered(test.t, Field(1) == Variable(pos=0))'],
+           ['  Filter_Default([user.t])'],
+           ['    Select_HKeyOrdered(user.t, Field(1) == Variable(pos=0))'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
@@ -50,8 +50,8 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['project([Field(0)])'],
-           ['  AncestorLookup_Default(Index(test.t.t_s[IndexColumn(s)]) -> [test.t])'],
-           ['    IndexScan_Default(Index(test.t.t_s[IndexColumn(s)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))']]
+           ['  AncestorLookup_Default(Index(user.t.t_s[IndexColumn(s)]) -> [user.t])'],
+           ['    IndexScan_Default(Index(user.t.t_s[IndexColumn(s)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
@@ -67,8 +67,8 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['project([Field(0)])'],
-           ['  AncestorLookup_Default(Index(test.t.t_s[IndexColumn(s)]) -> [test.t])'],
-           ['    IndexScan_Default(Index(test.t.t_s[IndexColumn(s)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))']]
+           ['  AncestorLookup_Default(Index(user.t.t_s[IndexColumn(s)]) -> [user.t])'],
+           ['    IndexScan_Default(Index(user.t.t_s[IndexColumn(s)]) (>=UnboundExpressions[Variable(pos=0)],<=UnboundExpressions[Variable(pos=0)]))']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
@@ -83,16 +83,16 @@
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['project([Field(0)])'],
-           ['  Filter_Default([test.t])'],
-           ['    Select_HKeyOrdered(test.t, Field(1) == Variable(pos=0))'],
+           ['  Filter_Default([user.t])'],
+           ['    Select_HKeyOrdered(user.t, Field(1) == Variable(pos=0))'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
 - Statement: SET cbo TO 'false'
 ---
 - Statement: EXPLAIN SELECT id FROM t WHERE s = ?
 - output: [['project([Field(0)])'],
-           ['  Filter_Default([test.t])'],
-           ['    Select_HKeyOrdered(test.t, Field(1) == Variable(pos=0))'],
+           ['  Filter_Default([user.t])'],
+           ['    Select_HKeyOrdered(user.t, Field(1) == Variable(pos=0))'],
            ['      GroupScan_Default(full scan on _akiban_t)']]
 ---
 # Turn it back off
