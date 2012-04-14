@@ -26,6 +26,8 @@ distinct-2: DISTINCT and ORDER BY
 
 distinct-3: Illegal DISTINCT and ORDER BY
 
+distinct-3g: Illegal DISTINCT and ORDER BY turned into GROUP BY
+
 exists-1: EXISTS condition
 
 group-by-1: GROUP BY expression

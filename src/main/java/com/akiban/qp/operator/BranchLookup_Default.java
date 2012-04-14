@@ -303,7 +303,7 @@ public class BranchLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 inputCursor.open();
                 advanceInput();
                 idle = false;
@@ -317,7 +317,7 @@ public class BranchLookup_Default extends Operator
         {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row nextRow = null;
                 while (nextRow == null && inputRow.isHolding()) {
@@ -357,7 +357,7 @@ public class BranchLookup_Default extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             if (!idle) {
                 inputCursor.close();
                 inputRow.release();

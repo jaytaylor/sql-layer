@@ -37,6 +37,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.util.tap.Tap;
 import com.akiban.util.tap.TapReport;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -44,6 +45,7 @@ import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
 
+@Ignore
 public class SimpleJoinPT extends QPProfilePTBase
 {
     @Before
@@ -51,28 +53,32 @@ public class SimpleJoinPT extends QPProfilePTBase
     {
         customer = createTable(
             "schema", "customer",
-            "cid int not null key",
-            "name varchar(20)," +
-            "index(name)");
+            "cid int not null",
+            "name varchar(20)",
+            "primary key(cid)");
         order = createTable(
-            "schema", "order",
-            "oid int not null key",
+            "schema", "orders",
+            "oid int not null",
             "cid int",
             "salesman varchar(20)",
-            "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)",
-            "index(salesman)");
+            "primary key(oid)",
+            "grouping foreign key (cid) references customer(cid)");
         item = createTable(
             "schema", "item",
-            "iid int not null key",
+            "iid int not null",
             "oid int",
-            "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
+            "primary key(iid)",
+            "grouping foreign key (oid) references orders(oid)");
         address = createTable(
             "schema", "address",
-            "aid int not null key",
+            "aid int not null",
             "cid int",
             "address varchar(100)",
-            "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
-            "index(address)");
+            "primary key(aid)",
+            "grouping foreign key (cid) references customer(cid)");
+        createIndex("schema", "customer", "idx_cname", "name");
+        createIndex("schema", "orders", "idx_osalesman", "salesman");
+        createIndex("schema", "address", "idx_aaddress", "address");
         schema = new Schema(rowDefCache().ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
@@ -111,7 +117,7 @@ public class SimpleJoinPT extends QPProfilePTBase
     @Test
     public void profileGroupScan()
     {
-        final int SCANS = 100;
+        final int SCANS = 100000000;
         final int CUSTOMERS = 1000;
         final int ORDERS_PER_CUSTOMER = 5;
         final int ITEMS_PER_ORDER = 2;

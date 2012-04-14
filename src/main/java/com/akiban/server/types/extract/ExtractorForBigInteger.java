@@ -50,6 +50,11 @@ final class ExtractorForBigInteger extends ObjectExtractor<BigInteger> {
         case DOUBLE:    return BigInteger.valueOf(Math.round(source.getDouble()));
         case FLOAT:     return BigInteger.valueOf(Math.round(source.getFloat()));
         case U_FLOAT:   return BigInteger.valueOf(Math.round(source.getUFloat()));
+        case DATE:      return BigInteger.valueOf(source.getDate());
+        case DATETIME:  return BigInteger.valueOf(source.getDateTime());
+        case TIME:      return BigInteger.valueOf(source.getTime());
+        case TIMESTAMP: return BigInteger.valueOf(source.getTimestamp());
+        case YEAR:      return BigInteger.valueOf(source.getYear());
         default: throw unsupportedConversion(type);
         }
     }

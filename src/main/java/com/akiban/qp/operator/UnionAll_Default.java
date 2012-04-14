@@ -175,7 +175,7 @@ final class UnionAll_Default extends Operator {
         public void open() {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 idle = false;
             } finally {
                 TAP_OPEN.out();
@@ -186,7 +186,7 @@ final class UnionAll_Default extends Operator {
         public Row next() {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 Row outputRow;
                 if (currentCursor == null) {
                     outputRow = nextCursorFirstRow();
@@ -211,7 +211,7 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public void close() {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             inputOperatorsIndex = -1;
             if (currentCursor != null) {
                 currentCursor.close();

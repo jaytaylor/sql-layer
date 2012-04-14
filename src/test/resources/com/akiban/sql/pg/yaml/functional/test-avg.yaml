@@ -46,7 +46,7 @@
     AVG(boolean_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
-- output: [[1, 1.0 , 1, '1.000000000', 1.0, 1.0, 1, '1.000000000', 1.0, 1]]
+- output: [[1.0, 1.0 , 1.0, '1.000000000', 1.0, 1.0, 1.0, '1.000000000', 1.0, 1.0]]
 
 # Insert duplicate row
 ---
@@ -60,7 +60,7 @@
     AVG(boolean_field), AVG(decimal_field), AVG(double_field),
     AVG(float_field), AVG(integer_field), AVG(numeric_field),
     AVG(real_field), AVG(smallint_field) FROM all_types
-- output: [[1, 1.0, 1, '1.000000000', 1.0, 1.0, 1, '1.000000000', 1.0, 1]]
+- output: [[1.0, 1.0, 1.0, '1.000000000', 1.0, 1.0, 1.0, '1.000000000', 1.0, 1.0]]
 # Rounding (1+1+2+2)/4 = 6/4 = 1.5
 ---
 - Statement: INSERT INTO all_types
@@ -75,7 +75,7 @@
     AVG(integer_field), AVG(numeric_field), AVG(real_field),
     AVG(smallint_field)
     FROM all_types
-- output: [[1, 1.5, '1.500000000', 1.5, 1.5, 1, '1.500000000', 1.5, 1]]
+- output: [[1.5, 1.5, '1.500000000', 1.5, 1.5, 1.5, '1.500000000', 1.5, 1.5]]
 
 # Back to zero
 ---
@@ -88,19 +88,19 @@
 - Statement: SELECT AVG(bigint_field), AVG(decimal_field),
     AVG(double_field), AVG(float_field), AVG(integer_field),
     AVG(numeric_field), AVG(real_field), AVG(smallint_field) FROM all_types
-- output: [[0, 0, 0.0, 0.0, 0, 0, 0.0, 0]]
+- output: [[0.0, 0, 0.0, 0.0, 0.0, 0, 0.0, 0.0]]
 # Do boolean specially
 # Returns incorrect results -- see bug-avg-boolean.yaml
 ---
 - Statement: INSERT INTO all_types (boolean_field) VALUES (0)
 --- 
 - Statement: SELECT AVG(boolean_field) FROM all_types
-- output: [[0]]
+- output: [[0.6666666666666666]]
 ---
 - Statement: INSERT INTO all_types (boolean_field) VALUES (0), (0)
 ---
 - Statement: SELECT AVG(boolean_field) FROM all_types
-- output: [[0]]
+- output: [[0.4]]
 ---
 - Statement: DELETE FROM all_types
 

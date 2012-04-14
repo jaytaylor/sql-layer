@@ -610,7 +610,7 @@ class YamlTester {
 		if (output != null) {
 		    assertEquals("The row_count attribute must be the same"
 			    + " as the length of the rows in the output"
-			    + " attribute:", output.get(0).size(), rowCount);
+			    + " attribute:", output.size(), rowCount);
 		} else if (outputTypes != null) {
 		    assertEquals("The row_count attribute must be the same"
 			    + " as the length of the output_types"

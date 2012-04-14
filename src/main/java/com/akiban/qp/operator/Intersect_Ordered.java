@@ -208,7 +208,7 @@ class Intersect_Ordered extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 leftInput.open();
                 rightInput.open();
                 nextLeftRow();
@@ -224,7 +224,7 @@ class Intersect_Ordered extends Operator
         {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 Row next = null;
                 while (!closed && next == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -271,7 +271,7 @@ class Intersect_Ordered extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 leftRow.release();
                 rightRow.release();

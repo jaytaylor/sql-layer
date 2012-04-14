@@ -28,22 +28,15 @@ package com.akiban.sql.pg;
 
 import java.io.IOException;
 
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
-import javax.management.remote.JMXConnector;
 
 import junit.framework.Assert;
 
 import org.junit.Test;
-
-import com.akiban.server.manage.ManageMXBean;
-import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /* test class for JMXIterpreter, which provides a JMX interface to the server in the test framework  */
 public class JMXInterpreterIT extends PostgresServerYamlITBase {
@@ -98,7 +91,7 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
     }
 
     @Test
-    public void testCall()  {
+    public void testCall() throws Exception  {
         JMXInterpreter conn = null;
         try {
             conn = new JMXInterpreter(true);
@@ -111,27 +104,6 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
                     parameters, "method");
             System.out.println(""+data);
             
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());   
-        } catch (InstanceNotFoundException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());   
-        } catch (MBeanException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());   
-        } catch (ReflectionException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());   
-        } catch (MalformedObjectNameException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
-        } catch (Exception e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());
         } finally {
             if (conn != null) {
                 conn.close();

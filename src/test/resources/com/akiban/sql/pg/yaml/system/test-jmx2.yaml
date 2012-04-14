@@ -1,0 +1,137 @@
+---
+- Properties: sys-aksql
+- suppressed: true
+---
+- CreateTable: t1 (c1 int);
+---
+- Statement: insert into t1 values (1),(2),(3),(77),(88),(99)
+---
+- Statement: create index idx1 on t1 (c1)
+---
+- Statement: ALTER TABLE t1 ALL UPDATE STATISTICS;
+---
+- JMX: com.akiban:type=IndexStatistics
+- method: dumpIndexStatisticsToString
+- split_result: true
+- params: ['user']
+- output: [
+['Index: idx1'],
+['RowCount: 6'],
+['SampledCount: 6'],
+['Statistics:'],
+['- Columns: 1'],
+['  Histogram:'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [1]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [2]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [3]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [77]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [88]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [99]'],
+['    lt: 0'],
+['Table: t1'],
+[!dc dc]]
+---
+- Statement: create index idx2 on t1 (c1)
+---
+- Statement: ALTER TABLE t1 ALL UPDATE STATISTICS;
+---
+- JMX: com.akiban:type=IndexStatistics
+- method: dumpIndexStatisticsToString
+- split_result: true
+- params: ['user']
+- output: [
+['Index: idx1'],
+['RowCount: 6'],
+['SampledCount: 6'],
+['Statistics:'],
+['- Columns: 1'],
+['  Histogram:'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [1]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [2]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [3]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [77]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [88]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [99]'],
+['    lt: 0'],
+['Table: t1'],
+[!dc dc],
+['---'],
+['Index: idx2'],
+['RowCount: 6'],
+['SampledCount: 6'],
+['Statistics:'],
+['- Columns: 1'],
+['  Histogram:'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [1]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [2]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [3]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [77]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [88]'],
+['    lt: 0'],
+['  - distinct: 0'],
+['    eq: 1'],
+['    key: [99]'],
+['    lt: 0'],
+['Table: t1'],
+[!dc dc]]
+---
+- JMX: com.akiban:type=AKSERVER
+- get: VersionString
+- output: [[!dc dc]]
+---
+- JMX: com.akiban:type=Configuration
+- set: QueryTimeoutSec
+- params: ['2']
+---
+- JMX: com.akiban:type=Configuration
+- get: QueryTimeoutSec
+- output: [['2']]
+...

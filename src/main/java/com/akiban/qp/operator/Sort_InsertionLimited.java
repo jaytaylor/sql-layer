@@ -171,7 +171,7 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 input.open();
                 state = State.FILLING;
                 for (ExpressionEvaluation eval : evaluations)
@@ -187,7 +187,7 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 switch (state) {
                 case FILLING:
@@ -212,12 +212,17 @@ class Sort_InsertionLimited extends Operator
                                 Holder last = sorted.last();
                                 if (last.compareTo(holder) > 0) {
                                     // New row is less, so keep it
-                                    // instead.
-                                    sorted.remove(last);
-                                    last.empty();
-                                    holder.freeze();
+                                    // instead unless it's already in
+                                    // there (in suppress dups case).
                                     boolean added = sorted.add(holder);
-                                    assert added;
+                                    if (added) {
+                                        sorted.remove(last);
+                                        last.empty();
+                                        holder.freeze();
+                                    }
+                                    else {
+                                        assert !preserveDuplicates;
+                                    }
                                 }
                                 else {
                                     // Will not be using new row.
@@ -254,7 +259,7 @@ class Sort_InsertionLimited extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             input.close();
             if (sorted != null) {
                 if (iterator == null)

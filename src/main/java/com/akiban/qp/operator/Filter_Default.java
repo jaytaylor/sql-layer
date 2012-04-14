@@ -138,7 +138,7 @@ class Filter_Default extends Operator
         {
             TAP_OPEN.in();
             try {
-                CursorLifecycle.checkIdle(this);
+                // CursorLifecycle.checkIdle(this);
                 input.open();
                 closed = false;
             } finally {
@@ -151,7 +151,7 @@ class Filter_Default extends Operator
         {
             TAP_NEXT.in();
             try {
-                CursorLifecycle.checkIdleOrActive(this);
+                // CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row;
                 do {
@@ -171,7 +171,7 @@ class Filter_Default extends Operator
         @Override
         public void close()
         {
-            CursorLifecycle.checkIdleOrActive(this);
+            // CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 input.close();
                 closed = true;
