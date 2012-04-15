@@ -1,10 +1,5 @@
 # Test statement cache
 ---
-# Turn it off and back on to clear.
-- JMX: com.akiban:type=PostgresServer
-- set: StatementCacheCapacity
-- params: ['0']
----
 - JMX: com.akiban:type=PostgresServer
 - set: StatementCacheCapacity
 - params: ['100']
@@ -13,6 +8,11 @@
 - get: StatementCacheCapacity
 - output: [[100]]
 ---
+- CreateTable: t (id int not null, s varchar(10))
+---
+- JMX: com.akiban:type=PostgresServer
+- method: resetStatementCache
+---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
 - output: [[0]]
@@ -20,8 +20,6 @@
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
 - output: [[0]]
----
-- CreateTable: t (id int not null, s varchar(10))
 ---
 - Statement: INSERT INTO t VALUES(1, 'fred'), (2, 'barney')
 ---
