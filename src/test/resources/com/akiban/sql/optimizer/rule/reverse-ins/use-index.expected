@@ -7,5 +7,5 @@ SelectQuery@39fa487f
           Flatten@27cc7f4b(orders INNER items)
             AncestorLookup@62b92956(items -> [orders, items])
               IndexScan@6a48ffbc(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =VALUES[0])
-              TableSource@78f92cc8(orders - TableGroupJoin@5e8dc627(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@2eeb3c84(items - TableGroupJoin@2dcc5af0(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+              TableSource@78f92cc8(orders - TableGroupJoin@5e8dc627(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@2eeb3c84(items - TableGroupJoin@2dcc5af0(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

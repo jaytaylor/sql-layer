@@ -1,1 +1,1 @@
-SELECT _G_1.parent$name AS name, _G_1.child$name AS name FROM user._akiban_parent AS _G_1, user._akiban_parent AS _G_2 WHERE TRUE AND ((_G_2.parent$state = 'MA') AND ((_G_1.parent$id <> _G_2.parent$id) AND TRUE))
+SELECT _G_1.parent$name AS name, _G_1.child$name AS name FROM test._akiban_parent AS _G_1, test._akiban_parent AS _G_2 WHERE TRUE AND ((_G_2.parent$state = 'MA') AND ((_G_1.parent$id <> _G_2.parent$id) AND TRUE))

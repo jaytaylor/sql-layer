@@ -13,7 +13,7 @@
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - split_result: true
-- params: ['user']
+- params: ['test']
 - output: [
 ['Index: idx1'],
 ['RowCount: 6'],
@@ -55,7 +55,7 @@
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - split_result: true
-- params: ['user']
+- params: ['test']
 - output: [
 ['Index: idx1'],
 ['RowCount: 6'],

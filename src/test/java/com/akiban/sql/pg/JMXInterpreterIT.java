@@ -95,7 +95,7 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
         JMXInterpreter conn = null;
         try {
             conn = new JMXInterpreter(true);
-            Object[] parameters = { new String("user") };
+            Object[] parameters = { new String("test") };
             Object data = conn.makeBeanCall( 
                     SERVER_ADDRESS, 
                     SERVER_JMX_PORT, 
