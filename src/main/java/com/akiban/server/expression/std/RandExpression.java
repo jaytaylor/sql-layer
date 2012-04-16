@@ -74,34 +74,36 @@ public class RandExpression extends AbstractCompositeExpression
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
-        private final Random random;
+        private  Random random;
         
         public InnerEvaluation (List<? extends ExpressionEvaluation> evals)
         {
             super(evals);
-            
-            switch(evals.size())
-            {
-                case 0:     
-                    random = new Random(); 
-                    break;
-                
-                case 1:     
-                    ValueSource source = evals.get(0).eval();
-                    if (source.isNull())
-                        random = new Random(0L);
-                     else
-                        random = new Random(source.getLong());
-                     break;
-                
-                default:    
-                    throw new WrongExpressionArityException(1, evals.size());
-            }
+            random = null; 
         }
         
         @Override
         public ValueSource eval()
         {
+            if (random == null)
+                switch(children().size())
+                {
+                    case 0:     
+                        random = new Random(); 
+                        break;
+
+                    case 1:     
+                        ValueSource source = children().get(0).eval();
+                        if (source.isNull())
+                            random = new Random(0L);
+                         else
+                            random = new Random(source.getLong());
+                         break;
+
+                    default:    
+                        throw new WrongExpressionArityException(1, children().size());
+                }
+            
             valueHolder().putDouble(random.nextDouble());
             return valueHolder();
         }
