@@ -184,9 +184,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
             catch (RuntimeException e) {
                 log.error("error while analyzing " + index, e);
+                throw e;
             }
             catch (Error e) {
                 log.error("error while analyzing " + index, e);
+                throw e;
             }
         }
         DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
