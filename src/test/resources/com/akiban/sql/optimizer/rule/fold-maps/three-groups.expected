@@ -3,11 +3,11 @@ SelectQuery@1eb0c6
     MapJoin@18c4a7f()
       Flatten@16ee3ec(customers INNER orders)
         AncestorLookup@135da43(orders -> [customers, orders])
-          IndexScan@8c7be5(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, >Cast(2011-01-01 AS DATE NOT NULL))
+          IndexScan@8c7be5(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >Cast(2011-01-01 AS DATE NOT NULL))
           TableSource@1554233(customers - TableGroup@11a0d35(customers))
-          TableSource@6d3b92(orders - TableGroupJoin@1594a88(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          TableSource@6d3b92(orders - TableGroupJoin@1594a88(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
       MapJoin@12c4c57()
-        IndexScan@147e668(Index(user.parent.name[IndexColumn(name)]), covering/NONE, =customers.name)
+        IndexScan@147e668(Index(test.parent.name[IndexColumn(name)]), covering/NONE, =customers.name)
         Project@1d709a5[orders.order_date, child.name]
           Select@ba6c13[]
-            IndexScan@167c5e3(Index(user.child.name[IndexColumn(name)]), covering/NONE, =parent.name)
+            IndexScan@167c5e3(Index(test.child.name[IndexColumn(name)]), covering/NONE, =parent.name)

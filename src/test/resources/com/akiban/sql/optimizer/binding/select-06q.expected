@@ -99,7 +99,7 @@ resultSet:
 						null
 						correlation Name: null
 						null
-						userData: user.t1
+						userData: test.t1
 			[1]:			
 			com.akiban.sql.parser.ResultColumn@6ee0a386
 			exposedName: z

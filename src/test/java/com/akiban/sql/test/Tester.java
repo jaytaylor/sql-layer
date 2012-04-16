@@ -185,7 +185,7 @@ public class Tester
         }
     }
 
-    static final String DEFAULT_SCHEMA = "user";
+    static final String DEFAULT_SCHEMA = "test";
 
     public void setSchema(String sql) throws Exception {
         SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);

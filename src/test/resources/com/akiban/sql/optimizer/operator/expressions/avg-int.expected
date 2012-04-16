@@ -2,5 +2,5 @@ PhysicalSelect[_SQL_COL_1:DOUBLE]
   project([Arith(/ -> Field(0), Field(1) -> DOUBLE)])
     Aggregation(without GROUP BY: [sumINT, count(*)])
       project([Field(3), Literal(1)])
-        Filter_Default([user.items])
+        Filter_Default([test.items])
           GroupScan_Default(full scan on _akiban_customers)

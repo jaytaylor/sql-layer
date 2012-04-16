@@ -7,5 +7,5 @@ SelectQuery@370aa282
             Select@6d1576d7[items.sku != customers.name]
               IndexScan@1c2d5534(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, >=S)
             TableSource@44af17c7(customers - TableGroup@2f8bbc98(customers))
-            TableSource@43422d0b(orders - TableGroupJoin@6434d75f(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@2d9b4fac(items - TableGroupJoin@4927d15e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+            TableSource@43422d0b(orders - TableGroupJoin@6434d75f(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@2d9b4fac(items - TableGroupJoin@4927d15e(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

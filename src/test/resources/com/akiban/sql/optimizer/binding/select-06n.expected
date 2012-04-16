@@ -89,7 +89,7 @@ resultSet:
 			null
 			correlation Name: null
 			null
-			userData: user.t1
+			userData: test.t1
 		rightResultSet: 			
 			com.akiban.sql.parser.FromBaseTable@5e98ba6f
 			tableName: t2
@@ -97,7 +97,7 @@ resultSet:
 			null
 			correlation Name: null
 			null
-			userData: user.t2
+			userData: test.t2
 		joinClause: 			
 			com.akiban.sql.parser.BinaryRelationalOperatorNode@262b415
 			operator: =

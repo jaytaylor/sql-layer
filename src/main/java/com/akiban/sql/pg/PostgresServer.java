@@ -284,6 +284,15 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
     
     @Override
+    public void resetStatementCache() {
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                statementCache.reset();
+            }        
+        }
+    }
+
+    @Override
     public Set<Integer> getCurrentSessions() {
         return new HashSet<Integer>(connections.keySet());
 
