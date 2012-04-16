@@ -81,9 +81,9 @@ public class IfExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return false;
+            return NullTreating.IGNORED;
         }
     };
     protected static final EnumSet<AkType> STRING = EnumSet.of(AkType.VARCHAR, AkType.TEXT);

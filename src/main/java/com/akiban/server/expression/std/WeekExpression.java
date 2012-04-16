@@ -112,10 +112,11 @@ public class WeekExpression extends AbstractCompositeExpression
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
+        
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return true;
+            return NullTreating.CONTAMINATING;
         }
     }
 

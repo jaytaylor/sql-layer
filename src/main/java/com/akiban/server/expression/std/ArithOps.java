@@ -276,9 +276,9 @@ public class ArithOps
         }
         
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return true;
+            return NullTreating.CONTAMINATING;
         }
         
         @Override

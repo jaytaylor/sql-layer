@@ -60,9 +60,9 @@ public class IfNullExpression extends CoalesceExpression
         }
 
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return false;
+            return NullTreating.IGNORED;
         }
     };
     

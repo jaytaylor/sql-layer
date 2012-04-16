@@ -68,10 +68,11 @@ public class LogExpression extends AbstractCompositeExpression
     public static final ExpressionComposer LOG = new  ExpressionComposer ()
     {
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return true;
+            return NullTreating.CONTAMINATING;
         }
+        
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {

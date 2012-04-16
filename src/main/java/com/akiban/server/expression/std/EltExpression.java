@@ -78,9 +78,9 @@ public class EltExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return false; // This is a special case. NULL only makes the top NULL 
+            return NullTreating.IGNORED; // This is a special case. NULL only makes the top NULL 
                                                    // if it's the first arg
         }
         

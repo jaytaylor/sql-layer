@@ -147,9 +147,9 @@ public final class FunctionsRegistryImplTest {
         }
 
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return true;
+            return NullTreating.CONTAMINATING;
         }
     };
 

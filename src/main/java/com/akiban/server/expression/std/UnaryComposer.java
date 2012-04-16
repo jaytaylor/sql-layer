@@ -49,9 +49,9 @@ abstract class UnaryComposer implements ExpressionComposer {
     // For most expressions, NULL is contaminating
     // Any expressions that treat NULL specially should override this
     @Override
-    public boolean nullIsContaminating()
+    public NullTreating getNullTreating()
     {
-        return true;
+        return NullTreating.CONTAMINATING;
     }
         
     @Override

@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
@@ -94,7 +95,7 @@ public abstract class ComposedExpressionTestBase {
         
         Expression expression = getComposer().compose(children);
         assertTrue ("ExpressionComposer.nullIsContaminating() and Expression.nullIsContaminating() should match",
-                    getComposer().nullIsContaminating() == expression.nullIsContaminating());
+                    (getComposer().getNullTreating() == NullTreating.CONTAMINATING) == expression.nullIsContaminating());
     }
     
     @OnlyIfNot("alreadyExc()")

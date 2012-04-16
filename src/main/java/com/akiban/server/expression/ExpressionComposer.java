@@ -39,6 +39,10 @@ import java.util.List;
  * @see com.akiban.server.service.functions.Scalar.
  */
 public interface ExpressionComposer {
+    public static enum NullTreating
+    {
+        IGNORED, CONTAMINATING, REMOVED
+    }
     /**
      * - Adjust input types, if needed
      * - Return the type of a composed expression when passed the given types.
@@ -71,8 +75,13 @@ public interface ExpressionComposer {
     
     /**
      * 
-     * @return whether one or more null arguments would make the top expression NULL
+     * @return IGNORED 
+     *                  If NULL operand(s) will simply be ignored
+     *         CONTAMINATING
+     *                  If NULL operand(s) will make this expression return NULL
+     *         REMOVED
+     *                  If NULL expression(s) should be removed (optimisation purpose)
      *         
      */
-    boolean nullIsContaminating();
+    NullTreating getNullTreating();
 }

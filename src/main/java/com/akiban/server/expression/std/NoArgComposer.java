@@ -47,10 +47,10 @@ abstract class NoArgComposer implements ExpressionComposer {
     }
     
     @Override
-    public boolean nullIsContaminating()
+    public NullTreating getNullTreating()
     {
         // NULL would be contaminating, if there were one.
-        return true;
+        return NullTreating.CONTAMINATING;
     }
     
     @Override

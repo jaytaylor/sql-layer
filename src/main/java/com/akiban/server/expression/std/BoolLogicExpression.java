@@ -128,9 +128,10 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
 
     
         @Override
-        public boolean nullIsContaminating() {
-            return false;
+        public NullTreating getNullTreating() {
+            return NullTreating.IGNORED;
         }
+        
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {

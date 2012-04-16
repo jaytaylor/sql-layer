@@ -78,9 +78,9 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return true;
+            return NullTreating.CONTAMINATING;
         }
     }
 

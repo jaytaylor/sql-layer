@@ -78,9 +78,9 @@ public class CoalesceExpression extends AbstractCompositeExpression {
         }
 
         @Override
-        public boolean nullIsContaminating()
+        public NullTreating getNullTreating()
         {
-            return false;
+            return NullTreating.IGNORED;
         }
     };
 
