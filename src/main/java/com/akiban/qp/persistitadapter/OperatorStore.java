@@ -101,12 +101,21 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             UserTable userTable = ais.getUserTable(oldRowData.getRowDefId());
             GroupTable groupTable = userTable.getGroup().getGroupTable();
 
-            TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+            final TableIndex index = userTable.getPrimaryKeyIncludingInternal().getIndex();
             assert index != null : userTable;
             UserTableRowType tableType = schema.userTableRowType(userTable);
             IndexRowType indexType = tableType.indexRowType(index);
-            IndexBound bound = new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData, this), index),
-                                              ConstantColumnSelector.ALL_ON);
+            ColumnSelector indexColumnSelector =
+                new ColumnSelector()
+                {
+                    public boolean includesColumn(int columnPosition)
+                    {
+                        return columnPosition < index.getKeyColumns().size();
+                    }
+                };
+            IndexBound bound =
+                new IndexBound(new NewRowBackedIndexRow(tableType, new LegacyRowWrapper(oldRowData, this), index),
+                               indexColumnSelector);
             IndexKeyRange range = IndexKeyRange.bounded(indexType, bound, true, bound, true);
 
             Operator indexScan = indexScan_Default(indexType, false, range);
