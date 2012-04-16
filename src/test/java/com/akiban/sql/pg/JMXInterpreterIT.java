@@ -34,6 +34,7 @@ import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
+import com.akiban.sql.pg.JMXInterpreter.JmxAdapter;
 import junit.framework.Assert;
 
 import org.junit.Test;
@@ -41,7 +42,7 @@ import org.junit.Test;
 /* test class for JMXIterpreter, which provides a JMX interface to the server in the test framework  */
 public class JMXInterpreterIT extends PostgresServerYamlITBase {
 
-    private static final String SERVER_JMX_PORT = "8082";
+    private static final int SERVER_JMX_PORT = 8082;
     private static final String SERVER_ADDRESS = "localhost";
 
     @Test
@@ -49,12 +50,11 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
         JMXInterpreter conn = null;
         try {
             conn = new JMXInterpreter(true);
-            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
+            conn.ensureConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
             System.out.println(conn.serviceURL);
             Assert.assertNotNull(conn);
             
-            final MBeanServerConnection mbs = conn.getConnector()
-                    .getMBeanServerConnection();
+            final MBeanServerConnection mbs = conn.getAdapter().getConnection();
             MBeanInfo info = null;
             ObjectName mxbeanName = null;
             try {
@@ -80,9 +80,6 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
                   System.out.println("  "+ops[x].getSignature()[a].getDescription()+":"+ops[x].getSignature()[a].getType());
                 }
             }
-        } catch (IOException e) {
-            e.printStackTrace();
-            Assert.fail(e.getMessage());   
         } finally {
             if (conn != null) {
                 conn.close();
