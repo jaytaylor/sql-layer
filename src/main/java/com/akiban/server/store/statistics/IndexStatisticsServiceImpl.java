@@ -170,7 +170,6 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                                       Collection<? extends Index> indexes) {
         final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
-            boolean success = false;
             try {
                 IndexStatistics indexStatistics = 
                     storeStats.computeIndexStatistics(session, index);
@@ -178,14 +177,16 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                     storeStats.storeIndexStatistics(session, index, indexStatistics);
                     updates.put(index, indexStatistics);
                 }
-                success = true;
             }
             catch (PersistitException ex) {
+                log.error("error while analyzing " + index, ex);
                 throw new PersistitAdapterException(ex);
             }
-            finally {
-                if (!success)
-                    log.error("error while analyzing {}", index);
+            catch (RuntimeException e) {
+                log.error("error while analyzing " + index, e);
+            }
+            catch (Error e) {
+                log.error("error while analyzing " + index, e);
             }
         }
         DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
