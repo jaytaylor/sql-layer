@@ -1667,7 +1667,8 @@ class YamlTester {
             if (output != null) {
                 if (result == null)
                     fail("found null; expected: " + output);
-                List<Object> actuals = new ArrayList<Object>(Arrays.asList(result.toString().split("\\n")));                int highestCommon = Math.min(actuals.size(), output.size());
+                List<Object> actuals = new ArrayList<Object>(Arrays.asList(result.toString().split("\\n")));
+                int highestCommon = Math.min(actuals.size(), output.size());
                 for (int i = 0; i < highestCommon; ++i) {
                     if (output.get(i) == DontCare.INSTANCE)
                         actuals.set(i, DontCare.INSTANCE);
