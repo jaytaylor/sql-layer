@@ -6,7 +6,7 @@
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheCapacity
-- output: [[100]]
+- output: [['100']]
 ---
 - CreateTable: t (id int not null, s varchar(10))
 ---
@@ -15,11 +15,11 @@
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
-- output: [[0]]
+- output: [['0']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-- output: [[0]]
+- output: [['0']]
 ---
 - Statement: INSERT INTO t VALUES(1, 'fred'), (2, 'barney')
 ---
@@ -36,12 +36,12 @@
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
 # INSERT, EXPLAIN
-- output: [[2]]
+- output: [['2']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
 # EXPLAIN x 2
-- output: [[2]]
+- output: [['2']]
 ---
 # AIS change
 - Statement: CREATE INDEX t_s ON t(s)
@@ -54,11 +54,11 @@
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
 # CREATE, EXPLAIN
-- output: [[4]]
+- output: [['4']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-- output: [[2]]
+- output: [['2']]
 ---
 # Different compiler mode
 - Statement: SET cbo TO 'true'
@@ -71,11 +71,11 @@
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheMisses
 # SET, EXPLAIN
-- output: [[6]]
+- output: [['6']]
 ---
 - JMX: com.akiban:type=PostgresServer
 - get: StatementCacheHits
-- output: [[2]]
+- output: [['2']]
 ---
 - Statement: DROP INDEX t_s
 ---
