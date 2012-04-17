@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import static com.akiban.util.AssertUtils.assertCollectionEquals;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -68,6 +69,7 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import com.akiban.util.Strings;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -1621,8 +1623,12 @@ class YamlTester {
             }
             assertNull("The output attribute must not appear more than once",
                     output);
-            List<Object> row = rows(value, "output value").get(0);
-            output = (ArrayList<Object>) row;
+            List<List<Object>> rows = rows(value, "output value");
+            output = new ArrayList<Object>(rows.size());
+            for (List<?> row : rows) {
+                assertEquals("number of entries in row " + row, 1, row.size());
+                output.add(row.get(0));
+            }
         }
 
         public void execute() {
@@ -1659,14 +1665,15 @@ class YamlTester {
             }
             
             if (output != null) {
-                
-                String[] output_list = result.toString().split("\n");
-                for (int x=0;x < output.size();x++) {
-                    if (!expected(output.get(x), output_list[x])) {
-                        fail("Error: '" + output.get(x).toString()+"' does not equal '"+output_list[x]+"'");
-                        System.out.println("Actual results: "+result.toString());
-                    }
+                if (result == null)
+                    fail("found null; expected: " + output);
+                List<Object> actuals = new ArrayList<Object>(Arrays.asList(result.toString().split("\\n")));
+                int highestCommon = Math.min(actuals.size(), output.size());
+                for (int i = 0; i < highestCommon; ++i) {
+                    if (output.get(i) == DontCare.INSTANCE)
+                        actuals.set(i, DontCare.INSTANCE);
                 }
+                assertCollectionEquals(output, actuals);
             }
         }
 
