@@ -1,0 +1,14 @@
+SelectQuery@6db1694e
+  ResultSet@1a78b825[cid, name]
+    MapJoin@6281635b()
+      Flatten@1ca21de3(customers)
+        Select@575830c4[customers.name == foo]
+          GroupScan@5ee9c0a8(Group(customers -> test._akiban_customers))
+            TableSource@6dc9b6c1(customers - TableGroup@44678646(customers))
+      Project@6b8192b6[customers.cid, parent.name]
+        Select@7c721de[isNull(parent.name)]
+          NullIfEmpty@68a080bf
+            Flatten@164b143(parent)
+              AncestorLookup@79b1a66b(parent -> [parent])
+                SingleIndexScan@7e24f937(Index(test.parent.PRIMARY[IndexColumn(id)]), NONE, =customers.cid)
+                TableSource@55fd7136(parent - TableGroup@2d65ca94(parent))
