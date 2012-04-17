@@ -1,8 +1,0 @@
-SelectQuery@6e99175d
-  ResultSet@4cd1365[cid, name]
-    Project@33b44e59[customers.cid, parent.name]
-      Select@283cf94[isNull(parent.name)]
-        MapJoin@56dfb22b(LEFT)
-          SingleIndexScan@782a519b(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =foo, rows = 1, cost = 6.86220)
-          Select@5083658a[parent.id == customers.cid]
-            SingleIndexScan@627f7051(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 1, cost = 7.99100)

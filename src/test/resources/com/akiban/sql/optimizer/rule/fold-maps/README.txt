@@ -1,7 +1,5 @@
 aggregate: Aggregation with nested loops
 
-left-outer-index-usage: Outer join with a later condition that could be incorrectly serviced by index scan (bug980957)
-
 outer: Outer join across groups.
 
 outer-join-condition: Outer join with another condition.
