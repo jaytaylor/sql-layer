@@ -9,6 +9,6 @@ SelectQuery@862041
                 Select@ede19e[]
                   AggregateSource@17777a1(SORT,[c.name],[])
                     Select@4f12c2[]
-                      TableGroupJoinTree@27daad50(TableGroup@311496a4(customers), c INNER a - IndexScan@12c08c7(Index(user.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 15, cost = 397.470))
+                      TableGroupJoinTree@27daad50(TableGroup@311496a4(customers), c INNER a - IndexScan@12c08c7(Index(test.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 15, cost = 397.470))
                         TableSource@144569b(c - TableGroup@1900f17(customers))
-                          TableSource@191e0eb(a - TableGroupJoin@ced1a8(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+                          TableSource@191e0eb(a - TableGroupJoin@ced1a8(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))

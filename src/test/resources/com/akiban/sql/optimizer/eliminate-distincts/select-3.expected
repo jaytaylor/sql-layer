@@ -1,1 +1,1 @@
-SELECT user.parent.name AS name, user.child.name AS name FROM user.parent, user.child WHERE (user.parent.id = user.child.pid) AND TRUE
+SELECT test.parent.name AS name, test.child.name AS name FROM test.parent, test.child WHERE (test.parent.id = test.child.pid) AND TRUE

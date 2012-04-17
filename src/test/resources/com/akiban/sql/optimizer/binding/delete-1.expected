@@ -13,7 +13,7 @@ resultSet:
 		null
 		correlation Name: null
 		null
-		userData: user.t1
+		userData: test.t1
 	whereClause: 		
 		com.akiban.sql.parser.BinaryRelationalOperatorNode@5557c2bd
 		operator: =
@@ -32,4 +32,4 @@ resultSet:
 targetTableName: 	
 	com.akiban.sql.parser.TableName@a5d
 	t1
-	userData: user.t1
+	userData: test.t1

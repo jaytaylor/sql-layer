@@ -1,1 +1,1 @@
-SELECT user.parent.name AS name, user.child.name AS name FROM user.parent INNER JOIN user.child ON ((user.parent.id = user.child.pid) AND TRUE)
+SELECT test.parent.name AS name, test.child.name AS name FROM test.parent INNER JOIN test.child ON ((test.parent.id = test.child.pid) AND TRUE)
