@@ -109,13 +109,24 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return tables;
     }
 
+    /**
+     * @param boundTables Tables already bound by the outside
+     * @param queryJoins Joins that come from the query, or part of the query, that an index is being searched for.
+     *                   Will generally, but not in the case of a sub-query, match <code>joins</code>.
+     * @param joins Joins that apply to this part of the query.
+     * @param outsideJoins All joins for this query.
+     * @param sortAllowed <code>true</code> if sorting is allowed
+     *
+     * @return Full list of all usable condition sources.
+     */
     public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
+                                             Collection<JoinOperator> queryJoins,
                                              Collection<JoinOperator> joins,
                                              Collection<JoinOperator> outsideJoins,
                                              boolean sortAllowed) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
-        setJoinConditions(joins);
+        setJoinConditions(queryJoins, joins);
         updateRequiredColumns(joins, outsideJoins);
         return conditionSources;
     }
@@ -136,9 +147,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return false;
     }
     
-    public void setJoinConditions(Collection<JoinOperator> joins) {
+    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins) {
         conditionSources = new ArrayList<ConditionList>();
-        if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(joins)) {
+        if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
             conditionSources.add(queryGoal.getWhereConditions());
         }
         for (JoinOperator join : joins) {
