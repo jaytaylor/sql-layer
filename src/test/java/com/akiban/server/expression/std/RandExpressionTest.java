@@ -26,7 +26,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
@@ -37,7 +36,7 @@ import org.junit.Test;
 
 import static org.junit.Assert.*;
 
-public class RandExpressionTest extends ComposedExpressionTestBase
+public class RandExpressionTest
 {
     
     private static List<Double> getRand (long seed, int size)
@@ -67,24 +66,4 @@ public class RandExpressionTest extends ComposedExpressionTestBase
         doTest(1,10);
         doTest(6,2);
     }
-    
-    
-    @Override
-    protected CompositionTestInfo getTestInfo()
-    {
-        return new CompositionTestInfo(1, AkType.LONG, false);
-    }
-
-    @Override
-    protected ExpressionComposer getComposer()
-    {
-        return RandExpression.COMPOSER;
-    }
-
-    @Override
-    protected boolean alreadyExc()
-    {
-        return false;
-    }
-    
 }
