@@ -843,8 +843,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         Collection<ConditionExpression> unhandledConditions = 
             new HashSet<ConditionExpression>(conditions);
-        if (index.getGroupConditions() != null)
-            unhandledConditions.removeAll(index.getGroupConditions());
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             CostEstimate select = costEstimator.costSelect(unhandledConditions,
                                                            cost.getRowCount());
