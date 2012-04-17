@@ -9,7 +9,7 @@
 ---
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
-- params: ['user']
+- params: ['test']
 - output:
     - ['']
 ---
@@ -19,7 +19,7 @@
 ---
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
-- params: ['user']
+- params: ['test']
 - output:
     - ['']
 ---
@@ -27,7 +27,7 @@
 ---
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
-- params: ['user']
+- params: ['test']
 - output:
     - ["Index: PRIMARY"]
     - ["RowCount: 100"]
@@ -170,7 +170,7 @@
 ---
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
-- params: ['user']
+- params: ['test']
 - output:
     - ["Index: name_address"]
     - ["RowCount: 200"]
