@@ -1,14 +1,14 @@
-SelectQuery@53847a91
-  ResultSet@1e8af06d[name, order_date]
-    Project@33ae93c5[c.name, x[1]]
-      Select@a678505[]
-        JoinNode@54f21f54(LEFT/NESTED_LOOPS)
-          TableGroupJoinTree@1e05c314(TableGroup@28ec5359(customers), c - IndexScan@54a15d(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))
-            TableSource@34f5b235(c - TableGroup@28ec5359(customers))
-          SubquerySource@6e86d0bc(x)
-            Subquery@124e1099
-              ResultSet@4323b632[cid, order_date]
-                Project@63e6ef5d[orders.cid, orders.order_date]
-                  Select@5d8eaf0d[]
-                    TableGroupJoinTree@4ad8d990(TableGroup@bdd6a16(customers), orders - IndexScan@755fd06f(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, =2011-01-01, =c.cid, rows = 1, cost = 6.09200))
-                      TableSource@6dffcd26(orders - TableGroup@bdd6a16(customers))
+SelectQuery@2b8f1492
+  ResultSet@3e8f9395[name, order_date]
+    Project@44223b49[c.name, x[1]]
+      Select@23625891[]
+        JoinNode@5b6613be(LEFT/NESTED_LOOPS)
+          TableGroupJoinTree@79b25781(TableGroup@a9a4dd3(customers), c - SingleIndexScan@186b5d15(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))
+            TableSource@329b33fe(c - TableGroup@a9a4dd3(customers))
+          SubquerySource@6b7282a6(x)
+            Subquery@da4a9bd
+              ResultSet@3583be4a[cid, order_date]
+                Project@3d4cbf87[orders.cid, orders.order_date]
+                  Select@5c4207b8[orders.order_date == 2011-01-01]
+                    TableGroupJoinTree@7308f059(TableGroup@30ac1a39(customers), orders - SingleIndexScan@72edad25(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =c.cid, rows = 10, cost = 76.0860))
+                      TableSource@3e2be06d(orders - TableGroup@30ac1a39(customers))
