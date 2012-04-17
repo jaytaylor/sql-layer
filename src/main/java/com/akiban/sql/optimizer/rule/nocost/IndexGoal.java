@@ -431,7 +431,8 @@ public class IndexGoal implements Comparator<IndexScan>
         SingleIndexScan bestIndex = null;
         // If this table is the optional part of a LEFT join, can
         // still consider group indexes to it, but not single table
-        // indexes on it.
+        // indexes on it. WHERE conditions are removed before this
+        // is called, see IndexPicker#determineIndexGoal().
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
                 SingleIndexScan candidate = new SingleIndexScan(index, table);

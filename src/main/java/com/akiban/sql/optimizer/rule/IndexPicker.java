@@ -129,19 +129,28 @@ public class IndexPicker extends BaseRule
             Sort ordering = null;
             AggregateSource grouping = null;
             Project projectDistinct = null;
+            boolean isOuterJoin = false;
             while (true) {
                 input = input.getOutput();
                 if (!(input instanceof Joinable))
                     break;
                 if (input instanceof JoinNode) {
-                    ConditionList conds = ((JoinNode)input).getJoinConditions();
+                    JoinNode joinNode = (JoinNode)input;
+                    ConditionList conds = joinNode.getJoinConditions();
                     if ((conds != null) && !conds.isEmpty())
                         conditionSources.add(conds);
+
+                    switch (joinNode.getJoinType()) {
+                        case LEFT:
+                        case RIGHT:
+                        case FULL_OUTER:
+                            isOuterJoin = true;
+                    }
                 }
             }
             if (input instanceof Select) {
                 ConditionList conds = ((Select)input).getConditions();
-                if (!conds.isEmpty()) {
+                if (!conds.isEmpty() && !isOuterJoin) {
                     conditionSources.add(conds);
                 }
             }

@@ -123,11 +123,24 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     public void setBoundTables(Set<ColumnSource> boundTables) {
         this.boundTables = boundTables;
     }
+
+    private static boolean hasOuterJoin(Collection<JoinOperator> joins) {
+        for (JoinOperator joinOp : joins) {
+            switch (joinOp.getJoinType()) {
+                case LEFT:
+                case RIGHT:
+                case FULL_OUTER:
+                    return true;
+            }
+        }
+        return false;
+    }
     
     public void setJoinConditions(Collection<JoinOperator> joins) {
         conditionSources = new ArrayList<ConditionList>();
-        if (queryGoal.getWhereConditions() != null)
+        if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(joins)) {
             conditionSources.add(queryGoal.getWhereConditions());
+        }
         for (JoinOperator join : joins) {
             ConditionList joinConditions = join.getJoinConditions();
             if (joinConditions != null)
@@ -670,7 +683,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         // Can only consider single table indexes when table is not
         // nullable (required).  If table is the optional part of a
         // LEFT join, can still consider compatible LEFT / RIGHT group
-        // indexes, below.
+        // indexes, below. WHERE conditions are removed before this is
+        // called, see GroupIndexGoal#setJoinConditions().
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
                 SingleIndexScan candidate = new SingleIndexScan(index, table);
