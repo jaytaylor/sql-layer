@@ -97,7 +97,7 @@ case "$1" in
               log_failure_msg "Shutdown Akiban"
               ;;
             esac
-            exit ${retval}
+            exit 1
         fi
         echo -n "Shutdown Akiban "
         su $AKIBAN_OWNR -c "kill `cat $pid_file`"
