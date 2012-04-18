@@ -158,7 +158,7 @@ class Map_NestedLoops extends Operator
         {
             TAP_OPEN.in();
             try {
-                // CursorLifecycle.checkIdle(this);
+                CursorLifecycle.checkIdle(this);
                 this.outerInput.open();
                 this.closed = false;
             } finally {
@@ -171,7 +171,7 @@ class Map_NestedLoops extends Operator
         {
             TAP_NEXT.in();
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row outputRow = null;
                 while (!closed && outputRow == null) {
@@ -201,7 +201,7 @@ class Map_NestedLoops extends Operator
         @Override
         public void close()
         {
-            // CursorLifecycle.checkIdleOrActive(this);
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 innerInput.close();
                 closeOuter();
