@@ -45,7 +45,7 @@ class SorterToCursorAdapter implements Cursor
     @Override
     public void open()
     {
-        // CursorLifecycle.checkIdle(this);
+        CursorLifecycle.checkIdle(this);
         try {
             sorter = new Sorter(context, input, rowType, ordering, sortOption, loadTap);
             cursor = sorter.sort();
@@ -58,14 +58,14 @@ class SorterToCursorAdapter implements Cursor
     @Override
     public Row next()
     {
-        // CursorLifecycle.checkIdleOrActive(this);
+        CursorLifecycle.checkIdleOrActive(this);
         return cursor == null ? null : cursor.next();
     }
 
     @Override
     public void close()
     {
-        // CursorLifecycle.checkIdleOrActive(this);
+        CursorLifecycle.checkIdleOrActive(this);
         if (cursor != null) {
             cursor.close();
             // Destroy here because Sorters can only be used once.

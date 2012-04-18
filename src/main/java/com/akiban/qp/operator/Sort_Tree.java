@@ -160,7 +160,7 @@ class Sort_Tree extends Operator
         {
             TAP_OPEN.in();
             try {
-                // CursorLifecycle.checkIdle(this);
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 output = adapter().sort(context, input, sortType, ordering, sortOption, TAP_LOAD);
                 output.open();
@@ -175,7 +175,7 @@ class Sort_Tree extends Operator
             Row row = null;
             TAP_NEXT.in();
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 if (!input.isActive()) {
                     row = output.next();
@@ -192,7 +192,7 @@ class Sort_Tree extends Operator
         @Override
         public void close()
         {
-            // CursorLifecycle.checkIdleOrActive(this);
+            CursorLifecycle.checkIdleOrActive(this);
             if (output != null) {
                 input.close();
                 output.close();

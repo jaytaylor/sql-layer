@@ -136,7 +136,7 @@ class Count_TableStatus extends Operator
         {
             TAP_OPEN.in();
             try {
-                // CursorLifecycle.checkIdle(this);
+                CursorLifecycle.checkIdle(this);
                 pending = true;
             } finally {
                 TAP_OPEN.out();
@@ -148,7 +148,7 @@ class Count_TableStatus extends Operator
         {
             TAP_NEXT.in();
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 if (pending) {
                     long rowCount = adapter().rowCount(tableType);
@@ -166,7 +166,7 @@ class Count_TableStatus extends Operator
         @Override
         public void close()
         {
-            // CursorLifecycle.checkIdleOrActive(this);
+            CursorLifecycle.checkIdleOrActive(this);
             pending = false;
         }
 

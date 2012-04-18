@@ -30,20 +30,16 @@ public final class CursorLifecycle
 {
     public static void checkIdle(CursorBase cursor)
     {
-/*
         if (!cursor.isIdle()) {
             throw new WrongStateException(IDLE, cursor);
         }
-*/
     }
 
     public static void checkIdleOrActive(CursorBase cursor)
     {
-/*
         if (cursor.isDestroyed()) {
             throw new WrongStateException(IDLE_OR_ACTIVE, cursor);
         }
-*/
     }
 
     private static String cursorState(CursorBase cursor)
