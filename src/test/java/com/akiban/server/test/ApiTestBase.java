@@ -276,6 +276,11 @@ public class ApiTestBase {
         ddl(); // loads up the schema manager et al
     }
 
+    public final Session createNewSession()
+    {
+        return sm.getSessionService().createSession();
+    }
+
     public final void safeRestartTestServices() throws Exception {
         final String datapath = serviceManager().getTreeService().getDataPath();
         Thread.sleep(1000);  // Let journal flush
