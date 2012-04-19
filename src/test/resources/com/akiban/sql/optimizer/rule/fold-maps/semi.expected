@@ -1,0 +1,21 @@
+SelectQuery@1628bf85
+  ResultSet@4d35c020[order_date]
+    Project@3d89c7a[orders.order_date]
+      Select@2090f8f[or(EXISTS(Subquery@6189ed86),orders.order_date == Cast(0000-00-00 AS DATE NOT NULL))]
+        Flatten@1eb08bf7(orders)
+          GroupScan@58b514de(Group(customers -> test._akiban_customers))
+            TableSource@26492a71(orders - TableGroup@586d2851(customers))
+
+Subquery@6189ed86
+  MapJoin@66720b31()
+    SingleIndexScan@493cf282(Index(test.child.PRIMARY[IndexColumn(id)]), covering/NONE)
+    Select@10e4fb96[ANY(Subquery@637290de)]
+      Flatten@40555a5e(items)
+        Select@239ff251[items.oid == orders.oid]
+          AncestorLookup@59ddb61c(items -> [items])
+            SingleIndexScan@6adf165b(Index(test.items.PRIMARY[IndexColumn(iid)]), NONE, =child.id)
+            TableSource@2dfdc7a3(items - TableGroup@586d2851(customers))
+
+Subquery@637290de
+  Project@768511d3[items.sku == VALUES[0]]
+    ExpressionsSource@1a55706f([[1234], [4567]])
