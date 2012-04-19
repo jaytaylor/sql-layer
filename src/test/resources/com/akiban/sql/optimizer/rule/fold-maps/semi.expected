@@ -1,21 +1,21 @@
-SelectQuery@1628bf85
-  ResultSet@4d35c020[order_date]
-    Project@3d89c7a[orders.order_date]
-      Select@2090f8f[or(EXISTS(Subquery@6189ed86),orders.order_date == Cast(0000-00-00 AS DATE NOT NULL))]
-        Flatten@1eb08bf7(orders)
-          GroupScan@58b514de(Group(customers -> test._akiban_customers))
-            TableSource@26492a71(orders - TableGroup@586d2851(customers))
+SelectQuery@7bd349e2
+  ResultSet@6c97d3f0[order_date]
+    Project@63db6942[orders.order_date]
+      Select@59db9f45[or(EXISTS(Subquery@61b59919),orders.order_date == Cast(0000-00-00 AS DATE NOT NULL))]
+        Flatten@7e9f5cc(orders)
+          GroupScan@2b8ca663(Group(customers -> test._akiban_customers))
+            TableSource@71257687(orders - TableGroup@7297e3a5(customers))
 
-Subquery@6189ed86
-  MapJoin@66720b31()
-    SingleIndexScan@493cf282(Index(test.child.PRIMARY[IndexColumn(id)]), covering/NONE)
-    Select@10e4fb96[ANY(Subquery@637290de)]
-      Flatten@40555a5e(items)
-        Select@239ff251[items.oid == orders.oid]
-          AncestorLookup@59ddb61c(items -> [items])
-            SingleIndexScan@6adf165b(Index(test.items.PRIMARY[IndexColumn(iid)]), NONE, =child.id)
-            TableSource@2dfdc7a3(items - TableGroup@586d2851(customers))
-
-Subquery@637290de
-  Project@768511d3[items.sku == VALUES[0]]
-    ExpressionsSource@1a55706f([[1234], [4567]])
+Subquery@61b59919
+  MapJoin@1bb0889a()
+    Flatten@11082823(items)
+      Select@4b6c06dd[items.oid == orders.oid]
+        AncestorLookup@2e831a91(items -> [items])
+          SingleIndexScan@2c1533c8(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234)
+          TableSource@690bc995(items - TableGroup@7297e3a5(customers))
+    Select@14db38a4[]
+      Flatten@21453d72(child)
+        Select@2136bdda[child.name != Astro]
+          AncestorLookup@48c5186e(child -> [child])
+            SingleIndexScan@3a87d472(Index(test.child.PRIMARY[IndexColumn(id)]), NONE, =items.iid)
+            TableSource@4df8b14(child - TableGroup@213c2d7f(parent))
