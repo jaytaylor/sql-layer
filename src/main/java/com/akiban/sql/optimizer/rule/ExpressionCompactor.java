@@ -37,7 +37,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 public class ExpressionCompactor extends BaseRule 
-                                 implements PlanVisitor, ExpressionRewriteVisitor
 {
     private static final Logger logger = LoggerFactory.getLogger(ExpressionCompactor.class);
 
@@ -48,41 +47,57 @@ public class ExpressionCompactor extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        plan.accept(this);
+        new Compactor().compact(plan);
     }
 
-    @Override
-    public boolean visitEnter(PlanNode n) {
-        return visit(n);
+    static class Compactor implements PlanVisitor, ExpressionRewriteVisitor {
+        Collection<BasePlanWithInput> toRemove = new ArrayList<BasePlanWithInput>();
+
+        public void compact(PlanContext plan) {
+            plan.accept(this);
+            for (BasePlanWithInput n : toRemove) {
+                n.getOutput().replaceInput(n, n.getInput());
+            }
+        }
+
+        @Override
+            public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+            public boolean visitLeave(PlanNode n) {
+            if (n instanceof Select) {
+                Select select = (Select)n;
+                ConditionList conditions = select.getConditions();
+                compactConditions(n, conditions);
+                if (conditions.isEmpty())
+                    toRemove.add(select);
+            }
+            return true;
+        }
+
+        @Override
+            public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        @Override
+            public boolean visitChildrenFirst(ExpressionNode expr) {
+            return true;
+        }
+
+        @Override
+            public ExpressionNode visit(ExpressionNode expr) {
+            if (expr instanceof AnyCondition)
+                return anyCondition((AnyCondition)expr);
+            if (expr instanceof IfElseExpression)
+                compactConditions(null, ((IfElseExpression)expr).getTestConditions());
+            return expr;
+        }
     }
 
-    @Override
-    public boolean visitLeave(PlanNode n) {
-        if (n instanceof Select)
-            compactConditions(n, ((Select)n).getConditions());
-        return true;
-    }
-
-    @Override
-    public boolean visit(PlanNode n) {
-        return true;
-    }
-
-    @Override
-    public boolean visitChildrenFirst(ExpressionNode expr) {
-        return true;
-    }
-
-    @Override
-    public ExpressionNode visit(ExpressionNode expr) {
-        if (expr instanceof AnyCondition)
-            return anyCondition((AnyCondition)expr);
-        if (expr instanceof IfElseExpression)
-            compactConditions(null, ((IfElseExpression)expr).getTestConditions());
-        return expr;
-    }
-
-    protected void compactConditions(PlanNode node, ConditionList conditions) {
+    protected static void compactConditions(PlanNode node, ConditionList conditions) {
         if (conditions.size() <= 1)
             return;
         
@@ -173,7 +188,7 @@ public class ExpressionCompactor extends BaseRule
         return 5;
     }
         
-    protected ExpressionNode anyCondition(AnyCondition any) {
+    protected static ExpressionNode anyCondition(AnyCondition any) {
         Subquery subquery = any.getSubquery();
         PlanNode input = subquery.getInput();
         if (!(input instanceof Project))

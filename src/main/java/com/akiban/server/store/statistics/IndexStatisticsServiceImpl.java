@@ -44,6 +44,8 @@ import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.StringWriter;
@@ -54,6 +56,8 @@ import java.io.IOException;
 
 public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
 {
+    private static final Logger log = LoggerFactory.getLogger(IndexStatisticsServiceImpl.class);
+
     private final PersistitStore store;
     private final TreeService treeService;
     // Following couple only used by JMX method, where there is no context.
@@ -175,7 +179,16 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 }
             }
             catch (PersistitException ex) {
+                log.error("error while analyzing " + index, ex);
                 throw new PersistitAdapterException(ex);
+            }
+            catch (RuntimeException e) {
+                log.error("error while analyzing " + index, e);
+                throw e;
+            }
+            catch (Error e) {
+                log.error("error while analyzing " + index, e);
+                throw e;
             }
         }
         DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {

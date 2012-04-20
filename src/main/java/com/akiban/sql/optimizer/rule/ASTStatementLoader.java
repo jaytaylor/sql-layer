@@ -296,17 +296,25 @@ public class ASTStatementLoader extends BaseRule
             if (selectNode.hasWindows())
                 throw new UnsupportedSQLException("WINDOW", selectNode);
         
-            if (selectNode.isDistinct()) {
-                Project project = new Project(query, projects);
-                query = project;
-                if (!sorts.isEmpty()) {
-                    query = new Sort(query, sortsForDistinct(sorts, project));
-                    query = new Distinct(query, Distinct.Implementation.EXPLICIT_SORT);
+            do_distinct:
+            {
+                // Distinct puts the Project before any Sort so as to only do one sort.
+                if (selectNode.isDistinct()) {
+                    Project project = new Project(query, projects);
+                    if (sorts.isEmpty()) {
+                        query = new Distinct(project);
+                        break do_distinct;
+                    }
+                    else if (adjustSortsForDistinct(sorts, project)) {
+                        query = new Sort(project, sorts);
+                        query = new Distinct(query, Distinct.Implementation.EXPLICIT_SORT);
+                        break do_distinct;
+                    }
+                    else {
+                        query = new AggregateSource(query, new ArrayList<ExpressionNode>((projects)));
+                        // Don't break: treat like non-distinct case.
+                    }
                 }
-                else
-                    query = new Distinct(query);
-            }
-            else {
                 if (!sorts.isEmpty()) {
                     query = new Sort(query, sorts);
                 }
@@ -962,18 +970,23 @@ public class ASTStatementLoader extends BaseRule
         /** SELECT DISTINCT with sorting sorts by an input Project and
          * adds extra columns so as to only sort once for both
          * Distinct and the requested ordering.
+         * Returns <code>false</code> if this is not possible and
+         * DISTINCT should be turned into GROUP BY.
          */
-        protected List<OrderByExpression> sortsForDistinct(List<OrderByExpression> sorts,
-                                                           Project project)
+        protected boolean adjustSortsForDistinct(List<OrderByExpression> sorts,
+                                                 Project project)
                 throws StandardException {
             List<ExpressionNode> exprs = project.getFields();
             BitSet used = new BitSet(exprs.size());
             for (OrderByExpression orderBy : sorts) {
                 ExpressionNode expr = orderBy.getExpression();
                 int idx = exprs.indexOf(expr);
-                if (idx < 0)
+                if (idx < 0) {
+                    if (isDistinctSortNotSelectGroupBy())
+                        return false;
                     throw new UnsupportedSQLException("SELECT DISTINCT requires that ORDER BY expressions be in the select list",
                                                       expr.getSQLsource());
+                }
                 ExpressionNode cexpr = new ColumnExpression(project, idx,
                                                             expr.getSQLtype(),
                                                             expr.getSQLsource());
@@ -991,7 +1004,15 @@ public class ASTStatementLoader extends BaseRule
                     sorts.add(orderBy);
                 }
             }
-            return sorts;
+            return true;
+        }
+
+        private Boolean distinctSortNotSelectGroupBySetting = null;
+
+        protected boolean isDistinctSortNotSelectGroupBy() {
+            if (distinctSortNotSelectGroupBySetting == null)
+                distinctSortNotSelectGroupBySetting = Boolean.valueOf(rulesContext.getProperty("distinctSortNotSelectGroupBy", "false"));
+            return distinctSortNotSelectGroupBySetting;
         }
 
         /** LIMIT / OFFSET */

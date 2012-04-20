@@ -520,6 +520,33 @@ public class Sort_TreeIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            sort_Tree(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(customerRowType)),
+                customerRowType,
+                ordering(field(customerRowType, 1), true),
+                SortOption.PRESERVE_DUPLICATES);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(customerRowType, 2L, "foundation"),
+                    row(customerRowType, 4L, "highland"),
+                    row(customerRowType, 5L, "matrix"),
+                    row(customerRowType, 1L, "northbridge"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     private Ordering ordering(Object... objects)
     {
         Ordering ordering = API.ordering();

@@ -5,13 +5,13 @@ SelectQuery@14fdb00d
       MapJoin@48bd6a5f()
         Flatten@b92a848(customers INNER orders INNER items)
           AncestorLookup@496614e7(items -> [customers, orders, items])
-            IndexScan@4ce66f56(Index(user.items.sku[IndexColumn(sku)]), NONE, =VALUES[0])
+            IndexScan@4ce66f56(Index(test.items.sku[IndexColumn(sku)]), NONE, =VALUES[0])
             TableSource@5749b290(customers - TableGroup@2c979e8b(customers))
-            TableSource@276a38b5(orders - TableGroupJoin@1629ce8c(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@4e4ee70b(items - TableGroupJoin@12b754b2(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+            TableSource@276a38b5(orders - TableGroupJoin@1629ce8c(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@4e4ee70b(items - TableGroupJoin@12b754b2(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
         Project@3a56860b[orders.order_date, items.sku, items.quan, child.name]
           Select@67a5a19[]
             Flatten@42197bb7(child)
               BranchLookup@17094d48(parent -> parent)
-                IndexScan@63b0bdc8(Index(user.parent.name[IndexColumn(name)]), NONE, =customers.name)
-                TableSource@761eec35(child - TableGroupJoin@687bc899(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+                IndexScan@63b0bdc8(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name)
+                TableSource@761eec35(child - TableGroupJoin@687bc899(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))

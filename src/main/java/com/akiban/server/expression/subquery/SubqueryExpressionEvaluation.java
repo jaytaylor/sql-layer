@@ -35,7 +35,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
 
-public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluation {
+public abstract class SubqueryExpressionEvaluation extends ExpressionEvaluation.Base {
 
     @Override
     public void of(QueryContext context) {
@@ -61,6 +61,14 @@ public abstract class SubqueryExpressionEvaluation implements ExpressionEvaluati
         }
         finally {
             cursor.close();
+        }
+    }
+
+    @Override
+    public void destroy()
+    {
+        if (cursor != null) {
+            cursor.destroy();
         }
     }
 

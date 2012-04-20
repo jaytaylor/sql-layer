@@ -339,7 +339,7 @@ public abstract class ComposedExpressionTestBase {
         }
     }
 
-    private static class DummyExpressionEvaluation implements ExpressionEvaluation {
+    private static class DummyExpressionEvaluation extends ExpressionEvaluation.Base {
         @Override
         public void of(Row row) {
             missingRequirements.remove(ExpressionAttribute.NEEDS_ROW);

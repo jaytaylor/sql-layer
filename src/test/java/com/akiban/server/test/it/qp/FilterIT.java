@@ -253,6 +253,9 @@ public class FilterIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    // No test for cursor lifecycle needed -- tested in several other operator ITs, including
+    // GroupScanIT.testCursor.
+
     private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
     {
         Set<UserTableRowType> keepTypes = type.schema().userTableTypes();

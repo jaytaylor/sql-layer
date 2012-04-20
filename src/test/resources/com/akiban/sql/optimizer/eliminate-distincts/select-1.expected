@@ -1,1 +1,1 @@
-SELECT user.parent.name AS name FROM user.parent
+SELECT test.parent.name AS name FROM test.parent

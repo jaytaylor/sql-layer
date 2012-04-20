@@ -168,6 +168,41 @@ public class SelectIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            select_HKeyOrdered(
+                groupScan_Default(coi), itemRowType, itemOidEQ(12L));
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(customerRowType, 1L, "northbridge"),
+                    row(orderRowType, 11L, 1L, "ori"),
+                    row(orderRowType, 12L, 1L, null),
+                    row(itemRowType, 121L, 12L),
+                    row(itemRowType, 122L, 12L),
+                    row(addressRowType, 1001L, 1L, "111 1111 st"),
+                    row(addressRowType, 1002L, 1L, null),
+                    row(customerRowType, 2L, "foundation"),
+                    row(orderRowType, 21L, 2L, "tom"),
+                    row(orderRowType, 22L, 2L, null),
+                    row(addressRowType, 2001L, 2L, "222 1111 st"),
+                    row(addressRowType, 2002L, 2L, null),
+                    row(orderRowType, 31L, 3L, "peter"),
+                    row(customerRowType, 4L, "highland"),
+                    row(addressRowType, 4001L, 4L, "444 1111 st"),
+                    row(addressRowType, 4002L, 4L, null),
+                    row(addressRowType, 5001L, 5L, "555 1111 st"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     // For use by this class
 
     private Expression customerNameEQ(String name)

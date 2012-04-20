@@ -33,7 +33,6 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
@@ -44,7 +43,6 @@ import org.junit.Test;
 import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class BranchLookup_NestedIT extends OperatorITBase
 {
@@ -362,6 +360,36 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 row(aRowType, 24L, 2L, "a24"),
         };
         compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            map_NestedLoops(
+                filter_Default(
+                    groupScan_Default(rabc),
+                    Collections.singleton(aRowType)),
+                branchLookup_Nested(rabc, aRowType, rRowType, aRowType, LookupOption.DISCARD_INPUT, 0),
+                0);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(aRowType, 13L, 1L, "a13"),
+                    row(aRowType, 14L, 1L, "a14"),
+                    row(aRowType, 13L, 1L, "a13"),
+                    row(aRowType, 14L, 1L, "a14"),
+                    row(aRowType, 23L, 2L, "a23"),
+                    row(aRowType, 24L, 2L, "a24"),
+                    row(aRowType, 23L, 2L, "a23"),
+                    row(aRowType, 24L, 2L, "a24"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     private IndexKeyRange aValueRange(String lo, String hi)

@@ -138,6 +138,7 @@ class Filter_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 closed = false;
             } finally {
@@ -150,6 +151,7 @@ class Filter_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row;
                 do {
@@ -169,8 +171,35 @@ class Filter_Default extends Operator
         @Override
         public void close()
         {
-            input.close();
-            closed = true;
+            CursorLifecycle.checkIdleOrActive(this);
+            if (!closed) {
+                input.close();
+                closed = true;
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // Execution interface
@@ -184,6 +213,6 @@ class Filter_Default extends Operator
         // Object state
 
         private final Cursor input;
-        private boolean closed = false;
+        private boolean closed = true;
     }
 }

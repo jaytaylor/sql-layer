@@ -1,9 +1,9 @@
 PhysicalSelect[order_date:date[DATE], oid:int[INT], oid:int[INT]]
   Map_NestedLoops
-    Filter_Default([user.orders])
+    Filter_Default([test.orders])
       GroupScan_Default(full scan on _akiban_customers)
     project([Bound(0,Field(2)), Bound(0,Field(0)), Field(0)])
       IfEmpty_Default(Literal(NULL), Literal(NULL), Literal(NULL))
-        Select_HKeyOrdered(user.orders, Field(0) != Bound(0,Field(0)))
-          AncestorLookup_Default(Index(user.orders.order_date[IndexColumn(order_date)]) -> [user.orders])
-            IndexScan_Default(Index(user.orders.order_date[IndexColumn(order_date)]) (>=UnboundExpressions[Bound(0,Field(2))],<=UnboundExpressions[Bound(0,Field(2))]))
+        Select_HKeyOrdered(test.orders, Field(0) != Bound(0,Field(0)))
+          AncestorLookup_Default(Index(test.orders.order_date[IndexColumn(order_date)]) -> [test.orders])
+            IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]) (>=UnboundExpressions[Bound(0,Field(2))],<=UnboundExpressions[Bound(0,Field(2))]))

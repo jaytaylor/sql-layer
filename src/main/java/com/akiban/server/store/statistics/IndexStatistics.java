@@ -34,19 +34,15 @@ import java.util.List;
  */
 public class IndexStatistics
 {
-    private final Index index;
+    // NOTE: There is no backpointer to the Index in this class because of 
+    // IndexStatisticsServiceImpl.cache, a WeakHashMap<Index,IndexStatistics>.
     private long analysisTimestamp, rowCount, sampledCount;
     private Histogram[] histograms; // Indexed by column count.
 
     protected IndexStatistics(Index index) {
-        this.index = index;
         this.histograms = new Histogram[index.getKeyColumns().size()];
     }
     
-    public Index index() {
-        return index;
-    }
-
     /** The system time at which the statistics were gathered. */
     public long getAnalysisTimestamp() {
         return analysisTimestamp;

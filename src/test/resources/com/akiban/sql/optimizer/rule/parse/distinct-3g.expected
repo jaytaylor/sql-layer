@@ -1,0 +1,11 @@
+SelectQuery@2c19f426
+  ResultSet@5bec0168[name]
+    Project@635081fd[customers.name]
+      Sort@3a863bfb[orders.order_date]
+        AggregateSource@42cbf9c1([customers.name],[])
+          Select@5d7a1029[]
+            JoinNode@78bb23b0(INNER[orders.oid == items.oid])
+              JoinNode@462435bc(INNER[customers.cid == orders.cid])
+                TableSource@7343ed9d(customers)
+                TableSource@70a51989(orders)
+              TableSource@672fab25(items)

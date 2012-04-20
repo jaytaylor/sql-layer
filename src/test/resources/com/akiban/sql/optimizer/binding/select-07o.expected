@@ -31,7 +31,7 @@ resultSet:
 		null
 		correlation Name: t1_1
 		t1_1
-		userData: user.t1
+		userData: test.t1
 		[1]:		
 		com.akiban.sql.parser.FromBaseTable@19381960
 		tableName: t1
@@ -39,7 +39,7 @@ resultSet:
 		null
 		correlation Name: t1_2
 		t1_2
-		userData: user.t1
+		userData: test.t1
 orderByList: 	
 	com.akiban.sql.parser.OrderByList@3209fa8f
 	allAscending: true

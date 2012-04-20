@@ -91,7 +91,7 @@ public final class ValueSourceExpression implements Expression
     }
 
 
-    private class InnerEvaluation implements ExpressionEvaluation
+    private class InnerEvaluation extends ExpressionEvaluation.Base
     {
         @Override
         public void of(Row row)

@@ -396,7 +396,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void processQuery() throws IOException {
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         int rowsProcessed = 0;
         sql = messenger.readString();
         sessionTracer.setCurrentStatement(sql);
@@ -448,7 +448,7 @@ public class PostgresServerConnection extends ServerSessionBase
         readyForQuery();
         logger.debug("Query complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
-            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime), rowsProcessed);
+            reqs.instrumentation().logQuery(pid, sql, (System.currentTimeMillis() - startTime), rowsProcessed);
         }
     }
 
@@ -649,7 +649,7 @@ public class PostgresServerConnection extends ServerSessionBase
         
         // Statement cache depends on some connection settings.
         statementCache = server.getStatementCache(Arrays.asList(format,
-                                                                getProperty("cbo")),
+                                                                Boolean.valueOf(getProperty("cbo"))),
                                                   aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)

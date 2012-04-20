@@ -54,16 +54,17 @@ public class AbsExpression extends AbstractUnaryExpression
         {
             if (argumentTypes.size() != 1) 
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            
-            // We want to return the original type with ABS, but cast VARCHAR to DOUBLE
+           
             ExpressionType argExpType = argumentTypes.get(0);
             AkType argAkType = argExpType.getType();
-            if (argAkType == AkType.VARCHAR)
-                argAkType = AkType.DOUBLE;
             
-            argumentTypes.setType(0, argAkType);
+            // Cast both VARCHAR and UNSUPPORTED; UNSUPPORTED appearing on SQL params (ABS(?) query)
+            if (argAkType == AkType.VARCHAR || argAkType == AkType.UNSUPPORTED)
+            {
+                argumentTypes.setType(0, AkType.DOUBLE);
+            }
             
-            return ExpressionTypes.newType(argAkType, argExpType.getPrecision(), argExpType.getScale());
+            return argumentTypes.get(0);
         }
     }
     
@@ -82,6 +83,9 @@ public class AbsExpression extends AbstractUnaryExpression
             AkType operandType = operand().getConversionType();
             
             switch (operandType) {
+                case VARCHAR:
+                    valueHolder().putDouble( Math.abs(Double.parseDouble(operand().getString())));
+                    break;
                 case DOUBLE:
                     valueHolder().putDouble( Math.abs(operand().getDouble()) ); 
                     break;   

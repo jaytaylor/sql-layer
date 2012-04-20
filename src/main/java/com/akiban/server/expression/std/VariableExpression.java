@@ -125,5 +125,11 @@ public final class VariableExpression implements Expression {
         private final int position;
         private QueryContext context;
         private int ownedBy = 0;
+
+        @Override
+        public void destroy()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 }

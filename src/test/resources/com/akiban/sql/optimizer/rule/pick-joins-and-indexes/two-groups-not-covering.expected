@@ -3,7 +3,7 @@ SelectQuery@c391550
     Project@430cc80a[child.name, items.iid]
       Select@7c212ae9[]
         JoinNode@658866a9(INNER/NESTED_LOOPS)
-          TableGroupJoinTree@3ce3c973(TableGroup@5e0c1552(customers), items - SingleIndexScan@6b4beaba(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 734.773))
+          TableGroupJoinTree@3ce3c973(TableGroup@5e0c1552(customers), items - SingleIndexScan@6b4beaba(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 734.773))
             TableSource@15f10300(items - TableGroup@5e0c1552(customers))
-          TableGroupJoinTree@ebebc40(TableGroup@451f905e(parent), child - SingleIndexScan@1b3f2ec6(Index(user.child.PRIMARY[IndexColumn(id)]), NONE, =items.quan, rows = 1, cost = 14.4482))
+          TableGroupJoinTree@ebebc40(TableGroup@451f905e(parent), child - SingleIndexScan@1b3f2ec6(Index(test.child.PRIMARY[IndexColumn(id)]), NONE, =items.quan, rows = 1, cost = 14.4482))
             TableSource@1fc0041(child - TableGroup@451f905e(parent))

@@ -1,1 +1,1 @@
-SELECT DISTINCT user.child.name AS name FROM user.parent LEFT OUTER JOIN user.child ON ((user.parent.id = user.child.pid) AND TRUE)
+SELECT DISTINCT test.child.name AS name FROM test.parent LEFT OUTER JOIN test.child ON ((test.parent.id = test.child.pid) AND TRUE)

@@ -168,11 +168,11 @@ public class ProtobufWriter {
                 setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
                 // Not yet in AIS: ordinal, description, protected
 
-        for(Column column : table.getColumns()) {
+        for(Column column : table.getColumnsIncludingInternal()) {
             writeColumn(tableBuilder, column);
         }
 
-        for(Index index : table.getIndexes()) {
+        for(Index index : table.getIndexesIncludingInternal()) {
             writeTableIndex(tableBuilder, index);
         }
 

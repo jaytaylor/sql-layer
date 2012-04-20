@@ -67,7 +67,7 @@ resultSet:
 					null
 					correlation Name: null
 					null
-					userData: user.t1
+					userData: test.t1
 	fromList: 		
 		com.akiban.sql.parser.FromList@79f03d7
 
@@ -78,4 +78,4 @@ resultSet:
 		null
 		correlation Name: null
 		null
-		userData: user.t1
+		userData: test.t1

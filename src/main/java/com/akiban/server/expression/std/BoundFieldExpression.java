@@ -99,6 +99,11 @@ public final class BoundFieldExpression implements Expression {
         }
 
         @Override
+        public void destroy() {
+            fieldExpressionEvaluation.destroy();
+        }
+
+        @Override
         public void acquire() {
             fieldExpressionEvaluation.acquire();
         }
