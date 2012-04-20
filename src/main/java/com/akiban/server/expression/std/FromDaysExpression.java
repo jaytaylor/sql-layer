@@ -79,7 +79,6 @@ public class FromDaysExpression extends AbstractUnaryExpression
             if (days.isNull())
                 return NullValueSource.only();
             long val = days.getLong();
-            
             valueHolder().putDate( val < 0
                     ? 0L
                     :Extractors.getLongExtractor(AkType.DATE).unixToStdLong(days.getLong() * FACTOR + BEGINNING));

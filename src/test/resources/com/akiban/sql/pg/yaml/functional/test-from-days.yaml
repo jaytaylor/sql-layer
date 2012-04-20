@@ -1,0 +1,17 @@
+## test FROM_DAYS function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: SELECT FROM_DAYS(0);
+- output_types: [DATE]
+- output: [['0001-01-01']]
+#--- ZERO-DATE not handled correctl
+#- Statement: SELECT FROM_DAYS(-1);
+#- output: [['0000-00-00']]
+---
+- Statement: SELECT from_days(734980);
+- output: [['2012-04-22']]
+---
+- Statement: SELECT FROM_DAYS(null);
+- output: [[null]]
+...
