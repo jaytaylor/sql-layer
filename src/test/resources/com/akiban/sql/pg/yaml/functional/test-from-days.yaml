@@ -2,6 +2,11 @@
 ---
 - Include: all-types-schema.yaml
 ---
+- Statement: insert into all_types(date_field) values('0000-00-00');
+---
+- Statement: select date_field from all_types;
+- output: [['0000-00-00']]
+---
 - Statement: SELECT FROM_DAYS(0);
 - output_types: [DATE]
 - output: [['0001-01-01']]
