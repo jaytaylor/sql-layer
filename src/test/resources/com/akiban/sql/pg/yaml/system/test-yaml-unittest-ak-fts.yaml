@@ -2,6 +2,10 @@
 - Properties: it
 - suppressed: true
 ---
+#  Suppress to due to bug 986323 
+- Property: all
+- suppressed: true
+---
 - OpenContext: context_ak
 - type: sys-aksql
 ---
