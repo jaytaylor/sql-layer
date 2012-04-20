@@ -72,6 +72,14 @@ public class PostgresServerITBase extends ITBase
         return serviceManager().getPostgresService().getServer();
     }
 
+    protected Connection getConnection() {
+        return connection;
+    }
+
+    protected void forgetConnection() throws Exception {
+        closeTheConnection();
+    }
+
     protected Connection connection;
 
     @Before
