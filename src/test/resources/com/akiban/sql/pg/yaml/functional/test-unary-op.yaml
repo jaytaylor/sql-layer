@@ -1,0 +1,30 @@
+# Test the unary plus/minus operator
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, varchar_field) VALUES (1, '12abc')
+--- # just to make sure the binary op still works
+- Statement: SELECT bigint_field + bigint_field from all_types;
+- output: [[2]]
+---
+- Statement: SELECT bigint_field - bigint_field from all_types;
+- output: [[0]]
+--- 
+- Statement: SELECT - bigint_field from all_types;
+- output: [[-1]]
+---
+- Statement: SELECT + bigint_field from all_types;
+- output: [[1]]
+---
+- Statement: SELECT +'2.5' from all_types;
+- output: [[2.5]]
+---
+- Statement: SELECT -'2.5' from all_types;
+- output: [[-2.5]]
+#---
+#- Statement: SELECT -'12abc' from all_types;
+#- output: [[null]]
+#---
+#- Statement: SELECT -varchar_field from all_types;
+#- output: [[null]]
+...

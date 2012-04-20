@@ -1,0 +1,1 @@
+SELECT * FROM customers c, orders o1, orders o2 WHERE c.cid = o1.cid AND o1.cid = o2.cid

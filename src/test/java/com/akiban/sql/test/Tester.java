@@ -1,20 +1,32 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.test;
 
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.optimizer.AISBinder;
@@ -33,26 +45,15 @@ import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.optimizer.rule.TestCostEstimator;
-import com.akiban.sql.parser.CursorNode;
 import com.akiban.sql.parser.DMLStatementNode;
-import com.akiban.sql.parser.DeleteNode;
-import com.akiban.sql.parser.InsertNode;
-import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
-import com.akiban.sql.parser.UpdateNode;
-import com.akiban.sql.parser.ValueNode;
 import com.akiban.sql.views.ViewDefinition;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.GroupIndex;
 
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
-import com.akiban.server.util.GroupIndexCreator;
 
 import java.util.*;
 import java.io.*;
@@ -184,39 +185,17 @@ public class Tester
         }
     }
 
-    static final String DEFAULT_SCHEMA = "user";
+    static final String DEFAULT_SCHEMA = "test";
 
     public void setSchema(String sql) throws Exception {
-        SchemaDef schemaDef = SchemaDef.parseSchema("use " + DEFAULT_SCHEMA + "; " + 
-                                                    sql);
-        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        ais = toAis.getAis();
+        SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
+        ais = schemaFactory.ais(sql);
         if (actions.contains(Action.BIND))
             binder = new AISBinder(ais, DEFAULT_SCHEMA);
         if (actions.contains(Action.OPERATORS))
-            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, compilerProperties, ais, DEFAULT_SCHEMA, new FunctionsRegistryImpl(), new TestCostEstimator(ais, DEFAULT_SCHEMA, statsFile));
+            operatorCompiler = OperatorCompilerTest.TestOperatorCompiler.create(parser, ais, statsFile, compilerProperties);
         if (actions.contains(Action.PLAN))
-            rulesContext = new RulesTestContext(ais, DEFAULT_SCHEMA, 
-                                                statsFile, planRules,
-                                                compilerProperties);
-    }
-
-    public void addGroupIndex(String cols) throws Exception {
-        BufferedReader brdr = new BufferedReader(new StringReader(cols));
-        while (true) {
-            String line = brdr.readLine();
-            if (line == null) break;
-            String defn[] = line.split("\t");
-            Index.JoinType joinType = Index.JoinType.LEFT;
-            if (defn.length > 3)
-                joinType = Index.JoinType.valueOf(defn[3]);
-            GroupIndex index = GroupIndexCreator.createIndex(ais,
-                                                             defn[0], 
-                                                             defn[1],
-                                                             defn[2],
-                                                             joinType);
-            index.getGroup().addIndex(index);
-        }
+            rulesContext = RulesTestContext.create(ais, statsFile, false, planRules, compilerProperties);
     }
 
     public void setIndexStatistics(File file) throws Exception {
@@ -311,8 +290,6 @@ public class Tester
                     tester.addAction(Action.BIND);
                 else if ("-schema".equals(arg))
                     tester.setSchema(maybeFile(args[i++]));
-                else if ("-group-index".equals(arg))
-                    tester.addGroupIndex(maybeFile(args[i++]));
                 else if ("-index-stats".equals(arg))
                     tester.setIndexStatistics(new File(args[i++]));
                 else if ("-view".equals(arg))

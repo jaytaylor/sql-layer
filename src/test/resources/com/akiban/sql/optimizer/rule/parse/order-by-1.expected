@@ -1,9 +1,9 @@
 SelectQuery@5567d7fb
   ResultSet@1925d92c[name, order_date]
     Limit@746e96ff(OFFSET 1 LIMIT 10)
-      Project@3d4e49a[user.customers.name, user.orders.order_date]
-        Sort@6f18278a[user.orders.order_date DESC, user.customers.name]
+      Project@3d4e49a[customers.name, orders.order_date]
+        Sort@6f18278a[orders.order_date DESC, customers.name]
           Select@1acc0e01[]
-            JoinNode@4aab7165(LEFT[user.customers.cid == user.orders.cid])
-              TableSource@3da1c42f(user.customers)
-              TableSource@47570945(user.orders)
+            JoinNode@4aab7165(LEFT[customers.cid == orders.cid])
+              TableSource@3da1c42f(customers)
+              TableSource@47570945(orders)

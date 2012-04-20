@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -34,7 +45,6 @@ import com.akiban.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -46,13 +56,14 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 @RunWith(NamedParameterizedRunner.class)
-public class RulesTest extends OptimizerTestBase 
+public class
+        RulesTest extends OptimizerTestBase
                        implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "rule");
 
-    protected File rulesFile, schemaFile, indexFile, statsFile, propertiesFile;
+    protected File rulesFile, schemaFile, indexFile, statsFile, propertiesFile, extraDDL;
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
@@ -65,26 +76,32 @@ public class RulesTest extends OptimizerTestBase
             File rulesFile = new File(subdir, "rules.yml");
             File schemaFile = new File(subdir, "schema.ddl");
             if (rulesFile.exists() && schemaFile.exists()) {
-                File indexFile = new File(subdir, "group.idx");
-                if (!indexFile.exists())
-                    indexFile = null;
-                File statsFile = new File(subdir, "stats.yaml");
-                if (!statsFile.exists())
-                    statsFile = null;
-                File compilerPropertiesFile = new File(subdir, "compiler.properties");
-                if (!compilerPropertiesFile.exists())
-                    compilerPropertiesFile = null;
+                File defaultStatsFile = new File(subdir, "stats.yaml");
+                File defaultPropertiesFile = new File(subdir, "compiler.properties");
+                File defaultExtraDDL = new File(subdir, "schema-extra.ddl");
+                if (!defaultStatsFile.exists())
+                    defaultStatsFile = null;
+                if (!defaultPropertiesFile.exists())
+                    defaultPropertiesFile = null;
+                if (!defaultExtraDDL.exists())
+                    defaultExtraDDL = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
+                    File statsFile = new File(subdir, args[0] + ".stats.yaml");
                     File propertiesFile = new File(subdir, args[0] + ".properties");
+                    File extraDDL = new File(subdir, args[0] + ".ddl");
+                    if (!statsFile.exists())
+                        statsFile = defaultStatsFile;
                     if (!propertiesFile.exists())
-                        propertiesFile = compilerPropertiesFile;
+                        propertiesFile = defaultPropertiesFile;
+                    if (!extraDDL.exists())
+                        extraDDL = defaultExtraDDL;
                     Object[] nargs = new Object[args.length+5];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = rulesFile;
                     nargs[2] = schemaFile;
-                    nargs[3] = indexFile;
-                    nargs[4] = statsFile;
-                    nargs[5] = propertiesFile;
+                    nargs[3] = statsFile;
+                    nargs[4] = propertiesFile;
+                    nargs[5] = extraDDL;
                     System.arraycopy(args, 1, nargs, 6, args.length-1);
                     result.add(nargs);
                 }
@@ -94,23 +111,26 @@ public class RulesTest extends OptimizerTestBase
     }
 
     public RulesTest(String caseName, 
-                     File rulesFile, File schemaFile, File indexFile, File statsFile, File propertiesFile,
+                     File rulesFile, File schemaFile, File statsFile, File propertiesFile,
+                     File extraDDL,
                      String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.rulesFile = rulesFile;
         this.schemaFile = schemaFile;
-        this.indexFile = indexFile;
         this.statsFile = statsFile;
         this.propertiesFile = propertiesFile;
+        this.extraDDL = extraDDL;
     }
 
     protected RulesContext rules;
 
     @Before
     public void loadDDL() throws Exception {
-        AkibanInformationSchema ais = loadSchema(schemaFile);
-        if (indexFile != null)
-            OptimizerTestBase.loadGroupIndexes(ais, indexFile);
+        List<File> schemaFiles = new ArrayList<File>(2);
+        schemaFiles.add(schemaFile);
+        if (extraDDL != null)
+            schemaFiles.add(extraDDL);
+        AkibanInformationSchema ais = loadSchema(schemaFiles);
         Properties properties = new Properties();
         if (propertiesFile != null) {
             FileInputStream fstr = new FileInputStream(propertiesFile);
@@ -121,9 +141,9 @@ public class RulesTest extends OptimizerTestBase
                 fstr.close();
             }
         }
-        rules = new RulesTestContext(ais, DEFAULT_SCHEMA, statsFile,
-                                     RulesTestHelper.loadRules(rulesFile),
-                                     properties);
+        rules = RulesTestContext.create(ais, statsFile, extraDDL != null,
+                                        RulesTestHelper.loadRules(rulesFile), 
+                                        properties);
     }
 
     @Test

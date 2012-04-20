@@ -38,40 +38,40 @@
 - Statement: Select bigint_field from all_types where datetime_field is null
 - output: [[6]]
 
-#--- bug # 913921
-#- Statement: update all_types set date_field = '0000-00-00' where bigint_field = 5 
-#---
-#- Statement: Select bigint_field from all_types where date_field = '0000-00-00'
-#- output: [[2],[3],[5]]
-#---
-#- Statement: update all_types set time_field = '00:00:00' where bigint_field = 5 
-#---
-#- Statement: Select bigint_field from all_types where time_field = '00:00:00'
-#- output: [[2],[3],[4],[5]]
-#---
-#- Statement: update all_types set timestamp_field = '0000-00-00 00:00:00' where bigint_field = 3
-#---
-#- Statement: Select bigint_field from all_types where timestamp_field = '0000-00-00 00:00:00'
-#- output: [[2],[3],[4],[5]]
-#---
-#- Statement: update all_types set datetime_field = '0000-00-00 00:00:00' where bigint_field = 1
+--- # bug 913921
+- Statement: update all_types set date_field = '0000-00-00' where bigint_field = 5 
+---
+- Statement: Select bigint_field from all_types where date_field = '0000-00-00'
+- output: [[2],[3],[5]]
+---
+- Statement: update all_types set time_field = '00:00:00' where bigint_field = 5 
+---
+- Statement: Select bigint_field from all_types where time_field = '00:00:00'
+- output: [[2],[3],[4],[5]]
+---
+- Statement: update all_types set timestamp_field = '0000-00-00 00:00:00' where bigint_field = 3
+--- # command 21
+- Statement: Select bigint_field from all_types where timestamp_field = '0000-00-00 00:00:00'
+- output_ordered: [[2],[4],[5], [3]]
+---
+- Statement: update all_types set datetime_field = '0000-00-00 00:00:00' where bigint_field = 1
 ---
 - Statement: Select bigint_field from all_types 
 - row_count: 6
----
+--- # command 24
 - Statement: Select bigint_field from all_types where date_field = '0000-00-00'
-- row_count: 2
+- row_count: 3
 ---
 - Statement: Delete from all_types where date_field = '0000-00-00'
 ---
 - Statement: Select bigint_field from all_types where date_field = '0000-00-00'
 - row_count: 0
----
+--- # command 27
 - Statement: Select bigint_field from all_types 
-- row_count: 4
----
+- row_count: 3
+--- # command 28
 - Statement: Select bigint_field from all_types where datetime_field = '0000-00-00'
-- row_count: 1
+- row_count: 2
 ---
 - CreateTable: T1 ( varchar_field varchar(32) )
 ---
@@ -86,14 +86,15 @@
             [1], [20], [300],
            [1961], [2001], [3210], [9999],
            [1234567], [null]]
----
+--- # command 32
 - Statement: SELECT YEAR(datetime_field) FROM all_types
-- output: [[2011],[0],[1988],[null]]
+- row_count: 3
+#- output: [[2011],[0],[1988],[null]]
            
-#--- bug 913922
-#- Statement: SELECT varchar_field FROM T1
-#    WHERE YEAR(varchar_field) > YEAR('0100-01-01')
-#- output_ordered: [['0300-03-30'],
-#           ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01']]
+--- # bug 913922 (fix committed)
+- Statement: SELECT varchar_field FROM T1
+    WHERE YEAR(varchar_field) > YEAR('0100-01-01')
+- output_ordered: [['0300-03-30'],
+           ['1961-01-11'], ['2001-09-11'], ['3210-04-04'], ['9999-01-01'], ['1234567-00-00']]
 
 ...

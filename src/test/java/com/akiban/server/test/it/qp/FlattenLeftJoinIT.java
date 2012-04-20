@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
@@ -33,6 +44,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
@@ -55,32 +67,32 @@ public class FlattenLeftJoinIT extends OperatorITBase
         // Don't call super.before(). This is a different schema from most operator ITs.
         ancestor = createTable(
             "schema", "ancestor",
-            "aid int not null key",
+            "aid int not null primary key",
             "avalue varchar(20)");
         parent = createTable(
             "schema", "parent",
-            "pid int not null key",
+            "pid int not null primary key",
             "aid int",
             "pvalue varchar(20)",
-            "constraint __akiban_pa foreign key __akiban_pa(aid) references ancestor(aid)");
+            "grouping foreign key(aid) references ancestor(aid)");
         beforeChild = createTable(
             "schema", "before_child",
-            "bid int not null key",
+            "bid int not null primary key",
             "pid int",
             "bvalue varchar(20)",
-            "constraint __akiban_bp foreign key __akiban_bp(pid) references parent(pid)");
+            "grouping foreign key(pid) references parent(pid)");
         child = createTable(
             "schema", "child",
-            "cid int not null key",
+            "cid int not null primary key",
             "pid int",
             "cvalue varchar(20)",
-            "constraint __akiban_cp foreign key __akiban_cp(pid) references parent(pid)");
+            "grouping foreign key(pid) references parent(pid)");
         afterChild = createTable(
             "schema", "after_child",
-            "aid int not null key",
+            "aid int not null primary key",
             "pid int",
             "avalue varchar(20)",
-            "constraint __akiban_ap foreign key __akiban_ap(pid) references parent(pid)");
+            "grouping foreign key(pid) references parent(pid)");
         schema = new Schema(rowDefCache().ais());
         ancestorRowType = schema.userTableRowType(userTable(ancestor));
         parentRowType = schema.userTableRowType(userTable(parent));
@@ -540,11 +552,11 @@ public class FlattenLeftJoinIT extends OperatorITBase
     private int beforeChild;
     private int child;
     private int afterChild;
-    private RowType ancestorRowType;
-    private RowType parentRowType;
-    private RowType beforeChildRowType;
-    private RowType childRowType;
-    private RowType afterChildRowType;
+    private UserTableRowType ancestorRowType;
+    private UserTableRowType parentRowType;
+    private UserTableRowType beforeChildRowType;
+    private UserTableRowType childRowType;
+    private UserTableRowType afterChildRowType;
     private IndexRowType parentPidIndexType;
     private GroupTable group;
 }

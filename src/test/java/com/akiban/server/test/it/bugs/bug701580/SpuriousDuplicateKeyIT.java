@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.bugs.bug701580;
@@ -38,8 +49,9 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
     }
 
     private void simpleTestCase() throws Exception {
-        createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
-        int t2 = createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
+        createTable("test", "t1", "bid1 int not null, token varchar(64), primary key(bid1)");
+        createIndex("test", "t1", "token", "token");
+        int t2 = createTable("test", "t2", "bid int not null, theme varchar(64), primary key (bid), unique(theme)");
 
         confirmIds("t1", 1, 2, 2);
         confirmIds("t2", 1, 2, 2);
@@ -54,11 +66,13 @@ public final class SpuriousDuplicateKeyIT extends ITBase {
 
     @Test
     public void indexIdsLocalToGroup() throws Exception {
-        createTable("test", "t1", "bid1 int, token varchar(64), primary key(bid1), key (token)");
+        createTable("test", "t1", "bid1 int not null, token varchar(64), primary key(bid1)");
+        createIndex("test", "t1", "token", "token");
 
-        createTable("test", "t2", "bid int, theme varchar(64), primary key (bid), unique key (theme)");
-        createTable("test", "t3", "id int key, bid_id int, "
-                +"CONSTRAINT __akiban_fk FOREIGN KEY (bid_id) REFERENCES t2 (bid)");
+        createTable("test", "t2", "bid int not null, theme varchar(64), primary key (bid), unique (theme)");
+        createTable("test", "t3", "id int not null primary key, bid_id int, "+
+                    "GROUPING FOREIGN KEY (bid_id) REFERENCES t2 (bid)");
+        createIndex("test", "t3", "__akiban_fk", "bid_id");
 
         confirmIds("t1", 1, 2, 2);
         confirmIds("t2", 1, 2, 4);

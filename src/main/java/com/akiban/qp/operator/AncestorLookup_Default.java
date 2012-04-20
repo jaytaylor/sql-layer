@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
@@ -19,15 +30,13 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,7 +71,7 @@ import java.util.*;
  <li><b>RowType rowType:</b> Ancestors will be located for input rows
  of this type.
 
- <li><b>List<RowType> ancestorTypes:</b> Ancestor types to be located.
+ <li><b>Collection<UserTableRowType> ancestorTypes:</b> Ancestor types to be located.
 
  <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
@@ -152,28 +161,10 @@ class AncestorLookup_Default extends Operator
     public AncestorLookup_Default(Operator inputOperator,
                                   GroupTable groupTable,
                                   RowType rowType,
-                                  Collection<? extends RowType> ancestorTypes,
+                                  Collection<UserTableRowType> ancestorTypes,
                                   API.LookupOption flag)
     {
-        ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
-        // Keeping index rows not currently supported
-        boolean inputFromIndex = rowType instanceof IndexRowType;
-        ArgumentValidation.isTrue("!inputFromIndex || flag == API.LookupOption.DISCARD_INPUT",
-                                  !inputFromIndex || flag == API.LookupOption.DISCARD_INPUT);
-        RowType tableRowType =
-            inputFromIndex
-            ? ((IndexRowType) rowType).tableType()
-            : rowType;
-        // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
-        // is from an index. I.e., this operator can be used for an index lookup.
-        for (RowType ancestorType : ancestorTypes) {
-            ArgumentValidation.isTrue("inputFromIndex || ancestorType1 != tableRowType",
-                                      inputFromIndex || ancestorType != tableRowType);
-            ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
-                                      ancestorType.ancestorOf(tableRowType));
-            ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                      ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
-        }
+        validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
@@ -196,8 +187,53 @@ class AncestorLookup_Default extends Operator
         this.ancestorTypeDepth = new int[ancestorTypes.size()];
         int a = 0;
         for (RowType ancestorType : this.ancestorTypes) {
-            UserTable userTable = ((UserTableRowType) ancestorType).userTable();
+            UserTable userTable = ancestorType.userTable();
             this.ancestorTypeDepth[a++] = userTable.getDepth() + 1;
+        }
+    }
+    
+    // For use by this class
+
+    private void validateArguments(RowType rowType, Collection<UserTableRowType> ancestorTypes, API.LookupOption flag)
+    {
+        ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
+        if (rowType instanceof IndexRowType) {
+            // Keeping index rows not supported
+            ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
+                                      flag == API.LookupOption.DISCARD_INPUT);
+            RowType tableRowType = ((IndexRowType) rowType).tableType();
+            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+            // is from an index. I.e., this operator can be used for an index lookup.
+            for (UserTableRowType ancestorType : ancestorTypes) {
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(tableRowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
+            }
+        } else if (rowType instanceof UserTableRowType) {
+            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+            // is from an index. I.e., this operator can be used for an index lookup.
+            for (RowType ancestorType : ancestorTypes) {
+                ArgumentValidation.isTrue("ancestorType != tableRowType",
+                                          ancestorType != rowType);
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(rowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == rowType.userTable().getGroup());
+            }
+        } else if (rowType instanceof HKeyRowType) {
+            ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
+                                      flag == API.LookupOption.DISCARD_INPUT);
+            for (UserTableRowType ancestorType : ancestorTypes) {
+                HKeyRowType hKeyRowType = (HKeyRowType) rowType;
+                UserTableRowType tableRowType = ancestorType.schema().userTableRowType(hKeyRowType.hKey().userTable());
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(tableRowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
+            }
+        } else {
+            ArgumentValidation.isTrue("invalid rowType", false);
         }
     }
 
@@ -227,6 +263,7 @@ class AncestorLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 advance();
             } finally {
@@ -239,6 +276,7 @@ class AncestorLookup_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 while (pending.isEmpty() && inputRow.isHolding()) {
                     advance();
@@ -256,9 +294,37 @@ class AncestorLookup_Default extends Operator
         @Override
         public void close()
         {
-            input.close();
-            ancestorRow.release();
-            pending.clear();
+            CursorLifecycle.checkIdleOrActive(this);
+            if (input.isActive()) {
+                input.close();
+                ancestorRow.release();
+                pending.clear();
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return input.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return input.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // For use by this class
@@ -289,7 +355,6 @@ class AncestorLookup_Default extends Operator
                 hKey.useSegments(depth);
                 readAncestorRow(hKey);
                 if (ancestorRow.isHolding()) {
-                    ancestorRow.get().runId(inputRow.runId());
                     pending.add(ancestorRow.get());
                 }
             }

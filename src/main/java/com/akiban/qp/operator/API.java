@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
@@ -30,10 +41,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.EnumSet;
-import java.util.List;
+import java.util.*;
 
 public class API
 {
@@ -136,31 +144,52 @@ public class API
     // BranchLookup
 
     public static Operator branchLookup_Default(Operator inputOperator,
-                                                        GroupTable groupTable,
-                                                        RowType inputRowType,
-                                                        RowType outputRowType,
-                                                        LookupOption flag)
+                                                GroupTable groupTable,
+                                                RowType inputRowType,
+                                                UserTableRowType outputRowType,
+                                                LookupOption flag)
     {
         return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, NO_LIMIT);
     }
 
     public static Operator branchLookup_Default(Operator inputOperator,
-                                                        GroupTable groupTable,
-                                                        RowType inputRowType,
-                                                        RowType outputRowType,
-                                                        LookupOption flag,
-                                                        Limit limit)
+                                                GroupTable groupTable,
+                                                RowType inputRowType,
+                                                UserTableRowType outputRowType,
+                                                LookupOption flag,
+                                                Limit limit)
     {
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
     }
 
+    /** deprecated */
     public static Operator branchLookup_Nested(GroupTable groupTable,
-                                                       RowType inputRowType,
-                                                       RowType outputRowType,
-                                                       LookupOption flag,
-                                                       int inputBindingPosition)
+                                               RowType inputRowType,
+                                               UserTableRowType outputRowType,
+                                               LookupOption flag,
+                                               int inputBindingPosition)
     {
-        return new BranchLookup_Nested(groupTable, inputRowType, outputRowType, flag, inputBindingPosition);
+        return new BranchLookup_Nested(groupTable,
+                                       inputRowType,
+                                       null,
+                                       outputRowType,
+                                       flag,
+                                       inputBindingPosition);
+    }
+
+    public static Operator branchLookup_Nested(GroupTable groupTable,
+                                               RowType inputRowType,
+                                               UserTableRowType ancestorRowType,
+                                               UserTableRowType outputRowType,
+                                               LookupOption flag,
+                                               int inputBindingPosition)
+    {
+        return new BranchLookup_Nested(groupTable,
+                                       inputRowType,
+                                       ancestorRowType,
+                                       outputRowType,
+                                       flag,
+                                       inputBindingPosition);
     }
 
     // Limit
@@ -184,7 +213,7 @@ public class API
     public static Operator ancestorLookup_Default(Operator inputOperator,
                                                   GroupTable groupTable,
                                                   RowType rowType,
-                                                  Collection<? extends RowType> ancestorTypes,
+                                                  Collection<UserTableRowType> ancestorTypes,
                                                   LookupOption flag)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
@@ -335,13 +364,24 @@ public class API
 
     // Product
 
+    /** deprecated */
     public static Operator product_NestedLoops(Operator outerInput,
                                                        Operator innerInput,
                                                        RowType outerType,
                                                        RowType innerType,
                                                        int inputBindingPosition)
     {
-        return new Product_NestedLoops(outerInput, innerInput, outerType, innerType, inputBindingPosition);
+        return new Product_NestedLoops(outerInput, innerInput, outerType, null, innerType, inputBindingPosition);
+    }
+
+    public static Operator product_NestedLoops(Operator outerInput,
+                                                       Operator innerInput,
+                                                       RowType outerType,
+                                                       UserTableRowType branchType,
+                                                       RowType innerType,
+                                                       int inputBindingPosition)
+    {
+        return new Product_NestedLoops(outerInput, innerInput, outerType, branchType, innerType, inputBindingPosition);
     }
 
     // Count
@@ -413,11 +453,34 @@ public class API
     
     // Intersect
     
+    /** deprecated */
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
-                                            RowType leftRowType, RowType rightRowType,
+                                            IndexRowType leftRowType, IndexRowType rightRowType,
                                             int leftOrderingFields,
                                             int rightOrderingFields,
                                             int comparisonFields,
+                                            JoinType joinType,
+                                            IntersectOutputOption intersectOutput)
+    {
+        if (comparisonFields < 0) {
+            throw new IllegalArgumentException();
+        }
+        boolean[] ascending = new boolean[comparisonFields];
+        Arrays.fill(ascending, true);
+        return new Intersect_Ordered(leftInput, rightInput,
+                                     leftRowType, rightRowType,
+                                     leftOrderingFields,
+                                     rightOrderingFields,
+                                     ascending,
+                                     joinType,
+                                     intersectOutput);
+    }
+    
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
+                                            IndexRowType leftRowType, IndexRowType rightRowType,
+                                            int leftOrderingFields,
+                                            int rightOrderingFields,
+                                            boolean[] ascending,
                                             JoinType joinType,
                                             IntersectOutputOption intersectOutput)
     {
@@ -425,9 +488,24 @@ public class API
                                      leftRowType, rightRowType,
                                      leftOrderingFields,
                                      rightOrderingFields,
-                                     comparisonFields,
+                                     ascending,
                                      joinType,
                                      intersectOutput);
+    }
+    
+    // HKeyUnion
+    
+    public static Operator hKeyUnion_Ordered(Operator leftInput, Operator rightInput,
+                                             RowType leftRowType, RowType rightRowType,
+                                             int leftOrderingFields, int rightOrderingFields,
+                                             int comparisonFields,
+                                             UserTableRowType outputHKeyTableRowType)
+    {
+        return new HKeyUnion_Ordered(leftInput, rightInput,
+                                     leftRowType, rightRowType,
+                                     leftOrderingFields, rightOrderingFields,
+                                     comparisonFields,
+                                     outputHKeyTableRowType);
     }
 
     // Insert
@@ -458,7 +536,7 @@ public class API
     public static Cursor cursor(Operator root, QueryContext context)
     {
         // if all they need is the wrapped cursor, create it directly
-        return new TopLevelWrappingCursor(context, root.cursor(context));
+        return new ChainedCursor(context, root.cursor(context));
     }
 
     // Options

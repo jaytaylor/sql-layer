@@ -1,7 +1,7 @@
 SelectQuery@59d0d45b
   ResultSet@cc7f9e[_SQL_COL_1, _SQL_COL_2, _SQL_COL_3, _SQL_COL_4, _SQL_COL_5, _SQL_COL_6, _SQL_COL_7]
-    Project@71ce5e7a[MAX(user.items.price), MIN(user.items.price), SUM(user.items.quan), AVG(user.items.quan), COUNT(user.items.oid), COUNT(*), COUNT(DISTINCT user.items.oid)]
+    Project@71ce5e7a[MAX(items.price), MIN(items.price), SUM(items.quan), AVG(items.quan), COUNT(items.oid), COUNT(*), COUNT(DISTINCT items.oid)]
       Select@1d96f4b5[]
         AggregateSource@219ba640(UNGROUPED,[])
           Select@71bfc4fc[]
-            TableSource@651db6bb(user.items)
+            TableSource@651db6bb(items)

@@ -1,20 +1,32 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
 
+import static com.akiban.util.AssertUtils.assertCollectionEquals;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -27,7 +39,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.Connection;
@@ -56,6 +69,7 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
+import com.akiban.util.Strings;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -153,8 +167,15 @@ import com.akiban.server.store.statistics.IndexStatisticsMXBean;
    if used, please suppress the IT level calls or place tests in AAS directly
    
    - JMX: <objectName>   (i.e com.akiban:type=IndexStatistics)
+   ** Only one allowed of the following three (3) per command set
+   - set: <set method>
+   - method: <method>
+   - get: <get method>
+   
    - params: [<parameter value>, ...]
-   - output: [<output value>, ...]
+   - output: [[<output value>, ...], ...]
+
+
 
 */
 class YamlTester {
@@ -301,7 +322,7 @@ class YamlTester {
 	}
 	Reader in = null;
 	try {
-	    in = new FileReader(include);
+	    in = new InputStreamReader(new FileInputStream(include), "UTF-8");
 	} catch (IOException e) {
 	    throw new ContextAssertionError("Problem accessing include file "
 		    + include + ": " + e, e);
@@ -591,7 +612,7 @@ class YamlTester {
 		if (output != null) {
 		    assertEquals("The row_count attribute must be the same"
 			    + " as the length of the rows in the output"
-			    + " attribute:", output.get(0).size(), rowCount);
+			    + " attribute:", output.size(), rowCount);
 		} else if (outputTypes != null) {
 		    assertEquals("The row_count attribute must be the same"
 			    + " as the length of the output_types"
@@ -1024,29 +1045,6 @@ class YamlTester {
 		assertEquals("Wrong output type for column " + i + ":",
 			outputTypes.get(i - 1), columnTypeName);
 	    }
-	}
-
-	private void debugPrintResults(ResultSet rs) throws SQLException {
-	    System.err.println(context() + "Result output:");
-	    ResultSetMetaData md = rs.getMetaData();
-	    int nc = md.getColumnCount();
-	    for (int i = 1; i <= nc; i++) {
-		if (i != 1) {
-		    System.err.print(", ");
-		}
-		System.err.print(md.getColumnName(i));
-	    }
-	    System.err.println();
-	    while (rs.next()) {
-		for (int i = 1; i <= nc; i++) {
-		    if (i != 1) {
-			System.err.print(", ");
-		    }
-		    System.err.print(rs.getObject(i));
-		}
-		System.err.println();
-	    }
-	    rs.beforeFirst();
 	}
     }
 
@@ -1569,9 +1567,11 @@ class YamlTester {
 
         ArrayList<Object> output = null;
         String objectName = null;
-        ArrayList<String> params = null;
+        Object[] params = null;
         String method = null;
-
+        String set = null;
+        String get = null;
+        
         public JMXCommand(Object value, List<Object> sequence) {
             super(string(value, "JMX value"));
             if (value != null & String.valueOf(value).trim().length() > 1) {
@@ -1579,7 +1579,7 @@ class YamlTester {
             } else {
                 fail("Must provide an Object name");
             }
-
+            
             for (int i = 1; i < sequence.size(); i++) {
                 Entry<Object, Object> map = onlyEntry(sequence.get(i),
                         "JMX attribute");
@@ -1589,8 +1589,14 @@ class YamlTester {
                     parseParams(attributeValue);
                 } else if ("method".equals(attribute)) {
                     method = String.valueOf(attributeValue).trim();
+                } else if ("set".equals(attribute)) {
+                    set = String.valueOf(attributeValue).trim();
+                } else if ("get".equals(attribute)) {
+                    get = String.valueOf(attributeValue).trim();
                 } else if ("output".equals(attribute)) {
                     parseOutput(attributeValue);
+                } else if ("split_result".equals(attribute)) {
+                    // skip
                 } else {
                     fail("The '" + attribute + "' attribute name was not"
                             + " recognized");
@@ -1605,87 +1611,71 @@ class YamlTester {
             }
             assertNull("The params attribute must not appear more than once",
                     params);
-            params = new ArrayList<String>(
+            ArrayList<Object> list = new ArrayList<Object>(
                     stringSequence(value, "params value"));
+            params = list.toArray(new Object[list.size()]);
         }
 
         private void parseOutput(Object value) {
             if (value == null) {
+                output = null;
                 return;
             }
             assertNull("The output attribute must not appear more than once",
                     output);
-            List<Object> row = rows(value, "output value").get(0);
-            output = (ArrayList<Object>) row;
+            List<List<Object>> rows = rows(value, "output value");
+            output = new ArrayList<Object>(rows.size());
+            for (List<?> row : rows) {
+                assertEquals("number of entries in row " + row, 1, row.size());
+                output.add(row.get(0));
+            }
         }
 
-        protected boolean rowsEqual(List<Object> pattern, List<Object> row) {
-            
-            int size = pattern.size();
-            if (size != row.size()) {
-            return false;
-            }
-            for (int i = 0; i < size; i++) {
-            Object patternElem = pattern.get(i);
-            Object rowElem = row.get(i);
-            if (patternElem instanceof OutputComparator) {
-                return ((OutputComparator) patternElem)
-                        .compareOutput(rowElem);
-            } else if (patternElem == null) {
-                if (rowElem != null) {
-                    return false;
-                }
-            } else if (!objectToString(patternElem).equals(
-                objectToString(rowElem))) {
-                return false;
-            }
-            }
-            return true;
-        }
-        
         public void execute() {
-            JMXInterpreter conn = new JMXInterpreter();
-            conn.openConnection("localhost", "8082");
-            if (objectName.equalsIgnoreCase("com.akiban:type=IndexStatistics")) {
-                IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
-                        .getConnector());
-                assertNotNull(bean);
-                if (method.equalsIgnoreCase("dumpIndexStatistics")) {
-                    try {
-                        bean.dumpIndexStatistics(params.get(0), params.get(1));
-                    } catch (IOException e) {
-                        System.out.println("Error: " + e.getMessage());
-                        fail("Error: " + e.getMessage());
-                    }
-                } else {
-                    fail("Method not supported");
+            JMXInterpreter conn = new JMXInterpreter(DEBUG);
+            Object result = null;
+            try {
+                if (method != null) {
+                    result = conn.makeBeanCall("localhost", 8082, objectName,
+                            method, params, "method");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+method+")");
+//                        System.out.println(result);
+//                    }
                 }
-            } else if (objectName.equalsIgnoreCase("com.akiban:type=AKSERVER")) {
-                try {
-                    ManageMXBean bean = conn.getAkServer(conn
-                            .getConnector());
-                    assertNotNull("bean is null", bean);
-                    if (method.equalsIgnoreCase("getVersionString")) {
-                        if (output != null) {
-                            List<Object> row = new ArrayList<Object>();
-
-                            row.add(bean.getVersionString());
-                            if (!rowsEqual(output.subList(0, 1), row)) {
-                                fail("Version does not match");
-                            }
-                        } else {
-                              System.out.println(bean.getVersionString());
-                        }
-                    } else {
-                        fail("Method not supported");
-                    }
-                } catch (java.lang.reflect.UndeclaredThrowableException e) {
-                    fail("error: " + e.getCause());
+                if (set != null) {
+                    conn.makeBeanCall("localhost", 8082, objectName, set, params, "set");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+set+")");
+//                    }
                 }
+                if (get != null) {
+                    result = conn.makeBeanCall("localhost", 8082, objectName, get, params, "get");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+get+")");
+//                        System.out.println(result);
+//                    }
 
-            } else {
-                fail("JMX call not supported currently");
+                }
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error: " + e.getMessage());
+                fail("Error: " + e.getMessage());
+            }
+            
+            if (output != null) {
+                if (result == null)
+                    fail("found null; expected: " + output);
+                List<Object> actuals = new ArrayList<Object>(Arrays.asList(result.toString().split("\\n")));
+                int highestCommon = Math.min(actuals.size(), output.size());
+                for (int i = 0; i < highestCommon; ++i) {
+                    if (output.get(i) == DontCare.INSTANCE)
+                        actuals.set(i, DontCare.INSTANCE);
+                }
+                assertCollectionEquals(output, actuals);
             }
         }
+
     }
 }

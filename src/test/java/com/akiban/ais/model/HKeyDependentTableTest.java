@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.ais.model;
@@ -37,51 +48,50 @@ public class HKeyDependentTableTest
         //
         // "cn" means that the parent is cascaded but that the child table isn't.
         String[] ddl = {
-            "use s; ",
             // 1st level - root table
             "create table s.r(",
-            "    rid int not null key",
-            ") engine = akibandb;",
+            "    rid int not null primary key",
+            ");",
             // 2nd level
             "create table s.c(",
             "    rid int not null, ",
             "    cid int not null, ",
             "    primary key(rid, cid), ",
-            "   constraint `__akiban_c_r` foreign key (rid) references r(rid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (rid) references r(rid)",
+            ");",
             "create table s.n(",
             "    rid int, ",
             "    nid int not null, ",
             "    primary key(nid), ",
-            "   constraint `__akiban_n_r` foreign key (rid) references r(rid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (rid) references r(rid)",
+            ");",
             // 3rd level
             "create table s.cc(",
             "    rid int not null, ",
             "    cid int not null, ",
             "    ccid int not null, ",
             "    primary key(rid, cid, ccid), ",
-            "   constraint `__akiban_cc_c` foreign key (rid, cid) references c(rid, cid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (rid, cid) references c(rid, cid)",
+            ");",
             "create table s.cn(",
             "    rid int, ",
             "    cid int, ",
             "    cnid int not null, ",
             "    primary key(cnid), ",
-            "   constraint `__akiban_cn_c` foreign key (rid, cid) references c(rid, cid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (rid, cid) references c(rid, cid)",
+            ");",
             "create table s.nc(",
             "    nid int not null, ",
             "    ncid int not null, ",
             "    primary key(nid, ncid), ",
-            "   constraint `__akiban_nc_n` foreign key (nid) references n(nid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (nid) references n(nid)",
+            ");",
             "create table s.nn(",
             "    nid int, ",
             "    nnid int not null, ",
             "    primary key(nnid), ",
-            "   constraint `__akiban_nn_n` foreign key (nid) references n(nid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (nid) references n(nid)",
+            ");",
             // 4th level
             "create table s.ccc(",
             "    rid int not null, ",
@@ -89,54 +99,54 @@ public class HKeyDependentTableTest
             "    ccid int not null, ",
             "    cccid int not null, ",
             "    primary key(rid, cid, ccid, cccid), ",
-            "   constraint `__akiban_ccc_cc` foreign key (rid, cid, ccid) references cc(rid, cid, ccid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (rid, cid, ccid) references cc(rid, cid, ccid)",
+            ");",
             "create table s.ccn(",
             "    rid int, ",
             "    cid int, ",
             "    ccid int, ",
             "    ccnid int not null, ",
             "    primary key(ccnid), ",
-            "   constraint `__akiban_ccn_cc` foreign key (rid, cid, ccid) references cc(rid, cid, ccid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (rid, cid, ccid) references cc(rid, cid, ccid)",
+            ");",
             "create table s.cnc(",
             "    cnid int not null, ",
             "    cncid int not null, ",
             "    primary key(cnid, cncid), ",
-            "   constraint `__akiban_cnc_cn` foreign key (cnid) references cn(cnid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cnid) references cn(cnid)",
+            ");",
             "create table s.cnn(",
             "    cnid int, ",
             "    cnnid int not null, ",
             "    primary key(cnnid), ",
-            "   constraint `__akiban_cnn_cn` foreign key (cnid) references cn(cnid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cnid) references cn(cnid)",
+            ");",
             "create table s.ncc(",
             "    nid int, ",
             "    ncid int not null, ",
             "    nccid int not null, ",
             "    primary key(ncid, nccid), ",
-            "   constraint `__akiban_ncc_nc` foreign key (nid, ncid) references nc(nid, ncid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (nid, ncid) references nc(nid, ncid)",
+            ");",
             "create table s.ncn(",
             "    nid int, ",
             "    ncid int, ",
             "    ncnid int not null, ",
             "    primary key(ncnid), ",
-            "   constraint `__akiban_ncn_nc` foreign key (nid, ncid) references nc(nid, ncid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (nid, ncid) references nc(nid, ncid)",
+            ");",
             "create table s.nnc(",
             "    nnid int not null, ",
             "    nncid int not null, ",
             "    primary key(nnid, nncid), ",
-            "   constraint `__akiban_nnc_nn` foreign key (nnid) references nn(nnid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (nnid) references nn(nnid)",
+            ");",
             "create table s.nnn(",
             "    nnid int, ",
             "    nnnid int not null, ",
             "    primary key(nnnid), ",
-            "   constraint `__akiban_nnn_nn` foreign key (nnid) references nn(nnid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (nnid) references nn(nnid)",
+            ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable r = ais.getUserTable("s", "r");

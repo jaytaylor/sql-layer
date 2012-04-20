@@ -1,0 +1,1 @@
+com.akiban.server.error.UnsupportedSQLException: UNSUPPORTED_SQL: Unsupported SQL Column cannot be used outside aggregate function or GROUP BY : cid

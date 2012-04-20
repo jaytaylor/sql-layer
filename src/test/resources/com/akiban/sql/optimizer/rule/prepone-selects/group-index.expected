@@ -1,11 +1,11 @@
 SelectQuery@370aa282
   ResultSet@1b332109[name, order_date, quan]
-    Project@39bde3d2[user.customers.name, user.orders.order_date, user.items.quan]
+    Project@39bde3d2[customers.name, orders.order_date, items.quan]
       Select@61b80d9b[]
-        Flatten@6e681db8(user.customers INNER user.orders INNER user.items)
-          AncestorLookup@757753a8(user.items -> [user.customers, user.orders, user.items])
-            Select@6d1576d7[user.items.sku != user.customers.name]
+        Flatten@6e681db8(customers INNER orders INNER items)
+          AncestorLookup@757753a8(items -> [customers, orders, items])
+            Select@6d1576d7[items.sku != customers.name]
               IndexScan@1c2d5534(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, >=S)
-            TableSource@44af17c7(user.customers - TableGroup@2f8bbc98(customers))
-            TableSource@43422d0b(user.orders - TableGroupJoin@6434d75f(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@2d9b4fac(user.items - TableGroupJoin@4927d15e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+            TableSource@44af17c7(customers - TableGroup@2f8bbc98(customers))
+            TableSource@43422d0b(orders - TableGroupJoin@6434d75f(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableSource@2d9b4fac(items - TableGroupJoin@4927d15e(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

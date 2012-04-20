@@ -1,0 +1,1 @@
+SELECT oid FROM orders WHERE order_date = '2011-03-03'

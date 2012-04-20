@@ -1,4 +1,6 @@
 # Test the DAYOFMONTH() function
+# Bug 913792
+# Status: fix committed 
 ---
 - Include: all-types-schema.yaml
 ---

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.rowdata;
@@ -45,26 +56,25 @@ public class RowDefCacheTest
     public void testMultipleBadlyOrderedColumns() throws Exception
     {
         String[] ddl = {
-            String.format("use `%s`; ", SCHEMA),
             "create table b(",
             "    b0 int,",
-            "    b1 int,",
-            "    b2 int,",
-            "    b3 int,",
-            "    b4 int,",
+            "    b1 int not null,",
+            "    b2 int not null,",
+            "    b3 int not null,",
+            "    b4 int not null,",
             "    b5 int,",
             "    primary key(b3, b2, b4, b1)",
-            ") engine = akibandb;",
+            ");",
             "create table bb(",
-            "    bb0 int,",
+            "    bb0 int not null,",
             "    bb1 int,",
-            "    bb2 int,",
-            "    bb3 int,",
-            "    bb4 int,",
-            "    bb5 int,",
+            "    bb2 int not null,",
+            "    bb3 int not null,",
+            "    bb4 int not null,",
+            "    bb5 int not null,",
             "    primary key (bb0, bb5, bb3, bb2, bb4), ",
-            "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0` (`bb0`,`bb2`,`bb1`,`bb3`) REFERENCES `b` (`b3`,`b2`,`b4`,`b1`)",
-            ") engine = akibandb;",
+            "    GROUPING FOREIGN KEY (bb0,bb2,bb1,bb3) REFERENCES b (b3,b2,b4,b1)",
+            ");",
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef b = rowDefCache.getRowDef(tableName("b"));
@@ -116,16 +126,15 @@ public class RowDefCacheTest
     public void childDoesNotContributeToHKey() throws Exception
     {
         String[] ddl = {
-            String.format("use `%s`;", SCHEMA),
             "create table parent (",
-            "   id int,",
+            "   id int not null,",
             "   primary key(id)",
-            ") engine = akibandb;",
+            ");",
             "create table child (",
-            "   id int,",
+            "   id int not null,",
             "   primary key(id),",
-            "   constraint `__akiban_fk0` foreign key `akibanfk` (id) references parent(id)",
-            ") engine = akibandb;"
+            "   GROUPING FOREIGN KEY (id) references parent(id)",
+            ");"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef parent = rowDefCache.getRowDef(tableName("parent"));
@@ -146,17 +155,16 @@ public class RowDefCacheTest
     public void testUserIndexDefs() throws Exception
     {
         String[] ddl = {
-            String.format("use %s;", SCHEMA),
             "create table t (",
-            "    a int, ",
+            "    a int not null, ",
             "    b int, ",
-            "    c int, ",
+            "    c int not null, ",
             "    d int, ",
             "    e int, ",
             "    primary key(c, a), ",
-            "    key e_d(e, d), ",
-            "    unique key d_b(d, b)",
-            ");"
+            "    constraint d_b unique(d, b)",
+            ");",
+            "create index e_d on t(e, d);"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef t = rowDefCache.getRowDef(tableName("t"));
@@ -177,33 +185,34 @@ public class RowDefCacheTest
     public void testNonCascadingPKs() throws Exception
     {
         String[] ddl = {
-            String.format("use %s; ", SCHEMA),
             "create table customer(",
             "    cid int not null, ",
             "    cx int not null, ",
             "    primary key(cid), ",
-            "    unique key cid_cx(cid, cx) ",
-            ") engine = akibandb; ",
+            "    constraint cid_cx unique(cid, cx) ",
+            "); ",
             "create table orders(",
             "    oid int not null, ",
             "    cid int not null, ",
             "    ox int not null, ",
             "    primary key(oid), ",
-            "    unique key cid_oid(cid, oid), ",
-            "    unique key oid_cid(oid, cid), ",
-            "    unique key cid_oid_ox(cid, oid, ox), ",
-            "    constraint __akiban_oc foreign key co(cid) references customer(cid)",
-            ") engine = akibandb; ",
+            "    constraint cid_oid unique(cid, oid), ",
+            "    constraint oid_cid unique(oid, cid), ",
+            "    constraint cid_oid_ox unique(cid, oid, ox), ",
+            "    grouping foreign key(cid) references customer(cid)",
+            "); ",
+            "create index \"__akiban_oc\" on orders(cid);",
             "create table item(",
             "    iid int not null, ",
             "    oid int not null, ",
             "    ix int not null, ",
             "    primary key(iid), ",
-            "    key oid_iid(oid, iid), ",
-            "    key iid_oid(iid, oid), ",
-            "    key oid_iid_ix(oid, iid, ix), ",
-            "    constraint __akiban_io foreign key io(oid) references orders(oid)",
-            ") engine = akibandb; "
+            "    grouping foreign key(oid) references orders(oid)",
+            "); ",
+            "create index \"__akiban_io\" on item(oid);",
+            "create index oid_iid on item(oid, iid);",
+            "create index iid_oid on item(iid, oid);",
+            "create index oid_iid_ix on item(oid, iid, ix);",
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         Index index;
@@ -621,30 +630,31 @@ public class RowDefCacheTest
     public void testCascadingPKs() throws Exception
     {
         String[] ddl = {
-            String.format("use %s; ", SCHEMA),
             "create table customer(",
             "    cid int not null, ",
             "    cx int not null, ",
-            "    primary key(cid), ",
-            "    key cx(cx)",
-            ") engine = akibandb; ",
+            "    primary key(cid) ",
+            "); ",
+            "create index cx on customer(cx);",
             "create table orders(",
             "    cid int not null, ",
             "    oid int not null, ",
             "    ox int not null, ",
             "    primary key(cid, oid), ",
-            "    key ox_cid(ox, cid), ",
-            "    constraint __akiban_oc foreign key co(cid) references customer(cid)",
-            ") engine = akibandb; ",
+            "    grouping foreign key (cid) references customer(cid)",
+            "); ",
+            "create index \"__akiban_oc\" on orders(cid);",
+            "create index ox_cid on orders(ox, cid);",
             "create table item(",
             "    cid int not null, ",
             "    oid int not null, ",
             "    iid int not null, ",
             "    ix int not null, ",
             "    primary key(cid, oid, iid), ",
-            "    key ix_iid_oid_cid(ix, iid, oid, cid), ",
-            "    constraint __akiban_io foreign key io(cid, oid) references orders(cid, oid)",
-            ") engine = akibandb; "
+            "    grouping foreign key (cid, oid) references orders(cid, oid)",
+            "); ",
+            "create index \"__akiban_io\" on item(cid, oid);",
+            "create index ix_iid_oid_cid on item(ix, iid, oid, cid);",
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         Index index;
@@ -927,22 +937,22 @@ public class RowDefCacheTest
     public void checkI2HFieldIndex() throws Exception
     {
         String[] ddl = {
-            String.format("use `%s`;", SCHEMA),
             "create table parent (",
-            "   a int,",
-            "   b int,",
+            "   a int not null,",
+            "   b int not null,",
             "   x int,",
             "   primary key(b, a)",
-            ") engine = akibandb;",
+            ");",
             "create table child (",
-            "   c int,",
-            "   d int,",
+            "   c int not null,",
+            "   d int not null,",
             "   b int,",
             "   a int,",
             "   x int,",
             "   primary key(c, d),",
-            "   constraint `__akiban_fk0` foreign key `akibanfk` (b, a) references parent(b, a)",
-            ") engine = akibandb;"
+            "   GROUPING FOREIGN KEY (b, a) references parent(b, a)",
+            ");",
+            "create index \"__akiban_fk0\" on child(b, a);"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef parent = rowDefCache.getRowDef(tableName("parent"));
@@ -985,48 +995,11 @@ public class RowDefCacheTest
     }
 
     @Test
-    public void checkSingleTableGroupIndex() throws Exception {
-        String[] ddl = { "use "+SCHEMA+";",
-                         "create table customer(cid int, name varchar(32), primary key(cid)) engine=akibandb;"
-        };
-
-        final RowDefCache rowDefCache;
-        {
-            AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-            Table customerTable = ais.getTable(SCHEMA, "customer");
-            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName", 100, false, Index.KEY_CONSTRAINT, Index.JoinType.LEFT);
-            index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0,true, null));
-            rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
-        }
-
-        Index index;
-        IndexRowComposition rowComp;
-        IndexToHKey indexToHKey;
-
-        RowDef customer = rowDefCache.getRowDef(tableName("customer"));
-        RowDef customer_group = rowDefCache.getRowDef(customer.getGroupRowDefId());
-        // group index on name
-        index = customer_group.getGroupIndex("cName");
-        assertNotNull(index);
-        assertFalse(index.isPrimaryKey());
-        assertFalse(index.isUnique());
-        rowComp = index.indexRowComposition();
-        assertEquals(1, rowComp.getFieldPosition(0)); // c.name
-        // customer hkey
-        assertEquals(0, rowComp.getFieldPosition(1)); // c.cid
-        assertEquals(2, rowComp.getLength());
-        indexToHKey = index.indexToHKey();
-        assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
-        assertEquals(1, indexToHKey.getIndexRowPosition(1)); // index cid
-    }
-
-
-    @Test
     public void checkCOGroupIndex() throws Exception {
-        String[] ddl = { "use "+SCHEMA+";",
-                         "create table customer(cid int, name varchar(32), primary key(cid)) engine=akibandb;",
-                         "create table orders(oid int, cid int, date date, primary key(oid), "+
-                                 "constraint __akiban foreign key(cid) references customer(cid)) engine=akibandb;"
+        String[] ddl = { "create table customer(cid int not null, name varchar(32), primary key(cid));",
+                         "create table orders(oid int not null, cid int, date date, primary key(oid), "+
+                                 "grouping foreign key(cid) references customer(cid));",
+                         "create index cName_oDate on orders(customer.name, orders.date) using left join;"
         };
 
         final RowDefCache rowDefCache;
@@ -1070,24 +1043,17 @@ public class RowDefCacheTest
 
     @Test
     public void checkCOIGroupIndex() throws Exception {
-        String[] ddl = { "use "+SCHEMA+";",
-                         "create table customer(cid int, name varchar(32), primary key(cid)) engine=akibandb;",
-                         "create table orders(oid int, cid int, date date, primary key(oid), "+
-                                 "constraint __akiban foreign key(cid) references customer(cid)) engine=akibandb;",
-                         "create table items(iid int, oid int, sku int, primary key(iid), "+
-                                 "constraint __akiban foreign key(oid) references orders(oid)) engine=akibandb;"
+        String[] ddl = { "create table customer(cid int not null, name varchar(32), primary key(cid));",
+                         "create table orders(oid int not null, cid int, date date, primary key(oid), "+
+                                 "grouping foreign key(cid) references customer(cid));",
+                         "create table items(iid int not null, oid int, sku int, primary key(iid), "+
+                                 "grouping foreign key(oid) references orders(oid));",
+                         "create index cName_oDate_iSku on items(customer.name, orders.date, items.sku) using left join;"
         };
 
         final RowDefCache rowDefCache;
         {
             AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-            Table customerTable = ais.getTable(SCHEMA, "customer");
-            Table ordersTable = ais.getTable(SCHEMA, "orders");
-            Table itemsTable = ais.getTable(SCHEMA, "items");
-            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName_oDate_iSku", 100, false, Index.KEY_CONSTRAINT,  Index.JoinType.LEFT);
-            index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0, true, null));
-            index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 1, true, null));
-            index.addColumn(new IndexColumn(index, itemsTable.getColumn("sku"), 2, true, null));
             rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
         }
 
@@ -1127,23 +1093,17 @@ public class RowDefCacheTest
 
     @Test
     public void checkOIGroupIndex() throws Exception {
-        String[] ddl = { "use "+SCHEMA+";",
-                         "create table customer(cid int, name varchar(32), primary key(cid)) engine=akibandb;",
-                         "create table orders(oid int, cid int, date date, primary key(oid), "+
-                                 "constraint __akiban foreign key(cid) references customer(cid)) engine=akibandb;",
-                         "create table items(iid int, oid int, sku int, primary key(iid), "+
-                                 "constraint __akiban foreign key(oid) references orders(oid)) engine=akibandb;"
+        String[] ddl = { "create table customer(cid int not null, name varchar(32), primary key(cid));",
+                         "create table orders(oid int not null, cid int, date date, primary key(oid), "+
+                                 "grouping foreign key(cid) references customer(cid));",
+                         "create table items(iid int not null, oid int, sku int, primary key(iid), "+
+                                 "grouping foreign key(oid) references orders(oid));",
+                         "create index oDate_iSku on items(orders.date, items.sku) using left join;"
         };
 
         final RowDefCache rowDefCache;
         {
             AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
-            Table customerTable = ais.getTable(SCHEMA, "customer");
-            Table ordersTable = ais.getTable(SCHEMA, "orders");
-            Table itemsTable = ais.getTable(SCHEMA, "items");
-            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "oDate_iSku", 100, false, Index.KEY_CONSTRAINT, Index.JoinType.LEFT);
-            index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 0, true, null));
-            index.addColumn(new IndexColumn(index, itemsTable.getColumn("sku"), 1, true, null));
             rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
         }
 
@@ -1222,5 +1182,5 @@ public class RowDefCacheTest
     }
 
     private static final String SCHEMA = "schema";
-    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory(SCHEMA);
 }

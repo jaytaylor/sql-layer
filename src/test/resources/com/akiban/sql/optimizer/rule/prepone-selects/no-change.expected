@@ -1,8 +1,8 @@
 SelectQuery@40395aaf
   ResultSet@7570b819[cid, name, oid, cid, order_date, special]
-    Project@3b46ad8b[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.orders.special]
-      Select@1d2b9f14[user.orders.special == upper(user.customers.name)]
-        Flatten@513c952f(user.customers INNER user.orders)
-          GroupScan@60666a53(Group(customers -> user._akiban_customers))
-            TableSource@785606f3(user.customers - TableGroup@63cea096(customers))
-            TableSource@57e2793d(user.orders - TableGroupJoin@12910b0b(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+    Project@3b46ad8b[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, orders.special]
+      Select@1d2b9f14[orders.special == upper(customers.name)]
+        Flatten@513c952f(customers INNER orders)
+          GroupScan@60666a53(Group(customers -> test._akiban_customers))
+            TableSource@785606f3(customers - TableGroup@63cea096(customers))
+            TableSource@57e2793d(orders - TableGroupJoin@12910b0b(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
@@ -19,15 +30,10 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -184,22 +190,24 @@ public class BranchLookup_Default extends Operator
     public BranchLookup_Default(Operator inputOperator,
                                 GroupTable groupTable,
                                 RowType inputRowType,
-                                RowType outputRowType,
+                                UserTableRowType outputRowType,
                                 API.LookupOption flag,
                                 Limit limit)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("limit", limit);
-        ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
-                                  inputRowType instanceof IndexRowType || outputRowType != inputRowType);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || !keepInput",
+        ArgumentValidation.isTrue("outputRowType != inputRowType", outputRowType != inputRowType);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
                                   inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
         } else if (inputRowType instanceof IndexRowType) {
             inputTableType = ((IndexRowType) inputRowType).tableType();
+        } else if (inputRowType instanceof HKeyRowType) {
+            Schema schema = outputRowType.schema();
+            inputTableType = schema.userTableRowType(inputRowType.hKey().userTable());
         }
         assert inputTableType != null : inputRowType;
         UserTable inputTable = inputTableType.userTable();
@@ -232,10 +240,13 @@ public class BranchLookup_Default extends Operator
         // is false. Otherwise, branchRoot's parent is the common ancestor. Find inputTable's ancestor that is also
         // a child of the common ancestor. Then compare these ordinals to determine whether input precedes branch.
         if (this.branchRootOrdinal == -1) {
+            // output type is ancestor of input row type
             this.inputPrecedesBranch = false;
         } else if (inputTable == commonAncestor) {
+            // input row type is parent of output type
             this.inputPrecedesBranch = true;
         } else {
+            // neither input type nor output type is the common ancestor
             UserTable ancestorOfInputAndChildOfCommon = inputTable;
             while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
                 ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
@@ -292,8 +303,10 @@ public class BranchLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 inputCursor.open();
                 advanceInput();
+                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -304,6 +317,7 @@ public class BranchLookup_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row nextRow = null;
                 while (nextRow == null && inputRow.isHolding()) {
@@ -343,10 +357,40 @@ public class BranchLookup_Default extends Operator
         @Override
         public void close()
         {
-            inputCursor.close();
-            inputRow.release();
-            lookupCursor.close();
-            lookupRow.release();
+            CursorLifecycle.checkIdleOrActive(this);
+            if (!idle) {
+                inputCursor.close();
+                inputRow.release();
+                lookupCursor.close();
+                lookupRow.release();
+                idle = true;
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            inputCursor.destroy();
+            lookupCursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return idle;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !idle;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return inputCursor.isDestroyed();
         }
 
         // Execution interface
@@ -370,7 +414,6 @@ public class BranchLookup_Default extends Operator
                     lookupRow.release();
                     close();
                 } else {
-                    currentLookupRow.runId(inputRow.get().runId());
                     lookupRow.hold(currentLookupRow);
                 }
             } else {
@@ -415,6 +458,7 @@ public class BranchLookup_Default extends Operator
         private final ShareHolder<Row> lookupRow = new ShareHolder<Row>();
         private final HKey lookupRowHKey;
         private LookupState lookupState;
+        private boolean idle = true;
     }
 
     // Inner classes

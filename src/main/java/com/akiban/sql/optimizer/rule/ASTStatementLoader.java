@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -53,6 +64,9 @@ import java.util.*;
  */
 public class ASTStatementLoader extends BaseRule
 {
+    // TODO: Maybe move this into a separate class.
+    public static final int IN_TO_OR_MAX_COUNT_DEFAULT = 1;
+
     private static final Logger logger = LoggerFactory.getLogger(ASTStatementLoader.class);
 
     @Override
@@ -74,7 +88,7 @@ public class ASTStatementLoader extends BaseRule
         plan.putWhiteboard(MARKER, ast);
         DMLStatementNode stmt = ast.getStatement();
         try {
-            plan.setPlan(new Loader().toStatement(stmt));
+            plan.setPlan(new Loader((SchemaRulesContext)plan.getRulesContext()).toStatement(stmt));
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
@@ -82,6 +96,30 @@ public class ASTStatementLoader extends BaseRule
     }
 
     static class Loader {
+        private SchemaRulesContext rulesContext;
+
+        Loader(SchemaRulesContext rulesContext) {
+            this.rulesContext = rulesContext;
+            pushEquivalenceFinder();
+        }
+
+        private void pushEquivalenceFinder() {
+            columnEquivalences.push(new EquivalenceFinder<ColumnExpression>() {
+                @Override
+                protected String describeElement(ColumnExpression element) {
+                    return element.getSQLsource().getTableName() + "." + element.getColumn().getName();
+                }
+            });
+        }
+
+        private void popEquivalenceFinder() {
+            columnEquivalences.pop();
+        }
+        
+        private EquivalenceFinder<ColumnExpression> peekEquivalenceFinder() {
+            return columnEquivalences.element();
+        }
+
         /** Convert given statement into appropriate intermediate form. */
         protected BaseStatement toStatement(DMLStatementNode stmt) throws StandardException {
             switch (stmt.getNodeType()) {
@@ -108,7 +146,7 @@ public class ASTStatementLoader extends BaseRule
                                               cursorNode.getFetchFirstClause());
             if (cursorNode.getUpdateMode() == CursorNode.UpdateMode.UPDATE)
                 throw new UnsupportedSQLException("FOR UPDATE", cursorNode);
-            return new SelectQuery(query);
+            return new SelectQuery(query, peekEquivalenceFinder());
         }
 
         // UPDATE
@@ -126,7 +164,7 @@ public class ASTStatementLoader extends BaseRule
                 ExpressionNode value = toExpression(result.getExpression());
                 updateColumns.add(new UpdateColumn(column, value));
             }
-            return new UpdateStatement(query, targetTable, updateColumns);
+            return new UpdateStatement(query, targetTable, updateColumns, peekEquivalenceFinder());
         }
 
         // INSERT
@@ -163,7 +201,7 @@ public class ASTStatementLoader extends BaseRule
                     targetColumns.add(aisColumns.get(i));
                 }
             }
-            return new InsertStatement(query, targetTable, targetColumns);
+            return new InsertStatement(query, targetTable, targetColumns, peekEquivalenceFinder());
         }
     
         // DELETE
@@ -171,7 +209,7 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             PlanNode query = toQuery((SelectNode)deleteNode.getResultSetNode());
             TableNode targetTable = getTargetTable(deleteNode);
-            return new DeleteStatement(query, targetTable);
+            return new DeleteStatement(query, targetTable, peekEquivalenceFinder());
         }
 
         /** The query part of SELECT / INSERT, which might be VALUES / UNION */
@@ -258,17 +296,25 @@ public class ASTStatementLoader extends BaseRule
             if (selectNode.hasWindows())
                 throw new UnsupportedSQLException("WINDOW", selectNode);
         
-            if (selectNode.isDistinct()) {
-                Project project = new Project(query, projects);
-                query = project;
-                if (!sorts.isEmpty()) {
-                    query = new Sort(query, sortsForDistinct(sorts, project));
-                    query = new Distinct(query, Distinct.Implementation.EXPLICIT_SORT);
+            do_distinct:
+            {
+                // Distinct puts the Project before any Sort so as to only do one sort.
+                if (selectNode.isDistinct()) {
+                    Project project = new Project(query, projects);
+                    if (sorts.isEmpty()) {
+                        query = new Distinct(project);
+                        break do_distinct;
+                    }
+                    else if (adjustSortsForDistinct(sorts, project)) {
+                        query = new Sort(project, sorts);
+                        query = new Distinct(query, Distinct.Implementation.EXPLICIT_SORT);
+                        break do_distinct;
+                    }
+                    else {
+                        query = new AggregateSource(query, new ArrayList<ExpressionNode>((projects)));
+                        // Don't break: treat like non-distinct case.
+                    }
                 }
-                else
-                    query = new Distinct(query);
-            }
-            else {
                 if (!sorts.isEmpty()) {
                     query = new Sort(query, sorts);
                 }
@@ -329,18 +375,26 @@ public class ASTStatementLoader extends BaseRule
         /** The common top-level join and select part of all statements. */
         protected PlanNode toQuery(SelectNode selectNode)
                 throws StandardException {
-            Joinable joins = null;
-            for (FromTable fromTable : selectNode.getFromList()) {
-                if (joins == null)
-                    joins = toJoinNode(fromTable, true);
-                else
-                    joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
+            PlanNode input;
+            if (!selectNode.getFromList().isEmpty()) {
+                Joinable joins = null;
+                for (FromTable fromTable : selectNode.getFromList()) {
+                    if (joins == null)
+                        joins = toJoinNode(fromTable, true);
+                    else
+                        joins = joinNodes(joins, toJoinNode(fromTable, true), JoinType.INNER);
+                }
+                input = joins;
+            }
+            else {
+                // No FROM list means one row with presumably constant Projects.
+                input = new ExpressionsSource(Collections.singletonList(Collections.<ExpressionNode>emptyList()));
             }
             ConditionList conditions = toConditions(selectNode.getWhereClause());
             if (hasAggregateFunction(conditions))
                 throw new UnsupportedSQLException("Aggregate not allowed in WHERE",
                                                   selectNode.getWhereClause());
-            return new Select(joins, conditions);
+            return new Select(input, conditions);
         }
 
         protected Map<FromTable,Joinable> joinNodes =
@@ -354,8 +408,16 @@ public class ASTStatementLoader extends BaseRule
                 if (tb == null)
                     throw new UnsupportedSQLException("FROM table",
                                                       fromTable);
-                TableNode table = getTableNode((UserTable)tb.getTable());
-                result = new TableSource(table, required);
+                UserTable userTable = (UserTable)tb.getTable();
+                TableNode table = getTableNode(userTable);
+                String name = fromTable.getCorrelationName();
+                if (name == null) {
+                    if (userTable.getName().getSchemaName().equals(rulesContext.getDefaultSchemaName()))
+                        name = userTable.getName().getTableName();
+                    else
+                        name = userTable.getName().toString();
+                }
+                result = new TableSource(table, required, name);
             }
             else if (fromTable instanceof com.akiban.sql.parser.JoinNode) {
                 com.akiban.sql.parser.JoinNode joinNode = 
@@ -388,7 +450,7 @@ public class ASTStatementLoader extends BaseRule
                                                      fromSubquery.getOrderByList(),
                                                      fromSubquery.getOffset(),
                                                      fromSubquery.getFetchFirst());
-                result = new SubquerySource(new Subquery(subquery), 
+                result = new SubquerySource(new Subquery(subquery, peekEquivalenceFinder()),
                                             fromSubquery.getExposedName());
             }
             else
@@ -542,10 +604,25 @@ public class ASTStatementLoader extends BaseRule
                 throws StandardException {
             ExpressionNode left = toExpression(in.getLeftOperand());
             ValueNodeList rightOperandList = in.getRightOperandList();
-            if (rightOperandList.size() == 1) {
-                ExpressionNode right1 = toExpression(rightOperandList.get(0));
-                conditions.add(new ComparisonCondition(Comparison.EQ, left, right1,
-                                                       in.getType(), in));
+            if (rightOperandList.size() <= getInToOrMaxCount()) {
+                // Make single element into = comparison and small
+                // number into a disjunction of those.
+                ConditionExpression conds = null;
+                for (ValueNode rightOperand : rightOperandList) {
+                    ExpressionNode right = toExpression(rightOperand);
+                    ConditionExpression cond = new ComparisonCondition(Comparison.EQ, left, right,
+                                                                       in.getType(), in);
+                    if (conds == null) {
+                        conds = cond;
+                        continue;
+                    }
+                    List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                    operands.add(conds);
+                    operands.add(cond);
+                    conds = new LogicalFunctionCondition("or", operands, 
+                                                         in.getType(), in);
+                }
+                conditions.add(conds);
                 return;
             }
             List<List<ExpressionNode>> rows = new ArrayList<List<ExpressionNode>>();
@@ -562,7 +639,7 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> fields = new ArrayList<ExpressionNode>(1);
             fields.add(cond);
             PlanNode subquery = new Project(source, fields);
-            conditions.add(new AnyCondition(new Subquery(subquery), in.getType(), in));
+            conditions.add(new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()), in.getType(), in));
         }
     
         protected void addSubqueryCondition(List<ConditionExpression> conditions, 
@@ -689,11 +766,11 @@ public class ASTStatementLoader extends BaseRule
                 if (distinct)
                     // See InConditionReverser#convert(Select,AnyCondition).
                     subquery = new Distinct(subquery);
-                condition = new AnyCondition(new Subquery(subquery), 
+                condition = new AnyCondition(new Subquery(subquery, peekEquivalenceFinder()),
                                              subqueryNode.getType(), subqueryNode);
             }
             else {
-                condition = new ExistsCondition(new Subquery(subquery), 
+                condition = new ExistsCondition(new Subquery(subquery, peekEquivalenceFinder()),
                                                 subqueryNode.getType(), subqueryNode);
             }
             if (negate) {
@@ -893,18 +970,23 @@ public class ASTStatementLoader extends BaseRule
         /** SELECT DISTINCT with sorting sorts by an input Project and
          * adds extra columns so as to only sort once for both
          * Distinct and the requested ordering.
+         * Returns <code>false</code> if this is not possible and
+         * DISTINCT should be turned into GROUP BY.
          */
-        protected List<OrderByExpression> sortsForDistinct(List<OrderByExpression> sorts,
-                                                           Project project)
+        protected boolean adjustSortsForDistinct(List<OrderByExpression> sorts,
+                                                 Project project)
                 throws StandardException {
             List<ExpressionNode> exprs = project.getFields();
             BitSet used = new BitSet(exprs.size());
             for (OrderByExpression orderBy : sorts) {
                 ExpressionNode expr = orderBy.getExpression();
                 int idx = exprs.indexOf(expr);
-                if (idx < 0)
+                if (idx < 0) {
+                    if (isDistinctSortNotSelectGroupBy())
+                        return false;
                     throw new UnsupportedSQLException("SELECT DISTINCT requires that ORDER BY expressions be in the select list",
                                                       expr.getSQLsource());
+                }
                 ExpressionNode cexpr = new ColumnExpression(project, idx,
                                                             expr.getSQLtype(),
                                                             expr.getSQLsource());
@@ -922,7 +1004,15 @@ public class ASTStatementLoader extends BaseRule
                     sorts.add(orderBy);
                 }
             }
-            return sorts;
+            return true;
+        }
+
+        private Boolean distinctSortNotSelectGroupBySetting = null;
+
+        protected boolean isDistinctSortNotSelectGroupBy() {
+            if (distinctSortNotSelectGroupBySetting == null)
+                distinctSortNotSelectGroupBySetting = Boolean.valueOf(rulesContext.getProperty("distinctSortNotSelectGroupBy", "false"));
+            return distinctSortNotSelectGroupBySetting;
         }
 
         /** LIMIT / OFFSET */
@@ -974,7 +1064,8 @@ public class ASTStatementLoader extends BaseRule
         }
     
         protected Map<Group,TableTree> groups = new HashMap<Group,TableTree>();
-        protected EquivalenceFinder<ColumnExpression> columnEquivalences = new EquivalenceFinder<ColumnExpression>();
+        protected Deque<EquivalenceFinder<ColumnExpression>> columnEquivalences
+                = new ArrayDeque<EquivalenceFinder<ColumnExpression>>(1);
 
         protected TableNode getTableNode(UserTable table)
                 throws StandardException {
@@ -1022,7 +1113,7 @@ public class ASTStatementLoader extends BaseRule
                 Column column = cb.getColumn();
                 if (column != null)
                     return new ColumnExpression(((TableSource)joinNode), column, 
-                                                type, valueNode, columnEquivalences);
+                                                type, valueNode);
                 else
                     return new ColumnExpression(((ColumnSource)joinNode), 
                                                 cb.getFromTable().getResultColumns().indexOf(cb.getResultColumn()), 
@@ -1121,11 +1212,13 @@ public class ASTStatementLoader extends BaseRule
             }
             else if (valueNode instanceof SubqueryNode) {
                 SubqueryNode subqueryNode = (SubqueryNode)valueNode;
+                pushEquivalenceFinder();
                 PlanNode subquerySelect = toQueryForSelect(subqueryNode.getResultSet(),
                                                            subqueryNode.getOrderByList(),
                                                            subqueryNode.getOffset(),
                                                            subqueryNode.getFetchFirst());
-                Subquery subquery = new Subquery(subquerySelect);
+                Subquery subquery = new Subquery(subquerySelect, peekEquivalenceFinder());
+                popEquivalenceFinder();
                 if ((subqueryNode.getType() != null) &&
                     subqueryNode.getType().getTypeId().isRowMultiSet())
                     return new SubqueryResultSetExpression(subquery,
@@ -1330,5 +1423,14 @@ public class ASTStatementLoader extends BaseRule
             }
         }
 
+        public int getInToOrMaxCount() {
+            String prop = rulesContext.getProperty("inToOrMaxCount");
+            if (prop != null)
+                return Integer.valueOf(prop);
+            else
+                return IN_TO_OR_MAX_COUNT_DEFAULT;
+        }
+
     }
+
 }

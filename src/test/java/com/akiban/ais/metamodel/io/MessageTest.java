@@ -1,51 +1,57 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.ais.metamodel.io;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.server.rowdata.SchemaFactory;
+import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
-
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertSame;
 
 public final class MessageTest {
-    private static AkibanInformationSchema coiSchema() throws Exception {
-        SchemaDef schemaDef = new SchemaDef();
-        schemaDef.parseCreateTable("create table test.c(id int key, name varchar(32)) engine=akibandb;");
-        schemaDef.parseCreateTable("create table test.o(id int key, cid int, foo int, "+
-                                   "constraint __akiban foreign key(cid) references c(id)) engine=akibandb;");
-        schemaDef.parseCreateTable("create table test.i(id int key, oid int, "+
-                                   "constraint __akiban foreign key(oid) references o(id)) engine=akibandb;");
-        return new SchemaDefToAis(schemaDef, true).getAis();
+    private static AkibanInformationSchema coiSchema(boolean withGroupIndex) throws Exception {
+        SchemaFactory schemaFactory = new SchemaFactory("test");
+        return schemaFactory.ais("create table test.c(id int not null primary key, name varchar(32));",
+                                 "create table test.o(id int not null primary key, cid int, foo int, ",
+                                 "grouping foreign key(cid) references c(id));",
+                                 "create table test.i(id int not null primary key, oid int, ",
+                                 "grouping foreign key(oid) references o(id));",
+                                 withGroupIndex ? "create index foo on o(c.name, o.foo) using left join;" : "");
     }
 
     private static void serializeAndCompare(AkibanInformationSchema ais) throws Exception {
-        ByteBuffer buffer = ByteBuffer.allocate(1 << 19);
+        GrowableByteBuffer buffer = new GrowableByteBuffer(1 << 19);
         new Writer(new MessageTarget(buffer)).save(ais);
         buffer.flip();
         AkibanInformationSchema newAis = new Reader(new MessageSource(buffer)).load();
@@ -65,22 +71,19 @@ public final class MessageTest {
 
     @Test
     public void coiAIS() throws Exception {
-        AkibanInformationSchema ais = coiSchema();
+        AkibanInformationSchema ais = coiSchema(false);
         serializeAndCompare(ais);
     }
 
     @Test
     public void coiAISWithGroupIndex() throws Exception {
-        final AkibanInformationSchema ais = coiSchema();
+        final AkibanInformationSchema ais = coiSchema(true);
         final Table cTable = ais.getTable("test", "c");
         assertNotNull("c table not null", cTable);
         final Table oTable = ais.getTable("test", "o");
         assertNotNull("o table not null", oTable);
         final Group group = cTable.getGroup();
         assertSame("customer and order group", group, oTable.getGroup());
-        final GroupIndex fooIndex = GroupIndex.create(ais, group, "foo", 100, false, "KEY", null);
-        fooIndex.addColumn(new IndexColumn(fooIndex, cTable.getColumn("name"), 0, true, null));
-        fooIndex.addColumn(new IndexColumn(fooIndex, oTable.getColumn("foo"), 1, true, null));
         ais.checkIntegrity();
         serializeAndCompare(ais);
     }

@@ -1,0 +1,39 @@
+## test EXTRACT frunction
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (bigint_field, date_field, time_field) VALUES (20061107, '2000-12-01', '01:05:06')
+---
+- Statement: SELECT extract(month from date_field) from all_types;
+- output: [[12]]
+---
+- Statement: SELECT extract(year from time_field) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT extract (minute from time_field) from all_types;
+- output: [[5]]
+---
+- Statement: SELECT extract (second from time_field) from all_types;
+- output: [[6]]
+---
+- Statement: SELECT extract (second from date_field) from all_types;
+- output: [[0]]
+---
+- Statement: SELECT extract (second from time('12:30:10')) from all_types;
+- output: [[10]]
+---
+- Statement: SELECT extract (second from '12:30:10') from all_types;
+- output: [[10]]
+---
+- Statement: SELECT EXTRACT (DAY FROM bigint_field) from all_types;
+- output: [[7]]
+---
+- Statement: SELECT EXTRACT (year from bigint_field) from all_types;
+- output: [[2006]]
+---
+- Statement: SELECT extract (hour from null) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT extract( bigint_field) from all_types;
+- error: [42000]
+...

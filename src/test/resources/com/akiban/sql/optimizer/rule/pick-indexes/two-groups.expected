@@ -1,13 +1,13 @@
 SelectQuery@718ddc48
   ResultSet@18793536[order_date, name]
-    Project@3d9478c7[user.orders.order_date, user.child.name]
+    Project@3d9478c7[orders.order_date, child.name]
       Select@5e857066[]
         JoinNode@a966905(INNER/NESTED_LOOPS)
-          TableJoins@18c8ccb1(TableGroup@8c1e4d5(customers) - GroupScan@71966070(Group(customers -> user._akiban_customers)))
-            JoinNode@26f6852d(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@47959352(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@4b61cd25(user.customers - TableGroup@8c1e4d5(customers))
-              TableSource@1e35ecd(user.orders - TableGroupJoin@47959352(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          TableJoins@30fd981a(TableGroup@2cfb1135(parent) - IndexScan@1726c5a5(Index(user.parent.name[IndexColumn(name)]), NONE, =user.customers.name))
-            JoinNode@590cec16(INNER/GROUP[user.child.pid == user.parent.id] - TableGroupJoin@7279df82(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
-              TableSource@7664e5b2(user.parent - TableGroup@2cfb1135(parent))
-              TableSource@5a2445d7(user.child - TableGroupJoin@7279df82(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+          TableJoins@18c8ccb1(TableGroup@8c1e4d5(customers) - GroupScan@71966070(Group(customers -> test._akiban_customers)))
+            JoinNode@26f6852d(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@47959352(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@4b61cd25(customers - TableGroup@8c1e4d5(customers))
+              TableSource@1e35ecd(orders - TableGroupJoin@47959352(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          TableJoins@30fd981a(TableGroup@2cfb1135(parent) - IndexScan@1726c5a5(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name))
+            JoinNode@590cec16(INNER/GROUP[child.pid == parent.id] - TableGroupJoin@7279df82(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+              TableSource@7664e5b2(parent - TableGroup@2cfb1135(parent))
+              TableSource@5a2445d7(child - TableGroupJoin@7279df82(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))

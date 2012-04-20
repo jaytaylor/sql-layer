@@ -1,24 +1,39 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
 
 /** Joins within a single {@link TableGroup} represented as a tree
  * whose structure mirrors that of the group.
@@ -33,7 +48,9 @@ public class TableGroupJoinTree extends BaseJoinable
         TableSource table;
         TableGroupJoinNode parent, nextSibling, firstChild;
         JoinType parentJoinType;
-
+        ConditionList joinConditions;
+        long state;
+        
         public TableGroupJoinNode(TableSource table) {
             this.table = table;
         }
@@ -67,6 +84,21 @@ public class TableGroupJoinTree extends BaseJoinable
             this.parentJoinType = parentJoinType;
         }
 
+        public ConditionList getJoinConditions() {
+            return joinConditions;
+        }
+        public void setJoinConditions(ConditionList joinConditions) {
+            this.joinConditions = joinConditions;
+        }
+
+        /** Integer state managed by some rule. */
+        public long getState() {
+            return state;
+        }
+        public void setState(long state) {
+            this.state = state;
+        }
+
         /** Find the given table in this (sub-)tree. */
         public TableGroupJoinNode findTable(TableSource table) {
             for (TableGroupJoinNode node : this) {
@@ -80,6 +112,12 @@ public class TableGroupJoinTree extends BaseJoinable
         @Override
         public Iterator<TableGroupJoinNode> iterator() {
             return new TableGroupJoinIterator(this);
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
+                "(" + table + ", " + state + ")";
         }
     }
 
@@ -111,13 +149,13 @@ public class TableGroupJoinTree extends BaseJoinable
                 return;
             }
             while (true) {
+                if (next == root) {
+                    next = null;
+                    return;
+                }
                 node = next.getNextSibling();
                 if (node != null) {
                     next = node;
-                    return;
-                }
-                if (next == root) {
-                    next = null;
                     return;
                 }
                 next = next.getParent();
@@ -130,8 +168,15 @@ public class TableGroupJoinTree extends BaseJoinable
         }
     }
 
+    public interface LeafFinderPredicate<V> {
+        boolean includeAndContinue(TableGroupJoinNode node, TableGroupJoinTree tree);
+        V mapToValue(TableGroupJoinNode node);
+    }
+    
     private TableGroup group;
     private TableGroupJoinNode root;
+    private Set<TableSource> required;
+    private PlanNode scan;
     
     public TableGroupJoinTree(TableGroupJoinNode root) {
         this.group = root.getTable().getGroup();
@@ -144,7 +189,28 @@ public class TableGroupJoinTree extends BaseJoinable
     public TableGroupJoinNode getRoot() {
         return root;
     }
+
+    public Set<TableSource> getRequired() {
+        return required;
+    }
+    public void setRequired(Set<TableSource> required) {
+        this.required = required;
+    }
     
+    public PlanNode getScan() {
+        return scan;
+    }
+    public void setScan(PlanNode scan) {
+        this.scan = scan;
+    }
+    
+    public <V> Map<TableGroupJoinNode,V> findLeaves(LeafFinderPredicate<V> predicate) {
+        Map<TableGroupJoinNode,V> results = new HashMap<TableGroupJoinNode, V>();
+        if (predicate.includeAndContinue(root, this))
+            buildLeaves(root, predicate, results);
+        return results;
+    }
+
     @Override
     public Iterator<TableGroupJoinNode> iterator() {
         return new TableGroupJoinIterator(root);
@@ -185,6 +251,10 @@ public class TableGroupJoinTree extends BaseJoinable
         str.append(group);
         str.append(", ");
         summarizeJoins(str);
+        if (scan != null) {
+            str.append(" - ");
+            str.append(scan.summaryString());
+        }
         str.append(")");
         return str.toString();
     }
@@ -196,7 +266,46 @@ public class TableGroupJoinTree extends BaseJoinable
                 str.append(node.getParentJoinType());
                 str.append(" ");
             }
-            str.append(node.getTable().getTable().getTable().getName().getTableName());
+            str.append(node.getTable().getName());
+            if (node.getJoinConditions() != null) {
+                boolean first = true;
+                for (ConditionExpression joinCondition : node.getJoinConditions()) {
+                    if (joinCondition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
+                        continue;
+                    if (first) {
+                        str.append(" ON ");
+                        first = false;
+                    }
+                    else
+                        str.append(" AND ");
+                    str.append(joinCondition);
+                }
+            }
+        }
+    }
+
+    private <V> void buildLeaves(TableGroupJoinNode root, LeafFinderPredicate<V> predicate,
+                                 Map<TableGroupJoinNode,V> out)
+    {
+        // parent caller is responsible for checking that this root satisfies the predicate
+        TableGroupJoinNode child = root.getFirstChild();
+        boolean hitLeaf;
+        if (child == null) {
+            hitLeaf = true;
+        }
+        else {
+            boolean anyChildMatched = false;
+            for (; child != null; child = child.getNextSibling()) {
+                if (predicate.includeAndContinue(child, this)) {
+                    buildLeaves(child, predicate, out);
+                    anyChildMatched = true; // this frame's root is not the leaf of the predicate-matching tree
+                }
+            }
+            hitLeaf = !anyChildMatched;
+        }
+        if (hitLeaf) {
+            V value = predicate.mapToValue(root);
+            out.put(root, value);
         }
     }
 

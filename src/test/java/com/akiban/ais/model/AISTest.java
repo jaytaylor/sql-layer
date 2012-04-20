@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.ais.model;
@@ -34,12 +45,11 @@ public class AISTest
     public void testTableColumnsReturnedInOrder() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.t(",
             "    col2 int not null, ",
             "    col1 int not null, ",
             "    col0 int not null ",
-            ") engine = akibandb;"
+            ");"
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = ais.getUserTable("s", "t");
@@ -54,16 +64,15 @@ public class AISTest
     public void testIndexColumnsReturnedInOrder() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.t(",
             "    col0 int not null, ",
             "    col1 int not null, ",
             "    col2 int not null, ",
             "    col3 int not null, ",
             "    col4 int not null, ",
-            "    col5 int not null, ",
-            "    key i(col5, col4, col3) ",
-            ") engine = akibandb;"
+            "    col5 int not null ",
+            ");",
+            "create index i on s.t(col5, col4, col3);"
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = ais.getUserTable("s", "t");
@@ -85,7 +94,6 @@ public class AISTest
     public void testPKColumnsReturnedInOrder() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.t(",
             "    col0 int not null, ",
             "    col1 int not null, ",
@@ -94,7 +102,7 @@ public class AISTest
             "    col4 int not null, ",
             "    col5 int not null, ",
             "    primary key (col5, col4, col3) ",
-            ") engine = akibandb;"
+            ");"
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = ais.getUserTable("s", "t");
@@ -113,18 +121,17 @@ public class AISTest
     public void testJoinColumnsReturnedInOrder() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.parent(",
             "    p0 int not null, ",
             "    p1 int not null, ",
             "    primary key (p1, p0) ",
-            ") engine = akibandb;",
+            ");",
             "create table s.child(",
             "    c0 int not null, ",
             "    c1 int not null, ",
             "    primary key (c0, c1), ",
-            "   constraint `__akiban_fk` foreign key (c0, c1) references parent(p1, p0)",
-            ") engine = akibandb;",
+            "    grouping foreign key (c0, c1) references parent(p1, p0)",
+            ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         Join join = ais.getUserTable("s", "child").getParentJoin();
@@ -142,23 +149,22 @@ public class AISTest
     public void testHKeyNonCascadingPKs() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.customer(",
             "    cid int not null, ",
             "    primary key (cid) ",
-            ") engine = akibandb;",
-            "create table s.`order`(",
+            ");",
+            "create table s.\"order\"(",
             "    oid int not null, ",
             "    cid int not null, ",
             "    primary key (oid), ",
-            "   constraint `__akiban_fk_oc` foreign key (cid) references customer(cid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cid) references customer(cid)",
+            ");",
             "create table s.item(",
             "    iid int not null, ",
             "    oid int not null, ",
             "    primary key (iid), ",
-            "   constraint `__akiban_fk_io` foreign key (oid) references `order`(oid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (oid) references \"order\"(oid)",
+            ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
@@ -201,28 +207,27 @@ public class AISTest
     public void testHKeyNonCascadingMultiColumnPKs() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.customer(",
             "    cid0 int not null, ",
             "    cid1 int not null, ",
             "    primary key (cid0, cid1) ",
-            ") engine = akibandb;",
-            "create table s.`order`(",
+            ");",
+            "create table s.\"order\"(",
             "    oid0 int not null, ",
             "    oid1 int not null, ",
             "    cid0 int not null, ",
             "    cid1 int not null, ",
             "    primary key (oid0, oid1), ",
-            "   constraint `__akiban_fk_oc` foreign key (cid0, cid1) references customer(cid0, cid1)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cid0, cid1) references customer(cid0, cid1)",
+            ");",
             "create table s.item(",
             "    iid0 int not null, ",
             "    iid1 int not null, ",
             "    oid0 int not null, ",
             "    oid1 int not null, ",
             "    primary key (iid0, iid1), ",
-            "   constraint `__akiban_fk_io` foreign key (oid0, oid1) references `order`(oid0, oid1)",
-            ") engine = akibandb;",
+            "    grouping foreign key (oid0, oid1) references \"order\"(oid0, oid1)",
+            ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
@@ -277,24 +282,23 @@ public class AISTest
     public void testHKeyCascadingPKs() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.customer(",
             "    cid int not null, ",
             "    primary key (cid) ",
-            ") engine = akibandb;",
-            "create table s.`order`(",
+            ");",
+            "create table s.\"order\"(",
             "    cid int not null, ",
             "    oid int not null, ",
             "    primary key (cid, oid), ",
-            "   constraint `__akiban_fk_oc` foreign key (cid) references customer(cid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cid) references customer(cid)",
+            ");",
             "create table s.item(",
             "    cid int not null, ",
             "    oid int not null, ",
             "    iid int not null, ",
             "    primary key (cid, oid, iid), ",
-            "   constraint `__akiban_fk_io` foreign key (cid, oid) references `order`(cid, oid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cid, oid) references \"order\"(cid, oid)",
+            ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
@@ -337,20 +341,19 @@ public class AISTest
     public void testHKeyCascadingMultiColumnPKs() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.customer(",
             "    cid0 int not null, ",
             "    cid1 int not null, ",
             "    primary key (cid0, cid1) ",
-            ") engine = akibandb;",
-            "create table s.`order`(",
+            ");",
+            "create table s.\"order\"(",
             "    cid0 int not null, ",
             "    cid1 int not null, ",
             "    oid0 int not null, ",
             "    oid1 int not null, ",
             "    primary key (cid0, cid1, oid0, oid1), ",
-            "   constraint `__akiban_fk_oc` foreign key (cid0, cid1) references customer(cid0, cid1)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cid0, cid1) references customer(cid0, cid1)",
+            ");",
             "create table s.item(",
             "    cid0 int not null, ",
             "    cid1 int not null, ",
@@ -359,8 +362,8 @@ public class AISTest
             "    iid0 int not null, ",
             "    iid1 int not null, ",
             "    primary key (cid0, cid1, oid0, oid1, iid0, iid1), ",
-            "   constraint `__akiban_fk_io` foreign key (cid0, cid1, oid0, oid1) references `order`(cid0, cid1, oid0, oid1)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cid0, cid1, oid0, oid1) references \"order\"(cid0, cid1, oid0, oid1)",
+            ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
@@ -415,29 +418,28 @@ public class AISTest
     public void testHKeyWithBranches() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.customer(",
             "    cid int not null, ",
             "    primary key (cid) ",
-            ") engine = akibandb;",
-            "create table s.`order`(",
+            ");",
+            "create table s.\"order\"(",
             "    oid int not null, ",
             "    cid int not null, ",
             "    primary key (oid), ",
-            "   constraint `__akiban_fk_oc` foreign key (cid) references customer(cid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cid) references customer(cid)",
+            ");",
             "create table s.item(",
             "    iid int not null, ",
             "    oid int not null, ",
             "    primary key (iid), ",
-            "   constraint `__akiban_fk_io` foreign key (oid) references `order`(oid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (oid) references \"order\"(oid)",
+            ");",
             "create table s.address(",
             "    aid int not null, ",
             "    cid int not null, ",
             "    primary key (aid), ",
-            "   constraint `__akiban_fk_ac` foreign key (cid) references customer(cid)",
-            ") engine = akibandb;",
+            "    grouping foreign key (cid) references customer(cid)",
+            ");",
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         // ---------------- Customer -------------------------------------
@@ -491,11 +493,10 @@ public class AISTest
     public void testAkibanPKColumn() throws Exception
     {
         String[] ddl = {
-            "use s; ",
             "create table s.t(",
             "    a int, ",
             "    b int",
-            ") engine = akibandb;"
+            ");"
         };
         AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
         UserTable table = (UserTable) ais.getTable("s", "t");
@@ -602,5 +603,5 @@ public class AISTest
         }
     }
 
-    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory("s");
 }

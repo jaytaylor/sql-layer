@@ -1,13 +1,13 @@
 SelectQuery@64f007ad
   ResultSet@4a8822a0[order_date, sku, quan]
     MapJoin@507d811a()
-      Flatten@5fa6fb3e(user.orders INNER user.items)
-        BranchLookup@4bb8d481(user.customers -> user.customers)
-          IndexScan@538787fd(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-          TableSource@246972f1(user.orders - TableGroupJoin@66f11de2(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          TableSource@6f93ee4(user.items - TableGroupJoin@5fe1153a(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-      Project@2f995c9a[user.orders.order_date, user.items.sku, user.items.quan]
+      Flatten@5fa6fb3e(orders INNER items)
+        BranchLookup@4bb8d481(customers -> customers)
+          IndexScan@538787fd(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith)
+          TableSource@246972f1(orders - TableGroupJoin@66f11de2(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          TableSource@6f93ee4(items - TableGroupJoin@5fe1153a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+      Project@2f995c9a[orders.order_date, items.sku, items.quan]
         Select@7d8e9adf[]
           Limit@3238c403(LIMIT 1)
-            Select@2cccbab7[user.items.quan == VALUES[0]]
-              ExpressionsSource@558fee4f([[50], [100]])
+            Select@2cccbab7[items.quan == VALUES[0]]
+              ExpressionsSource@558fee4f([[50], [51], [100]])

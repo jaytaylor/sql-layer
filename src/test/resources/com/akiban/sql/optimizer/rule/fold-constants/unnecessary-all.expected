@@ -1,5 +1,5 @@
 SelectQuery@3cee6ad6
   ResultSet@48a826da[name]
-    Project@178ed77a[user.customers.name]
+    Project@178ed77a[customers.name]
       Select@22e496ab[]
-        TableSource@6e3e5a91(user.customers)
+        TableSource@6e3e5a91(customers)

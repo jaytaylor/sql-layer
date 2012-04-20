@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.tablestatus;
@@ -20,6 +31,8 @@ import static org.junit.Assert.assertEquals;
 import java.util.Collections;
 import java.util.concurrent.Callable;
 
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
@@ -32,7 +45,7 @@ public class TableStatusRecoveryIT extends ITBase {
     
     @Test
     public void simpleInsertRowCountTest() throws Exception {
-        int tableId = createTable("test", "A", "I INT, V VARCHAR(255), PRIMARY KEY(I)");
+        int tableId = createTable("test", "A", "I INT NOT NULL, V VARCHAR(255), PRIMARY KEY(I)");
         for (int i = 0; i < 10000; i++) {
             writeRows(createNewRow(tableId, i, "This is record # " + 1));
         }
@@ -85,7 +98,12 @@ public class TableStatusRecoveryIT extends ITBase {
     public void autoIncrementInsertTest() throws Exception {
         final int INSERT_COUNT = 10000;
 
-        int tableId = createTable("test", "A", "I INT AUTO_INCREMENT, V VARCHAR(255), PRIMARY KEY(I)");
+        NewAISBuilder builder = AISBBasedBuilder.create("test");
+        builder.userTable("A").autoIncLong("I", 1).colString("V", 255).pk("I");
+        ddl().createTable(session(), builder.ais().getUserTable("test", "A"));
+        updateAISGeneration();
+
+        int tableId = tableId("test", "A");
         for (int i = 1; i <= INSERT_COUNT; i++) {
             writeRows(createNewRow(tableId, i, "This is record # " + 1));
         }
@@ -103,10 +121,10 @@ public class TableStatusRecoveryIT extends ITBase {
 
     @Test
     public void ordinalCreationTest() throws Exception {
-        final int aId = createTable("test", "A", "ID INT, PRIMARY KEY(ID)");
+        final int aId = createTable("test", "A", "ID INT NOT NULL, PRIMARY KEY(ID)");
         final int aOrdinal = getOrdinal(aId);
 
-        final int bId = createTable("test", "B", "ID INT, AID INT, PRIMARY KEY(ID)", akibanFK("AID", "A", "ID"));
+        final int bId = createTable("test", "B", "ID INT NOT NULL, AID INT, PRIMARY KEY(ID)", akibanFK("AID", "A", "ID"));
         final int bOrdinal = getOrdinal(bId);
         
         assertEquals("ordinals unique before restart", true, aOrdinal != bOrdinal);
@@ -116,7 +134,7 @@ public class TableStatusRecoveryIT extends ITBase {
         assertEquals("parent ordinal same after restart", aOrdinal, getOrdinal(aId));
         assertEquals("child ordinal same after restart", bOrdinal, getOrdinal(bId));
         
-        final int cId = createTable("test", "C", "ID INT, BID INT, PRIMARY KEY(ID)", akibanFK("BID", "B", "ID"));
+        final int cId = createTable("test", "C", "ID INT NOT NULL, BID INT, PRIMARY KEY(ID)", akibanFK("BID", "B", "ID"));
         final int cOrdinal = getOrdinal(cId);
         
         assertEquals("new grandchild after restart has unique ordinal", true, cOrdinal != aOrdinal && cOrdinal != bOrdinal);

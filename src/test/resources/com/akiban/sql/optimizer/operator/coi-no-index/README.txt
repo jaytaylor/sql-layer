@@ -1,5 +1,7 @@
 COI with no indexed other than primary keys
 
+select-0; no FROM list
+
 select-2: inequality
 
 select-2a: match column

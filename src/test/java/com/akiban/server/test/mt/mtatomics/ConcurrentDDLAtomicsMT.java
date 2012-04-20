@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.mt.mtatomics;
@@ -18,6 +29,8 @@ package com.akiban.server.test.mt.mtatomics;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
@@ -187,7 +200,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
     @Test
     public void dropShiftsIndexIdWhileScanning() throws Exception {
-        final int tableId = createTable(SCHEMA, TABLE, "id int key", "name varchar(32)", "age varchar(2)", "key(name)", "key(age)");
+        final int tableId = createTable(SCHEMA, TABLE, "id int not null primary key", "name varchar(32)", "age varchar(2)",
+                                        "UNIQUE(name)", "UNIQUE(age)");
         writeRows(
                 createNewRow(tableId, 2, "alpha", 3),
                 createNewRow(tableId, 1, "bravo", 2),
@@ -250,6 +264,10 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         largeEnoughTable(5000);
         final String uniqueTableName = TABLE + "thesnowman";
 
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA, uniqueTableName).colLong("id", false).pk("id");
+        final UserTable tableToCreate = builder.ais().getUserTable(SCHEMA, uniqueTableName);
+
         TimedCallable<Void> dropTable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
@@ -259,13 +277,14 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
                 return null;
             }
         };
+
         TimedCallable<Void> createTable = new TimedCallable<Void>() {
             @Override
             protected Void doCall(TimePoints timePoints, Session session) throws Exception {
                 Timing.sleep(2000);
                 timePoints.mark("ADD>");
                 try {
-                    createTable(SCHEMA, uniqueTableName, "id int key");
+                    ddl().createTable(session, tableToCreate);
                     timePoints.mark("ADD SUCCEEDED");
                 } catch (IllegalStateException e) {
                     timePoints.mark("ADD FAILED");
@@ -395,12 +414,12 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
         int rowCount;
         long dropTime;
         float factor = 1.5f; // after we write N rows, we'll write an additional (factor-1)*N rows as buffer
-        int parentId = createTable(SCHEMA, TABLE+"parent", "id int key");
+        int parentId = createTable(SCHEMA, TABLE+"parent", "id int not null primary key");
         writeRows(
                 createNewRow(parentId, 1)
         );
-        final String[] childTableDDL = {"id int key", "pid int", "name varchar(32)", "key(name)",
-                "CONSTRAINT __akiban_p FOREIGN KEY __akiban_p(pid) REFERENCES " +TABLE+"parent(id)"};
+        final String[] childTableDDL = {"id int not null primary key", "pid int", "name varchar(32)", "UNIQUE(name)",
+                "GROUPING FOREIGN KEY (pid) REFERENCES " +TABLE+"parent(id)"};
         do {
             int tableId = createTable(SCHEMA, TABLE, childTableDDL);
             rowCount = 1;
@@ -487,7 +506,8 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
 
         final int NUMBER_OF_ROWS = 100;
-        final int initialTableId = createTable(SCHEMA, TABLE, "id int key", "age int", "key(age)");
+        final int initialTableId = createTable(SCHEMA, TABLE, "id int not null primary key", "age int");
+        createIndex(SCHEMA, TABLE, "age", "age");
         final TableName tableName = new TableName(SCHEMA, TABLE);
         for(int i=0; i < NUMBER_OF_ROWS; ++i) {
             writeRows(createNewRow(initialTableId, i, i + 1));

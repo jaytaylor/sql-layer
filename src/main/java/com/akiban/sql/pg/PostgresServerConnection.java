@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
@@ -25,6 +36,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserException;
+import com.akiban.sql.parser.SQLParserFeature;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.qp.loadableplan.LoadablePlan;
@@ -164,6 +176,7 @@ public class PostgresServerConnection extends ServerSessionBase
                         continue;
                     ignoreUntilSync = false;
                 }
+                long startNsec = System.nanoTime();
                 try {
                     sessionTracer.beginEvent(EventTypes.PROCESS);
                     switch (type) {
@@ -202,24 +215,23 @@ public class PostgresServerConnection extends ServerSessionBase
                         break;
                     }
                 } catch (QueryCanceledException ex) {
-                    if (!reqs.config().testing()) {
-                        logger.warn(ex.getMessage());
-                        logger.warn("StackTrace: {}", ex);
-                    }
+                    logError("Query canceled", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.QUERY_CANCELED, message);
                 } catch (InvalidOperationException ex) {
-                    logger.warn("Error in query: {}",ex.getMessage());
-                    logger.warn("StackTrace: {}", ex);
+                    logError("Error in query", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
                 } catch (Exception ex) {
-                    logger.warn("Unexpected error in query", ex);
-                    logger.warn("Stack Trace: {}", ex);
+                    logError("Unexpected error in query", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
                     sendErrorResponse(type, ex, ErrorCode.UNEXPECTED_EXCEPTION, message);
                 }
                 finally {
                     sessionTracer.endEvent();
+                    long stopNsec = System.nanoTime();
+                    if (logger.isTraceEnabled()) {
+                        logger.trace("Executed {}: {} usec", type, (stopNsec - startNsec) / 1000);
+                    }
                 }
                 PROCESS_MESSAGE.out();
             }
@@ -230,6 +242,15 @@ public class PostgresServerConnection extends ServerSessionBase
                 transaction = null;
             }
             server.removeConnection(pid);
+        }
+    }
+
+    private void logError(String msg, Exception ex) {
+        if (reqs.config().testing()) {
+            logger.debug(msg, ex);
+        }
+        else {
+            logger.warn(msg, ex);
         }
     }
 
@@ -375,7 +396,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void processQuery() throws IOException {
-        long startTime = System.nanoTime();
+        long startTime = System.currentTimeMillis();
         int rowsProcessed = 0;
         sql = messenger.readString();
         sessionTracer.setCurrentStatement(sql);
@@ -427,7 +448,7 @@ public class PostgresServerConnection extends ServerSessionBase
         readyForQuery();
         logger.debug("Query complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
-            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime), rowsProcessed);
+            reqs.instrumentation().logQuery(pid, sql, (System.currentTimeMillis() - startTime), rowsProcessed);
         }
     }
 
@@ -597,28 +618,39 @@ public class PostgresServerConnection extends ServerSessionBase
         aisTimestamp = currentTimestamp;
         ais = ddl.getAIS(session);
 
-        parser = new SQLParser();
-
-        defaultSchemaName = getProperty("database");
-        // TODO: Any way / need to ask AIS if schema exists and report error?
-
         rebuildCompiler();
     }
 
     protected void rebuildCompiler() {
+        parser = new SQLParser();
+        Set<SQLParserFeature> features = parser.getFeatures();
+        if (false) {
+            // TODO: Need some kind of MySQL compatibility setting(s).
+            // These are the ones not currently on by default.
+            features.add(SQLParserFeature.INFIX_BIT_OPERATORS);
+            features.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
+            features.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
+        }
+
+        defaultSchemaName = getProperty("database");
+        // TODO: Any way / need to ask AIS if schema exists and report error?
+
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
         if (format.equals("json"))
-            compiler = new PostgresJsonCompiler(this); 
+            compiler = PostgresJsonCompiler.create(this); 
         else
-            compiler = new PostgresOperatorCompiler(this);
+            compiler = PostgresOperatorCompiler.create(this);
         adapter = new PersistitAdapter(compiler.getSchema(),
                                        reqs.store().getPersistitStore(),
                                        reqs.treeService(),
                                        session,
                                        reqs.config());
-
-        statementCache = server.getStatementCache(aisTimestamp);
+        
+        // Statement cache depends on some connection settings.
+        statementCache = server.getStatementCache(Arrays.asList(format,
+                                                                Boolean.valueOf(getProperty("cbo"))),
+                                                  aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
             new PostgresEmulatedMetaDataStatementParser(this)
         };
@@ -743,7 +775,8 @@ public class PostgresServerConnection extends ServerSessionBase
                 messenger.setEncoding(value);
             return true;
         }
-        if ("OutputFormat".equals(key)) {
+        if ("OutputFormat".equals(key) ||
+            "cbo".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();
             return true;

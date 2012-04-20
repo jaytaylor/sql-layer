@@ -1,1 +1,1 @@
-SELECT _G_1.parent$name AS pname, _G_1.child$name AS cname FROM user._akiban_parent AS _G_1 WHERE (_G_1.parent$name = 'foo') AND (TRUE AND TRUE)
+SELECT _G_1.parent$name AS pname, _G_1.child$name AS cname FROM test._akiban_parent AS _G_1 WHERE (_G_1.parent$name = 'foo') AND (TRUE AND TRUE)

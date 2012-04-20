@@ -1,30 +1,41 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.types.ValueSourceIsNullException;
-import java.util.List;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import java.util.Arrays;
+import java.util.List;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
-import static org.junit.Assert.*;
 
 public class SubStringExpressionTest extends ComposedExpressionTestBase
 {
@@ -44,19 +55,38 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
                 ExprUtil.constNull(AkType.VARCHAR), ExprUtil.constNull(AkType.VARCHAR)));
     }
     
-    @Test(expected = ValueSourceIsNullException.class)
+    @Test                  //  substr() with 2 args behaves properly in unit tests
+    public void testBug ()                                // , but NOT in IT tests
+    {
+        Expression st = new LiteralExpression(AkType.VARCHAR, "Sakila");
+        Expression from = new LiteralExpression(AkType.LONG, 1L);
+        Expression len = new LiteralExpression(AkType.LONG, 6L);
+        
+        // test 2 args
+        assertEquals("Sakila", SubStringExpression.COMPOSER.compose(Arrays.asList(st, from))
+                .evaluation().eval().getString());
+        
+        // test 3 args
+        assertEquals("Sakila", SubStringExpression.COMPOSER.compose(Arrays.asList(st, from, len))
+                .evaluation().eval().getString());
+        
+    }
+    
+    @Test
     public void test ()
     {
         // test with 2 argument  
+        subAndCheck("quadratically", "ratically", 5);
+        subAndCheck("Sakila", "Sakila", 1);
         subAndCheck("1234", "1234", 1); // meaning from index 0 to the end
-        subAndCheck("1234", "4", 0); // meaning from index 3
+        subAndCheck("1234", "", 0); // index out of bound -> null
         subAndCheck("1234", "", 9);  
         subAndCheck("1234", "234", -3); // meanding from index 1
         subAndCheck ("", "", 5); // empty string -> empty string
         subAndCheck(null,null,4);
         
         // test with 3 argument
-        subAndCheck ("1234", "4", 0, 2); // meaning from index 3 till 4
+        subAndCheck ("1234", "4", -1, 2); // meaning from index 3 till 4
         subAndCheck ("1234", "4",  -1, 4); // meanding from index 3 til 4
         subAndCheck ("1234", "1234", -4, 4); // meaning from index 0 till inde 3
         subAndCheck ("", "", -5, 9); // empty string -> empty string
@@ -90,10 +120,9 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
     
     private static void check (Expression inputExp, String expected)
     {
-        ValueSource result = inputExp.evaluation().eval();
-        String actual = result.getString();
-    
-        assertTrue ("Actual equals expected ", actual.equals(expected));
+        ValueSource result = inputExp.evaluation().eval();                      
+        assertTrue ("Actual equals expected ", expected == null ? result.isNull() :
+                                               result.getString().equals(expected));
     }
     
     private static List <? extends Expression> getArgList (Expression ...arg)

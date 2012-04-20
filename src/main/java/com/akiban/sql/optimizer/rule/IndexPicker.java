@@ -1,22 +1,34 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.sql.optimizer.plan.*;
+import com.akiban.sql.optimizer.rule.nocost.*;
 
+import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
@@ -41,20 +53,17 @@ public class IndexPicker extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<Picker> pickers = 
-          new JoinsFinder(((SchemaRulesContext)planContext.getRulesContext())
-                          .getCostEstimator()).find(query);
+          new JoinsFinder().find(query);
         for (Picker picker : pickers)
             picker.pickIndexes();
     }
 
     static class Picker {
-        CostEstimator costEstimator;
         Joinable joinable;
         BaseQuery query;
         Set<ColumnSource> boundTables;
 
-        public Picker(CostEstimator costEstimator, Joinable joinable) {
-            this.costEstimator = costEstimator;
+        public Picker(Joinable joinable) {
             this.joinable = joinable;
         }
 
@@ -120,19 +129,28 @@ public class IndexPicker extends BaseRule
             Sort ordering = null;
             AggregateSource grouping = null;
             Project projectDistinct = null;
+            boolean isOuterJoin = false;
             while (true) {
                 input = input.getOutput();
                 if (!(input instanceof Joinable))
                     break;
                 if (input instanceof JoinNode) {
-                    ConditionList conds = ((JoinNode)input).getJoinConditions();
+                    JoinNode joinNode = (JoinNode)input;
+                    ConditionList conds = joinNode.getJoinConditions();
                     if ((conds != null) && !conds.isEmpty())
                         conditionSources.add(conds);
+
+                    switch (joinNode.getJoinType()) {
+                        case LEFT:
+                        case RIGHT:
+                        case FULL_OUTER:
+                            isOuterJoin = true;
+                    }
                 }
             }
             if (input instanceof Select) {
                 ConditionList conds = ((Select)input).getConditions();
-                if (!conds.isEmpty()) {
+                if (!conds.isEmpty() && !isOuterJoin) {
                     conditionSources.add(conds);
                 }
             }
@@ -174,7 +192,7 @@ public class IndexPicker extends BaseRule
             }
             return new IndexGoal(query, boundTables,
                                  conditionSources, grouping, ordering, projectDistinct,
-                                 tables, costEstimator);
+                                 tables);
         }
 
         protected IndexScan pickBestIndex(TableJoins tableJoins, IndexGoal goal) {
@@ -205,13 +223,7 @@ public class IndexPicker extends BaseRule
         }
 
         protected void pickIndexes(JoinNode join) {
-            if (join.getGroupJoin() != null) {
-                // TODO: Better would be to treat the group join as a
-                // possibility, competing against other indexes and
-                // using XxxLookup_Nested if it survives.
-                join.getGroupJoin().remove();
-                join.setGroupJoin(null);
-            }
+            assert (join.getGroupJoin() == null) : join;
             join.setImplementation(JoinNode.Implementation.NESTED_LOOPS);
             
             Joinable left = join.getLeft();
@@ -369,10 +381,8 @@ public class IndexPicker extends BaseRule
     static class JoinsFinder implements PlanVisitor, ExpressionVisitor {
         List<Picker> result = new ArrayList<Picker>();
         Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
-        CostEstimator costEstimator;
 
-        public JoinsFinder(CostEstimator costEstimator) {
-            this.costEstimator = costEstimator;
+        public JoinsFinder() {
         }
 
         public List<Picker> find(BaseQuery query) {
@@ -417,7 +427,7 @@ public class IndexPicker extends BaseRule
                         // Already have another set of joins to same root join.
                         return true;
                 }
-                Picker entry = new Picker(costEstimator, j);
+                Picker entry = new Picker(j);
                 if (!subqueries.isEmpty()) {
                     entry.query = subqueries.peek().subquery;
                 }

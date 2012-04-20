@@ -1,0 +1,7 @@
+- com.akiban.sql.optimizer.rule.ASTStatementLoader
+- com.akiban.sql.optimizer.rule.ConstantFolder
+- com.akiban.sql.optimizer.rule.ColumnEquivalenceFinder
+- com.akiban.sql.optimizer.rule.GroupJoinFinder_CBO
+- com.akiban.sql.optimizer.rule.JoinAndIndexPicker
+#- com.akiban.sql.optimizer.rule.NestedLoopFolder
+- com.akiban.sql.optimizer.rule.BranchJoiner_CBO

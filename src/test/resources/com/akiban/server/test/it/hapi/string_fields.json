@@ -6,7 +6,7 @@
     "schema" : "test",
 
     "tables" : [
-        ["strings", "id int key", "c char(10)", "v varchar(10)", "index(c)", "index(v)"]
+        ["strings", "id int not null primary key", "c char(10)", "v varchar(10)", "index(c)", "index(v)"]
     ],
 
     "write_rows" : {

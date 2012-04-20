@@ -1,3 +1,8 @@
+# BUG 913921: CANNot update time/date or timestimpe fields with 0s
+# Status fix released
+#
+# bug 913922 evaluation of year 0s is faulty
+# status fix committed
 ---
 - Include: all-types-schema.yaml
 ---

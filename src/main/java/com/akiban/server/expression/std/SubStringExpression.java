@@ -1,37 +1,43 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.*;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.sql.StandardException;
-import com.akiban.server.expression.TypesList;
 import java.util.List;
-import com.akiban.server.types.extract.LongExtractor;
-import com.akiban.server.types.util.ValueHolder;
 
 public class SubStringExpression extends AbstractCompositeExpression
 {
@@ -53,7 +59,13 @@ public class SubStringExpression extends AbstractCompositeExpression
             argumentTypes.setType(0, AkType.VARCHAR);
             for (int i = 1; i < size; ++i)
                 argumentTypes.setType(i, AkType.LONG);
-            return argumentTypes.get(0);
+            return  argumentTypes.get(0);
+        }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     };
     
@@ -77,8 +89,12 @@ public class SubStringExpression extends AbstractCompositeExpression
             
             ObjectExtractor<String> sExtractor = Extractors.getStringExtractor();
             String st = sExtractor.getObject(stringSource);            
-            if (st.equals("")) return new ValueHolder(AkType.VARCHAR, "");            
-            
+            if (st.equals(""))
+            {
+                valueHolder().putString("");
+                return valueHolder();
+            }            
+                       
             // FROM operand
             int from = 0;
           
@@ -92,14 +108,22 @@ public class SubStringExpression extends AbstractCompositeExpression
                 
             }
             
-            from = (from == 0 ? -1 : from);
-            
+            if (from == 0)
+            {
+                valueHolder().putString("");
+                return valueHolder();
+            }
+                       
             // if from is negative or zero, start from the end, and adjust
                 // index by 1 since index in sql starts at 1 NOT 0
             from += (from < 0?  st.length()  : -1);
           
-            // if from is still neg, set from = 0
-            from = from < 0 ? 0 : from;
+            // if from is still neg, return empty string
+            if (from < 0)
+            {
+                valueHolder().putString("");
+                return valueHolder();
+            } 
             
             // TO operand
             int to = st.length() -1;
@@ -114,9 +138,14 @@ public class SubStringExpression extends AbstractCompositeExpression
             }
             
             // if to <= fr => return empty
-            if (to < from || from >= st.length() ) return new ValueHolder(AkType.VARCHAR, "");            
+            if (to < from || from >= st.length())
+            {
+                valueHolder().putString("");
+                return valueHolder();
+            }            
+            
             to = (to > st.length() -1 ? st.length() -1 : to);
-
+            
             valueHolder().putString(st.substring(from,to +1 ));
             return valueHolder();
         }  
@@ -124,7 +153,7 @@ public class SubStringExpression extends AbstractCompositeExpression
     
     SubStringExpression (List <? extends Expression> children)
     {
-        super(AkType.VARCHAR, children);
+        super(AkType.VARCHAR, children);       
         if (children.size() > 3 || children.size() < 2)
             throw new WrongExpressionArityException(3, children.size());        
     }

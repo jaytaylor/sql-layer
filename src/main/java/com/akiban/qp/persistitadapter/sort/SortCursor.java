@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.persistitadapter.sort;
@@ -18,6 +29,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
@@ -31,9 +43,49 @@ public abstract class SortCursor implements Cursor
     // Cursor interface
 
     @Override
+    public void open()
+    {
+        CursorLifecycle.checkIdle(this);
+        idle = false;
+    }
+
+    @Override
+    public Row next()
+    {
+        CursorLifecycle.checkIdleOrActive(this);
+        return null;
+    }
+
+    @Override
     public final void close()
     {
+        CursorLifecycle.checkIdleOrActive(this);
         iterationHelper.close();
+        idle = true;
+    }
+
+    @Override
+    public void destroy()
+    {
+        destroyed = true;
+    }
+
+    @Override
+    public boolean isIdle()
+    {
+        return !destroyed && idle;
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        return !destroyed && !idle;
+    }
+
+    @Override
+    public boolean isDestroyed()
+    {
+        return destroyed;
     }
 
     // SortCursor interface
@@ -72,6 +124,8 @@ public abstract class SortCursor implements Cursor
     protected final PersistitAdapter adapter;
     protected final Exchange exchange;
     protected final IterationHelper iterationHelper;
-    
+    private boolean idle = true;
+    private boolean destroyed = false;
+
     static final PointTap SORT_TRAVERSE = Tap.createCount("traverse_sort");
 }

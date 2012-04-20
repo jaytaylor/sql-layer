@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.types.extract;
@@ -21,18 +32,18 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
 
+import java.math.MathContext;
+import java.math.RoundingMode;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 
-import java.util.Calendar;
 import java.util.Date;
 import java.util.EnumSet;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
-import org.joda.time.MutableDateTime;
 
 abstract class ExtractorsForDates extends LongExtractor {
 
@@ -464,15 +475,17 @@ abstract class ExtractorsForDates extends LongExtractor {
             AkType type = source.getConversionType();
             switch (type){
                 case INTERVAL_MILLIS:  return source.getInterval_Millis();
-                case DECIMAL:   return source.getDecimal().longValue();
-                case DOUBLE:    return (long)source.getDouble();
+                case DECIMAL:   return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
+                case DOUBLE:    return Math.round(source.getDouble());
                 case U_BIGINT:  return source.getUBigInt().longValue();
                 case VARCHAR:   return getLong(source.getString());
                 case TEXT:      return getLong(source.getText());
                 case LONG:      return source.getLong();
                 case INT:       return source.getInt();
                 case U_INT:     return source.getUInt();
-                case U_DOUBLE:  return (long)source.getUDouble();
+                case U_DOUBLE:  return Math.round(source.getUDouble());
+                case FLOAT:     return Math.round(source.getFloat());
+                case U_FLOAT:   return Math.round(source.getUFloat());
                 default:        throw unsupportedConversion(type);
             }
         }
@@ -532,15 +545,17 @@ abstract class ExtractorsForDates extends LongExtractor {
             AkType type = source.getConversionType();
             switch (type){
                 case INTERVAL_MONTH:  return source.getInterval_Month();
-                case DECIMAL:   return source.getDecimal().longValue();
-                case DOUBLE:    return (long)source.getDouble();
+                case DECIMAL:   return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
+                case DOUBLE:    return Math.round(source.getDouble());
                 case U_BIGINT:  return source.getUBigInt().longValue();
                 case VARCHAR:   return getLong(source.getString());
                 case TEXT:      return getLong(source.getText());
                 case LONG:      return source.getLong();
                 case INT:       return source.getInt();
                 case U_INT:     return source.getUInt();
-                case U_DOUBLE:  return (long)source.getUDouble();
+                case U_DOUBLE:  return Math.round(source.getUDouble());
+                case FLOAT:     return Math.round(source.getFloat());
+                case U_FLOAT:   return Math.round(source.getUFloat());
                 default:        throw unsupportedConversion(type);
             }
         }
@@ -666,6 +681,11 @@ abstract class ExtractorsForDates extends LongExtractor {
         case INT:       return source.getInt();
         case U_INT:     return source.getUInt();
         case LONG:      return source.getLong();
+        case U_FLOAT:   return Math.round(source.getUFloat());
+        case FLOAT:     return Math.round(source.getFloat());
+        case DOUBLE:    return Math.round(source.getDouble());
+        case U_DOUBLE:  return Math.round(source.getUDouble());
+        case DECIMAL:   return source.getDecimal().setScale(0, RoundingMode.HALF_UP).longValue();
         default: throw unsupportedConversion(type);
         }
     }

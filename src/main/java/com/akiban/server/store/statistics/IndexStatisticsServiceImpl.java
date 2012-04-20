@@ -1,25 +1,32 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.store.statistics;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
@@ -37,13 +44,20 @@ import com.google.inject.Inject;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.io.FileWriter;
+import java.io.StringWriter;
+import java.io.Writer;
 import java.util.*;
 import java.io.File;
 import java.io.IOException;
 
 public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
 {
+    private static final Logger log = LoggerFactory.getLogger(IndexStatisticsServiceImpl.class);
+
     private final PersistitStore store;
     private final TreeService treeService;
     // Following couple only used by JMX method, where there is no context.
@@ -141,8 +155,10 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
-        if (result != null)
+        if (result != null) {
+            cache.put(index, result);
             return result;
+        }
         result = new IndexStatistics(index);
         result.setAnalysisTimestamp(-1);
         cache.put(index, result);
@@ -163,7 +179,16 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 }
             }
             catch (PersistitException ex) {
+                log.error("error while analyzing " + index, ex);
                 throw new PersistitAdapterException(ex);
+            }
+            catch (RuntimeException e) {
+                log.error("error while analyzing " + index, e);
+                throw e;
+            }
+            catch (Error e) {
+                log.error("error while analyzing " + index, e);
+                throw e;
             }
         }
         DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
@@ -209,7 +234,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Override
     public void dumpIndexStatistics(Session session, 
-                                    String schema, File file) throws IOException {
+                                    String schema, Writer file) throws IOException {
         List<Index> indexes = new ArrayList<Index>();
         Set<Group> groups = new HashSet<Group>();
         AkibanInformationSchema ais = schemaManager.getAis(session);
@@ -252,8 +277,41 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             Session session = sessionService.createSession();
             try {
                 File file = new File(toFile);
-                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, file);
+                FileWriter writer = new FileWriter(file);
+                try {
+                    IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                }
+                finally {
+                    writer.close();
+                }
                 return file.getAbsolutePath();
+            }
+            finally {
+                session.close();
+            }
+        }
+
+        @Override
+        public String dumpIndexStatisticsToString(String schema) throws IOException {
+            Session session = sessionService.createSession();
+            try {
+                StringWriter writer = new StringWriter();
+                IndexStatisticsServiceImpl.this.dumpIndexStatistics(session, schema, writer);
+                writer.close();
+                return writer.toString();
+            }
+            finally {
+                session.close();
+            }
+        }
+
+        @Override
+        public void loadIndexStatistics(String schema, String fromFile) 
+                throws IOException {
+            Session session = sessionService.createSession();
+            try {
+                File file = new File(fromFile);
+                IndexStatisticsServiceImpl.this.loadIndexStatistics(session, schema, file);
             }
             finally {
                 session.close();

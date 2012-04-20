@@ -1,12 +1,16 @@
 SelectQuery@6f93ee4
   ResultSet@558fee4f[order_date]
     MapJoin@d325aef()
-      Flatten@64f007ad(user.orders)
-        BranchLookup@4a8822a0(user.customers -> user.customers)
-          IndexScan@2f995c9a(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-          TableSource@59e3bddb(user.orders - TableGroupJoin@7d8e9adf(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-      Project@5c66b06b[user.orders.order_date]
+      Flatten@64f007ad(orders)
+        BranchLookup@4a8822a0(customers -> customers)
+          IndexScan@2f995c9a(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith)
+          TableSource@59e3bddb(orders - TableGroupJoin@7d8e9adf(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+      Project@5c66b06b[orders.order_date]
         Select@59c87031[]
           Limit@1d59e6df(LIMIT 1)
-            Select@79444986[user.items.oid == user.orders.oid]
-              IndexScan@72373a9c(Index(user.items.sku[IndexColumn(sku)]), covering/NONE, =1234)
+            Select@54140fee[]
+              Flatten@7e7f8062(items)
+                Select@64c5e2cf[items.sku == 1234]
+                  AncestorLookup@7badb7b8(items -> [items])
+                    IndexScan@49f8d077(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =orders.oid)
+                    TableSource@2a8c7be5(items - TableGroup@6e3e5a91(customers))

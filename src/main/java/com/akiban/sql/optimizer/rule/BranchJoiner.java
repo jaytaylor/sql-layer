@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -181,7 +192,7 @@ public class BranchJoiner extends BaseRule
             // the original branch or everything an ancestor of the
             // side branch (far enough above the index table).
             // Fetch it in the same stream.
-            scan = new BranchLookup(scan, leafAncestor, 
+            scan = new BranchLookup(scan, leafAncestor, entry.getKey().getParent(),
                                     entry.getKey(), entry.getValue());
             return flattenBranches(scan, tableJoins.getJoins(), allTables, null);
         }
@@ -198,8 +209,7 @@ public class BranchJoiner extends BaseRule
             if (ancestors.contains(indexTable))
                 descendants.add(indexTable); // Getting it along with descendants.
             Collections.sort(descendants, tableSourceById);
-            scan = new BranchLookup(scan, indexTableNode, 
-                                    indexTableNode, descendants);
+            scan = new BranchLookup(scan, indexTableNode, descendants);
             // Only need the rest.
             mainBranchNodes = branching.getMainBranchTableNodesAbove(indexTableNode);
             mainBranchSources = branching.getMainBranchTableSourcesAbove(indexTableNode);
@@ -403,7 +413,7 @@ public class BranchJoiner extends BaseRule
                 subplans.add(subplan);
             }
 
-            input = new Product(subplans);
+            input = new Product(null, subplans);
         }
         return input;
     }
@@ -524,6 +534,8 @@ public class BranchJoiner extends BaseRule
         @Override
         // Access things in stable order.
         public int compare(TableSource t1, TableSource t2) {
+            if (t1.getTable().getTable() == t2.getTable().getTable())
+                return t1.getName().compareTo(t2.getName());
             return t1.getTable().getTable().getTableId().compareTo(t2.getTable().getTable().getTableId());
         }
     };

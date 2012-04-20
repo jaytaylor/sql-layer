@@ -1,9 +1,9 @@
 SelectQuery@65d0d124
   ResultSet@27ed688f[order_date, _SQL_COL_1]
-    Project@536b98c3[user.orders.order_date, SUM(times(user.items.price,user.items.quan))]
-      Select@4a738d08[SUM(times(user.items.price,user.items.quan)) > 1000.00]
-        AggregateSource@68302e67([user.orders.order_date],[])
+    Project@536b98c3[orders.order_date, SUM(times(items.price,items.quan))]
+      Select@4a738d08[SUM(times(items.price,items.quan)) > 1000.00]
+        AggregateSource@68302e67([orders.order_date],[])
           Select@3336a1a1[]
-            JoinNode@47ad6b4b(INNER[user.orders.oid == user.items.oid])
-              TableSource@4a5f2db0(user.items)
-              TableSource@2eb0a3f5(user.orders)
+            JoinNode@47ad6b4b(INNER[orders.oid == items.oid])
+              TableSource@4a5f2db0(items)
+              TableSource@2eb0a3f5(orders)

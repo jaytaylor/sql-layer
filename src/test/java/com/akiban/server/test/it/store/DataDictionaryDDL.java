@@ -1,90 +1,55 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.store;
 
+import com.akiban.ais.CAOIBuilderFiller;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.session.Session;
 
+import static com.akiban.ais.CAOIBuilderFiller.*;
+
 public class DataDictionaryDDL {
     public final static String SCHEMA = "data_dictionary_test";
-
-    public final static String CUSTOMER_DDL =
-        "create table customer("+
-            "customer_id bigint not null,"+
-            "customer_name varchar(100) not null,"+
-            "primary key(customer_id)"+
-        ") engine = akibandb;";
-
-    public final static String ADDRESS_DDL =
-        "create table `address`("+
-            "customer_id bigint not null,"+
-            "instance_id int not null,"+
-            "address_line1 varchar(60) not null,"+
-            "address_line2 varchar(60) not null,"+
-            "address_line3 varchar(60) not null,"+
-            "primary key (`customer_id`, `instance_id`),"+
-            "constraint __akiban foreign key(customer_id) references customer(customer_id)"+
-        ") engine = akibandb;";
-
-    public final static String ORDER_DDL =
-        "create table `order`("+
-            "order_id bigint not null,"+
-            "customer_id bigint not null,"+
-            "order_date int not null,"+
-            "primary key(order_id),"+
-            "foreign key(customer_id) references customer(customer_id),"+
-            "constraint __akiban foreign key(customer_id) references customer(customer_id)"+
-        ") engine = akibandb;";
-
-    public final static String ITEM_DDL =
-        "create table item("+
-            "order_id bigint not null,"+
-            "part_id bigint not null,"+
-            "quantity int not null,"+
-            "unit_price int not null,"+
-            "primary key(part_id),"+
-            "foreign key(order_id) references `order`(order_id),"+
-            "constraint __akiban FOREIGN KEY(order_id) references `order`(order_id)"+
-        ") engine = akibandb;";
-
-    public final static String COMPONENT_DDL =
-        "create table component("+
-            "part_id bigint not null,"+
-            "component_id bigint not null,"+
-            "supplier_id int not null,"+
-            "unique_id int not null,"+
-            "description varchar(50),"+
-            "primary key (`component_id`),"+
-            "foreign key `fk` (`part_id`) references item(`part_id`),"+
-            "unique key `uk` (`unique_id`),"+
-            "key `xk` (supplier_id),"+
-            "constraint __akiban foreign key(part_id) references item(part_id)"+
-        ") engine = akibandb;";
-
 
     public static void createTables(Session session, DDLFunctions ddl) throws InvalidOperationException {
         createTables(session, ddl, SCHEMA);
     }
 
     public static void createTables(Session session, DDLFunctions ddl, String schema) throws InvalidOperationException {
-        ddl.createTable(session, schema, CUSTOMER_DDL);
-        ddl.createTable(session, schema, ADDRESS_DDL);
-        ddl.createTable(session, schema, ORDER_DDL);
-        ddl.createTable(session, schema, ITEM_DDL);
-        ddl.createTable(session, schema, COMPONENT_DDL);
+        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder(schema);
+        AkibanInformationSchema tempAIS = builder.ais();
+
+        ddl.createTable(session, tempAIS.getUserTable(schema, CUSTOMER_TABLE));
+        ddl.createTable(session, tempAIS.getUserTable(schema, ADDRESS_TABLE));
+        ddl.createTable(session, tempAIS.getUserTable(schema, ORDER_TABLE));
+        ddl.createTable(session, tempAIS.getUserTable(schema, ITEM_TABLE));
+        ddl.createTable(session, tempAIS.getUserTable(schema, COMPONENT_TABLE));
     }
 }

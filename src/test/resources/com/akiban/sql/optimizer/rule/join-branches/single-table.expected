@@ -1,8 +1,8 @@
 SelectQuery@6b98e8b4
   ResultSet@4054824[cid, name]
-    Project@76c3358b[user.customers.cid, user.customers.name]
+    Project@76c3358b[customers.cid, customers.name]
       Select@444b0bbb[]
-        Flatten@3b8e80a6(user.customers)
-          AncestorLookup@1aef4504(user.customers -> [user.customers])
-            IndexScan@529c176c(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-            TableSource@56b61c3(user.customers - TableGroup@1de4eb5b(customers))
+        Flatten@3b8e80a6(customers)
+          AncestorLookup@1aef4504(customers -> [customers])
+            IndexScan@529c176c(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith)
+            TableSource@56b61c3(customers - TableGroup@1de4eb5b(customers))

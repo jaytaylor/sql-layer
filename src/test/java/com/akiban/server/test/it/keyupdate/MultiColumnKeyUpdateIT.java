@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.keyupdate;
@@ -543,7 +554,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
                                  "cx int",
                                  "cid1 int not null",
                                  "primary key(cid1, cid2)",
-                                 "constraint __akiban_cv foreign key __akiban_cv(vid1, vid2) references vendor(vid1, vid2)");
+                                 "grouping foreign key (vid1, vid2) references vendor(vid1, vid2)");
         c_cid1 = 4;
         c_cid2 = 1;
         c_vid1 = 0;
@@ -559,9 +570,9 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
                               "priority int",
                               "when int",
                               "primary key(oid1, oid2)",
-                              "key(priority)",
                               "unique(when)",
-                              "constraint __akiban_oc foreign key __akiban_oc(cid1, cid2) references customer(cid1, cid2)");
+                              "grouping foreign key (cid1, cid2) references customer(cid1, cid2)");
+        createIndex("coi", "order", "priority", "priority");
         o_oid1 = 3;
         o_oid2 = 2;
         o_cid1 = 0;
@@ -577,7 +588,7 @@ public class MultiColumnKeyUpdateIT extends KeyUpdateBase
                              "iid1 int not null",
                              "iid2 int not null",
                              "primary key(iid1, iid2)",
-                             "constraint __akiban_io foreign key __akiban_io(oid1, oid2) references order(oid1, oid2)");
+                             "grouping foreign key (oid1, oid2) references \"order\"(oid1, oid2)");
         i_iid1 = 3;
         i_iid2 = 4;
         i_oid1 = 1;

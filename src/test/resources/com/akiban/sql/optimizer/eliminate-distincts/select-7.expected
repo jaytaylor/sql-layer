@@ -1,1 +1,1 @@
-SELECT DISTINCT user.parent.title AS title FROM user.parent
+SELECT DISTINCT test.parent.title AS title FROM test.parent

@@ -29,7 +29,7 @@
 ---
 - Statement: SELECT RIGHTSHIFT(4,4) from all_types;
 - output: [[0]]
-#---
+#--- BUG: issues with sign-extension shifting
 #- Statement: SELECT RIGHTSHIFT(-4,1) from all_types;
 #- output: [[9223372036854775806]]
 #---

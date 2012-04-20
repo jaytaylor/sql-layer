@@ -5,10 +5,10 @@ SelectQuery@cbf30e
         AggregateSource@a4e2e3(UNGROUPED,[])
           Select@12bb7e0[]
             Product@4b035d
-              Flatten@ca0115(user.customers INNER user.orders)
-                BranchLookup@d1fa5(user.customers -> user.customers)
-                  IndexScan@198a455(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-                  TableSource@15a0305(user.orders - TableGroupJoin@4cee32(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              Flatten@aa37a6(user.customers INNER user.addresses)
-                BranchLookup@12b7eea(user.customers -> user.addresses)
-                  TableSource@1b3f829(user.addresses - TableGroupJoin@99353f(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
+              Flatten@ca0115(customers INNER orders)
+                BranchLookup@d1fa5(customers -> customers)
+                  IndexScan@198a455(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith)
+                  TableSource@15a0305(orders - TableGroupJoin@4cee32(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              Flatten@aa37a6(customers INNER addresses)
+                BranchLookup@12b7eea(customers -> addresses)
+                  TableSource@1b3f829(addresses - TableGroupJoin@99353f(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))

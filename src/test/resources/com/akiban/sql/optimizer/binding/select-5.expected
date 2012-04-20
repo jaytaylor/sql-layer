@@ -44,7 +44,7 @@ resultSet:
 		null
 		correlation Name: null
 		null
-		userData: user.t1
+		userData: test.t1
 		[1]:		
 		com.akiban.sql.parser.FromSubquery@4cc39a20
 		correlation Name: t2
@@ -107,7 +107,7 @@ resultSet:
 						null
 						correlation Name: null
 						null
-						userData: user.t1
+						userData: test.t1
 			[1]:			
 			com.akiban.sql.parser.ResultColumn@736921fd
 			exposedName: x2

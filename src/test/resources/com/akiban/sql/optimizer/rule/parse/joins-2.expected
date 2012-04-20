@@ -6,24 +6,24 @@ SelectQuery@344977e2
           SubquerySource@14718242(m1)
             Subquery@578b1f8f
               ResultSet@6b033450[name, vmax]
-                Project@1f5fa713[user.customers.name, MAX(times(user.items.price,user.items.quan))]
+                Project@1f5fa713[customers.name, MAX(times(items.price,items.quan))]
                   Select@7c3afb99[]
-                    AggregateSource@45c3987([user.customers.name],[])
+                    AggregateSource@45c3987([customers.name],[])
                       Select@42c4d04d[]
-                        JoinNode@747917a(INNER[user.orders.oid == user.items.oid])
-                          JoinNode@6b9fe451(INNER[user.customers.cid == user.orders.cid])
-                            TableSource@4e46b90a(user.customers)
-                            TableSource@51e67ac(user.orders)
-                          TableSource@f284fd4(user.items)
+                        JoinNode@747917a(INNER[orders.oid == items.oid])
+                          JoinNode@6b9fe451(INNER[customers.cid == orders.cid])
+                            TableSource@4e46b90a(customers)
+                            TableSource@51e67ac(orders)
+                          TableSource@f284fd4(items)
           SubquerySource@1f90ef12(m2)
             Subquery@3c63e8c
               ResultSet@68e0ada6[name, vmin]
-                Project@76a8a314[user.customers.name, MIN(times(user.items.price,user.items.quan))]
+                Project@76a8a314[customers.name, MIN(times(items.price,items.quan))]
                   Select@ace16ad[]
-                    AggregateSource@6032bd65([user.customers.name],[])
+                    AggregateSource@6032bd65([customers.name],[])
                       Select@2330633a[]
-                        JoinNode@3dc286e2(INNER[user.orders.oid == user.items.oid])
-                          JoinNode@2e257f1b(INNER[user.customers.cid == user.orders.cid])
-                            TableSource@1fbbdd48(user.customers)
-                            TableSource@66bcb23e(user.orders)
-                          TableSource@6e5a3923(user.items)
+                        JoinNode@3dc286e2(INNER[orders.oid == items.oid])
+                          JoinNode@2e257f1b(INNER[customers.cid == orders.cid])
+                            TableSource@1fbbdd48(customers)
+                            TableSource@66bcb23e(orders)
+                          TableSource@6e5a3923(items)

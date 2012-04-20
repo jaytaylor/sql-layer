@@ -1,44 +1,50 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.sql.compiler.ASTTransformTestBase;
 import com.akiban.sql.compiler.BooleanNormalizer;
 import com.akiban.sql.compiler.TypeComputer;
 import com.akiban.sql.parser.SQLParser;
-import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.views.ViewDefinition;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
-import com.akiban.server.util.GroupIndexCreator;
 
+import com.akiban.util.Strings;
 import org.junit.Before;
 import org.junit.Ignore;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.IOException;
-import java.io.StringWriter;
-import java.io.FileReader;
-import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 @Ignore
 public class OptimizerTestBase extends ASTTransformTestBase
@@ -51,7 +57,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"
                  + OptimizerTestBase.class.getPackage().getName().replace('.', '/'));
-    public static final String DEFAULT_SCHEMA = "user";
+    public static final String DEFAULT_SCHEMA = "test";
 
     // Base class has all possible transformers for convenience.
     protected AISBinder binder;
@@ -71,55 +77,32 @@ public class OptimizerTestBase extends ASTTransformTestBase
         distinctEliminator = new DistinctEliminator(parser);
     }
 
-    public static AkibanInformationSchema parseSchema(File schema) throws Exception {
-        String sql = fileContents(schema);
-        SchemaDef schemaDef = SchemaDef.parseSchema("use " + DEFAULT_SCHEMA + 
-                                                    "; " + sql);
-        SchemaDefToAis toAis = new SchemaDefToAis(schemaDef, false);
-        return toAis.getAis();
+    public static AkibanInformationSchema parseSchema(List<File> ddls) throws Exception {
+        StringBuilder ddlBuilder = new StringBuilder();
+        for (File ddl : ddls)
+            ddlBuilder.append(fileContents(ddl));
+        String sql = ddlBuilder.toString();
+        SchemaFactory schemaFactory = new SchemaFactory(DEFAULT_SCHEMA);
+        return schemaFactory.ais(sql);
     }
 
-    protected AkibanInformationSchema loadSchema(File schema) throws Exception {
-        AkibanInformationSchema ais = parseSchema(schema);
+    public static AkibanInformationSchema parseSchema(File ddl) throws Exception {
+        return parseSchema(Collections.singletonList(ddl));
+    }
+
+    protected AkibanInformationSchema loadSchema(List<File> ddl) throws Exception {
+        AkibanInformationSchema ais = parseSchema(ddl);
         binder = new AISBinder(ais, DEFAULT_SCHEMA);
         return ais;
+    }
+
+    protected AkibanInformationSchema loadSchema(File ddl) throws Exception {
+        return loadSchema(Collections.singletonList(ddl));
     }
 
     protected void loadView(File view) throws Exception {
         String sql = fileContents(view);
         binder.addView(new ViewDefinition(sql, parser));
-    }
-
-    public static void loadGroupIndexes(AkibanInformationSchema ais, File file) 
-            throws Exception {
-        Reader rdr = null;
-        try {
-            rdr = new FileReader(file);
-            BufferedReader brdr = new BufferedReader(rdr);
-            while (true) {
-                String line = brdr.readLine();
-                if (line == null) break;
-                String defn[] = line.split("\t");
-                JoinType joinType = JoinType.LEFT;
-                if (defn.length > 3)
-                    joinType = JoinType.valueOf(defn[3]);
-                GroupIndex index = GroupIndexCreator.createIndex(ais,
-                                                                 defn[0], 
-                                                                 defn[1],
-                                                                 defn[2],
-                                                                 joinType);
-                index.getGroup().addIndex(index);
-            }
-        }
-        finally {
-            if (rdr != null) {
-                try {
-                    rdr.close();
-                }
-                catch (IOException ex) {
-                }
-            }
-        }
     }
 
 }

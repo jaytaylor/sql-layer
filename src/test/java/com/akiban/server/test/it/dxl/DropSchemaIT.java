@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.dxl;
@@ -47,36 +58,36 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void unknownSchemaIsNoOp() throws InvalidOperationException {
-        createTable("one", "t", "id int key");
+        createTable("one", "t", "id int not null primary key");
         ddl().dropSchema(session(), "not_a_real_schema");
         expectTables("one", "t");
     }
 
     @Test
     public void singleTable() throws InvalidOperationException {
-        createTable("one", "t", "id int key");
+        createTable("one", "t", "id int not null primary key");
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "t");
     }
 
     @Test
     public void singleTableCheckData() throws InvalidOperationException {
-        final int tid1 = createTable("one", "t", "id int key");
+        final int tid1 = createTable("one", "t", "id int not null primary key");
         writeRows(createNewRow(tid1, 1L), createNewRow(tid1, 2L));
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "t");
         // Check for lingering data
-        final int tid2 = createTable("one", "t", "id int key");
+        final int tid2 = createTable("one", "t", "id int not null primary key");
         expectRowCount(tid2, 0);
         assertEquals("scanned rows", 0, scanFull(scanAllRequest(tid2)).size());
     }
 
     @Test
     public void multipleTables() throws InvalidOperationException {
-        createTable("one", "a", "id int key");
-        createTable("one", "b", "id int key");
-        createTable("two", "a", "id int key");
-        createTable("two", "b", "id int key");
+        createTable("one", "a", "id int not null primary key");
+        createTable("one", "b", "id int not null primary key");
+        createTable("two", "a", "id int not null primary key");
+        createTable("two", "b", "id int not null primary key");
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "a", "b");
         expectTables("two", "a", "b");
@@ -84,11 +95,11 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void groupedTables() throws InvalidOperationException {
-        createTable("one", "c", "id int key");
-        createTable("one", "o", "id int key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("one", "i", "id int key, oid int, constraint __akiban foreign key(oid) references o(id)");
-        createTable("one", "t", "id int key");
-        createTable("two", "c", "id int key");
+        createTable("one", "c", "id int not null primary key");
+        createTable("one", "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
+        createTable("one", "i", "id int not null primary key, oid int, grouping foreign key(oid) references o(id)");
+        createTable("one", "t", "id int not null primary key");
+        createTable("two", "c", "id int not null primary key");
         ddl().dropSchema(session(), "one");
         expectNotTables("one", "c", "o", "i", "t");
         expectTables("two", "c");
@@ -96,9 +107,9 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void crossSchemaGroupInvalid() throws InvalidOperationException {
-        createTable("one", "c", "id int key");
-        createTable("one", "o", "id int key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("two", "i", "id int key, oid int, constraint __akiban foreign key(oid) references one.o(id)");
+        createTable("one", "c", "id int not null primary key");
+        createTable("one", "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
+        createTable("two", "i", "id int not null primary key, oid int, grouping foreign key(oid) references one.o(id)");
         try {
             ddl().dropSchema(session(), "one");
             Assert.fail("ForeignConstraintDDLException expected");
@@ -111,9 +122,9 @@ public final class DropSchemaIT extends ITBase {
 
     @Test
     public void crossSchemaGroupValid() throws InvalidOperationException {
-        createTable("one", "c", "id int key");
-        createTable("one", "o", "id int key, cid int, constraint __akiban foreign key(cid) references c(id)");
-        createTable("two", "i", "id int key, oid int, constraint __akiban foreign key(oid) references one.o(id)");
+        createTable("one", "c", "id int not null primary key");
+        createTable("one", "o", "id int not null primary key, cid int, grouping foreign key(cid) references c(id)");
+        createTable("two", "i", "id int not null primary key, oid int, grouping foreign key(oid) references one.o(id)");
         ddl().dropSchema(session(), "two");
         expectTables("one", "c", "o");
         expectNotTables("two", "i");

@@ -1,4 +1,6 @@
 # Inserting 'Infinity' after '0.0' into a float fails
+# BUG 889291
+# Status confirmed
 ---
 - CreateTable: t (float_field float)
 ---

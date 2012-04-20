@@ -1,4 +1,9 @@
 # Test the HOUR() function
+# Bug 901845: HOUR() (TIME type) does not perform bound checking
+# Status: triaged
+#
+# Bug 901875 HOUR does not return correct value at upper limit
+# Status fix released
 ---
 - Include: all-types-schema.yaml
 ---

@@ -1,9 +1,9 @@
 SelectQuery@7f7c3056
   ResultSet@32499f7d[name, _SQL_COL_1]
-    Project@7f85e155[user.customers.name, COUNT(*)]
+    Project@7f85e155[customers.name, COUNT(*)]
       Select@2e8cd4db[]
-        AggregateSource@1fea8dbd([user.customers.name],[])
-          Select@5fff83a9[user.customers.cid == user.orders.cid]
+        AggregateSource@1fea8dbd([customers.name],[])
+          Select@5fff83a9[customers.cid == orders.cid]
             JoinNode@1cfd7c(INNER)
-              TableSource@6f45d7f2(user.customers)
-              TableSource@526489f0(user.orders)
+              TableSource@6f45d7f2(customers)
+              TableSource@526489f0(orders)

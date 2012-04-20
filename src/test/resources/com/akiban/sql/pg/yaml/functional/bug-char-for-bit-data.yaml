@@ -1,4 +1,6 @@
 # Test char for bit data, alias for varbinary
+# BUG: 705980 BI datatype currently not supported
+# Status: confirmed
 ---
 - CreateTable: t (char_for_bit_data_field char(32) for bit data)
 ---

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.store;
@@ -58,19 +69,19 @@ public final class SchemaManagerIT extends ITBase {
     private final static String VOL3_PREFIX = "bar_schema";
 
     private final static String T1_NAME = "t1";
-    private final static String T1_DDL = "create table t1(id int, PRIMARY KEY(id)) engine=akibandb;";
+    private final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
     private final static String T2_NAME = "t2";
-    private final static String T2_DDL = "create table t2(id int, PRIMARY KEY(id)) engine=akibandb;";
+    private final static String T2_DDL = "id int NOT NULL, PRIMARY KEY(id)";
     private final static String T3_CHILD_T1_NAME = "t3";
-    private final static String T3_CHILD_T1_DDL = "create table t3(id int, t1id int, PRIMARY KEY(id), "+
-                                                  "constraint __akiban foreign key(t1id) references t1(id)) engine=akibandb;";
+    private final static String T3_CHILD_T1_DDL = "id int NOT NULL, t1id int, PRIMARY KEY(id), "+
+                                                  "grouping foreign key(t1id) references t1(id)";
 
     private SchemaManager schemaManager;
 
-    private void createTableDef(final String schema, final String ddl) throws Exception {
+    private void createTableDef(final String schema, final String tableName, final String ddl) throws Exception {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
-                schemaManager.createTableDefinition(session(), schema, ddl);
+                createTable(schema, tableName, ddl);
                 return null;
             }
         });
@@ -136,7 +147,7 @@ public final class SchemaManagerIT extends ITBase {
     // Also tests createDef(), but assertTablesInSchema() uses getDef() so try and test first
     @Test
     public void getTableDefinition() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         final TableDefinition def = getTableDef(SCHEMA, T1_NAME);
         assertNotNull("Definition exists", def);
     }
@@ -149,9 +160,9 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void getTableDefinitionsOneSchema() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
-        createTableDef(SCHEMA, T2_DDL);
-        createTableDef(SCHEMA + "_bob", T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
+        createTableDef(SCHEMA, T2_NAME, T2_DDL);
+        createTableDef(SCHEMA + "_bob", T1_NAME, T1_DDL);
         final SortedMap<String, TableDefinition> defs = schemaManager.getTableDefinitions(session(), SCHEMA);
         assertTrue("contains t1", defs.containsKey(T1_NAME));
         assertTrue("contains t2", defs.containsKey(T2_NAME));
@@ -160,13 +171,13 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void createOneDefinition() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
     }
 
     @Test
     public void deleteOneDefinition() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
         deleteTableDef(SCHEMA, T1_NAME);
         assertTablesInSchema(SCHEMA);
@@ -182,7 +193,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void deleteDefinitionTwice() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
         
         deleteTableDef(SCHEMA, T1_NAME);
@@ -193,10 +204,10 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void deleteTwoDefinitions() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
 
-        createTableDef(SCHEMA, T2_DDL);
+        createTableDef(SCHEMA, T2_NAME, T2_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME);
 
         deleteTableDef(SCHEMA, T1_NAME);
@@ -208,10 +219,10 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void deleteChildDefinition() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
 
-        createTableDef(SCHEMA, T3_CHILD_T1_DDL);
+        createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME, T3_CHILD_T1_NAME);
 
         // Deleting child should not delete parent
@@ -224,10 +235,10 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void deleteParentDefinitionFirst() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
 
-        createTableDef(SCHEMA, T3_CHILD_T1_DDL);
+        createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME, T3_CHILD_T1_NAME);
 
         final AkibanInformationSchema ais = ddl().getAIS(session());
@@ -266,11 +277,11 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA_VOL2_B);
         assertTablesInSchema(SCHEMA);
 
-        createTableDef(SCHEMA_VOL2_A, T1_DDL);
+        createTableDef(SCHEMA_VOL2_A, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA_VOL2_A, T1_NAME);
         assertTablesInSchema(SCHEMA);
 
-        createTableDef(SCHEMA_VOL2_B, T2_DDL);
+        createTableDef(SCHEMA_VOL2_B, T2_NAME, T2_DDL);
         assertTablesInSchema(SCHEMA_VOL2_B, T2_NAME);
         assertTablesInSchema(SCHEMA_VOL2_A, T1_NAME);
         assertTablesInSchema(SCHEMA);
@@ -281,8 +292,8 @@ public final class SchemaManagerIT extends ITBase {
         final String SCHEMA_VOL2_A = VOL2_PREFIX + "_a";
         final String SCHEMA_VOL2_B = VOL2_PREFIX + "_b";
 
-        createTableDef(SCHEMA_VOL2_A, T1_DDL);
-        createTableDef(SCHEMA_VOL2_B, T2_DDL);
+        createTableDef(SCHEMA_VOL2_A, T1_NAME, T1_DDL);
+        createTableDef(SCHEMA_VOL2_B, T2_NAME, T2_DDL);
         assertTablesInSchema(SCHEMA_VOL2_A, T1_NAME);
         assertTablesInSchema(SCHEMA_VOL2_B, T2_NAME);
 
@@ -299,14 +310,14 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void updateTimestampChangesWithCreate() throws Exception {
         final long first = schemaManager.getUpdateTimestamp();
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         final long second = schemaManager.getUpdateTimestamp();
         assertTrue("timestamp changed", first != second);
     }
 
     @Test
     public void updateTimestampChangesWithDelete() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         final long first = schemaManager.getUpdateTimestamp();
         deleteTableDef(SCHEMA, T1_NAME);
         final long second = schemaManager.getUpdateTimestamp();
@@ -316,14 +327,14 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void schemaGenChangesWithCreate() throws Exception {
         final int first = schemaManager.getSchemaGeneration();
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         final int second = schemaManager.getSchemaGeneration();
         assertTrue("timestamp changed", first != second);
     }
 
     @Test
     public void schemaGenChangesWithDelete() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         final int first = schemaManager.getSchemaGeneration();
         deleteTableDef(SCHEMA, T1_NAME);
         final int second = schemaManager.getSchemaGeneration();
@@ -351,27 +362,29 @@ public final class SchemaManagerIT extends ITBase {
         // TODO: Delete this test, only confirming temporarily desired behavior
         // Purely testing initial table IDs start at 1 and don't change when adding new tables
         // Partly required by com.akiban.qp.operator.AcenstorLookup_Default creating an array sized by max table id
-        createTableDef(SCHEMA, T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
         assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        createTableDef(SCHEMA, T2_DDL);
+        createTableDef(SCHEMA, T2_NAME, T2_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME);
         assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        assertEquals("t2 id", 2, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
-        createTableDef(SCHEMA, T3_CHILD_T1_DDL);
+        // 3: t1 group table got 2
+        assertEquals("t2 id", 3, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
+        createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME, T3_CHILD_T1_NAME);
         assertEquals("t1 id", 1, getUserTable(SCHEMA, T1_NAME).getTableId().intValue());
-        assertEquals("t2 id", 2, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
-        assertEquals("t3 id", 3, getUserTable(SCHEMA, T3_CHILD_T1_NAME).getTableId().intValue());
+        assertEquals("t2 id", 3, getUserTable(SCHEMA, T2_NAME).getTableId().intValue());
+        // 4: t2 group table got 4
+        assertEquals("t3 id", 5, getUserTable(SCHEMA, T3_CHILD_T1_NAME).getTableId().intValue());
     }
 
     @Test
     public void schemaStringsSingleTable() throws Exception {
         // Check 1) basic ordering 2) that the statements are 'canonicalized'
-        final String TABLE_DDL =  "create table bar(id int key)";
+        final String TABLE_DDL =  "id int not null primary key";
         final String SCHEMA_DDL = "create schema if not exists `foo`;";
-        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int, PRIMARY KEY(`id`)) engine=akibandb";
-        createTableDef("foo", TABLE_DDL);
+        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb";
+        createTableDef("foo", "bar", TABLE_DDL);
         final List<String> ddls = getSchemaStringsWithoutAIS(false);
         assertEquals("ddl count", 2, ddls.size()); // schema and table
         assertTrue("create schema", ddls.get(0).startsWith("create schema"));
@@ -382,8 +395,8 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void schemaStringsSingleGroup() throws Exception {
-        createTableDef(SCHEMA, T1_DDL);
-        createTableDef(SCHEMA, T3_CHILD_T1_DDL);
+        createTableDef(SCHEMA, T1_NAME, T1_DDL);
+        createTableDef(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
         Map<String, List<String>> schemaAndTables = new HashMap<String, List<String>>();
         schemaAndTables.put(SCHEMA, Arrays.asList(T1_NAME, T3_CHILD_T1_NAME));
     }
@@ -396,7 +409,7 @@ public final class SchemaManagerIT extends ITBase {
         schemaAndTables.put("s3", Arrays.asList("t4"));
         for(Map.Entry<String, List<String>> entry : schemaAndTables.entrySet()) {
             for(String table : entry.getValue()) {
-                createTableDef(entry.getKey(), "create table "+table+"(id int key)");
+                createTableDef(entry.getKey(), table, "id int not null primary key");
             }
         }
         assertSchemaStrings(schemaAndTables);
@@ -411,7 +424,7 @@ public final class SchemaManagerIT extends ITBase {
         String tableNames[] = new String[TABLE_COUNT];
         for(int i = 0; i < TABLE_COUNT; ++i) {
             tableNames[i] = "t" + i;
-            createTable(SCHEMA, tableNames[i], "id int key");
+            createTable(SCHEMA, tableNames[i], "id int not null primary key");
         }
 
         AkibanInformationSchema ais = schemaManager.getAis(session());
@@ -436,9 +449,9 @@ public final class SchemaManagerIT extends ITBase {
         final int UT_COUNT = ais.getUserTables().size();
         final int GT_COUNT = ais.getGroupTables().size();
 
-        createTable(SCHEMA+"1", "t1", "id int key");
-        createTable(SCHEMA+"2", "t2", "id int key");
-        createTable(SCHEMA+"3", "t3", "id int key");
+        createTable(SCHEMA+"1", "t1", "id int not null primary key");
+        createTable(SCHEMA+"2", "t2", "id int not null primary key");
+        createTable(SCHEMA+"3", "t3", "id int not null primary key");
 
         ais = schemaManager.getAis(session());
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
@@ -469,16 +482,44 @@ public final class SchemaManagerIT extends ITBase {
         };
 
         for(TableName pair[] : testNames) {
-            ddl().createTable(session(), pair[0].getSchemaName(),
-                              "create table `" + pair[0].getTableName() + "`(id int key)");
-            ddl().createTable(session(), pair[1].getSchemaName(),
-                              "create table `" + pair[1].getTableName() + "`(id int key)");
-
+            createTable(pair[0].getSchemaName(), pair[0].getTableName(), "id int not null primary key");
+            createTable(pair[1].getSchemaName(), pair[1].getTableName(), "id int not null primary key");
             String treeName1 = ddl().getAIS(session()).getUserTable(pair[0]).getTreeName();
             String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getTreeName();
-
             assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
         }
+    }
+
+    @Test
+    public void changeInAISTableIsUpgradeIssue() throws Exception {
+        /*
+         * Simple sanity check. Change as needed but heed the
+         * warnings that are in PSSM#createPrimordialAIS().
+         */
+        final String SCHEMA = "akiban_information_schema";
+        final String STATS_TABLE = "zindex_statistics";
+        final String ENTRY_TABLE = "zindex_statistics_entry";
+        final String STATS_DDL = "create table `akiban_information_schema`.`zindex_statistics`("+
+            "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp, "+
+            "`row_count` bigint, `sampled_count` bigint, "+
+            "PRIMARY KEY(`table_id`, `index_id`)"+
+        ") engine=akibandb";
+        final String ENTRY_DDL = "create table `akiban_information_schema`.`zindex_statistics_entry`("+
+            "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
+            "`item_number` int NOT NULL, `key_string` varchar(2048), `key_bytes` varbinary(4096), "+
+            "`eq_count` bigint, `lt_count` bigint, `distinct_count` bigint, "+
+            "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+
+            "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0`(`table_id`, `index_id`) "+
+                "REFERENCES `zindex_statistics`(`table_id`, `index_id`)"+
+        ") engine=akibandb";
+
+        TableDefinition statsDef = getTableDef(SCHEMA, STATS_TABLE);
+        assertNotNull("Stats table present", statsDef);
+        assertEquals("Stats DDL", STATS_DDL, statsDef.getDDL());
+
+        TableDefinition entryDef = getTableDef(SCHEMA, ENTRY_TABLE);
+        assertNotNull("Entry table present", entryDef);
+        assertEquals("Entry DDL", ENTRY_DDL, entryDef.getDDL());
     }
 
     /**

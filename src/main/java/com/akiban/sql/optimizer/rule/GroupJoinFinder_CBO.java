@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -56,7 +67,7 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         for (JoinIsland island : islands) {
             TableGroupJoinNode tree = isolateGroupJoins(island.root);
             if (tree != null) {
-                Joinable nroot = new TableGroupJoinTree(tree);
+                Joinable nroot = groupJoinTree(tree, island.root);
                 island.output.replaceInput(island.root, nroot);
                 island.root = nroot;
             }
@@ -89,10 +100,13 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
                 joinOK = true;
                 break;
             case LEFT:
-                joinOK = !hasJoinedReferences(join.getJoinConditions(), leftTree);
+                joinOK = checkJoinConditions(join.getJoinConditions(), leftTree, rightTree);
                 break;
             case RIGHT:
-                joinOK = !hasJoinedReferences(join.getJoinConditions(), rightTree);
+                // Cannot allow any non-group conditions, since even
+                // one only on parent would kill the child because
+                // that's how Select_HKeyOrdered works.
+                joinOK = checkJoinConditions(join.getJoinConditions(), null, leftTree);
                 break;
             default:
                 joinOK = false;
@@ -115,13 +129,35 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         }
         // Did not manage to coalesce. Put in any intermediate trees.
         if (leftTree != null)
-            join.setLeft(new TableGroupJoinTree(leftTree));
+            join.setLeft(groupJoinTree(leftTree, left));
         if (rightTree != null)
-            join.setRight(new TableGroupJoinTree(rightTree));
+            join.setRight(groupJoinTree(rightTree, right));
         // Make arbitrary joins LEFT not RIGHT.
         if (join.getJoinType() == JoinType.RIGHT)
             join.reverse();
         return null;
+    }
+
+    protected TableGroupJoinTree groupJoinTree(TableGroupJoinNode root, Joinable joins) {
+        TableGroupJoinTree tree = new TableGroupJoinTree(root);
+        Set<TableSource> required = new HashSet<TableSource>();
+        getRequiredTables(joins, required);
+        tree.setRequired(required);
+        return tree;
+    }
+
+    // Get all the tables reachable via inner joins from here.
+    protected void getRequiredTables(Joinable joinable, Set<TableSource> required) {
+        if (joinable instanceof TableSource) {
+            required.add((TableSource)joinable);
+        }
+        else if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            if (join.getJoinType() != JoinType.RIGHT)
+                getRequiredTables(join.getLeft(), required);
+            if (join.getJoinType() != JoinType.LEFT)
+                getRequiredTables(join.getRight(), required);
+        }
     }
 
     // Combine trees at the proper branch point.
@@ -150,19 +186,30 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
         return parent;
     }
 
+    protected boolean checkJoinConditions(ConditionList joinConditions,
+                                          TableGroupJoinNode outer,
+                                          TableGroupJoinNode inner) {
+        if (hasIllegalReferences(joinConditions, outer))
+            return false;
+        inner.setJoinConditions(joinConditions);
+        return true;
+    }
+
     // See whether any expression in the join condition other than the
-    // grouping join references the a table under the given tree.
-    protected boolean hasJoinedReferences(ConditionList joinConditions,
-                                          TableGroupJoinNode fromTree) {
+    // grouping join references a table under the given tree.
+    protected boolean hasIllegalReferences(ConditionList joinConditions,
+                                           TableGroupJoinNode fromTree) {
         JoinedReferenceFinder finder = null;
         if (joinConditions != null) {
             for (ConditionExpression condition : joinConditions) {
                 if (condition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
-                    continue;
+                    continue;   // Group condition okay.
+                if (fromTree == null)
+                    return true; // All non-group disallowed.
                 if (finder == null)
                     finder = new JoinedReferenceFinder(fromTree);
                 if (finder.find(condition))
-                    return true;
+                    return true; // Has references to other side.
             }
         }
         return false;
@@ -224,6 +271,47 @@ public class GroupJoinFinder_CBO extends GroupJoinFinder
     @Override
     protected Joinable getTableJoins(Joinable joins, TableGroup group) {
         throw new UnsupportedOperationException("Should have made TableGroupJoinTree");
+    }
+
+    @Override
+    protected void moveJoinConditions(List<JoinIsland> islands) {
+        for (JoinIsland island : islands) {
+            moveJoinConditions(island.root, island.whereConditions, island.whereJoins);
+        }        
+    }
+
+    protected void moveJoinConditions(Joinable joinable,
+                                      ConditionList whereConditions, List<TableGroupJoin> whereJoins) {
+        if (joinable instanceof TableGroupJoinTree) {
+            for (TableGroupJoinNode table : (TableGroupJoinTree)joinable) {
+                TableGroupJoin tableJoin = table.getTable().getParentJoin();
+                if (tableJoin != null) {
+                    if (table.getParent() == null) {
+                        tableJoin.reject(); // Did not make it into the group.
+                    }
+                    else if (whereJoins.contains(tableJoin)) {
+                        List<ComparisonCondition> joinConditions = tableJoin.getConditions();
+                        // Move down from WHERE conditions to join conditions.
+                        if (table.getJoinConditions() == null)
+                            table.setJoinConditions(new ConditionList());
+                        table.getJoinConditions().addAll(joinConditions);
+                        whereConditions.removeAll(joinConditions);
+                    }
+                }
+            }
+        }
+        else if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            join.setGroupJoin(null);
+            moveJoinConditions(join.getLeft(), whereConditions, whereJoins);
+            moveJoinConditions(join.getRight(), whereConditions, whereJoins);
+        }
+    }
+    
+    @Override
+    protected void moveJoinConditions(Joinable joinable, JoinNode output, TableJoins tableJoins,
+                                      ConditionList whereConditions, List<TableGroupJoin> whereJoins) {
+        throw new UnsupportedOperationException("Should have avoided TableJoins");
     }
 
 }

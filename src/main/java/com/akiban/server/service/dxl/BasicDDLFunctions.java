@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.service.dxl;
@@ -61,14 +72,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     private final static Logger logger = LoggerFactory.getLogger(BasicDDLFunctions.class);
 
     private final IndexStatisticsService indexStatisticsService;
-
-    @Override
-    public void createTable(Session session, String schema, String ddlText)
-    {
-        logger.trace("creating table: ({}) {}", schema, ddlText);
-        TableName tableName = schemaManager().createTableDefinition(session, schema, ddlText);
-        checkCursorsForDDLModification(session, getAIS(session).getTable(tableName));
-    }
     
     @Override
     public void createTable(Session session, UserTable table)
@@ -368,13 +371,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
         final Table table = getTable(session, tableName);
-        Collection<? extends Index> indexes;
+        Collection<Index> indexes = new HashSet<Index>();
         if (indexesToUpdate == null) {
-            indexes = table.getIndexes();
-            // TODO: Group indexes that include this table? That terminate with it?
+            indexes.addAll(table.getIndexes());
+            for (Index index : table.getGroup().getIndexes()) {
+                if (table == index.leafMostTable())
+                    indexes.add(index);
+            }
         }
         else {
-            Set<Index> namedIndexes = new HashSet<Index>();
             for (String indexName : indexesToUpdate) {
                 Index index = table.getIndex(indexName);
                 if (index == null) {
@@ -382,9 +387,8 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if (index == null)
                         throw new NoSuchIndexException(indexName);
                 }
-                namedIndexes.add(index);
+                indexes.add(index);
             }
-            indexes = namedIndexes;
         }
         indexStatisticsService.updateIndexStatistics(session, indexes);
     }

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.types.conversion;
@@ -118,6 +129,11 @@ public final class Converters {
                 VARBINARY
         );
         builder.legalConversions(U_BIGINT,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 FLOAT,
                 DOUBLE,
                 DECIMAL,
@@ -128,6 +144,11 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(DECIMAL,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 U_BIGINT,
                 VARCHAR,
                 LONG,
@@ -137,6 +158,11 @@ public final class Converters {
                 DOUBLE
         );
         builder.legalConversions(DOUBLE,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 FLOAT,
                 DECIMAL,
                 LONG,
@@ -146,6 +172,11 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(FLOAT,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 DOUBLE,
                 DECIMAL,
                 LONG,
@@ -155,6 +186,11 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(LONG,
+                DATE,
+                TIME,
+                DATETIME,
+                TIMESTAMP,
+                YEAR,
                 DOUBLE,
                 FLOAT,
                 U_BIGINT,
@@ -164,18 +200,27 @@ public final class Converters {
                 INTERVAL_MONTH
         );
         builder.legalConversions(DATE,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATETIME,
                 TIMESTAMP,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(DATETIME,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATE,
                 TIMESTAMP,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(TIME,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATE,
                 YEAR,
                 DATETIME,
@@ -184,12 +229,18 @@ public final class Converters {
                 LONG
         );
         builder.legalConversions(TIMESTAMP,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATETIME,
                 DATE,
                 VARCHAR,
                 LONG
         );
         builder.legalConversions(YEAR,
+                DOUBLE,
+                DECIMAL,
+                FLOAT,
                 DATE,
                 DATETIME,
                 TIMESTAMP,
@@ -213,6 +264,7 @@ public final class Converters {
         );
 
         builder.legalConversions(INTERVAL_MILLIS,
+                FLOAT,
                 DOUBLE,
                 DECIMAL,
                 U_BIGINT,                
@@ -221,6 +273,7 @@ public final class Converters {
         );
 
         builder.legalConversions(INTERVAL_MONTH,
+                FLOAT,
                 DOUBLE,
                 DECIMAL,
                 U_BIGINT,
