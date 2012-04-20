@@ -41,14 +41,12 @@ public class TodaysExpressionTest extends ComposedExpressionTestBase
     @Test
     public void test()
     {
-        doTest("0001-01-01", 365L);
-    }
-   
-    @Test(expected=IllegalFieldValueException.class)
-    public void testInvalidDates()
-    {
+        doTest("0001-01-01", 366L);
+        doTest("0000-01-01", 0L);
+        doTest("0000-01-02", 1L);
         doTest("0000-00-00", null);
     }
+  
     
     private void doTest (String date, Long expected)
     {

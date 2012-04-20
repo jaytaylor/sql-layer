@@ -26,39 +26,32 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
+import org.joda.time.IllegalFieldValueException;
 
 
-public class ToDaysExpression
-{
-    // ToDays return the number of days since the 'beginning of time'
-    // ie., '0000-01-01'
-    private static final Expression ZERO_DATE = new LiteralExpression(AkType.DATE, 34L);
-    
-    // number of milliseconds in a day
-    private static final Expression FACTOR = new LiteralExpression(AkType.LONG, 3600000L * 24);
-    
+public class ToDaysExpression  extends AbstractUnaryExpression
+{   
     @Scalar("to_days")
     public static final ExpressionComposer COMPOSER = new UnaryComposer()
     {
         @Override
         protected Expression compose(Expression argument)
         {
-            return new CastExpression(AkType.LONG,
-                            new ArithExpression
-                            (
-                                new ArithExpression(argument, ArithOps.MINUS, ZERO_DATE),
-                                ArithOps.DIV,
-                                FACTOR
-                             )
-                        );
+            return new ToDaysExpression(argument);
         }
 
         @Override
@@ -71,4 +64,55 @@ public class ToDaysExpression
             return ExpressionTypes.LONG;
         }
     };
+
+    private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
+    {
+        private static final long BEGINNING = Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(33);
+        private  static final long FACTOR = 3600L * 1000 * 24;
+        
+        public InnerEvaluation (ExpressionEvaluation eval)
+        {
+            super(eval);
+        }
+
+        @Override
+        public ValueSource eval()
+        {
+            ValueSource date = operand();
+            if (date.isNull())
+                return NullValueSource.only();
+            
+            try
+            {
+                valueHolder().putLong((Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(date.getDate())
+                                        - BEGINNING) / FACTOR);
+                return valueHolder();
+            }
+            catch ( IllegalFieldValueException e) // zero dates
+            {
+                QueryContext qc = queryContext();
+                if (qc != null)
+                    qc.warnClient(new InvalidParameterValueException(e.getMessage()));
+                return NullValueSource.only();
+            }
+        }
+        
+    }
+    
+    ToDaysExpression (Expression arg)
+    {
+        super(AkType.LONG, arg);
+    }
+    
+    @Override
+    protected String name()
+    {
+        return "TO_DAYS";
+    }
+
+    @Override
+    public ExpressionEvaluation evaluation()
+    {
+        return new InnerEvaluation(operandEvaluation());
+    }
 }
