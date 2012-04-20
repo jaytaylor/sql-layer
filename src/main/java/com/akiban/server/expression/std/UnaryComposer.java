@@ -51,7 +51,7 @@ abstract class UnaryComposer implements ExpressionComposer {
     @Override
     public NullTreating getNullTreating()
     {
-        return NullTreating.CONTAMINATING;
+        return NullTreating.RETURN_NULL;
     }
         
     @Override

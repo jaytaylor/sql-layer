@@ -80,7 +80,7 @@ public class EltExpression extends AbstractCompositeExpression
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.IGNORED; // This is a special case. NULL only makes the top NULL 
+            return NullTreating.IGNORE; // This is a special case. NULL only makes the top NULL 
                                                    // if it's the first arg
         }
         

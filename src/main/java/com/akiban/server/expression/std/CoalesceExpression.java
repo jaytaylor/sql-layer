@@ -80,7 +80,7 @@ public class CoalesceExpression extends AbstractCompositeExpression {
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.IGNORED;
+            return NullTreating.IGNORE;
         }
     };
 

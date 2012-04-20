@@ -50,6 +50,6 @@ public abstract class TernaryComposer implements ExpressionComposer
     @Override
     public NullTreating getNullTreating()
     {
-        return NullTreating.CONTAMINATING;
+        return NullTreating.RETURN_NULL;
     }
 }

@@ -41,7 +41,14 @@ import java.util.List;
 public interface ExpressionComposer {
     public static enum NullTreating
     {
-        IGNORED, CONTAMINATING, REMOVED
+        IGNORE,       // The function will treat NULL as if it were any regular value
+       
+        RETURN_NULL,  // The function will return NULL if at least one of its operands is NULL
+        
+        REMOVE        // The function essentially ignores NULL, so constant NULL could be removed from the operand-list
+                      // The differene between this and IGNORE is that
+                                // This doesn't care about NULL, NULL operand(s) will simply be skipped
+                                // while IGNORE might do something with NULL
     }
     /**
      * - Adjust input types, if needed
@@ -75,11 +82,11 @@ public interface ExpressionComposer {
     
     /**
      * 
-     * @return IGNORED 
+     * @return IGNORE 
      *                  If NULL operand(s) will simply be ignored
-     *         CONTAMINATING
+     *         RETURN_NULL
      *                  If NULL operand(s) will make this expression return NULL
-     *         REMOVED
+     *         REMOVE
      *                  If NULL expression(s) should be removed (optimisation purpose)
      *         
      */

@@ -71,7 +71,7 @@ public final class InExpression extends AbstractCompositeExpression {
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.IGNORED;
+            return NullTreating.IGNORE;
         }
     };
 

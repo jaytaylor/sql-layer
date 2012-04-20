@@ -95,7 +95,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.CONTAMINATING;
+            return NullTreating.RETURN_NULL;
         }
     };
 

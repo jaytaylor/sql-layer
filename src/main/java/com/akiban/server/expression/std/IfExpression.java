@@ -83,7 +83,7 @@ public class IfExpression extends AbstractCompositeExpression
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.IGNORED;
+            return NullTreating.IGNORE;
         }
     };
     protected static final EnumSet<AkType> STRING = EnumSet.of(AkType.VARCHAR, AkType.TEXT);

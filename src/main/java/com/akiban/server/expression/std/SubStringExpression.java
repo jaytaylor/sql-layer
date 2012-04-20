@@ -71,7 +71,7 @@ public class SubStringExpression extends AbstractCompositeExpression
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.CONTAMINATING;
+            return NullTreating.RETURN_NULL;
         }
     };
     

@@ -129,7 +129,7 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
     
         @Override
         public NullTreating getNullTreating() {
-            return NullTreating.IGNORED;
+            return NullTreating.IGNORE;
         }
         
         @Override

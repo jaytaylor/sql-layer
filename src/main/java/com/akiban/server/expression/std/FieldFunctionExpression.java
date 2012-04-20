@@ -74,7 +74,7 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.IGNORED;
+            return NullTreating.IGNORE;
         }
         
     };

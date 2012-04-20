@@ -62,7 +62,7 @@ public class IfNullExpression extends CoalesceExpression
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.IGNORED;
+            return NullTreating.IGNORE;
         }
     };
     

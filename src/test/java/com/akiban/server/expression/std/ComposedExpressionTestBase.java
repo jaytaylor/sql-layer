@@ -95,7 +95,7 @@ public abstract class ComposedExpressionTestBase {
         
         Expression expression = getComposer().compose(children);
         assertTrue ("ExpressionComposer.nullIsContaminating() and Expression.nullIsContaminating() should match",
-                    (getComposer().getNullTreating() == NullTreating.CONTAMINATING) == expression.nullIsContaminating());
+                    (getComposer().getNullTreating() == NullTreating.RETURN_NULL) == expression.nullIsContaminating());
     }
     
     @OnlyIfNot("alreadyExc()")

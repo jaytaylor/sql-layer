@@ -70,7 +70,7 @@ public class LogExpression extends AbstractCompositeExpression
         @Override
         public NullTreating getNullTreating()
         {
-            return NullTreating.CONTAMINATING;
+            return NullTreating.RETURN_NULL;
         }
         
         @Override

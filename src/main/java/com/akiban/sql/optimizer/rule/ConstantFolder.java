@@ -229,8 +229,8 @@ public class ConstantFolder extends BaseRule
             if (anyNull)
                 switch(expressionAssembler.getFunctionRegistry().composer(fname).getNullTreating())
                 {
-                    case REMOVED:       return removeNull(fun);
-                    case CONTAMINATING: return new BooleanConstantExpression(null, 
+                    case REMOVE:       return removeNull(fun);
+                    case RETURN_NULL: return new BooleanConstantExpression(null, 
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());
                 }
