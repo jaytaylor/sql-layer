@@ -1593,10 +1593,9 @@ class YamlTester {
                     set = String.valueOf(attributeValue).trim();
                 } else if ("get".equals(attribute)) {
                     get = String.valueOf(attributeValue).trim();
-                } else if ("output".equals(attribute)) {
+                } else if ("output".equals(attribute) ||
+                        "split_result".equals(attribute)) {
                     parseOutput(attributeValue);
-                } else if ("split_result".equals(attribute)) {
-                    // skip
                 } else {
                     fail("The '" + attribute + "' attribute name was not"
                             + " recognized");
