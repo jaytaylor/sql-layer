@@ -45,21 +45,21 @@ public abstract class SortCursor implements Cursor
     @Override
     public void open()
     {
-        // CursorLifecycle.checkIdle(this);
+        CursorLifecycle.checkIdle(this);
         idle = false;
     }
 
     @Override
     public Row next()
     {
-        // CursorLifecycle.checkIdleOrActive(this);
+        CursorLifecycle.checkIdleOrActive(this);
         return null;
     }
 
     @Override
     public final void close()
     {
-        // CursorLifecycle.checkIdleOrActive(this);
+        CursorLifecycle.checkIdleOrActive(this);
         iterationHelper.close();
         idle = true;
     }

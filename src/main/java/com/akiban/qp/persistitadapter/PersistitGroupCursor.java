@@ -57,7 +57,7 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void rebind(HKey hKey, boolean deep)
     {
-        // CursorLifecycle.checkIdle(this);
+        CursorLifecycle.checkIdle(this);
         this.hKey = (PersistitHKey) hKey;
         this.hKeyDeep = deep;
     }
@@ -69,7 +69,7 @@ class PersistitGroupCursor implements GroupCursor
     public void open()
     {
         try {
-            // CursorLifecycle.checkIdle(this);
+            CursorLifecycle.checkIdle(this);
             this.exchange = adapter.takeExchange(groupTable);
             exchange.clear();
             groupScan =
@@ -85,7 +85,7 @@ class PersistitGroupCursor implements GroupCursor
     public Row next()
     {
         try {
-            // CursorLifecycle.checkIdleOrActive(this);
+            CursorLifecycle.checkIdleOrActive(this);
             boolean next = !idle;
             if (next) {
                 groupScan.advance();
@@ -110,7 +110,7 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void close()
     {
-        // CursorLifecycle.checkIdleOrActive(this);
+        CursorLifecycle.checkIdleOrActive(this);
         if (!idle) {
             groupScan = null;
             adapter.returnExchange(exchange);
@@ -122,24 +122,25 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void destroy()
     {
+        destroyed = true;
     }
 
     @Override
     public boolean isIdle()
     {
-        return exchange != null && idle;
+        return !destroyed && idle;
     }
 
     @Override
     public boolean isActive()
     {
-        return exchange != null && !idle;
+        return !destroyed && !idle;
     }
 
     @Override
     public boolean isDestroyed()
     {
-        return exchange == null;
+        return destroyed;
     }
 
     // For use by this package
@@ -192,6 +193,7 @@ class PersistitGroupCursor implements GroupCursor
     private boolean hKeyDeep;
     private GroupScan groupScan;
     private boolean idle;
+    private boolean destroyed = false;
 
     // static state
     private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse_pgc");

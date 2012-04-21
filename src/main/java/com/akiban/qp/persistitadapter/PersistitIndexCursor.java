@@ -44,7 +44,7 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void open()
     {
-        // CursorLifecycle.checkIdle(this);
+        CursorLifecycle.checkIdle(this);
         exchange = adapter.takeExchange(indexRowType.index());
         sortCursor = SortCursor.create(context, keyRange, ordering, new IndexScanIterationHelper());
         sortCursor.open();
@@ -56,7 +56,7 @@ class PersistitIndexCursor implements Cursor
     {
         Row next;
         try {
-            // CursorLifecycle.checkIdleOrActive(this);
+            CursorLifecycle.checkIdleOrActive(this);
             boolean needAnother;
             do {
                 if ((next = sortCursor.next()) != null) {
@@ -85,7 +85,7 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void close()
     {
-        // CursorLifecycle.checkIdleOrActive(this);
+        CursorLifecycle.checkIdleOrActive(this);
         if (!idle) {
             row.release();
             adapter.returnExchange(exchange);
@@ -97,25 +97,26 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void destroy()
     {
+        destroyed = true;
         sortCursor = null;
     }
 
     @Override
     public boolean isIdle()
     {
-        return exchange != null && idle;
+        return !destroyed && idle;
     }
 
     @Override
     public boolean isActive()
     {
-        return exchange != null && !idle;
+        return !destroyed && !idle;
     }
 
     @Override
     public boolean isDestroyed()
     {
-        return exchange == null;
+        return destroyed;
     }
 
     // For use by this package
@@ -161,6 +162,7 @@ class PersistitIndexCursor implements Cursor
     private Exchange exchange;
     private SortCursor sortCursor;
     private boolean idle;
+    private boolean destroyed = false;
 
     // Inner classes
 
