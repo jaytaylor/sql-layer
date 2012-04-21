@@ -8,6 +8,8 @@ outer-where-condition: Outer join with a later condition.
 
 outer-where-preponable: Later condition that might otherwise get moved.
 
+semi: Map inside semi-join.
+
 sort: Sorting with nested loops
 
 two-groups: General join between two groups.
