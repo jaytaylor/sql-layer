@@ -628,9 +628,28 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     private void setIntersectionConditions(IndexScan rawScan) {
         MultiIndexIntersectScan scan = (MultiIndexIntersectScan) rawScan;
 
-        ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<ConditionExpression>(conditions.size());
-        scan.incrementConditionsCounter(counter);
-        scan.setGroupConditions(counter.getCountedConditions());
+        if (isAncestor(scan.getOutputIndexScan().getLeafMostTable(),
+                       scan.getSelectorIndexScan().getLeafMostTable())) {
+            // More conditions up the same branch are safely implied by the output row.
+            ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<ConditionExpression>(conditions.size());
+            scan.incrementConditionsCounter(counter);
+            scan.setConditions(new ArrayList<ConditionExpression>(counter.getCountedConditions()));
+        }
+        else {
+            // Otherwise only those for the output row are safe and
+            // conditions on another branch need to be checked again;
+            scan.setConditions(scan.getOutputIndexScan().getConditions());
+        }
+    }
+
+    /** Is the given <code>rootTable</code> an ancestor of <code>leafTable</code>? */
+    private static boolean isAncestor(TableSource leafTable, TableSource rootTable) {
+        do {
+            if (leafTable == rootTable)
+                return true;
+            leafTable = leafTable.getParentTable();
+        } while (leafTable != null);
+        return false;
     }
     
     private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan,SingleIndexScan> {
@@ -868,8 +887,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         Collection<ConditionExpression> unhandledConditions = 
             new HashSet<ConditionExpression>(conditions);
-        if (index.getGroupConditions() != null)
-            unhandledConditions.removeAll(index.getGroupConditions());
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             CostEstimate select = costEstimator.costSelect(unhandledConditions,
                                                            cost.getRowCount());

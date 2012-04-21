@@ -5,7 +5,7 @@ SelectQuery@64dc420b
         Product@7deb41d6(customers)
           Flatten@602f892f(customers INNER o1 INNER i1)
             AncestorLookup@50d79dfe(items -> [customers, orders, items])
-              MultiIndexIntersectScan@7bc5b828(INTERSECT(compare 1, skip 1: SingleIndexScan@71bd8993(Index(test.items.sku[IndexColumn(sku)]), , =1234) AND skip 1: SingleIndexScan@52934c3b(Index(test.items.sku[IndexColumn(sku)]), , =4567)), SORTED/reverse, rows = 200, cost = 17139.6)
+              MultiIndexIntersectScan@7bc5b828(INTERSECT(compare 1, skip 1: SingleIndexScan@71bd8993(Index(test.items.sku[IndexColumn(sku)]), , =1234) AND skip 1: SingleIndexScan@52934c3b(Index(test.items.sku[IndexColumn(sku)]), , =4567)), SORTED/reverse, rows = 200, cost = 17303.6)
               TableSource@4f14e777(customers - TableGroup@48d593f7(customers))
               TableSource@65685e30(o1 - TableGroupJoin@728edb84(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
               TableSource@35afe17b(i1 - TableGroupJoin@edf1de(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
