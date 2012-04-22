@@ -55,6 +55,7 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -698,8 +699,17 @@ public class AggregatePT extends ApiTestBase {
     }
 
     class WorkerThread extends Thread {
-
+        private Session session;
+        private PersistitAdapter adapter;
+        private QueryContext context;
+        private Cursor inputCursor;        
+        
         public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition) {
+            session = createNewSession();
+            adapter = new PersistitAdapter((Schema)valuesType.schema(), persistitStore(), treeService(), session, configService());
+            context = queryContext(adapter);
+            context.setRow(bindingPosition, valuesRow);
+            inputCursor = API.cursor(inputOperator, context);
         }
         
         public void open() {
@@ -710,6 +720,11 @@ public class AggregatePT extends ApiTestBase {
         }
 
         public void destroy() {
+        }
+
+        @Override
+        public void run() {
+            
         }
 
     }
