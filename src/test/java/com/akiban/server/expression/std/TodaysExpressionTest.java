@@ -26,7 +26,6 @@
 
 package com.akiban.server.expression.std;
 
-import org.joda.time.IllegalFieldValueException;
 import com.akiban.server.expression.Expression;
 import org.junit.Test;
 import com.akiban.server.expression.ExpressionComposer;
