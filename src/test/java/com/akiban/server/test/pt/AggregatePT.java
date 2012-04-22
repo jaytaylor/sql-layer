@@ -29,29 +29,32 @@ package com.akiban.server.test.pt;
 import com.akiban.server.test.ApiTestBase;
 
 import com.akiban.ais.model.TableIndex;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.operator.OperatorExecutionBase;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesHolderRow;
+import com.akiban.qp.row.ValuesRow;
+import com.akiban.qp.rowtype.DerivedTypesSchema;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
-
-import com.akiban.qp.operator.OperatorExecutionBase;
-import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.rowtype.DerivedTypesSchema;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -64,6 +67,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 
 public class AggregatePT extends ApiTestBase {
     public static final int ROW_COUNT = 100000;
@@ -532,6 +537,181 @@ public class AggregatePT extends ApiTestBase {
                 time += (end - start) / 1.0e6;
         }
         System.out.println(String.format("%g ms", time / REPEATS));
+    }
+
+    @Test
+    public void parallel() {
+        Schema schema = new Schema(rowDefCache().ais());
+        IndexRowType indexType = schema.indexRowType(index);
+        ValuesRowType valuesType = schema.newValuesType(AkType.INT, AkType.INT);
+        IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 0)))), new SetColumnSelector(0));
+        IndexBound hi = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 1)))), new SetColumnSelector(0));
+        IndexKeyRange keyRange = IndexKeyRange.bounded(indexType, lo, true, hi, false);
+        API.Ordering ordering = new API.Ordering();
+        ordering.append(new FieldExpression(indexType, 0), true);
+        
+        Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
+        RowType rowType = indexType;
+
+        plan = spa(plan, rowType);
+        rowType = plan.rowType();
+
+        int nthreads = Integer.parseInt(System.getProperty("test.nthreads", "4"));
+        double n = 10.0 / nthreads;
+        List<ValuesRow> keyRows = new ArrayList<ValuesRow>();
+        for (int i = 0; i < nthreads; i++) {
+            Object[] values = new Object[2];
+            values[0] = Math.round(n * i);
+            values[1] = Math.round(n * (i+1));
+            keyRows.add(new ValuesRow(valuesType, values));
+        }
+        plan = new Map_Parallel(plan, rowType, valuesType, keyRows, 0);
+                                
+        ordering = new API.Ordering();
+        ordering.append(new FieldExpression(rowType, 2), true);
+        plan = API.sort_InsertionLimited(plan, rowType, ordering, 
+                                         API.SortOption.PRESERVE_DUPLICATES, 100);
+        
+        PersistitAdapter adapter = persistitAdapter(schema);
+        QueryContext queryContext = queryContext(adapter);
+        
+        System.out.println("PARALLEL");
+        double time = 0.0;
+        for (int i = 0; i < WARMUPS+REPEATS; i++) {
+            long start = System.nanoTime();
+            Cursor cursor = API.cursor(plan, queryContext);
+            cursor.open();
+            while (true) {
+                Row row = cursor.next();
+                if (row == null) break;
+                if (i == 0) System.out.println(row);
+            }
+            cursor.close();
+            long end = System.nanoTime();
+            if (i >= WARMUPS)
+                time += (end - start) / 1.0e6;
+        }
+        System.out.println(String.format("%g ms", time / REPEATS));
+    }
+
+    class Map_Parallel extends Operator {
+        private Operator inputOperator;
+        private RowType outputType;
+        private ValuesRowType valuesType;
+        private List<ValuesRow> valuesRows;
+        private int bindingPosition;
+
+        public Map_Parallel(Operator inputOperator, RowType outputType, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
+            this.inputOperator = inputOperator;
+            this.outputType = outputType;
+            this.valuesType = valuesType;
+            this.valuesRows = valuesRows;
+            this.bindingPosition = bindingPosition;
+        }
+
+        @Override
+        protected Cursor cursor(QueryContext context) {
+            return new ParallelCursor(context, inputOperator, valuesType, valuesRows, bindingPosition);
+        }
+
+        @Override
+        public List<Operator> getInputOperators() {
+            return Collections.singletonList(inputOperator);
+        }
+    }
+
+    class ParallelCursor extends OperatorExecutionBase implements Cursor {
+        private QueryContext context;
+        private BlockingQueue<Row> queue;
+        private List<WorkerThread> threads;
+        private int nrunning;
+
+        public ParallelCursor(QueryContext context, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
+            this.context = context;
+            int nthreads = valuesRows.size();
+            queue = new ArrayBlockingQueue<Row>(nthreads);
+            threads = new ArrayList<WorkerThread>(nthreads);
+            for (ValuesRow valuesRow : valuesRows) {
+                threads.add(new WorkerThread(context, inputOperator, valuesType, valuesRow, bindingPosition));
+            }
+        }
+
+        @Override
+        public void open() {
+            nrunning = 0;
+            for (WorkerThread thread : threads) {
+                thread.open();
+                nrunning++;
+            }
+        }
+
+        @Override
+        public void close() {
+            for (WorkerThread thread : threads) {
+                if (thread.close())
+                    nrunning--;
+            }
+            assert (nrunning == 0);
+        }
+
+        @Override
+        public void destroy() {
+            for (WorkerThread thread : threads) {
+                thread.destroy();
+            }
+            threads = null;
+        }
+
+        @Override
+        public boolean isIdle() {
+            return (nrunning == 0);
+        }
+
+        @Override
+        public boolean isActive() {
+            return (nrunning > 0);
+        }
+
+        @Override
+        public boolean isDestroyed() {
+            return (threads == null);
+        }
+
+        @Override
+        public Row next() {
+            while (nrunning > 0) {
+                Row row;
+                try {
+                    row = queue.take();
+                }
+                catch (InterruptedException ex) {
+                    throw new QueryCanceledException(context.getSession());
+                }
+                if (row == null)
+                    nrunning--;
+                else
+                    return row;
+            }
+            return null;
+        }
+        
+    }
+
+    class WorkerThread extends Thread {
+
+        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition) {
+        }
+        
+        public void open() {
+        }
+
+        public boolean close() {
+            return true;
+        }
+
+        public void destroy() {
+        }
+
     }
 
 }
