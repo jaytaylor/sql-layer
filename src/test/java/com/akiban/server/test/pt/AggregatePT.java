@@ -109,38 +109,16 @@ public class AggregatePT extends ApiTestBase {
 
     @Test
     public void normalOperators() {
-        Schema schema = new Schema(rowDefCache().ais());;
+        Schema schema = new Schema(rowDefCache().ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
         ordering.append(new FieldExpression(indexType, 0), true);
-
-        FunctionsRegistry functions = new FunctionsRegistryImpl();
-        ExpressionComposer and = functions.composer("and");
-        Expression pred1 = functions.composer("greaterOrEquals")
-            .compose(Arrays.asList(Expressions.field(indexType, 1),
-                                   Expressions.literal("M")));
-        Expression pred2 = functions.composer("lessOrEquals")
-            .compose(Arrays.asList(Expressions.field(indexType, 1),
-                                   Expressions.literal("Y")));
-        Expression pred = and.compose(Arrays.asList(pred1, pred2));
-        pred2 = functions.composer("notEquals")
-            .compose(Arrays.asList(Expressions.field(indexType, 2),
-                                   Expressions.literal(1L)));
-        pred = and.compose(Arrays.asList(pred, pred2));
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
-        plan = API.select_HKeyOrdered(plan, rowType, pred);
-        plan = API.project_Default(plan, rowType,
-                                   Arrays.asList(Expressions.field(rowType, 0),
-                                                 Expressions.field(rowType, 3),
-                                                 Expressions.field(rowType, 4),
-                                                 Expressions.field(rowType, 5)));
-        rowType = plan.rowType();
-        plan = API.aggregate_Partial(plan, rowType, 
-                                     1, functions,
-                                     Arrays.asList("count", "sum", "sum"));
+
+        plan = spa(plan, rowType);
 
         PersistitAdapter adapter = persistitAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
@@ -164,9 +142,37 @@ public class AggregatePT extends ApiTestBase {
         System.out.println(String.format("%g ms", time / REPEATS));
     }
 
+    private Operator spa(Operator plan, RowType rowType) {
+        FunctionsRegistry functions = new FunctionsRegistryImpl();
+        ExpressionComposer and = functions.composer("and");
+        Expression pred1 = functions.composer("greaterOrEquals")
+            .compose(Arrays.asList(Expressions.field(rowType, 1),
+                                   Expressions.literal("M")));
+        Expression pred2 = functions.composer("lessOrEquals")
+            .compose(Arrays.asList(Expressions.field(rowType, 1),
+                                   Expressions.literal("Y")));
+        Expression pred = and.compose(Arrays.asList(pred1, pred2));
+        pred2 = functions.composer("notEquals")
+            .compose(Arrays.asList(Expressions.field(rowType, 2),
+                                   Expressions.literal(1L)));
+        pred = and.compose(Arrays.asList(pred, pred2));
+        
+        plan = API.select_HKeyOrdered(plan, rowType, pred);
+        plan = API.project_Default(plan, rowType,
+                                   Arrays.asList(Expressions.field(rowType, 0),
+                                                 Expressions.field(rowType, 3),
+                                                 Expressions.field(rowType, 4),
+                                                 Expressions.field(rowType, 5)));
+        rowType = plan.rowType();
+        plan = API.aggregate_Partial(plan, rowType, 
+                                     1, functions,
+                                     Arrays.asList("count", "sum", "sum"));
+        return plan;
+    }
+
     @Test
     public void bespokeOperator() {
-        Schema schema = new Schema(rowDefCache().ais());;
+        Schema schema = new Schema(rowDefCache().ais());
         IndexRowType indexType = schema.indexRowType(index);
         IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
         API.Ordering ordering = new API.Ordering();
@@ -174,6 +180,7 @@ public class AggregatePT extends ApiTestBase {
         
         Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
         RowType rowType = indexType;
+
         plan = new BespokeOperator(plan);
 
         PersistitAdapter adapter = persistitAdapter(schema);
@@ -484,6 +491,47 @@ public class AggregatePT extends ApiTestBase {
             return String.format("%d: [%d %d %d]", key, count1, sum1, sum2);
         }
 
+    }
+
+    @Test
+    public void sorted() {
+        Schema schema = new Schema(rowDefCache().ais());
+        IndexRowType indexType = schema.indexRowType(index);
+        IndexKeyRange keyRange = IndexKeyRange.unbounded(indexType);
+        API.Ordering ordering = new API.Ordering();
+        ordering.append(new FieldExpression(indexType, 0), true);
+        
+        Operator plan = API.indexScan_Default(indexType, keyRange, ordering);
+        RowType rowType = indexType;
+
+        plan = spa(plan, rowType);
+        rowType = plan.rowType();
+        
+        ordering = new API.Ordering();
+        ordering.append(new FieldExpression(rowType, 2), true);
+        plan = API.sort_InsertionLimited(plan, rowType, ordering, 
+                                         API.SortOption.PRESERVE_DUPLICATES, 100);
+        
+        PersistitAdapter adapter = persistitAdapter(schema);
+        QueryContext queryContext = queryContext(adapter);
+        
+        System.out.println("SORTED");
+        double time = 0.0;
+        for (int i = 0; i < WARMUPS+REPEATS; i++) {
+            long start = System.nanoTime();
+            Cursor cursor = API.cursor(plan, queryContext);
+            cursor.open();
+            while (true) {
+                Row row = cursor.next();
+                if (row == null) break;
+                if (i == 0) System.out.println(row);
+            }
+            cursor.close();
+            long end = System.nanoTime();
+            if (i >= WARMUPS)
+                time += (end - start) / 1.0e6;
+        }
+        System.out.println(String.format("%g ms", time / REPEATS));
     }
 
 }
