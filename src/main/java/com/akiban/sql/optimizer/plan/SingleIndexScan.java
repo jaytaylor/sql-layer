@@ -239,11 +239,6 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public List<ConditionExpression> getGroupConditions() {
-        return getConditions();
-    }
-
-    @Override
     public UserTable getLeafMostUTable() {
         return (UserTable) index.leafMostTable();
     }

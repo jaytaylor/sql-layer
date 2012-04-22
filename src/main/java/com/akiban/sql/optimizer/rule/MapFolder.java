@@ -150,6 +150,7 @@ public class MapFolder extends BaseRule
             parent = child.getOutput();
         } while (!((parent instanceof MapJoin) ||
                    // These need to be outside.
+                   (parent instanceof Subquery) ||
                    (parent instanceof ResultSet) ||
                    (parent instanceof AggregateSource) ||
                    (parent instanceof Sort) ||

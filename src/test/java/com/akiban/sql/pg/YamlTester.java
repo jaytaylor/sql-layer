@@ -69,7 +69,6 @@ import java.util.Map.Entry;
 import java.util.Stack;
 import java.util.regex.Pattern;
 
-import com.akiban.util.Strings;
 import org.yaml.snakeyaml.Yaml;
 import org.yaml.snakeyaml.constructor.AbstractConstruct;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
@@ -78,9 +77,6 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
-
-import com.akiban.server.manage.ManageMXBean;
-import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /**
  * A utility for testing SQL access over a Postgres server connection based on
@@ -1566,6 +1562,7 @@ class YamlTester {
     private class JMXCommand extends AbstractStatementCommand {
 
         ArrayList<Object> output = null;
+        ArrayList<Object> split_output = null;
         String objectName = null;
         Object[] params = null;
         String method = null;
@@ -1579,10 +1576,10 @@ class YamlTester {
             } else {
                 fail("Must provide an Object name");
             }
-            
+
             for (int i = 1; i < sequence.size(); i++) {
                 Entry<Object, Object> map = onlyEntry(sequence.get(i),
-                        "JMX attribute");
+                "JMX attribute");
                 String attribute = string(map.getKey(), "JMX attribute name");
                 Object attributeValue = map.getValue();
                 if ("params".equals(attribute)) {
@@ -1596,7 +1593,7 @@ class YamlTester {
                 } else if ("output".equals(attribute)) {
                     parseOutput(attributeValue);
                 } else if ("split_result".equals(attribute)) {
-                    // skip
+                    parseSplit(attributeValue);
                 } else {
                     fail("The '" + attribute + "' attribute name was not"
                             + " recognized");
@@ -1616,13 +1613,29 @@ class YamlTester {
             params = list.toArray(new Object[list.size()]);
         }
 
+        private void parseSplit (Object value) {
+            if (value == null) {
+                split_output = null;
+                return;
+            }
+            assertNull ("The split_result attribute must not appear more than once", split_output);
+            assertNull ("The output and split_result attributes can not appear together", output);
+            List<List<Object>> rows = rows(value, "output split value");
+            split_output = new ArrayList<Object>(rows.size());
+            for (List<?> row : rows) {
+                assertEquals("number of entries in row "+ row, 1, row.size());
+                split_output.add(row.get(0));
+            }
+        }
+        
         private void parseOutput(Object value) {
             if (value == null) {
                 output = null;
                 return;
             }
-            assertNull("The output attribute must not appear more than once",
-                    output);
+            assertNull("The output attribute must not appear more than once", output);
+            assertNull("The split_result and output attributes can not appear together", split_output);
+            
             List<List<Object>> rows = rows(value, "output value");
             output = new ArrayList<Object>(rows.size());
             for (List<?> row : rows) {
@@ -1664,12 +1677,22 @@ class YamlTester {
                 fail("Error: " + e.getMessage());
             }
             
-            if (output != null) {
+            if (split_output != null) {
                 if (result == null)
-                    fail("found null; expected: " + output);
+                    fail("found null; expected: " + split_output);
                 List<Object> actuals = new ArrayList<Object>(Arrays.asList(result.toString().split("\\n")));
-                int highestCommon = Math.min(actuals.size(), output.size());
+                int highestCommon = Math.min(actuals.size(), split_output.size());
                 for (int i = 0; i < highestCommon; ++i) {
+                    if (split_output.get(i) == DontCare.INSTANCE)
+                        actuals.set(i, DontCare.INSTANCE);
+                }
+                assertCollectionEquals(split_output, actuals);
+            } else if (output != null) {
+                if (result == null) 
+                    fail ("found null; expected: " + output);
+                List<Object> actuals = new ArrayList<Object>(Arrays.asList(result.toString()));
+                int highestCommon = Math.min(actuals.size(), output.size());
+                for (int i = 0; i < highestCommon; i++) {
                     if (output.get(i) == DontCare.INSTANCE)
                         actuals.set(i, DontCare.INSTANCE);
                 }
