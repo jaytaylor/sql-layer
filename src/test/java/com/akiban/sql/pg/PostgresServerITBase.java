@@ -48,9 +48,9 @@ public class PostgresServerITBase extends ITBase
         new File("src/test/resources/"
                  + PostgresServerITBase.class.getPackage().getName().replace('.', '/'));
 
-    public static final String SCHEMA_NAME = "user";
+    public static final String SCHEMA_NAME = "test";
     public static final String DRIVER_NAME = "org.postgresql.Driver";
-    public static final String CONNECTION_URL = "jdbc:postgresql://localhost:%d/user";
+    public static final String CONNECTION_URL = "jdbc:postgresql://localhost:%d/"+SCHEMA_NAME;
     public static final String USER_NAME = "auser";
     public static final String USER_PASSWORD = "apassword";
 

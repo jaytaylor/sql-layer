@@ -52,7 +52,7 @@
 - Statement: update all_types set timestamp_field = '0000-00-00 00:00:00' where bigint_field = 3
 --- # command 21
 - Statement: Select bigint_field from all_types where timestamp_field = '0000-00-00 00:00:00'
-- output: [[2],[4],[5], [3]]
+- output_ordered: [[2],[4],[5], [3]]
 ---
 - Statement: update all_types set datetime_field = '0000-00-00 00:00:00' where bigint_field = 1
 ---

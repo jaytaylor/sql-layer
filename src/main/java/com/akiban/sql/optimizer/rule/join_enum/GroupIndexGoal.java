@@ -109,13 +109,24 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return tables;
     }
 
+    /**
+     * @param boundTables Tables already bound by the outside
+     * @param queryJoins Joins that come from the query, or part of the query, that an index is being searched for.
+     *                   Will generally, but not in the case of a sub-query, match <code>joins</code>.
+     * @param joins Joins that apply to this part of the query.
+     * @param outsideJoins All joins for this query.
+     * @param sortAllowed <code>true</code> if sorting is allowed
+     *
+     * @return Full list of all usable condition sources.
+     */
     public List<ConditionList> updateContext(Set<ColumnSource> boundTables,
+                                             Collection<JoinOperator> queryJoins,
                                              Collection<JoinOperator> joins,
                                              Collection<JoinOperator> outsideJoins,
                                              boolean sortAllowed) {
         setBoundTables(boundTables);
         this.sortAllowed = sortAllowed;
-        setJoinConditions(joins);
+        setJoinConditions(queryJoins, joins);
         updateRequiredColumns(joins, outsideJoins);
         return conditionSources;
     }
@@ -123,11 +134,24 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     public void setBoundTables(Set<ColumnSource> boundTables) {
         this.boundTables = boundTables;
     }
+
+    private static boolean hasOuterJoin(Collection<JoinOperator> joins) {
+        for (JoinOperator joinOp : joins) {
+            switch (joinOp.getJoinType()) {
+                case LEFT:
+                case RIGHT:
+                case FULL_OUTER:
+                    return true;
+            }
+        }
+        return false;
+    }
     
-    public void setJoinConditions(Collection<JoinOperator> joins) {
+    public void setJoinConditions(Collection<JoinOperator> queryJoins, Collection<JoinOperator> joins) {
         conditionSources = new ArrayList<ConditionList>();
-        if (queryGoal.getWhereConditions() != null)
+        if ((queryGoal.getWhereConditions() != null) && !hasOuterJoin(queryJoins)) {
             conditionSources.add(queryGoal.getWhereConditions());
+        }
         for (JoinOperator join : joins) {
             ConditionList joinConditions = join.getJoinConditions();
             if (joinConditions != null)
@@ -326,11 +350,24 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (queryGoal.getOrdering() != null) {
             int idx = nequals;
             for (OrderByExpression targetColumn : queryGoal.getOrdering().getOrderBy()) {
+                // Get the expression by which this is ordering, recognizing the
+                // special cases where the Sort is fed by GROUP BY or feeds DISTINCT.
                 ExpressionNode targetExpression = targetColumn.getExpression();
-                if (targetExpression.isColumn() &&
-                    (queryGoal.getGrouping() != null)) {
-                    if (((ColumnExpression)targetExpression).getTable() == queryGoal.getGrouping()) {
-                        targetExpression = queryGoal.getGrouping().getField(((ColumnExpression)targetExpression).getPosition());
+                if (targetExpression.isColumn()) {
+                    ColumnExpression column = (ColumnExpression)targetExpression;
+                    ColumnSource table = column.getTable();
+                    if (table == queryGoal.getGrouping()) {
+                        targetExpression = queryGoal.getGrouping()
+                            .getField(column.getPosition());
+                    }
+                    else if (table instanceof Project) {
+                        // Cf. ASTStatementLoader.sortsForDistinct().
+                        Project project = (Project)table;
+                        if ((project.getOutput() == queryGoal.getOrdering()) &&
+                            (queryGoal.getOrdering().getOutput() instanceof Distinct)) {
+                            targetExpression = project.getFields()
+                                .get(column.getPosition());
+                        }
                     }
                 }
                 OrderByExpression indexColumn = null;
@@ -432,6 +469,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return result;
     }
 
+    // Does the column expression coming from the index match the ORDER BY target,
+    // allowing for column equivalences?
     protected boolean orderingExpressionMatches(ExpressionNode columnExpression,
                                                 ExpressionNode targetExpression) {
         if (columnExpression.equals(targetExpression))
@@ -589,9 +628,28 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     private void setIntersectionConditions(IndexScan rawScan) {
         MultiIndexIntersectScan scan = (MultiIndexIntersectScan) rawScan;
 
-        ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<ConditionExpression>(conditions.size());
-        scan.incrementConditionsCounter(counter);
-        scan.setGroupConditions(counter.getCountedConditions());
+        if (isAncestor(scan.getOutputIndexScan().getLeafMostTable(),
+                       scan.getSelectorIndexScan().getLeafMostTable())) {
+            // More conditions up the same branch are safely implied by the output row.
+            ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<ConditionExpression>(conditions.size());
+            scan.incrementConditionsCounter(counter);
+            scan.setConditions(new ArrayList<ConditionExpression>(counter.getCountedConditions()));
+        }
+        else {
+            // Otherwise only those for the output row are safe and
+            // conditions on another branch need to be checked again;
+            scan.setConditions(scan.getOutputIndexScan().getConditions());
+        }
+    }
+
+    /** Is the given <code>rootTable</code> an ancestor of <code>leafTable</code>? */
+    private static boolean isAncestor(TableSource leafTable, TableSource rootTable) {
+        do {
+            if (leafTable == rootTable)
+                return true;
+            leafTable = leafTable.getParentTable();
+        } while (leafTable != null);
+        return false;
     }
     
     private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan,SingleIndexScan> {
@@ -655,7 +713,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         // Can only consider single table indexes when table is not
         // nullable (required).  If table is the optional part of a
         // LEFT join, can still consider compatible LEFT / RIGHT group
-        // indexes, below.
+        // indexes, below. WHERE conditions are removed before this is
+        // called, see GroupIndexGoal#setJoinConditions().
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
                 SingleIndexScan candidate = new SingleIndexScan(index, table);
@@ -828,8 +887,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         Collection<ConditionExpression> unhandledConditions = 
             new HashSet<ConditionExpression>(conditions);
-        if (index.getGroupConditions() != null)
-            unhandledConditions.removeAll(index.getGroupConditions());
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             CostEstimate select = costEstimator.costSelect(unhandledConditions,
                                                            cost.getRowCount());

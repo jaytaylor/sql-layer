@@ -1,0 +1,27 @@
+---
+- Properties: it
+- suppressed: true
+---
+#  Suppress to due to bug 986323 
+- Properties: all
+- suppressed: true
+---
+- OpenContext: context_ak
+- type: sys-aksql
+---
+- UseContext: context_ak
+---
+- Include: all-yaml-unittest.yaml
+---
+- CloseContext: context_ak
+---
+- OpenContext: context_mysql
+- type: sys-mysql
+---
+- UseContext: context_mysql
+---
+- Include: all-yaml-unittest.yaml
+---
+- CloseContext: context_mysql
+
+...

@@ -183,6 +183,7 @@ final class Limit_Default extends Operator
         public void open() {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 super.open();
                 closed = false;
                 if (isSkipBinding()) {
@@ -216,6 +217,7 @@ final class Limit_Default extends Operator
         public Row next() {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row;
                 while (skipLeft > 0) {
@@ -250,10 +252,23 @@ final class Limit_Default extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 super.close();
                 closed = true;
             }
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
         }
 
         // Execution interface
@@ -264,6 +279,6 @@ final class Limit_Default extends Operator
         // object state
 
         private int skipLeft, limitLeft;
-        private boolean closed; 
+        private boolean closed = true;
     }
 }

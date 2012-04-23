@@ -274,6 +274,56 @@ public class Product_NestedLoopsIT extends OperatorITBase
         compareRows(expected, cursor(product, queryContext));
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator flattenCO =
+            flatten_HKeyOrdered(
+                filter_Default(
+                    branchLookup_Default(
+                        ancestorLookup_Default(
+                            indexScan_Default(customerNameIndexRowType, false),
+                            coi,
+                            customerNameIndexRowType,
+                            Collections.singleton(customerRowType),
+                            LookupOption.DISCARD_INPUT),
+                        coi,
+                        customerRowType,
+                        orderRowType,
+                        LookupOption.KEEP_INPUT),
+                    removeDescendentTypes(orderRowType)),
+                customerRowType,
+                orderRowType,
+                INNER_JOIN,
+                KEEP_PARENT);
+        Operator flattenCA =
+            flatten_HKeyOrdered(
+                branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
+                customerRowType,
+                addressRowType,
+                INNER_JOIN);
+        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
+        final RowType coaRowType = plan.rowType();
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
+                    row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
+                    row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3000L, 3L, "333 3000 st"),
+                    row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3001L, 3L, "333 3001 st"),
+                    row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+                    row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+                    row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+                    row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
     private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
     {
         Set<UserTableRowType> keepTypes = type.schema().userTableTypes();

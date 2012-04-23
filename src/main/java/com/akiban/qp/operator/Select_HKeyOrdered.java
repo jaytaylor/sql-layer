@@ -156,8 +156,10 @@ class Select_HKeyOrdered extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 this.evaluation.of(context);
+                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -168,6 +170,7 @@ class Select_HKeyOrdered extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row = null;
                 Row inputRow = input.next();
@@ -193,6 +196,7 @@ class Select_HKeyOrdered extends Operator
                         inputRow = input.next();
                     }
                 }
+                idle = row == null;
                 return row;
             } finally {
                 TAP_NEXT.out();
@@ -202,8 +206,36 @@ class Select_HKeyOrdered extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             selectedRow.release();
             input.close();
+            idle = true;
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+            evaluation.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return !input.isDestroyed() && idle;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !input.isDestroyed() && !idle;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // Execution interface
@@ -220,5 +252,6 @@ class Select_HKeyOrdered extends Operator
         private final Cursor input;
         private final ShareHolder<Row> selectedRow = new ShareHolder<Row>(); // The last input row with type = predicateRowType.
         private final ExpressionEvaluation evaluation;
+        private boolean idle = true;
     }
 }

@@ -31,6 +31,7 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
@@ -52,6 +53,7 @@ class SortCursorUnidirectional extends SortCursor
     @Override
     public void open()
     {
+        super.open();
         exchange.clear();
         if (bounded) {
             evaluateBoundaries(context);
@@ -77,6 +79,7 @@ class SortCursorUnidirectional extends SortCursor
     @Override
     public Row next()
     {
+        CursorLifecycle.checkIdleOrActive(this);
         Row next = null;
         if (exchange != null) {
             try {
@@ -151,7 +154,7 @@ class SortCursorUnidirectional extends SortCursor
         this.endKey = adapter.newKey();
         this.boundColumns = keyRange.boundColumns();
         this.types = new AkType[boundColumns];
-        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getKeyColumns();
+        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
         for (int f = 0; f < boundColumns; f++) {
             this.types[f] = indexColumns.get(f).getColumn().getType().akType();
         }
@@ -202,8 +205,6 @@ class SortCursorUnidirectional extends SortCursor
                 }
             }
         }
-        ValueSource loBound = loExpressions.eval(boundColumns - 1);
-        ValueSource hiBound = hiExpressions.eval(boundColumns - 1);
         // Construct start and end keys
         BoundExpressions startExpressions = start.boundExpressions(context);
         BoundExpressions endExpressions = end.boundExpressions(context);

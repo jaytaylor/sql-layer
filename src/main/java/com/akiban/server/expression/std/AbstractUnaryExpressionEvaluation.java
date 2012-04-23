@@ -32,7 +32,7 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
-public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEvaluation
+public abstract class AbstractUnaryExpressionEvaluation extends ExpressionEvaluation.Base
 {
     @Override
     public void of(Row row) {
@@ -43,6 +43,11 @@ public abstract class AbstractUnaryExpressionEvaluation implements ExpressionEva
     public void of(QueryContext context) {
         operandEvaluation.of(context);
         this.context = context;
+    }
+
+    @Override
+    public void destroy() {
+        operandEvaluation.destroy();
     }
 
     @Override

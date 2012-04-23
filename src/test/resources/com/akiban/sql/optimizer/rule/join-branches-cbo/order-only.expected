@@ -4,5 +4,5 @@ SelectQuery@788390b0
       Select@559b808a[items.quan > 100]
         Flatten@18f63055(items)
           AncestorLookup@54140fee(items -> [items])
-            IndexScan@7121fd61(Index(user.items.sku[IndexColumn(sku)]), SORTED, rows = 20000, cost = 166762)
+            IndexScan@7121fd61(Index(test.items.sku[IndexColumn(sku)]), SORTED, rows = 20000, cost = 166762)
             TableSource@174323d5(items - TableGroup@10c789fb(customers))

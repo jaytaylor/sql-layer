@@ -125,7 +125,7 @@ final class OperatorStoreMaintenance {
             }
         } finally {
             if (cursor != null) {
-                cursor.close();
+                cursor.destroy();
             }
             if (runTapEntered) {
                 RUN_TAP.out();
@@ -156,7 +156,7 @@ final class OperatorStoreMaintenance {
                     return true;
                 }
                 finally {
-                    siblingsCounter.close();
+                    siblingsCounter.destroy();
                     SIBLING_ALL_TAP.out();
                 }
              default:

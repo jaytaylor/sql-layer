@@ -9,12 +9,12 @@ SelectQuery@1f31cd12
                 Flatten@108543aa(c2 INNER orders)
                   Select@1d1d565f[orders.order_date > 2011-03-02]
                     BranchLookup@711185e7(customers -> customers)
-                      IndexScan@356e3aaf(Index(user.customers.name[IndexColumn(name)]), SORTED)
+                      IndexScan@356e3aaf(Index(test.customers.name[IndexColumn(name)]), SORTED)
                       TableSource@6c22fde7(c2 - TableGroup@1ff19e50(customers))
-                      TableSource@24753433(orders - TableGroupJoin@57ced290(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                      TableSource@24753433(orders - TableGroupJoin@57ced290(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
       Project@377e9134[customers.cid, customers.name]
         Select@566f0962[]
           Flatten@4b6218f9(customers)
             AncestorLookup@1555aa19(customers -> [customers])
-              IndexScan@2b125a40(Index(user.customers.name[IndexColumn(name)]), NONE, =ANY[0])
+              IndexScan@2b125a40(Index(test.customers.name[IndexColumn(name)]), NONE, =ANY[0])
               TableSource@37975d46(customers - TableGroup@41e335d7(customers))

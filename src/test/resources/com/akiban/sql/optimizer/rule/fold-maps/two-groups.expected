@@ -2,12 +2,12 @@ SelectQuery@19b808a
   ResultSet@140fee[order_date, name]
     MapJoin@16b321b()
       Flatten@a6cbf7(customers INNER orders)
-        GroupScan@98f192(Group(customers -> user._akiban_customers))
+        GroupScan@98f192(Group(customers -> test._akiban_customers))
           TableSource@d3ade7(customers - TableGroup@11bd9c9(customers))
-          TableSource@13e4a5a(orders - TableGroupJoin@17748d3(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+          TableSource@13e4a5a(orders - TableGroupJoin@17748d3(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
       Project@121fd61[orders.order_date, child.name]
         Select@82254d[]
           Flatten@4e2f0a(child)
             BranchLookup@f268de(parent -> parent)
-              IndexScan@c2cf83(Index(user.parent.name[IndexColumn(name)]), NONE, =customers.name)
-              TableSource@19050a0(child - TableGroupJoin@1c5af2e(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+              IndexScan@c2cf83(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name)
+              TableSource@19050a0(child - TableGroupJoin@1c5af2e(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))

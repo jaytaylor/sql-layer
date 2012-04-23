@@ -166,6 +166,14 @@ public abstract class Admin
         }
     }
 
+    // For testing.
+    protected static synchronized void forget() throws InterruptedException, IOException {
+        if (only != null) {
+            only.close();
+            only = null;
+        }
+    }
+
     // State
 
     public static final String AKIBAN_ADMIN = "akiban.admin";

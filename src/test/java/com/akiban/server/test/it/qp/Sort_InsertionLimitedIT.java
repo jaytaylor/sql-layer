@@ -481,7 +481,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     }
 
     @Test
-    public void testSuppressDuplicates()
+    public void testSuppressDuplicateCID()
     {
         Operator project =
             project_Default(
@@ -504,6 +504,32 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, 2L),
             row(projectType, 3L),
             row(projectType, 5L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testSuppressDuplicateName()
+    {
+        Operator project =
+            project_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                Arrays.asList(field(orderRowType, 2)));
+        RowType projectType = project.rowType();
+        Operator plan =
+            sort_InsertionLimited(
+                project,
+                projectType,
+                ordering(field(projectType, 0), true),
+                SortOption.SUPPRESS_DUPLICATES,
+                2);
+
+        RowBase[] expected = new RowBase[]{
+            row(projectType, "david"),
+            row(projectType, "jack"),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -536,6 +562,34 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, "northbridge"),
         };
         compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
+                SortOption.PRESERVE_DUPLICATES,
+                4);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(orderRowType, 31L, 3L, "david"),
+                    row(orderRowType, 21L, 2L, "david"),
+                    row(orderRowType, 12L, 1L, "david"),
+                    row(orderRowType, 22L, 2L, "jack"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     private Ordering ordering(Object... objects)

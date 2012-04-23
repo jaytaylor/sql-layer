@@ -1,0 +1,19 @@
+## Test the RADIANS function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(double_field, bigint_field, varchar_field) 
+              VALUES (90.0, 180, '270');
+---
+- Statement: SELECT RADIANS(90) / PI();
+- output: [[0.5]]
+---
+- Statement: SELECT RADIANS(bigint_field) / PI() from all_types;
+- output: [[1.0]]
+---
+- Statement: SELECT radians(null);
+- output: [[null]]
+---
+- Statement: SELECT RADIANS(varchar_field) / PI() from all_types;
+- output: [[1.5]]
+...

@@ -2,7 +2,7 @@ SelectQuery@33847a42
   ResultSet@3e769d7a[cid, name]
     MapJoin@654e3615()
       Flatten@71c0d0a8(customers)
-        GroupScan@29c2fff0(Group(customers -> user._akiban_customers))
+        GroupScan@29c2fff0(Group(customers -> test._akiban_customers))
           TableSource@299e421e(customers - TableGroup@4130fafb(customers))
       Project@5d5cd49f[customers.cid, customers.name]
         Select@798b429b[]
@@ -11,5 +11,5 @@ SelectQuery@33847a42
               Flatten@65d4ab0e(orders)
                 Select@6d2a585c[orders.order_date > 2011-03-02]
                   BranchLookup@770f3801(customers -> customers)
-                    IndexScan@82606b8(Index(user.customers.name[IndexColumn(name)]), NONE, =customers.name)
-                    TableSource@4183aedf(orders - TableGroupJoin@78831e35(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+                    IndexScan@82606b8(Index(test.customers.name[IndexColumn(name)]), NONE, =customers.name)
+                    TableSource@4183aedf(orders - TableGroupJoin@78831e35(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

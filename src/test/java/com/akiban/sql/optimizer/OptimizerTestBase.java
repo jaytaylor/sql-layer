@@ -57,7 +57,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
     public static final File RESOURCE_DIR = 
         new File("src/test/resources/"
                  + OptimizerTestBase.class.getPackage().getName().replace('.', '/'));
-    public static final String DEFAULT_SCHEMA = "user";
+    public static final String DEFAULT_SCHEMA = "test";
 
     // Base class has all possible transformers for convenience.
     protected AISBinder binder;

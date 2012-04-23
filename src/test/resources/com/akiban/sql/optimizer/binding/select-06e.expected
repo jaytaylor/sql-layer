@@ -57,7 +57,7 @@ resultSet:
 		null
 		correlation Name: null
 		null
-		userData: user.t1
+		userData: test.t1
 	whereClause: 		
 		com.akiban.sql.parser.SubqueryNode@2e530cf2
 		subqueryType: EXISTS
@@ -89,4 +89,4 @@ resultSet:
 				null
 				correlation Name: null
 				null
-				userData: user.t2
+				userData: test.t2

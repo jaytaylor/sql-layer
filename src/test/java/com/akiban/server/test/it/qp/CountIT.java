@@ -34,6 +34,8 @@ import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static com.akiban.qp.operator.API.*;
 
 public class CountIT extends OperatorITBase
@@ -84,4 +86,44 @@ public class CountIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
+    @Test
+    public void testCount_DefaultCursor()
+    {
+        Operator plan =
+            count_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(customerRowType)),
+                customerRowType);
+        final RowType resultRowType = plan.rowType();
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(resultRowType, 3L),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
+    @Test
+    public void testCount_TableStatusCursor()
+    {
+        Operator plan = count_TableStatus(customerRowType);
+        final RowType resultRowType = plan.rowType();
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(resultRowType, 3L),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
 }

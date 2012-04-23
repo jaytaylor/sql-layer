@@ -4,6 +4,8 @@ choose-condition-2: wide and narrow
 
 covering-or-group-scan: covering index or group scan?
 
+distinct-sorted: DISTINCT + ORDER BY from index.
+
 group-equals: two equals on group index
 
 in-index: IN that can use index
@@ -47,3 +49,5 @@ empty-stats: analyzed with no rows
 scaled-distinct: mostly distinct now larger
 
 scaled-not-distinct: not so distinct now larger
+
+left-outer-index-usage: Outer join with a later condition that could be incorrectly serviced by index scan (bug980957)

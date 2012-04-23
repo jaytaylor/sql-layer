@@ -179,6 +179,7 @@ class Project_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
             } finally {
                 TAP_OPEN.out();
@@ -190,6 +191,7 @@ class Project_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row projectedRow = null;
                 Row inputRow;
@@ -208,7 +210,33 @@ class Project_Default extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             input.close();
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return input.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return input.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // Execution interface

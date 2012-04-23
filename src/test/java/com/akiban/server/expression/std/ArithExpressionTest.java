@@ -130,11 +130,11 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
     }
 
     @Test
-    public void longDivideLong ()
+    public void longDivLong ()
     {
         Expression left = new LiteralExpression (AkType.LONG, 2L);
         Expression right = new LiteralExpression(AkType.LONG, 5L);
-        Expression top = new ArithExpression(left, ex = ArithOps.DIVIDE, right);
+        Expression top = new ArithExpression(left, ex = ArithOps.DIV, right);
 
         assertTrue("Top is const", top.isConstant());
         ValueSource actual = new ValueHolder(top.evaluation().eval());
@@ -142,6 +142,39 @@ public class ArithExpressionTest  extends ComposedExpressionTestBase
         assertEquals("actual == expected", expected, actual);
     }
 
+    @Test
+    public void longDivideLong()
+    {
+        Expression left = new LiteralExpression(AkType.LONG, 2L);
+        Expression right = new LiteralExpression(AkType.LONG, 5L);
+        Expression top = new ArithExpression(left, ex = ArithOps.DIVIDE, right);
+
+        assertEquals("Top Type", AkType.DOUBLE, top.valueType());
+        assertEquals("value ", 0.4d, top.evaluation().eval().getDouble(), 0.0000001);
+    }
+    
+    @Test
+    public void doubleDivFloat()
+    {
+        Expression left = new LiteralExpression(AkType.DOUBLE, 5.0d);
+        Expression right = new LiteralExpression(AkType.FLOAT, 2f);
+        Expression top = new ArithExpression(left, ArithOps.DIV, right);
+        
+        assertEquals("Top type ", AkType.DOUBLE, top.valueType());
+        assertEquals("value ", 2.0d, top.evaluation().eval().getDouble(), 0.00001);
+    }
+    
+    @Test
+    public void doubleDivDecimal()
+    {
+        Expression left = new LiteralExpression(AkType.DOUBLE, 10.0d);
+        Expression right = new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(3));
+        Expression top = new ArithExpression(left, ArithOps.DIV, right);
+        
+        assertEquals("Top type ", AkType.DECIMAL, top.valueType());
+        assertEquals("value ", BigDecimal.valueOf(3), top.evaluation().eval().getDecimal());
+    }
+    
     @Test
     public void bigIntPlusBigInt ()
     {

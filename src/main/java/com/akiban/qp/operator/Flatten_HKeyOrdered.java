@@ -278,7 +278,9 @@ class Flatten_HKeyOrdered extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
+                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -289,6 +291,7 @@ class Flatten_HKeyOrdered extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row outputRow = pending.take();
                 Row inputRow;
@@ -332,6 +335,7 @@ class Flatten_HKeyOrdered extends Operator
                     }
                     outputRow = pending.take();
                 }
+                idle = outputRow == null;
                 return outputRow;
             } finally {
                 TAP_NEXT.out();
@@ -344,6 +348,32 @@ class Flatten_HKeyOrdered extends Operator
             parent.release();
             pending.clear();
             input.close();
+            idle = true;
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return idle;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !idle;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // Execution interface
@@ -444,5 +474,6 @@ class Flatten_HKeyOrdered extends Operator
         private final PendingRows pending = new PendingRows(MAX_PENDING);
         private final HKey leftJoinHKey;
         private boolean childlessParent;
+        private boolean idle = true;
     }
 }

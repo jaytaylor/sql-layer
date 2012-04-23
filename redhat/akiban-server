@@ -82,8 +82,21 @@ case "$1" in
         ;;
     stop)
         status -p $pid_file akiban > /dev/null 2>&1
-        if [ $? -ne 0 ]; then
-            log_failure_msg "Shutdown Akiban"
+        retval=$?
+        if [ ${retval} -ne 0 ]; then
+            # return codes from status as documented in LSB spec
+            # http://refspecs.linuxbase.org/LSB_4.0.0/LSB-Core-generic/LSB-Core-generic/iniscrptact.html
+            case ${retval} in
+            1) 
+              log_failure_msg "Akiban is not running, but PID file exists"
+              ;;
+            3) 
+              log_failure_msg "Akiban process is not running"
+              ;;
+            *)
+              log_failure_msg "Shutdown Akiban"
+              ;;
+            esac
             exit 1
         fi
         echo -n "Shutdown Akiban "

@@ -152,6 +152,7 @@ class Count_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 count = 0;
                 closed = false;
@@ -165,6 +166,7 @@ class Count_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row = null;
                 while ((row == null) && !closed) {
@@ -186,8 +188,36 @@ class Count_Default extends Operator
         @Override
         public void close()
         {
-            input.close();
-            closed = true;
+            CursorLifecycle.checkIdleOrActive(this);
+            if (!closed) {
+                input.close();
+                closed = true;
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // Execution interface
@@ -202,6 +232,6 @@ class Count_Default extends Operator
 
         private final Cursor input;
         private long count;
-        private boolean closed;
+        private boolean closed = true;
     }
 }

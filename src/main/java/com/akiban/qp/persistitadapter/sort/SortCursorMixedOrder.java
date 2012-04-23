@@ -43,6 +43,7 @@ abstract class SortCursorMixedOrder extends SortCursor
     @Override
     public void open()
     {
+        super.open();
         exchange.clear();
         scanStates.clear();
         try {
@@ -58,6 +59,7 @@ abstract class SortCursorMixedOrder extends SortCursor
     @Override
     public Row next()
     {
+        super.next();
         Row next = null;
         try {
             if (justOpened) {

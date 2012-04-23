@@ -68,6 +68,27 @@ public class UpdateStatement extends BaseUpdateStatement
     }
 
     @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            if (getInput().accept(v)) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (UpdateColumn updateColumn : updateColumns) {
+                        updateColumn.accept((ExpressionRewriteVisitor)v);
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
+                    for (UpdateColumn updateColumn : updateColumns) {
+                        if (!updateColumn.accept((ExpressionVisitor)v)) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+        return v.visitLeave(this);
+    }
+    
+    @Override
     public String summaryString() {
         return super.summaryString() + "(" + getTargetTable() + updateColumns + ")";
     }

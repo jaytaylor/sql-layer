@@ -3,9 +3,9 @@ SelectQuery@583a5794
     MapJoin@6d7e845a()
       Flatten@d2368df(orders INNER items)
         BranchLookup@fba0f36(customers -> customers)
-          IndexScan@3caa4b(Index(user.customers.name[IndexColumn(name)]), NONE, =Smith)
-          TableSource@7eb05acd(orders - TableGroupJoin@ed0220c(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          TableSource@8c3c315(items - TableGroupJoin@26b496d(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+          IndexScan@3caa4b(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith)
+          TableSource@7eb05acd(orders - TableGroupJoin@ed0220c(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          TableSource@8c3c315(items - TableGroupJoin@26b496d(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
       Project@4816ef71[orders.order_date, items.sku, items.quan]
         Select@59c208b0[]
           Limit@51a19458(LIMIT 1)
@@ -13,5 +13,5 @@ SelectQuery@583a5794
               Flatten@105691e(i2)
                 Select@47124746[items.quan == plus(i2.quan,items.quan)]
                   AncestorLookup@a383118(items -> [items])
-                    IndexScan@6f1f23e5(Index(user.items.sku[IndexColumn(sku)]), NONE, =1234)
+                    IndexScan@6f1f23e5(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234)
                     TableSource@5121177e(i2 - TableGroup@656dc861(customers))

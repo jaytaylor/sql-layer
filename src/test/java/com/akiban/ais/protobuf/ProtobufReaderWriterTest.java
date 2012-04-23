@@ -27,6 +27,7 @@
 package com.akiban.ais.protobuf;
 
 import com.akiban.ais.CAOIBuilderFiller;
+import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
@@ -45,6 +46,8 @@ import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
 import static com.akiban.ais.AISComparator.compareAndAssert;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 
 public class ProtobufReaderWriterTest {
     private final String SCHEMA = "test";
@@ -169,6 +172,45 @@ public class ProtobufReaderWriterTest {
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
         ProtobufWriter writer = new ProtobufWriter(bb);
         writer.save(inAIS);
+    }
+
+    // bug971833
+    @Test
+    public void tableWithNoDeclaredPK() {
+        // CREATE TABLE t1(valid BOOLEAN, state CHAR(2))
+        final String TABLE = "t1";
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, TABLE);
+        builder.column(SCHEMA, TABLE, "valid", 0, "TINYINT", null, null, true, false, null, null);
+        builder.column(SCHEMA, TABLE, "state", 1, "CHAR", 2L, null, true, false, null, null);
+        builder.createGroup(TABLE, SCHEMA, "akiban_"+TABLE);
+        builder.addTableToGroup(TABLE, SCHEMA, TABLE);
+
+        // AIS does not have to be validate-able to be serialized (this is how it comes from adapter)
+        final AkibanInformationSchema inAIS = builder.akibanInformationSchema();
+        final UserTable t1_1 = inAIS.getUserTable(SCHEMA, TABLE);
+        assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
+        assertNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
+
+        // Serialized AIS did not create an internal column, PK
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        UserTable t1_2 = outAIS.getUserTable(SCHEMA, TABLE);
+        assertNull("Deserialized should not have declared PK", t1_2.getPrimaryKey());
+        assertNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
+
+        compareAndAssert(inAIS, outAIS, false);
+
+        // Now add an internal PK and run through again
+        t1_1.endTable();
+        assertNull("Source table should not have declared PK", t1_1.getPrimaryKey());
+        assertNotNull("Source table should have internal PK", t1_1.getPrimaryKeyIncludingInternal());
+
+        outAIS = writeAndRead(inAIS);
+        t1_2 = outAIS.getUserTable(SCHEMA, TABLE);
+        assertNull("Deserialized should not have declared PK", t1_2.getPrimaryKey());
+        assertNotNull("Deserialized should have internal PK", t1_2.getPrimaryKeyIncludingInternal());
+
+        compareAndAssert(inAIS, outAIS, false);
     }
 
 

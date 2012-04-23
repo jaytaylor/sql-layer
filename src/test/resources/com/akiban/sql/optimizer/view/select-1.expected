@@ -87,7 +87,7 @@ resultSet:
 				null
 				correlation Name: null
 				null
-				userData: user.t1
+				userData: test.t1
 			whereClause: 				
 				com.akiban.sql.parser.NotNode@3b75078b
 				operator: not

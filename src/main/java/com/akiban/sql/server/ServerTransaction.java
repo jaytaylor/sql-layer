@@ -86,7 +86,7 @@ public class ServerTransaction
     }
 
     public void beforeUpdate() {
-        if (transaction.getCurrentStep() == 0)
+        if (transaction.getStep() == 0)
             // On the first non-read statement in a transaction, move
             // to step 1 to enable isolation against later steps.
             // Step 1 will do the update and then we'll move to step 2
