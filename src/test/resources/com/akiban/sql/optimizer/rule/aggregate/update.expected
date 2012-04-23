@@ -1,0 +1,11 @@
+UpdateStatement@1b83048(items[items.quan = Subquery@169dd64])
+  Select@145f5e3[]
+    TableSource@122d9c(items)
+
+Subquery@169dd64
+  ResultSet@170984c[_SQL_COL_1]
+    Project@11ed166[GROUP[0]]
+      Select@45aa2c[]
+        AggregateSource@1a734ff(UNGROUPED,[MAX(items.quan)])
+          Select@886ad0[]
+            TableSource@ee20fe(items)

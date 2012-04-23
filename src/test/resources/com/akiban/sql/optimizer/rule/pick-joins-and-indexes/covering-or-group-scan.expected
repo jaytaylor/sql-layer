@@ -4,5 +4,5 @@ SelectQuery@5ad557c2
       Select@161e14f0[]
         TableGroupJoinTree@6c267f18(TableGroup@1ba4806(customers), customers INNER orders INNER items - SingleIndexScan@529e0c79(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/NONE, =$0, rows = 200, cost = 166.294))
           TableSource@7dd74c03(customers - TableGroup@1ba4806(customers))
-            TableSource@41bf9980(orders - TableGroupJoin@53623820(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@27cc7f4b(items - TableGroupJoin@5552e7a4(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+            TableSource@41bf9980(orders - TableGroupJoin@53623820(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@27cc7f4b(items - TableGroupJoin@5552e7a4(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

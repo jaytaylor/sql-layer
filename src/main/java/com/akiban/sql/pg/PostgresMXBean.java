@@ -47,6 +47,7 @@ public interface PostgresMXBean {
     void setStatementCacheCapacity(int capacity);
     int getStatementCacheHits();
     int getStatementCacheMisses();
+    void resetStatementCache();
     
     Set<Integer> getCurrentSessions();
     

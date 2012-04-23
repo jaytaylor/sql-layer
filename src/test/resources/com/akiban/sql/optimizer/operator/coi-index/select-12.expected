@@ -3,7 +3,7 @@ PhysicalSelect[name:varchar(32)[VARCHAR]]
     UnionAll_Default
       UnionAll_Default
         UnionAll_Default
-          IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(Arthur)]))
-          IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(Arthur)],<UnboundExpressions[Literal(John)]))
-        IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(John)],<UnboundExpressions[Literal(Victor)]))
-      IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(Victor)],<UnboundExpressions[Literal(NULL)]))
+          IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(Arthur)]))
+          IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(Arthur)],<UnboundExpressions[Literal(John)]))
+        IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(John)],<UnboundExpressions[Literal(Victor)]))
+      IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>UnboundExpressions[Literal(Victor)],<UnboundExpressions[Literal(NULL)]))

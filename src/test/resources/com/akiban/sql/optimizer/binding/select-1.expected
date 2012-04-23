@@ -53,7 +53,7 @@ resultSet:
 		null
 		correlation Name: null
 		null
-		userData: user.t1
+		userData: test.t1
 	whereClause: 		
 		com.akiban.sql.parser.AndNode@502cb49d
 		operator: and

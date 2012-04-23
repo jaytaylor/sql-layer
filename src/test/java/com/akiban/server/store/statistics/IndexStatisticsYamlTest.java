@@ -57,7 +57,7 @@ public class IndexStatisticsYamlTest
 
     @Test
     public void testLoadDump() throws Exception {
-        IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "user");
+        IndexStatisticsYamlLoader loader = new IndexStatisticsYamlLoader(ais, "test");
         Map<Index,IndexStatistics> stats = loader.load(YAML_FILE);
         File tempFile = File.createTempFile("stats", ".yaml");
         StringWriter tempWriter = new StringWriter();

@@ -194,7 +194,7 @@ class HKeyUnion_Ordered extends Operator
         {
             TAP_OPEN.in();
             try {
-                // CursorLifecycle.checkIdle(this);
+                CursorLifecycle.checkIdle(this);
                 leftInput.open();
                 rightInput.open();
                 previousHKey = null;
@@ -211,7 +211,7 @@ class HKeyUnion_Ordered extends Operator
         {
             TAP_NEXT.in();
             try {
-                // CursorLifecycle.checkIdleOrActive(this);
+                CursorLifecycle.checkIdleOrActive(this);
                 Row nextRow = null;
                 while (!closed && nextRow == null) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
@@ -253,7 +253,7 @@ class HKeyUnion_Ordered extends Operator
         @Override
         public void close()
         {
-            // CursorLifecycle.checkIdleOrActive(this);
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 leftRow.release();
                 rightRow.release();

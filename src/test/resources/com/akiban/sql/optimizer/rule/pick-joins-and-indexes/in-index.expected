@@ -6,5 +6,5 @@ SelectQuery@55de5f0b
           ExpressionsSource@60b25809([[1234], [4567], [6666]])
           TableGroupJoinTree@57e603e6(TableGroup@61d22f35(customers), customers INNER orders INNER items - IndexScan@751bbe4f(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), NONE, =Smith, =VALUES[0], rows = 1, cost = 109.604))
             TableSource@640eac4a(customers - TableGroup@61d22f35(customers))
-              TableSource@7f516197(orders - TableGroupJoin@2d0a238e(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-                TableSource@37de41ce(items - TableGroupJoin@1dad8678(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+              TableSource@7f516197(orders - TableGroupJoin@2d0a238e(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@37de41ce(items - TableGroupJoin@1dad8678(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

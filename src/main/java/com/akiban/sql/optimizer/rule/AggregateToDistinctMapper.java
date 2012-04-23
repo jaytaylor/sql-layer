@@ -149,10 +149,7 @@ public class AggregateToDistinctMapper extends BaseRule
                                 sorts.add(orderBy);
                             }
                         }
-                        n = sort.getInput();
-                        sort.getOutput().replaceInput(sort, n);
-                        sort.replaceInput(n, distinct.getInput());
-                        distinct.replaceInput(distinct.getInput(), sort);
+                        n = moveBeneath(sort, distinct);
                         distinct.setImplementation(Distinct.Implementation.EXPLICIT_SORT);
                     }
                 }
@@ -184,11 +181,31 @@ public class AggregateToDistinctMapper extends BaseRule
                         remap(fields);
                 }
                 else if (n instanceof Limit) {
-                    // Understood not but mapped.
+                    Limit limit = (Limit)n;
+                    if (limit.getInput() instanceof Project) {
+                        // One that was necessary above. Swap places
+                        // so that Limit can apply to Distinct.
+                        n = moveBeneath(limit, (Project)limit.getInput());
+                    }
                 }
                 else
                     break;
             }
+        }
+
+        // Move the given node beneath a new output. Returns a node
+        // whose output is what the original's was, so that traversal
+        // can continue.
+        protected PlanNode moveBeneath(BasePlanWithInput node, 
+                                       BasePlanWithInput output) {
+            PlanNode next = node.getInput();    // Where to continue.
+            // Remove from current position.
+            node.getOutput().replaceInput(node, next);
+            // Splice below current input to desired output.
+            PlanNode input = output.getInput();
+            node.replaceInput(next, input);
+            output.replaceInput(input, node);
+            return next;
         }
 
         protected <T extends ExpressionNode> void remap(List<T> exprs) {

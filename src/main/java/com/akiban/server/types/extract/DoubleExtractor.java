@@ -55,6 +55,11 @@ public final class DoubleExtractor extends AbstractExtractor {
         case U_INT:     return source.getUInt();
         case INTERVAL_MILLIS:  return source.getInterval_Millis();
         case INTERVAL_MONTH:   return source.getInterval_Month();
+        case DATE:      return source.getDate();
+        case DATETIME:  return source.getDateTime();
+        case TIME:      return source.getTime();
+        case TIMESTAMP: return source.getTimestamp();
+        case YEAR:      return source.getYear();
         default:
             throw unsupportedConversion(type);
         }                

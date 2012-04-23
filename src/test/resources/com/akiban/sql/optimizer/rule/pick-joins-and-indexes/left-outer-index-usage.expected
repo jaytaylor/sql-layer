@@ -1,0 +1,9 @@
+SelectQuery@48342983
+  ResultSet@58917c7d[cid, name]
+    Project@37841ff8[customers.cid, parent.name]
+      Select@434eef41[isNull(parent.name)]
+        JoinNode@58b47b0f(LEFT/NESTED_LOOPS)
+          TableGroupJoinTree@30dda1eb(TableGroup@30fb4348(customers), customers - SingleIndexScan@3ffe4517(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =foo, rows = 1, cost = 6.86220))
+            TableSource@2a8a4820(customers - TableGroup@30fb4348(customers))
+          TableGroupJoinTree@26b1645d(TableGroup@4e6a09d3(parent), parent - SingleIndexScan@13ab23dd(Index(test.parent.PRIMARY[IndexColumn(id)]), NONE, =customers.cid, rows = 1, cost = 13.2132))
+            TableSource@1bc51f4e(parent - TableGroup@4e6a09d3(parent))

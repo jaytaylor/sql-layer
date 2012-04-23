@@ -28,28 +28,58 @@ package com.akiban.sql.pg;
 
 import java.io.IOException;
 
-import javax.management.remote.JMXConnector;
+import javax.management.MBeanInfo;
+import javax.management.MBeanOperationInfo;
+import javax.management.MBeanServerConnection;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
 
+import com.akiban.sql.pg.JMXInterpreter.JmxAdapter;
 import junit.framework.Assert;
 
 import org.junit.Test;
 
-import com.akiban.server.manage.ManageMXBean;
-import com.akiban.server.store.statistics.IndexStatisticsMXBean;
-
 /* test class for JMXIterpreter, which provides a JMX interface to the server in the test framework  */
 public class JMXInterpreterIT extends PostgresServerYamlITBase {
 
-    private static final String SERVER_JMX_PORT = "8082";
+    private static final int SERVER_JMX_PORT = 8082;
     private static final String SERVER_ADDRESS = "localhost";
 
     @Test
-    public void testForBasicConstructor() {
+    public void testForBasicConstructor()  {
         JMXInterpreter conn = null;
         try {
-            conn = new JMXInterpreter();
-            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
+            conn = new JMXInterpreter(true);
+            conn.ensureConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
+            System.out.println(conn.serviceURL);
             Assert.assertNotNull(conn);
+            
+            final MBeanServerConnection mbs = conn.getAdapter().getConnection();
+            MBeanInfo info = null;
+            ObjectName mxbeanName = null;
+            try {
+                mxbeanName = new ObjectName(
+                        "com.akiban:type=IndexStatistics");
+            } catch (MalformedObjectNameException e1) {
+                e1.printStackTrace();
+                Assert.fail(e1.getMessage());
+            } catch (NullPointerException e1) {
+                e1.printStackTrace();
+                Assert.fail(e1.getMessage());   
+            }
+            try {
+                info = mbs.getMBeanInfo(mxbeanName);
+            } catch (Exception e) {
+                e.printStackTrace();
+                return;
+            }
+            MBeanOperationInfo[] ops = info.getOperations();
+            for (int x=0;x < ops.length;x++) {
+                System.out.println(x+" Return type("+ops[x].getDescription()+"): "+ ops[x].getReturnType());
+                for (int a=0;a < ops[x].getSignature().length;a++) {
+                  System.out.println("  "+ops[x].getSignature()[a].getDescription()+":"+ops[x].getSignature()[a].getType());
+                }
+            }
         } finally {
             if (conn != null) {
                 conn.close();
@@ -58,34 +88,25 @@ public class JMXInterpreterIT extends PostgresServerYamlITBase {
     }
 
     @Test
-    public void testCallToAkServer() {
-        JMXInterpreter conn = new JMXInterpreter();
+    public void testCall() throws Exception  {
+        JMXInterpreter conn = null;
         try {
-            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-            Assert.assertNotNull(conn);
-            JMXConnector connector = conn.getConnector();
-            Assert.assertNotNull(connector);
-            ManageMXBean bean = conn.getAkServer(connector);
-
-            Assert.assertNotNull(bean);
-            Assert.assertNotNull(bean.getVersionString());
+            conn = new JMXInterpreter(true);
+            Object[] parameters = { new String("test") };
+            Object data = conn.makeBeanCall( 
+                    SERVER_ADDRESS, 
+                    SERVER_JMX_PORT, 
+                    "com.akiban:type=IndexStatistics", 
+                    "dumpIndexStatisticsToString", 
+                    parameters, "method");
+            System.out.println(""+data);
+            
         } finally {
-            conn.close();
+            if (conn != null) {
+                conn.close();
+            }
         }
     }
-
-    @Test
-    public void testCalltoIndexStatisticsMXBean() throws IOException {
-        JMXInterpreter conn = new JMXInterpreter();
-        try {
-            conn.openConnection(SERVER_ADDRESS, SERVER_JMX_PORT);
-            IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
-                    .getConnector());
-            Assert.assertNotNull(bean);
-            bean.dumpIndexStatistics("test", "/tmp/test.dmp");
-        } finally {
-            conn.close();
-        }
-    }
+    
 
 }
