@@ -196,7 +196,7 @@ public abstract class CostEstimator implements TableRowCounts
         boolean scaleCount = true;
         double selectivity = 1.0;
         if (equalityComparands != null && !equalityComparands.isEmpty()) {
-            selectivity = fractionEqual(equalityComparands, index,
+            selectivity = fractionEqual(equalityComparands,
                                         indexColumnsIndexes, indexColumnsStats);
         }
         if (lowComparand != null || highComparand != null) {
@@ -246,55 +246,55 @@ public abstract class CostEstimator implements TableRowCounts
     }
 
     protected double fractionEqual(List<ExpressionNode> eqExpressions, 
-                                   Index index, 
                                    Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats) {
         double selectivity = 1.0;
         keyTarget.attach(key);
         for (int column = 0; column < eqExpressions.size(); column++) {
             ExpressionNode node = eqExpressions.get(column);
-            key.clear();
-            // encodeKeyValue evaluates to true iff node is a constant expression. key is initialized as a side-effect.
-            byte[] columnValue = encodeKeyValue(node, index, column) ? keyCopy() : null;
-            selectivity *= fractionEqual(indexColumnsIndexes, indexColumnsStats, column, columnValue);
+            Index index = indexColumnsIndexes[column];
+            IndexStatistics indexStats = indexColumnsStats[column];
+            selectivity *= fractionEqual(index, indexStats, node);
         }
         return selectivity;
     }
     
-    protected double fractionEqual(Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats, int column, byte[] columnValue) {
-        Index index = indexColumnsIndexes[column];
-        IndexStatistics indexStats = indexColumnsStats[column];
+    protected double fractionEqual(Index index, IndexStatistics indexStats, ExpressionNode expr) {
         if (indexStats == null) {
             return missingStatsSelectivity();
         } else {
             Histogram histogram = indexStats.getHistogram(1);
             if ((histogram == null) || histogram.getEntries().isEmpty()) {
                 return missingStatsSelectivity();
-            }
-            else if (columnValue == null) {
-                // Variable expression. Use average selectivity for histogram.
-                return
-                    mostlyDistinct(indexStats)
-                    ? 1.0 / indexStats.getSampledCount()
-                    : 1.0 / histogram.totalDistinctCount();
             } else {
-                // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
-                List<HistogramEntry> entries = histogram.getEntries();
-                for (HistogramEntry entry : entries) {
-                    // Constant expression
-                    int compare = bytesComparator.compare(columnValue, entry.getKeyBytes());
-                    if (compare == 0) {
-                        return ((double) entry.getEqualCount()) / indexStats.getSampledCount();
-                    } else if (compare < 0) {
-                        long d = entry.getDistinctCount();
-                        return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
+                key.clear();
+                // encodeKeyValue evaluates non-null iff node is a constant expression. key is initialized as a side-effect.
+                byte[] columnValue = encodeKeyValue(expr, index, 0) ? keyCopy() : null;
+                if (columnValue == null) {
+                    // Variable expression. Use average selectivity for histogram.
+                    return
+                        mostlyDistinct(indexStats)
+                        ? 1.0 / indexStats.getSampledCount()
+                        : 1.0 / histogram.totalDistinctCount();
+                } else {
+                    // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
+                    List<HistogramEntry> entries = histogram.getEntries();
+                    for (HistogramEntry entry : entries) {
+                        // Constant expression
+                        int compare = bytesComparator.compare(columnValue, entry.getKeyBytes());
+                        if (compare == 0) {
+                            return ((double) entry.getEqualCount()) / indexStats.getSampledCount();
+                        } else if (compare < 0) {
+                            long d = entry.getDistinctCount();
+                            return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
+                        }
                     }
+                    HistogramEntry lastEntry = entries.get(entries.size() - 1);
+                    long d = lastEntry.getDistinctCount();
+                    if (d == 0) {
+                        return 1;
+                    }
+                    return 0.00483;
                 }
-                HistogramEntry lastEntry = entries.get(entries.size() - 1);
-                long d = lastEntry.getDistinctCount();
-                if (d == 0) {
-                    return 1;
-                }
-                return 0.00483;
             }
         }
     }
