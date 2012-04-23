@@ -70,6 +70,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
@@ -780,6 +781,8 @@ public class AggregatePT extends ApiTestBase {
         private AtomicReferenceArray<T> buffers;
         private AtomicLong holdMask = new AtomicLong();
         private AtomicLong getMask = new AtomicLong();
+        private Semaphore holdSemaphore = new Semaphore(0);
+        private Semaphore getSemaphore = new Semaphore(0);
 
         public ShareHolderMux(int size) {
             assert (size < 64);
@@ -810,9 +813,7 @@ public class AggregatePT extends ApiTestBase {
                 long mask = holdMask.get();
                 long bit = Long.lowestOneBit(~mask);
                 if ((bit == 0) || (bit > size)) {
-                    synchronized (holdMask) {
-                        holdMask.wait();
-                    }
+                    holdSemaphore.acquire();
                     continue;
                 }
                 if (holdMask.compareAndSet(mask, mask | bit))
@@ -826,9 +827,7 @@ public class AggregatePT extends ApiTestBase {
                 long mask = getMask.get();
                 long bit = Long.lowestOneBit(mask);
                 if (bit == 0) {
-                    synchronized (getMask) {
-                        getMask.wait();
-                    }
+                    getSemaphore.acquire();
                     continue;
                 }
                 if (getMask.compareAndSet(mask, mask & ~bit)) {
@@ -846,9 +845,7 @@ public class AggregatePT extends ApiTestBase {
                 if (getMask.compareAndSet(mask, mask | (1 << i))) {
                     if (mask == 0) {
                         // Was previously empty.
-                        synchronized (getMask) {
-                            getMask.notify();
-                        }
+                        getSemaphore.release();
                     }
                     break;
                 }
@@ -863,9 +860,7 @@ public class AggregatePT extends ApiTestBase {
                 if (holdMask.compareAndSet(mask, mask & ~(1 << i))) {
                     if (mask == (1 << size) - 1) {
                         // Was previously full.
-                        synchronized (holdMask) {
-                            holdMask.notify();
-                        }
+                        holdSemaphore.release();
                     }
                     break;
                 }
@@ -883,6 +878,8 @@ public class AggregatePT extends ApiTestBase {
             for (int i = 0; i < size; i++) {
                 hold(i, null);
             }
+            holdSemaphore.drainPermits();
+            getSemaphore.drainPermits();
         }
 
     }
