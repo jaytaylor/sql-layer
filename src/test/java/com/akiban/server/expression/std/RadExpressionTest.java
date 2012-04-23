@@ -26,55 +26,57 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.Arrays;
+import com.akiban.server.error.WrongExpressionArityException;
 import org.junit.Test;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.server.types.extract.Extractors;
 import static org.junit.Assert.*;
 
-public class FromDaysExpressionTest extends ComposedExpressionTestBase
+public class RadExpressionTest extends ComposedExpressionTestBase
 {
     @Test
     public void test()
     {
-        doTest(-1L, "0000-00-00");
+        doTest(180.0, Math.PI);
+        doTest(90.0, Math.PI/2);
+        doTest(45.0, Math.PI/4);
+        doTest(30.0, Math.PI/6);
+        doTest(60.0, Math.PI/3);
+        doTest(270.0, 3* Math.PI / 2);
         doTest(null, null);
-        doTest(1L, "0000-00-00");
-        doTest(10L, "0000-00-00");
-        doTest(365L, "0000-00-00");
-        doTest(366L, "0001-01-01");
-        
-        doTest(715875L, "1960-01-01");
-        doTest(719528L, "1970-01-01");
-        doTest(734980L, "2012-04-22");
     }
     
-    private static void doTest(Long days, String date)
+    @Test(expected=WrongExpressionArityException.class)
+    public void testArity()
     {
-        Expression top = new FromDaysExpression(days == null 
-                ? LiteralExpression.forNull()
-                : new LiteralExpression(AkType.LONG, days.longValue()));
+        Expression top = RandExpression.COMPOSER.compose(Arrays.asList(LiteralExpression.forNull(), LiteralExpression.forNull()));
+    }
+    
+    private static void doTest(Double input, Double expected)
+    {
+        Expression top = new RadExpression(input == null ? LiteralExpression.forNull()
+                                                         :new LiteralExpression(AkType.DOUBLE, input.doubleValue()));
+        String testName = "[RAD(" + input + ")]";
         
-        String name = "FROM_DAYS(" + days + ")";
-        if (date == null)
-            assertTrue(name + " Top should NULL", top.evaluation().eval().isNull());
+        if (expected == null)
+            assertTrue(testName + " Top shoud be NULL", top.evaluation().eval().isNull());
         else
-            assertEquals(name, date, Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
+            assertEquals(testName, expected.doubleValue(), top.evaluation().eval().getDouble(), 0.0001);
     }
     
     @Override
     protected CompositionTestInfo getTestInfo()
     {
-        return new CompositionTestInfo(1, AkType.LONG, true);
+        return new CompositionTestInfo(1, AkType.DOUBLE, true);
     }
 
     @Override
     protected ExpressionComposer getComposer()
     {
-        return FromDaysExpression.COMPOSER;
+        return RadExpression.COMPOSER;
     }
 
     @Override
@@ -82,4 +84,5 @@ public class FromDaysExpressionTest extends ComposedExpressionTestBase
     {
         return false;
     }
+    
 }

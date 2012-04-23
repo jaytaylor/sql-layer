@@ -36,70 +36,60 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
-import org.joda.time.DateTimeZone;
 
-public class FromDaysExpression extends AbstractUnaryExpression
+public class RadExpression extends AbstractUnaryExpression
 {
-    @Scalar("FROM_DAYS")
+    @Scalar("radians")
     public static final ExpressionComposer COMPOSER = new UnaryComposer()
     {
-        @Override
-        protected Expression compose(Expression argument)
-        {
-            return new FromDaysExpression(argument);
-        }
 
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            
-            argumentTypes.setType(0, AkType.LONG);
-            return ExpressionTypes.DATE;
+            argumentTypes.setType(0, AkType.DOUBLE);
+            return argumentTypes.get(0);
         }
-        
+
+        @Override
+        protected Expression compose(Expression argument)
+        {
+            return new RadExpression(argument);
+        }
     };
     
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private static final long BEGINNING = Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(33);
-        private  static final long FACTOR = 3600L * 1000 * 24;
+        private static final double FACTOR = Math.PI / 180;
         
-        InnerEvaluation (ExpressionEvaluation eval)
+        public InnerEvaluation(ExpressionEvaluation operand)
         {
-            super(eval);
+            super(operand);
         }
         
         @Override
         public ValueSource eval()
         {
-            ValueSource days = operand();
-            if (days.isNull())
+            ValueSource source = operand();
+            if (source.isNull())
                 return NullValueSource.only();
-            long val = days.getLong();
-            valueHolder().putDate( val < 366
-                    ? 0L
-                    :Extractors.getLongExtractor(AkType.DATE).unixToStdLong(days.getLong() * FACTOR + BEGINNING));
+            
+            valueHolder().putDouble(FACTOR * source.getDouble());
             return valueHolder();
-        }    
+        }
     }
     
-    FromDaysExpression (Expression arg)
+    RadExpression (Expression arg)
     {
-        super(AkType.DATE, arg);
-        
-        // set timezone to UTC so that the calculation is accurate
-        ConverterTestUtils.setGlobalTimezone("UTC");
+        super(AkType.DOUBLE, arg);
     }
     
     @Override
     protected String name()
     {
-        return "FROM_DAYS";
+        return "RADIANS";
     }
 
     @Override
@@ -107,5 +97,4 @@ public class FromDaysExpression extends AbstractUnaryExpression
     {
         return new InnerEvaluation(operandEvaluation());
     }
-    
 }

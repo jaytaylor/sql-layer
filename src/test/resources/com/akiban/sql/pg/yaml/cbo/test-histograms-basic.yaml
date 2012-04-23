@@ -28,7 +28,7 @@
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - params: ['test']
-- output:
+- split_result:
     - ["Index: PRIMARY"]
     - ["RowCount: 100"]
     - ["SampledCount: 100"]
@@ -171,7 +171,7 @@
 - JMX: com.akiban:type=IndexStatistics
 - method: dumpIndexStatisticsToString
 - params: ['test']
-- output:
+- split_result: 
     - ["Index: name_address"]
     - ["RowCount: 200"]
     - ["SampledCount: 200"]
