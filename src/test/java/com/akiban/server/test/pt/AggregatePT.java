@@ -73,9 +73,6 @@ import org.junit.Test;
 import java.util.*;
 import java.util.concurrent.ArrayBlockingQueue;
 import java.util.concurrent.BlockingQueue;
-import java.util.concurrent.Semaphore;
-import java.util.concurrent.atomic.AtomicLong;
-import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class AggregatePT extends ApiTestBase {
     public static final int ROW_COUNT = 100000;
@@ -780,118 +777,6 @@ public class AggregatePT extends ApiTestBase {
             finally {
                 inputCursor.close();
             }
-        }
-
-    }
-
-    /** A multiplexer over a fixed number of {@link Shareable}s. 
-     * There is no guarantee of output order, even for items inserted by the same thread.
-     * The assumption is that the caller will sort them or does not care.
-     */
-    static class ShareHolderMux<T extends Shareable> {
-        private int size;
-        private AtomicReferenceArray<T> buffers;
-        private AtomicLong holdMask = new AtomicLong();
-        private AtomicLong getMask = new AtomicLong();
-        private Semaphore holdSemaphore = new Semaphore(0);
-        private Semaphore getSemaphore = new Semaphore(0);
-
-        public ShareHolderMux(int size) {
-            assert (size < 64);
-            this.size = size;
-            buffers = new AtomicReferenceArray<T>(size);
-        }
-
-        /** Get the item at the given position. */
-        public T get(int i) {
-            return buffers.get(i);
-        }
-
-        /** Store an item into the given position. */
-        public void hold(int i, T item) {
-            if (item != null) {
-                item.acquire();
-            }
-            item = buffers.getAndSet(i, item);
-            if (item != null) {
-                item.release();
-            }
-        }
-
-        /** Get an available index into which to {@link #hold} an
-         * item, blocking when full. */
-        public int nextHoldIndex() throws InterruptedException {
-            while (true) {
-                long mask = holdMask.get();
-                long bit = Long.lowestOneBit(~mask);
-                if ((bit == 0) || (bit > size)) {
-                    holdSemaphore.acquire();
-                    continue;
-                }
-                if (holdMask.compareAndSet(mask, mask | bit))
-                    return Long.numberOfTrailingZeros(bit);
-            }
-        }
-
-        /** Get an index which has been filled, blocking when empty. */
-        public int nextGetIndex() throws InterruptedException {
-            while (true) {
-                long mask = getMask.get();
-                long bit = Long.lowestOneBit(mask);
-                if (bit == 0) {
-                    getSemaphore.acquire();
-                    continue;
-                }
-                if (getMask.compareAndSet(mask, mask & ~bit)) {
-                    return Long.numberOfTrailingZeros(bit);
-                }
-            }
-        }
-
-        /** Mark an index returned by {@link #nextHoldIndex} as having been filled.
-         * @see #put
-         */
-        public void heldGetIndex(int i) {
-            while (true) {
-                long mask = getMask.get();
-                if (getMask.compareAndSet(mask, mask | (1 << i))) {
-                    if (mask == 0) {
-                        // Was previously empty.
-                        getSemaphore.release();
-                    }
-                    break;
-                }
-            }
-        }
-
-        /** Clear the given index position, making it available to {@link put} again. */
-        public void releaseHoldIndex(int i) {
-            hold(i, null);
-            while (true) {
-                long mask = holdMask.get();
-                if (holdMask.compareAndSet(mask, mask & ~(1 << i))) {
-                    if (mask == (1 << size) - 1) {
-                        // Was previously full.
-                        holdSemaphore.release();
-                    }
-                    break;
-                }
-            }
-        }
-
-        /** Add an item to the buffer, waiting for an available slot. */
-        public void put(T item) throws InterruptedException {
-            int i = nextHoldIndex();
-            hold(i, item);
-            heldGetIndex(i);
-        }
-        
-        public void clear() {
-            for (int i = 0; i < size; i++) {
-                hold(i, null);
-            }
-            holdSemaphore.drainPermits();
-            getSemaphore.drainPermits();
         }
 
     }
