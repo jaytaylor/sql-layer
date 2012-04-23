@@ -579,7 +579,7 @@ public class AggregatePT extends ApiTestBase {
         PersistitAdapter adapter = persistitAdapter(schema);
         QueryContext queryContext = queryContext(adapter);
         
-        System.out.println("PARALLEL");
+        System.out.println("PARALLEL " + nthreads);
         double time = 0.0;
         for (int i = 0; i < WARMUPS+REPEATS; i++) {
             long start = System.nanoTime();
