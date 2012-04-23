@@ -1,0 +1,30 @@
+## Test the UNHEX(str) function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(varchar_field, bigint_field) 
+              VALUES ('416B736572766572', 20);
+---
+- Statement: SELECT UNHEX('616B6962616E');
+- output: [['akiban']]
+---
+- Statement: SELECT bigint_field from all_types where unhex(bigint_field) = ' ';
+- output: [[20]]
+---
+- Statement: SELECT UNHEX(varchar_field) from all_types;
+- output: [['Akserver']]
+---
+- Statement: SELECT UNHEX(HEX('Hello, world'));
+- output: [['Hello, world']]
+---
+- Statement: SELECT unhex(?);
+- params: [['56']]
+- output: [['V']]
+---
+- Statement: SELECT bigint_field from all_types where UNHEX(?) = '9';
+- params: [['39']]
+- output: [[20]]
+---
+- Statement: SELECT unhex('xyz');
+- output: [[null]]
+...
