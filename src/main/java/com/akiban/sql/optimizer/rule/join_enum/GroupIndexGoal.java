@@ -195,8 +195,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     /** Populate given index usage according to goal.
      * @return <code>false</code> if the index is useless.
      */
-    public boolean usable(SingleIndexScan index, IntersectionEnumerator enumerator) {
-        int nequals = insertLeadingEqualities(index, conditions, enumerator);
+    public boolean usable(SingleIndexScan index) {
+        int nequals = insertLeadingEqualities(index, conditions);
         List<ExpressionNode> indexExpressions = index.getColumns();
         if (nequals < indexExpressions.size()) {
             ExpressionNode indexExpression = indexExpressions.get(nequals);
@@ -208,13 +208,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         if (ccond.getOperation().equals(Comparison.NE))
                             continue; // ranges are better suited for !=
                         ExpressionNode otherComparand = null;
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft(), enumerator)) {
+                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
                             otherComparand = ccond.getRight();
                         }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight(), enumerator)) {
+                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
                             otherComparand = ccond.getLeft();
                         }
-                        if ((otherComparand != null) && constantOrBound(otherComparand, enumerator)) {
+                        if ((otherComparand != null) && constantOrBound(otherComparand)) {
                             index.addInequalityCondition(condition,
                                                          ccond.getOperation(),
                                                          otherComparand);
@@ -239,8 +239,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return true;
     }
 
-    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds,
-                                        IntersectionEnumerator enumerator)
+    private int insertLeadingEqualities(SingleIndexScan index, List<ConditionExpression> localConds)
     {
         setColumnsAndOrdering(index);
         int nequals = 0;
@@ -256,14 +255,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     ComparisonCondition ccond = (ComparisonCondition)condition;
                     ExpressionNode comparand = null;
                     if (ccond.getOperation() == Comparison.EQ) {
-                        if (indexExpressionMatches(indexExpression, ccond.getLeft(), enumerator)) {
+                        if (indexExpressionMatches(indexExpression, ccond.getLeft())) {
                             comparand = ccond.getRight();
                         }
-                        else if (indexExpressionMatches(indexExpression, ccond.getRight(), enumerator)) {
+                        else if (indexExpressionMatches(indexExpression, ccond.getRight())) {
                             comparand = ccond.getLeft();
                         }
                     }
-                    if ((comparand != null) && constantOrBound(comparand, enumerator)) {
+                    if ((comparand != null) && constantOrBound(comparand)) {
                         equalityCondition = condition;
                         otherComparand = comparand;
                         break;
@@ -485,10 +484,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     protected class UnboundFinder implements ExpressionVisitor {
         boolean found = false;
-        IntersectionEnumerator enumerator;
 
-        public UnboundFinder(IntersectionEnumerator enumerator) {
-            this.enumerator = enumerator;
+        public UnboundFinder() {
         }
 
         @Override
@@ -517,8 +514,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     /** Does the given expression have references to tables that aren't bound? */
-    protected boolean constantOrBound(ExpressionNode expression, IntersectionEnumerator enumerator) {
-        UnboundFinder f = new UnboundFinder(enumerator);
+    protected boolean constantOrBound(ExpressionNode expression) {
+        UnboundFinder f = new UnboundFinder();
         expression.accept(f);
         return !f.found;
     }
@@ -540,8 +537,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     /** Is the comparison operand what the index indexes? */
     protected boolean indexExpressionMatches(ExpressionNode indexExpression,
-                                             ExpressionNode comparisonOperand,
-                                             IntersectionEnumerator enumerator) {
+                                             ExpressionNode comparisonOperand) {
         if (indexExpression.equals(comparisonOperand))
             return true;
         if (!(comparisonOperand instanceof ColumnExpression))
@@ -565,7 +561,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             return false;
         Project project = (Project)results.getInput();
         ExpressionNode insideExpression = project.getFields().get(comparisonColumn.getPosition());
-        return indexExpressionMatches(indexExpression, insideExpression, enumerator);
+        return indexExpressionMatches(indexExpression, insideExpression);
     }
 
     /** Find the best index among the branches. */
@@ -789,7 +785,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     protected IndexScan betterIndex(IndexScan bestIndex, SingleIndexScan candidate, IntersectionEnumerator enumerator) {
-        if (usable(candidate, enumerator)) {
+        if (usable(candidate)) {
             enumerator.addLeaf(candidate);
             if (bestIndex == null) {
                 logger.debug("Selecting {}", candidate);
