@@ -38,6 +38,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.OperatorExecutionBase;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.row.ValuesRow;
@@ -70,6 +71,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.ArrayBlockingQueue;
+import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.Semaphore;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReferenceArray;
@@ -624,17 +627,20 @@ public class AggregatePT extends ApiTestBase {
         }
     }
 
+    // Nulls are not allowed in ArrayBlockingQueue.
+    static final Object EOF_ROW = new Object();
+
     class ParallelCursor extends OperatorExecutionBase implements Cursor {
         private QueryContext context;
-        private ShareHolderMux<Row> queue;
+        private BlockingQueue<Object> queue;
         private List<WorkerThread> threads;
         private int nrunning;
-        private int takeIndex;
+        private Row heldRow;
 
         public ParallelCursor(QueryContext context, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
             this.context = context;
             int nthreads = valuesRows.size();
-            queue = new ShareHolderMux<Row>(nthreads * nthreads);
+            queue = new ArrayBlockingQueue<Object>(nthreads * nthreads);
             threads = new ArrayList<WorkerThread>(nthreads);
             for (ValuesRow valuesRow : valuesRows) {
                 threads.add(new WorkerThread(context, inputOperator, valuesType, valuesRow, bindingPosition, queue));
@@ -644,7 +650,6 @@ public class AggregatePT extends ApiTestBase {
         @Override
         public void open() {
             nrunning = 0;
-            takeIndex = -1;
             for (WorkerThread thread : threads) {
                 thread.open();
                 nrunning++;
@@ -653,6 +658,10 @@ public class AggregatePT extends ApiTestBase {
 
         @Override
         public void close() {
+            if (heldRow != null) {
+                heldRow.release();
+                heldRow = null;
+            }
             for (WorkerThread thread : threads) {
                 if (thread.close())
                     nrunning--;
@@ -690,21 +699,22 @@ public class AggregatePT extends ApiTestBase {
         @Override
         public Row next() {
             while (nrunning > 0) {
-                if (takeIndex >= 0) {
-                    queue.releaseHoldIndex(takeIndex);
-                    takeIndex = -1;
+                if (heldRow != null) {
+                    heldRow.release();
+                    heldRow = null;
                 }
                 try {
-                    takeIndex = queue.nextGetIndex();
+                    Object row = queue.take();
+                    if (row != EOF_ROW)
+                        heldRow = (Row)row;
                 }
                 catch (InterruptedException ex) {
                     throw new QueryCanceledException(context.getSession());
                 }
-                Row row = queue.get(takeIndex);
-                if (row == null)
+                if (heldRow == null)
                     nrunning--;
                 else
-                    return row;
+                    return heldRow;
             }
             return null;
         }
@@ -716,11 +726,11 @@ public class AggregatePT extends ApiTestBase {
         private PersistitAdapter adapter;
         private QueryContext context;
         private Cursor inputCursor;        
-        private ShareHolderMux<Row> queue;
+        private BlockingQueue<Object> queue;
         private Thread thread;
         private volatile boolean open;
         
-        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, ShareHolderMux<Row> queue) {
+        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, BlockingQueue<Object> queue) {
             session = createNewSession();
             adapter = new PersistitAdapter((Schema)valuesType.schema(), persistitStore(), treeService(), session, configService());
             context = queryContext(adapter);
@@ -759,7 +769,9 @@ public class AggregatePT extends ApiTestBase {
                     Row row = inputCursor.next();
                     if (row == null) 
                         open = false;
-                    queue.put(row);
+                    else
+                        row.acquire();
+                    queue.put((row != null) ? row : EOF_ROW);
                 }
             }
             catch (InterruptedException ex) {
