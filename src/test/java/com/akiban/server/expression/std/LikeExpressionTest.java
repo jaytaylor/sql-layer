@@ -109,7 +109,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
 
         param(pb, LikeExpression.ILIKE_COMPOSER, "x===b", "_=====__", "=", false, false, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "Axydam", "A%d=am", "=", false, false, true); // invalide escape sequence =a
+        param(pb, LikeExpression.ILIKE_COMPOSER, "Axydam", "A%d=am", "=", true, false, false); 
         param(pb, LikeExpression.ILIKE_COMPOSER, "Ja%vas", "J_\\%%", "\\", true, false, false);
 
         param(pb, LikeExpression.ILIKE_COMPOSER, "", "", "\\",true, false, false);
@@ -134,7 +134,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_%def", "abc___%def", "_", true, false, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "axybc", "a%bc", "_", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abcd", "abc_", "_", true, false, true); // exception invalid escape sequence
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxde", "abc_de", "_", true, false, true);  // exception
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxde", "abc_de", "_", false, false, false);  
 
 
         // percent as escape
@@ -142,6 +142,8 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc%%", "%", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abcxyz", "abc%", "%", true, false, true); // % by itself exception
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "abc%%", "%", false, false, false); // two %s => not a wildcard anymore
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "abc%%", "\\", true, false, false); 
+        
         param(pb, LikeExpression.ILIKE_COMPOSER, "ab%c%cde", "ab%%c%%%", "%", true, false, true);  // exception be thrown
 
         // null as escape, then \\ is used
