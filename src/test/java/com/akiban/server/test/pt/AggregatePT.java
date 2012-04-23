@@ -59,6 +59,8 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.ShareHolder;
+import com.akiban.util.Shareable;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -68,8 +70,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.atomic.AtomicLong;
 
 public class AggregatePT extends ApiTestBase {
     public static final int ROW_COUNT = 100000;
@@ -623,23 +624,25 @@ public class AggregatePT extends ApiTestBase {
 
     class ParallelCursor extends OperatorExecutionBase implements Cursor {
         private QueryContext context;
-        private BlockingQueue<Row> queue;
+        private ShareHolderMux<Row> queue;
         private List<WorkerThread> threads;
         private int nrunning;
+        private int takeIndex;
 
         public ParallelCursor(QueryContext context, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
             this.context = context;
             int nthreads = valuesRows.size();
-            queue = new ArrayBlockingQueue<Row>(nthreads);
+            queue = new ShareHolderMux<Row>(nthreads * nthreads);
             threads = new ArrayList<WorkerThread>(nthreads);
             for (ValuesRow valuesRow : valuesRows) {
-                threads.add(new WorkerThread(context, inputOperator, valuesType, valuesRow, bindingPosition));
+                threads.add(new WorkerThread(context, inputOperator, valuesType, valuesRow, bindingPosition, queue));
             }
         }
 
         @Override
         public void open() {
             nrunning = 0;
+            takeIndex = -1;
             for (WorkerThread thread : threads) {
                 thread.open();
                 nrunning++;
@@ -661,6 +664,8 @@ public class AggregatePT extends ApiTestBase {
                 thread.destroy();
             }
             threads = null;
+            queue.clear();
+            queue = null;
         }
 
         @Override
@@ -681,13 +686,17 @@ public class AggregatePT extends ApiTestBase {
         @Override
         public Row next() {
             while (nrunning > 0) {
-                Row row;
+                if (takeIndex >= 0) {
+                    queue.releaseHoldIndex(takeIndex);
+                    takeIndex = -1;
+                }
                 try {
-                    row = queue.take();
+                    takeIndex = queue.nextGetIndex();
                 }
                 catch (InterruptedException ex) {
                     throw new QueryCanceledException(context.getSession());
                 }
+                Row row = queue.get(takeIndex);
                 if (row == null)
                     nrunning--;
                 else
@@ -698,33 +707,169 @@ public class AggregatePT extends ApiTestBase {
         
     }
 
-    class WorkerThread extends Thread {
+    class WorkerThread implements Runnable {
         private Session session;
         private PersistitAdapter adapter;
         private QueryContext context;
         private Cursor inputCursor;        
+        private ShareHolderMux<Row> queue;
+        private Thread thread;
         
-        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition) {
+        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, ShareHolderMux<Row> queue) {
             session = createNewSession();
             adapter = new PersistitAdapter((Schema)valuesType.schema(), persistitStore(), treeService(), session, configService());
             context = queryContext(adapter);
             context.setRow(bindingPosition, valuesRow);
             inputCursor = API.cursor(inputOperator, context);
+            this.queue = queue;
         }
         
         public void open() {
+            thread = new Thread(this);
+            thread.start();
         }
 
         public boolean close() {
+            if (thread == null) return false;
+            thread.interrupt();
             return true;
         }
 
         public void destroy() {
+            close();
+            if (inputCursor != null) {
+                inputCursor.destroy();
+                inputCursor = null;
+            }
         }
 
         @Override
         public void run() {
-            
+            inputCursor.open();
+            try {
+                while (true) {
+                    Row row = inputCursor.next();
+                    queue.put(row);
+                    if (row == null) break;
+                }
+            }
+            catch (InterruptedException ex) {
+                throw new QueryCanceledException(context.getSession());
+            }
+            finally {
+                inputCursor.close();
+            }
+        }
+
+    }
+
+    /** A multiplexer over a fixed number of {@link Shareable}s. 
+     * There is no guarantee of output order, even for items inserted by the same thread.
+     * The assumption is that the caller will sort them or does not care.
+     */
+    static class ShareHolderMux<T extends Shareable> {
+        private int size;
+        private ShareHolder<T>[] buffers;
+        private AtomicLong holdMask = new AtomicLong();
+        private AtomicLong getMask = new AtomicLong();
+
+        public ShareHolderMux(int size) {
+            assert (size < 64);
+            this.size = size;
+            buffers = (ShareHolder<T>[])new ShareHolder[size];
+            for (int i = 0; i < size; i++) {
+                buffers[i] = new ShareHolder<T>();
+            }
+        }
+
+        /** Get the item at the given position. */
+        public T get(int i) {
+            return buffers[i].get();
+        }
+
+        /** Store an item into the given position. */
+        public void hold(int i, T item) {
+            assert buffers[i].isEmpty();
+            buffers[i].hold(item);
+        }
+
+        /** Get an available index into which to {@link #hold} an
+         * item, blocking when full. */
+        public int nextHoldIndex() throws InterruptedException {
+            while (true) {
+                long mask = holdMask.get();
+                long bit = Long.lowestOneBit(~mask);
+                if ((bit == 0) || (bit > size)) {
+                    synchronized (holdMask) {
+                        holdMask.wait();
+                    }
+                }
+                if (holdMask.compareAndSet(mask, mask | bit))
+                    return Long.numberOfTrailingZeros(bit);
+            }
+        }
+
+        /** Get an index which has been filled, blocking when empty. */
+        public int nextGetIndex() throws InterruptedException {
+            while (true) {
+                long mask = getMask.get();
+                long bit = Long.lowestOneBit(mask);
+                if ((bit == 0) || (bit > size)) {
+                    synchronized (getMask) {
+                        getMask.wait();
+                    }
+                }
+                if (getMask.compareAndSet(mask, mask & ~bit))
+                    return Long.numberOfTrailingZeros(bit);
+            }
+        }
+
+        /** Mark an index returned by {@link #nextHoldIndex} as having been filled.
+         * @see #put
+         */
+        public void heldGetIndex(int i) {
+            while (true) {
+                long mask = getMask.get();
+                if (getMask.compareAndSet(mask, mask | (1 << i))) {
+                    if (mask == 0) {
+                        // Was previously empty.
+                        synchronized (getMask) {
+                            getMask.notify();
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        /** Clear the given index position, making it available to {@link put} again. */
+        public void releaseHoldIndex(int i) {
+            buffers[i].release();
+            while (true) {
+                long mask = holdMask.get();
+                if (holdMask.compareAndSet(mask, mask & ~(1 << i))) {
+                    if (mask == (1 << size) - 1) {
+                        // Was previously full.
+                        synchronized (holdMask) {
+                            holdMask.notify();
+                        }
+                    }
+                    break;
+                }
+            }
+        }
+
+        /** Add an item to the buffer, waiting for an available slot. */
+        public void put(T item) throws InterruptedException {
+            int i = nextHoldIndex();
+            set(i, item);
+            heldGetIndex(i);
+        }
+        
+        public void clear() {
+            for (int i = 0; i < size; i++) {
+                buffers[i].release();
+            }
         }
 
     }
