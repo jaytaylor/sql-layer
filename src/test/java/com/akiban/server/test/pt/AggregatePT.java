@@ -71,6 +71,7 @@ import org.junit.Test;
 
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReferenceArray;
 
 public class AggregatePT extends ApiTestBase {
     public static final int ROW_COUNT = 100000;
@@ -545,7 +546,7 @@ public class AggregatePT extends ApiTestBase {
     public void parallel() {
         Schema schema = new Schema(rowDefCache().ais());
         IndexRowType indexType = schema.indexRowType(index);
-        ValuesRowType valuesType = schema.newValuesType(AkType.INT, AkType.INT);
+        ValuesRowType valuesType = schema.newValuesType(AkType.LONG, AkType.LONG);
         IndexBound lo = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 0)))), new SetColumnSelector(0));
         IndexBound hi = new IndexBound(new RowBasedUnboundExpressions(indexType, Collections.<Expression>singletonList(new BoundFieldExpression(0, new FieldExpression(valuesType, 1)))), new SetColumnSelector(0));
         IndexKeyRange keyRange = IndexKeyRange.bounded(indexType, lo, true, hi, false);
@@ -655,7 +656,9 @@ public class AggregatePT extends ApiTestBase {
                 if (thread.close())
                     nrunning--;
             }
-            assert (nrunning == 0);
+            // TODO: Could be off if closed prematurely and there are
+            // nulls in the queue (or waiting to be added).
+            assert (nrunning == 0) : nrunning;
         }
 
         @Override
@@ -714,6 +717,7 @@ public class AggregatePT extends ApiTestBase {
         private Cursor inputCursor;        
         private ShareHolderMux<Row> queue;
         private Thread thread;
+        private volatile boolean open;
         
         public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, ShareHolderMux<Row> queue) {
             session = createNewSession();
@@ -730,8 +734,9 @@ public class AggregatePT extends ApiTestBase {
         }
 
         public boolean close() {
-            if (thread == null) return false;
+            if (!open) return false;
             thread.interrupt();
+            //thread.join();
             return true;
         }
 
@@ -741,16 +746,19 @@ public class AggregatePT extends ApiTestBase {
                 inputCursor.destroy();
                 inputCursor = null;
             }
+            session.close();
         }
 
         @Override
         public void run() {
             inputCursor.open();
+            open = true;
             try {
-                while (true) {
+                while (open) {
                     Row row = inputCursor.next();
+                    if (row == null) 
+                        open = false;
                     queue.put(row);
-                    if (row == null) break;
                 }
             }
             catch (InterruptedException ex) {
@@ -769,28 +777,30 @@ public class AggregatePT extends ApiTestBase {
      */
     static class ShareHolderMux<T extends Shareable> {
         private int size;
-        private ShareHolder<T>[] buffers;
+        private AtomicReferenceArray<T> buffers;
         private AtomicLong holdMask = new AtomicLong();
         private AtomicLong getMask = new AtomicLong();
 
         public ShareHolderMux(int size) {
             assert (size < 64);
             this.size = size;
-            buffers = (ShareHolder<T>[])new ShareHolder[size];
-            for (int i = 0; i < size; i++) {
-                buffers[i] = new ShareHolder<T>();
-            }
+            buffers = new AtomicReferenceArray<T>(size);
         }
 
         /** Get the item at the given position. */
         public T get(int i) {
-            return buffers[i].get();
+            return buffers.get(i);
         }
 
         /** Store an item into the given position. */
         public void hold(int i, T item) {
-            assert buffers[i].isEmpty();
-            buffers[i].hold(item);
+            if (item != null) {
+                item.acquire();
+            }
+            item = buffers.getAndSet(i, item);
+            if (item != null) {
+                item.release();
+            }
         }
 
         /** Get an available index into which to {@link #hold} an
@@ -803,6 +813,7 @@ public class AggregatePT extends ApiTestBase {
                     synchronized (holdMask) {
                         holdMask.wait();
                     }
+                    continue;
                 }
                 if (holdMask.compareAndSet(mask, mask | bit))
                     return Long.numberOfTrailingZeros(bit);
@@ -814,13 +825,15 @@ public class AggregatePT extends ApiTestBase {
             while (true) {
                 long mask = getMask.get();
                 long bit = Long.lowestOneBit(mask);
-                if ((bit == 0) || (bit > size)) {
+                if (bit == 0) {
                     synchronized (getMask) {
                         getMask.wait();
                     }
+                    continue;
                 }
-                if (getMask.compareAndSet(mask, mask & ~bit))
+                if (getMask.compareAndSet(mask, mask & ~bit)) {
                     return Long.numberOfTrailingZeros(bit);
+                }
             }
         }
 
@@ -844,7 +857,7 @@ public class AggregatePT extends ApiTestBase {
 
         /** Clear the given index position, making it available to {@link put} again. */
         public void releaseHoldIndex(int i) {
-            buffers[i].release();
+            hold(i, null);
             while (true) {
                 long mask = holdMask.get();
                 if (holdMask.compareAndSet(mask, mask & ~(1 << i))) {
@@ -862,13 +875,13 @@ public class AggregatePT extends ApiTestBase {
         /** Add an item to the buffer, waiting for an available slot. */
         public void put(T item) throws InterruptedException {
             int i = nextHoldIndex();
-            set(i, item);
+            hold(i, item);
             heldGetIndex(i);
         }
         
         public void clear() {
             for (int i = 0; i < size; i++) {
-                buffers[i].release();
+                hold(i, null);
             }
         }
 
