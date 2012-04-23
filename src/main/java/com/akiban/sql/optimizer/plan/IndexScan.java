@@ -140,7 +140,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     public abstract OrderEffectiveness getOrderEffectiveness();
     public abstract List<ExpressionNode> getColumns();
     public abstract List<IndexColumn> getIndexColumns();
-    public abstract List<ConditionExpression> getGroupConditions();
     public abstract List<ExpressionNode> getEqualityComparands();
     public abstract List<ConditionExpression> getConditions();
     public abstract boolean hasConditions();
