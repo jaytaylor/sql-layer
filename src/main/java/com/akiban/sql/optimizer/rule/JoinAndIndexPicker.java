@@ -114,6 +114,8 @@ public class JoinAndIndexPicker extends BaseRule
             if (input instanceof Sort) {
                 ordering = (Sort)input;
                 input = input.getOutput();
+                if (input instanceof Project)
+                    input = input.getOutput();
             }
             else if (input instanceof AggregateSource) {
                 grouping = (AggregateSource)input;
