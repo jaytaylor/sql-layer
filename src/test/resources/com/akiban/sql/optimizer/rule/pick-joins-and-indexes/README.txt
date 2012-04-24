@@ -51,3 +51,7 @@ scaled-distinct: mostly distinct now larger
 scaled-not-distinct: not so distinct now larger
 
 left-outer-index-usage: Outer join with a later condition that could be incorrectly serviced by index scan (bug980957)
+
+outer-index: LEFT using an index
+
+outer-no-index-extra-conditions: LEFT with extra conditions cannot use index
