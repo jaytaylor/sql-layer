@@ -267,6 +267,7 @@ public abstract class CostEstimator implements TableRowCounts
                 return missingStatsSelectivity();
             } else {
                 key.clear();
+                keyTarget.attach(key);
                 // encodeKeyValue evaluates non-null iff node is a constant expression. key is initialized as a side-effect.
                 byte[] columnValue = encodeKeyValue(expr, index, 0) ? keyCopy() : null;
                 if (columnValue == null) {
@@ -666,7 +667,7 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
                                    Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions,
                                    long size) {
-        return new CostEstimate(round(size * conditionsSelectivity(selectivityConditions)),
+        return new CostEstimate(Math.max(1, round(size * conditionsSelectivity(selectivityConditions))),
                                 model.select((int)size) * conditions.size());
     }
 
