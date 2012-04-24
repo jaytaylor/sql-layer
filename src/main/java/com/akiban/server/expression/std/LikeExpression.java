@@ -120,8 +120,8 @@ public class LikeExpression extends AbstractCompositeExpression
             if (l.isNull() || r.isNull()) return NullValueSource.only();
 
             
-            String left = Extractors.getStringExtractor().getObject(l);
-            String right = Extractors.getStringExtractor().getObject(r);
+            String left = l.getString();
+            String right = r.getString();
             
             char esca;
             if (children().size() == 3)
