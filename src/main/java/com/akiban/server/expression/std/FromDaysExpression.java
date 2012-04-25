@@ -66,7 +66,7 @@ public class FromDaysExpression extends AbstractUnaryExpression
     
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private static final long BEGINNING = Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(33);
+        private static final long BEGINNING = Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(33, DateTimeZone.UTC);
         private  static final long FACTOR = 3600L * 1000 * 24;
         
         InnerEvaluation (ExpressionEvaluation eval)
