@@ -164,13 +164,19 @@ abstract class ExtractorsForDates extends LongExtractor {
                 throw new InvalidDateFormatException ("time", parts[1]);
             }
 
+            // Allow, but discard, fractional seconds
+            final String secondParts[] = timeParts[2].split("\\.");
+            if(secondParts.length != 1 && secondParts.length != 2) {
+                throw new InvalidDateFormatException ("time", parts[1]);
+            }
+
             try {
             return  Long.parseLong(dateParts[0]) * DATETIME_YEAR_SCALE +
                     Long.parseLong(dateParts[1]) * DATETIME_MONTH_SCALE +
                     Long.parseLong(dateParts[2]) * DATETIME_DAY_SCALE +
                     Long.parseLong(timeParts[0]) * DATETIME_HOUR_SCALE +
                     Long.parseLong(timeParts[1]) * DATETIME_MIN_SCALE +
-                    Long.parseLong(timeParts[2]) * DATETIME_SEC_SCALE;
+                    Long.parseLong(secondParts[0]) * DATETIME_SEC_SCALE;
             } catch (NumberFormatException ex) {
                 throw new InvalidDateFormatException ("date time", string);
             }
