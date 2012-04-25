@@ -1,0 +1,9 @@
+SelectQuery@7cadb683
+  ResultSet@70a99267[cid, order_date]
+    Project@ccae1fa[customers.cid, orders.order_date]
+      Select@5bb9eaa5[]
+        JoinNode@1d94a824(INNER/NESTED_LOOPS)
+          TableGroupJoinTree@49acab08(TableGroup@aaae2a8(customers), customers - SingleIndexScan@59068910(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =Smith, rows = 1, cost = 6.04220))
+            TableSource@2e9d4ecf(customers - TableGroup@aaae2a8(customers))
+          TableGroupJoinTree@6710c001(TableGroup@3c10a719(customers), orders - SingleIndexScan@694a791d(Index(test.orders.PRIMARY[IndexColumn(oid)]), NONE, =Subquery@5d1dc52f, rows = 1, cost = 13.2364))
+            TableSource@65691318(orders - TableGroup@3c10a719(customers))

@@ -509,8 +509,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 }
             }
             else if (n instanceof SubqueryExpression) {
-                found = true;
-                return false;
+                for (ColumnSource used : ((SubqueryExpression)n).getSubquery().getOuterTables()) {
+                    // Tables defined inside the subquery are okay, but ones from outside
+                    // need to be bound to eval as an expression.
+                    if (!boundTables.contains(used)) {
+                        found = true;
+                        return false;
+                    }
+                }
             }
             return true;
         }
