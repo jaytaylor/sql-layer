@@ -1,0 +1,17 @@
+SelectQuery@7a5d5033
+  ResultSet@43c8308[cid]
+    Project@20be8464[customers.cid]
+      Select@3be5d207[]
+        MapJoin@655538e5(INNER)
+          Flatten@3e0a765c(customers INNER orders INNER items)
+            Select@20e0b1d6[items.quan > 100]
+              AncestorLookup@7fbb6976(items -> [customers, orders, items])
+                SingleIndexScan@6909037d(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234)
+                TableSource@6ff4ff23(customers - TableGroup@6d6e1eff(customers))
+                TableSource@3d9a8c41(orders - TableGroupJoin@4ec4396a(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@2aced6e2(items - TableGroupJoin@3495868c(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+          Flatten@44b46c4c(parent)
+            Select@213214d1[parent.id > 1]
+              AncestorLookup@5ef4b65d(parent -> [parent])
+                SingleIndexScan@13f0c45f(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name)
+                TableSource@717da562(parent - TableGroup@58b52f79(parent))
