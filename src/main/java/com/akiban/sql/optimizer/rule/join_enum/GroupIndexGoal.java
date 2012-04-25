@@ -483,10 +483,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                                     (ColumnExpression)targetExpression);
     }
 
-    protected class UnboundFinder implements ExpressionVisitor, PlanVisitor {
+    protected class UnboundFinder implements ExpressionVisitor {
         boolean found = false;
         IntersectionEnumerator enumerator;
-        int subqueryDepth = 0;
 
         public UnboundFinder(IntersectionEnumerator enumerator) {
             this.enumerator = enumerator;
@@ -498,13 +497,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
         @Override
         public boolean visitLeave(ExpressionNode n) {
-            if (n instanceof SubqueryExpression)
-                subqueryDepth--;
             return !found;
         }
         @Override
         public boolean visit(ExpressionNode n) {
-            if ((n instanceof ColumnExpression) && (subqueryDepth == 0)) {
+            if (n instanceof ColumnExpression) {
                 ColumnExpression columnExpression = (ColumnExpression)n;
                 if (!boundTables.contains(columnExpression.getTable())) {
                     found = true;
@@ -520,21 +517,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                         return false;
                     }
                 }
-                subqueryDepth++;
             }
-            return true;
-        }
-
-        @Override
-        public boolean visitEnter(PlanNode n) {
-            return visit(n);
-        }
-        @Override
-        public boolean visitLeave(PlanNode n) {
-            return true;
-        }
-        @Override
-        public boolean visit(PlanNode n) {
             return true;
         }
     }
