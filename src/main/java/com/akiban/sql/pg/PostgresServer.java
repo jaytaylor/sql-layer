@@ -153,7 +153,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     public void run() {
         logger.debug("Postgres server listening on port {}", port);
-        int pid = 0;
+        int sessionId = 0;
         Random rand = new Random();
         try {
             synchronized(this) {
@@ -163,11 +163,11 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             }
             while (running) {
                 Socket sock = socket.accept();
-                pid++;
+                sessionId++;
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
-                    new PostgresServerConnection(this, sock, pid, secret, reqs);
-                connections.put(pid, connection);
+                    new PostgresServerConnection(this, sock, sessionId, secret, reqs);
+                connections.put(sessionId, connection);
                 connection.start();
             }
         }
@@ -191,22 +191,32 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return listening;
     }
 
-    public synchronized PostgresServerConnection getConnection(int pid) {
-        return connections.get(pid);
+    public synchronized PostgresServerConnection getConnection(int sessionId) {
+        return connections.get(sessionId);
     }
    
-    public synchronized void removeConnection(int pid) {
-        connections.remove(pid);
+    public synchronized void removeConnection(int sessionId) {
+        connections.remove(sessionId);
     }
     
     @Override
-    public String getSqlString(int pid) {
-        return getConnection(pid).getSqlString();
+    public String getSqlString(int sessionId) {
+        return getConnection(sessionId).getSqlString();
     }
     
     @Override
-    public String getRemoteAddress(int pid) {
-        return getConnection(pid).getRemoteAddress();
+    public String getRemoteAddress(int sessionId) {
+        return getConnection(sessionId).getRemoteAddress();
+    }
+
+    @Override
+    public void cancelQuery(int sessionId) {
+        getConnection(sessionId).cancelQuery();
+    }
+
+    @Override
+    public void killConnection(int sessionId) {
+        getConnection(sessionId).stop();
     }
 
     public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
