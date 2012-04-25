@@ -45,6 +45,25 @@ public class DateTimeExtractorTest extends LongExtractorTestBase {
               });
     }
 
+    @Test
+    public void onlyDatePart() {
+        encodeAndDecode("2000-01-01");
+        long actual = ExtractorsForDates.DATETIME.getLong("2000-01-01");
+        assertEquals(20000101000000L, actual);
+    }
+
+    @Test
+    public void timePartWithFractionalSeconds() {
+        final String INPUT_NO_FRACTION = "2012-04-25 08:52:17";
+        final String INPUT_FRACTION = "2012-04-25 08:52:17.999999";
+        final long EXPECTED = 20120425085217L;
+        encodeAndDecode(INPUT_NO_FRACTION);
+        encodeAndDecode(INPUT_FRACTION);
+        final long actualNoFraction = ExtractorsForDates.DATETIME.getLong(INPUT_NO_FRACTION);
+        assertEquals("Encoded for "+INPUT_NO_FRACTION, EXPECTED, actualNoFraction);
+        final long actualFraction = ExtractorsForDates.DATETIME.getLong(INPUT_FRACTION);
+        assertEquals("Encoded for "+INPUT_FRACTION, EXPECTED, actualFraction);
+    }
 
     @Test(expected=InvalidDateFormatException.class)
     public void datePartNotNumber() {
@@ -79,15 +98,6 @@ public class DateTimeExtractorTest extends LongExtractorTestBase {
     @Test(expected=InvalidDateFormatException.class)
     public void tooManyTimeParts() {
         encodeAndDecode("2000-01-01 00:00:00:00");
-    }
-
-    // does not expect exception
-    // missing time-fields will just be filled with 00:00:00
-    @Test//(expected=InvalidDateFormatException.class)
-    public void onlyDatePart() {
-        encodeAndDecode("2000-01-01");
-        long actual = ExtractorsForDates.DATETIME.getLong("2000-01-01");
-        assertEquals(20000101000000L, actual);
     }
 
     @Test(expected=InvalidDateFormatException.class)
