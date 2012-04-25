@@ -70,6 +70,11 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
         
+        param(pb, LikeExpression.ILIKE_COMPOSER, "ab123b124", "a%%%%%%b%", "\\", true, false, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "ab123b124", "a%%%%%%%", "\\", true, false, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "ab123b124", "a%%%%%%%4", "\\", true, false, false);
+        param(pb, LikeExpression.LIKE_COMPOSER, "-A-Abx", "%-Ab%", "\\", true, false, false);
+             
         param(pb, LikeExpression.BLIKE_COMPOSER, "aX", "axx", "x", false, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "aX", "axx", "x", true, false, false);
         

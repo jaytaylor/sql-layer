@@ -123,7 +123,7 @@ public final class Matchers
                             d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
                             if (d == null) d = tk.pos.get('\0'); // if something doesn't match
                                                                  // try to find the underscore because that would match anything
-                            left += d == null ? tk.pos.size() : tk.pos.size() - d +1;
+                            left += d == null ? tk.pos.size() : tk.pos.size() - d;
                             continue While;
                         }
                     }
@@ -134,7 +134,7 @@ public final class Matchers
                     d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
                     if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
                                                          // because it'd match anything
-                    left += d == null ? tk.pos.size() : tk.pos.size() - d +1;
+                    left += d == null ? tk.pos.size() : tk.pos.size() - d;
                 }
             }
             return false; // if the two matched, we would've returned true
@@ -209,7 +209,7 @@ public final class Matchers
                             d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
                             if (d == null) d = tk.pos.get('\0'); // if something doesn't match
                                                                  // try to find the underscore because that would match anything
-                            left += d == null ? tk.pos.size() : tk.pos.size() - d +1;
+                            left += d == null ? tk.pos.size() : tk.pos.size() - d;
                             continue While;
                         }
                     }
@@ -220,7 +220,7 @@ public final class Matchers
                     d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
                     if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
                                                          // because it'd match anything
-                    left += d == null ? tk.pos.size() : tk.pos.size() - d +1;
+                    left += d == null ? tk.pos.size() : tk.pos.size() - d;
                 }
             }
             return false; // if the two matched, we would've returned true
@@ -362,8 +362,9 @@ public final class Matchers
                     ++n;
                 while (n < limit && pat.charAt(n) == '%');
 
-                if (length == 0)
+                if (length == 0 && (n < limit || pat.charAt(n -1) != '%'))
                 {
+                    start = n;
                     --n;
                     continue For;
                 }
