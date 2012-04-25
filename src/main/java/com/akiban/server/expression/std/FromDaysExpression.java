@@ -40,6 +40,8 @@ import com.akiban.server.types.extract.ConverterTestUtils;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
 import org.joda.time.DateTimeZone;
+import org.joda.time.DateTimeZone;
+
 
 public class FromDaysExpression extends AbstractUnaryExpression
 {
@@ -80,10 +82,14 @@ public class FromDaysExpression extends AbstractUnaryExpression
             ValueSource days = operand();
             if (days.isNull())
                 return NullValueSource.only();
+            
             long val = days.getLong();
+            DateTimeZone def = DateTimeZone.getDefault();
+            DateTimeZone.setDefault(DateTimeZone.UTC);
             valueHolder().putDate( val < 366
                     ? 0L
                     :Extractors.getLongExtractor(AkType.DATE).unixToStdLong(days.getLong() * FACTOR + BEGINNING));
+            DateTimeZone.setDefault(def); // restore timezone
             return valueHolder();
         }    
     }
@@ -91,9 +97,6 @@ public class FromDaysExpression extends AbstractUnaryExpression
     FromDaysExpression (Expression arg)
     {
         super(AkType.DATE, arg);
-        
-        // set timezone to UTC so that the calculation is accurate
-        ConverterTestUtils.setGlobalTimezone("UTC");
     }
     
     @Override
