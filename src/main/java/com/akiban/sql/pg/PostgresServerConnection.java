@@ -75,7 +75,7 @@ public class PostgresServerConnection extends ServerSessionBase
     private boolean running = false, ignoreUntilSync = false;
     private Socket socket;
     private PostgresMessenger messenger;
-    private int pid, secret;
+    private int sessionId, secret;
     private int version;
     private Map<String,PostgresStatement> preparedStatements =
         new HashMap<String,PostgresStatement>();
@@ -91,15 +91,15 @@ public class PostgresServerConnection extends ServerSessionBase
     private String sql;
     
     public PostgresServerConnection(PostgresServer server, Socket socket, 
-                                    int pid, int secret,
+                                    int sessionId, int secret,
                                     ServerServiceRequirements reqs) {
         super(reqs);
         this.server = server;
 
         this.socket = socket;
-        this.pid = pid;
+        this.sessionId = sessionId;
         this.secret = secret;
-        this.sessionTracer = new ServerSessionTracer(pid, server.isInstrumentationEnabled());
+        this.sessionTracer = new ServerSessionTracer(sessionId, server.isInstrumentationEnabled());
         sessionTracer.setRemoteAddress(socket.getInetAddress().getHostAddress());
     }
 
@@ -122,7 +122,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 // Wait a bit, but don't hang up shutdown if thread is wedged.
                 thread.join(500);
                 if (thread.isAlive())
-                    logger.warn("Connection " + pid + " still running.");
+                    logger.warn("Connection " + sessionId + " still running.");
             }
             catch (InterruptedException ex) {
                 Thread.currentThread().interrupt();
@@ -241,7 +241,7 @@ public class PostgresServerConnection extends ServerSessionBase
                 transaction.abort();
                 transaction = null;
             }
-            server.removeConnection(pid);
+            server.removeConnection(sessionId);
         }
     }
 
@@ -325,20 +325,13 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void processCancelRequest() throws IOException {
-        int pid = messenger.readInt();
+        int sessionId = messenger.readInt();
         int secret = messenger.readInt();
-        PostgresServerConnection connection = server.getConnection(pid);
+        PostgresServerConnection connection = server.getConnection(sessionId);
         if ((connection != null) && (secret == connection.secret)) {
-            // A running query checks session state for query cancelation during Cursor.next() calls. If the
-            // query is stuck in a blocking operation, then thread interruption should unstick it. Either way,
-            // the query should eventually throw QueryCanceledException which will be caught by topLevel().
-            connection.session.cancelCurrentQuery(true);
-            if (connection.thread != null) {
-                connection.thread.interrupt();
-            }
-            connection.messenger.setCancel(true);
+            connection.cancelQuery();
         }
-        stop();                                         // That's all for this connection.
+        stop();                 // That's all for this connection.
     }
 
     protected void processSSLMessage() throws IOException {
@@ -388,7 +381,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
         {
             messenger.beginMessage(PostgresMessages.BACKEND_KEY_DATA_TYPE.code());
-            messenger.writeInt(pid);
+            messenger.writeInt(sessionId);
             messenger.writeInt(secret);
             messenger.sendMessage();
         }
@@ -448,7 +441,7 @@ public class PostgresServerConnection extends ServerSessionBase
         readyForQuery();
         logger.debug("Query complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
-            reqs.instrumentation().logQuery(pid, sql, (System.currentTimeMillis() - startTime), rowsProcessed);
+            reqs.instrumentation().logQuery(sessionId, sql, (System.currentTimeMillis() - startTime), rowsProcessed);
         }
     }
 
@@ -579,7 +572,7 @@ public class PostgresServerConnection extends ServerSessionBase
         rowsProcessed = executeStatement(pstmt, context, maxrows);
         logger.debug("Execute complete");
         if (reqs.instrumentation().isQueryLogEnabled()) {
-            reqs.instrumentation().logQuery(pid, sql, (System.nanoTime() - startTime), rowsProcessed);
+            reqs.instrumentation().logQuery(sessionId, sql, (System.nanoTime() - startTime), rowsProcessed);
         }
     }
 
@@ -603,6 +596,17 @@ public class PostgresServerConnection extends ServerSessionBase
     
     protected void processTerminate() throws IOException {
         stop();
+    }
+
+    public void cancelQuery() {
+        // A running query checks session state for query cancelation during Cursor.next() calls. If the
+        // query is stuck in a blocking operation, then thread interruption should unstick it. Either way,
+        // the query should eventually throw QueryCanceledException which will be caught by topLevel().
+        session.cancelCurrentQuery(true);
+        if (thread != null) {
+            thread.interrupt();
+        }
+        messenger.setCancel(true);
     }
 
     // When the AIS changes, throw everything away, since it might
