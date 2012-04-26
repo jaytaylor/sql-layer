@@ -126,6 +126,8 @@ public class SelectPreponer extends BaseRule
         Map<Select,ConditionDependencyAnalyzer> selectDependencies;
         Map<TableSource,PlanNode> loaders;
         Map<ExpressionNode,PlanNode> indexColumns;
+        List<PlanNode> joins;
+        Map<PlanNode,Set<TableSource>> joined;
         
         public Preponer() {
         }
@@ -153,8 +155,9 @@ public class SelectPreponer extends BaseRule
                 prev = node;
                 node = node.getOutput();
             }
-            boolean sawJoin = false;
+            joins = null;
             while (true) {
+                boolean isJoin = false;
                 if (node instanceof Flatten) {
                     // Limit to tables that are inner joined (and on the
                     // outer side of outer joins.)
@@ -169,7 +172,7 @@ public class SelectPreponer extends BaseRule
                                 iter.remove();
                         }
                     }
-                    sawJoin = true;
+                    isJoin = true;
                 }
                 else if (node instanceof MapJoin) {
                     switch (((MapJoin)node).getJoinType()) {
@@ -183,18 +186,23 @@ public class SelectPreponer extends BaseRule
                     default:
                         return;
                     }
-                    sawJoin = true;
+                    isJoin = true;
                 }
                 else if (node instanceof Product) {
                     // Only inner right now.
-                    sawJoin = true;
+                    isJoin = true;
                 }
                 else
                     break;
+                if (isJoin) {
+                    if (joins == null)
+                        joins = new ArrayList<PlanNode>();
+                    joins.add(node);
+                }
                 prev = node;
                 node = node.getOutput();
             }
-            if (!sawJoin ||
+            if ((joins == null) ||
                 (loaders.isEmpty() &&
                  ((indexColumns == null) || indexColumns.isEmpty()))) {
                 // We didn't see any joins (conditions will follow
@@ -202,9 +210,20 @@ public class SelectPreponer extends BaseRule
                 // out of things to move.
                 return;
             }
+            // Might be able to place multi-table conditions after a join.
+            if (joined == null)
+                joined = new HashMap<PlanNode,Set<TableSource>>();
+            for (PlanNode join : joins) {
+                Set<TableSource> tables = joined.get(join);
+                if (tables == null) {
+                    tables = new HashSet<TableSource>();
+                    joined.put(join, tables);
+                }
+                tables.addAll(loaders.keySet());
+            }
             if (node instanceof Select) {
                 Select select = (Select)node;
-                moveConditions(getDependencies(select), select.getConditions());
+                moveConditions(getDependencies(select), select);
             }
         }
 
@@ -222,12 +241,12 @@ public class SelectPreponer extends BaseRule
         // Have a straight path to these conditions and know where
         // tables came from.  See what can be moved back there.
         protected void moveConditions(ConditionDependencyAnalyzer dependencies,
-                                      ConditionList conditions) {
-            Iterator<ConditionExpression> iter = conditions.iterator();
+                                      Select select) {
+            Iterator<ConditionExpression> iter = select.getConditions().iterator();
             while (iter.hasNext()) {
                 ConditionExpression condition = iter.next();
                 PlanNode moveTo = canMove(dependencies, condition);
-                if (moveTo != null) {
+                if ((moveTo != null) && (moveTo != select.getInput())) {
                     moveCondition(condition, moveTo);
                     iter.remove();
                 }
@@ -235,8 +254,7 @@ public class SelectPreponer extends BaseRule
         }
 
         // Return where this condition can move.
-        // TODO: Can move to after subset of joins once enough tables are joined,
-        // by breaking apart Flatten.
+        // TODO: Could move earlier after subset of joins by breaking apart Flatten.
         protected PlanNode canMove(ConditionDependencyAnalyzer dependencies,
                                    ConditionExpression condition) {
             ColumnSource singleTable = dependencies.analyze(condition);
@@ -247,10 +265,22 @@ public class SelectPreponer extends BaseRule
                 if (loader != null)
                     return loader;
             }
-            if (singleTable == null)
-                return null;
-            else
+            if (singleTable != null)
                 return loaders.get(singleTable);
+            Set<ColumnSource> allTables = dependencies.getReferencedTables();
+            if (!allTables.isEmpty()) {
+                joins:
+                for (PlanNode join : joins) {
+                    // Find the first (deepest) join that has all the tables we need.
+                    Set<TableSource> tables = joined.get(join);
+                    for (ColumnSource table : allTables) {
+                        if (!tables.contains(table))
+                            continue joins;
+                    }
+                    return join;
+                }
+            }
+            return null;
         }
 
         // If all the referenced columns come from the same index, return it.
