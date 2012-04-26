@@ -216,7 +216,9 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     @Override
     public void killConnection(int sessionId) {
-        getConnection(sessionId).stop();
+        PostgresServerConnection conn = getConnection(sessionId);
+        conn.cancelQuery();
+        conn.stop();
     }
 
     public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
