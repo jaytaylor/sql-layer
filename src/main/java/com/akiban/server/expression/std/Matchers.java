@@ -355,7 +355,7 @@ public final class Matchers
             if (pat.charAt(n) == escape)
             {
                 if (++n < limit)
-                    m.put(pt[length++] = ignoreCase && !(hasLetter |= Character.isLetter(pat.charAt(n)))
+                    m.put(pt[length++] = ignoreCase && (hasLetter |= Character.isLetter(pat.charAt(n)))
                                                     ? Character.toLowerCase(pat.charAt(n))
                                                     : pat.charAt(n)
                           , n - start);
@@ -381,7 +381,7 @@ public final class Matchers
             else if (pat.charAt(n) == '_')
                 m.put(pt[length++] = '\0', n + 1 - start);
             else
-                m.put(pt[length++] = ignoreCase && !(hasLetter |= Character.isLetter(pat.charAt(n)))    
+                m.put(pt[length++] = ignoreCase && (hasLetter |= Character.isLetter(pat.charAt(n)))    
                                                 ? Character.toLowerCase(pat.charAt(n))
                                                 :pat.charAt(n)
                         , n + 1 - start);
@@ -389,7 +389,7 @@ public final class Matchers
         if (length > 0) ret.add(new Token(m, 
                 pt, 
                 length, 
-                !hasLetter,
+                ignoreCase && hasLetter,
                 n < limit
                     ? false 
                     : !(pat.charAt(n-1) == '%' && ((n - 2 < 0) || pat.charAt(n-2) != escape))));
