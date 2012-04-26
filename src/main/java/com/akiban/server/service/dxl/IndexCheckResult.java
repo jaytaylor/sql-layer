@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.store.statistics;
+package com.akiban.server.service.dxl;
 
 import com.akiban.ais.model.IndexName;
 

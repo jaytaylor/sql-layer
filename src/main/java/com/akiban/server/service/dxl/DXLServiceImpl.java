@@ -41,11 +41,9 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.google.common.base.Function;
 import com.google.inject.Inject;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -165,11 +163,6 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
         } finally {
             session.close();
         }
-    }
-
-    @Override
-    public <R> R executeUnderGlobalLock(Session session, Function<? super Session, ? extends R> function) {
-        return ddlFunctions.executeUnderGlobalLock(session, function);
     }
 
     protected List<DXLFunctionsHook> getHooks() {

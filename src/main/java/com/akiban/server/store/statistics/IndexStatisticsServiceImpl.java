@@ -70,20 +70,17 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
-    private final DXLService dxlService;
 
     private PersistitStoreIndexStatistics storeStats;
     private Map<Index,IndexStatistics> cache;
 
     @Inject
     public IndexStatisticsServiceImpl(Store store, TreeService treeService,
-                                      SchemaManager schemaManager, SessionService sessionService,
-                                      DXLService dxlService) {
+                                      SchemaManager schemaManager, SessionService sessionService) {
         this.store = store.getPersistitStore();
         this.treeService = treeService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
-        this.dxlService = dxlService;
     }
     
     /* Service */
@@ -144,6 +141,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         finally {
             store.releaseExchange(session, ex);
         }
+    }
+
+    @Override
+    public long countEntriesManually(Session session, Index index) throws PersistitException {
+        return storeStats.manuallyCountEntries(session, index);
     }
 
     @Override
@@ -280,63 +282,6 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                                  IndexStatisticsMXBean.class);
     }
 
-    private IndexCheckSummary checkAndFix(Session session, String schemaRegex, String tableRegex) {
-        long startNs = System.nanoTime();
-        Pattern schemaPattern = Pattern.compile(schemaRegex);
-        Pattern tablePattern = Pattern.compile(tableRegex);
-        List<IndexCheckResult> results = new ArrayList<IndexCheckResult>();
-        AkibanInformationSchema ais = schemaManager.getAis(session);
-
-        for (Map.Entry<TableName,UserTable> entry : ais.getUserTables().entrySet()) {
-            TableName tName = entry.getKey();
-            if (schemaPattern.matcher(tName.getSchemaName()).find()
-                    && tablePattern.matcher(tName.getTableName()).find())
-            {
-                UserTable uTable = entry.getValue();
-                List<Index> indexes = new ArrayList<Index>();
-                indexes.add(uTable.getPrimaryKeyIncludingInternal().getIndex());
-                for (Index gi : uTable.getGroup().getIndexes()) {
-                    if (gi.leafMostTable().equals(uTable))
-                        indexes.add(gi);
-                }
-                for (Index index : indexes) {
-                    IndexCheckResult indexCheckResult = checkAndFixIndex(session, index);
-                    results.add(indexCheckResult);
-                }
-            }
-        }
-        long endNs = System.nanoTime();
-        return new IndexCheckSummary(results,  endNs - startNs);
-    }
-
-    private IndexCheckResult checkAndFixIndex(Session session, Index index) {
-        try {
-            long expected = countEntries(session, index);
-            long actual = storeStats.manuallyCountEntries(session, index);
-            if (expected != actual) {
-                if (index.isTableIndex()) {
-                    store.getTableStatus(((TableIndex)index).getTable()).setRowCount(actual);
-                }
-                else {
-                    final Exchange ex = store.getExchange(session, index);
-                    try {
-                        AccumulatorAdapter accum =
-                                new AccumulatorAdapter(AccumInfo.ROW_COUNT, treeService, ex.getTree());
-                        accum.set(actual);
-                    }
-                    finally {
-                        store.releaseExchange(session, ex);
-                    }
-                }
-            }
-            return new IndexCheckResult(index.getIndexName(), expected, actual, countEntries(session, index));
-        }
-        catch (Exception e) {
-            log.error("while checking/fixing " + index, e);
-            return new IndexCheckResult(index.getIndexName(), -1, -1, -1);
-        }
-    }
-
     class JmxBean implements IndexStatisticsMXBean {
         @Override
         public String dumpIndexStatistics(String schema, String toFile) 
@@ -383,28 +328,6 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             finally {
                 session.close();
             }
-        }
-
-        @Override
-        public IndexCheckSummary checkAndFix(final String schemaRegex, final String tableRegex) {
-            Session session = sessionService.createSession();
-            try {
-                final IndexStatisticsServiceImpl parentService = IndexStatisticsServiceImpl.this;
-                return dxlService.executeUnderGlobalLock(session, new Function<Session, IndexCheckSummary>() {
-                    @Override
-                    public IndexCheckSummary apply(Session session) {
-                        return parentService.checkAndFix(session, schemaRegex, tableRegex);
-                    }
-                });
-            }
-            finally {
-                session.close();
-            }
-        }
-
-        @Override
-        public IndexCheckSummary checkAndFixAll() {
-            return checkAndFix(".*", ".*");
         }
     }
 }

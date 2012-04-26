@@ -40,6 +40,7 @@ import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.SchemaDefParseException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
 
 public interface DDLFunctions {
@@ -195,4 +196,6 @@ public interface DDLFunctions {
      * @throws InvalidOperationException
      */
     void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate);
+
+    IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex);
 }
