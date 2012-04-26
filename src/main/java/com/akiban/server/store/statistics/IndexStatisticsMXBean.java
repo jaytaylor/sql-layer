@@ -27,6 +27,8 @@
 package com.akiban.server.store.statistics;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.List;
 
 public interface IndexStatisticsMXBean
 {
@@ -38,4 +40,8 @@ public interface IndexStatisticsMXBean
 
     /** Read index statistics from a YAML file. */
     public void loadIndexStatistics(String schema, String fromFile) throws IOException;
+
+    public IndexCheckSummary checkAndFix(String schemaRegex, String tableRegex);
+
+    public IndexCheckSummary checkAndFixAll();
 }

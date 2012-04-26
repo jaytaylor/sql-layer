@@ -28,6 +28,7 @@ package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.*;
 import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.dxl.DXLTransactionHook;
@@ -42,6 +43,7 @@ import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 
 import com.persistit.Exchange;
+import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
@@ -53,6 +55,7 @@ import java.io.Writer;
 import java.util.*;
 import java.io.File;
 import java.io.IOException;
+import java.util.regex.Pattern;
 
 public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
 {
@@ -269,7 +272,76 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                                  new JmxBean(), 
                                  IndexStatisticsMXBean.class);
     }
-    
+
+    private IndexCheckSummary checkAndFix(Session session, String schemaRegex, String tableRegex) {
+        long startNs = System.nanoTime();
+        Pattern schemaPattern = Pattern.compile(schemaRegex);
+        Pattern tablePattern = Pattern.compile(tableRegex);
+        List<IndexCheckResult> results = new ArrayList<IndexCheckResult>();
+        AkibanInformationSchema ais = schemaManager.getAis(session);
+
+        for (Map.Entry<TableName,UserTable> entry : ais.getUserTables().entrySet()) {
+            TableName tName = entry.getKey();
+            if (schemaPattern.matcher(tName.getSchemaName()).find()
+                    && tablePattern.matcher(tName.getSchemaName()).find())
+            {
+                UserTable uTable = entry.getValue();
+                List<Index> indexes = new ArrayList<Index>();
+                indexes.add(uTable.getPrimaryKeyIncludingInternal().getIndex());
+                for (Index gi : uTable.getGroup().getIndexes()) {
+                    if (gi.leafMostTable().equals(uTable))
+                        indexes.add(gi);
+                }
+                for (Index index : indexes) {
+                    IndexCheckResult indexCheckResult = checkAndFixIndex(session, index);
+                    results.add(indexCheckResult);
+                }
+            }
+        }
+        long endNs = System.nanoTime();
+        return new IndexCheckSummary(results,  endNs - startNs);
+    }
+
+    private IndexCheckResult checkAndFixIndex(Session session, Index index) {
+        Transaction txn = store.getDb().getTransaction();
+        try {
+            txn.begin();
+        } catch (PersistitException e) {
+            log.error("couldn't start transaction", e);
+            throw new PersistitAdapterException(e);
+        }
+        try {
+            long expected = countEntries(session, index);
+            long actual = storeStats.manuallyCountEntries(session, index);
+            if (expected != actual) {
+                if (index.isTableIndex()) {
+                    store.getTableStatus(((TableIndex)index).getTable()).setRowCount(actual);
+                }
+                else {
+                    final Exchange ex = store.getExchange(session, index);
+                    try {
+                        AccumulatorAdapter accum =
+                                new AccumulatorAdapter(AccumInfo.ROW_COUNT, treeService, ex.getTree());
+                        accum.set(actual);
+                    }
+                    finally {
+                        store.releaseExchange(session, ex);
+                    }
+                }
+            }
+            txn.commit();
+            return new IndexCheckResult(index.getIndexName(), expected, actual, countEntries(session, index));
+        }
+        catch (Exception e) {
+            log.error("while checking/fixing " + index, e);
+            return new IndexCheckResult(index.getIndexName(), -1, -1, -1);
+        }
+        finally {
+            txn.end();
+        }
+    }
+
+
     class JmxBean implements IndexStatisticsMXBean {
         @Override
         public String dumpIndexStatistics(String schema, String toFile) 
@@ -316,6 +388,22 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             finally {
                 session.close();
             }
+        }
+
+        @Override
+        public IndexCheckSummary checkAndFix(String schemaRegex, String tableRegex) {
+            Session session = sessionService.createSession();
+            try {
+                return IndexStatisticsServiceImpl.this.checkAndFix(session, schemaRegex, tableRegex);
+            }
+            finally {
+                session.close();
+            }
+        }
+
+        @Override
+        public IndexCheckSummary checkAndFixAll() {
+            return checkAndFix(".*", ".*");
         }
     }
 }
