@@ -93,20 +93,20 @@ public class EncryptExpression extends AbstractBinaryExpression
     {
         private static final Base64 encoder = new Base64();
         
-        public static String decrypt_encrypt(String text, String key, int mode) throws 
+        public static String decrypt_encrypt(String text, String key, int length, int mode) throws 
                 NoSuchAlgorithmException, NoSuchPaddingException, 
                 InvalidKeyException, IllegalBlockSizeException, 
                 BadPaddingException, UnsupportedEncodingException, 
                 NoSuchProviderException, java.security.InvalidKeyException
         {
-            SecretKey skey = new SecretKeySpec(adjustKey(key), "AES"); 
+            SecretKey skey = new SecretKeySpec(adjustKey(key, length), "AES"); 
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "SunJCE");
             cipher.init(mode, skey);
             
             switch(mode)
             {
                 case Cipher.ENCRYPT_MODE:
-                    return encoder.encodeToString(cipher.doFinal(text.getBytes("UTF-8")));
+                    return encoder.encodeToString(cipher.doFinal(text.getBytes()));
                 case Cipher.DECRYPT_MODE:
                     return new String((cipher.doFinal(encoder.decode(text))));
                 default:
@@ -114,34 +114,36 @@ public class EncryptExpression extends AbstractBinaryExpression
                             
             }
         }
+        
         /**
-         * adjust the key into a byte array of 16 bytes.
-         * If key.length() is >=16, then it wraps around
-         * 
+         * adjust the key into a byte array of [length] bytes.
+         * If key.length() is >= key length, then it wraps around
          * (Because this is what MySQL does, too)
+         * 
          * @param key
          * @return
          * @throws UnsupportedEncodingException 
          */
-        private static byte[] adjustKey(String key) throws UnsupportedEncodingException
+        private static byte[] adjustKey(String key, int length) throws UnsupportedEncodingException
         {
-            byte keyBytes[] = new byte[16];
+            byte keyBytes[] = new byte[length];
             Arrays.fill(keyBytes, (byte) 0);
             byte realKey[] = key.getBytes();
 
             int n = 0;
             for (byte b : realKey)
-                keyBytes[(n++) % 16] ^= b;
+                keyBytes[n++ % length] ^= b;
 
 
             return keyBytes;
-
         }
     }
     
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private final int MODE;
+        private final int DEFAULT_KEY_LENGTH = 16; // someone might want to change this 
+        
         InnerEvaluation(List<? extends ExpressionEvaluation> args, int mode)
         {
             super(args);
@@ -159,7 +161,7 @@ public class EncryptExpression extends AbstractBinaryExpression
                 
             try
             {
-                valueHolder().putString(Encryption.decrypt_encrypt(text.getString(), key.getString(), MODE));
+                valueHolder().putString(Encryption.decrypt_encrypt(text.getString(), key.getString(), DEFAULT_KEY_LENGTH, MODE));
                 return valueHolder();
             }
             catch (Exception e)
@@ -198,5 +200,4 @@ public class EncryptExpression extends AbstractBinaryExpression
     {
         return new InnerEvaluation(childrenEvaluations(), MODE);
     }
-    
 }

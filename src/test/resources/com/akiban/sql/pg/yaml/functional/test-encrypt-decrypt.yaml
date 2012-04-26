@@ -1,0 +1,12 @@
+## Test the aes_encrypt and aes_decrypt functions
+---
+- CreateTable: t(varchar_field varchar(64))
+---
+- Statement: SELECT decrypt(encrypt('hello world!!!', 'this is key'), 'this is key');
+- output: [['hello world!!!']]
+---
+- Statement: insert into t(varchar_field) VALUES(encrypt('xtremely secret info', 'password'));
+---
+- Statement: SELECT decrypt(varchar_field, 'password') from t;
+- output: [['xtremely secret info']]
+...
