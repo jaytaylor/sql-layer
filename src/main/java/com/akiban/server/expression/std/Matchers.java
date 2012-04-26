@@ -124,8 +124,8 @@ public final class Matchers
                             if (d == null) d = tk.pos.get('\0'); // if something doesn't match
                                                                  // try to find the underscore because that would match anything
                             left += d == null || (d - 1) <= lastPos // can't shift to the left
-                                    ? tk.pos.size() 
-                                    : tk.pos.size() - d;
+                                    ? tk.length 
+                                    : tk.length - d;
                             continue While;
                         }
                     }
@@ -136,7 +136,7 @@ public final class Matchers
                     d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
                     if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
                                                          // because it'd match anything      
-                    left += d == null ? tk.pos.size() : tk.pos.size() - d;
+                    left += d == null ? tk.length: tk.length - d;
                 }
             }
             return false; // if the two matched, we would've returned true
@@ -212,8 +212,8 @@ public final class Matchers
                             if (d == null) d = tk.pos.get('\0'); // if something doesn't match
                                                                  // try to find the underscore because that would match anything      
                             left += d == null || (d - 1) <= lastPos // can't shift to the left
-                                    ? tk.pos.size() 
-                                    : tk.pos.size() - d;
+                                    ? tk.length
+                                    : tk.length - d;
                             continue While;
                         }
                     }
@@ -225,7 +225,9 @@ public final class Matchers
                     if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
                                                          // because it'd match anything
                          
-                    left += d == null ? tk.pos.size() : tk.pos.size() - d;
+                    left += d == null //|| d -1 <= tail
+                            ? tk.length
+                            : tk.length - d;
                 }
             }
             return false; // if the two matched, we would've returned true

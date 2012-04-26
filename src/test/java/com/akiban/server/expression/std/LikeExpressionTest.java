@@ -69,6 +69,11 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
+      
+            //'xxxA-AAbx' LIKE '%-AAb%' (duplicate characters in pattern)
+        param(pb, LikeExpression.LIKE_COMPOSER, "xxxA-AAbx", "%-AAb%", "\\", true, false, false);
+        param(pb, LikeExpression.LIKE_COMPOSER, "xxxA-AAbx-ABC", "%-Ax_%", "\\", false, false, false);
+
         
         // '-bb-Abx' LIKE '%-Ab%' 
         param(pb, LikeExpression.LIKE_COMPOSER, "-bb-Abx", "%-Ab%", "\\", true, false, false);
