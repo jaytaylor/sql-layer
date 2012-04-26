@@ -283,7 +283,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         for (Map.Entry<TableName,UserTable> entry : ais.getUserTables().entrySet()) {
             TableName tName = entry.getKey();
             if (schemaPattern.matcher(tName.getSchemaName()).find()
-                    && tablePattern.matcher(tName.getSchemaName()).find())
+                    && tablePattern.matcher(tName.getTableName()).find())
             {
                 UserTable uTable = entry.getValue();
                 List<Index> indexes = new ArrayList<Index>();
