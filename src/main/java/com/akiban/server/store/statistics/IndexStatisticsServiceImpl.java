@@ -28,12 +28,9 @@ package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.*;
 import com.akiban.server.AccumulatorAdapter;
-import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTransactionHook;
-import com.akiban.server.service.instrumentation.InstrumentationServiceImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -42,24 +39,20 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
-import com.google.common.base.Function;
 import com.google.inject.Inject;
 
 import com.persistit.Exchange;
-import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
 import java.io.FileWriter;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.*;
 import java.io.File;
 import java.io.IOException;
-import java.util.regex.Pattern;
 
 public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
 {
