@@ -137,6 +137,11 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
 
     @Override
+    public long countEntriesManually(Session session, Index index) throws PersistitException {
+        return storeStats.manuallyCountEntries(session, index);
+    }
+
+    @Override
     public IndexStatistics getIndexStatistics(Session session, Index index) {
         // TODO: Use getAnalysisTimestamp() of -1 to mark an "empty"
         // analysis to save going to disk for the same index every
@@ -269,7 +274,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                                  new JmxBean(), 
                                  IndexStatisticsMXBean.class);
     }
-    
+
     class JmxBean implements IndexStatisticsMXBean {
         @Override
         public String dumpIndexStatistics(String schema, String toFile) 
