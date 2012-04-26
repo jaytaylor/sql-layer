@@ -7,3 +7,12 @@ SelectQuery@7cadb683
             TableSource@2e9d4ecf(customers - TableGroup@aaae2a8(customers))
           TableGroupJoinTree@6710c001(TableGroup@3c10a719(customers), orders - SingleIndexScan@694a791d(Index(test.orders.PRIMARY[IndexColumn(oid)]), NONE, =Subquery@5d1dc52f, rows = 1, cost = 13.2364))
             TableSource@65691318(orders - TableGroup@3c10a719(customers))
+
+Subquery@5d1dc52f
+  ResultSet@430d1f7[_SQL_COL_1]
+    Project@52dc9c9c[MIN(o2.oid)]
+      Select@2128b147[]
+        AggregateSource@11adf044(UNGROUPED,[])
+          Select@768ebd52[o2.order_date > 2010-01-01]
+            TableGroupJoinTree@152f8f4d(TableGroup@49a54659(customers), o2 - SingleIndexScan@5d1dc52f(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =customers.cid, rows = 10, cost = 84.2860))
+              TableSource@25d99371(o2 - TableGroup@49a54659(customers))
