@@ -46,20 +46,23 @@ public class JMXCancelationIT extends PostgresServerITBase
 
     @Before
     public void loadDB() throws Exception {
-        Connection connection = openConnection();
         Statement statement = connection.createStatement();
         statement.execute("CREATE TABLE t(id INTEGER NOT NULL PRIMARY KEY)");
         for (int id = 0; id < N; id++) {
             statement.execute(String.format("INSERT INTO t VALUES(%s)", id));
         }
         statement.close();
-        closeConnection(connection);
     }
 
     @Test
     public void testCancel() throws Exception {
-        Thread queryThread = startQueryThread();
-        Thread.sleep(250);
+        test("cancelQuery", false);
+        test("killConnection", true);
+    }
+
+    private void test(String method, boolean closedOK) throws Exception {
+        Thread queryThread = startQueryThread(closedOK);
+        Thread.sleep(5000);
         JMXInterpreter jmx = null;
         try {
             jmx = new JMXInterpreter(false);
@@ -70,12 +73,8 @@ public class JMXCancelationIT extends PostgresServerITBase
             assertEquals(1, sessions.length);
             jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
                              "com.akiban:type=PostgresServer",
-                             "cancelQuery", sessions, "method");
+                             method, sessions, "method");
             queryThread.join();
-            sessions = (Integer[])
-                jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
-                                 "com.akiban:type=PostgresServer",
-                                 "CurrentSessions", null, "get");
         }
         finally {
             if (jmx != null) {
@@ -84,20 +83,21 @@ public class JMXCancelationIT extends PostgresServerITBase
         }
     }
 
-    private Thread startQueryThread() throws Exception {
+    private Thread startQueryThread(final boolean closedOK) throws Exception {
         Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    Connection connection = null;
                     Statement statement = null;
                     try {
-                        connection = openConnection();
                         statement = connection.createStatement();
                         statement.execute("SELECT COUNT(*) FROM t t1, t t2, t t3");
                         fail("Query should not complete.");
                     }
                     catch (SQLException ex) {
-                        assertEquals(ErrorCode.QUERY_CANCELED.getFormattedValue(), ex.getSQLState());
+                        String sqlState = ex.getSQLState();
+                        // Kill case can see either cancel or connection close.
+                        if (!closedOK || !"08006".equals(sqlState))
+                            assertEquals(ErrorCode.QUERY_CANCELED.getFormattedValue(), sqlState);
                     }
                     catch (Exception ex) {
                         fail(ex.toString());
@@ -108,12 +108,6 @@ public class JMXCancelationIT extends PostgresServerITBase
                                 statement.close();
                         }
                         catch (SQLException ex) {
-                        }
-                        try {
-                            if (connection != null)
-                                closeConnection(connection);
-                        }
-                        catch (Exception ex) {
                         }
                     }
                 }
