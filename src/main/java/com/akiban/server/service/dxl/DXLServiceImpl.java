@@ -41,6 +41,7 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.google.common.base.Function;
 import com.google.inject.Inject;
 
 import java.util.ArrayList;
@@ -54,7 +55,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     private final Object MONITOR = new Object();
 
-    private volatile DDLFunctions ddlFunctions;
+    private volatile HookableDDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
     private final SchemaManager schemaManager;
     private final Store store;
@@ -81,7 +82,8 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     public void start() {
         List<DXLFunctionsHook> hooks = getHooks();
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
-        DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(middleman), hooks, sessionService);
+        HookableDDLFunctions localDdlFunctions
+                = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);
         DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(middleman, localDdlFunctions),
                 hooks, sessionService);
         synchronized (MONITOR) {
@@ -163,6 +165,11 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
         } finally {
             session.close();
         }
+    }
+
+    @Override
+    public <R> R executeUnderGlobalLock(Session session, Function<? super Session, ? extends R> function) {
+        return ddlFunctions.executeUnderGlobalLock(session, function);
     }
 
     protected List<DXLFunctionsHook> getHooks() {

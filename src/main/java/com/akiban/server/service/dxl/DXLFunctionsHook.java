@@ -29,6 +29,7 @@ package com.akiban.server.service.dxl;
 import com.akiban.server.service.session.Session;
 
 public interface DXLFunctionsHook {
+
     static enum DXLType {
         DDL_FUNCTIONS_WRITE,
         DDL_FUNCTIONS_READ,
@@ -37,6 +38,8 @@ public interface DXLFunctionsHook {
     }
 
     static enum DXLFunction {
+        GLOBAL_LOCK_RUNNABLE(DXLType.DDL_FUNCTIONS_WRITE),
+
         CREATE_TABLE(DXLType.DDL_FUNCTIONS_WRITE),
         RENAME_TABLE(DXLType.DDL_FUNCTIONS_WRITE),
         DROP_TABLE(DXLType.DDL_FUNCTIONS_WRITE),

@@ -29,11 +29,14 @@ package com.akiban.server.service.dxl;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
+import com.akiban.server.service.session.Session;
+import com.google.common.base.Function;
 
 public interface DXLService {
     DDLFunctions ddlFunctions();
     DMLFunctions dmlFunctions();
     void recreateGroupIndexes(GroupIndexRecreatePredicate predicate);
+    <R> R executeUnderGlobalLock(Session session, Function<? super Session, ? extends R> function);
 
     public interface GroupIndexRecreatePredicate {
         boolean shouldRecreate(GroupIndex index);

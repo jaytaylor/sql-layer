@@ -31,7 +31,9 @@ import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLTransactionHook;
+import com.akiban.server.service.instrumentation.InstrumentationServiceImpl;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
@@ -40,6 +42,7 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 
+import com.google.common.base.Function;
 import com.google.inject.Inject;
 
 import com.persistit.Exchange;
@@ -49,6 +52,7 @@ import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.annotation.Nullable;
 import java.io.FileWriter;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -66,17 +70,20 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
+    private final DXLService dxlService;
 
     private PersistitStoreIndexStatistics storeStats;
     private Map<Index,IndexStatistics> cache;
 
     @Inject
     public IndexStatisticsServiceImpl(Store store, TreeService treeService,
-                                      SchemaManager schemaManager, SessionService sessionService) {
+                                      SchemaManager schemaManager, SessionService sessionService,
+                                      DXLService dxlService) {
         this.store = store.getPersistitStore();
         this.treeService = treeService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
+        this.dxlService = dxlService;
     }
     
     /* Service */
@@ -303,13 +310,6 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
 
     private IndexCheckResult checkAndFixIndex(Session session, Index index) {
-        Transaction txn = store.getDb().getTransaction();
-        try {
-            txn.begin();
-        } catch (PersistitException e) {
-            log.error("couldn't start transaction", e);
-            throw new PersistitAdapterException(e);
-        }
         try {
             long expected = countEntries(session, index);
             long actual = storeStats.manuallyCountEntries(session, index);
@@ -329,18 +329,13 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                     }
                 }
             }
-            txn.commit();
             return new IndexCheckResult(index.getIndexName(), expected, actual, countEntries(session, index));
         }
         catch (Exception e) {
             log.error("while checking/fixing " + index, e);
             return new IndexCheckResult(index.getIndexName(), -1, -1, -1);
         }
-        finally {
-            txn.end();
-        }
     }
-
 
     class JmxBean implements IndexStatisticsMXBean {
         @Override
@@ -391,10 +386,16 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         }
 
         @Override
-        public IndexCheckSummary checkAndFix(String schemaRegex, String tableRegex) {
+        public IndexCheckSummary checkAndFix(final String schemaRegex, final String tableRegex) {
             Session session = sessionService.createSession();
             try {
-                return IndexStatisticsServiceImpl.this.checkAndFix(session, schemaRegex, tableRegex);
+                final IndexStatisticsServiceImpl parentService = IndexStatisticsServiceImpl.this;
+                return dxlService.executeUnderGlobalLock(session, new Function<Session, IndexCheckSummary>() {
+                    @Override
+                    public IndexCheckSummary apply(Session session) {
+                        return parentService.checkAndFix(session, schemaRegex, tableRegex);
+                    }
+                });
             }
             finally {
                 session.close();
