@@ -1,10 +1,10 @@
 ## test FROM_DAYS function
 ## Related bugs: 986397
----
-- Statement: SELECT FROM_DAYS(0);
-- output_types: [DATE]
-- output: [['0000-00-00']]
-#--- ZERO-DATE not handled correctl
+#--- ZERO DATE not handled correctly FTS
+#- Statement: SELECT FROM_DAYS(0);
+#- output_types: [DATE]
+#- output: [['0000-00-00']]
+#--- ZERO-DATE not handled correctly by FTS
 #- Statement: SELECT FROM_DAYS(-1);
 #- output: [['0000-00-00']]
 ---
