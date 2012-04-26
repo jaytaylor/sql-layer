@@ -55,10 +55,10 @@ import org.apache.commons.codec.binary.Base64;
 public class EncryptExpression extends AbstractBinaryExpression
 {
 
-    @Scalar("encrypt")
+    @Scalar("aes_encrypt")
     public static final ExpressionComposer ENCRYPT = new InnerComposer(Cipher.ENCRYPT_MODE);
     
-    @Scalar("decrypt")
+    @Scalar("aes_decrypt")
     public static final ExpressionComposer DECRYPT = new InnerComposer(Cipher.DECRYPT_MODE);
     
     private static final class InnerComposer extends BinaryComposer
@@ -91,7 +91,7 @@ public class EncryptExpression extends AbstractBinaryExpression
     
     private static final class Encryption
     {
-        private static final Base64 encoder = new Base64();
+        private static final Base64 ENCODER = new Base64();
         
         public static String decrypt_encrypt(String text, String key, int length, int mode) throws 
                 NoSuchAlgorithmException, NoSuchPaddingException, 
@@ -106,9 +106,9 @@ public class EncryptExpression extends AbstractBinaryExpression
             switch(mode)
             {
                 case Cipher.ENCRYPT_MODE:
-                    return encoder.encodeToString(cipher.doFinal(text.getBytes()));
+                    return ENCODER.encodeToString(cipher.doFinal(text.getBytes()));
                 case Cipher.DECRYPT_MODE:
-                    return new String((cipher.doFinal(encoder.decode(text))));
+                    return new String((cipher.doFinal(ENCODER.decode(text))));
                 default:
                     throw new UnsupportedOperationException("Unknown mode: " + mode);
                             
@@ -142,7 +142,6 @@ public class EncryptExpression extends AbstractBinaryExpression
             for (byte b : realKey)
                 keyBytes[n++ % length] ^= b;
 
-
             return keyBytes;
         }
     }
@@ -169,7 +168,9 @@ public class EncryptExpression extends AbstractBinaryExpression
                 
             try
             {
-                valueHolder().putString(Encryption.decrypt_encrypt(text.getString(), key.getString(), DEFAULT_KEY_LENGTH, MODE));
+                valueHolder().putString(Encryption.decrypt_encrypt(text.getString(), key.getString(), 
+                                                                    DEFAULT_KEY_LENGTH, 
+                                                                    MODE));
                 return valueHolder();
             }
             catch (Exception e)
@@ -180,7 +181,6 @@ public class EncryptExpression extends AbstractBinaryExpression
                 return NullValueSource.only();
             }
         }
-        
     }
     
     private final int MODE;
