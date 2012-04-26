@@ -40,6 +40,7 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowDefNotFoundException;
+import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.sql.StandardException;
@@ -260,6 +261,11 @@ public class SchemaFactory {
 
         @Override
         public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
             throw new UnsupportedOperationException();
         }
     }
