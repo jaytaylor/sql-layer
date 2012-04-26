@@ -52,14 +52,17 @@ public class ValueSourcesTest
         boolean exc(ValueSource left, ValueSource right);
     }
     
+    private static final int EQ = 0, GE = 1, GT = 2, LE = 3, LT = 4, NE = 5;
     private static final Op[] OPS = new Op[]
     {
-        new Op(){public boolean exc(ValueSource left, ValueSource right) {return ValueSources.equals(left, right, false);}},
-        new Op(){public boolean exc(ValueSource left, ValueSource right) {return ValueSources.compare(left, right) > 0;}},
-        new Op(){public boolean exc(ValueSource left, ValueSource right) {return ValueSources.compare(left, right) < 0;}},
+        new Op(){public boolean exc(ValueSource a, ValueSource b){return ValueSources.equals(a, b, false);}},
+        new Op(){public boolean exc(ValueSource a, ValueSource b){return ValueSources.compare(a, b) >= 0;}},
+        new Op(){public boolean exc(ValueSource a, ValueSource b){return ValueSources.compare(a, b) > 0;}},
+        new Op(){public boolean exc(ValueSource a, ValueSource b){return ValueSources.compare(a, b) <= 0;}},
+        new Op(){public boolean exc(ValueSource a, ValueSource b){return ValueSources.compare(a, b) < 0;}},
+        new Op(){public boolean exc(ValueSource a, ValueSource b){return !ValueSources.equals(a, b, false);}},
     };
-    
-    private static final int EQ = 0, GT = 1, LT = 2;
+
     
     private static EnumSet<AkType> DATES = EnumSet.of(DATE, DATETIME, TIME, YEAR, TIMESTAMP);
     private static EnumSet<AkType> NUMS = EnumSet.of(DECIMAL, DOUBLE, FLOAT, U_FLOAT, U_DOUBLE, U_BIGINT, INT, U_INT);
@@ -245,6 +248,13 @@ public class ValueSourcesTest
                    , new ValueHolder(TIMESTAMP, Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2006-11-07 12:30:10"))
                    , true);
         
+        //--------------- test HUGE number -------------------------------------
+        param(pb, new ValueHolder(AkType.LONG,20081012000000L), LT, new ValueHolder(AkType.LONG, 20110504000000L), true);
+//        param(pb, new ValueHolder(AkType.U_BIGINT, BigInteger.valueOf(Long.MAX_VALUE).pow(Integer.MAX_VALUE))
+//                , EQ
+//                , new ValueHolder(AkType.DOUBLE, 1.2)
+//                , false);
+        param(pb, new ValueHolder(AkType.DOUBLE, Double.POSITIVE_INFINITY), EQ, new ValueHolder(AkType.DECIMAL, BigDecimal.ZERO), false);
         return pb.asList();
     }
 

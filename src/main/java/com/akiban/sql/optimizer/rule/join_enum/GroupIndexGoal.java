@@ -581,7 +581,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         IntersectionEnumerator intersections = new IntersectionEnumerator();
         for (TableGroupJoinNode table : tables) {
-            IndexScan tableIndex = pickBestIndex(table.getTable(), required, intersections);
+            IndexScan tableIndex = pickBestIndex(table, required, intersections);
             if ((tableIndex != null) &&
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
@@ -714,7 +714,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     /** Find the best index on the given table. 
      * @param required Tables reachable from root via INNER joins and hence not nullable.
      */
-    public IndexScan pickBestIndex(TableSource table, Set<TableSource> required, IntersectionEnumerator enumerator) {
+    public IndexScan pickBestIndex(TableGroupJoinNode node, Set<TableSource> required, IntersectionEnumerator enumerator) {
+        TableSource table = node.getTable();
         IndexScan bestIndex = null;
         // Can only consider single table indexes when table is not
         // nullable (required).  If table is the optional part of a
@@ -727,7 +728,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 bestIndex = betterIndex(bestIndex, candidate, enumerator);
             }
         }
-        if (table.getGroup() != null) {
+        if ((table.getGroup() != null) && !hasOuterJoinNonGroupConditions(node)) {
             for (GroupIndex index : table.getGroup().getGroup().getIndexes()) {
                 // The leaf must be used or else we'll get duplicates from a
                 // scan (the indexed columns need not be root to leaf, making
@@ -792,6 +793,22 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             }
         }
         return bestIndex;
+    }
+
+    // If a LEFT join has more conditions, they won't be included in an index, so
+    // can't use it.
+    protected boolean hasOuterJoinNonGroupConditions(TableGroupJoinNode node) {
+        if (node.getTable().isRequired())
+            return false;
+        ConditionList conditions = node.getJoinConditions();
+        if (conditions != null) {
+            for (ConditionExpression cond : conditions) {
+                if (cond.getImplementation() != ConditionExpression.Implementation.GROUP_JOIN) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     protected IndexScan betterIndex(IndexScan bestIndex, SingleIndexScan candidate, IntersectionEnumerator enumerator) {

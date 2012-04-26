@@ -28,10 +28,11 @@ package com.akiban.server.types.util;
 
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidCharToNumException;
-import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.AkType;
+import static com.akiban.server.types.AkType.*;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
 import com.google.common.collect.Iterables;
 import java.math.BigDecimal;
@@ -39,8 +40,6 @@ import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Map;
-
-import static com.akiban.server.types.AkType.*;
 
 public class ValueSources
 {
@@ -100,16 +99,40 @@ public class ValueSources
         // decimal comparator
         Comparator<ValueSource> dec_c2 = new Comparator<ValueSource>()
         {
-
             @Override
-            public int compare(ValueSource left, ValueSource right)
-            {
+            public int compare(ValueSource l, ValueSource r)
+            {                
+                // BigDecimal is incapable of converting [Double|Float].[NaN | INFINITY] to BigDecimal. 
+                // It'd throw NumberFormatException, instead.
+                // So if those values appear, we'll compare them as Double                
+                switch(l.getConversionType())
+                {
+                    case DOUBLE:
+                    case U_DOUBLE:
+                    case FLOAT:
+                    case U_FLOAT:
+                        double left = Extractors.getDoubleExtractor().getDouble(l);
+                        if (Double.isInfinite(left) || Double.isNaN(left))
+                            return Double.compare(left, r.getDecimal().doubleValue());
+                }
+                
+                switch(r.getConversionType())
+                {
+                    case DOUBLE:
+                    case U_DOUBLE:
+                    case FLOAT:
+                    case U_FLOAT:
+                        double right = Extractors.getDoubleExtractor().getDouble(r);                                
+                        if (Double.isInfinite(right) || Double.isNaN(right))
+                            return Double.compare(right, l.getDecimal().doubleValue());
+                    
+                }
+                
                 ObjectExtractor<BigDecimal> extractor = Extractors.getDecimalExtractor();
-                return extractor.getObject(left).compareTo(extractor.getObject(right));
-            }
-            
+                return extractor.getObject(l).compareTo(extractor.getObject(r));
+            }                        
         };
-        
+
         Map<AkType, Comparator<ValueSource>> m2Double = new EnumMap(AkType.class);
         Map<AkType, Comparator<ValueSource>> m2Decimal = new EnumMap(AkType.class);
         
@@ -266,7 +289,6 @@ public class ValueSources
                     return 1;
                 }
             }
-            
         };
         
         for (AkType right : Iterables.concat(date, time, datetime))
@@ -370,13 +392,13 @@ public class ValueSources
         {
             boolean ret = compare(v1, v2) == 0;
             
-            if (!ret && textAsNumeric && v1.getConversionType() == AkType.VARCHAR 
-                                      && v2.getConversionType() == AkType.VARCHAR)
+            if (!ret && textAsNumeric && isText(v1.getConversionType())
+                                      && isText(v2.getConversionType()))
                     // try compare as double
                     return Double.compare(Extractors.getDoubleExtractor().getDouble(v1),
-                                         Extractors.getDoubleExtractor().getDouble(v2))
+                                          Extractors.getDoubleExtractor().getDouble(v2))
                             == 0;
-                    // TODO: fi test failed (again!) could try to compare v1, va2 
+                    // TODO: if test failed (again!) could try to compare v1, va2 
                     // as DATES  select field ('9-12-12', '0009-12-12', 2);
                     // or time, etc ...
 
@@ -388,13 +410,12 @@ public class ValueSources
         }
     }
     
-    public static int compare (ValueSource left, ValueSource right)
+    public static long compare (ValueSource left, ValueSource right)
     {
         AkType l = left.getConversionType();
-        AkType r = right.getConversionType();
-        int ret;
+        AkType r = right.getConversionType();    
         
-        if (l == r)
+        if (l == r || isText(l) && isText(r))
             return compareSameType(left, right);
         else
         {
@@ -419,20 +440,12 @@ public class ValueSources
         }
     }
 
-    private static Comparator<ValueSource> getOp (AkType left, AkType right)
+    private static boolean isText(AkType t)
     {
-        Map<AkType, Comparator<ValueSource>> v;
-        Comparator<ValueSource> c1 = null, c2 = null;
-        
-        if ((v = map.get(right)) != null)
-            c1 = v.get(left);
-        
-        if ((v = map.get(left)) != null)
-            c2 = v.get(right);
-        
-        return c1 == null? c2 : c1;
+        return t == AkType.VARCHAR || t == AkType.TEXT;
     }
-    private static int compareSameType (ValueSource l, ValueSource r)
+    
+    private static long compareSameType (ValueSource l, ValueSource r)
     {
         switch(l.getConversionType())
         {
@@ -440,8 +453,8 @@ public class ValueSources
             case U_BIGINT:  return l.getUBigInt().compareTo(r.getUBigInt());
             case DOUBLE:    return Double.compare(l.getDouble(), r.getDouble());
             case U_DOUBLE:  return Double.compare(l.getUDouble(), r.getUDouble());
-            case FLOAT:     return Double.compare(l.getFloat(), r.getFloat());
-            case U_FLOAT:   return Double.compare(l.getUFloat(), r.getUFloat());
+            case FLOAT:     return Float.compare(l.getFloat(), r.getFloat());
+            case U_FLOAT:   return Float.compare(l.getUFloat(), r.getUFloat());
             case INT:       
             case U_INT:     
             case LONG:
@@ -450,11 +463,10 @@ public class ValueSources
             case DATETIME:
             case TIMESTAMP:
             case YEAR:      LongExtractor ex = Extractors.getLongExtractor(l.getConversionType());
-                            return (int)(ex.getLong(l) - ex.getLong(r));
+                            return ex.getLong(l) - ex.getLong(r);
             case BOOL:      return Boolean.valueOf(l.getBool()).compareTo(r.getBool());
             case VARCHAR:
-            case TEXT:
-                            ObjectExtractor<String> ext = Extractors.getStringExtractor();
+            case TEXT:      ObjectExtractor<String> ext = Extractors.getStringExtractor();
                             return ext.getObject(l).compareTo(ext.getObject(r));
             case NULL:      return 1;
             default:        return 0;
