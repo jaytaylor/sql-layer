@@ -100,8 +100,9 @@ public class UnhexExpression extends AbstractUnaryExpression
                 if (!LEGAL.contains(c1 = (char)(st.charAt(0) | 32)))
                         return NullValueSource.only();
                 
-                // check to see if the hex string can be evenly divided
-                // into pairs
+                // check to see if the hex string can be evenly divided into pairs
+                
+                // if so, the first two digits will make a character
                 if (st.length() % 2 == 0)
                 {
                     if (!LEGAL.contains(c2 = (char)(st.charAt(1) | 32)))
@@ -112,9 +113,10 @@ public class UnhexExpression extends AbstractUnaryExpression
                     ++start;
                    
                 }
-                else
+                else // if not, only the first digit will
                     out.append((char)(c1 >= 'a' ? c1 + BASE_CHAR : c1 - '0')); 
                 
+                // starting from here, all characters should be evenly divided into pairs
                 end = st.length() -1;
                 for (; start < end; ++start)
                 {
