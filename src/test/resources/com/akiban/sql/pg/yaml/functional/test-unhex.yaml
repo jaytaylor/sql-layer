@@ -2,8 +2,17 @@
 ---
 - Include: all-types-schema.yaml
 ---
-- Statement: INSERT INTO all_types(varchar_field, bigint_field) 
-              VALUES ('416B736572766572', 20);
+- Statement: INSERT INTO all_types(varchar_field, bigint_field, char_field) 
+              VALUES ('416B736572766572', 20, 'f');
+---
+- Statement: SELECT UNHEX('FF');
+- output: [['ÿ']]
+---
+- Statement: SELECT UNHEX('f8Ac') = UNHEX('F8aC');
+- output: [['true']]
+---
+- Statement: SELECT unhex(char_field) from all_types;
+- output: [['']]
 ---
 - Statement: SELECT UNHEX('616B6962616E');
 - output: [['akiban']]
