@@ -321,7 +321,8 @@ public final class SingleIndexScan extends IndexScan {
     public void visitComparands(ExpressionRewriteVisitor v) {
         if (equalityComparands != null) {
             for (int i = 0; i < equalityComparands.size(); i++) {
-                equalityComparands.set(i, equalityComparands.get(i).accept(v));
+                if (equalityComparands.get(i) != null)
+                    equalityComparands.set(i, equalityComparands.get(i).accept(v));
             }
         }
         if (lowComparand != null)
@@ -334,7 +335,8 @@ public final class SingleIndexScan extends IndexScan {
     public void visitComparands(ExpressionVisitor v) {
         if (equalityComparands != null) {
             for (ExpressionNode comparand : equalityComparands) {
-                comparand.accept(v);
+                if (comparand != null)
+                    comparand.accept(v);
             }
         }
         if (lowComparand != null)
