@@ -31,10 +31,15 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.AccumulatorAdapter.AccumInfo;
+import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.dxl.IndexCheckResult;
 import com.akiban.server.service.dxl.IndexCheckSummary;
+import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.akiban.server.test.it.ITBase;
+import com.persistit.Exchange;
 import com.persistit.exception.PersistitInterruptedException;
 import org.junit.After;
 import org.junit.Before;
@@ -81,6 +86,18 @@ public final class FixCountStarIT extends ITBase {
         assertEquals("index fix summary", expected, actual);
     }
 
+    @Test
+    public void fixGroupIndex() {
+        setIndexCount(gi, 31);
+        checkIndexCount(gi, 31);
+        IndexCheckSummary actual =  dxl().ddlFunctions().checkAndFixIndexes(session(), "idx_count", "c");
+        IndexCheckSummary expected = new IndexCheckBuilder()
+                .add(cnameIdx, 2, 2, 2)
+                .add(gi, 31, 1, 1)
+                .get();
+        assertEquals("index fix summary", expected, actual);
+    }
+
     private void setIndexCount(final Index index, final long newVal) {
         transactionallyUnchecked(new Runnable() {
             @Override
@@ -90,7 +107,17 @@ public final class FixCountStarIT extends ITBase {
                     store().getPersistitStore().getTableStatus(tIndex.getTable()).setRowCount(newVal);
                 }
                 else {
-                    throw new UnsupportedOperationException();
+                    PersistitStore store = store().getPersistitStore();
+                    final Exchange ex = store.getExchange(session(), index);
+                    try {
+                        new AccumulatorAdapter(AccumInfo.ROW_COUNT, treeService(), ex.getTree()).set(newVal);
+                    }
+                    catch (PersistitInterruptedException e) {
+                        throw new PersistitAdapterException(e);
+                    }
+                    finally {
+                        store.releaseExchange(session(), ex);
+                    }
                 }
             }
         });
