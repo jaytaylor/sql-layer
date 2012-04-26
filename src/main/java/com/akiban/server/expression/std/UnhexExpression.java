@@ -79,7 +79,7 @@ public class UnhexExpression extends AbstractUnaryExpression
         {
             super(arg);
         }
-        
+        //b df ee re
         @Override
         public ValueSource eval()
         {
@@ -95,10 +95,13 @@ public class UnhexExpression extends AbstractUnaryExpression
                 StringBuilder out = new StringBuilder();
                 char c1, c2;
                 int start = 1, end;
-                                    
+                   
+                // check if the first digit is a 'legal' hex 
                 if (!LEGAL.contains(c1 = (char)(st.charAt(0) | 32)))
                         return NullValueSource.only();
                 
+                // check to see if the hex string can be evenly divided
+                // into pairs
                 if (st.length() % 2 == 0)
                 {
                     if (!LEGAL.contains(c2 = (char)(st.charAt(1) | 32)))
