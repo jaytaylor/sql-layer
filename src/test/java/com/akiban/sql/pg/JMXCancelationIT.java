@@ -62,7 +62,7 @@ public class JMXCancelationIT extends PostgresServerITBase
 
     private void test(String method, boolean closedOK) throws Exception {
         Thread queryThread = startQueryThread(closedOK);
-        Thread.sleep(5000);
+        Thread.sleep(250);
         JMXInterpreter jmx = null;
         try {
             jmx = new JMXInterpreter(false);
