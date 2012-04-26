@@ -118,7 +118,15 @@ public class EncryptExpression extends AbstractBinaryExpression
         /**
          * adjust the key into a byte array of [length] bytes.
          * If key.length() is >= key length, then it wraps around
-         * (Because this is what MySQL does, too)
+         *
+         * This is a 'bad' cryptographic hash algorithm because it's not hard at all to find
+         * two keys that would hash to the same value, but it's what MySQL does.
+         * 
+         * 
+         * Try: 
+         * SELECT aes_decrypt(aes_encrypt('abc', 'abcdefghijklmnoprst'), 'rstdefghijklmnopabc');
+         *  
+         * => returns 'abc'!
          * 
          * @param key
          * @return
