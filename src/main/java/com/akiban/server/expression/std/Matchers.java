@@ -54,7 +54,7 @@ public final class Matchers
         final int length;
         final boolean ignoreCase;
         final boolean endsWith;
-        final TreeMap<Integer, Integer> circular; // map length (of overlap region) --> starting its position
+        final TreeMap<Integer, Integer> circular; // map length (of overlap region) --> its starting position
         Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end, TreeMap<Integer, Integer> cir)
         {
             pos = p;
