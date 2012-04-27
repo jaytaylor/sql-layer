@@ -28,6 +28,7 @@ package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -128,6 +129,9 @@ public class LikeExpression extends AbstractCompositeExpression
             {
                 ValueSource escapSource = children().get(2).eval();
                 if (escapSource.isNull()) return NullValueSource.only();
+                String e = escapSource.getString();
+                if (e.length() != 1)
+                    throw new InvalidParameterValueException("Invalid escape character: " + e);
                 esca = escapSource.getString().charAt(0);
             }
             else
