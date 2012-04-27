@@ -52,6 +52,8 @@ public class DateTimeExtractorTest extends LongExtractorTestBase {
                 new TestElement("2012-04-27 15:23:00-11:00", 20120427152300L, "2012-04-27 15:23:00"),
                 // Both are allowed but ignored
                 new TestElement("2012-04-27 15:25:45.123456+5:00", 20120427152545L, "2012-04-27 15:25:45"),
+                // Ignore leading/trailing spacing
+                new TestElement("  2012-04-27 16:06:12      ", 20120427160612L, "2012-04-27 16:06:12"),
               });
     }
 

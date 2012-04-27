@@ -183,7 +183,7 @@ abstract class ExtractorsForDates extends LongExtractor {
 
         @Override
         public long getLong(String string) {
-            Matcher m = PARSE_PATTERN.matcher(string);
+            Matcher m = PARSE_PATTERN.matcher(string.trim());
 
             if (!m.matches() || m.group(DATE_GROUP) == null) {
                 throw new InvalidDateFormatException("datetime", string);
