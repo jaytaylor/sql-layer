@@ -129,7 +129,7 @@ public final class VariableExpression implements Expression {
         @Override
         public void destroy()
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported in VARIABLE yet.");
         }
     }
 }

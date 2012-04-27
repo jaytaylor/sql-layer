@@ -65,7 +65,7 @@ public final class InExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported in IN yet.");
         }
 
         @Override
