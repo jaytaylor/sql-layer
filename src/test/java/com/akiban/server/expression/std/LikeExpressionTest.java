@@ -158,7 +158,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "", "\\",false, true, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "abc", "", "\\",false, true, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abc=_", "abc===_", "==",true, false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc=_", "abc===_", "=",true, false, false);
 
         // underscore as escape
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc__", "_", true, false, false);

@@ -74,31 +74,12 @@ public final class Matchers
         }
     }
     
-    /**
-     * the pattern starts with percent
-     */
-    static class Contain implements Matcher
-    {
-        private final String pattern;
-        private List<Token> tokens;
-        
-        public Contain (String pt, char escape, boolean ignoreCase)
-        {
-            pattern = pt;
-            tokens = new LinkedList<Token>();
-            
-            // start at 1. (0 is %, which would've been skipped anyways)
-            int start = 1;
-            do
-                start = computePos(escape, pt, start, tokens, ignoreCase);
-            while (start < pattern.length());
-        }
-
-                         
+    static abstract class AbstractMatcher implements Matcher
+    {    
         // global variable, marking the position in the text string
         // should be altered in contain(...)
-        private int nextStart;
-        private boolean contain (String str, int start, int limit, Token tk)
+        protected int nextStart;
+        protected boolean contain (String str, int start, int limit, Token tk)
         {
             char ch;
             int left = start, right = 0, lastPos = tk.length - 1;
@@ -146,6 +127,27 @@ public final class Matchers
             }
             return false; // if the two matched, we would've returned true
         }
+    }
+    
+    /**
+     * the pattern starts with percent
+     */
+    static class Contain extends AbstractMatcher
+    {
+        private final String pattern;
+        private List<Token> tokens;
+        
+        public Contain (String pt, char escape, boolean ignoreCase)
+        {
+            pattern = pt;
+            tokens = new LinkedList<Token>();
+            
+            // start at 1. (0 is %, which would've been skipped anyways)
+            int start = 1;
+            do
+                start = computePos(escape, pt, start, tokens, ignoreCase);
+            while (start < pattern.length());
+        }
         
         @Override
         public boolean match(String str)
@@ -161,7 +163,7 @@ public final class Matchers
     }
     
     
-    static class StartWith implements Matcher
+    static class StartWith extends  AbstractMatcher
     {
          
         private final String pattern;
@@ -184,59 +186,6 @@ public final class Matchers
             do
                 start = computePos(escape, pattern, start, tokens, ignoreCase);
             while (start < pattern.length());
-        }
-        
-                
-        // global variable, marking the position in the text string
-        // should be altered in contain(...)
-        private int nextStart;
-        private boolean contain (String str, int start, int limit, Token tk)
-        {
-            char ch;
-            int left = start, right = 0, lastPos = tk.length - 1;
-            int tail;
-            Integer d;
-            
-            While:
-            while (left < limit)
-            {
-                if ((tail = left + lastPos) >= limit)
-                    return false; // ??? pattern is longer than text???
-                
-                if ((ch = str.charAt(tail)) == tk.pattern[right = lastPos]
-                        || tk.pattern[right] == '\0' // wildcard _
-                        || tk.ignoreCase && (ch = Character.toLowerCase(ch)) == tk.pattern[right])
-                {
-                    nextStart = tail + 1;
-                    while (--tail >= left && --right >= 0)
-                    {
-                        if ((ch = str.charAt(tail)) != tk.pattern[right]
-                                && (!tk.ignoreCase || (ch = Character.toLowerCase(ch)) != tk.pattern[right])
-                                && tk.pattern[right] != '\0')
-                        {
-                            d = tk.pos.get(ch);
-                            if (d == null) d = tk.pos.get('\0'); // if something doesn't match
-                                                                 // try to find the underscore because that would match anything      
-                            left += d == null || d > right // can't shift to the left
-                                    ? tk.length
-                                    : right - d;
-                            continue While;
-                        }
-                    }
-                    return true; // if someting has gone wrong, we would've skipped it
-                }
-                else
-                {
-                    d = tk.pos.get(ch);
-                    if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
-                                                         // because it'd match anything
-                         
-                    left += d == null
-                            ? tk.length
-                            : right - d;
-                }
-            }
-            return false; // if the two matched, we would've returned true
         }
         
         @Override
