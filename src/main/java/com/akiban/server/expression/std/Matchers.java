@@ -94,11 +94,13 @@ public final class Matchers
             while (start < pattern.length());
         }
 
+                         
         // global variable, marking the position in the text string
         // should be altered in contain(...)
         private int nextStart;
         private boolean contain (String str, int start, int limit, Token tk)
         {
+            char ch;
             int left = start, right = 0, lastPos = tk.length - 1;
             int tail;
             Integer d;
@@ -109,23 +111,23 @@ public final class Matchers
                 if ((tail = left + lastPos) >= limit)
                     return false; // ??? pattern is longer than text???
                 
-                if (str.charAt(tail) == tk.pattern[right = lastPos]
-                        || tk.ignoreCase && Character.toLowerCase(str.charAt(tail)) == tk.pattern[right]
-                        || tk.pattern[right] == '\0') // wildcard _
+                if ((ch = str.charAt(tail)) == tk.pattern[right = lastPos]
+                        || tk.pattern[right] == '\0' // wildcard _
+                        || tk.ignoreCase && (ch = Character.toLowerCase(ch)) == tk.pattern[right])
                 {
-                    nextStart = tail + 1; // set the next position in left
-                    while (--tail >= left && --right >= 0) // walks backward from the tail 
-                    {                                      // to the head looking for mismatched chars
-                        if (str.charAt(tail) != tk.pattern[right]
-                                && (!tk.ignoreCase || Character.toLowerCase(str.charAt(tail)) != tk.pattern[right])
+                    nextStart = tail + 1;
+                    while (--tail >= left && --right >= 0)
+                    {
+                        if ((ch = str.charAt(tail)) != tk.pattern[right]
+                                && (!tk.ignoreCase || (ch = Character.toLowerCase(ch)) != tk.pattern[right])
                                 && tk.pattern[right] != '\0')
                         {
-                            d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
+                            d = tk.pos.get(ch);
                             if (d == null) d = tk.pos.get('\0'); // if something doesn't match
-                                                                 // try to find the underscore because that would match anything
-                            left += d == null || (d - 1) <= lastPos // can't shift to the left
-                                    ? tk.length 
-                                    : tk.length - d;
+                                                                 // try to find the underscore because that would match anything      
+                            left += d == null || d > right // can't shift to the left
+                                    ? tk.length
+                                    : right - d;
                             continue While;
                         }
                     }
@@ -133,10 +135,13 @@ public final class Matchers
                 }
                 else
                 {
-                    d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
+                    d = tk.pos.get(ch);
                     if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
-                                                         // because it'd match anything      
-                    left += d == null ? tk.length: tk.length - d;
+                                                         // because it'd match anything
+                         
+                    left += d == null
+                            ? tk.length
+                            : right - d;
                 }
             }
             return false; // if the two matched, we would've returned true
@@ -181,12 +186,13 @@ public final class Matchers
             while (start < pattern.length());
         }
         
-        
+                
         // global variable, marking the position in the text string
         // should be altered in contain(...)
         private int nextStart;
         private boolean contain (String str, int start, int limit, Token tk)
         {
+            char ch;
             int left = start, right = 0, lastPos = tk.length - 1;
             int tail;
             Integer d;
@@ -197,23 +203,23 @@ public final class Matchers
                 if ((tail = left + lastPos) >= limit)
                     return false; // ??? pattern is longer than text???
                 
-                if (str.charAt(tail) == tk.pattern[right = lastPos]
-                        || tk.ignoreCase && Character.toLowerCase(str.charAt(tail)) == tk.pattern[right]
-                        || tk.pattern[right] == '\0') // wildcard _
+                if ((ch = str.charAt(tail)) == tk.pattern[right = lastPos]
+                        || tk.pattern[right] == '\0' // wildcard _
+                        || tk.ignoreCase && (ch = Character.toLowerCase(ch)) == tk.pattern[right])
                 {
                     nextStart = tail + 1;
                     while (--tail >= left && --right >= 0)
                     {
-                        if (str.charAt(tail) != tk.pattern[right]
-                                && (!tk.ignoreCase || Character.toLowerCase(str.charAt(tail)) != tk.pattern[right])
+                        if ((ch = str.charAt(tail)) != tk.pattern[right]
+                                && (!tk.ignoreCase || (ch = Character.toLowerCase(ch)) != tk.pattern[right])
                                 && tk.pattern[right] != '\0')
                         {
-                            d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
+                            d = tk.pos.get(ch);
                             if (d == null) d = tk.pos.get('\0'); // if something doesn't match
                                                                  // try to find the underscore because that would match anything      
-                            left += d == null || (d - 1) <= lastPos // can't shift to the left
+                            left += d == null || d > right // can't shift to the left
                                     ? tk.length
-                                    : tk.length - d;
+                                    : right - d;
                             continue While;
                         }
                     }
@@ -221,13 +227,13 @@ public final class Matchers
                 }
                 else
                 {
-                    d = tk.pos.get(tk.ignoreCase? Character.toLowerCase(str.charAt(tail)) : str.charAt(tail));
+                    d = tk.pos.get(ch);
                     if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
                                                          // because it'd match anything
                          
-                    left += d == null //|| d -1 <= tail
+                    left += d == null
                             ? tk.length
-                            : tk.length - d;
+                            : right - d;
                 }
             }
             return false; // if the two matched, we would've returned true
@@ -236,26 +242,27 @@ public final class Matchers
         @Override
         public boolean match(String str)
         {
-            int limit = str.length();
+            char lch, rch;
+            int lLimit = str.length(), rLimit = pattern.length();
             int r_len = pattern.length();
-
-            boolean percent = false;
             int l = 0, r = 0;
             
-            while (r < r_len && l < str.length())
+            boolean percent = false;
+            
+            while (r < r_len && l < lLimit)
             {
-                if (pattern.charAt(r) == escape)
+                if ((rch = pattern.charAt(r)) == escape)
                 {
-                    if (r + 1 >= pattern.length())
+                    if (r + 1 >= rLimit)
                         throw new InvalidParameterValueException("Illegal Escaped Sequence");
-                    if (pattern.charAt(r +1) != str.charAt(l)
-                            && (!ignoreCase || Character.toLowerCase(pattern.charAt(r+1)) 
-                                                != Character.toLowerCase(str.charAt(l))))
+                    if ((rch = pattern.charAt(r +1)) != (lch = str.charAt(l))
+                            && (!ignoreCase || Character.toLowerCase(rch) 
+                                                != Character.toLowerCase(lch)))
                         return false;
                     r += 2;
                     ++l;
                 }
-                else if (pattern.charAt(r) == '%')
+                else if (rch == '%')
                 {
                     if (r + 1 == r_len) // end of string
                         return true;
@@ -263,16 +270,15 @@ public final class Matchers
                     percent = true;
                     break;
                 }
-                else if (pattern.charAt(r) == '_')
+                else if (rch == '_')
                 {
                     ++r;
                     ++l;
                 }
                 else
                 {
-                    if (pattern.charAt(r) != str.charAt(l)
-                            && (!ignoreCase || Character.toLowerCase(pattern.charAt(r))
-                                               != Character.toLowerCase(str.charAt(l))))
+                    if (rch != (lch = str.charAt(l))
+                            && (!ignoreCase || Character.toLowerCase(rch) != Character.toLowerCase(lch)))
                         return false;
                     ++l;
                     ++r;
@@ -283,8 +289,6 @@ public final class Matchers
             if (percent)
             {
                 nextStart = l;
-                
-                // check escaped
                 if (tokens == null)
                     doComputePos(r);
                 
@@ -344,6 +348,7 @@ public final class Matchers
     private static int computePos (char escape, String pat, int start, List<Token> ret, boolean ignoreCase)
     {
         char pt [] = new char[pat.length() - start];
+        char ch;
         Map<Character, Integer> m = new HashMap<Character, Integer>();
         int length = 0;
         int limit = pat.length();
@@ -352,17 +357,22 @@ public final class Matchers
         
         For:
         for (; n < limit; ++n)
-            if (pat.charAt(n) == escape)
+        {
+            if ((ch = pat.charAt(n)) == escape)
             {
                 if (++n < limit)
-                    m.put(pt[length++] = ignoreCase && (hasLetter |= Character.isLetter(pat.charAt(n)))
-                                                    ? Character.toLowerCase(pat.charAt(n))
-                                                    : pat.charAt(n)
-                          , n - start);
+                {
+                    ch = pat.charAt(n);
+                    m.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))
+                                                    ? Character.toLowerCase(ch)
+                                                    : ch
+                          , length);
+                    ++length;
+                }
                 else
                     throw new InvalidParameterValueException("Illegal escaped sequence");
             }
-            else if (pat.charAt(n) == '%')
+            else if (ch == '%')
             {
                 // skip multiples %'s
                 do
@@ -378,14 +388,18 @@ public final class Matchers
                 else 
                     break For;
             }
-            else if (pat.charAt(n) == '_')
+            else if (ch == '_')
                 m.put(pt[length++] = '\0', n + 1 - start);
             else
-                m.put(pt[length++] = ignoreCase && (hasLetter |= Character.isLetter(pat.charAt(n)))    
-                                                ? Character.toLowerCase(pat.charAt(n))
-                                                :pat.charAt(n)
-                        , n + 1 - start);
-
+            {
+                m.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))    
+                                                ? Character.toLowerCase(ch)
+                                                : ch
+                        , length);
+                ++length;
+            }
+        }
+        
         if (length > 0) ret.add(new Token(m, 
                 pt, 
                 length, 

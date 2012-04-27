@@ -69,7 +69,24 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-      
+   
+        // test empty/illegal escaped char
+        // select 'ab' like '%ab\\%'
+        // escape char at end-of-string . => returns NULL + warning 
+        param(pb, LikeExpression.LIKE_COMPOSER, "ab", "%ab\\", "\\", false, true, false);
+        
+        // select 'ab' like '\\'
+        // string contains ONLY the escape character => return NULL + warning
+        param(pb, LikeExpression.LIKE_COMPOSER, "ab", "\\", "\\", false, true, false);
+        
+        // select 'abc' like 'abc\\'
+        // this returns FALSE as opposed to a NULL
+        param(pb, LikeExpression.LIKE_COMPOSER, "abc", "abc\\", "\\", false, false, false);
+        
+        // select 'ab' like '%\\'
+        param(pb, LikeExpression.LIKE_COMPOSER, "ab", "%\\", "\\", false, true, false);
+        
+        
         //select '-A-abx' like '%-Ab%';
         param(pb, LikeExpression.LIKE_COMPOSER, "-A-abx", "%-Ab%", "\\", true, false, false);
         
