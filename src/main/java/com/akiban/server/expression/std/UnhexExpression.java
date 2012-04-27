@@ -101,7 +101,6 @@ public class UnhexExpression extends AbstractUnaryExpression
                         return NullValueSource.only();
                 
                 // check to see if the hex string can be evenly divided into pairs
-                
                 // if so, the first two digits will make a character
                 if (st.length() % 2 == 0)
                 {
@@ -125,7 +124,6 @@ public class UnhexExpression extends AbstractUnaryExpression
                     
                     if (!LEGAL.contains(c2 = (char)(st.charAt(++start) | 32)))
                         return NullValueSource.only();
-                    
                     
                     out.append((char)((c1 > 'a' ? c1 + BASE_CHAR : c1 - '0') * 16
                             + (c2 > 'a' ? c2 + BASE_CHAR : c2 - '0')));
