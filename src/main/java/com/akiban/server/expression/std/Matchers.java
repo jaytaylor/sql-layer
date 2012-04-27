@@ -30,6 +30,8 @@ import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.TreeMap;
 
 public final class Matchers
 {
@@ -52,13 +54,15 @@ public final class Matchers
         final int length;
         final boolean ignoreCase;
         final boolean endsWith;
-        Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end)
+        final TreeMap<Integer, Integer> circular; // map length (of overlap region) --> starting its position
+        Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end, TreeMap<Integer, Integer> cir)
         {
             pos = p;
             pattern = pat;
             length = len;
             ignoreCase = ic;
             endsWith = end;
+            circular = cir;
         }
     }
     
@@ -106,9 +110,19 @@ public final class Matchers
                             d = tk.pos.get(ch);
                             if (d == null) d = tk.pos.get('\0'); // if something doesn't match
                                                                  // try to find the underscore because that would match anything      
-                            left += d == null || d > right // can't shift to the left
-                                    ? tk.length
-                                    : right - d;
+                            
+                            if (d != null && d < right) // if the mismatched is in pattern and if its position is
+                                left += right - d;      // greater than right (to prevent negative shifting)
+                            else // if there's no such char in pattern
+                            {    // try to match the prefix of pattern starting from [0, right-1] with the suffix
+                               
+                                TreeMap w = tk.circular;
+                                Entry<Integer, Integer> pre;
+                                if (w != null && (pre = w.floorEntry(tk.length - right)) != null)
+                                    left += pre.getValue();
+                                else
+                                    left += tk.length;
+                            }
                             continue While;
                         }
                     }
@@ -119,10 +133,7 @@ public final class Matchers
                     d = tk.pos.get(ch);
                     if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
                                                          // because it'd match anything
-                         
-                    left += d == null
-                            ? tk.length
-                            : right - d;
+                    left += d == null ? tk.length : right - d;
                 }
             }
             return false; // if the two matched, we would've returned true
@@ -298,11 +309,17 @@ public final class Matchers
     {
         char pt [] = new char[pat.length() - start];
         char ch;
-        Map<Character, Integer> m = new HashMap<Character, Integer>();
+        
         int length = 0;
         int limit = pat.length();
         int n = start;
+        Integer sec;
+        
         boolean hasLetter = false;
+        
+        List<Integer> h = new LinkedList<Integer>();
+        Map<Character, Integer> m = new HashMap<Character, Integer>();
+        TreeMap<Integer, Integer> wrap;
         
         For:
         for (; n < limit; ++n)
@@ -312,10 +329,13 @@ public final class Matchers
                 if (++n < limit)
                 {
                     ch = pat.charAt(n);
-                    m.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))
+                    sec = m.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))
                                                     ? Character.toLowerCase(ch)
                                                     : ch
                           , length);
+                  
+                    if (sec != null && (sec == 0 || ch == pt[0]))
+                        h.add(length);
                     ++length;
                 }
                 else
@@ -338,24 +358,44 @@ public final class Matchers
                     break For;
             }
             else if (ch == '_')
-                m.put(pt[length++] = '\0', n + 1 - start);
+            {
+                sec = m.put(pt[length] = '\0', length);
+                if (sec != null && (sec == 0) || pt[0] == '\0')
+                    h.add(length);
+                ++length;
+            }
             else
             {
-                m.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))    
+               sec =  m.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))    
                                                 ? Character.toLowerCase(ch)
                                                 : ch
                         , length);
+                                    
+                if (sec != null && (sec == 0 || ch == pt[0]))
+                        h.add(length);
                 ++length;
             }
         }
         
+        wrap = new TreeMap<Integer, Integer>();
+        // find the suffix that matches the prefix (the wrap-around region)
+        for  (Integer p : h)
+        {
+            int bound = length - p;
+            for (int  i = 0; i < bound; ++i)
+                if (pt[i] != pt[i + p])
+                    continue;
+            wrap.put(bound, p);
+        }
+
         if (length > 0) ret.add(new Token(m, 
                 pt, 
                 length, 
                 ignoreCase && hasLetter,
                 n < limit
                     ? false 
-                    : !(pat.charAt(n-1) == '%' && ((n - 2 < 0) || pat.charAt(n-2) != escape))));
+                    : !(pat.charAt(n-1) == '%' && ((n - 2 < 0) || pat.charAt(n-2) != escape)),
+                wrap.isEmpty() ? null : wrap));
         return n;
     }
             

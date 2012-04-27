@@ -69,7 +69,12 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
-   
+        
+        // test with periodic patterns (where you can kind-of 'connect' the head to the tail and make it a circular queue
+        param(pb, LikeExpression.LIKE_COMPOSER, "abxabcabcab", "%abcabcab%", "\\", true, false, false);
+        
+        param(pb, LikeExpression.LIKE_COMPOSER, "zcbacba", "%acba%", "\\", true, false, false);
+        
         // test empty/illegal escaped char
         // select 'ab' like '%ab\\%'
         // escape char at end-of-string . => returns NULL + warning 
