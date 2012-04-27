@@ -239,11 +239,6 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public List<ConditionExpression> getGroupConditions() {
-        return getConditions();
-    }
-
-    @Override
     public UserTable getLeafMostUTable() {
         return (UserTable) index.leafMostTable();
     }
@@ -321,4 +316,33 @@ public final class SingleIndexScan extends IndexScan {
             conditions = new ArrayList<ConditionExpression>();
         return conditions;
     }
+
+    @Override
+    public void visitComparands(ExpressionRewriteVisitor v) {
+        if (equalityComparands != null) {
+            for (int i = 0; i < equalityComparands.size(); i++) {
+                if (equalityComparands.get(i) != null)
+                    equalityComparands.set(i, equalityComparands.get(i).accept(v));
+            }
+        }
+        if (lowComparand != null)
+            lowComparand = lowComparand.accept(v);
+        if (highComparand != null)
+            highComparand = highComparand.accept(v);
+    }
+
+    @Override
+    public void visitComparands(ExpressionVisitor v) {
+        if (equalityComparands != null) {
+            for (ExpressionNode comparand : equalityComparands) {
+                if (comparand != null)
+                    comparand.accept(v);
+            }
+        }
+        if (lowComparand != null)
+            lowComparand.accept(v);
+        if (highComparand != null)
+            highComparand.accept(v);
+    }
+
 }

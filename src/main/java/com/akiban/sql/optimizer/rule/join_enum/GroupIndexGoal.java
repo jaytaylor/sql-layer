@@ -509,8 +509,14 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 }
             }
             else if (n instanceof SubqueryExpression) {
-                found = true;
-                return false;
+                for (ColumnSource used : ((SubqueryExpression)n).getSubquery().getOuterTables()) {
+                    // Tables defined inside the subquery are okay, but ones from outside
+                    // need to be bound to eval as an expression.
+                    if (!boundTables.contains(used)) {
+                        found = true;
+                        return false;
+                    }
+                }
             }
             return true;
         }
@@ -575,7 +581,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         IntersectionEnumerator intersections = new IntersectionEnumerator();
         for (TableGroupJoinNode table : tables) {
-            IndexScan tableIndex = pickBestIndex(table.getTable(), required, intersections);
+            IndexScan tableIndex = pickBestIndex(table, required, intersections);
             if ((tableIndex != null) &&
                 ((bestIndex == null) || (compare(tableIndex, bestIndex) > 0)))
                 bestIndex = tableIndex;
@@ -628,9 +634,28 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     private void setIntersectionConditions(IndexScan rawScan) {
         MultiIndexIntersectScan scan = (MultiIndexIntersectScan) rawScan;
 
-        ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<ConditionExpression>(conditions.size());
-        scan.incrementConditionsCounter(counter);
-        scan.setGroupConditions(counter.getCountedConditions());
+        if (isAncestor(scan.getOutputIndexScan().getLeafMostTable(),
+                       scan.getSelectorIndexScan().getLeafMostTable())) {
+            // More conditions up the same branch are safely implied by the output row.
+            ConditionsCounter<ConditionExpression> counter = new ConditionsCounter<ConditionExpression>(conditions.size());
+            scan.incrementConditionsCounter(counter);
+            scan.setConditions(new ArrayList<ConditionExpression>(counter.getCountedConditions()));
+        }
+        else {
+            // Otherwise only those for the output row are safe and
+            // conditions on another branch need to be checked again;
+            scan.setConditions(scan.getOutputIndexScan().getConditions());
+        }
+    }
+
+    /** Is the given <code>rootTable</code> an ancestor of <code>leafTable</code>? */
+    private static boolean isAncestor(TableSource leafTable, TableSource rootTable) {
+        do {
+            if (leafTable == rootTable)
+                return true;
+            leafTable = leafTable.getParentTable();
+        } while (leafTable != null);
+        return false;
     }
     
     private class IntersectionEnumerator extends MultiIndexEnumerator<ConditionExpression,IndexScan,SingleIndexScan> {
@@ -689,7 +714,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     /** Find the best index on the given table. 
      * @param required Tables reachable from root via INNER joins and hence not nullable.
      */
-    public IndexScan pickBestIndex(TableSource table, Set<TableSource> required, IntersectionEnumerator enumerator) {
+    public IndexScan pickBestIndex(TableGroupJoinNode node, Set<TableSource> required, IntersectionEnumerator enumerator) {
+        TableSource table = node.getTable();
         IndexScan bestIndex = null;
         // Can only consider single table indexes when table is not
         // nullable (required).  If table is the optional part of a
@@ -702,7 +728,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 bestIndex = betterIndex(bestIndex, candidate, enumerator);
             }
         }
-        if (table.getGroup() != null) {
+        if ((table.getGroup() != null) && !hasOuterJoinNonGroupConditions(node)) {
             for (GroupIndex index : table.getGroup().getGroup().getIndexes()) {
                 // The leaf must be used or else we'll get duplicates from a
                 // scan (the indexed columns need not be root to leaf, making
@@ -767,6 +793,22 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             }
         }
         return bestIndex;
+    }
+
+    // If a LEFT join has more conditions, they won't be included in an index, so
+    // can't use it.
+    protected boolean hasOuterJoinNonGroupConditions(TableGroupJoinNode node) {
+        if (node.getTable().isRequired())
+            return false;
+        ConditionList conditions = node.getJoinConditions();
+        if (conditions != null) {
+            for (ConditionExpression cond : conditions) {
+                if (cond.getImplementation() != ConditionExpression.Implementation.GROUP_JOIN) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     protected IndexScan betterIndex(IndexScan bestIndex, SingleIndexScan candidate, IntersectionEnumerator enumerator) {
@@ -868,8 +910,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         Collection<ConditionExpression> unhandledConditions = 
             new HashSet<ConditionExpression>(conditions);
-        if (index.getGroupConditions() != null)
-            unhandledConditions.removeAll(index.getGroupConditions());
+        if (index.getConditions() != null)
+            unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             CostEstimate select = costEstimator.costSelect(unhandledConditions,
                                                            cost.getRowCount());

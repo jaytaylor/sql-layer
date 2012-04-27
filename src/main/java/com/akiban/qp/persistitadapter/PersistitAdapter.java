@@ -290,7 +290,7 @@ public class PersistitAdapter extends StoreAdapter
     public int enterUpdateStep()
     {
         Transaction transaction = transaction();
-        int step = transaction.getCurrentStep();
+        int step = transaction.getStep();
         if (step > 0)
             transaction.incrementStep();
         return step;

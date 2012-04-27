@@ -33,10 +33,17 @@ abstract public class LongExtractorTestBase {
     static protected class TestElement {
         private final long longVal;
         private final String string;
+        private final String expectedString;
 
         public TestElement(String s, Number n) {
-            this.longVal = n.longValue();
-            this.string = s;
+            this(s, n, s);
+
+        }
+
+        public TestElement(String inputString, Number encodedNumber, String decodedString) {
+            this.longVal = encodedNumber.longValue();
+            this.string = inputString;
+            this.expectedString = decodedString;
         }
 
         @Override
@@ -59,12 +66,20 @@ abstract public class LongExtractorTestBase {
     }
 
     @Test
-    public void decodingToString() {
+    public final void decodingToString() {
         int count = 0;
         for(TestElement t : TEST_CASES) {
             final String decoded = ENCODER.asString(t.longVal);
-            Assert.assertEquals("test case [" + count + "] long->String: " + t, t.string, decoded);
+            Assert.assertEquals("test case [" + count + "] long->String: " + t, t.expectedString, decoded);
             ++count;
+        }
+    }
+
+    @Test
+    public final void encodeAndDecodeAll() {
+        for(TestElement t : TEST_CASES) {
+            final String actual = encodeAndDecode(t.string);
+            Assert.assertEquals("encodeAndDecode " + t, t.expectedString, actual);
         }
     }
 }

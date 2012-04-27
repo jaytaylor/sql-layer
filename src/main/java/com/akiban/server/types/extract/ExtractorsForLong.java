@@ -33,6 +33,7 @@ import com.akiban.server.types.ValueSourceIsNullException;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.math.RoundingMode;
+import org.joda.time.DateTimeZone;
 
 class ExtractorsForLong extends LongExtractor {
 
@@ -114,6 +115,30 @@ class ExtractorsForLong extends LongExtractor {
     @Override
     public long getEncoded (long [] ymd_hms) {
         throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
+
+    @Override
+    public long stdLongToUnix(long longVal, DateTimeZone tz)
+    {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
+
+    @Override
+    public long unixToStdLong(long unixVal, DateTimeZone tz)
+    {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
+
+    @Override
+    public long[] getYearMonthDayHourMinuteSecond(long value, DateTimeZone tz)
+    {
+        throw new UnsupportedOperationException("Unsupported! Only works for date/time types");
+    }
+
+    @Override
+    public long getEncoded(long[] ymd_hms, DateTimeZone tz)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
     
 }

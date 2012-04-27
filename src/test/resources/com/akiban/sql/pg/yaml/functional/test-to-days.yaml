@@ -1,0 +1,29 @@
+## Test the TO_DAYS function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: SELECT (DATE('0001-01-01') - DATE('0000-01-01')) + DATE('2000-01-01');
+- output: [['2001-01-01']]
+---
+- Statement: SELECT TO_DAYS(DATE('0001-01-01'));
+- output: [[366]]
+---
+- Statement: SELECT TO_DAYS('1-01-01');
+- output: [[366]]
+---
+- Statement: SELECT TO_DAYS('0001-01-01 23:5959');
+- output: [[366]]
+---
+- Statement: SELECT TO_DAYS('0000-01-01');
+- output: [[0]]
+---
+- Statement: SELECT to_days('2012-04-22');
+- output: [[734980]]
+---
+- Statement: SELECT TO_DAYS('1970-01-01');
+- output: [[719528]]
+---
+- Statement: SELECT TO_DAYS('1960-01-01');
+- output: [[715875]]
+...
+
