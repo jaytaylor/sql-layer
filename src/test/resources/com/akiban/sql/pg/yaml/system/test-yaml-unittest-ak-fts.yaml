@@ -1,8 +1,9 @@
 ---
+- Message: Suppressed due to bug 986323  https://bugs.launchpad.net/akiban-server/+bug/986323
+---
 - Properties: it
 - suppressed: true
 ---
-#  Suppress to due to bug 986323 
 - Properties: all
 - suppressed: true
 ---
