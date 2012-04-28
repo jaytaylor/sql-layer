@@ -38,7 +38,6 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;

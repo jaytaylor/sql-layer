@@ -26,12 +26,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidParameterValueException;
-import java.util.HashMap;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
+import java.util.*;
 
 public final class Matchers
 {
@@ -54,8 +49,9 @@ public final class Matchers
         final int length;
         final boolean ignoreCase;
         final boolean endsWith;
-        final TreeMap<Integer, Integer> circular; // map length (of overlap region) --> its starting position
-        Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end, TreeMap<Integer, Integer> cir)
+        final TreeSet<Integer> circular;
+        
+        Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end, TreeSet<Integer> cir)
         {
             pos = p;
             pattern = pat;
@@ -110,16 +106,15 @@ public final class Matchers
                             d = tk.pos.get(ch);
                             if (d == null) d = tk.pos.get('\0'); // if something doesn't match
                                                                  // try to find the underscore because that would match anything      
-                            
+
                             if (d != null && d < right) // if the mismatched is in pattern and if its position is
                                 left += right - d;      // greater than right (to prevent negative shifting)
                             else // if there's no such char in pattern
-                            {    // try to match the prefix of pattern starting from [0, right-1] with the suffix
-                               
-                                TreeMap w = tk.circular;
-                                Entry<Integer, Integer> pre;
-                                if (w != null && (pre = w.floorEntry(tk.length - right)) != null)
-                                    left += pre.getValue();
+                            {    
+                                // try to match the prefix of pattern starting from [0, right-1] with the suffix
+                                TreeSet<Integer> w = tk.circular;
+                                if (w != null && (d = w.ceiling(right)) != null)
+                                    left += d;
                                 else
                                     left += tk.length;
                             }
@@ -216,8 +211,7 @@ public final class Matchers
                     if (r + 1 >= rLimit)
                         throw new InvalidParameterValueException("Illegal Escaped Sequence");
                     if ((rch = pattern.charAt(r +1)) != (lch = str.charAt(l))
-                            && (!ignoreCase || Character.toLowerCase(rch) 
-                                                != Character.toLowerCase(lch)))
+                            && (!ignoreCase || Character.toLowerCase(rch) != Character.toLowerCase(lch)))
                         return false;
                     r += 2;
                     ++l;
@@ -244,7 +238,6 @@ public final class Matchers
                     ++r;
                 }
             }
-            
             
             if (percent)
             {
@@ -313,14 +306,20 @@ public final class Matchers
         int length = 0;
         int limit = pat.length();
         int n = start;
-        Integer sec;
+        Integer pos;
         
         boolean hasLetter = false;
         
-        List<Integer> h = new LinkedList<Integer>();
-        Map<Character, Integer> m = new HashMap<Character, Integer>();
-        TreeMap<Integer, Integer> wrap;
+        // map each character to its right most position
+        Map<Character, Integer> shift = new HashMap<Character, Integer>();
         
+        // positions at which the first char appears
+        List<Integer> occurences = new LinkedList<Integer>();
+        
+        // store all the positions such that the substring starting at each position toward the end
+        // completely matches the substring starting from 0
+        TreeSet<Integer> wrap;
+
         For:
         for (; n < limit; ++n)
         {
@@ -329,13 +328,13 @@ public final class Matchers
                 if (++n < limit)
                 {
                     ch = pat.charAt(n);
-                    sec = m.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))
+                    pos = shift.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))
                                                     ? Character.toLowerCase(ch)
                                                     : ch
                           , length);
                   
-                    if (sec != null && (sec == 0 || ch == pt[0]))
-                        h.add(length);
+                    if (pos != null && (ch == pt[0]))
+                        occurences.add(length);
                     ++length;
                 }
                 else
@@ -350,7 +349,6 @@ public final class Matchers
 
                 if (length == 0 && (n < limit || pat.charAt(n -1) != '%'))
                 {
-                    start = n;
                     --n;
                     continue For;
                 }
@@ -359,36 +357,36 @@ public final class Matchers
             }
             else if (ch == '_')
             {
-                sec = m.put(pt[length] = '\0', length);
-                if (sec != null && (sec == 0) || pt[0] == '\0')
-                    h.add(length);
+                pos = shift.put(pt[length] = '\0', length);
+                if (pos != null && pt[0] == '\0')
+                    occurences.add(length);
                 ++length;
             }
             else
             {
-               sec =  m.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))    
+               pos =  shift.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))    
                                                 ? Character.toLowerCase(ch)
                                                 : ch
                         , length);
                                     
-                if (sec != null && (sec == 0 || ch == pt[0]))
-                        h.add(length);
+                if (pos != null && ch == pt[0])
+                        occurences.add(length);
                 ++length;
             }
         }
         
-        wrap = new TreeMap<Integer, Integer>();
         // find the suffix that matches the prefix (the wrap-around region)
-        for  (Integer p : h)
+        wrap = new TreeSet<Integer>();     
+        for  (Integer p : occurences)
         {
             int bound = length - p;
             for (int  i = 0; i < bound; ++i)
                 if (pt[i] != pt[i + p])
                     continue;
-            wrap.put(bound, p);
+            wrap.add(p);
         }
 
-        if (length > 0) ret.add(new Token(m, 
+        if (length > 0) ret.add(new Token(shift, 
                 pt, 
                 length, 
                 ignoreCase && hasLetter,
