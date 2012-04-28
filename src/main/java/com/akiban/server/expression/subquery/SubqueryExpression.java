@@ -48,7 +48,7 @@ public abstract class SubqueryExpression implements Expression {
 
     @Override
     public boolean needsRow() {
-        return true;
+        return (outerRowType != null);
     }
 
     // for use by subclasses

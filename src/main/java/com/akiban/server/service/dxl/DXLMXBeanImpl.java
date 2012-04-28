@@ -46,6 +46,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;
 import com.akiban.server.util.GroupIndexCreator;
+import com.google.common.base.Function;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -202,6 +203,22 @@ class DXLMXBeanImpl implements DXLMXBean {
     @Override
     public String printAIS() {
         return new ProtobufWriter().save(ais()).toString();
+    }
+
+    @Override
+    public IndexCheckSummary checkAndFix(final String schemaRegex, final String tableRegex) {
+        Session session = sessionService.createSession();
+        try {
+            return dxlService.ddlFunctions().checkAndFixIndexes(session, schemaRegex, tableRegex);
+        }
+        finally {
+            session.close();
+        }
+    }
+
+    @Override
+    public IndexCheckSummary checkAndFixAll() {
+        return checkAndFix(".*", ".*");
     }
 
     public List<String> getGrouping(String schema) {

@@ -32,16 +32,16 @@ import java.util.Set;
 public interface PostgresMXBean {
         
     /**
-     * @param pid connection ID
+     * @param sessionId connection ID
      * @return text of current/last query this connection executed
      */
-    String getSqlString(int pid);
+    String getSqlString(int sessionId);
     
     /**
-     * @param pid connection ID
+     * @param sessionId connection ID
      * @return client's IP address
      */
-    String getRemoteAddress(int pid);
+    String getRemoteAddress(int sessionId);
 
     int getStatementCacheCapacity();
     void setStatementCacheCapacity(int capacity);
@@ -84,4 +84,9 @@ public interface PostgresMXBean {
      */
     void clearPlans();
     String loadPlan(String jarFilePath, String className);
+
+    /** Cancel any running query for the given connection. */
+    void cancelQuery(int sessionId);
+    /** Kill the given connection. */
+    void killConnection(int sessionId);
 }
