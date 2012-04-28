@@ -44,11 +44,14 @@ public final class Matchers
 
     private static final class Token
     {
-        final Map<Character, Integer> pos;
-        final char pattern[];
-        final int length;
-        final boolean ignoreCase;
-        final boolean endsWith;
+        final Map<Character, Integer> pos; // map each character to its right most position
+        final char pattern[];              // the pattern string 
+        final int length;                  // length of the patter (this is NOT neccessarily == pattern.length)
+        final boolean ignoreCase;          
+        final boolean endsWith;            // whether this Token is the last token
+        
+        // store all the positions such that the substring starting at this toward the end
+        // completely matches the substring starting from 0
         final TreeSet<Integer> circular;
         
         Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end, TreeSet<Integer> cir)
@@ -316,7 +319,7 @@ public final class Matchers
         // positions at which the first char appears
         List<Integer> occurences = new LinkedList<Integer>();
         
-        // store all the positions such that the substring starting at each position toward the end
+        // store all the positions such that the substring starting at this toward the end
         // completely matches the substring starting from 0
         TreeSet<Integer> wrap;
 
