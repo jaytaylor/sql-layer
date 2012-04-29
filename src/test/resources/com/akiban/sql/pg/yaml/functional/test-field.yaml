@@ -36,13 +36,15 @@
 - output: [[0]]
 ## Test with params
 ---
-- Statement: SELECT FIELD ('124.4', 124, ?);
-- params: [[124.4]]
+- Statement: SELECT FIELD ('124.3', 124, ?);
+- params: [[124.3]]
 - output: [[2]]
 ---
 - Statement: SELECT FIELD (?, 20110411, '2006-11-07', DATE('2012-04-11'), 20120310);
 - params: [['2012-04-11']]
 - output: [[3]]
+---
+- Message: SELECT FIELD with null disabled
 #---
 #- Statement: SELECT FIELD(123, null, '123.1', 123);
 #- output: [[3]]
