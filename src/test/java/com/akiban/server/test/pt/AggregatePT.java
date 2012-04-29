@@ -71,8 +71,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
-import java.util.concurrent.ArrayBlockingQueue;
-import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.locks.LockSupport;
 
 public class AggregatePT extends ApiTestBase {
     public static final int ROW_COUNT = 100000;
@@ -624,12 +624,42 @@ public class AggregatePT extends ApiTestBase {
         }
     }
 
-    // Nulls are not allowed in ArrayBlockingQueue.
+    // Nulls are not allowed in ConcurrentLinkedQueue.
     static final Object EOF_ROW = new Object();
+
+    static class RowQueue {
+        private final Thread reader;
+        private Queue<Object> queue;
+        
+        public RowQueue(Thread reader) {
+            this.reader = reader;
+            queue = new ConcurrentLinkedQueue<Object>();
+        }
+        
+        public Row take() throws InterruptedException {
+            while (true) {
+                Row row = (Row)queue.poll();
+                if (row == null)
+                    LockSupport.park(this);
+                else if (row != EOF_ROW)
+                    return row;
+            }
+        }
+
+        public void put(Row row) throws InterruptedException {
+            boolean added = queue.offer((row != null) ? row : EOF_ROW);
+            assert added;       // No size limit on ConcurrentLinkedQueue.
+            LockSupport.unpark(reader);
+        }
+
+        public void clear() {
+            queue.clear();
+        }
+    }
 
     class ParallelCursor extends OperatorExecutionBase implements Cursor {
         private QueryContext context;
-        private BlockingQueue<Object> queue;
+        private RowQueue queue;
         private List<WorkerThread> threads;
         private int nrunning;
         private Row heldRow;
@@ -637,7 +667,7 @@ public class AggregatePT extends ApiTestBase {
         public ParallelCursor(QueryContext context, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
             this.context = context;
             int nthreads = valuesRows.size();
-            queue = new ArrayBlockingQueue<Object>(nthreads * nthreads);
+            queue = new RowQueue(Thread.currentThread());
             threads = new ArrayList<WorkerThread>(nthreads);
             for (ValuesRow valuesRow : valuesRows) {
                 threads.add(new WorkerThread(context, inputOperator, valuesType, valuesRow, bindingPosition, queue));
@@ -701,9 +731,9 @@ public class AggregatePT extends ApiTestBase {
                     heldRow = null;
                 }
                 try {
-                    Object row = queue.take();
-                    if (row != EOF_ROW)
-                        heldRow = (Row)row;
+                    Row row = queue.take();
+                    if (row != null)
+                        heldRow = row; // Was acquired by worker.
                 }
                 catch (InterruptedException ex) {
                     throw new QueryCanceledException(context.getSession());
@@ -723,11 +753,11 @@ public class AggregatePT extends ApiTestBase {
         private PersistitAdapter adapter;
         private QueryContext context;
         private Cursor inputCursor;        
-        private BlockingQueue<Object> queue;
+        private RowQueue queue;
         private Thread thread;
         private volatile boolean open;
         
-        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, BlockingQueue<Object> queue) {
+        public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
             session = createNewSession();
             adapter = new PersistitAdapter((Schema)valuesType.schema(), persistitStore(), treeService(), session, configService());
             context = queryContext(adapter);
@@ -768,7 +798,7 @@ public class AggregatePT extends ApiTestBase {
                         open = false;
                     else
                         row.acquire();
-                    queue.put((row != null) ? row : EOF_ROW);
+                    queue.put(row);
                 }
             }
             catch (InterruptedException ex) {
