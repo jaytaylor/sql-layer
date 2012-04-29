@@ -215,4 +215,17 @@ public final class MultiIndexIntersectScan extends IndexScan {
     public UserTable findCommonAncestor(IndexScan other) {
         return outputScan.findCommonAncestor(other);
     }
+
+    @Override
+    public void visitComparands(ExpressionRewriteVisitor v) {
+        outputScan.visitComparands(v);
+        selectorScan.visitComparands(v);
+    }
+
+    @Override
+    public void visitComparands(ExpressionVisitor v) {
+        outputScan.visitComparands(v);
+        selectorScan.visitComparands(v);
+    }
+
 }

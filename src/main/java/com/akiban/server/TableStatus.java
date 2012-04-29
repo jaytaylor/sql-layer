@@ -64,4 +64,6 @@ public interface TableStatus {
      * @return RowDef of the associated table.
      */
     RowDef getRowDef();
+
+    void setRowCount(long rowCount);
 }

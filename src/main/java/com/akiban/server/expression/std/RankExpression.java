@@ -32,6 +32,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.IntValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
+import com.akiban.server.types.util.ValueSources;
 import java.util.List;
 
 public final class RankExpression extends CompareExpression {
@@ -44,7 +45,7 @@ public final class RankExpression extends CompareExpression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new InnerEvaluation(childrenEvaluations(), op);
+        return new InnerEvaluation(childrenEvaluations());
     }
 
     @Override
@@ -76,7 +77,8 @@ public final class RankExpression extends CompareExpression {
             boolean leftNull = left.isNull();
             boolean rightNull = right.isNull();
             if (!leftNull && !rightNull) {
-                comparison = op.compare(left, right);
+                // overflow could happen and lead to incorrect result if d(left,right) > Integer.MAX_VALUE
+                comparison = (int)ValueSources.compare(left, right);
             } else if (!leftNull) {
                 comparison = 1;
             } else if (!rightNull) {
@@ -87,13 +89,11 @@ public final class RankExpression extends CompareExpression {
             return IntValueSource.of(comparison);
         }
 
-        private InnerEvaluation(List<? extends ExpressionEvaluation> children, CompareOp op) {
+        private InnerEvaluation(List<? extends ExpressionEvaluation> children) {
             super(children);
-            this.op = op;
             this.scratch = new ValueHolder();
         }
 
-        private final CompareOp op;
         private final ValueHolder scratch;
     }
 }
