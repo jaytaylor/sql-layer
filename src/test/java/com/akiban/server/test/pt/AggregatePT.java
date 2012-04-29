@@ -638,17 +638,22 @@ public class AggregatePT extends ApiTestBase {
         
         public Row take() throws InterruptedException {
             while (true) {
-                Row row = (Row)queue.poll();
-                if (row == null)
+                Object row = queue.poll();
+                if (row == null) {
+                    // assert (reader == Thread.currentThread());
                     LockSupport.park(this);
-                else if (row != EOF_ROW)
-                    return row;
+                }
+                else {
+                    return ((row != EOF_ROW) ? (Row)row : null);
+                }
             }
         }
 
         public void put(Row row) throws InterruptedException {
             boolean added = queue.offer((row != null) ? row : EOF_ROW);
-            assert added;       // No size limit on ConcurrentLinkedQueue.
+            // No size limit on ConcurrentLinkedQueue. A real implementation would
+            // need to block sometimes when too full.
+            assert added;
             LockSupport.unpark(reader);
         }
 
