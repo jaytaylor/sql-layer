@@ -542,8 +542,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
+            int pos = pushBoundRow(null); // Allocate slot in case loops in outer.
             RowStream ostream = assembleStream(mapJoin.getOuter());
-            pushBoundRow(ostream.fieldOffsets);
+            boundRows.set(pos, ostream.fieldOffsets);
             RowStream stream = assembleStream(mapJoin.getInner());
             stream.operator = API.map_NestedLoops(ostream.operator, 
                                                   stream.operator,
@@ -1107,8 +1108,10 @@ public class OperatorAssembler extends BaseRule
             loopBindingsOffset = expressionBindingsOffset;
         }
 
-        protected void pushBoundRow(ColumnExpressionToIndex boundRow) {
+        protected int pushBoundRow(ColumnExpressionToIndex boundRow) {
+            int position = boundRows.size();
             boundRows.push(boundRow);
+            return position;
         }
 
         protected void popBoundRow() {
