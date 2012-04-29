@@ -660,7 +660,10 @@ public class JoinAndIndexPicker extends BaseRule
         public boolean visitLeave(PlanNode n) {
             if (n instanceof Subquery) {
                 SubqueryState s = subqueries.pop();
-                s.subquery.setOuterTables(s.getTablesReferencedButNotDefined());
+                Set<ColumnSource> outerTables = s.getTablesReferencedButNotDefined();
+                s.subquery.setOuterTables(outerTables);
+                if (!subqueries.isEmpty())
+                    subqueries.peek().tablesReferenced.addAll(outerTables);
             }
             return true;
         }

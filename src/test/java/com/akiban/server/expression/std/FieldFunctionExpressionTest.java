@@ -78,6 +78,7 @@ public class FieldFunctionExpressionTest extends ComposedExpressionTestBase
                       new LiteralExpression(TIME, 123011L));
         
         // heterogeneous types
+        param(pb, 3L, lit(123), LiteralExpression.forNull(), lit("123.1"), lit(123));
         param(pb, 2L, lit("00.1"), lit("666"), lit("0.1"), lit("777"), lit(true));
         param(pb, 0L, lit("00.1"), lit("666"), lit("0.11"), lit("777"), lit(true));
         param(pb, 2L, lit("12:30:10"), lit(123010L), new LiteralExpression(TIME, 123010L));

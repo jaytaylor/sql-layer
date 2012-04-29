@@ -29,6 +29,7 @@ package com.akiban.server.service.dxl;
 import com.akiban.server.service.session.Session;
 
 public interface DXLFunctionsHook {
+
     static enum DXLType {
         DDL_FUNCTIONS_WRITE,
         DDL_FUNCTIONS_READ,
@@ -55,6 +56,7 @@ public interface DXLFunctionsHook {
         FORCE_GENERATION_UPDATE(DXLType.DDL_FUNCTIONS_WRITE),
         CREATE_INDEXES(DXLType.DDL_FUNCTIONS_WRITE),
         DROP_INDEXES(DXLType.DDL_FUNCTIONS_WRITE),
+        CHECK_AND_FIX_INDEXES(DXLType.DDL_FUNCTIONS_WRITE),
 
         GET_TABLE_STATISTICS(DXLType.DML_FUNCTIONS_READ),
         OPEN_CURSOR(DXLType.DML_FUNCTIONS_READ),
