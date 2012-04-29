@@ -41,6 +41,9 @@ import java.util.Date;
 import java.util.EnumSet;
 import java.util.TimeZone;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -158,46 +161,56 @@ abstract class ExtractorsForDates extends LongExtractor {
      * See: http://dev.mysql.com/doc/refman/5.5/en/datetime.html
      */
     final static ExtractorsForDates DATETIME = new ExtractorsForDates(AkType.DATETIME) {
+        private final String ZERO_STR = "0";
+        // Capture DATE and TIME into groups (1 and 5) with TIME being optional, each individual fragment also grouped
+        private final int DATE_GROUP = 1;
+        private final int DATE_YEAR_GROUP = 2;
+        private final int DATE_MONTH_GROUP = 3;
+        private final int DATE_DAY_GROUP = 4;
+        private final int TIME_GROUP = 5;
+        private final int TIME_HOUR_GROUP = 6;
+        private final int TIME_MINUTE_GROUP = 7;
+        private final int TIME_SECOND_GROUP = 8;
+        private final int TIME_FRAC_GROUP = 9;
+        private final int TIME_TIMEZONE_GROUP = 10;
+        private final Pattern PARSE_PATTERN = Pattern.compile(
+                "^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$"
+        );
+
         @Override protected long doGetLong(ValueSource source) {
             return source.getDateTime();
         }
 
         @Override
         public long getLong(String string) {
-            String parts[] = string.split(" ");
-            if (parts.length == 1) {
-                string += " 00:00:00";
-                parts = string.split(" ");
-            }
-            else if(parts.length != 2) {
-                throw new InvalidDateFormatException ("date time", string);
+            Matcher m = PARSE_PATTERN.matcher(string.trim());
+
+            if (!m.matches() || m.group(DATE_GROUP) == null) {
+                throw new InvalidDateFormatException("datetime", string);
             }
 
-            final String dateParts[] = parts[0].split("-");
-            if(dateParts.length != 3) {
-                throw new InvalidDateFormatException ("date", parts[0]);
-            }
+            String year = m.group(DATE_YEAR_GROUP);
+            String month = m.group(DATE_MONTH_GROUP);
+            String day = m.group(DATE_DAY_GROUP);
+            String hour = ZERO_STR;
+            String minute = ZERO_STR;
+            String seconds = ZERO_STR;
 
-            final String timeParts[] = parts[1].split(":");
-            if(timeParts.length != 3) {
-                throw new InvalidDateFormatException ("time", parts[1]);
-            }
-
-            // Allow, but discard, fractional seconds
-            final String secondParts[] = timeParts[2].split("\\.");
-            if(secondParts.length != 1 && secondParts.length != 2) {
-                throw new InvalidDateFormatException ("time", parts[1]);
+            if(m.group(TIME_GROUP) != null) {
+                hour = m.group(TIME_HOUR_GROUP);
+                minute = m.group(TIME_MINUTE_GROUP);
+                seconds = m.group(TIME_SECOND_GROUP);
             }
 
             try {
-            return  Long.parseLong(dateParts[0]) * DATETIME_YEAR_SCALE +
-                    Long.parseLong(dateParts[1]) * DATETIME_MONTH_SCALE +
-                    Long.parseLong(dateParts[2]) * DATETIME_DAY_SCALE +
-                    Long.parseLong(timeParts[0]) * DATETIME_HOUR_SCALE +
-                    Long.parseLong(timeParts[1]) * DATETIME_MIN_SCALE +
-                    Long.parseLong(secondParts[0]) * DATETIME_SEC_SCALE;
+            return  Long.parseLong(year) * DATETIME_YEAR_SCALE +
+                    Long.parseLong(month) * DATETIME_MONTH_SCALE +
+                    Long.parseLong(day) * DATETIME_DAY_SCALE +
+                    Long.parseLong(hour) * DATETIME_HOUR_SCALE +
+                    Long.parseLong(minute) * DATETIME_MIN_SCALE +
+                    Long.parseLong(seconds) * DATETIME_SEC_SCALE;
             } catch (NumberFormatException ex) {
-                throw new InvalidDateFormatException ("date time", string);
+                throw new InvalidDateFormatException("datetime", string);
             }
         }
 
