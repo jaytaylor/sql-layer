@@ -174,7 +174,6 @@ public final class Matchers
     
     static class StartWith extends  AbstractMatcher
     {
-         
         private final String pattern;
         private final char escape;
         private final boolean ignoreCase;
@@ -385,7 +384,7 @@ public final class Matchers
             }
         }
         
-        // find the suffix that matches the prefix (the wrap-around region)
+        // find the suffix that matches the prefix (the wrap-around region(s))
         wrap = new TreeSet<Integer>();     
         for  (Integer p : occurences)
         {
@@ -406,14 +405,13 @@ public final class Matchers
                 wrap.isEmpty() ? null : wrap));
         return n;
     }
-            
+
     /**
      * Check if a string ends with a given pattern
      * 
      * @param str
      * @param start
      * @param tk
-     * @param ignoreCase
      * @return 
      */
     private static boolean endWith(String str, int start, Token tk)
@@ -425,8 +423,9 @@ public final class Matchers
         while (left >= start && right >= 0)
         {
             if (tk.pattern[right] == str.charAt(left)
+                    || tk.pattern[right] == '\0'
                     || tk.ignoreCase && tk.pattern[right] == Character.toLowerCase(str.charAt(left))
-                    || tk.pattern[right] == '\0')
+               )
             {
                 --right;
                 --left;
