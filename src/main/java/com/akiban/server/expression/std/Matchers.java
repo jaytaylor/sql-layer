@@ -111,20 +111,20 @@ public final class Matchers
                                                                  // try to find the underscore because that would match anything      
 
                             if (d != null && d < right) // if the mismatched is in pattern and if its position is
-                                left += right - d;      // greater than right (to prevent negative shifting)
+                                left += right - d;      // not greater than right (to prevent negative shifting)
                             else // if there's no such char in pattern
                             {    
                                 // try to match the prefix of pattern starting from [0, right-1] with the suffix
                                 TreeSet<Integer> w = tk.circular;
                                 if (w != null && (d = w.ceiling(right)) != null)
                                     left += d;
-                                else
-                                    left += tk.length;
+                                else // if the pattern's prefix can't be matched with its suffix
+                                    left += tk.length; // shift the whole thing by [length]
                             }
                             continue While;
                         }
                     }
-                    return true; // if someting has gone wrong, we would've skipped it
+                    return true; // if something has gone wrong, we would've skipped it
                 }
                 else
                 {
@@ -289,6 +289,13 @@ public final class Matchers
      * 
      * + Finds and maps each distinct character with its right most position
      * 
+     * + Determine whether this pattern's suffix can be matched with its prefix
+     *   Find such wrap-around region(s) 
+     *      Eg., 'abcx123abc' => The prefix 'abc' can be matched with the suffix its 'abc'
+     *            'abcabcabc' => Has two 'wrap-around' substrings:
+     *                  + 'abc'
+     *                  + 'abcabc'
+     *                              
      * + If this is the last token in the pattern and there's nothing behind it
      *      then set the endsWith flag, so that the match can just skip to the end
      *      of the string. 
