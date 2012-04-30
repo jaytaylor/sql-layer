@@ -65,6 +65,7 @@ import com.akiban.util.Shareable;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
 import org.junit.Before;
@@ -794,9 +795,11 @@ public class AggregatePT extends ApiTestBase {
 
         @Override
         public void run() {
+            Transaction transaction = treeService().getTransaction(session);
             inputCursor.open();
             open = true;
             try {
+                transaction.begin();
                 while (open) {
                     Row row = inputCursor.next();
                     if (row == null) 
@@ -805,12 +808,17 @@ public class AggregatePT extends ApiTestBase {
                         row.acquire();
                     queue.put(row);
                 }
+                transaction.commit();
             }
             catch (InterruptedException ex) {
                 throw new QueryCanceledException(context.getSession());
             }
+            catch (PersistitException ex) {
+                PersistitAdapter.handlePersistitException(session, ex);
+            } 
             finally {
                 inputCursor.close();
+                transaction.end();
             }
         }
 
