@@ -72,6 +72,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 
@@ -87,27 +88,32 @@ public class AggregatePT extends ApiTestBase {
     private TableIndex index;
 
     @Before
-    public void loadData() {
+    public void loadData() throws Exception {
+        transactionally(new Callable<Void>() {
+      @Override
+      public Void call() throws Exception {
         int t = createTable("user", "t",
-                            "id INT NOT NULL PRIMARY KEY",
-                            "gid INT",
-                            "flag BOOLEAN",
-                            "sval VARCHAR(20) NOT NULL",
-                            "n1 INT",
-                            "n2 INT",
-                            "k INT");
-        Random rand = new Random(69);
-        for (int i = 0; i < ROW_COUNT; i++) {
-            writeRow(t, i,
-                     rand.nextInt(NKEYS),
-                     (rand.nextInt(100) < 80) ? 0 : 1,
-                     randString(rand, 20),
-                     rand.nextInt(100),
-                     rand.nextInt(1000),
-                     rand.nextInt());
-        }
-        index = createIndex("user", "t", "t_i", 
-                            "gid", "sval", "flag", "k", "n1", "n2", "id");
+                             "id INT NOT NULL PRIMARY KEY",
+                             "gid INT",
+                             "flag BOOLEAN",
+                             "sval VARCHAR(20) NOT NULL",
+                             "n1 INT",
+                             "n2 INT",
+                             "k INT");
+         Random rand = new Random(69);
+         for (int i = 0; i < ROW_COUNT; i++) {
+             writeRow(t, i,
+                      rand.nextInt(NKEYS),
+                      (rand.nextInt(100) < 80) ? 0 : 1,
+                      randString(rand, 20),
+                      rand.nextInt(100),
+                      rand.nextInt(1000),
+                      rand.nextInt());
+         }
+         index = createIndex("user", "t", "t_i", 
+                             "gid", "sval", "flag", "k", "n1", "n2", "id");
+         return null;
+      }});
     }
 
     private String randString(Random rand, int size) {
