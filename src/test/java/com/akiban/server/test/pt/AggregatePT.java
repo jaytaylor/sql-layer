@@ -114,6 +114,7 @@ public class AggregatePT extends ApiTestBase {
                              "gid", "sval", "flag", "k", "n1", "n2", "id");
          return null;
       }});
+      // FIXME: Temporary workaround to prevent locking on this transaction's bucket because the timestamps haven't caught up.
       new com.akiban.sql.pg.JMXInterpreter(true).makeBeanCall("localhost", 8082, "com.persistit:type=Persistit,class=TransactionIndex", "cleanup", null, "method");
     }
 
