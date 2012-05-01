@@ -76,6 +76,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.locks.LockSupport;
 
 public class AggregatePT extends ApiTestBase {
+    public static final int NKEYS = 10;
     public static final int ROW_COUNT = 100000;
     public static final int WARMUPS = 100, REPEATS = 10;
 
@@ -98,7 +99,7 @@ public class AggregatePT extends ApiTestBase {
         Random rand = new Random(69);
         for (int i = 0; i < ROW_COUNT; i++) {
             writeRow(t, i,
-                     rand.nextInt(10),
+                     rand.nextInt(NKEYS),
                      (rand.nextInt(100) < 80) ? 0 : 1,
                      randString(rand, 20),
                      rand.nextInt(100),
@@ -562,7 +563,7 @@ public class AggregatePT extends ApiTestBase {
         rowType = plan.rowType();
 
         int nthreads = Integer.parseInt(System.getProperty("test.nthreads", "4"));
-        double n = 10.0 / nthreads;
+        double n = (double)NKEYS / nthreads;
         List<ValuesRow> keyRows = new ArrayList<ValuesRow>();
         for (int i = 0; i < nthreads; i++) {
             Object[] values = new Object[2];
