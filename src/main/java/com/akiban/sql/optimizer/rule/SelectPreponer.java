@@ -254,6 +254,17 @@ public class SelectPreponer extends BaseRule
             }
             boolean maps = false;
             while (node instanceof MapJoin) {
+                switch (((MapJoin)node).getJoinType()) {
+                case INNER:
+                    break;
+                case LEFT:
+                case SEMI:
+                    if (prev == ((MapJoin)node).getInner())
+                        return;
+                    break;
+                default:
+                    return;
+                }
                 maps = true;
                 prev = node;
                 node = node.getOutput();
@@ -275,8 +286,10 @@ public class SelectPreponer extends BaseRule
                     if (selects == null)
                         selects = new HashMap<Select,SelectConditions>();
                     SelectConditions selectConditions = selects.get(select);
-                    if (selectConditions == null)
+                    if (selectConditions == null) {
                         selectConditions = new SelectConditions(select);
+                        selects.put(select, selectConditions);
+                    }
                     selectConditions.addBranch(branch);
                 }
             }
