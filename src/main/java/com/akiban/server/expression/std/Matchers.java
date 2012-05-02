@@ -50,18 +50,13 @@ public final class Matchers
         final boolean ignoreCase;          
         final boolean endsWith;            // whether this Token is the last token
         
-        // store all the positions such that the substring starting at this toward the end
-        // completely matches the substring starting from 0
-        final TreeSet<Integer> circular;
-        
-        Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end, TreeSet<Integer> cir)
+        Token (Map<Character, Integer> p, char pat[], int len, boolean ic, boolean end)
         {
             pos = p;
             pattern = pat;
             length = len;
             ignoreCase = ic;
             endsWith = end;
-            circular = cir;
         }
     }
     
@@ -92,9 +87,11 @@ public final class Matchers
             While:
             while (left < limit)
             {
-                if ((tail = left + lastPos) >= limit)
-                    return false; // ??? pattern is longer than text???
+                if ((tail = left + lastPos) >= limit) // text is shorter than pattern
+                    return false;
                 
+                // if mismatch does NOT occur at the end
+                // then keep moving leftward from the tail
                 if ((ch = str.charAt(tail)) == tk.pattern[right = lastPos]
                         || tk.pattern[right] == '\0' // wildcard _
                         || tk.ignoreCase && (ch = Character.toLowerCase(ch)) == tk.pattern[right])
@@ -113,20 +110,13 @@ public final class Matchers
                             if (d != null && d < right) // if the mismatched is in pattern and if its position is
                                 left += right - d;      // not greater than right (to prevent negative shifting)
                             else // if there's no such char in pattern
-                            {    
-                                // try to match the prefix of pattern starting from [0, right-1] with the suffix
-                                TreeSet<Integer> w = tk.circular;
-                                if (w != null && (d = w.ceiling(right)) != null)
-                                    left += d;
-                                else // if the pattern's prefix can't be matched with its suffix
-                                    left += tk.length; // shift the whole thing by [length]
-                            }
+                                left += 1; // shift th pattern to the right by 1
                             continue While;
                         }
                     }
                     return true; // if something has gone wrong, we would've skipped it
                 }
-                else
+                else // if mismatch occurs at the end
                 {
                     d = tk.pos.get(ch);
                     if (d == null) d = tk.pos.get('\0'); // if something isn't  in there, try to get the right most wildcard _
@@ -149,13 +139,9 @@ public final class Matchers
         public Contain (String pt, char escape, boolean ignoreCase)
         {
             pattern = pt;
-            tokens = new LinkedList<Token>();
             
-            // start at 1. (0 is %, which would've been skipped anyways)
-            int start = 1;
-            do
-                start = computePos(escape, pt, start, tokens, ignoreCase);
-            while (start < pattern.length());
+            // start at 0, since 0 would've been skipped anyways
+            tokens = computePos(escape, pt, 1, ignoreCase);
         }
         
         @Override
@@ -191,9 +177,7 @@ public final class Matchers
         {
             tokens = new LinkedList<Token>();
             
-            do
-                start = computePos(escape, pattern, start, tokens, ignoreCase);
-            while (start < pattern.length());
+            tokens = computePos(escape, pattern, start, ignoreCase);
         }
         
         @Override
@@ -283,127 +267,101 @@ public final class Matchers
      *           - if a regular char is encountered, put it in a char array
      *           - if an escape char is encountered, just put the character that is 'escaped' by it
      *           - if a wildcard _ is encountered, mark it as \0 (null char) because it's special!
-     *           - if a wildcard % is encountered, stop the search return the position where the search
-     *             stops
+     *           - if a wildcard % is encountered, stop the search, put the token into
+     *             the list. Also determine wether this is the last token (to speed up the matching)
+     *              
      * 
      * + Finds and maps each distinct character with its right most position
      * 
-     * + Determine whether this pattern's suffix can be matched with its prefix
-     *   Find such wrap-around region(s) 
-     *      Eg., 'abcx123abc' => The prefix 'abc' can be matched with the suffix its 'abc'
-     *            'abcabcabc' => Has two 'wrap-around' substrings:
-     *                  + 'abc'
-     *                  + 'abcabc'
-     *                              
-     * + If this is the last token in the pattern and there's nothing behind it
-     *      then set the endsWith flag, so that the match can just skip to the end
-     *      of the string. 
-     * 
-     * + Put all the info gathered about this token in the list 'ret'
      * @param escape
      * @param pat
      * @param start     : start position in the string pattern
-     * @param ret
      * @param ignoreCase
-     * @return          : return the next position to search in the pattern
+     * @return          : return the list of all tokens
      */
-    private static int computePos (char escape, String pat, int start, List<Token> ret, boolean ignoreCase)
+    private static List<Token> computePos (char escape, String pat, int start, boolean ignoreCase)
     {
-        char pt [] = new char[pat.length() - start];
+        final int patLength = pat.length();
+        int n = start;
+        int length; // length of the token
+        
+        char pt[]; // contains the token after it was 'processed'
         char ch;
         
-        int length = 0;
-        int limit = pat.length();
-        int n = start;
-        Integer pos;
-        
-        boolean hasLetter = false;
+        boolean hasLetter;
         
         // map each character to its right most position
-        Map<Character, Integer> shift = new HashMap<Character, Integer>();
+        Map<Character, Integer> shift;
         
-        // positions at which the first char appears
-        List<Integer> occurences = new LinkedList<Integer>();
+        // list of all tokens (each separated by '%'s
+        List<Token> ret = new LinkedList<Token>();
         
-        // store all the positions such that the substring starting at this toward the end
-        // completely matches the substring starting from 0
-        TreeSet<Integer> wrap;
-
-        For:
-        for (; n < limit; ++n)
+        while (n < patLength)
         {
-            if ((ch = pat.charAt(n)) == escape)
+        
+            pt = new char[patLength - start];
+            length = 0;
+            hasLetter = false;
+            shift = new HashMap<Character, Integer>();
+            
+            For:
+            for (; n < patLength; ++n)
             {
-                if (++n < limit)
+                if ((ch = pat.charAt(n)) == escape)
                 {
-                    ch = pat.charAt(n);
-                    pos = shift.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))
-                                                    ? Character.toLowerCase(ch)
-                                                    : ch
-                          , length);
-                  
-                    if (pos != null && (ch == pt[0]))
-                        occurences.add(length);
+                    if (++n < patLength)
+                    {
+                        ch = pat.charAt(n);
+                        shift.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))
+                                                        ? Character.toLowerCase(ch)
+                                                        : ch
+                              , length);
+
+                        ++length;
+                    }
+                    else
+                        throw new InvalidParameterValueException("Illegal escaped sequence");
+                }
+                else if (ch == '%')
+                {
+                    // skip multiples %'s
+                    do
+                        ++n;
+                    while (n < patLength && pat.charAt(n) == '%');
+
+                    if (length == 0 && (n < patLength || pat.charAt(n -1) != '%'))
+                    {
+                        --n;
+                        continue For;
+                    }
+                    else 
+                        break For;
+                }
+                else if (ch == '_')
+                {
+                    shift.put(pt[length] = '\0', length);
                     ++length;
                 }
                 else
-                    throw new InvalidParameterValueException("Illegal escaped sequence");
-            }
-            else if (ch == '%')
-            {
-                // skip multiples %'s
-                do
-                    ++n;
-                while (n < limit && pat.charAt(n) == '%');
-
-                if (length == 0 && (n < limit || pat.charAt(n -1) != '%'))
                 {
-                    --n;
-                    continue For;
-                }
-                else 
-                    break For;
-            }
-            else if (ch == '_')
-            {
-                pos = shift.put(pt[length] = '\0', length);
-                if (pos != null && pt[0] == '\0')
-                    occurences.add(length);
-                ++length;
-            }
-            else
-            {
-               pos =  shift.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))    
-                                                ? Character.toLowerCase(ch)
-                                                : ch
-                        , length);
-                                    
-                if (pos != null && ch == pt[0])
-                        occurences.add(length);
-                ++length;
-            }
-        }
-        
-        // find the suffix that matches the prefix (the wrap-around region(s))
-        wrap = new TreeSet<Integer>();     
-        for  (Integer p : occurences)
-        {
-            int bound = length - p;
-            for (int  i = 0; i < bound; ++i)
-                if (pt[i] != pt[i + p])
-                    continue;
-            wrap.add(p);
-        }
+                   shift.put(pt[length] = ignoreCase && (hasLetter |= Character.isLetter(ch))    
+                                                    ? Character.toLowerCase(ch)
+                                                    : ch
+                            , length);
 
-        if (length > 0) ret.add(new Token(shift, 
-                pt, 
-                length, 
-                ignoreCase && hasLetter,
-                n < limit
-                    ? false 
-                    : !(pat.charAt(n-1) == '%' && ((n - 2 < 0) || pat.charAt(n-2) != escape)),
-                wrap.isEmpty() ? null : wrap));
-        return n;
+                    ++length;
+                }
+            }
+
+            if (length > 0) ret.add(new Token(shift, 
+                    pt, 
+                    length, 
+                    ignoreCase && hasLetter,
+                    n < patLength
+                        ? false 
+                        : !(pat.charAt(n-1) == '%' && ((n - 2 < 0) || pat.charAt(n-2) != escape))));
+        }
+        return ret;
     }
 
     /**
