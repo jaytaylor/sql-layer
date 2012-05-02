@@ -85,7 +85,7 @@ public final class VariableExpression implements Expression {
         return true;
     }
 
-    private static class InnerEvaluation implements ExpressionEvaluation {
+   private static class InnerEvaluation extends ExpressionEvaluation.Base {
         @Override
         public void of(Row row) {
         }
@@ -125,11 +125,5 @@ public final class VariableExpression implements Expression {
         private final int position;
         private QueryContext context;
         private int ownedBy = 0;
-
-        @Override
-        public void destroy()
-        {
-            //throw new UnsupportedOperationException("Not supported in VARIABLE yet.");
-        }
     }
 }
