@@ -118,161 +118,250 @@ public class SelectPreponer extends BaseRule
         finder.find(plan.getPlan());
         Preponer preponer = new Preponer();
         for (PlanNode origin : finder.getOrigins()) {
-            preponer.pullToward(origin);
+            preponer.addOrigin(origin);
         }
+        preponer.moveDeferred();
     }
     
-    static class Preponer {
-        Map<Select,ConditionDependencyAnalyzer> selectDependencies;
+    // Holds the state of a single branch of a loop, which usually means a group.
+    static class Branch {
         Map<TableSource,PlanNode> loaders;
         Map<ExpressionNode,PlanNode> indexColumns;
         List<PlanNode> joins;
         Map<PlanNode,Set<TableSource>> joined;
         
-        public Preponer() {
+        public Branch() {
+            loaders = new HashMap<TableSource,PlanNode>();
         }
 
-        protected void pullToward(PlanNode node) {
-            loaders = new HashMap<TableSource,PlanNode>();
-            PlanNode prev = null;
-            if (node instanceof IndexScan) {
-                indexColumns = new HashMap<ExpressionNode,PlanNode>();
-                for (ExpressionNode column : ((IndexScan)node).getColumns()) {
-                    if (column != null) {
-                        indexColumns.put(column, node);
-                    }
+        public void setIndex(IndexScan index) {
+            indexColumns = new HashMap<ExpressionNode,PlanNode>();
+            for (ExpressionNode column : index.getColumns()) {
+                if (column != null) {
+                    indexColumns.put(column, index);
                 }
-                prev = node;
-                node = node.getOutput();
             }
-            else {
-                indexColumns = null;
+        }
+
+        public void addLoader(PlanNode loader) {
+            for (TableSource table : ((TableLoader)loader).getTables()) {
+                loaders.put(table, loader);
             }
-            while (node instanceof TableLoader) {
-                for (TableSource table : ((TableLoader)node).getTables()) {
-                    loaders.put(table, node);
-                }
-                prev = node;
-                node = node.getOutput();
-            }
-            joins = null;
-            while (true) {
-                boolean isJoin = false;
-                if (node instanceof Flatten) {
-                    // Limit to tables that are inner joined (and on the
-                    // outer side of outer joins.)
-                    Set<TableSource> inner = ((Flatten)node).getInnerJoinedTables();
-                    loaders.keySet().retainAll(inner);
-                    if (indexColumns != null) {
-                        Iterator<ExpressionNode> iter = indexColumns.keySet().iterator();
-                        while (iter.hasNext()) {
-                            ExpressionNode expr = iter.next();
-                            if (expr.isColumn() && 
-                                !inner.contains(((ColumnExpression)expr).getTable()))
-                                iter.remove();
-                        }
-                    }
-                    isJoin = true;
-                }
-                else if (node instanceof MapJoin) {
-                    switch (((MapJoin)node).getJoinType()) {
-                    case INNER:
-                        break;
-                    case LEFT:
-                    case SEMI:
-                        if (prev == ((MapJoin)node).getInner())
-                            return;
-                        break;
-                    default:
-                        return;
-                    }
-                    isJoin = true;
-                }
-                else if (node instanceof Product) {
-                    // Only inner right now.
-                    isJoin = true;
-                }
-                else
-                    break;
-                if (isJoin) {
-                    if (joins == null)
-                        joins = new ArrayList<PlanNode>();
-                    joins.add(node);
-                }
-                prev = node;
-                node = node.getOutput();
-            }
-            if ((joins == null) ||
-                (loaders.isEmpty() &&
-                 ((indexColumns == null) || indexColumns.isEmpty()))) {
-                // We didn't see any joins (conditions will follow
-                // loading directly -- nothing to move over) or ran
-                // out of things to move.
-                return;
-            }
+        }
+
+        // A within-group join: Flatten or Product.
+        public void addJoin(PlanNode join) {
+            if (joins == null)
+                joins = new ArrayList<PlanNode>();
+            joins.add(join);
+
             // Might be able to place multi-table conditions after a join.
             if (joined == null)
                 joined = new HashMap<PlanNode,Set<TableSource>>();
-            for (PlanNode join : joins) {
-                Set<TableSource> tables = joined.get(join);
-                if (tables == null) {
-                    tables = new HashSet<TableSource>();
-                    joined.put(join, tables);
+            Set<TableSource> tables = new HashSet<TableSource>(loaders.keySet());
+            joined.put(join, tables);
+        }
+
+        public void addFlatten(Flatten flatten) {
+            // Limit to tables that are inner joined (and on the outer
+            // side of outer joins.)
+            Set<TableSource> inner = flatten.getInnerJoinedTables();
+            loaders.keySet().retainAll(inner);
+            if (indexColumns != null) {
+                Iterator<ExpressionNode> iter = indexColumns.keySet().iterator();
+                while (iter.hasNext()) {
+                    ExpressionNode expr = iter.next();
+                    if (expr.isColumn() && 
+                        !inner.contains(((ColumnExpression)expr).getTable()))
+                        iter.remove();
                 }
-                tables.addAll(loaders.keySet());
+            }
+            addJoin(flatten);
+        }
+
+        public Branch merge(Branch other) {
+            loaders.putAll(other.loaders);
+            if (indexColumns == null)
+                indexColumns = other.indexColumns;
+            else if (other.indexColumns != null)
+                indexColumns.putAll(other.indexColumns);
+            if (joins == null)
+                joins = other.joins;
+            else if (other.joins != null)
+                joins.addAll(other.joins);
+            if (joined == null)
+                joined = other.joined;
+            else if (other.joined != null)
+                joined.putAll(other.joined);
+            return this;
+        }
+
+        public boolean isEmpty() {
+            return ((joins == null) ||
+                    (loaders.isEmpty() &&
+                     ((indexColumns == null) || indexColumns.isEmpty())));
+        }
+
+        // Does this branch consist solely of an index?
+        public boolean indexOnly() {
+            return (loaders.isEmpty() && 
+                    !((indexColumns == null) || indexColumns.isEmpty()));
+        }
+    }
+
+    static class Preponer {
+        Map<Product,Branch> products;
+        Map<Select,SelectConditions> selects;
+        
+        public Preponer() {
+        }
+
+        public void addOrigin(PlanNode node) {
+            Branch branch = new Branch();
+            PlanNode prev = null;
+            if (node instanceof IndexScan) {
+                branch.setIndex((IndexScan)node);
+                prev = node;
+                node = node.getOutput();
+            }
+            while (node instanceof TableLoader) {
+                branch.addLoader(node);
+                prev = node;
+                node = node.getOutput();
+            }
+            while (true) {
+                if (node instanceof Flatten) {
+                    // A Flatten takes a single stream of lookups.
+                    branch.addFlatten((Flatten)node);
+                }
+                else if (node instanceof Product) {
+                    // A Product takes multiple streams, so we may
+                    // have seen this one before.  Always inner join
+                    // as of now, so no filtering of sources.
+                    Product product = (Product)node;
+                    if (products == null)
+                        products = new HashMap<Product,Branch>();
+                    Branch obranch = products.get(product);
+                    if (obranch != null)
+                        branch = obranch.merge(branch);
+                    else
+                        branch.addJoin(node);
+                }
+                else
+                    break;
+                prev = node;
+                node = node.getOutput();
+            }
+            boolean maps = false;
+            while (node instanceof MapJoin) {
+                maps = true;
+                prev = node;
+                node = node.getOutput();
             }
             if (node instanceof Select) {
                 Select select = (Select)node;
-                moveConditions(getDependencies(select), select);
+                if (!maps) {
+                    // No nested loops; can just move things now.
+                    if (!branch.isEmpty()) {
+                        // If we didn't see any joins, conditions will already
+                        // follow loading directly -- nothing to move
+                        // over.
+                        new SelectConditions(select).moveConditions(branch);
+                    }
+                }
+                else {
+                    // Need to defer until have all the contributors
+                    // to the Map joins.
+                    if (selects == null)
+                        selects = new HashMap<Select,SelectConditions>();
+                    SelectConditions selectConditions = selects.get(select);
+                    if (selectConditions == null)
+                        selectConditions = new SelectConditions(select);
+                    selectConditions.addBranch(branch);
+                }
             }
         }
 
-        protected ConditionDependencyAnalyzer getDependencies(Select select) {
-            if (selectDependencies == null)
-                selectDependencies = new HashMap<Select,ConditionDependencyAnalyzer>();
-            ConditionDependencyAnalyzer dependencies = selectDependencies.get(select);
-            if (dependencies == null) {
-                dependencies = new ConditionDependencyAnalyzer(select);
-                selectDependencies.put(select, dependencies);
+        public void moveDeferred() {
+            if (selects != null) {
+                for (SelectConditions swm : selects.values()) {
+                    swm.moveConditions(null);
+                }
             }
-            return dependencies;
         }
 
+    }
+
+    static class SelectConditions {
+        Select select;
+        ConditionDependencyAnalyzer dependencies;
+        // The branches that are joined up to feed the Select, added in depth-first
+        // order, meaning that tables from an earlier branch should be available as
+        // bound variables to later ones.
+        List<Branch> branches;
+
+        public SelectConditions(Select select) {
+            this.select = select;
+            dependencies = new ConditionDependencyAnalyzer(select);
+        }
+
+        public void addBranch(Branch branch) {
+            if (branches == null)
+                branches = new ArrayList<Branch>();
+            branches.add(branch);
+        }
+
+        
         // Have a straight path to these conditions and know where
         // tables came from.  See what can be moved back there.
-        protected void moveConditions(ConditionDependencyAnalyzer dependencies,
-                                      Select select) {
+        public void moveConditions(Branch branch) {
+            assert ((branch != null) == (branches == null));
             Iterator<ConditionExpression> iter = select.getConditions().iterator();
             while (iter.hasNext()) {
                 ConditionExpression condition = iter.next();
-                PlanNode moveTo = canMove(dependencies, condition);
+                ColumnSource singleTable = dependencies.analyze(condition);
+                PlanNode moveTo = canMove(branch, singleTable);
                 if ((moveTo != null) && (moveTo != select.getInput())) {
                     moveCondition(condition, moveTo);
                     iter.remove();
                 }
             }
         }
-
+        
         // Return where this condition can move.
         // TODO: Could move earlier after subset of joins by breaking apart Flatten.
-        protected PlanNode canMove(ConditionDependencyAnalyzer dependencies,
-                                   ConditionExpression condition) {
-            ColumnSource singleTable = dependencies.analyze(condition);
-            if (indexColumns != null) {
+        public PlanNode canMove(Branch branch, ColumnSource singleTable) {
+            Set<TableSource> outerTables = null;
+            if (branch == null) {
+                // Several joined branches: find the shallowest one that has everything.
+                // If the condition only references a single table, no
+                // need to check outer bindings; it's wherever it is.
+                if (singleTable == null)
+                    outerTables = new HashSet<TableSource>();
+                branch = findBranch(outerTables);
+                if (branch == null)
+                    return null;
+            }
+            if (branch.indexColumns != null) {
                 // Can check the index column before it's used for lookup.
-                PlanNode loader = 
-                    getSingleIndexLoader(dependencies.getReferencedColumns());
+                PlanNode loader = getSingleIndexLoader(branch, outerTables);
                 if (loader != null)
                     return loader;
             }
-            if (singleTable != null)
-                return loaders.get(singleTable);
             Set<ColumnSource> allTables = dependencies.getReferencedTables();
-            if (!allTables.isEmpty()) {
+            if ((singleTable == null) && (outerTables != null)) {
+                // Might still narrow down to a single table within this branch.
+                allTables.removeAll(outerTables);
+                if (allTables.size() == 1)
+                    singleTable = allTables.iterator().next();
+            }
+            if (singleTable != null)
+                return branch.loaders.get(singleTable);
+            if ((branch.joins != null) && !allTables.isEmpty()) {
                 joins:
-                for (PlanNode join : joins) {
-                    // Find the first (deepest) join that has all the tables we need.
-                    Set<TableSource> tables = joined.get(join);
+                for (PlanNode join : branch.joins) {
+                    // Find the first (deepest) flatten that has all the tables we need.
+                    Set<TableSource> tables = branch.joined.get(join);
                     for (ColumnSource table : allTables) {
                         if (!tables.contains(table))
                             continue joins;
@@ -283,11 +372,64 @@ public class SelectPreponer extends BaseRule
             return null;
         }
 
+        // Find the first branch that has enough to evaluate the condition.
+        public Branch findBranch(Set<TableSource> outerTables) {
+            for (Branch branch : branches) {
+                if (branch.indexOnly()) {
+                    // If the map branch is just an index, have to
+                    // look at individual columns.
+                    Set<TableSource> maybeOuterTables = null;
+                    if (outerTables != null)
+                        // Even though index only has some columns, can exclude whole
+                        // tables for purposes of deeper branches.
+                        maybeOuterTables = new HashSet<TableSource>();
+                    boolean allFound = true;
+                    for (ColumnExpression column : dependencies.getReferencedColumns()) {
+                        if (branch.indexColumns.containsKey(column)) {
+                            if (maybeOuterTables != null)
+                                maybeOuterTables.add((TableSource)column.getTable());
+                        }
+                        else {
+                            allFound = false;
+                        }
+                    }
+                    if (allFound)
+                        return branch;
+                    if (maybeOuterTables != null)
+                        outerTables.addAll(maybeOuterTables);
+                }
+                else {
+                    boolean allFound = true;
+                    for (ColumnSource referencedTable : dependencies.getReferencedTables()) {
+                        if (outerTables != null) {
+                            if (outerTables.contains(referencedTable))
+                                continue;
+                        }
+                        if (!branch.loaders.containsKey(referencedTable)) {
+                            allFound = false;
+                            break;
+                        }
+                    }
+                    if (allFound)
+                        return branch;
+                    if (outerTables != null)
+                        // Not moving to this branch; its tables are then available.
+                        outerTables.addAll(branch.loaders.keySet());
+                }
+            }
+            return null;
+        }
+
         // If all the referenced columns come from the same index, return it.
-        protected PlanNode getSingleIndexLoader(Set<ColumnExpression> columns) {
+        public PlanNode getSingleIndexLoader(Branch branch,
+                                             Set<TableSource> outerTables) {
             PlanNode single = null;
-            for (ColumnExpression column : columns) {
-                PlanNode loader = indexColumns.get(column);
+            for (ColumnExpression column : dependencies.getReferencedColumns()) {
+                if (outerTables != null) {
+                    if (outerTables.contains(column.getTable())) 
+                        continue;
+                }
+                PlanNode loader = branch.indexColumns.get(column);
                 if (loader == null)
                     return null;
                 if (single == null)
@@ -299,8 +441,7 @@ public class SelectPreponer extends BaseRule
         }
 
         // Move the given condition to a Select that is right after the given node.
-        protected void moveCondition(ConditionExpression condition, 
-                                     PlanNode before) {
+        public void moveCondition(ConditionExpression condition, PlanNode before) {
             Select select = null;
             PlanWithInput after = before.getOutput();
             if (after instanceof Select)
