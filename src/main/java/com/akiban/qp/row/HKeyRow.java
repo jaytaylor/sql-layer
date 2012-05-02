@@ -62,12 +62,6 @@ public class HKeyRow extends AbstractRow
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
     public Row subRow(RowType subRowType)
     {
         throw new UnsupportedOperationException();
