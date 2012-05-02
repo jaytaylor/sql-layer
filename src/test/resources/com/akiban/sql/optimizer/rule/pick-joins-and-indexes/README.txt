@@ -57,3 +57,5 @@ left-outer-index-usage: Outer join with a later condition that could be incorrec
 outer-index: LEFT using an index
 
 outer-no-index-extra-conditions: LEFT with extra conditions cannot use index
+
+cross-product: Conditions but no joins
