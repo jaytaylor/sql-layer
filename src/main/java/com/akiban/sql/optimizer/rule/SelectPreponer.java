@@ -305,6 +305,8 @@ public class SelectPreponer extends BaseRule
 
     }
 
+    // Holds what is known about inputs to a Select, which may come from multiple map
+    // join branches.
     static class SelectConditions {
         Select select;
         ConditionDependencyAnalyzer dependencies;
