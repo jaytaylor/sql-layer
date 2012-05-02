@@ -127,8 +127,7 @@ class OperatorStoreGIHandler {
 
     private void removeExchange(GroupIndex groupIndex, Exchange exchange) {
         try {
-            if (exchange.fetch().getValue().isDefined()) { // see bug 914044 for why we can't do if(exchange.remove())
-                exchange.remove();
+            if (exchange.remove()) {
                 AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, -1);
             }
             else
