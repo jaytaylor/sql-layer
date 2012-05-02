@@ -100,7 +100,7 @@ public class EncryptExpression extends AbstractBinaryExpression
                 NoSuchProviderException, java.security.InvalidKeyException
         {
             SecretKey skey = new SecretKeySpec(adjustKey(key, length), "AES"); 
-            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding", "SunJCE");
+            Cipher cipher = Cipher.getInstance("AES/ECB/ISO10126Padding");
             cipher.init(mode, skey);
             
             switch(mode)
@@ -129,7 +129,7 @@ public class EncryptExpression extends AbstractBinaryExpression
          * => returns 'abc'!
          * 
          * @param key
-         * @return
+         * @return the key in byte array
          * @throws UnsupportedEncodingException 
          */
         private static byte[] adjustKey(String key, int length) throws UnsupportedEncodingException
@@ -149,6 +149,8 @@ public class EncryptExpression extends AbstractBinaryExpression
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         private final int MODE;
+        
+        // KEY LENTH in BYTES
         private final int DEFAULT_KEY_LENGTH = 16; // someone might want to change this 
         
         InnerEvaluation(List<? extends ExpressionEvaluation> args, int mode)

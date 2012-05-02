@@ -12,4 +12,7 @@
 --- ## this is bad! Two different keys shouldn't be able to decrypt the same message
 - Statement: select aes_decrypt(aes_encrypt('abc', '893456789123456712'), '123456789123456789');
 - output: [['abc']]
+---
+- Statement: select aes_decrypt(aes_encrypt('helloworld', '1234567891234567'), '1234567891234567');
+- output: [['helloworld']]
 ...
