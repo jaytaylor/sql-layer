@@ -196,13 +196,23 @@ public class SelectPreponer extends BaseRule
                     i = flattens.indexOf(before);
                 if (i < 0)
                     i = flattens.size();
-                for (PlanNode flatten : other.flattens)
+                for (PlanNode flatten : other.flattens) {
+                    if (flatten == before) 
+                        break;
                     flattens.add(i++, flatten);
+                }
             }
             if (flattened == null)
                 flattened = other.flattened;
-            else if (other.flattened != null)
-                flattened.putAll(other.flattened);
+            else if (other.flattened != null) {
+                for (Map.Entry<PlanNode,Set<TableSource>> entry : other.flattened.entrySet()) {
+                    Set<TableSource> existing = flattened.get(entry.getKey());
+                    if (existing != null)
+                        existing.addAll(entry.getValue());
+                    else
+                        flattened.put(entry.getKey(), entry.getValue());
+                }
+            }
             return this;
         }
 
@@ -271,20 +281,24 @@ public class SelectPreponer extends BaseRule
                     loop.addFlatten((Flatten)node);
                 }
                 else if (node instanceof Product) {
-                    // A Product takes multiple streams, so we may
-                    // have seen this one before.  Always inner join
-                    // as of now, so no filtering of sources.
                     Product product = (Product)node;
-                    if (products == null)
-                        products = new HashMap<Product,Loop>();
-                    Loop obranch = products.get(product);
-                    if (obranch != null) {
-                        loop = obranch.merge(loop, product);
-                        newLoop = false;
-                    }
-                    else {
-                        products.put(product, loop);
-                        loop.addFlattenOrProduct(node);
+                    if (newLoop) {
+                        // Always inner join at present, so no filtering
+                        // of sources.
+                        loop.addFlattenOrProduct(product);
+
+                        // A Product takes multiple streams, so we may
+                        // have seen this one before.
+                        if (products == null)
+                            products = new HashMap<Product,Loop>();
+                        Loop oloop = products.get(product);
+                        if (oloop != null) {
+                            loop = oloop.merge(loop, product);
+                            newLoop = false;
+                        }
+                        else {
+                            products.put(product, loop);
+                        }
                     }
                     hasProducts = true;
                 }
