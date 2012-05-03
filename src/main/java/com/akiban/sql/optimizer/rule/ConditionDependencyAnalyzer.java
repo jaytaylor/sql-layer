@@ -101,6 +101,8 @@ public class ConditionDependencyAnalyzer implements PlanVisitor, ExpressionVisit
         if (state == State.GATHER) {
             if (n instanceof ColumnSource)
                 upstreamTables.add((ColumnSource)n);
+            else if (n instanceof IndexScan)
+                upstreamTables.addAll(((IndexScan)n).getTables());
         }
         return true;
     }
