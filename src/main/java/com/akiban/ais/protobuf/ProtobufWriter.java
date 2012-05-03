@@ -35,6 +35,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 
@@ -54,7 +55,6 @@ public class ProtobufWriter {
     private static final GrowableByteBuffer NO_BUFFER = new GrowableByteBuffer(0);
     private final GrowableByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
-    private Map<String,Schema> schemaMap = new TreeMap<String,Schema>();
 
     public ProtobufWriter() {
         this(NO_BUFFER);
@@ -66,17 +66,6 @@ public class ProtobufWriter {
     }
 
     public AISProtobuf.AkibanInformationSchema save(AkibanInformationSchema ais) {
-        // Collect into schemas until that it is a top level AIS object
-        for(Group group : ais.getGroups().values()) {
-            String schemaName = group.getGroupTable().getRoot().getName().getSchemaName();
-            getSchemaFromName(schemaName).groups.add(group);
-        }
-
-        for(UserTable userTable : ais.getUserTables().values()) {
-            String schemaName = userTable.getName().getSchemaName();
-            getSchemaFromName(schemaName).userTables.add(userTable);
-        }
-
         AISProtobuf.AkibanInformationSchema.Builder aisBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
 
         // Write top level proto messages and recurse down as needed
@@ -84,7 +73,7 @@ public class ProtobufWriter {
             writeType(aisBuilder, type);
         }
 
-        for(Schema schema : schemaMap.values()) {
+        for(Schema schema : ais.getScheams().values()) {
             writeSchema(aisBuilder, schema);
         }
 
@@ -92,15 +81,6 @@ public class ProtobufWriter {
         if (buffer != NO_BUFFER)
             writeMessageLite(pbAIS);
         return pbAIS;
-    }
-
-    private Schema getSchemaFromName(String schemaName) {
-        Schema schema = schemaMap.get(schemaName);
-        if(schema == null) {
-            schema = new Schema(schemaName);
-            schemaMap.put(schemaName, schema);
-        }
-        return schema;
     }
 
     private void writeMessageLite(MessageLite msg) {
@@ -134,13 +114,16 @@ public class ProtobufWriter {
 
     private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema) {
         AISProtobuf.Schema.Builder schemaBuilder = AISProtobuf.Schema.newBuilder();
-        schemaBuilder.setSchemaName(schema.name);
+        schemaBuilder.setSchemaName(schema.getName());
 
-        for(Group group : schema.groups) {
-            writeGroup(schemaBuilder, group);
+        // Write groups into same schema as root table
+        for(UserTable table : schema.getUserTables().values()) {
+            if (table.getParentJoin() == null && table.getGroup() != null) {
+                writeGroup(schemaBuilder, table.getGroup());
+            }
         }
 
-        for(UserTable table : schema.userTables) {
+        for(UserTable table : schema.getUserTables().values()) {
             writeTable(schemaBuilder, table);
         }
 
@@ -285,15 +268,5 @@ public class ProtobufWriter {
                 setCharacterSetName(charAndColl.charset()).
                 setCollationOrderName(charAndColl.collation()).
                 build();
-    }
-
-    private static class Schema {
-        public final String name;
-        public final List<Group> groups = new ArrayList<Group>();
-        public final List<UserTable> userTables = new ArrayList<UserTable>();
-
-        public Schema(String name) {
-            this.name = name;
-        }
     }
 }

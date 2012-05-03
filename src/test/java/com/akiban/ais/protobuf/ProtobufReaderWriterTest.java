@@ -150,6 +150,7 @@ public class ProtobufReaderWriterTest {
     public void missingRootTable() {
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);
         inAIS.getUserTables().remove(TableName.create(SCHEMA, CAOIBuilderFiller.CUSTOMER_TABLE));
+        inAIS.getSchema(SCHEMA).getUserTables().remove(CAOIBuilderFiller.CUSTOMER_TABLE);
         writeAndRead(inAIS);
     }
 
