@@ -182,7 +182,7 @@ public class SelectPreponer extends BaseRule
 
         /** Merge another loop into this one. Although <code>Product</code> starts
          * with separate lookup operators, it's a single loop for purposes of nesting. */
-        public Loop merge(Loop other) {
+        public Loop merge(Loop other, PlanNode before) {
             loaders.putAll(other.loaders);
             if (indexColumns == null)
                 indexColumns = other.indexColumns;
@@ -190,8 +190,15 @@ public class SelectPreponer extends BaseRule
                 indexColumns.putAll(other.indexColumns);
             if (flattens == null)
                 flattens = other.flattens;
-            else if (other.flattens != null)
-                flattens.addAll(other.flattens);
+            else if (other.flattens != null) {
+                int i = -1;
+                if (before != null)
+                    i = flattens.indexOf(before);
+                if (i < 0)
+                    i = flattens.size();
+                for (PlanNode flatten : other.flattens)
+                    flattens.add(i++, flatten);
+            }
             if (flattened == null)
                 flattened = other.flattened;
             else if (other.flattened != null)
@@ -246,6 +253,7 @@ public class SelectPreponer extends BaseRule
          * some conditions or something we can't handle. */
         public void addOrigin(PlanNode node) {
             Loop loop = new Loop();
+            boolean newLoop = true, hasMaps = false, hasProducts = false;
             PlanNode prev = null;
             if (node instanceof IndexScan) {
                 loop.setIndex((IndexScan)node);
@@ -257,7 +265,6 @@ public class SelectPreponer extends BaseRule
                 prev = node;
                 node = node.getOutput();
             }
-            boolean hasMaps = false, hasProducts = false;
             while (true) {
                 if (node instanceof Flatten) {
                     // A Flatten takes a single stream of lookups.
@@ -271,10 +278,14 @@ public class SelectPreponer extends BaseRule
                     if (products == null)
                         products = new HashMap<Product,Loop>();
                     Loop obranch = products.get(product);
-                    if (obranch != null)
-                        loop = obranch.merge(loop);
-                    else
+                    if (obranch != null) {
+                        loop = obranch.merge(loop, product);
+                        newLoop = false;
+                    }
+                    else {
+                        products.put(product, loop);
                         loop.addFlattenOrProduct(node);
+                    }
                     hasProducts = true;
                 }
                 else if (node instanceof MapJoin) {
@@ -312,7 +323,7 @@ public class SelectPreponer extends BaseRule
                                 selects.remove(select);
                         }
                         else {
-                            if (hasMaps) {
+                            if (hasMaps && newLoop) {
                                 selectConditions.addBranch(loop);
                             }
                             if (hasProducts || hasMaps) {
