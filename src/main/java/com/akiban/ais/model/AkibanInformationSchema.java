@@ -50,15 +50,6 @@ public class AkibanInformationSchema implements Traversable
         charsetAndCollation = CharsetAndCollation.intern(DEFAULT_CHARSET, DEFAULT_COLLATION);
     }
 
-    public AkibanInformationSchema(AkibanInformationSchema ais)
-    {
-        this();
-        groups.putAll(ais.getGroups());
-        userTables.putAll(ais.getUserTables());
-        groupTables.putAll(ais.getGroupTables());
-        joins.putAll(ais.getJoins());
-    }
-
 
     // AkibanInformationSchema interface
 
@@ -207,6 +198,16 @@ public class AkibanInformationSchema implements Traversable
         return joins.get(joinName);
     }
 
+    public Map<String, Schema> getScheams()
+    {
+        return schemas;
+    }
+
+    public Schema getSchema(String schema)
+    {
+        return schemas.get(schema);
+    }
+
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
@@ -269,7 +270,16 @@ public class AkibanInformationSchema implements Traversable
 
     public void addUserTable(UserTable table)
     {
-        userTables.put(table.getName(), table);
+        TableName tableName = table.getName();
+        userTables.put(tableName, table);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(tableName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(tableName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addUserTable(table);
     }
 
     public void addGroupTable(GroupTable table)
@@ -300,6 +310,11 @@ public class AkibanInformationSchema implements Traversable
     public void addJoin(Join join)
     {
         joins.put(join.getName(), join);
+    }
+
+    public void addSchema(Schema schema)
+    {
+        schemas.put(schema.getName(), schema);
     }
 
     public void deleteGroupAndGroupTable(Group group)
@@ -544,6 +559,10 @@ public class AkibanInformationSchema implements Traversable
 
     void removeTable(TableName name) {
         userTables.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeTable(name.getTableName());
+        }
         invalidateTableIdMap();
     }
 
@@ -557,6 +576,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
+    private final Map<String, Schema> schemas = new TreeMap<String, Schema>();
     private final CharsetAndCollation charsetAndCollation;
 
     private Map<Integer, UserTable> userTablesById = null;
