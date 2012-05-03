@@ -164,8 +164,8 @@ public class SelectPreponer extends BaseRule
         }
 
         public void addFlatten(Flatten flatten) {
-            // Limit to tables that are inner flattened (and on the outer
-            // side of outer flattens.)
+            // Limit to tables that are inner joined (and on the outer
+            // side of outer joins.)
             Set<TableSource> inner = flatten.getInnerJoinedTables();
             loaders.keySet().retainAll(inner);
             if (indexColumns != null) {
@@ -215,13 +215,12 @@ public class SelectPreponer extends BaseRule
 
     /** Move conditions as follows:
      * 
-     * Starting with index scans and
-     * lookup operators, trace downstream, adding tables from
-     * additional such operators. When we come to a
-     * <code>Product</code>, merge with any other streams. When we
-     * come to a <code>Map</code>, note the depth-first traversal of
-     * its branches, which corresponds to bindings being available to
-     * inner loops.
+     * Starting with index scans and lookup operators, trace
+     * downstream, adding tables from additional such operators. When
+     * we come to a <code>Product</code>, merge with any other
+     * streams. When we come to a <code>MapJoin</code>, note the
+     * traversal of its loops, which corresponds to bindings being
+     * available to inner loops.
      *
      * When we finally come to a <code>Select</code>, move conditions from it down to
      * earlier operators:<ul>
@@ -230,7 +229,7 @@ public class SelectPreponer extends BaseRule
      * after that table is looked up.</li>
      * <li>If the condition uses multiple tables in a single group, when they are joined
      * together by <code>Flatten</code> or <code>Product</code></li>
-     * <li>Tables from outer loops using <code>Map</code>, which are available to
+     * <li>Tables from outer loops using <code>MapJoin</code>, which are available to
      *  the inner loop, can be ignored in the above.</li></ul>
      * 
      * In general, nested loop handling needs to be deferred until all
@@ -293,42 +292,44 @@ public class SelectPreponer extends BaseRule
                     }
                     hasMaps = true;
                 }
+                else if (node instanceof Select) {
+                    Select select = (Select)node;
+                    if (!select.getConditions().isEmpty()) {
+                        SelectConditions selectConditions = null;
+                        boolean newSelect = false;
+                        if (selects != null)
+                            selectConditions = selects.get(select);
+                        if (selectConditions == null) {
+                            selectConditions = new SelectConditions(select);
+                            newSelect = true;
+                        }
+                        if (!loop.isEmpty()) {
+                            // Try once right away to get single table conditions.
+                            selectConditions.moveConditions(loop);
+                        }
+                        if (select.getConditions().isEmpty()) {
+                            if (!newSelect)
+                                selects.remove(select);
+                        }
+                        else {
+                            if (hasMaps) {
+                                selectConditions.addBranch(loop);
+                            }
+                            if (hasProducts || hasMaps) {
+                                // Need to defer until have all the contributors
+                                // to the Map joins. Enable reuse for
+                                // Product.
+                                if (selects == null)
+                                    selects = new HashMap<Select,SelectConditions>();
+                                selects.put(select, selectConditions);
+                            }
+                        }
+                    }
+                }
                 else
                     break;
                 prev = node;
                 node = node.getOutput();
-            }
-            if (node instanceof Select) {
-                Select select = (Select)node;
-                if (select.getConditions().isEmpty())
-                    return;     // Nothing (left) to do.
-                SelectConditions selectConditions = null;
-                boolean newSelect = false;
-                if (selects != null)
-                    selectConditions = selects.get(select);
-                if (selectConditions == null) {
-                    selectConditions = new SelectConditions(select);
-                    newSelect = true;
-                }
-                if (!loop.isEmpty()) {
-                    // Try once right away to get single table conditions.
-                    selectConditions.moveConditions(loop);
-                }
-                if (select.getConditions().isEmpty()) {
-                    if (!newSelect)
-                        selects.remove(select);
-                    return;
-                }
-                if (hasMaps) {
-                    selectConditions.addBranch(loop);
-                }
-                if (hasProducts || hasMaps) {
-                    // Need to defer until have all the contributors
-                    // to the Map flattens / enable reuse for Product.
-                    if (selects == null)
-                        selects = new HashMap<Select,SelectConditions>();
-                    selects.put(select, selectConditions);
-                }
             }
         }
 
@@ -343,14 +344,14 @@ public class SelectPreponer extends BaseRule
     }
 
     /** Holds what is known about inputs to a Select, which may come
-     * from multiple <code>Map</code> join branches. */
+     * from multiple <code>MapJoin</code> loops. */
     static class SelectConditions {
         Select select;
         ConditionDependencyAnalyzer dependencies;
-        // The branches that are flattened up to feed the Select, added in depth-first
+        // The loops that are joined up to feed the Select, added in visitor
         // order, meaning that tables from an earlier loop should be available as
-        // bound variables to later ones.
-        List<Loop> branches;
+        // bound variables to later / deeper ones.
+        List<Loop> loops;
 
         public SelectConditions(Select select) {
             this.select = select;
@@ -358,13 +359,13 @@ public class SelectPreponer extends BaseRule
         }
 
         public void addBranch(Loop loop) {
-            if (branches == null)
-                branches = new ArrayList<Loop>();
-            branches.add(loop);
+            if (loops == null)
+                loops = new ArrayList<Loop>();
+            loops.add(loop);
         }
 
         public boolean hasBranches() {
-            return (branches != null);
+            return (loops != null);
         }
         
         /** Try to move conditions from <code>Select</code>.
@@ -386,7 +387,7 @@ public class SelectPreponer extends BaseRule
         }
         
         /** Return where this condition can move. */
-        // TODO: Could move earlier after subset of flattens by breaking apart Flatten.
+        // TODO: Could move earlier after subset of joins by breaking apart Flatten.
         public PlanNode canMove(Loop loop, ColumnSource singleTable) {
             Set<TableSource> outerTables = null;
             if (loop == null) {
@@ -395,7 +396,7 @@ public class SelectPreponer extends BaseRule
                 if (singleTable == null)
                     outerTables = new HashSet<TableSource>();
                 // Several joined loops: find the shallowest one that has everything.
-                loop = findBranch(outerTables);
+                loop = findLoop(outerTables);
                 if (loop == null)
                     return null;
             }
@@ -412,33 +413,34 @@ public class SelectPreponer extends BaseRule
                 if (allTables.size() == 1)
                     singleTable = allTables.iterator().next();
             }
-            if (singleTable != null)
+            if (singleTable != null) {
                 return loop.loaders.get(singleTable);
+            }
             if ((loop.flattens != null) && !allTables.isEmpty()) {
                 flattens:
-                for (PlanNode join : loop.flattens) {
+                for (PlanNode flatten : loop.flattens) {
                     // Find the first (deepest) flatten that has all the tables we need.
-                    Set<TableSource> tables = loop.flattened.get(join);
+                    Set<TableSource> tables = loop.flattened.get(flatten);
                     for (ColumnSource table : allTables) {
                         if (!tables.contains(table))
                             continue flattens;
                     }
-                    return join;
+                    return flatten;
                 }
             }
             return null;
         }
 
         /** Find the first loop that has enough to evaluate the condition. */
-        public Loop findBranch(Set<TableSource> outerTables) {
-            for (Loop loop : branches) {
+        public Loop findLoop(Set<TableSource> outerTables) {
+            for (Loop loop : loops) {
                 if (loop.indexOnly()) {
                     // If the map loop is just an index, have to
                     // look at individual columns.
                     Set<TableSource> maybeOuterTables = null;
                     if (outerTables != null)
                         // Even though index only has some columns, can exclude whole
-                        // tables for purposes of deeper branches.
+                        // tables for purposes of deeper loops.
                         maybeOuterTables = new HashSet<TableSource>();
                     boolean allFound = true;
                     for (ColumnExpression column : dependencies.getReferencedColumns()) {
