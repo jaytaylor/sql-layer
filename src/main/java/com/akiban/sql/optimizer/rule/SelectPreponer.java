@@ -400,6 +400,10 @@ public class SelectPreponer extends BaseRule
                         maybeOuterTables = new HashSet<TableSource>();
                     boolean allFound = true;
                     for (ColumnExpression column : dependencies.getReferencedColumns()) {
+                        if (outerTables != null) {
+                            if (outerTables.contains(column.getTable())) 
+                                continue;
+                        }
                         if (branch.indexColumns.containsKey(column)) {
                             if (maybeOuterTables != null)
                                 maybeOuterTables.add((TableSource)column.getTable());
