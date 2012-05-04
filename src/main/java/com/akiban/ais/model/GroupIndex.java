@@ -138,84 +138,6 @@ public class GroupIndex extends Index
         }
     }
 
-
-    @Override
-    protected Column indexRowCompositionColumn(HKeyColumn hKeyColumn) {
-        // If we're within the branch segment, we want the root-most equivalent column, bound at the segment.
-        // Otherwise (ie, rootward of the segment), we want the usual, leafward column.
-
-        final int rootMostDepth = rootMostTable().getDepth();
-        final int forTableDepth = hKeyColumn.segment().table().getDepth();
-
-        if (forTableDepth < rootMostDepth) {
-            // table is root of the branch segment; use the standard hkey column
-            return hKeyColumn.column();
-        }
-
-        // table is within the branch segment
-        List<Column> equivalentColumns = hKeyColumn.equivalentColumns();
-        switch (getJoinType()) {
-        case LEFT:
-            // use a rootward bias, but no more rootward than the rootmost table
-            for (Column equivalentColumn : equivalentColumns) {
-                int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
-                if (equivalentColumnDepth >= rootMostDepth) {
-                    return equivalentColumn;
-                }
-            }
-            break;
-        case RIGHT:
-            // use a childward bias, but no more childward than the childmost table
-            int leafMostDepth = leafMostTable().getDepth();
-            for(ListIterator<Column> reverseCols = equivalentColumns.listIterator(equivalentColumns.size());
-                reverseCols.hasPrevious();)
-            {
-                Column equivalentColumn = reverseCols.previous();
-                int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
-                if (equivalentColumnDepth <= leafMostDepth) {
-                    return equivalentColumn;
-                }
-            }
-            break;
-        }
-
-        throw new AssertionError(
-                "no suitable column found for table " + hKeyColumn.segment().table()
-                        + " in " + equivalentColumns
-        );
-    }
-
-    private void checkIndexTableInBranchNew(IndexColumn indexColumn, UserTable indexTable, int indexTableDepth,
-            Map.Entry<Integer, ParticipatingTable> entry, boolean entryIsRootward)
-    {
-        if (entry == null) {
-            return;
-        }
-        if (entry.getKey().intValue() == indexTableDepth) {
-            throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
-                    indexTable.getName(), entry.getValue().table.getName());
-        }
-        UserTable entryTable = entry.getValue().table;
-
-        final UserTable rootward;
-        final UserTable leafward;
-        if (entryIsRootward) {
-            assert entry.getKey() < indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
-            rootward = entryTable;
-            leafward = indexTable;
-        } else {
-            assert entry.getKey() > indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
-            rootward = indexTable;
-            leafward = entryTable;
-        }
-
-        if (!leafward.isDescendantOf(rootward))
-        {
-            throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(), 
-                    indexTable.getName(), entry.getValue().table.getName());
-        }
-    }
-
     @Override
     public boolean isTableIndex()
     {
@@ -238,7 +160,7 @@ public class GroupIndex extends Index
             offset += userTable.getColumnsIncludingInternal().size();
             columnsPerFlattenedField.addAll(userTable.getColumnsIncludingInternal());
         }
-        computeFieldAssociations(ordinalMap, null, offsetsMap);
+        computeFieldAssociations(ordinalMap, offsetsMap);
         // Complete computation of inIndex bitsets
         for (ParticipatingTable participatingTable : tablesByDepth.values()) {
             participatingTable.close();
@@ -255,10 +177,169 @@ public class GroupIndex extends Index
     {
         return leafMostTable().hKey();
     }
-    
+
+    // For use by this class
+
+    private void computeFieldAssociations(Map<Table,Integer> ordinalMap,
+                                          Map<? extends Table, Integer> flattenedRowOffsets)
+    {
+        freezeColumns();
+        AssociationBuilder toIndexRowBuilder = new AssociationBuilder();
+        AssociationBuilder toHKeyBuilder = new AssociationBuilder();
+        List<Column> indexColumns = new ArrayList<Column>();
+        // Add index key fields
+        for (IndexColumn iColumn : getKeyColumns()) {
+            Column column = iColumn.getColumn();
+            indexColumns.add(column);
+            toIndexRowBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
+        }
+        // Add leafward-biased hkey fields not already included
+        int indexColumnPosition = indexColumns.size();
+        leafwardHKeyColumns = new ArrayList<IndexColumn>();
+        List<Column> rootwardColumns = new ArrayList<Column>();
+        HKey hKey = hKey();
+        for (HKeySegment hKeySegment : hKey.segments()) {
+            Integer ordinal = ordinalMap.get(hKeySegment.table());
+            assert ordinal != null : hKeySegment.table();
+            toHKeyBuilder.toHKeyEntry(ordinal, -1, -1);
+            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                // TODO: Experiment. hKeyColumn is leafward. Also include rootward column.
+                // Column column = indexRowCompositionColumn(hKeyColumn);
+                Column leafwardColumn = hKeyColumn.column();
+                Join join = leafwardColumn.getUserTable().getParentJoin();
+                if (indexCovers(join.getParent())) {
+                    Column rootwardColumn = join.getMatchingParent(leafwardColumn);
+                    if (rootwardColumn != null) {
+                        rootwardColumns.add(rootwardColumn);
+                    }
+                }
+                if (!indexColumns.contains(leafwardColumn)) {
+                    toIndexRowBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, leafwardColumn), -1);
+                    indexColumns.add(leafwardColumn);
+                    leafwardHKeyColumns.add(new IndexColumn(this, leafwardColumn, indexColumnPosition++, true, 0));
+                }
+                int indexRowPos = indexColumns.indexOf(leafwardColumn);
+                int fieldPos = columnPosition(flattenedRowOffsets, leafwardColumn);
+                toHKeyBuilder.toHKeyEntry(-1, indexRowPos, fieldPos);
+            }
+        }
+        // Complete metadata for rootward-biased hkey fields
+        rootwardHKeyColumns = new ArrayList<IndexColumn>();
+        for (Column column : rootwardColumns) {
+            IndexColumn indexColumn = new IndexColumn(this, column, indexColumnPosition++, true, 0);
+            rootwardHKeyColumns.add(indexColumn);
+            toIndexRowBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
+        }
+        allColumns = new ArrayList<IndexColumn>();
+        allColumns.addAll(keyColumns);
+        allColumns.addAll(leafwardHKeyColumns);
+        allColumns.addAll(rootwardHKeyColumns);
+        indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
+        indexToHKey = toHKeyBuilder.createIndexToHKey();
+    }
+
+    private boolean indexCovers(UserTable table)
+    {
+        return table.getDepth() >= rootMostTable().getDepth() && table.getDepth() <= leafMostTable().getDepth();
+    }
+
+    private static int columnPosition(Map<? extends Table,Integer> flattenedRowOffsets, Column column)
+    {
+        int position = column.getPosition();
+        Integer offset = flattenedRowOffsets.get(column.getTable());
+        if (offset == null) {
+            throw new NullPointerException("no offset for " + column.getTable() + " in " + flattenedRowOffsets);
+        }
+        position += offset;
+        return position;
+    }
+
+    private Column indexRowCompositionColumn(HKeyColumn hKeyColumn)
+    {
+        // If we're within the branch segment, we want the root-most equivalent column, bound at the segment.
+        // Otherwise (ie, rootward of the segment), we want the usual, leafward column.
+
+        final int rootMostDepth = rootMostTable().getDepth();
+        final int forTableDepth = hKeyColumn.segment().table().getDepth();
+
+        if (forTableDepth < rootMostDepth) {
+            // table is root of the branch segment; use the standard hkey column
+            return hKeyColumn.column();
+        }
+
+        // table is within the branch segment
+        List<Column> equivalentColumns = hKeyColumn.equivalentColumns();
+        switch (getJoinType()) {
+            case LEFT:
+                // use a rootward bias, but no more rootward than the rootmost table
+                for (Column equivalentColumn : equivalentColumns) {
+                    int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+                    if (equivalentColumnDepth >= rootMostDepth) {
+                        return equivalentColumn;
+                    }
+                }
+                break;
+            case RIGHT:
+                // use a childward bias, but no more childward than the childmost table
+                int leafMostDepth = leafMostTable().getDepth();
+                for(ListIterator<Column> reverseCols = equivalentColumns.listIterator(equivalentColumns.size());
+                    reverseCols.hasPrevious();)
+                {
+                    Column equivalentColumn = reverseCols.previous();
+                    int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+                    if (equivalentColumnDepth <= leafMostDepth) {
+                        return equivalentColumn;
+                    }
+                }
+                break;
+        }
+
+        throw new AssertionError(
+            "no suitable column found for table " + hKeyColumn.segment().table()
+            + " in " + equivalentColumns
+        );
+    }
+
+    private void checkIndexTableInBranchNew(IndexColumn indexColumn, UserTable indexTable, int indexTableDepth,
+                                            Map.Entry<Integer, ParticipatingTable> entry, boolean entryIsRootward)
+    {
+        if (entry == null) {
+            return;
+        }
+        if (entry.getKey().intValue() == indexTableDepth) {
+            throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(),
+                                                    indexTable.getName(), entry.getValue().table.getName());
+        }
+        UserTable entryTable = entry.getValue().table;
+
+        final UserTable rootward;
+        final UserTable leafward;
+        if (entryIsRootward) {
+            assert entry.getKey() < indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
+            rootward = entryTable;
+            leafward = indexTable;
+        } else {
+            assert entry.getKey() > indexTableDepth : String.format("failed %d < %d", entry.getKey(), indexTableDepth);
+            rootward = indexTable;
+            leafward = entryTable;
+        }
+
+        if (!leafward.isDescendantOf(rootward))
+        {
+            throw new BranchingGroupIndexException (indexColumn.getIndex().getIndexName().getName(),
+                                                    indexTable.getName(), entry.getValue().table.getName());
+        }
+    }
+
+    // Object state
+
     private final Group group;
     private final NavigableMap<Integer,ParticipatingTable> tablesByDepth = new TreeMap<Integer, ParticipatingTable>();
     private List<Column> columnsPerFlattenedField;
+    private List<IndexColumn> leafwardHKeyColumns;
+    private List<IndexColumn> rootwardHKeyColumns;
+
+    // Inner classes
 
     private static class ParticipatingTable
     {

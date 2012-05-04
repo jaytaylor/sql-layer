@@ -293,9 +293,7 @@ public final class DropTreesIT extends ITBase {
         UserTable t = getUserTable(tid);
         expectTree(t);
         Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
-        if(!pk.isHKeyEquivalent()) {
-            expectTree(pk);
-        }
+        expectTree(pk);
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
         expectNoTree(pk);
@@ -330,9 +328,7 @@ public final class DropTreesIT extends ITBase {
         UserTable c = getUserTable(cid);
         expectTree(c);
         Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
-        if(!pk.isHKeyEquivalent()) {
-            expectTree(pk);
-        }
+        expectTree(pk);
         ddl().dropTable(session(), c.getName());
         expectNoTree(pk);
         ddl().dropTable(session(), p.getName());

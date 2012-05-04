@@ -37,11 +37,11 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         groupIndex("c.name, o.when");
         writeAndCheck(
                 createNewRow(c, 1L, "Bergy"),
-                "Bergy, null, 1, null => " + containing(c)
+                "Bergy, null, null, null, 1 => " + containing(c)
         );
         writeAndCheck(
                 createNewRow(o, 10L, 1L, "01-01-2001"),
-                "Bergy, 01-01-2001, 1, 10 => " + containing(c, o)
+                "Bergy, 01-01-2001, 1, 10, 1 => " + containing(c, o)
         );
     }
 
@@ -53,7 +53,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         writeAndCheck(
                 createNewRow(c, 1L, "Bergy"),
-                "Bergy, 01-01-2001, 1, 10 => " + containing(c, o)
+                "Bergy, 01-01-2001, 1, 10, 1 => " + containing(c, o)
         );
     }
 
@@ -63,24 +63,24 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         final NewRow customer, firstOrder, secondOrder;
         writeAndCheck(
                 customer = createNewRow(c, 1L, "Joe"),
-                "Joe, null, 1, null => " + containing(c)
+                "Joe, null, null, null, 1 => " + containing(c)
         );
         writeAndCheck(
                 firstOrder = createNewRow(o, 11L, 1L, "01-01-01"),
-                "Joe, 01-01-01, 1, 11 => " + containing(c, o)
+                "Joe, 01-01-01, 1, 11, 1 => " + containing(c, o)
         );
         writeAndCheck(
                 secondOrder = createNewRow(o, 12L, 1L, "02-02-02"),
-                "Joe, 01-01-01, 1, 11 => " + containing(c, o),
-                "Joe, 02-02-02, 1, 12 => " + containing(c, o)
+                "Joe, 01-01-01, 1, 11, 1 => " + containing(c, o),
+                "Joe, 02-02-02, 1, 12, 1 => " + containing(c, o)
         );
         deleteAndCheck(
                 secondOrder,
-                "Joe, 01-01-01, 1, 11 => " + containing(c, o)
+                "Joe, 01-01-01, 1, 11, 1 => " + containing(c, o)
         );
         deleteAndCheck(
                 firstOrder,
-                "Joe, null, 1, null => " + containing(c)
+                "Joe, null, null, null, 1 => " + containing(c)
         );
         deleteAndCheck(
                 customer
@@ -93,74 +93,74 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         // write write write
         writeAndCheck(
                 createNewRow(c, 1L, "Horton"),
-                "Horton, null, null, 1, null, null => " + containing(c)
+                "Horton, null, null, null, null, null, 1, null => " + containing(c)
         );
         writeAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
-                "Horton, 01-01-2001, null, 1, 11, null => " + containing(c, o)
+                "Horton, 01-01-2001, null, 1, null, null, 1, 11 => " + containing(c, o)
         );
         writeAndCheck(
                 createNewRow(i, 101L, 11L, 1111),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101, 1, 11 => " + containing(c, o, i)
         );
         writeAndCheck(
                 createNewRow(i, 102L, 11L, 2222),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + containing(c, o, i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102, 1, 11 => " + containing(c, o, i)
         );
 
         writeAndCheck(
                 createNewRow(i, 103L, 11L, 3333),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + containing(c, o, i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + containing(c, o, i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103, 1, 11 => " + containing(c, o, i)
         );
 
         writeAndCheck(
                 createNewRow(o, 12L, 1L, "02-02-2002"),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + containing(c, o, i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + containing(c, o, i),
-                "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
+                "Horton, 01-01-2001, 1111, 1, 11, 101, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103, 1, 11 => " + containing(c, o, i),
+                "Horton, 02-02-2002, null, 1, null, null, 1, 12 => " + containing(c, o)
         );
 
         writeAndCheck(createNewRow(a, 10001L, 1L, "Causeway"),
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing(c, o, i),
-                "Horton, 01-01-2001, 2222, 1, 11, 102 => " + containing(c, o, i),
-                "Horton, 01-01-2001, 3333, 1, 11, 103 => " + containing(c, o, i),
-                "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
+                "Horton, 01-01-2001, 1111, 1, 11, 101, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 2222, 1, 11, 102, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-2001, 3333, 1, 11, 103, 1, 11 => " + containing(c, o, i),
+                "Horton, 02-02-2002, null, 1, null, null, 1, 12 => " + containing(c, o)
         );
 
         // update parent
         updateAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 createNewRow(o, 11L, 1L, "01-01-1999"), // party!
-                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + containing(c, o, i),
-                "Horton, 01-01-1999, 2222, 1, 11, 102 => " + containing(c, o, i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(c, o, i),
-                "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
+                "Horton, 01-01-1999, 1111, 1, 11, 101, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 2222, 1, 11, 102, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103, 1, 11 => " + containing(c, o, i),
+                "Horton, 02-02-2002, null, 1, null, null, 1, 12 => " + containing(c, o)
         );
         // update child
         updateAndCheck(
                 createNewRow(i, 102L, 11L, 2222),
                 createNewRow(i, 102L, 11L, 2442),
-                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + containing(c, o, i),
-                "Horton, 01-01-1999, 2442, 1, 11, 102 => " + containing(c, o, i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(c, o, i),
-                "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
+                "Horton, 01-01-1999, 1111, 1, 11, 101, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 2442, 1, 11, 102, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103, 1, 11 => " + containing(c, o, i),
+                "Horton, 02-02-2002, null, 1, null, null, 1, 12 => " + containing(c, o)
         );
 
         // delete child
         deleteAndCheck(
                 createNewRow(i, 102L, 11L, 222211),
-                "Horton, 01-01-1999, 1111, 1, 11, 101 => " + containing(c, o, i),
-                "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(c, o, i),
-                "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
+                "Horton, 01-01-1999, 1111, 1, 11, 101, 1, 11 => " + containing(c, o, i),
+                "Horton, 01-01-1999, 3333, 1, 11, 103, 1, 11 => " + containing(c, o, i),
+                "Horton, 02-02-2002, null, 1, null, null, 1, 12 => " + containing(c, o)
         );
-        // delete grandparent
+        // delete parent
         deleteAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
-                "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
+                "Horton, 02-02-2002, null, 1, null, null, 1, 12 => " + containing(c, o)
         );
     }
 
@@ -173,7 +173,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         groupIndex("name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
-                "Horton, 01-01-2001, 1111, 1, 11, 101 => " + containing("name_when_sku", c, o, i)
+                "Horton, 01-01-2001, 1111, 1, 11, 101, 1, 11 => " + containing("name_when_sku", c, o, i)
         );
     }
 
@@ -185,7 +185,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         groupIndex("name_when_sku", "c.name, o.when, i.sku");
         checkIndex("name_when_sku",
-                "Horton, 01-01-2001, null, 1, 11, null => " + containing("name_when_sku", c, o)
+                "Horton, 01-01-2001, null, 1, null, null, 1, 11 => " + containing("name_when_sku", c, o)
         );
     }
     
@@ -197,7 +197,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         groupIndex("when_sku","o.when, i.sku");
         checkIndex("when_sku",
-                "01-01-2001, null, 1, 11, null => " + containing("when_sku", o)
+                "01-01-2001, null, 1, null, null, 11 => " + containing("when_sku", o)
         );
     }
 
@@ -210,14 +210,14 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001, 101 => " + containing(i, h));
 
-        // delete from root on up
+        // delete from root on down
         dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001, 101 => " + containing(i, h));
 
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001 => " + containing( i, h)));
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001, 101 => " + containing(i, h));
 
         dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
         checkIndex(indexName);
@@ -234,12 +234,12 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001, 101 => " + containing(i, h));
 
-        // delete from root on up
+        // delete from root on down
 
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001, 101 => " + containing(i, h));
 
         dml().deleteRow(session(), createNewRow(i, 101L, 11L, 1111));
         checkIndex(indexName);
@@ -257,7 +257,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001, 101 => " + containing(i, h));
 
         // delete from root on up
 
@@ -276,7 +276,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(i, 101L, 11L, 1111),
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
-        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001, 101 => " + containing(i, h));
 
         // delete from root on up
 
@@ -309,13 +309,13 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
         checkIndex(indexName,
-                "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h)
+                "1111, handle with care, null, 11, 101, 1001, 101 => " + containing(i, h)
         );
 
         // bring an o that adopts the i
         dml().writeRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(indexName,
-                "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h)
+                "1111, handle with care, 1, 11, 101, 1001, 101 => " + containing(i, h)
         );
     }
 
@@ -328,13 +328,13 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(h, 1001L, 101L, "handle with care")
         );
         checkIndex(indexName,
-                "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h)
+                "1111, handle with care, null, 11, 101, 1001, 101 => " + containing(i, h)
         );
 
         // bring an o that adopts the i
         dml().writeRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(indexName,
-                "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h)
+                "1111, handle with care, 1, 11, 101, 1001, 101 => " + containing(i, h)
         );
     }
 
@@ -355,15 +355,15 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         checkIndex(
                 "when_name",
-                "01-01-2001, Horton, 1, 11 => " + containing("when_name", c, o),
-                "02-02-2002, David, 2, 13 => " + containing("when_name", c, o),
-                "03-03-2003, Horton, 1, 12 => " + containing("when_name", c, o)
+                "01-01-2001, Horton, 1, 11, 1 => " + containing("when_name", c, o),
+                "02-02-2002, David, 2, 13, 2 => " + containing("when_name", c, o),
+                "03-03-2003, Horton, 1, 12, 1 => " + containing("when_name", c, o)
         );
         checkIndex(
                 "second_idx",
-                "David, Highland, 2, 23 => " + containing("second_idx", c, a),
-                "Horton, Causeway, 1, 22 => " + containing("second_idx", c, a),
-                "Horton, Harrington, 1, 21 => " + containing("second_idx",c, a)
+                "David, Highland, 2, 23, 2 => " + containing("second_idx", c, a),
+                "Horton, Causeway, 1, 22, 1 => " + containing("second_idx", c, a),
+                "Horton, Harrington, 1, 21, 1 => " + containing("second_idx",c, a)
         );
     }
 
@@ -378,22 +378,22 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         checkIndex(indexName);
 
         writeRows(createNewRow(i, 101L, 11L, "1111"));
-        checkIndex(indexName, "1111, null, 1, 11, 101, null => " + containing(i));
+        checkIndex(indexName, "1111, null, 1, 11, null, null, 101 => " + containing(i));
 
         writeRows(createNewRow(h, 1001L, 101L, "don't break"));
-        checkIndex(indexName, "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h));
 
         writeRows(createNewRow(c, 2L, "David"));
-        checkIndex(indexName, "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h));
 
         writeRows(createNewRow(o, 12L, 2L, "02-02-2002"));
-        checkIndex(indexName, "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h));
+        checkIndex(indexName, "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h));
 
         writeRows(createNewRow(i, 102L, 12L, "2222"));
         checkIndex(
                 indexName,
-                "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
 
         dml().updateRow(
@@ -405,8 +405,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         checkIndex(
                 indexName,
-                "1111, null, 1, 11, 101, null => " + containing(i),
-                "2222, don't break, 2, 12, 102, 1001 => " + containing(i, h)
+                "1111, null, 1, 11, null, null, 101 => " + containing(i),
+                "2222, don't break, 2, 12, 102, 1001, 102 => " + containing(i, h)
         );
     }
 
@@ -425,8 +425,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(
                 indexName,
-                "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
 
         dml().updateRow(
@@ -436,10 +436,12 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 null
         );
 
+        // TODO: This test fails on the first row. last two nulls are 101, 1001, reflecting the old home
+        // TODO: of the row. Ancestor lookup broken due to use of wrong column?
         checkIndex(
                 indexName,
-                "1111, don't break, 2, 12, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 2, 12, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
     }
 
@@ -458,8 +460,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(
                 indexName,
-                "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
 
         dml().updateRow(
@@ -471,8 +473,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         checkIndex(
                 indexName,
-                "1111, don't break, 2, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 2, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
     }
 
@@ -491,8 +493,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(
                 indexName,
-                "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
 
         dml().updateRow(
@@ -503,8 +505,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
 
         checkIndex(indexName,
-                "1111, null, 1, 11, 101, null => " + containing(i),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, null, 1, 11, null, null, 101 => " + containing(i),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
     }
 
@@ -521,15 +523,14 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(o, 12L, 2L, "02-02-2002"),
                 createNewRow(i, 102L, 12L, "2222"),
 
-                createNewRow(o, 66L, 6L,
- "03-03-2003"),
+                createNewRow(o, 66L, 6L, "03-03-2003"),
                 createNewRow(i, 666L, 66L, "6666")
         );
         checkIndex(
                 indexName,
-                "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i),
-                "6666, null, 6, 66, 666, null => " + containing(i)
+                "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i),
+                "6666, null, 6, 66, null, null, 666 => " + containing(i)
         );
 
         dml().updateRow(
@@ -541,9 +542,9 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         checkIndex(
                 indexName,
-                "1111, null, 1, 11, 101, null => " + containing(i),
-                "2222, null, 2, 12, 102, null => " + containing(i),
-                "6666, don't break, 6, 66, 666, 1001 => " + containing(i, h)
+                "1111, null, 1, 11, null, null, 101 => " + containing(i),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i),
+                "6666, don't break, 6, 66, 666, 1001, 666 => " + containing(i, h)
         );
     }
 
@@ -562,8 +563,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(
                 indexName,
-                "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
 
         dml().updateRow(
@@ -575,8 +576,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         checkIndex(
                 indexName,
-                "1111, don't break, null, 66, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, null, 66, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
     }
 
@@ -595,8 +596,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(
                 indexName,
-                "1111, don't break, 1, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 1, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
 
         dml().updateRow(
@@ -608,8 +609,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
 
         checkIndex(
                 indexName,
-                "1111, don't break, 6, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 6, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
     }
 
@@ -630,8 +631,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(
                 indexName,
-                "1111, don't break, 6, 11, 101, 1001 => " + containing(i, h),
-                "2222, null, 2, 12, 102, null => " + containing(i)
+                "1111, don't break, 6, 11, 101, 1001, 101 => " + containing(i, h),
+                "2222, null, 2, 12, null, null, 102 => " + containing(i)
         );
     }
 

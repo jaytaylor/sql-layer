@@ -146,7 +146,7 @@ class OperatorStoreGIHandler {
                 table = table.parentTable()
         ){
             if (row.containsRealRowOf(table)) {
-                result |= 1 << indexFromEnd;
+                result |= 1 << table.getDepth();
             }
             ++indexFromEnd;
         }
