@@ -557,11 +557,13 @@ public class JoinAndIndexPicker extends BaseRule
             if (planClass == null)
                 planClass = new JoinPlanClass(this, bitset);
             joins = new ArrayList<JoinOperator>(joins);
+            Collection<JoinOperator> condJoins = joins; // Joins with conditions for indexing.
             if (subqueryJoins != null) {
                 // "Push down" joins into the subquery. Since these
                 // are joins to the dervived table, they still need to
                 // be recognized to match an indexable column.
-                joins.addAll(subqueryJoins);
+                condJoins = new ArrayList<JoinOperator>(joins);
+                condJoins.addAll(subqueryJoins);
             }
             if (subqueryOutsideJoins != null) {
                 outsideJoins.addAll(subqueryOutsideJoins);
@@ -569,7 +571,7 @@ public class JoinAndIndexPicker extends BaseRule
             outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
             Plan leftPlan = left.bestPlan(outsideJoins);
-            Plan rightPlan = right.bestNestedPlan(left, joins, outsideJoins);
+            Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                                              joinType, JoinNode.Implementation.NESTED_LOOPS,
