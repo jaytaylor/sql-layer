@@ -151,7 +151,7 @@ public class SelectPreponer extends BaseRule
         }
 
         /** Add a within-group join: Flatten or Product. */
-        public void addFlattenOrProduct(PlanNode join) {
+        public Set<TableSource> addFlattenOrProduct(PlanNode join) {
             if (flattens == null)
                 flattens = new ArrayList<PlanNode>();
             flattens.add(join);
@@ -161,6 +161,7 @@ public class SelectPreponer extends BaseRule
                 flattened = new HashMap<PlanNode,Set<TableSource>>();
             Set<TableSource> tables = new HashSet<TableSource>(loaders.keySet());
             flattened.put(join, tables);
+            return tables;
         }
 
         public void addFlatten(Flatten flatten) {
@@ -177,7 +178,8 @@ public class SelectPreponer extends BaseRule
                         iter.remove();
                 }
             }
-            addFlattenOrProduct(flatten);
+            // A Flatten can get more tables than directly feed it when in a Product.
+            addFlattenOrProduct(flatten).addAll(inner);
         }
 
         /** Merge another loop into this one. Although <code>Product</code> starts
@@ -361,7 +363,9 @@ public class SelectPreponer extends BaseRule
         public void moveDeferred() {
             if (selects != null) {
                 for (SelectConditions swm : selects.values()) {
-                    swm.moveConditions(null);
+                    if (swm.hasLoops()) {
+                        swm.moveConditions(null);
+                    }
                 }
             }
         }
@@ -389,7 +393,7 @@ public class SelectPreponer extends BaseRule
             loops.add(loop);
         }
 
-        public boolean hasBranches() {
+        public boolean hasLoops() {
             return (loops != null);
         }
         
