@@ -39,7 +39,6 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
-import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 import com.persistit.exception.InvalidKeyException;
 import java.io.UnsupportedEncodingException;
@@ -97,9 +96,7 @@ public class EncryptExpression extends AbstractBinaryExpression
     }
     
     private static final class Encryption
-    {
-        private static final Base64 ENCODER = new Base64();
-        
+    {   
         public static void decrypt_encrypt (ValueSource text, ValueSource key, 
                                             ValueHolder ret,
                                             int length, int mode) throws
