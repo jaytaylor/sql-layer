@@ -91,7 +91,7 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         
         // decrypt the encrypted string
         Expression decrypted = EncryptExpression.DECRYPT.compose(Arrays.asList(
-                new LiteralExpression(AkType.VARCHAR, encrypted.evaluation().eval().getString()),
+                new LiteralExpression(AkType.VARBINARY, encrypted.evaluation().eval().getVarBinary()),
                 new LiteralExpression(AkType.VARCHAR, key)));
         
         assertEquals(text, decrypted.evaluation().eval().getString());

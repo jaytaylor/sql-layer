@@ -37,7 +37,10 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
+import com.akiban.util.ByteSource;
+import com.akiban.util.WrappingByteSource;
 import com.persistit.exception.InvalidKeyException;
 import java.io.UnsupportedEncodingException;
 import java.security.NoSuchAlgorithmException;
@@ -56,23 +59,27 @@ public class EncryptExpression extends AbstractBinaryExpression
 {
 
     @Scalar("aes_encrypt")
-    public static final ExpressionComposer ENCRYPT = new InnerComposer(Cipher.ENCRYPT_MODE);
+    public static final ExpressionComposer ENCRYPT 
+            = new InnerComposer(Cipher.ENCRYPT_MODE, AkType.VARBINARY);
     
     @Scalar("aes_decrypt")
-    public static final ExpressionComposer DECRYPT = new InnerComposer(Cipher.DECRYPT_MODE);
+    public static final ExpressionComposer DECRYPT 
+            = new InnerComposer(Cipher.DECRYPT_MODE, AkType.VARCHAR);
     
     private static final class InnerComposer extends BinaryComposer
     {
         private final int MODE;
-        InnerComposer (int mode)
+        private final AkType TOP;
+        InnerComposer (int mode, AkType t)
         {
             MODE = mode;
+            TOP = t;
         }
         
         @Override
         protected Expression compose(Expression first, Expression second)
         {
-            return new EncryptExpression(first, second, MODE);
+            return new EncryptExpression(first, second, MODE, TOP);
         }
 
         @Override
@@ -93,27 +100,31 @@ public class EncryptExpression extends AbstractBinaryExpression
     {
         private static final Base64 ENCODER = new Base64();
         
-        public static String decrypt_encrypt(String text, String key, int length, int mode) throws 
-                NoSuchAlgorithmException, NoSuchPaddingException, 
-                InvalidKeyException, IllegalBlockSizeException, 
-                BadPaddingException, UnsupportedEncodingException, 
-                NoSuchProviderException, java.security.InvalidKeyException
-        {
-            SecretKey skey = new SecretKeySpec(adjustKey(key, length), "AES"); 
-            Cipher cipher = Cipher.getInstance("AES/ECB/ISO10126Padding");
+        public static void decrypt_encrypt (ValueSource text, ValueSource key, 
+                                            ValueHolder ret,
+                                            int length, int mode) throws
+                    NoSuchAlgorithmException, NoSuchPaddingException, 
+                    InvalidKeyException, IllegalBlockSizeException, 
+                    BadPaddingException, UnsupportedEncodingException, 
+                    NoSuchProviderException, java.security.InvalidKeyException
+        {            
+            SecretKey skey = new SecretKeySpec(adjustKey(key.getString(), length), "AES"); 
+            Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(mode, skey);
             
             switch(mode)
             {
                 case Cipher.ENCRYPT_MODE:
-                    return ENCODER.encodeToString(cipher.doFinal(text.getBytes()));
+                    ret.putVarBinary(new WrappingByteSource(cipher.doFinal(text.getString().getBytes())));
+                    break;
                 case Cipher.DECRYPT_MODE:
-                    return new String((cipher.doFinal(ENCODER.decode(text))));
+                    ret.putString(new String(cipher.doFinal(text.getVarBinary().byteArray())));
+                    break;
                 default:
-                    throw new UnsupportedOperationException("Unknown mode: " + mode);
-                            
+                    throw new IllegalArgumentException("Unexpected MODE: " + mode);
             }
         }
+        
         
         /**
          * adjust the key into a byte array of [length] bytes.
@@ -170,9 +181,9 @@ public class EncryptExpression extends AbstractBinaryExpression
                 
             try
             {
-                valueHolder().putString(Encryption.decrypt_encrypt(text.getString(), key.getString(), 
-                                                                    DEFAULT_KEY_LENGTH, 
-                                                                    MODE));
+                Encryption.decrypt_encrypt(text, key, valueHolder(),
+                                            DEFAULT_KEY_LENGTH, 
+                                            MODE);
                 return valueHolder();
             }
             catch (Exception e)
@@ -186,9 +197,9 @@ public class EncryptExpression extends AbstractBinaryExpression
     }
     
     private final int MODE;
-    EncryptExpression(Expression text, Expression key, int mode)
+    EncryptExpression(Expression text, Expression key, int mode, AkType top)
     {
-        super(AkType.VARCHAR, text, key);
+        super(top, text, key);
         MODE = mode;
     }
     
