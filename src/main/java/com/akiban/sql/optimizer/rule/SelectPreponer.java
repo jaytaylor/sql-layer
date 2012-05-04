@@ -34,7 +34,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /** Move WHERE clauses closer to their table origin.
- * This rule runs after flattening has been laid out.
+ * This rule runs after joins of various sorts has been laid out, but
+ * before while they are still in data-flow order.
  *
  * Note: <i>prepone</i>, while not an American or British English
  * word, is the transparent opposite of <i>postpone</i>.
@@ -65,7 +66,9 @@ public class SelectPreponer extends BaseRule
         preponer.moveDeferred();
     }
     
-    /** Find all the places where data starts, such as <code>IndexScan</code> and <code><i>XxxLookup</i></code>. */
+    /** Find all the places where data starts, such as
+     * <code>IndexScan</code> and <code><i>XxxLookup</i></code>.
+     */
     static class TableOriginFinder implements PlanVisitor, ExpressionVisitor {
         List<PlanNode> origins = new ArrayList<PlanNode>();
 
@@ -124,7 +127,9 @@ public class SelectPreponer extends BaseRule
         }
     }
 
-    /** Holds the state of a single side of a loop, which usually means a group. */
+    /** Holds the state of a single side of a loop, which usually
+     * means a group with its in-group joins.
+     */
     static class Loop {
         Map<TableSource,PlanNode> loaders; // Lookup operators.
         Map<ExpressionNode,PlanNode> indexColumns; // Individual columns of IndexScan.
@@ -156,7 +161,8 @@ public class SelectPreponer extends BaseRule
                 flattens = new ArrayList<PlanNode>();
             flattens.add(join);
 
-            // Might be able to place multi-table conditions after a join.
+            // Might be able to place multi-table conditions after a flatten join,
+            // so record what is available.
             if (flattened == null)
                 flattened = new HashMap<PlanNode,Set<TableSource>>();
             Set<TableSource> tables = new HashSet<TableSource>(loaders.keySet());
@@ -179,11 +185,16 @@ public class SelectPreponer extends BaseRule
                 }
             }
             // A Flatten can get more tables than directly feed it when in a Product.
+            // Really, it's the Lookup_Nested that gets them, but the
+            // sources don't advertize that, since only one node is
+            // allowed to introduce a table.
             addFlattenOrProduct(flatten).addAll(inner);
         }
 
-        /** Merge another loop into this one. Although <code>Product</code> starts
-         * with separate lookup operators, it's a single loop for purposes of nesting. */
+        /** Merge another loop into this one. Although
+         * <code>Product</code> starts with separate lookup operators,
+         * it's a single loop for purposes of nesting.
+         */
         public Loop merge(Loop other, PlanNode before) {
             loaders.putAll(other.loaders);
             if (indexColumns == null)
@@ -340,7 +351,7 @@ public class SelectPreponer extends BaseRule
                         }
                         else {
                             if (hasMaps && newLoop) {
-                                selectConditions.addBranch(loop);
+                                selectConditions.addLoop(loop);
                             }
                             if (hasProducts || hasMaps) {
                                 // Need to defer until have all the contributors
@@ -387,7 +398,7 @@ public class SelectPreponer extends BaseRule
             dependencies = new ConditionDependencyAnalyzer(select);
         }
 
-        public void addBranch(Loop loop) {
+        public void addLoop(Loop loop) {
             if (loops == null)
                 loops = new ArrayList<Loop>();
             loops.add(loop);
@@ -424,13 +435,13 @@ public class SelectPreponer extends BaseRule
                 // need to check outer bindings; it's wherever it is.
                 if (singleTable == null)
                     outerTables = new HashSet<TableSource>();
-                // Several joined loops: find the shallowest one that has everything.
+                // Several nested loops: find the shallowest one that has everything.
                 loop = findLoop(outerTables);
                 if (loop == null)
                     return null;
             }
             if (loop.indexColumns != null) {
-                // Can check the index column before it's used for lookup.
+                // Can check the index column(s) before it's used for lookup.
                 PlanNode loader = getSingleIndexLoader(loop, outerTables);
                 if (loader != null)
                     return loader;
