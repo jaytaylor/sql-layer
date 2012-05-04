@@ -70,6 +70,9 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
         
+        // test tricky case
+        param(pb, LikeExpression.LIKE_COMPOSER, "xbz123babcabcab", "%babcabcab%", "\\", true, false, false);
+        
         // test with periodic patterns (where you can kind-of 'connect' the head to the tail and make it a circular queue
         param(pb, LikeExpression.LIKE_COMPOSER, "abxabcabcab", "%abcabcab%", "\\", true, false, false);
         param(pb, LikeExpression.LIKE_COMPOSER, "abcabxabcabc", "%abcabc%", "\\", true, false, false);
