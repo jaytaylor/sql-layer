@@ -349,7 +349,7 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public boolean containsRealRowOf(UserTable userTable) {
-            return delegate.containsRealRowOf(userTable);
+            throw new UnsupportedOperationException(getClass().toString());
         }
 
         @Override

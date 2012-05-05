@@ -89,11 +89,6 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable) {
-        return false;
-    }
-
-    @Override
     public HKey hKey() {
         throw new UnsupportedOperationException();
     }
@@ -101,6 +96,11 @@ public class NewRowBackedIndexRow implements RowBase
     @Override
     public boolean ancestorOf(RowBase that) {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable) {
+        throw new UnsupportedOperationException(getClass().toString());
     }
 
     @Override

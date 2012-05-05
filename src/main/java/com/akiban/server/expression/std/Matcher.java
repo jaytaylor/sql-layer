@@ -24,59 +24,9 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.row;
+package com.akiban.server.expression.std;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.rowtype.HKeyRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
-
-public class HKeyRow extends AbstractRow
+public interface Matcher
 {
-    // Object interface
-
-    @Override
-    public String toString()
-    {
-        return hKey.toString();
-    }
-
-    // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i)
-    {
-        return hKey.eval(i);
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return hKey;
-    }
-
-    @Override
-    public Row subRow(RowType subRowType)
-    {
-        throw new UnsupportedOperationException();
-    }
-
-    // ProductRow interface
-
-    public HKeyRow(HKeyRowType rowType, HKey hKey)
-    {
-        this.rowType = rowType;
-        this.hKey = hKey;
-    }
-    
-    // Object state
-
-    private final HKeyRowType rowType;
-    private HKey hKey;
+    boolean match(String str);
 }

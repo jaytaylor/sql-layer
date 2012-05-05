@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.FieldDef;
@@ -72,6 +73,12 @@ public class PersistitGroupRow extends AbstractRow
     public PersistitHKey hKey()
     {
         return currentHKey;
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable)
+    {
+        return row.getRowDef().userTable() == userTable;
     }
 
     // PersistitGroupRow interface
@@ -174,7 +181,6 @@ public class PersistitGroupRow extends AbstractRow
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
     private static final int INITIAL_ROW_SIZE = 500;
-    private static final int INITIAL_ARRAY_SIZE = 10;
     private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
