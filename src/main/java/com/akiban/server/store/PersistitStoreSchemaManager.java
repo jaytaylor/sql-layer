@@ -28,7 +28,6 @@ package com.akiban.server.store;
 
 import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
-import java.io.IOException;
 import java.nio.BufferOverflowException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -59,6 +58,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.validation.AISValidations;
+import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -72,7 +72,6 @@ import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
-import com.akiban.server.error.SchemaLoadIOException;
 import com.akiban.server.error.TableNotInGroupException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
@@ -81,6 +80,7 @@ import com.akiban.server.service.tree.TreeLink;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
+import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -100,13 +100,61 @@ import com.persistit.Exchange;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
-public class PersistitStoreSchemaManager implements Service<SchemaManager>,
-        SchemaManager {
+/**
+ * <p>
+ * Older, MetaModel based storage:
+ * <table border="1">
+ *     <tr>
+ *         <th>key</th>
+ *         <th>value</th>
+ *         <th>description</th>
+ *     </tr>
+ *     <tr>
+ *         <td>"byAIS"</td>
+ *         <td>byte[]</td>
+ *         <td>As constructed by {@link MessageTarget}</td>
+ *     </tr>
+ * </table>
+ * </p>
+ * <br>
+ * <p>
+ * Newer, Protobuf based storage:
+ * <table border="1">
+ *     <tr>
+ *         <th>key</th>
+ *         <th>value</th>
+ *         <th>description</th>
+ *     </tr>
+ *     <tr>
+ *         <td>"byPBAIS"</td>
+ *         <td>integer</td>
+ *         <td>Logical PSSM version stored, see {@link #PROTOBUF_PSSM_VERSION} for current</td>
+ *     </tr>
+ *     <tr>
+ *         <td>"byPBAIS","schema",SCHEMA_NAME1</td>
+ *         <td>byte[]</td>
+ *         <td>As constructed by {@link com.akiban.ais.protobuf.ProtobufWriter}</td>
+ *     </tr>
+ *     <tr>
+ *         <td>"byPBAIS","schema",SCHEMA_NAME2</td>
+ *         <td>...</td>
+ *         <td>...</td>
+ *     </tr>
+ *     <tr>
+ *         <td>...</td>
+ *         <td>...</td>
+ *         <td>...</td>
+ *     </tr>
+ * </table>
+ * </p>
+ */
+public class PersistitStoreSchemaManager implements Service<SchemaManager>, SchemaManager {
+    private static final String METAMODEL_PARENT_KEY = "byAIS";
+    private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
+    private static final String PROTOBUF_SCHEMA_KEY = "schema";
+    private static final int PROTOBUF_PSSM_VERSION = 1;
 
-    static final String BY_AIS = "byAIS";
-
-    private static final Logger LOG = LoggerFactory
-            .getLogger(PersistitStoreSchemaManager.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
 
     private final static String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
 
@@ -124,6 +172,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private GrowableByteBuffer aisByteBuffer;
+    private boolean useMetaModelSerialization;
 
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
@@ -228,7 +277,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         nameChanger.setSchemaName(newName.getSchemaName());
         nameChanger.setNewTableName(newName.getTableName());
         nameChanger.doChange();
-        
+
         String vol1 = getVolumeForSchemaTree(currentName.getSchemaName());
         String vol2 = getVolumeForSchemaTree(newName.getSchemaName());
 
@@ -618,6 +667,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void start() {
         updateTimestamp = new AtomicLong();
+
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
@@ -625,12 +675,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         }
         // 0 = unlimited, start off at 1MB in this case.
         aisByteBuffer = new GrowableByteBuffer(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
+
         try {
-            afterStart();
+            loadAISFromDisk();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
-        } catch (IOException e) {
-            throw new SchemaLoadIOException(e.getMessage());
         }
     }
 
@@ -736,42 +785,81 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     /**
-     * Load the AIS tables from file and then load the serialized AIS from each
-     * {@link TreeService#SCHEMA_TREE_NAME} in each volume. This must be done
-     * in afterStart because it requires other services, TreeService and Store
-     * specifically, to be up and functional
-     * @throws PersistitException 
-     * @throws IOException 
+     * Load the AIS tables from file by iterating every volume and reading the contents
+     * of the {@link TreeService#SCHEMA_TREE_NAME} tree.
+     * @throws PersistitException
      */
-    private void afterStart() throws PersistitException, IOException {
+    private void loadAISFromDisk() throws PersistitException {
+        final AkibanInformationSchema newAIS = createPrimordialAIS();
+        setGroupTableIds(newAIS);
+
         final Session session = sessionService.createSession();
         final Transaction transaction = treeService.getTransaction(session);
         transaction.begin();
         try {
-            final AkibanInformationSchema newAIS = createPrimordialAIS();
-            setGroupTableIds(newAIS);
-
-            // Load stored AIS data from each schema tree
             treeService.visitStorage(session, new TreeVisitor() {
-                                         @Override
-                                         public void visit(Exchange ex) throws PersistitException{
-                                             ex.clear().append(BY_AIS);
-                                             if(ex.isValueDefined()) {
-                                                 byte[] storedAIS = ex.fetch().getValue().getByteArray();
-                                                 GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
-                                                 new Reader(new MessageSource(buffer)).load(newAIS);
-                                             }
-                                         }
-                                     }, SCHEMA_TREE_NAME);
+                @Override
+                public void visit(Exchange ex) throws PersistitException{
+                    // Simple heuristic to determine which style AIS storage we have
+                    // TODO: This is where the "automatic upgrade" would go
+
+                    boolean hasMetaModel = ex.clear().append(METAMODEL_PARENT_KEY).isValueDefined();
+                    boolean hasProtobuf = ex.clear().append(PROTOBUF_PARENT_KEY).isValueDefined();
+
+                    if(hasMetaModel && hasProtobuf) {
+                        throw new IllegalStateException("Both AIS and Protobuf serializations");
+                    }
+
+                    if(hasMetaModel) {
+                        useMetaModelSerialization = true;
+                        loadMetaModelBasedAIS(ex, newAIS);
+                    } else if(hasProtobuf) {
+                        if(useMetaModelSerialization) {
+                            throw new IllegalStateException("Mixed AIS and Protobuf serializations: " + ex);
+                        }
+                        loadProtobufBasedAIS(ex, newAIS);
+                    } else {
+                        throw new IllegalStateException("No (or unknown) AIS serialization");
+                    }
+                }
+            }, SCHEMA_TREE_NAME);
 
             buildRowDefCache(newAIS);
             transaction.commit();
         } finally {
-            if(!transaction.isCommitted()) {
-                transaction.rollback();
-            }
             transaction.end();
             session.close();
+        }
+    }
+
+    private static void loadMetaModelBasedAIS(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+        ex.clear().append(METAMODEL_PARENT_KEY).fetch();
+        if(!ex.getValue().isDefined()) {
+            throw new IllegalStateException(ex.toString() + " has no associated value (expected byte[])");
+        }
+        byte[] storedAIS = ex.getValue().getByteArray();
+        GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
+        Reader reader = new Reader(new MessageSource(buffer));
+        reader.load(newAIS);
+    }
+
+    private static void loadProtobufBasedAIS(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+        ex.clear().append(PROTOBUF_PARENT_KEY).fetch();
+        if(!ex.getValue().isDefined()) {
+            throw new IllegalStateException(ex.toString() + " has no associated value (expected int)");
+        }
+
+        int storedVersion = ex.getValue().getInt();
+        if(storedVersion != PROTOBUF_PSSM_VERSION) {
+            throw new IllegalStateException("Unexpected Protobuf PSSM version: " + storedVersion);
+        }
+
+        ex.append(PROTOBUF_SCHEMA_KEY).append(Key.BEFORE);
+        while(ex.next()) {
+            byte[] storedAIS = ex.getValue().getByteArray();
+            GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
+            ProtobufReader reader = new ProtobufReader(buffer, newAIS);
+            reader.load();
         }
     }
 
@@ -832,7 +920,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * alter, etc. This currently updates the {@link TreeService#SCHEMA_TREE_NAME} for a given schema,
      * rebuilds the {@link Store#getRowDefCache()}, and sets the {@link #getAis()} variable.
      * @param session Session to run under
-     * @param newAIS The new AIS to store in the {@link #BY_AIS} key range <b>and</b> commit as {@link #getAis()}.
+     * @param newAIS The new AIS to store in the {@link #METAMODEL_PARENT_KEY} key range <b>and</b> commit as {@link #getAis()}.
      * @param schemaName The schema the change affected.
      * @throws PersistitException
      */
@@ -845,7 +933,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         final Exchange schemaEx = treeService.getExchange(session, schemaTreeLink);
         
         try {
-            schemaEx.clear().append(BY_AIS);
+            schemaEx.clear().append(METAMODEL_PARENT_KEY);
             schemaEx.getValue().clear();
             schemaEx.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
             schemaEx.store();

@@ -59,9 +59,14 @@ public class ProtobufReader {
     private AISProtobuf.AkibanInformationSchema pbAIS;
 
     public ProtobufReader(GrowableByteBuffer buffer) {
+        this(buffer, new AkibanInformationSchema());
+    }
+
+    public ProtobufReader(GrowableByteBuffer buffer, AkibanInformationSchema destAIS) {
         assert buffer.hasArray() : buffer;
+        assert destAIS != null;
         this.buffer = buffer;
-        this.destAIS = new AkibanInformationSchema();
+        this.destAIS = destAIS;
     }
     
     public AkibanInformationSchema load() {
