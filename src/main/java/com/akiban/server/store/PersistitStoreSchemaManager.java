@@ -171,7 +171,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private final ConfigurationService config;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
-    private GrowableByteBuffer aisByteBuffer;
     private boolean useMetaModelSerialization;
 
     @Inject
@@ -673,8 +672,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
             maxAISBufferSize = 0;
         }
-        // 0 = unlimited, start off at 1MB in this case.
-        aisByteBuffer = new GrowableByteBuffer(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
 
         try {
             loadAISFromDisk();
@@ -688,7 +685,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         this.aish.setAis(null);
         this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
-        this.aisByteBuffer = null;
     }
 
     @Override
@@ -881,32 +877,23 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * @throws Exception For any error during serialization or if the buffer is too small.
      */
     private GrowableByteBuffer trySerializeAIS(final AkibanInformationSchema newAIS, final String volumeName) {
-        boolean finishedSerializing = false;
-        while(!finishedSerializing) {
-            try {
-                aisByteBuffer.clear();
-                new TableSubsetWriter(new MessageTarget(aisByteBuffer)) {
-                    @Override
-                    public boolean shouldSaveTable(Table table) {
-                        final String schemaName = table.getName().getSchemaName();
-                        return !schemaName.equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
-                               getVolumeForSchemaTree(schemaName).equals(volumeName);
-                    }
-                }.save(newAIS);
-                aisByteBuffer.flip();
-                finishedSerializing = true;
-            }
-            catch(BufferOverflowException e) {
-                if(aisByteBuffer.capacity() == maxAISBufferSize) {
-                    throw new AISTooLargeException (aisByteBuffer.capacity(), maxAISBufferSize);
+        int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
+        GrowableByteBuffer aisByteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
+
+        try {
+            aisByteBuffer.clear();
+            new TableSubsetWriter(new MessageTarget(aisByteBuffer)) {
+                @Override
+                public boolean shouldSaveTable(Table table) {
+                    final String schemaName = table.getName().getSchemaName();
+                    return !schemaName.equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
+                           getVolumeForSchemaTree(schemaName).equals(volumeName);
                 }
-                
-                int newCapacity = aisByteBuffer.capacity() * 2;
-                if(maxAISBufferSize != 0 && newCapacity > maxAISBufferSize) {
-                    newCapacity = maxAISBufferSize;
-                }
-                aisByteBuffer = new GrowableByteBuffer(newCapacity);
-            }
+            }.save(newAIS);
+            aisByteBuffer.flip();
+        }
+        catch(BufferOverflowException e) {
+            throw new AISTooLargeException(maxSize);
         }
         return aisByteBuffer;
     }
