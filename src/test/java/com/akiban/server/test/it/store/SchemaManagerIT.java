@@ -119,6 +119,11 @@ public final class SchemaManagerIT extends ITBase {
             }
         });
     }
+
+    private void safeRestart() throws Exception {
+        safeRestartTestServices();
+        schemaManager = serviceManager().getSchemaManager();
+    }
     
     @Override
     protected Collection<Property> startupConfigProperties() {
@@ -432,11 +437,10 @@ public final class SchemaManagerIT extends ITBase {
         assertEquals("group tables count before", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
-        safeRestartTestServices();
-
-        schemaManager = serviceManager().getSchemaManager();
+        safeRestart();
         ais = schemaManager.getAis(session());
         assertNotNull(ais);
+
         assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
         assertEquals("group tables count after", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
@@ -460,11 +464,10 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
 
-        safeRestartTestServices();
-
-        schemaManager = serviceManager().getSchemaManager();
+        safeRestart();
         ais = schemaManager.getAis(session());
         assertNotNull("ais exists", ais);
+
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
         assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
@@ -488,6 +491,33 @@ public final class SchemaManagerIT extends ITBase {
             String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getTreeName();
             assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
         }
+    }
+
+    @Test
+    public void crossSchemaGroups() throws Exception {
+        final String SCHEMA1 = "schema1";
+        final String SCHEMA2 = "schema2";
+        final TableName PARENT1 = new TableName(SCHEMA1, "parent1");
+        final TableName CHILD1 = new TableName(SCHEMA2, "child1");
+        final TableName PARENT2 = new TableName(SCHEMA2, "parent2");
+        final TableName CHILD2 = new TableName(SCHEMA1, "child2");
+        final String T2_CHILD_DDL = T2_DDL + ", t1id int, grouping foreign key(t1id) references %s";
+
+        // parent in schema1, child in schema2
+        createTable(PARENT1.getSchemaName(), PARENT1.getTableName(), T1_DDL);
+        createTable(CHILD1.getSchemaName(), CHILD1.getTableName(), String.format(T2_CHILD_DDL, PARENT1));
+        // child in schema1, child in schema2
+        createTable(PARENT2.getSchemaName(), PARENT2.getTableName(), T1_DDL);
+        createTable(CHILD2.getSchemaName(), CHILD2.getTableName(), String.format(T2_CHILD_DDL, PARENT2));
+
+        safeRestart();
+
+        assertTablesInSchema(SCHEMA1, PARENT1.getTableName(), CHILD2.getTableName());
+        assertTablesInSchema(SCHEMA2, PARENT2.getTableName(), CHILD1.getTableName());
+        UserTable parent1 = ddl().getUserTable(session(), PARENT1);
+        assertEquals("parent1 and child1 group", parent1.getGroup(), ddl().getUserTable(session(), CHILD1).getGroup());
+        UserTable parent2 = ddl().getUserTable(session(), PARENT2);
+        assertEquals("parent2 and child2 group", parent2.getGroup(), ddl().getUserTable(session(), CHILD2).getGroup());
     }
 
     @Test
