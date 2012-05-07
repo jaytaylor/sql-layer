@@ -68,6 +68,12 @@ public class LogExpression extends AbstractCompositeExpression
     public static final ExpressionComposer LOG = new  ExpressionComposer ()
     {
         @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.RETURN_NULL;
+        }
+        
+        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int size = argumentTypes.size();
@@ -98,7 +104,7 @@ public class LogExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported in LOG yet.");
         }
     };
     
@@ -172,7 +178,7 @@ public class LogExpression extends AbstractCompositeExpression
         this.name = name;
     }
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

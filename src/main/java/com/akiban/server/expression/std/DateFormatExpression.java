@@ -113,7 +113,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

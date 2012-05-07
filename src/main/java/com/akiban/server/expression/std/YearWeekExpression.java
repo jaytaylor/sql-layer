@@ -89,7 +89,13 @@ public class YearWeekExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported in YEAR_WEEK yet.");
+        }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.RETURN_NULL;
         }
     };
 
@@ -216,7 +222,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
     }
     
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }
