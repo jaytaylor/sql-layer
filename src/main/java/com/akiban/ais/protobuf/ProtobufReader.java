@@ -54,36 +54,48 @@ import java.util.Collection;
 import java.util.List;
 
 public class ProtobufReader {
-    private final GrowableByteBuffer buffer;
     private final AkibanInformationSchema destAIS;
-    private AISProtobuf.AkibanInformationSchema pbAIS;
+    private final AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
 
-    public ProtobufReader(GrowableByteBuffer buffer) {
-        this(buffer, new AkibanInformationSchema());
+    public ProtobufReader() {
+        this(new AkibanInformationSchema());
     }
 
-    public ProtobufReader(GrowableByteBuffer buffer, AkibanInformationSchema destAIS) {
-        assert buffer.hasArray() : buffer;
-        assert destAIS != null;
-        this.buffer = buffer;
+    public ProtobufReader(AkibanInformationSchema destAIS) {
         this.destAIS = destAIS;
     }
-    
-    public AkibanInformationSchema load() {
-        loadFromBuffer();
-        // AIS has two fields (types, schemas) and both are optional
-        loadTypes(pbAIS.getTypesList());
-        loadSchemas(pbAIS.getSchemasList());
+
+    public AkibanInformationSchema getAIS() {
         return destAIS;
     }
-    
-    private void loadFromBuffer() {
+
+    public ProtobufReader loadAIS() {
+        // AIS has two fields (types, schemas) and both are optional
+        AISProtobuf.AkibanInformationSchema pbAIS = pbAISBuilder.clone().build();
+        loadTypes(pbAIS.getTypesList());
+        loadSchemas(pbAIS.getSchemasList());
+        return this;
+    }
+
+    public ProtobufReader loadBuffer(GrowableByteBuffer buffer) {
+        loadFromBuffer(buffer);
+        return this;
+    }
+
+    public AkibanInformationSchema loadAndGetAIS(GrowableByteBuffer buffer) {
+        loadBuffer(buffer);
+        loadAIS();
+        return getAIS();
+    }
+
+    private void loadFromBuffer(GrowableByteBuffer buffer) {
+        checkBuffer(buffer);
         final int serializedSize = buffer.getInt();
         final int initialPos = buffer.position();
         final int bufferSize = buffer.limit() - initialPos;
         CodedInputStream codedInput = CodedInputStream.newInstance(buffer.array(), buffer.position(), Math.min(serializedSize, bufferSize));
         try {
-            pbAIS = AISProtobuf.AkibanInformationSchema.parseFrom(codedInput);
+            pbAISBuilder.mergeFrom(codedInput);
             // Successfully consumed, update byte buffer
             buffer.position(initialPos + serializedSize);
         } catch(IOException e) {
@@ -120,6 +132,11 @@ public class ProtobufReader {
 
             // Requires no tables, does not load indexes
             loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
+        }
+
+        // Assume no ordering of schemas or tables, load joins second
+        for(AISProtobuf.Schema pbSchema : pbSchemas) {
+            loadTableJoins(pbSchema.getSchemaName(), pbSchema.getTablesList());
         }
 
         // Hook up groups, create group tables and indexes after all in place
@@ -165,6 +182,7 @@ public class ProtobufReader {
                     ++maxTableId
             );
             newGroupInfo.group.setGroupTable(groupTable);
+            groupTable.setGroup(newGroupInfo.group);
         }
         
         for(int i = 0; i < joinsNeedingGroup.size(); ++i) {
@@ -195,8 +213,9 @@ public class ProtobufReader {
             loadColumns(userTable, pbTable.getColumnsList());
             loadTableIndexes(userTable, pbTable.getIndexesList());
         }
+    }
 
-        // Assume no ordering of table list, load joins second
+    private void loadTableJoins(String schema, Collection<AISProtobuf.Table> pbTables) {
         for(AISProtobuf.Table pbTable : pbTables) {
             if(pbTable.hasParentTable()) {
                 AISProtobuf.Join pbJoin = pbTable.getParentTable();
@@ -427,6 +446,11 @@ public class ProtobufReader {
             throw new ProtobufReadException(message.getDescriptorForType().getFullName(),
                                             "Missing required fields: " + names.toString());
         }
+    }
+
+    private static void checkBuffer(GrowableByteBuffer buffer) {
+        assert buffer != null;
+        assert buffer.hasArray() : "Array backed buffer required: " + buffer;
     }
     
     private static class NewGroupInfo {

@@ -39,15 +39,20 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.error.ProtobufWriteException;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
+import java.util.Collections;
+
 import static com.akiban.ais.AISComparator.compareAndAssert;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
 public class ProtobufReaderWriterTest {
     private final String SCHEMA = "test";
@@ -163,8 +168,7 @@ public class ProtobufReaderWriterTest {
 
         bb.flip();
         bb.limit(bb.limit() / 2);
-        ProtobufReader reader = new ProtobufReader(bb);
-        reader.load();
+        new ProtobufReader().loadBuffer(bb);
     }
 
     @Test(expected=ProtobufWriteException.class)
@@ -214,16 +218,71 @@ public class ProtobufReaderWriterTest {
         compareAndAssert(inAIS, outAIS, false);
     }
 
+    @Test
+    public void writeWithRestrictedSchema() {
+        final String SCHEMA1 = "test1";
+        final String TABLE1 = "t1";
+        final String SCHEMA2 = "test2";
+        final String TABLE2 = "t2";
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA1, TABLE1).colLong("id", false).colString("v", 250).pk("id");
+        builder.userTable(SCHEMA2, TABLE2).colLong("tid", false).pk("tid");
+        AkibanInformationSchema inAIS = builder.ais();
+
+        AkibanInformationSchema outAIS1 = writeAndRead(inAIS, SCHEMA1);
+        assertEquals("Serialized AIS has just schema 1", "[" + SCHEMA1 + "]", outAIS1.getScheams().keySet().toString());
+
+        AkibanInformationSchema outAIS2 = writeAndRead(inAIS, SCHEMA2);
+        assertEquals("Serialized AIS has just schema 2", "[" + SCHEMA2 + "]", outAIS2.getScheams().keySet().toString());
+    }
+
+    @Test
+    public void writeWithRestrictedSchemaNoMatch() {
+        AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS, SCHEMA + "foobar");
+        assertEquals("Serialized AIS has no schemas", "[]", outAIS.getScheams().keySet().toString());
+    }
+
+    @Test
+    public void loadMultipleBuffers() {
+        final int COUNT = 3;
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA+0, "t0").colLong("id", false).pk("id");
+        builder.userTable(SCHEMA+1, "t1").colBigInt("bid", false).colString("v", 32).pk("bid");
+        builder.userTable(SCHEMA+2, "t2").colDouble("d").colLong("l").key("d_idx", "d");
+        AkibanInformationSchema inAIS = builder.ais();
+
+
+        GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
+        for(int i = 0; i < COUNT; ++i) {
+            bbs[i] = createByteBuffer();
+            new ProtobufWriter(bbs[i], SCHEMA+i).save(inAIS);
+        }
+
+        AkibanInformationSchema outAIS = new AkibanInformationSchema();
+        ProtobufReader reader = new ProtobufReader(outAIS);
+        for(int i = 0; i < COUNT; ++i) {
+            bbs[i].flip();
+            reader.loadBuffer(bbs[i]);
+        }
+        reader.loadAIS();
+
+        compareAndAssert(inAIS, outAIS, true);
+    }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
+        return writeAndRead(inAIS, null);
+    }
+
+    private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS, String restrictSchema) {
         GrowableByteBuffer bb = createByteBuffer();
 
-        ProtobufWriter writer = new ProtobufWriter(bb);
+        ProtobufWriter writer = new ProtobufWriter(bb, restrictSchema);
         writer.save(inAIS);
 
         bb.flip();
-        ProtobufReader reader = new ProtobufReader(bb);
-        AkibanInformationSchema outAIS = reader.load();
+        ProtobufReader reader = new ProtobufReader().loadBuffer(bb);
+        AkibanInformationSchema outAIS = reader.loadAIS().getAIS();
 
         return outAIS;
     }

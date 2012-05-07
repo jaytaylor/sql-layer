@@ -55,26 +55,39 @@ public class ProtobufWriter {
     private static final GrowableByteBuffer NO_BUFFER = new GrowableByteBuffer(0);
     private final GrowableByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
+    private final String restrictSchema;
 
     public ProtobufWriter() {
         this(NO_BUFFER);
     }
 
     public ProtobufWriter(GrowableByteBuffer buffer) {
+        this(buffer, null);
+    }
+
+    public ProtobufWriter(GrowableByteBuffer buffer, String restrictToSchema) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
+        this.restrictSchema = restrictToSchema;
     }
 
     public AISProtobuf.AkibanInformationSchema save(AkibanInformationSchema ais) {
         AISProtobuf.AkibanInformationSchema.Builder aisBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
 
         // Write top level proto messages and recurse down as needed
-        for(Type type : ais.getTypes()) {
-            writeType(aisBuilder, type);
-        }
+        if(restrictSchema == null) {
+            for(Type type : ais.getTypes()) {
+                writeType(aisBuilder, type);
+            }
 
-        for(Schema schema : ais.getScheams().values()) {
-            writeSchema(aisBuilder, schema);
+            for(Schema schema : ais.getScheams().values()) {
+                writeSchema(aisBuilder, schema);
+            }
+        } else {
+            Schema schema = ais.getSchema(restrictSchema);
+            if(schema != null) {
+                writeSchema(aisBuilder, schema);
+            }
         }
 
         pbAIS = aisBuilder.build();
@@ -85,6 +98,8 @@ public class ProtobufWriter {
 
     private void writeMessageLite(MessageLite msg) {
         final int serializedSize = msg.getSerializedSize();
+        buffer.prepareForSize(serializedSize + 4);
+        buffer.limit(buffer.capacity());
         buffer.putInt(serializedSize);
         final int initialPos = buffer.position();
         final int bufferSize = buffer.limit() - initialPos;
