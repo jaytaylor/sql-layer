@@ -207,7 +207,7 @@ public class GroupIndex extends Index
                 // Column column = indexRowCompositionColumn(hKeyColumn);
                 Column leafwardColumn = hKeyColumn.column();
                 Join join = leafwardColumn.getUserTable().getParentJoin();
-                if (indexCovers(join.getParent())) {
+                if (join != null && indexCovers(join.getParent())) {
                     Column rootwardColumn = join.getMatchingParent(leafwardColumn);
                     if (rootwardColumn != null) {
                         rootwardColumns.add(rootwardColumn);

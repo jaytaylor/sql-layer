@@ -72,7 +72,7 @@ public class TableIndex extends Index
             toIndexRowBuilder.rowCompEntry(column.getPosition(), -1);
         }
         // Add leafward-biased hkey fields not already included
-        int indexColumnPosition = 0;
+        int indexColumnPosition = indexColumns.size();
         hKeyColumns = new ArrayList<IndexColumn>();
         HKey hKey = hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
