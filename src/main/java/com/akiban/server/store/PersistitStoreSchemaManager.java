@@ -59,6 +59,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
+import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -133,7 +134,7 @@ import com.persistit.exception.PersistitException;
  *     <tr>
  *         <td>"byPBAIS","schema",SCHEMA_NAME1</td>
  *         <td>byte[]</td>
- *         <td>As constructed by {@link com.akiban.ais.protobuf.ProtobufWriter}</td>
+ *         <td>As constructed by {@link ProtobufWriter}</td>
  *     </tr>
  *     <tr>
  *         <td>"byPBAIS","schema",SCHEMA_NAME2</td>
@@ -674,7 +675,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
 
         try {
-            loadAISFromDisk();
+            loadAISFromStorage();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -785,7 +786,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * of the {@link TreeService#SCHEMA_TREE_NAME} tree.
      * @throws PersistitException
      */
-    private void loadAISFromDisk() throws PersistitException {
+    private void loadAISFromStorage() throws PersistitException {
         final AkibanInformationSchema newAIS = createPrimordialAIS();
         setGroupTableIds(newAIS);
 
@@ -808,12 +809,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
                     if(hasMetaModel) {
                         useMetaModelSerialization = true;
-                        loadMetaModelBasedAIS(ex, newAIS);
+                        loadMetaModel(ex, newAIS);
                     } else if(hasProtobuf) {
                         if(useMetaModelSerialization) {
                             throw new IllegalStateException("Mixed AIS and Protobuf serializations: " + ex);
                         }
-                        loadProtobufBasedAIS(ex, newAIS);
+                        loadProtobuf(ex, newAIS);
                     } else {
                         throw new IllegalStateException("No (or unknown) AIS serialization");
                     }
@@ -828,7 +829,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
     }
 
-    private static void loadMetaModelBasedAIS(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+    private static void loadMetaModel(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
         ex.clear().append(METAMODEL_PARENT_KEY).fetch();
         if(!ex.getValue().isDefined()) {
             throw new IllegalStateException(ex.toString() + " has no associated value (expected byte[])");
@@ -839,7 +840,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         reader.load(newAIS);
     }
 
-    private static void loadProtobufBasedAIS(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+    private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
         ex.clear().append(PROTOBUF_PARENT_KEY).fetch();
         if(!ex.getValue().isDefined()) {
             throw new IllegalStateException(ex.toString() + " has no associated value (expected int)");
@@ -850,12 +851,20 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             throw new IllegalStateException("Unexpected Protobuf PSSM version: " + storedVersion);
         }
 
+        ProtobufReader reader = new ProtobufReader(newAIS);
         ex.append(PROTOBUF_SCHEMA_KEY).append(Key.BEFORE);
         while(ex.next()) {
             byte[] storedAIS = ex.getValue().getByteArray();
             GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
-            ProtobufReader reader = new ProtobufReader(buffer, newAIS);
-            reader.load();
+            reader.loadBuffer(buffer);
+        }
+
+        reader.loadAIS();
+
+        // TODO: ProtobufWriter does not save group tables (by design) so generate columns
+        AISBuilder builder = new AISBuilder(newAIS);
+        for(Group group : newAIS.getGroups().values()) {
+            builder.generateGroupTableColumns(group);
         }
     }
 
@@ -869,33 +878,65 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     /**
-     * Serialize the given AIS into a ByteBuffer in the MessageTarget format. Only tables existing
-     * in the given volume will be written.
+     * Serialize the given AIS into a ByteBuffer, either appropriate format according to the
+     * {@link #useMetaModelSerialization} variable. An exception will be thrown in the required
+     * size exceeds the {@link #maxAISBufferSize} setting.
+     *
      * @param newAIS The AIS to serialize.
-     * @param volumeName Volume to restrict tables to.
-     * @return ByteBuffer
-     * @throws Exception For any error during serialization or if the buffer is too small.
+     * @param schemaName Schema to restrict tables to.
      */
-    private GrowableByteBuffer trySerializeAIS(final AkibanInformationSchema newAIS, final String volumeName) {
+    private void saveAISToStorage(Exchange ex, AkibanInformationSchema newAIS, String schemaName) throws PersistitException {
         int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
-        GrowableByteBuffer aisByteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
-
+        GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
         try {
-            aisByteBuffer.clear();
-            new TableSubsetWriter(new MessageTarget(aisByteBuffer)) {
-                @Override
-                public boolean shouldSaveTable(Table table) {
-                    final String schemaName = table.getName().getSchemaName();
-                    return !schemaName.equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
-                           getVolumeForSchemaTree(schemaName).equals(volumeName);
-                }
-            }.save(newAIS);
-            aisByteBuffer.flip();
+            if(useMetaModelSerialization) {
+                saveMetaModel(ex, byteBuffer, newAIS, getVolumeForSchemaTree(schemaName));
+            } else {
+                saveProtobuf(ex, byteBuffer, newAIS, schemaName);
+            }
         }
         catch(BufferOverflowException e) {
             throw new AISTooLargeException(maxSize);
         }
-        return aisByteBuffer;
+    }
+
+    private void saveMetaModel(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String volume)
+            throws PersistitException {
+        buffer.clear();
+        new TableSubsetWriter(new MessageTarget(buffer)) {
+            @Override
+            public boolean shouldSaveTable(Table table) {
+                final String schemaName = table.getName().getSchemaName();
+                return !schemaName.equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
+                        getVolumeForSchemaTree(schemaName).equals(volume);
+            }
+        }.save(newAIS);
+        buffer.flip();
+
+        ex.clear().append(METAMODEL_PARENT_KEY);
+        ex.getValue().clear();
+        ex.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
+        ex.store();
+    }
+
+    private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema)
+            throws PersistitException {
+        buffer.clear();
+        new ProtobufWriter(buffer, schema).save(newAIS);
+        buffer.flip();
+
+        // Header
+        ex.clear().append(PROTOBUF_PARENT_KEY);
+        ex.getValue().clear().put(PROTOBUF_PSSM_VERSION);
+        ex.store();
+        // Schema's AIS
+        ex.append(PROTOBUF_SCHEMA_KEY).append(schema);
+        if(buffer.remaining() == 0) {
+            ex.remove();
+        } else {
+            ex.getValue().clear().putByteArray(buffer.array(), buffer.position(), buffer.limit());
+        }
+        ex.store();
     }
 
     private String getVolumeForSchemaTree(final String schemaName) {
@@ -906,24 +947,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * Internal helper intended to be called to finalize any AIS change. This includes create, delete,
      * alter, etc. This currently updates the {@link TreeService#SCHEMA_TREE_NAME} for a given schema,
      * rebuilds the {@link Store#getRowDefCache()}, and sets the {@link #getAis()} variable.
+     *
      * @param session Session to run under
      * @param newAIS The new AIS to store in the {@link #METAMODEL_PARENT_KEY} key range <b>and</b> commit as {@link #getAis()}.
      * @param schemaName The schema the change affected.
      * @throws PersistitException
      */
-    private void commitAISChange(final Session session, final AkibanInformationSchema newAIS, final String schemaName)
-            throws PersistitException {
+    private void commitAISChange(Session session, AkibanInformationSchema newAIS, String schemaName) throws PersistitException {
 
         //TODO: Verify the newAIS.isFrozen(), if not throw an exception. 
-        GrowableByteBuffer buffer = trySerializeAIS(newAIS, getVolumeForSchemaTree(schemaName));
-        final TreeLink schemaTreeLink =  treeService.treeLink(schemaName, SCHEMA_TREE_NAME);
-        final Exchange schemaEx = treeService.getExchange(session, schemaTreeLink);
-        
+
+        Exchange schemaEx = null;
         try {
-            schemaEx.clear().append(METAMODEL_PARENT_KEY);
-            schemaEx.getValue().clear();
-            schemaEx.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
-            schemaEx.store();
+            TreeLink schemaTreeLink =  treeService.treeLink(schemaName, SCHEMA_TREE_NAME);
+            schemaEx = treeService.getExchange(session, schemaTreeLink);
+            saveAISToStorage(schemaEx, newAIS, schemaName);
 
             try {
                 buildRowDefCache(newAIS);
@@ -934,7 +972,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 throw e;
             }
         } finally {
-            treeService.releaseExchange(session, schemaEx);
+            if(schemaEx != null) {
+                treeService.releaseExchange(session, schemaEx);
+            }
         }
     }
 
