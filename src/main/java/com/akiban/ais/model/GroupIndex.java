@@ -203,8 +203,6 @@ public class GroupIndex extends Index
             assert ordinal != null : hKeySegment.table();
             toHKeyBuilder.toHKeyEntry(ordinal, -1, -1);
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                // TODO: Experiment. hKeyColumn is leafward. Also include rootward column.
-                // Column column = indexRowCompositionColumn(hKeyColumn);
                 Column leafwardColumn = hKeyColumn.column();
                 Join join = leafwardColumn.getUserTable().getParentJoin();
                 if (join != null && indexCovers(join.getParent())) {
@@ -252,52 +250,6 @@ public class GroupIndex extends Index
         }
         position += offset;
         return position;
-    }
-
-    private Column indexRowCompositionColumn(HKeyColumn hKeyColumn)
-    {
-        // If we're within the branch segment, we want the root-most equivalent column, bound at the segment.
-        // Otherwise (ie, rootward of the segment), we want the usual, leafward column.
-
-        final int rootMostDepth = rootMostTable().getDepth();
-        final int forTableDepth = hKeyColumn.segment().table().getDepth();
-
-        if (forTableDepth < rootMostDepth) {
-            // table is root of the branch segment; use the standard hkey column
-            return hKeyColumn.column();
-        }
-
-        // table is within the branch segment
-        List<Column> equivalentColumns = hKeyColumn.equivalentColumns();
-        switch (getJoinType()) {
-            case LEFT:
-                // use a rootward bias, but no more rootward than the rootmost table
-                for (Column equivalentColumn : equivalentColumns) {
-                    int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
-                    if (equivalentColumnDepth >= rootMostDepth) {
-                        return equivalentColumn;
-                    }
-                }
-                break;
-            case RIGHT:
-                // use a childward bias, but no more childward than the childmost table
-                int leafMostDepth = leafMostTable().getDepth();
-                for(ListIterator<Column> reverseCols = equivalentColumns.listIterator(equivalentColumns.size());
-                    reverseCols.hasPrevious();)
-                {
-                    Column equivalentColumn = reverseCols.previous();
-                    int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
-                    if (equivalentColumnDepth <= leafMostDepth) {
-                        return equivalentColumn;
-                    }
-                }
-                break;
-        }
-
-        throw new AssertionError(
-            "no suitable column found for table " + hKeyColumn.segment().table()
-            + " in " + equivalentColumns
-        );
     }
 
     private void checkIndexTableInBranchNew(IndexColumn indexColumn, UserTable indexTable, int indexTableDepth,
