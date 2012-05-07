@@ -151,7 +151,8 @@ public class ProtobufReader {
             hasRequiredFields(pbGroup);
             String rootTableName = pbGroup.getRootTableName();
             Group group = Group.create(destAIS, rootTableName);
-            newGroups.add(new NewGroupInfo(schema, group, pbGroup));
+            String treeName = pbGroup.hasTreeName() ? pbGroup.getTreeName() : null;
+            newGroups.add(new NewGroupInfo(schema, group, pbGroup, treeName));
         }
         return newGroups;
     }
@@ -183,6 +184,8 @@ public class ProtobufReader {
             );
             newGroupInfo.group.setGroupTable(groupTable);
             groupTable.setGroup(newGroupInfo.group);
+            groupTable.setTreeName(newGroupInfo.treeName);
+            rootUserTable.setTreeName(newGroupInfo.treeName);
         }
         
         for(int i = 0; i < joinsNeedingGroup.size(); ++i) {
@@ -190,6 +193,7 @@ public class ProtobufReader {
             Group group = join.getParent().getGroup();
             join.setGroup(group);
             join.getChild().setGroup(group);
+            join.getChild().setTreeName(join.getParent().getTreeName());
             joinsNeedingGroup.addAll(join.getChild().getCandidateChildJoins());
         }
 
@@ -276,6 +280,9 @@ public class ProtobufReader {
                     pbIndex.getIsUnique(),
                     getIndexConstraint(pbIndex)
             );
+            if(pbIndex.hasTreeName()) {
+                tableIndex.setTreeName(pbIndex.getTreeName());
+            }
             loadIndexColumns(userTable, tableIndex, pbIndex.getColumnsList());
         }
     }
@@ -292,6 +299,9 @@ public class ProtobufReader {
                     getIndexConstraint(pbIndex),
                     convertJoinTypeOrNull(pbIndex.hasJoinType(), pbIndex.getJoinType())
             );
+            if(pbIndex.hasTreeName()) {
+                groupIndex.setTreeName(pbIndex.getTreeName());
+            }
             loadIndexColumns(null, groupIndex, pbIndex.getColumnsList());
         }
     }
@@ -457,11 +467,13 @@ public class ProtobufReader {
         final String schema;
         final Group group;
         final AISProtobuf.Group pbGroup;
+        final String treeName;
 
-        public NewGroupInfo(String schema, Group group, AISProtobuf.Group pbGroup) {
+        public NewGroupInfo(String schema, Group group, AISProtobuf.Group pbGroup, String treeName) {
             this.schema = schema;
             this.group = group;
             this.pbGroup = pbGroup;
+            this.treeName = treeName;
         }
     }
 }

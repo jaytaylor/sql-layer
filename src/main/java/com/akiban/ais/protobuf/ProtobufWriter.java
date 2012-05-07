@@ -243,8 +243,8 @@ public class ProtobufWriter {
         tableBuilder.addIndexes(writeIndexCommon(index, false));
     }
 
-    private static void writeGroupIndex(AISProtobuf.Group.Builder tableBuilder, Index index) {
-        tableBuilder.addIndexes(writeIndexCommon(index, true));
+    private static void writeGroupIndex(AISProtobuf.Group.Builder groupBuilder, Index index) {
+        groupBuilder.addIndexes(writeIndexCommon(index, true));
     }
 
     private static void writeIndexColumn(AISProtobuf.Index.Builder indexBuilder, IndexColumn indexColumn, boolean withTableName) {

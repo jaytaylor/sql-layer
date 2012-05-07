@@ -278,12 +278,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         nameChanger.setNewTableName(newName.getTableName());
         nameChanger.doChange();
 
-        String vol1 = getVolumeForSchemaTree(currentName.getSchemaName());
-        String vol2 = getVolumeForSchemaTree(newName.getSchemaName());
-
         try {
             commitAISChange(session, newAIS, currentName.getSchemaName());
-            if(!vol1.equals(vol2)) {
+            if(!currentName.getSchemaName().equals(newName.getSchemaName())) {
                 commitAISChange(session, newAIS, newName.getSchemaName());
             }
         } catch (PersistitException ex) {

@@ -270,6 +270,37 @@ public class ProtobufReaderWriterTest {
         compareAndAssert(inAIS, outAIS, true);
     }
 
+    @Test
+    public void tableAndIndexTreeNames() {
+        final String GROUP_TREENAME = "foo";
+        final String PARENT_PK_TREENAME = "bar";
+        final String GROUP_INDEX_TREENAME = "zap";
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable("parent").colLong("pid", false).colString("v", 32).pk("pid").key("v", "v");
+        builder.userTable("child").colLong("cid", false).colLong("pid").pk("pid").joinTo("parent").on("pid", "pid");
+        builder.groupIndex("v_cid", Index.JoinType.LEFT).on("parent", "v").and("child", "cid");
+
+        AkibanInformationSchema inAIS = builder.ais();
+        UserTable inParent = inAIS.getUserTable(SCHEMA, "parent");
+        UserTable inChild = inAIS.getUserTable(SCHEMA, "child");
+        inParent.getGroup().getGroupTable().setTreeName(GROUP_TREENAME);
+        inParent.getGroup().getIndex("v_cid").setTreeName(GROUP_INDEX_TREENAME);
+        inParent.setTreeName(GROUP_TREENAME);
+        inParent.getIndex("PRIMARY").setTreeName(PARENT_PK_TREENAME);
+        inChild.setTreeName(GROUP_TREENAME);
+
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        compareAndAssert(inAIS, outAIS, true);
+
+        UserTable outParent = outAIS.getUserTable(SCHEMA, "parent");
+        UserTable outChild = outAIS.getUserTable(SCHEMA, "child");
+        assertEquals("group table treename", GROUP_TREENAME, outParent.getGroup().getGroupTable().getTreeName());
+        assertEquals("parent table treename", GROUP_TREENAME, outParent.getTreeName());
+        assertEquals("child table treename", GROUP_TREENAME, outChild.getTreeName());
+        assertEquals("parent pk treename", PARENT_PK_TREENAME, inParent.getIndex("PRIMARY").getTreeName());
+        assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getTreeName());
+    }
+
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }
