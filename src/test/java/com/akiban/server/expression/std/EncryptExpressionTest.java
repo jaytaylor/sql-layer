@@ -102,7 +102,7 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         // decrypt the encrypted string
         Expression decrypted = getDecrypted(encrypted, key);
         
-        assertEquals(text, decrypted.evaluation().eval().getString());
+        assertEquals(text, new String(decrypted.evaluation().eval().getVarBinary().byteArray()));
     }
     
     @OnlyIfNot("alreadyExc()")
@@ -120,7 +120,7 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         
         assertEquals("Decrypted with a different key, but should still give the same text",
                      text,
-                     decrypted.evaluation().eval().getString());
+                     new String(decrypted.evaluation().eval().getVarBinary().byteArray()));
         
         assertTrue("This DECRYPT(text, key1) should NOT equal DECRYPT(text, key3)",
                     getDecrypted(encrypted, key3).evaluation().eval().isNull());

@@ -58,26 +58,25 @@ public class EncryptExpression extends AbstractBinaryExpression
 
     @Scalar("aes_encrypt")
     public static final ExpressionComposer ENCRYPT 
-            = new InnerComposer(Cipher.ENCRYPT_MODE, AkType.VARBINARY);
+            = new InnerComposer(Cipher.ENCRYPT_MODE);
     
     @Scalar("aes_decrypt")
     public static final ExpressionComposer DECRYPT 
-            = new InnerComposer(Cipher.DECRYPT_MODE, AkType.VARCHAR);
+            = new InnerComposer(Cipher.DECRYPT_MODE);
     
     private static final class InnerComposer extends BinaryComposer
     {
         private final int MODE;
-        private final AkType TOP;
-        InnerComposer (int mode, AkType t)
+
+        InnerComposer (int mode)
         {
             MODE = mode;
-            TOP = t;
         }
         
         @Override
         protected Expression compose(Expression first, Expression second)
         {
-            return new EncryptExpression(first, second, MODE, TOP);
+            return new EncryptExpression(first, second, MODE);
         }
 
         @Override
@@ -114,7 +113,7 @@ public class EncryptExpression extends AbstractBinaryExpression
                     ret.putVarBinary(new WrappingByteSource(cipher.doFinal(text.getString().getBytes())));
                     break;
                 case Cipher.DECRYPT_MODE:
-                    ret.putString(new String(cipher.doFinal(text.getVarBinary().byteArray())));
+                    ret.putVarBinary(new WrappingByteSource(cipher.doFinal(text.getVarBinary().byteArray())));
                     break;
                 default:
                     throw new IllegalArgumentException("Unexpected MODE: " + mode);
@@ -193,9 +192,9 @@ public class EncryptExpression extends AbstractBinaryExpression
     }
     
     private final int MODE;
-    EncryptExpression(Expression text, Expression key, int mode, AkType top)
+    EncryptExpression(Expression text, Expression key, int mode)
     {
-        super(top, text, key);
+        super(AkType.VARBINARY, text, key);
         MODE = mode;
     }
     
