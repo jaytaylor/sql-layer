@@ -42,8 +42,9 @@ import com.akiban.ais.model.validation.AISInvariants;
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
-public class
-        AISBuilder {
+public class AISBuilder {
+    public static String TREE_NAME_SEPARATOR = ".";
+
     GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
 
     // API for creating capturing basic schema information
@@ -283,33 +284,13 @@ public class
         forwardReferences.clear();
     }
 
-    private String computeTreeName(String groupSchemaName, String groupTableName) {
-        String proposedName = groupSchemaName + "$$" + groupTableName;
-        Collection<GroupTable> groupTables = ais.getGroupTables().values();
-        int saw = 0;
-        while(saw < groupTables.size()) {
-            saw = 0;
-            for(GroupTable table : groupTables) {
-                if(table.getTreeName().equals(proposedName)) {
-                    proposedName += "+";
-                    break;
-                }
-                ++saw;
-            }
-        }
-        return proposedName;
-    }
-
     // API for describing groups
 
-    public void createGroup(String groupName, String groupSchemaName,
-            String groupTableName) {
+    public void createGroup(String groupName, String groupSchemaName, String groupTableName) {
         LOG.info("createGroup: " + groupName + " -> " + groupSchemaName + "."
                 + groupTableName);
-        String treeName = computeTreeName(groupSchemaName, groupTableName);
         GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
-        groupTable.setTreeName(treeName);
         groupTable.setGroup(group);
     }
 
@@ -685,6 +666,11 @@ public class
         GroupTable groupTable = group.getGroupTable();
         groupTable.dropColumns();
         if (root != null && !multipleRoots) {
+            if(root.getTreeName() == null) {
+                String treeName = computeTreeName(group);
+                root.setTreeName(treeName);
+                groupTable.setTreeName(treeName);
+            }
             generateGroupTableColumns(groupTable, root);
         }
     }
@@ -780,6 +766,49 @@ public class
     
     public int getIndexIdOffset() {
         return indexIdGenerator;
+    }
+
+    public static String escapeForTreeName(String name) {
+        return name.replace(TREE_NAME_SEPARATOR, "\\" + TREE_NAME_SEPARATOR);
+    }
+
+    public static String schemaNameForIndex(Index index) {
+        final Table table;
+        switch(index.getIndexType()) {
+            case TABLE:
+                table = ((TableIndex)index).getTable();
+            break;
+            case GROUP:
+                table = ((GroupIndex)index).getGroup().getGroupTable();
+            break;
+            default:
+                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
+        }
+        return table.getName().getSchemaName();
+    }
+
+    public static String computeTreeName(Index index) {
+        final Table table;
+        switch(index.getIndexType()) {
+            case TABLE:
+                table = ((TableIndex)index).getTable();
+            break;
+            case GROUP:
+                table = ((GroupIndex)index).leafMostTable();
+            break;
+            default:
+                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
+        }
+        return escapeForTreeName(table.getName().getSchemaName()) + TREE_NAME_SEPARATOR +
+               escapeForTreeName(table.getName().getTableName()) + TREE_NAME_SEPARATOR +
+               escapeForTreeName(index.getIndexName().getName());
+    }
+
+    public static String computeTreeName(Group group) {
+        TableName tableName = group.getGroupTable().getRoot().getName();
+        // schema.group_name
+        return escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
+               escapeForTreeName(group.getName());
     }
 
     // State

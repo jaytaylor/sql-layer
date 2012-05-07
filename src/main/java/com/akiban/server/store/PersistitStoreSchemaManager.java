@@ -26,6 +26,8 @@
 
 package com.akiban.server.store;
 
+import static com.akiban.ais.model.AISBuilder.computeTreeName;
+import static com.akiban.ais.model.AISBuilder.schemaNameForIndex;
 import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
 import java.nio.BufferOverflowException;
@@ -38,7 +40,6 @@ import java.util.List;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.metamodel.io.AISTarget;
@@ -160,10 +161,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
 
-    private static final String TREE_NAME_SEPARATOR = "$$";
-
-    private static final AtomicInteger indexCounter = new AtomicInteger(0);
-
     private final AisHolder aish;
     private final SessionService sessionService;
     private final Store store;
@@ -180,15 +177,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         this.sessionService = sessionService;
         this.treeService = treeService;
         this.store = store;
-    }
-
-    private static String computeTreeName(Group group, Index index) {
-        IndexName iName = index.getIndexName();
-        return group.getName() + TREE_NAME_SEPARATOR +
-               iName.getSchemaName() + TREE_NAME_SEPARATOR +
-               iName.getTableName() + TREE_NAME_SEPARATOR +
-               iName.getName() + TREE_NAME_SEPARATOR +
-               indexCounter.getAndIncrement(); // Ensure uniqueness when tables are copied, (e.g. rename, alter table).
     }
 
     /**
@@ -221,9 +209,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private static void setTreeNames(UserTable newTable) {
         Group group = newTable.getGroup();
         GroupTable groupTable = group.getGroupTable();
-        newTable.setTreeName(groupTable.getTreeName());
         for(TableIndex index : newTable.getIndexesIncludingInternal()) {
-            index.setTreeName(computeTreeName(group, index));
+            index.setTreeName(computeTreeName(index));
         }
         syncIndexTreeNames(groupTable);
     }
@@ -394,7 +381,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             }
 
             newIndex.freezeColumns();
-            newIndex.setTreeName(computeTreeName(newGroup, newIndex));
+            newIndex.setTreeName(computeTreeName(newIndex));
             newIndexes.add(newIndex);
             builder.generateGroupTableIndexes(newGroup);
         }
@@ -735,8 +722,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         builder.groupingIsComplete();
 
         AkibanInformationSchema primordialAIS = builder.akibanInformationSchema();
-        
+
         UserTable statsTable = primordialAIS.getUserTable(SCHEMA, STATS);
+        statsTable.getGroup().getGroupTable().setTreeName(STATS_TREE);
         statsTable.setTableId(STATS_ID);
         statsTable.setTreeName(STATS_TREE);
         statsTable.getIndex(PRIMARY).setTreeName(STATS_PK_TREE);
@@ -968,20 +956,5 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             maxId = Math.max(index.getIndexId(), maxId);
         }
         return maxId;
-    }
-
-    private static String schemaNameForIndex(Index index) {
-        final Table table;
-        switch(index.getIndexType()) {
-            case TABLE:
-                table = ((TableIndex)index).getTable();
-            break;
-            case GROUP:
-                table = ((GroupIndex)index).getGroup().getGroupTable();
-            break;
-            default:
-                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
-        }
-        return table.getName().getSchemaName();
     }
 }

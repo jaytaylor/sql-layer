@@ -481,7 +481,9 @@ public final class SchemaManagerIT extends ITBase {
                 // These broke simple concat(s,'.',t) that was in RowDefCache
                 {new TableName("foo.bar", "baz"), new TableName("foo", "bar.baz")},
                 // These broke actual tree name generation
-                {new TableName("foo$$_akiban_bar", "baz"), new TableName("foo", "bar$$_akiban_baz")}
+                {new TableName("foo$$_akiban_bar", "baz"), new TableName("foo", "bar$$_akiban_baz")},
+                // New tree name separator
+                {new TableName("tes.", "tt1"), new TableName("tes", ".tt1")}
         };
 
         for(TableName pair[] : testNames) {
