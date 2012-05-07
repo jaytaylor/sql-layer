@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
@@ -74,15 +75,24 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         p.add("ENCRYPT/DECRYPT(" + text + ", " + key + ") ", text, key);
     }
     
+    private static Expression getEncrypted (String st, String k)
+    {
+        return  EncryptExpression.ENCRYPT.compose(Arrays.asList(
+                st == null ? LiteralExpression.forNull() : new LiteralExpression(AkType.VARCHAR, st),
+                k == null ? LiteralExpression.forNull() : new LiteralExpression(AkType.VARCHAR, k)));
+    }
+    
+    private static Expression getDecrypted (Expression encrypted, String k)
+    {
+        return EncryptExpression.DECRYPT.compose(Arrays.asList(
+                new LiteralExpression(AkType.VARBINARY, encrypted.evaluation().eval().getVarBinary()),
+                new LiteralExpression(AkType.VARCHAR, k)));
+    }
+    
     @Test
     public void test()
-    {
-        alreadyExc = false;
-        
-        Expression encrypted = EncryptExpression.ENCRYPT.compose(Arrays.asList(
-                text == null ? LiteralExpression.forNull() : new LiteralExpression(AkType.VARCHAR, text),
-                key == null ? LiteralExpression.forNull() : new LiteralExpression(AkType.VARCHAR, key)));
-        
+    {   
+        Expression encrypted = getEncrypted(text, key);
         if (key == null || text == null)
         {
             assertTrue("Top should be NULL ", encrypted.evaluation().eval().isNull());
@@ -90,11 +100,27 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         }
         
         // decrypt the encrypted string
-        Expression decrypted = EncryptExpression.DECRYPT.compose(Arrays.asList(
-                new LiteralExpression(AkType.VARBINARY, encrypted.evaluation().eval().getVarBinary()),
-                new LiteralExpression(AkType.VARCHAR, key)));
+        Expression decrypted = getDecrypted(encrypted, key);
         
         assertEquals(text, decrypted.evaluation().eval().getString());
+    }
+    
+    @OnlyIfNot("alreadyExc()")
+    @Test
+    public void testKey()
+    {
+        alreadyExc = true;
+        String text = "Encrypted Text";
+        String key1 = "abcdefghijklmnoprst";
+        String key2 = "rstdefghijklmnopabc";
+        
+        Expression encrypted = getEncrypted (text, key1);
+        Expression decrypted = getDecrypted(encrypted, key2);
+        
+        assertEquals("Decrypted with a different key, but should still give the same text",
+                     text,
+                     decrypted.evaluation().eval().getString());
+        
     }
     
     @Override

@@ -40,8 +40,8 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
 import com.akiban.util.WrappingByteSource;
-import com.persistit.exception.InvalidKeyException;
 import java.io.UnsupportedEncodingException;
+import java.security.InvalidKeyException;
 import java.security.NoSuchAlgorithmException;
 import java.security.NoSuchProviderException;
 import java.util.Arrays;
@@ -100,10 +100,10 @@ public class EncryptExpression extends AbstractBinaryExpression
                                             ValueHolder ret,
                                             int length, int mode) throws
                     NoSuchAlgorithmException, NoSuchPaddingException, 
-                    InvalidKeyException, IllegalBlockSizeException, 
-                    BadPaddingException, UnsupportedEncodingException, 
-                    NoSuchProviderException, java.security.InvalidKeyException
-        {            
+                    IllegalBlockSizeException, BadPaddingException, 
+                    UnsupportedEncodingException, NoSuchProviderException, 
+                    InvalidKeyException
+        {   
             SecretKey skey = new SecretKeySpec(adjustKey(key.getString(), length), "AES"); 
             Cipher cipher = Cipher.getInstance("AES/ECB/PKCS5Padding");
             cipher.init(mode, skey);
