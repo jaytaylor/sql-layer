@@ -113,6 +113,7 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         String text = "Encrypted Text";
         String key1 = "abcdefghijklmnoprst";
         String key2 = "rstdefghijklmnopabc";
+        String key3 = "xbyz";
         
         Expression encrypted = getEncrypted (text, key1);
         Expression decrypted = getDecrypted(encrypted, key2);
@@ -120,6 +121,9 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         assertEquals("Decrypted with a different key, but should still give the same text",
                      text,
                      decrypted.evaluation().eval().getString());
+        
+        assertTrue("This DECRYPT(text, key1) should NOT equal DECRYPT(text, key3)",
+                    getDecrypted(encrypted, key3).evaluation().eval().isNull());
         
     }
     
