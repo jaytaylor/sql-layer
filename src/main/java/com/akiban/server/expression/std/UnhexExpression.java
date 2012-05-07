@@ -26,6 +26,9 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -80,6 +83,47 @@ public class UnhexExpression extends AbstractUnaryExpression
             super(arg);
         }
         
+        /**
+         * It is assumed that if c is a character, it's a lowercase one
+         * 
+         * @param c: character with this (ASCII) code
+         * @return the HEX value of this char
+         * 
+         * Eg., 97 (or 'a') would return 10
+         *      45 (or '0') would return 0
+         */
+        private static int getHexVal (int c)
+        {
+            return c > 'a'
+                    ? c + BASE_CHAR
+                    : c - '0';
+        }
+        
+        /**
+         * 
+         * @param highChar
+         * @param lowChar
+         * @return a character whose (ASCII) code is eqal to the hexadecimal value 
+         *          of <highChar><lowChar>
+         * @throws InvalidParameterValue if either of the two char is not a legal
+         *          hex digit
+         * 
+         * Eg., parseByte('2', '0')  should return ' ' (space character)
+         * 
+         */
+        private static char parseByte(char highChar, char lowChar)
+        {
+            // convert all to lowercase
+            highChar |= 32;
+            lowChar |= 32;
+            
+            if (!LEGAL.contains(highChar) || !LEGAL.contains(lowChar))
+                throw new InvalidParameterValueException("Invalid HEX digit(s): " 
+                        + highChar + " " + lowChar);
+            
+            return (char)((getHexVal(highChar) << 4) + getHexVal(lowChar));
+        }
+        
         @Override
         public ValueSource eval()
         {
@@ -91,46 +135,37 @@ public class UnhexExpression extends AbstractUnaryExpression
             if (st.isEmpty())
                 valueHolder().putString(st);
             else
-            {
-                StringBuilder out = new StringBuilder();
-                char c1, c2;
-                int start = 1, end;
-                   
-                // check if the first digit is a 'legal' hex 
-                if (!LEGAL.contains(c1 = (char)(st.charAt(0) | 32)))
-                        return NullValueSource.only();
-                
-                // check to see if the hex string can be evenly divided into pairs
-                // if so, the first two digits will make a character
-                if (st.length() % 2 == 0)
+                try
                 {
-                    if (!LEGAL.contains(c2 = (char)(st.charAt(1) | 32)))
-                        return NullValueSource.only();
+                    StringBuilder out = new StringBuilder();
+                    int start, end;
 
-                    out.append((char)((c1 > 'a' ? c1 + BASE_CHAR : c1 - '0') * 16
-                            + (c2 > 'a' ? c2 + BASE_CHAR : c2 - '0')));
-                    ++start;
-                   
+                    // check if the hex string can be evenly divided into pairs
+                    // if so, the firt two digits will make a byte (a character)
+                    if (st.length() % 2 == 0)
+                    {
+                        out.append(parseByte(st.charAt(0) ,st.charAt(1)));
+                        start = 2;
+                    }
+                    else // if not, only the first char will
+                    {
+                        out.append(parseByte('0', st.charAt(0)));
+                        start = 1;
+                    }
+
+                    // starting from here, all characters should be evenly divided into pairs
+                    end = st.length() -1;
+                    for (; start < end; ++start)
+                        out.append(parseByte(st.charAt(start), st.charAt(++start)));                
+                    valueHolder().putString(out.toString());
                 }
-                else // if not, only the first digit will
-                    out.append((char)(c1 >= 'a' ? c1 + BASE_CHAR : c1 - '0')); 
-                
-                // starting from here, all characters should be evenly divided into pairs
-                end = st.length() -1;
-                for (; start < end; ++start)
+                catch (InvalidOperationException e)
                 {
-                    if (!LEGAL.contains(c1 = (char)(st.charAt(start) | 32)))
-                        return NullValueSource.only();
-                    
-                    if (!LEGAL.contains(c2 = (char)(st.charAt(++start) | 32)))
-                        return NullValueSource.only();
-                    
-                    out.append((char)((c1 > 'a' ? c1 + BASE_CHAR : c1 - '0') * 16
-                            + (c2 > 'a' ? c2 + BASE_CHAR : c2 - '0')));
+                    QueryContext qc = queryContext();
+                    if (qc != null)
+                        qc.warnClient(e);
+                    return NullValueSource.only();
                 }
-                
-                valueHolder().putString(out.toString());
-            }
             
             return valueHolder();
         }
