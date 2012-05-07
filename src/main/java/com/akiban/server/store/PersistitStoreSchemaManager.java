@@ -30,12 +30,11 @@ import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
 import java.nio.BufferOverflowException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -240,19 +239,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
         setTreeNames(finalTable);
         
-        try {
-            commitAISChange(session, merge.getAIS(), schemaName);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
-        }
-            
+        commitAISChange(session, merge.getAIS(), Collections.singleton(schemaName));
         return newTable.getName();
     }
 
     @Override
     public void renameTable(Session session, TableName currentName, TableName newName) {
-        String curSchema = currentName.getSchemaName();
-        String newSchema = newName.getSchemaName();
+        final String curSchema = currentName.getSchemaName();
+        final String newSchema = newName.getSchemaName();
         if(curSchema.equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
             throw new ProtectedTableDDLException(currentName);
         }
@@ -278,13 +272,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         nameChanger.setNewTableName(newName.getTableName());
         nameChanger.doChange();
 
-        try {
-            commitAISChange(session, newAIS, currentName.getSchemaName());
-            if(!currentName.getSchemaName().equals(newName.getSchemaName())) {
-                commitAISChange(session, newAIS, newName.getSchemaName());
-            }
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
+        if(curSchema.equals(newSchema)) {
+            commitAISChange(session, newAIS, Collections.singleton(curSchema));
+        } else {
+            commitAISChange(session, newAIS, Arrays.asList(curSchema, newSchema));
         }
     }
 
@@ -412,24 +403,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        final Map<String,String> volumeToSchema = new HashMap<String,String>();
+        final Set<String> schemas = new HashSet<String>();
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(getAis());
 
         Collection<Index> newIndexes = createIndexes(newAIS, indexesToAdd);
         for(Index index : newIndexes) {
-            String schemaName = index.getIndexName().getSchemaName();
-            volumeToSchema.put(getVolumeForSchemaTree(schemaName), schemaName);
+            schemas.add(schemaNameForIndex(index));
         }
         
-        for(String schema : volumeToSchema.values()) {
-            try {
-                commitAISChange(session, newAIS, schema);
-            } catch (PersistitException ex) {
-                throw new PersistitAdapterException(ex);
-            }
-        }
-        
+        commitAISChange(session, newAIS, schemas);
         return newIndexes;
     }
 
@@ -438,16 +421,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(getAis());
         final AISBuilder builder = new AISBuilder(newAIS);
-        final Map<String,String> volumeToSchema = new HashMap<String,String>();
+        final Set<String> schemas = new HashSet<String>();
 
         for(Index index : indexesToDrop) {
             final IndexName name = index.getIndexName();
-            String schemaName = null;
             switch(index.getIndexType()) {
                 case TABLE:
                     Table newTable = newAIS.getUserTable(new TableName(name.getSchemaName(), name.getTableName()));
                     if(newTable != null) {
-                        schemaName = newTable.getName().getSchemaName();
                         newTable.removeIndexes(Collections.singleton(newTable.getIndex(name.getName())));
                         builder.generateGroupTableIndexes(newTable.getGroup());
                     }
@@ -455,7 +436,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 case GROUP:
                     Group newGroup = newAIS.getGroup(name.getTableName());
                     if(newGroup != null) {
-                        schemaName = newGroup.getGroupTable().getName().getSchemaName();
                         newGroup.removeIndexes(Collections.singleton(newGroup.getIndex(name.getName())));
                     }
                 break;
@@ -463,16 +443,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                     throw new IllegalArgumentException("Unknown index type: " + index);
             }
 
-            volumeToSchema.put(getVolumeForSchemaTree(schemaName), schemaName);
+            schemas.add(schemaNameForIndex(index));
         }
 
-        for(String schema : volumeToSchema.values()) {
-            try {
-                commitAISChange(session, newAIS, schema);
-            } catch (PersistitException ex) {
-                throw new PersistitAdapterException(ex);
-            }
-        }
+        commitAISChange(session, newAIS, schemas);
     }
 
 
@@ -511,7 +485,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         final AkibanInformationSchema newAIS = removeTablesFromAIS(tables);
         try {
-            commitAISChange(session, newAIS, schemaName);
+            commitAISChange(session, newAIS, Collections.singleton(schemaName));
             // Success, remaining cleanup
             deleteTableStatuses(tables);
         } catch (PersistitException ex) {
@@ -946,28 +920,31 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * rebuilds the {@link Store#getRowDefCache()}, and sets the {@link #getAis()} variable.
      *
      * @param session Session to run under
-     * @param newAIS The new AIS to store in the {@link #METAMODEL_PARENT_KEY} key range <b>and</b> commit as {@link #getAis()}.
-     * @param schemaName The schema the change affected.
-     * @throws PersistitException
+     * @param newAIS The new AIS to store on disk <b>and</b> commit as {@link #getAis()}.
+     * @param schemaNames The schemas affected by the change.
      */
-    private void commitAISChange(Session session, AkibanInformationSchema newAIS, String schemaName) throws PersistitException {
+    private void commitAISChange(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
 
         //TODO: Verify the newAIS.isFrozen(), if not throw an exception. 
 
         Exchange schemaEx = null;
         try {
-            TreeLink schemaTreeLink =  treeService.treeLink(schemaName, SCHEMA_TREE_NAME);
-            schemaEx = treeService.getExchange(session, schemaTreeLink);
-            saveAISToStorage(schemaEx, newAIS, schemaName);
+            for(String schema : schemaNames) {
+                TreeLink schemaTreeLink =  treeService.treeLink(schema, SCHEMA_TREE_NAME);
+                schemaEx = treeService.getExchange(session, schemaTreeLink);
+                saveAISToStorage(schemaEx, newAIS, schema);
+                treeService.releaseExchange(session, schemaEx);
+            }
 
             try {
                 buildRowDefCache(newAIS);
-            }
-            catch (PersistitException e) {
+            } catch (PersistitException e) {
                 LOG.error("AIS change successful and stored on disk but RowDefCache creation failed!");
                 LOG.error("RUNNING STATE NOW INCONSISTENT");
                 throw e;
             }
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
         } finally {
             if(schemaEx != null) {
                 treeService.releaseExchange(session, schemaEx);
@@ -991,5 +968,20 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             maxId = Math.max(index.getIndexId(), maxId);
         }
         return maxId;
+    }
+
+    private static String schemaNameForIndex(Index index) {
+        final Table table;
+        switch(index.getIndexType()) {
+            case TABLE:
+                table = ((TableIndex)index).getTable();
+            break;
+            case GROUP:
+                table = ((GroupIndex)index).getGroup().getGroupTable();
+            break;
+            default:
+                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
+        }
+        return table.getName().getSchemaName();
     }
 }
