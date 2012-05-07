@@ -26,55 +26,7 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
-
-public abstract class AbstractNoArgExpression implements Expression {
-
-    // Expression interface
-
-    @Override
-    public boolean nullIsContaminating()
-    {
-        return true;
-    }
-    
-    @Override
-    public boolean isConstant() {
-        return true;
-    }
-
-    @Override
-    public boolean needsBindings() {
-        return false;
-    }
-
-    @Override
-    public boolean needsRow() {
-        return false;
-    }
-
-    @Override
-    public AkType valueType() {
-        return type;
-    }
-
-    // for use by subclasses
-
-    protected abstract String name();
-
-    protected AbstractNoArgExpression(AkType type) {
-        this.type = type;
-    }
-
-    // object interface
-
-    @Override
-    public String toString() {
-        return name() + "()";
-    }
-
-    // object state
-
-    private final AkType type;
+public interface Matcher
+{
+    boolean match(String str);
 }

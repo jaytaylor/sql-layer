@@ -47,6 +47,13 @@ abstract class NoArgComposer implements ExpressionComposer {
     }
     
     @Override
+    public NullTreating getNullTreating()
+    {
+        // NULL would be contaminating, if there were one.
+        return NullTreating.RETURN_NULL;
+    }
+    
+    @Override
     public Expression compose (List<? extends Expression> arguments, List<ExpressionType> typesList)
     {
         if (!arguments.isEmpty())

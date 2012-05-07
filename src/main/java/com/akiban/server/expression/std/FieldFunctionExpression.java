@@ -70,6 +70,12 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
             // don't really care about the types (for now)
             return new FieldFunctionExpression(arguments);
         }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.IGNORE;
+        }
         
     };
     
@@ -132,7 +138,7 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return false;
     }

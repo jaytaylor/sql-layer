@@ -120,6 +120,12 @@ final class ExprUtil {
         }
 
         private final AkType type;
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     private static final class ExplodingExpression implements Expression {
@@ -192,6 +198,12 @@ final class ExprUtil {
                 return "EXPLOSION_EVAL";
             }
         };
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
     }
 
     private static final class NonConstWrapper implements Expression {
@@ -231,5 +243,11 @@ final class ExprUtil {
         }
 
         private final Expression delegate;
+
+        @Override
+        public boolean nullIsContaminating()
+        {
+            return true;
+        }
     }
 }

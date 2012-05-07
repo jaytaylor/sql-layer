@@ -337,6 +337,12 @@ public class ArithOps
         }
         
         @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.RETURN_NULL;
+        }
+        
+        @Override
         public Expression compose (List<? extends Expression> args)
         {        
             switch(args.size())

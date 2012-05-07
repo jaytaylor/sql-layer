@@ -77,7 +77,13 @@ public class IfExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported in IF yet.");
+        }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.IGNORE;
         }
     };
     protected static final EnumSet<AkType> STRING = EnumSet.of(AkType.VARCHAR, AkType.TEXT);
@@ -111,7 +117,7 @@ public class IfExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return false;
     }

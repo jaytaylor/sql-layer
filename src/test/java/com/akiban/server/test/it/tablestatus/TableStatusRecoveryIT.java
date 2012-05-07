@@ -144,7 +144,7 @@ public class TableStatusRecoveryIT extends ITBase {
         final Persistit db = serviceManager().getTreeService().getDb();
 
         final String datapath = db.getProperty("datapath");
-        db.getJournalManager().force();
+        db.force();
         crashTestServices();
 
         final Property property = new Property("akserver.datapath", datapath);
