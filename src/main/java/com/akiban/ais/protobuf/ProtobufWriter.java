@@ -46,10 +46,6 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.MessageLite;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
 public class ProtobufWriter {
     private static final GrowableByteBuffer NO_BUFFER = new GrowableByteBuffer(0);
@@ -80,7 +76,7 @@ public class ProtobufWriter {
                 writeType(aisBuilder, type);
             }
 
-            for(Schema schema : ais.getScheams().values()) {
+            for(Schema schema : ais.getSchemas().values()) {
                 writeSchema(aisBuilder, schema);
             }
         } else {

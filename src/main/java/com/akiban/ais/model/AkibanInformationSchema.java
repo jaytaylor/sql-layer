@@ -198,7 +198,7 @@ public class AkibanInformationSchema implements Traversable
         return joins.get(joinName);
     }
 
-    public Map<String, Schema> getScheams()
+    public Map<String, Schema> getSchemas()
     {
         return schemas;
     }

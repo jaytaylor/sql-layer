@@ -43,7 +43,8 @@ import com.akiban.ais.model.validation.AISInvariants;
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
-public class AISBuilder {
+public class
+        AISBuilder {
     GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
 
     // API for creating capturing basic schema information
@@ -283,7 +284,8 @@ public class AISBuilder {
 
     // API for describing groups
 
-    public void createGroup(String groupName, String groupSchemaName, String groupTableName) {
+    public void createGroup(String groupName, String groupSchemaName,
+            String groupTableName) {
         LOG.info("createGroup: " + groupName + " -> " + groupSchemaName + "."
                 + groupTableName);
         GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);

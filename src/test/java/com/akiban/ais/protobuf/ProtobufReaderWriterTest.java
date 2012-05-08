@@ -46,8 +46,6 @@ import com.akiban.server.error.ProtobufWriteException;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
-import java.util.Collections;
-
 import static com.akiban.ais.AISComparator.compareAndAssert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -230,17 +228,17 @@ public class ProtobufReaderWriterTest {
         AkibanInformationSchema inAIS = builder.ais();
 
         AkibanInformationSchema outAIS1 = writeAndRead(inAIS, SCHEMA1);
-        assertEquals("Serialized AIS has just schema 1", "[" + SCHEMA1 + "]", outAIS1.getScheams().keySet().toString());
+        assertEquals("Serialized AIS has just schema 1", "[" + SCHEMA1 + "]", outAIS1.getSchemas().keySet().toString());
 
         AkibanInformationSchema outAIS2 = writeAndRead(inAIS, SCHEMA2);
-        assertEquals("Serialized AIS has just schema 2", "[" + SCHEMA2 + "]", outAIS2.getScheams().keySet().toString());
+        assertEquals("Serialized AIS has just schema 2", "[" + SCHEMA2 + "]", outAIS2.getSchemas().keySet().toString());
     }
 
     @Test
     public void writeWithRestrictedSchemaNoMatch() {
         AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais();
         AkibanInformationSchema outAIS = writeAndRead(inAIS, SCHEMA + "foobar");
-        assertEquals("Serialized AIS has no schemas", "[]", outAIS.getScheams().keySet().toString());
+        assertEquals("Serialized AIS has no schemas", "[]", outAIS.getSchemas().keySet().toString());
     }
 
     @Test

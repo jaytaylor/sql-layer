@@ -72,7 +72,7 @@ public class AISMerge {
         sourceTable = newTable;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
-                setDefaultTreeNames(collectTreeNames(targetAIS));
+                setDefaultTreeNames(computeTreeNames(targetAIS));
     }
     
     /**
@@ -254,7 +254,7 @@ public class AISMerge {
     }
 */
 
-    private static int computeTableIdOffset(AkibanInformationSchema ais) {
+    private int computeTableIdOffset(AkibanInformationSchema ais) {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
         int offset = 1;
         for(UserTable table : ais.getUserTables().values()) {
@@ -270,7 +270,7 @@ public class AISMerge {
         return offset;
     }
 
-    private static int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
+    private int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
         int offset = 1;
         Group group = ais.getGroup(groupName);
         for(UserTable table : ais.getUserTables().values()) {
@@ -286,7 +286,7 @@ public class AISMerge {
         return offset;
     }
 
-    public static Set<String> collectTreeNames(AkibanInformationSchema ais) {
+    public static Set<String> computeTreeNames (AkibanInformationSchema ais) {
         // Collect all tree names
         Set<String> treeNames = new HashSet<String>();
         for(Group group : ais.getGroups().values()) {

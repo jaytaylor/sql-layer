@@ -246,7 +246,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                                                   Collection<? extends Index> indexesToAdd) {
         final AISBuilder builder = new AISBuilder(newAIS);
         final List<Index> newIndexes = new ArrayList<Index>();
-        final NameGenerator nameGen = new DefaultNameGenerator().setDefaultTreeNames(AISMerge.collectTreeNames(newAIS));
+        final NameGenerator nameGen = new DefaultNameGenerator().setDefaultTreeNames(AISMerge.computeTreeNames(newAIS));
 
         for(Index index : indexesToAdd) {
             final IndexName indexName = index.getIndexName();

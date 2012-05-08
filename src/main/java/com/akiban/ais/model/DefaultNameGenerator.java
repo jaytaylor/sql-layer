@@ -205,7 +205,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     private static String makeUnique(Set<String> set, String original) {
-        int counter = 2;
+        int counter = 1;
         String proposed = original;
         while(!set.add(proposed)) {
             proposed = original + "$" + counter++;
