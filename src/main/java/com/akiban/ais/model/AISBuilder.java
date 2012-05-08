@@ -177,9 +177,6 @@ public class AISBuilder {
         Index index = group.getIndex(indexName);
         checkFound(index, "creating group index column", "index", concat(groupName, indexName));
         Table table = ais.getTable(schemaName, tableName);
-        if (table.getGroup() == null) {
-            throw new IllegalArgumentException("table is ungrouped: " + table);
-        }
         if (!table.getGroup().getName().equals(groupName)) {
             throw new IllegalArgumentException("group name mismatch: " + groupName + " != " + table.getGroup());
         }

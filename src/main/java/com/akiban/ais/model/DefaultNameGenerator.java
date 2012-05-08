@@ -180,7 +180,11 @@ public class DefaultNameGenerator implements NameGenerator {
                 tableName = ((TableIndex)index).getTable().getName();
             break;
             case GROUP:
-                tableName = ((GroupIndex)index).leafMostTable().getName();
+                UserTable root = ((GroupIndex)index).getGroup().getGroupTable().getRoot();
+                if(root == null) {
+                    throw new IllegalArgumentException("Grouping incomplete (no root)");
+                }
+                tableName = root.getName();
             break;
             default:
                 throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
