@@ -554,6 +554,17 @@ public final class SchemaManagerIT extends ITBase {
         assertEquals("Entry DDL", ENTRY_DDL, entryDef.getDDL());
     }
 
+    @Test
+    public void renameAndRecreate() throws Exception {
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        ddl().renameTable(session(), tableName(SCHEMA, T1_NAME), tableName("foo", "bar"));
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+
+        String originalTreeName = getUserTable(SCHEMA, T1_NAME).getTreeName();
+        String newTreeName = getUserTable("foo", "bar").getTreeName();
+        assertTrue("Unique tree names", !originalTreeName.equals(newTreeName));
+    }
+
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
      * confirm each table exists in the AIS and has a definition.

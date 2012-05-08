@@ -27,10 +27,11 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.akiban.ais.gwtutils.GwtLogger;
 import com.akiban.ais.gwtutils.GwtLogging;
@@ -43,8 +44,6 @@ import com.akiban.ais.model.validation.AISInvariants;
 // only names from the dump need be supplied. 
 
 public class AISBuilder {
-    public static String TREE_NAME_SEPARATOR = ".";
-
     GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
 
     // API for creating capturing basic schema information
@@ -131,8 +130,8 @@ public class AISBuilder {
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table",
                 concat(schemaName, tableName));
-        TableIndex.create(ais, table, indexName, indexIdGenerator++, unique,
-                constraint);
+        Index index = TableIndex.create(ais, table, indexName, indexIdGenerator++, unique, constraint);
+        index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
     public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
@@ -141,7 +140,8 @@ public class AISBuilder {
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
-        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
+        Index index = GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
+        index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
     @Deprecated
@@ -292,6 +292,7 @@ public class AISBuilder {
         GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
         groupTable.setGroup(group);
+        groupTable.setTreeName(nameGenerator.generateGroupTreeName(group));
     }
 
     public void deleteGroup(String groupName) {
@@ -573,7 +574,7 @@ public class AISBuilder {
                 + groupTable + " and user table " + userTable);
 
         for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
-            String indexName = nameGenerator.generateGroupIndexName(userIndex);
+            String indexName = nameGenerator.generateGroupTableIndexName(userIndex);
 
             // Check if the index we're about to add is already in the table.
             // This can happen if the user alters one or more groups, then
@@ -666,11 +667,6 @@ public class AISBuilder {
         GroupTable groupTable = group.getGroupTable();
         groupTable.dropColumns();
         if (root != null && !multipleRoots) {
-            if(root.getTreeName() == null) {
-                String treeName = computeTreeName(group);
-                root.setTreeName(treeName);
-                groupTable.setTreeName(treeName);
-            }
             generateGroupTableColumns(groupTable, root);
         }
     }
@@ -766,49 +762,6 @@ public class AISBuilder {
     
     public int getIndexIdOffset() {
         return indexIdGenerator;
-    }
-
-    public static String escapeForTreeName(String name) {
-        return name.replace(TREE_NAME_SEPARATOR, "\\" + TREE_NAME_SEPARATOR);
-    }
-
-    public static String schemaNameForIndex(Index index) {
-        final Table table;
-        switch(index.getIndexType()) {
-            case TABLE:
-                table = ((TableIndex)index).getTable();
-            break;
-            case GROUP:
-                table = ((GroupIndex)index).getGroup().getGroupTable();
-            break;
-            default:
-                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
-        }
-        return table.getName().getSchemaName();
-    }
-
-    public static String computeTreeName(Index index) {
-        final Table table;
-        switch(index.getIndexType()) {
-            case TABLE:
-                table = ((TableIndex)index).getTable();
-            break;
-            case GROUP:
-                table = ((GroupIndex)index).leafMostTable();
-            break;
-            default:
-                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
-        }
-        return escapeForTreeName(table.getName().getSchemaName()) + TREE_NAME_SEPARATOR +
-               escapeForTreeName(table.getName().getTableName()) + TREE_NAME_SEPARATOR +
-               escapeForTreeName(index.getIndexName().getName());
-    }
-
-    public static String computeTreeName(Group group) {
-        TableName tableName = group.getGroupTable().getRoot().getName();
-        // schema.group_name
-        return escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
-               escapeForTreeName(group.getName());
     }
 
     // State

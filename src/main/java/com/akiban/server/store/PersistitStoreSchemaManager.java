@@ -26,8 +26,6 @@
 
 package com.akiban.server.store;
 
-import static com.akiban.ais.model.AISBuilder.computeTreeName;
-import static com.akiban.ais.model.AISBuilder.schemaNameForIndex;
 import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
 import java.nio.BufferOverflowException;
@@ -51,11 +49,13 @@ import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
+import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
@@ -179,55 +179,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         this.store = store;
     }
 
-    /**
-     * The AISBuilder normally sets tree names for GroupTable indexes but on a brand new table,
-     * those indexes don't have tree names yet (they are set afterwards). This syncs up all the
-     * tree names on the given GroupTable.
-     * @param groupTable GroupTable to fix up
-     */
-    private static void syncIndexTreeNames(GroupTable groupTable) {
-        for(TableIndex index : groupTable.getIndexes()) {
-            if(!index.getKeyColumns().isEmpty()) {
-                Column groupColumn = index.getKeyColumns().get(0).getColumn();
-                Column userColumn = groupColumn.getUserColumn();
-                assert userColumn != null : groupColumn;
-                boolean found = false;
-                for(TableIndex userIndex : userColumn.getUserTable().getIndexesIncludingInternal()) {
-                    if(userIndex.getIndexId().equals(index.getIndexId())) {
-                        index.setTreeName(userIndex.getTreeName());
-                        found = true;
-                        break;
-                    }
-                }
-                assert found : index;
-            }
-        }
-    }
-
-    // TODO: Cleanup {@link #createIndexes(Session, Collection)} so AISBuilder can set final tree name
-    // on an index and {@link #syncIndexTreeNames(GroupTable)} could go away entirely
-    private static void setTreeNames(UserTable newTable) {
-        Group group = newTable.getGroup();
-        GroupTable groupTable = group.getGroupTable();
-        for(TableIndex index : newTable.getIndexesIncludingInternal()) {
-            index.setTreeName(computeTreeName(index));
-        }
-        syncIndexTreeNames(groupTable);
-    }
-
-    
     @Override
-    public TableName createTableDefinition(Session session, final UserTable newTable)
-    {
-        AISMerge merge = new AISMerge (getAis(), newTable);
+    public TableName createTableDefinition(Session session, final UserTable newTable) {
+        AISMerge merge = new AISMerge(getAis(), newTable);
         merge.merge();
         
         final String schemaName = newTable.getName().getSchemaName();
         final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
-        setTreeNames(finalTable);
-        
+
         commitAISChange(session, merge.getAIS(), Collections.singleton(schemaName));
-        return newTable.getName();
+        return finalTable.getName();
     }
 
     @Override
@@ -295,6 +256,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                                                   Collection<? extends Index> indexesToAdd) {
         final AISBuilder builder = new AISBuilder(newAIS);
         final List<Index> newIndexes = new ArrayList<Index>();
+        final NameGenerator nameGen = new DefaultNameGenerator().setDefaultTreeNames(AISMerge.collectTreeNames(newAIS));
 
         for(Index index : indexesToAdd) {
             final IndexName indexName = index.getIndexName();
@@ -381,7 +343,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             }
 
             newIndex.freezeColumns();
-            newIndex.setTreeName(computeTreeName(newIndex));
+            newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
             newIndexes.add(newIndex);
             builder.generateGroupTableIndexes(newGroup);
         }
@@ -396,7 +358,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         Collection<Index> newIndexes = createIndexes(newAIS, indexesToAdd);
         for(Index index : newIndexes) {
-            schemas.add(schemaNameForIndex(index));
+            schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
         }
         
         commitAISChange(session, newAIS, schemas);
@@ -430,7 +392,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                     throw new IllegalArgumentException("Unknown index type: " + index);
             }
 
-            schemas.add(schemaNameForIndex(index));
+            schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
         }
 
         commitAISChange(session, newAIS, schemas);

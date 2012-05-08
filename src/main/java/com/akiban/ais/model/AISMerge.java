@@ -36,6 +36,9 @@ import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
  * does not assume that UserTable.getAIS() returns a validated and complete 
@@ -52,7 +55,7 @@ public class AISMerge {
     /* state */
     private AkibanInformationSchema targetAIS;
     private UserTable sourceTable;
-    private NameGenerator groupNames; 
+    private NameGenerator nameGenerator;
     private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
 
     /**
@@ -67,8 +70,9 @@ public class AISMerge {
         new Writer(new AISTarget(targetAIS)).save(primaryAIS);
         
         sourceTable = newTable;
-       
-        groupNames = new DefaultNameGenerator().setDefaultGroupNames(targetAIS.getGroups().keySet());
+        nameGenerator = new DefaultNameGenerator().
+                setDefaultGroupNames(targetAIS.getGroups().keySet()).
+                setDefaultTreeNames(collectTreeNames(targetAIS));
     }
     
     /**
@@ -90,7 +94,7 @@ public class AISMerge {
         // TableSubsetWriter doesn't do. 
         LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
 
-        final AISBuilder builder = new AISBuilder(targetAIS);
+        final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
         builder.setTableIdOffset(computeTableIdOffset(targetAIS));
 
         if (sourceTable.getParentJoin() != null) {
@@ -109,8 +113,8 @@ public class AISMerge {
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
             LOG.debug("Table is root or lone table");
-            String groupName = groupNames.generateGroupName(sourceTable);
-            String groupTableName = groupNames.generateGroupTableName(groupName);
+            String groupName = nameGenerator.generateGroupName(sourceTable);
+            String groupTableName = nameGenerator.generateGroupTableName(groupName);
             builder.basicSchemaIsComplete();            
             builder.createGroup(groupName, 
                     sourceTable.getName().getSchemaName(), 
@@ -192,9 +196,9 @@ public class AISMerge {
             throw new JoinToUnknownTableException(sourceTable.getName(), new TableName(parentSchemaName, parentTableName));
          }
         LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
-        String joinName = groupNames.generateJoinName(parentTable.getName(),
-                                                      sourceTable.getName(),
-                                                      join.getJoinColumns());
+        String joinName = nameGenerator.generateJoinName(parentTable.getName(),
+                                                         sourceTable.getName(),
+                                                         join.getJoinColumns());
         builder.joinTables(joinName,
                 parentSchemaName,
                 parentTableName,
@@ -250,7 +254,7 @@ public class AISMerge {
     }
 */
 
-    private int computeTableIdOffset(AkibanInformationSchema ais) {
+    private static int computeTableIdOffset(AkibanInformationSchema ais) {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
         int offset = 1;
         for(UserTable table : ais.getUserTables().values()) {
@@ -266,7 +270,7 @@ public class AISMerge {
         return offset;
     }
 
-    private int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
+    private static int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
         int offset = 1;
         Group group = ais.getGroup(groupName);
         for(UserTable table : ais.getUserTables().values()) {
@@ -280,5 +284,24 @@ public class AISMerge {
             offset = Math.max(offset, index.getIndexId() + 1); 
         }
         return offset;
+    }
+
+    public static Set<String> collectTreeNames(AkibanInformationSchema ais) {
+        // Collect all tree names
+        Set<String> treeNames = new HashSet<String>();
+        for(Group group : ais.getGroups().values()) {
+            for(Index index : group.getIndexes()) {
+                treeNames.add(index.getTreeName());
+            }
+        }
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getParentJoin() == null) {
+                treeNames.add(table.getTreeName());
+            }
+            for(Index index : table.getIndexes()) {
+                treeNames.add(index.getTreeName());
+            }
+        }
+        return treeNames;
     }
 }
