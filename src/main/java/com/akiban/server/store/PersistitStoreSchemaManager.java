@@ -103,7 +103,28 @@ import com.persistit.exception.PersistitException;
 
 /**
  * <p>
- * Older, MetaModel based storage:
+ * Storage as of v1.2.1 (05/2012), Protobuf bytes per schema:
+ * <table border="1">
+ *     <tr>
+ *         <th>key</th>
+ *         <th>value</th>
+ *         <th>description</th>
+ *     </tr>
+ *     <tr>
+ *         <td>"byPBAIS",(int)version,"schema1"</td>
+ *         <td>byte[]</td>
+ *         <td>Key is a pair of version (int, see {@link #PROTOBUF_PSSM_VERSION} for current) and schema name (string).<br>
+ *             Value is as constructed by {@link ProtobufWriter}.
+ *     </tr>
+ *     <tr>
+ *         <td>"byPBAIS",(int)version,"schema2"</td>
+ *         <td>...</td>
+ *         <td>...</td>
+ *     </tr>
+ * </table>
+ * <br>
+ * <p>
+ * Storage as of v0.4 (05/2011), MetaModel bytes per AIS:
  * <table border="1">
  *     <tr>
  *         <th>key</th>
@@ -113,46 +134,15 @@ import com.persistit.exception.PersistitException;
  *     <tr>
  *         <td>"byAIS"</td>
  *         <td>byte[]</td>
- *         <td>As constructed by {@link MessageTarget}</td>
+ *         <td>Value is as constructed by {@link MessageTarget}</td>
  *     </tr>
  * </table>
  * </p>
- * <br>
- * <p>
- * Newer, Protobuf based storage:
- * <table border="1">
- *     <tr>
- *         <th>key</th>
- *         <th>value</th>
- *         <th>description</th>
- *     </tr>
- *     <tr>
- *         <td>"byPBAIS"</td>
- *         <td>integer</td>
- *         <td>Logical PSSM version stored, see {@link #PROTOBUF_PSSM_VERSION} for current</td>
- *     </tr>
- *     <tr>
- *         <td>"byPBAIS","schema",SCHEMA_NAME1</td>
- *         <td>byte[]</td>
- *         <td>As constructed by {@link ProtobufWriter}</td>
- *     </tr>
- *     <tr>
- *         <td>"byPBAIS","schema",SCHEMA_NAME2</td>
- *         <td>...</td>
- *         <td>...</td>
- *     </tr>
- *     <tr>
- *         <td>...</td>
- *         <td>...</td>
- *         <td>...</td>
- *     </tr>
- * </table>
  * </p>
  */
 public class PersistitStoreSchemaManager implements Service<SchemaManager>, SchemaManager {
     private static final String METAMODEL_PARENT_KEY = "byAIS";
     private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
-    private static final String PROTOBUF_SCHEMA_KEY = "schema";
     private static final int PROTOBUF_PSSM_VERSION = 1;
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
@@ -722,7 +712,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                     // TODO: This is where the "automatic upgrade" would go
 
                     boolean hasMetaModel = ex.clear().append(METAMODEL_PARENT_KEY).isValueDefined();
-                    boolean hasProtobuf = ex.clear().append(PROTOBUF_PARENT_KEY).isValueDefined();
+                    boolean hasProtobuf = ex.clear().append(PROTOBUF_PARENT_KEY).hasChildren();
 
                     if(hasMetaModel && hasProtobuf) {
                         throw new IllegalStateException("Both AIS and Protobuf serializations");
@@ -762,19 +752,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
-        ex.clear().append(PROTOBUF_PARENT_KEY).fetch();
-        if(!ex.getValue().isDefined()) {
-            throw new IllegalStateException(ex.toString() + " has no associated value (expected int)");
-        }
-
-        int storedVersion = ex.getValue().getInt();
-        if(storedVersion != PROTOBUF_PSSM_VERSION) {
-            throw new IllegalStateException("Unexpected Protobuf PSSM version: " + storedVersion);
-        }
-
         ProtobufReader reader = new ProtobufReader(newAIS);
-        ex.append(PROTOBUF_SCHEMA_KEY).append(Key.BEFORE);
-        while(ex.next()) {
+        Key key = ex.getKey();
+        key.clear().append(PROTOBUF_PARENT_KEY).append(Key.BEFORE);
+        while(ex.next(true)) {
+            if(key.getDepth() != 3) {
+                throw new IllegalStateException("Unexpected "+PROTOBUF_PARENT_KEY+" format: " + key);
+            }
+
+            key.indexTo(1);
+            int storedVersion = key.decodeInt();
+            String storedSchema = key.decodeString();
+            if(storedVersion != PROTOBUF_PSSM_VERSION) {
+                throw new IllegalArgumentException("Unsupported version for schema "+storedSchema+": " + storedVersion);
+            }
+
             byte[] storedAIS = ex.getValue().getByteArray();
             GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
             reader.loadBuffer(buffer);
@@ -782,7 +774,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         reader.loadAIS();
 
-        // TODO: ProtobufWriter does not save group tables (by design) so generate columns
+        // ProtobufWriter does not save group tables (by design) so generate columns
         AISBuilder builder = new AISBuilder(newAIS);
         for(Group group : newAIS.getGroups().values()) {
             builder.generateGroupTableColumns(group);
@@ -846,12 +838,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         new ProtobufWriter(buffer, schema).save(newAIS);
         buffer.flip();
 
-        // Header
-        ex.clear().append(PROTOBUF_PARENT_KEY);
-        ex.getValue().clear().put(PROTOBUF_PSSM_VERSION);
-        ex.store();
-        // Schema's AIS
-        ex.append(PROTOBUF_SCHEMA_KEY).append(schema);
+        ex.clear().append(PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
         if(buffer.remaining() == 0) {
             ex.remove();
         } else {
