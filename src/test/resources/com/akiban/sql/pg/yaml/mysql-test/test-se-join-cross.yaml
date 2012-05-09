@@ -2,6 +2,8 @@
 # AUTOGEN: SKIP
 # nonstandard implementation - not supporting for now
 ---
+- Message: Suppressed due to non-support, see also bug 907786
+---
 - Properties: all
 - suppressed: true
 ---

@@ -28,11 +28,12 @@ package com.akiban.server.expression.std;
 
 public enum Comparison
 {
+    
     EQ("==", false, true, false),
-    LT("<", true, false, false),
-    LE("<=", true, true, false),
-    GT(">", false, false, true),
     GE(">=", false, true, true),
+    GT(">", false, false, true),
+    LE("<=", true, true, false),
+    LT("<", true, false, false),
     NE("!=", true, false, true)
     ;
 

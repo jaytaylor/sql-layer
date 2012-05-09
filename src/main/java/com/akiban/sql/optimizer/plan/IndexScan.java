@@ -121,7 +121,13 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            // TODO: Should we visit the tables; we've replaced them, right?
+            if (v instanceof ExpressionRewriteVisitor) {
+                visitComparands((ExpressionRewriteVisitor)v);
+            }
+            else if (v instanceof ExpressionVisitor) {
+                visitComparands((ExpressionVisitor)v);
+            }
+            // Don't visit any tables here; they are done by a lookup when that's needed.
         }
         return v.visitLeave(this);
     }
@@ -147,6 +153,8 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
     public abstract boolean isLowInclusive();
     public abstract ExpressionNode getHighComparand();
     public abstract boolean isHighInclusive();
+    public abstract void visitComparands(ExpressionRewriteVisitor v);
+    public abstract void visitComparands(ExpressionVisitor v);
     
     @Override
     public String summaryString() {

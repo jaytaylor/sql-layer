@@ -26,7 +26,6 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.AbstractRow;
@@ -34,6 +33,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueSource;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -126,9 +126,8 @@ public class PersistitIndexRow extends AbstractRow
     @Override
     public ValueSource eval(int i) 
     {
-        IndexColumn column = indexColumns[i];
         PersistitKeyValueSource keySource = keySource(i);
-        keySource.attach(indexRow, column);
+        keySource.attach(indexRow, i, akTypes[i]);
         return keySource;
     }
 
@@ -140,35 +139,47 @@ public class PersistitIndexRow extends AbstractRow
 
     // PersistitIndexRow interface
 
+    public boolean keyEmpty()
+    {
+        return indexRow.getEncodedSize() == 0;
+    }
+
+    public long tableBitmap()
+    {
+        return tableBitmap;
+    }
+
     public PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType) throws PersistitException
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;
-        this.indexColumns = new IndexColumn[index().getAllColumns().size()];
-        index().getAllColumns().toArray(this.indexColumns);
+        assert indexRowType.nFields() == indexRowType.index().getAllColumns().size();
+        this.akTypes = new AkType[indexRowType.nFields()];
+        for (IndexColumn indexColumn : indexRowType.index().getAllColumns()) {
+            this.akTypes[indexColumn.getPosition()] = indexColumn.getColumn().getType().akType();
+        }
         this.keySources = new PersistitKeyValueSource[indexRowType.nFields()];
         this.indexRow = adapter.persistit().getKey(adapter.session());
-        this.hKey = new PersistitHKey(adapter, index().hKey());
+        this.hKey = new PersistitHKey(adapter, this.indexRowType.index().hKey());
     }
 
     // For use by this package
 
-    void copyFromExchange(Exchange exchange)
+    void copyFromExchange(Exchange exchange) throws PersistitException
     {
         // Extract the hKey from the exchange, using indexRow as a convenient Key to bridge Exchange
         // and PersistitHKey.
-        adapter.persistit().constructHKeyFromIndexKey(indexRow, exchange.getKey(), index());
+        adapter.persistit().constructHKeyFromIndexKey(indexRow, exchange.getKey(), indexRowType.index());
         hKey.copyFrom(indexRow);
         // Now copy the entire index record into indexRow.
         exchange.getKey().copyTo(indexRow);
+        // Get the tableBitmap if this is a group index row
+        if (indexRowType.index().isGroupIndex()) {
+            tableBitmap = exchange.getValue().getLong();
+        }
     }
 
     // For use by this class
-
-    private Index index()
-    {
-        return indexRowType.index();
-    }
 
     private PersistitKeyValueSource keySource(int i)
     {
@@ -182,8 +193,9 @@ public class PersistitIndexRow extends AbstractRow
 
     private final PersistitAdapter adapter;
     private final IndexRowType indexRowType;
-    private IndexColumn[] indexColumns;
+    private AkType[] akTypes;
     private final PersistitKeyValueSource[] keySources;
     private final Key indexRow;
+    private long tableBitmap;
     private PersistitHKey hKey;
 }

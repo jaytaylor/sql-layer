@@ -79,7 +79,13 @@ public final class VariableExpression implements Expression {
     private final AkType type;
     private final int position;
 
-    private static class InnerEvaluation extends ExpressionEvaluation.Base {
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
+
+   private static class InnerEvaluation extends ExpressionEvaluation.Base {
         @Override
         public void of(Row row) {
         }

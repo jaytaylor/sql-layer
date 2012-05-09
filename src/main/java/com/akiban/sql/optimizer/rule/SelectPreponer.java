@@ -176,6 +176,7 @@ public class SelectPreponer extends BaseRule
                     case INNER:
                         break;
                     case LEFT:
+                    case SEMI:
                         if (prev == ((MapJoin)node).getInner())
                             return;
                         break;

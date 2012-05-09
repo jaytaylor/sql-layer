@@ -58,11 +58,6 @@ public final class OverlayingRow extends AbstractRow {
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable) {
-        return underlying.containsRealRowOf(userTable);
-    }
-
-    @Override
     public RowType rowType() {
         return underlying.rowType();
     }

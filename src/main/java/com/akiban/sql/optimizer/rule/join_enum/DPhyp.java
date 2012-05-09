@@ -670,9 +670,11 @@ public abstract class DPhyp<P>
         assert (count > 1) : "Found less than 2 unconnected subgraphs";
         noperators += count - 1;
         nedges = noperators * 2;
-        long[] newEdges = new long[nedges];
-        System.arraycopy(edges, 0, newEdges, 0, edges.length);
-        edges = newEdges;
+        if (edges.length < nedges) { // Length was a conservative guess and might be large enough already.
+            long[] newEdges = new long[nedges];
+            System.arraycopy(edges, 0, newEdges, 0, edges.length);
+            edges = newEdges;
+        }
         // Just connect them all up. This is by no means an optimal
         // set of new edges, but the plan is trouble to begin with
         // since it involved a cross product. Would need something
