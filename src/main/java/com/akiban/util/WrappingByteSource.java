@@ -132,7 +132,8 @@ public final class WrappingByteSource implements ByteSource {
 
     @Override
     public String toString() {
-        return String.format("WrappingByteSource(byte[%d] offset=%d length=%d)", bytes.length, offset, length);
+        // TODO: charset?
+        return new String(bytes, offset, length);
     }
 
     @Override
