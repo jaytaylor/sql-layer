@@ -1,2 +1,2 @@
 - com.akiban.sql.optimizer.rule.ASTStatementLoader
-- com.akiban.sql.optimizer.rule.GroupJoinFinder_CBO
+- com.akiban.sql.optimizer.rule.GroupJoinFinder

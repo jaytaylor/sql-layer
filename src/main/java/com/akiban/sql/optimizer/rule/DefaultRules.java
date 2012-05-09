@@ -31,28 +31,6 @@ import java.util.List;
 
 public class DefaultRules
 {
-    /** These are the rules that get run for normal compilation. */
-    public static final List<BaseRule> DEFAULT_RULES = Arrays.asList(
-        // These aren't singletons because someday they will have options.
-        new ASTStatementLoader(),
-        new AggregateMapper(),
-        new AggregateToDistinctMapper(),
-        new ConstantFolder(),
-        new OuterJoinPromoter(),
-        new ColumnEquivalenceFinder(),
-        new GroupJoinFinder(),
-        new InConditionReverser(),
-        new IndexPicker(),
-        new NestedLoopMapper(),
-        new BranchJoiner(),
-        new SelectPreponer(),
-        new AggregateSplitter(),
-        new SortSplitter(),
-        new MapFolder(),
-        new ExpressionCompactor(),
-        new OperatorAssembler()
-     );
-
     /** These are the rules that get run for CBO compilation. */
     public static final List<BaseRule> DEFAULT_RULES_CBO = Arrays.asList(
         // These aren't singletons because someday they will have options.
@@ -62,11 +40,33 @@ public class DefaultRules
         new ConstantFolder(),
         new OuterJoinPromoter(),
         new ColumnEquivalenceFinder(),
-        new GroupJoinFinder_CBO(),
+        new GroupJoinFinder(),
         new InConditionReverser(),
         new JoinAndIndexPicker(),
         new NestedLoopMapper(),
         new BranchJoiner_CBO(),
+        new SelectPreponer(),
+        new AggregateSplitter(),
+        new SortSplitter(),
+        new MapFolder(),
+        new ExpressionCompactor(),
+        new OperatorAssembler()
+     );
+
+    /** These are the rules that get run for non-CBO compilation. */
+    public static final List<BaseRule> DEFAULT_RULES_OLD = Arrays.asList(
+        // These aren't singletons because someday they will have options.
+        new ASTStatementLoader(),
+        new AggregateMapper(),
+        new AggregateToDistinctMapper(),
+        new ConstantFolder(),
+        new OuterJoinPromoter(),
+        new ColumnEquivalenceFinder(),
+        new GroupJoinFinder_Old(),
+        new InConditionReverser(),
+        new IndexPicker(),
+        new NestedLoopMapper(),
+        new BranchJoiner(),
         new SelectPreponer(),
         new AggregateSplitter(),
         new SortSplitter(),
