@@ -56,7 +56,7 @@ public class HKey
         return (UserTable) table;
     }
 
-    public synchronized List<HKeySegment> segments()
+    public List<HKeySegment> segments()
     {
         return segments;
     }
@@ -94,7 +94,7 @@ public class HKey
         return segment;
     }
 
-    public synchronized boolean containsColumn(Column column) 
+    public boolean containsColumn(Column column) 
     {
         ensureDerived();
         for (Column c : columns) {
@@ -105,7 +105,7 @@ public class HKey
         return false;
     }
 
-    public synchronized int[] keyDepth()
+    public int[] keyDepth()
     {
         ensureDerived();
         return keyDepth;
