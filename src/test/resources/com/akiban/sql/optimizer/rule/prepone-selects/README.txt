@@ -16,3 +16,11 @@ group-index: Test against a group index.
 cross-group: Push through cross-group join.
 
 in: Push through semi-join.
+
+multiple-table: A condition on join result (does not move).
+
+multiple-table-2: Some earlier with multiple joins.
+
+multiple-table-3: Just indexes.
+
+multiple-table-in: Can be before the semi-join.

@@ -1,0 +1,20 @@
+SelectQuery@29ec6c08
+  ResultSet@60a896b8[cid]
+    Project@5c3f3b9b[customers.cid]
+      Select@3b626c6d[]
+        MapJoin@4e785727(INNER)
+          Flatten@2548ccb8(customers INNER o1)
+            GroupScan@1c64a584(Group(customers -> test._akiban_customers))
+              TableSource@6796a753(customers - TableGroup@53c36f46(customers))
+              TableSource@592b12d(o1 - TableGroupJoin@13ae8bac(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          MapJoin@77f541ef(INNER)
+            Flatten@3ea1e9b0(o2)
+              Select@753bc30a[o2.oid < o1.oid, o2.cid == customers.cid]
+                AncestorLookup@17553743(orders -> [orders])
+                  SingleIndexScan@5b9f1bac(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, =o1.order_date)
+                  TableSource@5e6a1140(o2 - TableGroup@43be87a0(customers))
+            Flatten@6bbef70(o3)
+              Select@b6e1782[o3.oid < o2.oid, o3.cid == customers.cid]
+                AncestorLookup@2ad1e832(orders -> [orders])
+                  SingleIndexScan@3ae34094(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, =o2.order_date)
+                  TableSource@61ae0436(o3 - TableGroup@11ba3c1f(customers))
