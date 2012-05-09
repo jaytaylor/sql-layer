@@ -94,8 +94,8 @@ public class MinMaxExpression extends AbstractBinaryExpression
                 throw new WrongExpressionArityException(1, argumentTypes.size());
             AkType topType = CoalesceExpression.getTopType(Arrays.asList(argumentTypes.get(0).getType(), 
                                                                          argumentTypes.get(1).getType()));
+            argumentTypes.setType(0, topType);
             argumentTypes.setType(1, topType);
-            argumentTypes.setType(2, topType);
             return ExpressionTypes.newType(topType,
                                            Math.max(argumentTypes.get(0).getPrecision(), argumentTypes.get(1).getPrecision()),
                                            Math.max(argumentTypes.get(0).getScale(), argumentTypes.get(1).getScale()));
