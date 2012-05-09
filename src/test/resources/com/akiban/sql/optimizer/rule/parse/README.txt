@@ -38,6 +38,8 @@ group-by-3: GROUP BY (and ORDER BY) alias
 
 having-1: HAVING condition
 
+having-2: HAVING condition with alias
+
 in-l1: IN with one literal
 
 in-l2: IN with two literals
