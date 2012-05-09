@@ -15,9 +15,12 @@
 #--- # test non-ascii character
 #- Statement: SELECT UNHEX('FF');
 #- output: [['ÿ']]
-#--- bug 997247: VARBINARY comparison not supported
-#- Statement: SELECT UNHEX('f8Ac') = UNHEX('F8aC');
-#- output: [['true']]
+---
+- Statement: SELECT UNHEX('f8Ac') = UNHEX('F8aC');
+- output: [['true']]
+---
+- Statement: SELECT UNHEX('f8Ab') = UNHEX('F8aC');
+- output: [['false']]
 ---
 - Statement: SELECT unhex(char_field) from all_types;
 - output: [['']]
