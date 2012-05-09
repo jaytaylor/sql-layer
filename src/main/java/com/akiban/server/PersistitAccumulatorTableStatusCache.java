@@ -64,9 +64,15 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     public synchronized void drop(int tableID) throws PersistitInterruptedException {
         InternalTableStatus ts = tableStatusMap.remove(tableID);
         if(ts != null) {
-            ts.setAutoIncrement(0, true);
-            ts.internalSetRowCount(0);
-            ts.setOrdinal(0);
+            if(ts.autoIncrement != null) {
+                ts.setAutoIncrement(0, true);
+            }
+            if(ts.rowCount != null) {
+                ts.internalSetRowCount(0);
+            }
+            if(ts.ordinal != null) {
+                ts.setOrdinal(0);
+            }
             ts.setRowDef(null, null);
         }
     }

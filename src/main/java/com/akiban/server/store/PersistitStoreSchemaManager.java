@@ -401,6 +401,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             return;
         }
 
+
         final List<TableName> tables = new ArrayList<TableName>();
         if (table.isGroupTable() == true) {
             final Group group = table.getGroup();
@@ -422,22 +423,26 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             tables.add(table.getName());
         }
 
+        final Set<String> schemas = new HashSet<String>();
+        final List<Integer> tableIDs = new ArrayList<Integer>();
+        for(TableName name : tables) {
+            schemas.add(name.getSchemaName());
+            tableIDs.add(getAis().getTable(name).getTableId());
+        }
+
         final AkibanInformationSchema newAIS = removeTablesFromAIS(tables);
         try {
-            commitAISChange(session, newAIS, Collections.singleton(schemaName));
+            commitAISChange(session, newAIS, schemas);
             // Success, remaining cleanup
-            deleteTableStatuses(tables);
+            deleteTableStatuses(tableIDs);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
     }
 
-    private void deleteTableStatuses(List<TableName> tables) throws PersistitException {
-        for(final TableName tn : tables) {
-            UserTable table = getAis().getUserTable(tn);
-            if(table != null) {
-                treeService.getTableStatusCache().drop(table.getTableId());
-            }
+    private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
+        for(Integer id : tableIDs) {
+            treeService.getTableStatusCache().drop(id);
         }
     }
 
@@ -727,7 +732,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                         }
                         loadProtobuf(ex, newAIS);
                     } else {
-                        throw new IllegalStateException("No (or unknown) AIS serialization");
+                        ex.clear().append(Key.BEFORE);
+                        if(ex.next(true)) {
+                            throw new IllegalStateException("Unknown AIS serialization: " + ex);
+                        }
+                        // else: nothing in SCHEMA_TREE_NAME
                     }
                 }
             }, SCHEMA_TREE_NAME);
@@ -834,17 +843,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema)
             throws PersistitException {
-        buffer.clear();
-        new ProtobufWriter(buffer, schema).save(newAIS);
-        buffer.flip();
-
         ex.clear().append(PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
-        if(buffer.remaining() == 0) {
-            ex.remove();
-        } else {
+        if(newAIS.getSchema(schema) != null) {
+            buffer.clear();
+            new ProtobufWriter(buffer, schema).save(newAIS);
+            buffer.flip();
+
             ex.getValue().clear().putByteArray(buffer.array(), buffer.position(), buffer.limit());
+            ex.store();
+        } else {
+            ex.remove();
         }
-        ex.store();
     }
 
     private String getVolumeForSchemaTree(final String schemaName) {
