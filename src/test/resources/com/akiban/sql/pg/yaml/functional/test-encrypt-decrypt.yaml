@@ -15,7 +15,7 @@
 #---
 #- Statement: SELECT aes_decrypt(varchar_field, 'password') from t;
 #- output: [['xtremely secret info']]
-#--- ## this is bad! Two different keys shouldn't be able to decrypt the same message
+#---
 #- Statement: select aes_decrypt(aes_encrypt('abc', '893456789123456712'), '123456789123456789');
 #- output: [['abc']]
 #---
