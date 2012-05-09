@@ -26,18 +26,19 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.expression.Expression;
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
 import com.akiban.junit.ParameterizationBuilder;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
+import com.akiban.util.WrappingByteSource;
 import java.util.Collection;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-
-import static org.junit.Assert.*;
 
 @RunWith(NamedParameterizedRunner.class)
 public class UnhexExpressionTest extends ComposedExpressionTestBase
@@ -72,7 +73,6 @@ public class UnhexExpressionTest extends ComposedExpressionTestBase
         p.add("UNHEX(" + in + ")", in, out);
     }
     
-    
     @Test
     public void test()
     {
@@ -85,7 +85,8 @@ public class UnhexExpressionTest extends ComposedExpressionTestBase
         if (output == null)
             assertTrue("Top should be NULL", top.evaluation().eval().isNull());
         else
-            assertEquals(output, top.evaluation().eval().getString());
+            assertEquals(new WrappingByteSource(output.getBytes()), 
+                         top.evaluation().eval().getVarBinary());
     }
     
     @Override

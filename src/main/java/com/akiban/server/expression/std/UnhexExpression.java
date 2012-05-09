@@ -30,18 +30,15 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.TypesList;
+import com.akiban.server.expression.*;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
-import java.util.HashSet;
-import java.util.Set;
+import com.akiban.util.ByteSource;
+import com.akiban.util.Strings;
+import com.akiban.util.WrappingByteSource;
 
 public class UnhexExpression extends AbstractUnaryExpression
 {
@@ -60,70 +57,21 @@ public class UnhexExpression extends AbstractUnaryExpression
             if (argumentTypes.size() != 1)
                 throw new WrongExpressionArityException(1, argumentTypes.size());
             
-            argumentTypes.setType(0, AkType.VARCHAR);
-            return ExpressionTypes.varchar(argumentTypes.get(0).getPrecision() / 2 + 1);
+            argumentTypes.setType(0, AkType.VARCHAR);            
+            return ExpressionTypes.varbinary(argumentTypes.get(0).getPrecision() / 2 + 1);
         }
         
     };
     
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private static final int BASE_CHAR = 10 -'a';
-        private static final Set<Character> LEGAL = new HashSet<Character>();
-        static
-        {
-            for (char ch = 'a'; ch <= 'f'; ++ch)
-                LEGAL.add(ch);
-            for (char ch = '0'; ch <= '9'; ++ch)
-                LEGAL.add(ch);
-        }
+        private static final ByteSource EMPTY = new WrappingByteSource(new byte[0]);
         
         InnerEvaluation(ExpressionEvaluation arg)
         {
             super(arg);
         }
-        
-        /**
-         * It is assumed that if c is a character, it's a lowercase one
-         * 
-         * @param c: character with this (ASCII) code
-         * @return the HEX value of this char
-         * 
-         * Eg., 97 (or 'a') would return 10
-         *      45 (or '0') would return 0
-         */
-        private static int getHexVal (int c)
-        {
-            return c > 'a'
-                    ? c + BASE_CHAR
-                    : c - '0';
-        }
-        
-        /**
-         * 
-         * @param highChar
-         * @param lowChar
-         * @return a character whose (ASCII) code is eqal to the hexadecimal value 
-         *          of <highChar><lowChar>
-         * @throws InvalidParameterValue if either of the two char is not a legal
-         *          hex digit
-         * 
-         * Eg., parseByte('2', '0')  should return ' ' (space character)
-         * 
-         */
-        private static char parseByte(char highChar, char lowChar)
-        {
-            // convert all to lowercase
-            highChar |= 32;
-            lowChar |= 32;
-            
-            if (!LEGAL.contains(highChar) || !LEGAL.contains(lowChar))
-                throw new InvalidParameterValueException("Invalid HEX digit(s): " 
-                        + highChar + " " + lowChar);
-            
-            return (char)((getHexVal(highChar) << 4) + getHexVal(lowChar));
-        }
-        
+       
         @Override
         public ValueSource eval()
         {
@@ -133,31 +81,11 @@ public class UnhexExpression extends AbstractUnaryExpression
             
             String st = source.getString();
             if (st.isEmpty())
-                valueHolder().putString(st);
+                valueHolder().putVarBinary(EMPTY);
             else
                 try
                 {
-                    StringBuilder out = new StringBuilder();
-                    int start, end;
-
-                    // check if the hex string can be evenly divided into pairs
-                    // if so, the firt two digits will make a byte (a character)
-                    if (st.length() % 2 == 0)
-                    {
-                        out.append(parseByte(st.charAt(0) ,st.charAt(1)));
-                        start = 2;
-                    }
-                    else // if not, only the first char will
-                    {
-                        out.append(parseByte('0', st.charAt(0)));
-                        start = 1;
-                    }
-
-                    // starting from here, all characters should be evenly divided into pairs
-                    end = st.length() -1;
-                    for (; start < end; ++start)
-                        out.append(parseByte(st.charAt(start), st.charAt(++start)));                
-                    valueHolder().putString(out.toString());
+                    valueHolder().putVarBinary(Strings.parseHexWithout0x(st));
                 }
                 catch (InvalidOperationException e)
                 {
@@ -173,7 +101,7 @@ public class UnhexExpression extends AbstractUnaryExpression
     
     UnhexExpression (Expression arg)
     {
-        super(AkType.VARCHAR, arg);
+        super(AkType.VARBINARY, arg);
     }
     
     @Override
