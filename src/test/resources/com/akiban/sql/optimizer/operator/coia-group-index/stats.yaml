@@ -1946,3 +1946,10 @@ Statistics:
     lt: 0
 Table: orders
 Timestamp: 2012-01-18T00:23:28.275Z
+---
+Index: PRIMARY
+RowCount: 1000000
+SampledCount: 1000000
+Statistics: []
+Table: referrals
+Timestamp: 2012-05-10T00:23:54.000Z

@@ -42,6 +42,16 @@ CREATE TABLE addresses
 CREATE INDEX "__akiban_fk_2" ON addresses(cid);
 CREATE INDEX state ON addresses(state);
 
+CREATE TABLE referrals
+(
+  rid int NOT NULL, 
+  PRIMARY KEY(rid),
+  cid int NOT NULL,
+  source VARCHAR(256),
+  referral VARCHAR(256),
+  GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
+);
+
 CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
 CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;
 CREATE INDEX state_and_cname ON customers(addresses.state, customers.name) USING LEFT JOIN;
