@@ -4,7 +4,7 @@
 #- com.akiban.sql.optimizer.rule.ConstantFolder
 #- com.akiban.sql.optimizer.rule.OuterJoinPromoter
 - com.akiban.sql.optimizer.rule.GroupJoinFinder_Old
-- com.akiban.sql.optimizer.rule.IndexPicker
+- com.akiban.sql.optimizer.rule.IndexPicker_Old
 - com.akiban.sql.optimizer.rule.NestedLoopMapper
 - com.akiban.sql.optimizer.rule.BranchJoiner_Old
 - com.akiban.sql.optimizer.rule.SelectPreponer
