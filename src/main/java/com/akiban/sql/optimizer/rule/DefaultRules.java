@@ -64,7 +64,7 @@ public class DefaultRules
         new ColumnEquivalenceFinder(),
         new GroupJoinFinder_Old(),
         new InConditionReverser(),
-        new IndexPicker(),
+        new IndexPicker_Old(),
         new NestedLoopMapper(),
         new BranchJoiner_Old(),
         new SelectPreponer(),

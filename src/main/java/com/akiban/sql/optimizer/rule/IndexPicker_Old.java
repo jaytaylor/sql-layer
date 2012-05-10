@@ -40,9 +40,9 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /** A goal for indexing: conditions on joined tables and ordering / grouping. */
-public class IndexPicker extends BaseRule
+public class IndexPicker_Old extends BaseRule
 {
-    private static final Logger logger = LoggerFactory.getLogger(IndexPicker.class);
+    private static final Logger logger = LoggerFactory.getLogger(IndexPicker_Old.class);
 
     @Override
     protected Logger getLogger() {
