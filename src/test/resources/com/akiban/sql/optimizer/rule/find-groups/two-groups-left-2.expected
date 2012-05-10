@@ -1,13 +1,11 @@
-SelectQuery@29952be0
-  ResultSet@739474[id, name, state, id, pid, name, cid, name, oid, cid, order_date]
-    Project@24174be7[parent.id, parent.name, parent.state, child.id, child.pid, child.name, customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
-      Select@75783d33[]
-        JoinNode@28fa1b85(LEFT[parent.name == customers.name])
-          TableJoins@46f7d5a6(TableGroup@38eba9b0(parent))
-            JoinNode@77d17f01(INNER/GROUP[child.pid == parent.id] - TableGroupJoin@5ae9581b(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
-              TableSource@5e8b957(parent - TableGroup@38eba9b0(parent))
-              TableSource@71e001c8(child - TableGroupJoin@5ae9581b(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
-          TableJoins@3c24cdc7(TableGroup@1441e2aa(customers))
-            JoinNode@71881149(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@1c2709da(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-              TableSource@c596a7a(customers - TableGroup@1441e2aa(customers))
-              TableSource@425d75eb(orders - TableGroupJoin@1c2709da(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+SelectQuery@1f18317f
+  ResultSet@6d5998cb[id, name, state, id, pid, name, cid, name, oid, cid, order_date]
+    Project@153e6f83[parent.id, parent.name, parent.state, child.id, child.pid, child.name, customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
+      Select@360b0c5a[]
+        JoinNode@f58046e(LEFT[parent.name == customers.name])
+          TableGroupJoinTree@5b8ad9a0(TableGroup@78d5c653(parent), parent INNER child)
+            TableSource@6b1ce012(parent - TableGroup@78d5c653(parent))
+              TableSource@34baf4ae(child - TableGroupJoin@1acfb11f(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+          TableGroupJoinTree@397577f9(TableGroup@4f1799e7(customers), customers INNER orders)
+            TableSource@5e15e68d(customers - TableGroup@4f1799e7(customers))
+              TableSource@6fd3633c(orders - TableGroupJoin@16793542(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

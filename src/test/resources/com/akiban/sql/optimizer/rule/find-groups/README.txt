@@ -10,6 +10,10 @@ join-across-subquery: group join in subquery expression
 
 not-equals: Conditions other than equals
 
+outer-join-condition-allowed: An extra outer join condition that can be done
+
+outer-join-condition-disallowed: An extra outer join condition that cannot be done
+
 right-as-left: RIGHT join expressed as LEFT
 
 right-as-right: RIGHT join expressed with RIGHT
@@ -31,12 +35,3 @@ two-groups-left: LEFT join between two groups (stays LEFT)
 two-groups-left-2: LEFT join between two groups other way (stays LEFT)
 
 two-groups-right: RIGHT join between two groups (turns into LEFT)
-
-group-via-equivalence-on-(left|inner|right): group joins where the grouping ON clause only works because of an
-    equivalence. Note that the LEFT variant does *not* match grouping, due to the relatively complex
-    condition involving OR NOT NULL.
-
-group-via-equivalence-where-inner: group joins where the grouping WHERE clause only works because of an equivalence
-
-group-via-equivalence-duplicates-conditions: Regression test for bug 947264. Equivalences cause a join condition to
-    inappropriately turn into the condition of another join.

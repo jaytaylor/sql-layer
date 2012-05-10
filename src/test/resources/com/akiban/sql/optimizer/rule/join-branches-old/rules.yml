@@ -1,0 +1,5 @@
+- com.akiban.sql.optimizer.rule.ASTStatementLoader
+- com.akiban.sql.optimizer.rule.GroupJoinFinder_Old
+- com.akiban.sql.optimizer.rule.IndexPicker
+#- com.akiban.sql.optimizer.rule.NestedLoopFolder
+- com.akiban.sql.optimizer.rule.BranchJoiner_Old

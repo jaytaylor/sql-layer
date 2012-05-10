@@ -2,10 +2,10 @@ SelectQuery@19fac852
   ResultSet@1f758cd1[name, order_date, state]
     Project@5e6ffd79[customers.name, orders.order_date, addresses.state]
       Select@a6a435f[]
-        Product@466d1750
+        Product@466d1750(customers)
           Flatten@2415a94f(customers INNER addresses)
             AncestorLookup@a1e940b(addresses -> [customers, addresses])
-              IndexScan@5d89635d(Index(test.addresses.state[IndexColumn(state)]), NONE, >M)
+              IndexScan@5d89635d(Index(test.addresses.state[IndexColumn(state)]), NONE, >M, rows = 640, cost = 63211.3)
               TableSource@52234265(customers - TableGroup@66da9ea4(customers))
               TableSource@8dc1f04(addresses - TableGroupJoin@1ae555bd(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
           Flatten@465ff916(customers LEFT orders)

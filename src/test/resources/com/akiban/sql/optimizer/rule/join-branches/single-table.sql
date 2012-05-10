@@ -1,2 +1,2 @@
-SELECT * FROM customers
- WHERE name = 'Smith'
+SELECT * FROM items
+ WHERE sku = '1234'
