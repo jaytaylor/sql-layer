@@ -38,4 +38,10 @@ select-7n: Non-ambiguous column
 
 select-7o: Non-ambiguous due in ORDER BY
 
+select-8o: Column alias available in ORDER BY
+
+select-8h: Column alias available in HAVING
+
+select-8n: Column alias not available in WHERE
+
 update-1: Columns of target table.

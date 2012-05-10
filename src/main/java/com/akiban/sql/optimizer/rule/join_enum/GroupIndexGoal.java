@@ -599,8 +599,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             CostEstimate previousBestCost = previousBest.getCostEstimate();
             for (Iterator<SingleIndexScan> iter = enumerator.leavesIterator(); iter.hasNext(); ) {
                 SingleIndexScan scan = iter.next();
-                if (scan.getScanCostEstimate().compareTo(previousBestCost) > 0)
+                if (scan.getScanCostEstimate().compareTo(previousBestCost) > 0) {
+                    logger.debug("Not intersecting {} {}", scan, scan.getScanCostEstimate());
                     iter.remove();
+                }
             }
         }
         Function<? super IndexScan,Void> hook = intersectionEnumerationHook;
