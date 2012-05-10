@@ -206,7 +206,11 @@ public class InConditionReverser extends BaseRule
         assert ((join.getJoinType() == JoinType.SEMI) ||
                 (join.getJoinType() == JoinType.SEMI_INNER_ALREADY_DISTINCT) ||
                 (join.getJoinType() == JoinType.SEMI_INNER_IF_DISTINCT));
-        Joinable right = join.getRight();
+        cleanUpSemiJoin(join, join.getRight());
+        join.setJoinType(JoinType.SEMI);
+    }
+
+    public static void cleanUpSemiJoin(JoinNode join, Joinable right) {
         if (right instanceof SubquerySource) {
             // Undo part of what we did above. Specifically,
             // splice out the SubquerySource, Subquery, Project
@@ -236,7 +240,6 @@ public class InConditionReverser extends BaseRule
                 conds.addAll(select.getConditions());
             join.replaceInput(right, input);
         }
-        join.setJoinType(JoinType.SEMI);
     }
 
     public void convert(Select select, ExistsCondition exists) {
