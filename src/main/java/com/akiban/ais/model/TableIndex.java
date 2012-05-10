@@ -34,8 +34,12 @@ import com.akiban.ais.model.validation.AISInvariants;
 
 public class TableIndex extends Index
 {
-    public static TableIndex create(AkibanInformationSchema ais, Table table, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint)
+    public static TableIndex create(AkibanInformationSchema ais,
+                                    Table table,
+                                    String indexName,
+                                    Integer indexId,
+                                    Boolean isUnique,
+                                    String constraint)
     {
         table.checkMutability();
         ais.checkMutability();
@@ -78,7 +82,7 @@ public class TableIndex extends Index
         for (HKeySegment hKeySegment : hKey.segments()) {
             Integer ordinal = ordinalMap.get(hKeySegment.table());
             assert ordinal != null : hKeySegment.table();
-            toHKeyBuilder.toHKeyEntry(ordinal, -1, -1);
+            toHKeyBuilder.toHKeyEntry(ordinal, -1);
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
                 Column column = hKeyColumn.column();
                 if (!indexColumns.contains(column)) {
@@ -92,7 +96,7 @@ public class TableIndex extends Index
                     hKeyColumns.add(new IndexColumn(this, column, indexColumnPosition, true, 0));
                     indexColumnPosition++;
                 }
-                toHKeyBuilder.toHKeyEntry(-1, indexColumns.indexOf(column), column.getPosition());
+                toHKeyBuilder.toHKeyEntry(-1, indexColumns.indexOf(column));
             }
         }
         allColumns = new ArrayList<IndexColumn>();
@@ -104,12 +108,12 @@ public class TableIndex extends Index
 
     @Override
     public Table leafMostTable() {
-        return getTable();
+        return table;
     }
 
     @Override
     public Table rootMostTable() {
-        return getTable();
+        return table;
     }
 
     @Override
@@ -120,6 +124,11 @@ public class TableIndex extends Index
     public Table getTable()
     {
         return table;
+    }
+
+    public IndexToHKey indexToHKey()
+    {
+        return indexToHKey;
     }
 
     // For a user table index: the user table hkey
@@ -154,4 +163,5 @@ public class TableIndex extends Index
     private final Table table;
     private HKey hKey;
     private List<IndexColumn> hKeyColumns;
+    private IndexToHKey indexToHKey;
 }

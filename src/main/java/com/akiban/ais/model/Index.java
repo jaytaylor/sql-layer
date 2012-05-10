@@ -44,7 +44,13 @@ public abstract class Index implements Traversable
     public abstract Table rootMostTable();
     public abstract void checkMutability();
 
-    protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint, JoinType joinType, boolean isValid)
+    protected Index(TableName tableName,
+                    String indexName,
+                    Integer indexId,
+                    Boolean isUnique,
+                    String constraint,
+                    JoinType joinType,
+                    boolean isValid)
     {
         if ( (indexId != null) && (indexId | INDEX_ID_BITS) != INDEX_ID_BITS)
             throw new IllegalArgumentException("index ID out of range: " + indexId + " > " + INDEX_ID_BITS);
@@ -208,11 +214,6 @@ public abstract class Index implements Traversable
         return indexRowComposition;
     }
 
-    public IndexToHKey indexToHKey()
-    {
-        return indexToHKey;
-    }
-
     protected static class AssociationBuilder {
         /**
          * @param fieldPosition entry of {@link IndexRowComposition#fieldPositions}
@@ -225,10 +226,9 @@ public abstract class Index implements Traversable
         /**
          * @param ordinal entry of {@link IndexToHKey#ordinals}
          * @param indexRowPosition entry of {@link IndexToHKey#indexRowPositions}
-         * @param fieldPosition entry of {@link IndexToHKey#fieldPositions}
          */
-        void toHKeyEntry(int ordinal, int indexRowPosition, int fieldPosition) {
-            list1.add(ordinal); list2.add(indexRowPosition); list3.add(fieldPosition);
+        void toHKeyEntry(int ordinal, int indexRowPosition) {
+            list1.add(ordinal); list2.add(indexRowPosition);
         }
 
         IndexRowComposition createIndexRowComposition() {
@@ -236,7 +236,7 @@ public abstract class Index implements Traversable
         }
 
         IndexToHKey createIndexToHKey() {
-            return new IndexToHKey(asArray(list1), asArray(list2), asArray(list3));
+            return new IndexToHKey(asArray(list1), asArray(list2));
         }
 
         private int[] asArray(List<Integer> list) {
@@ -249,7 +249,6 @@ public abstract class Index implements Traversable
 
         private List<Integer> list1 = new ArrayList<Integer>();
         private List<Integer> list2 = new ArrayList<Integer>();
-        private List<Integer> list3 = new ArrayList<Integer>();
     }
     
     private static JoinType extractJoinType(Integer idAndFlags) {
@@ -305,7 +304,6 @@ public abstract class Index implements Traversable
     private String treeName;
     private IndexDef indexDef;
     protected IndexRowComposition indexRowComposition;
-    protected IndexToHKey indexToHKey;
     protected List<IndexColumn> keyColumns;
     protected List<IndexColumn> allColumns;
 

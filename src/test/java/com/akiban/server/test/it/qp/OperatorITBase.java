@@ -26,10 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
@@ -259,6 +256,28 @@ public class OperatorITBase extends ITBase
             }
         }
         return null;
+    }
+
+    protected IndexRowType groupIndexType(Index.JoinType joinType, String ... columnNames)
+    {
+        IndexRowType selectedGroupIndexRowType = null;
+        for (IndexRowType groupIndexRowType : schema.groupIndexRowTypes()) {
+            boolean match = groupIndexRowType.index().getJoinType() == joinType;
+            for (IndexColumn indexColumn : groupIndexRowType.index().getKeyColumns()) {
+                Column column = indexColumn.getColumn();
+                String indexColumnName = String.format("%s.%s", column.getTable().getName().getTableName(),
+                                                       column.getName());
+                // Why do index column names lose case?!
+                if (indexColumn.getPosition() < columnNames.length &&
+                    !columnNames[indexColumn.getPosition()].equalsIgnoreCase(indexColumnName)) {
+                    match = false;
+                }
+            }
+            if (match) {
+                selectedGroupIndexRowType = groupIndexRowType;
+            }
+        }
+        return selectedGroupIndexRowType;
     }
 
     protected ColumnSelector columnSelector(final Index index)

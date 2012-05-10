@@ -259,7 +259,7 @@ public class PersistitStore implements Store {
                     if (parentPKExchange == null) {
                         // Initialize parent metadata and state
                         assert parentRowDef != null : rowDef;
-                        Index parentPK = parentRowDef.getPKIndex();
+                        TableIndex parentPK = parentRowDef.getPKIndex();
                         indexToHKey = parentPK.indexToHKey();
                         parentPKExchange = getExchange(session, parentPK);
                         constructParentPKIndexKey(new PersistitKeyAppender(parentPKExchange.getKey()), rowDef, rowData);
@@ -349,16 +349,15 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void constructHKeyFromIndexKey(final Key hKey, final Key indexKey, final Index index)
+    public void constructHKeyFromIndexKey(Key hKey, Key indexKey, IndexToHKey indexToHKey)
     {
-        final IndexToHKey indexToHKey = index.indexToHKey();
         hKey.clear();
         for(int i = 0; i < indexToHKey.getLength(); ++i) {
             if(indexToHKey.isOrdinal(i)) {
                 hKey.append(indexToHKey.getOrdinal(i));
             }
             else {
-                final int depth = indexToHKey.getIndexRowPosition(i);
+                int depth = indexToHKey.getIndexRowPosition(i);
                 if (depth < 0 || depth > indexKey.getDepth()) {
                     throw new IllegalStateException(
                             "IndexKey too shallow - requires depth=" + depth
@@ -382,8 +381,8 @@ public class PersistitStore implements Store {
         }
     }
 
-    static private void appendKeyFieldFromKey(final Key fromKey, final Key toKey,
-            final int depth) {
+    static private void appendKeyFieldFromKey(Key fromKey, Key toKey, int depth)
+    {
         fromKey.indexTo(depth);
         int from = fromKey.getIndex();
         fromKey.indexTo(depth + 1);
