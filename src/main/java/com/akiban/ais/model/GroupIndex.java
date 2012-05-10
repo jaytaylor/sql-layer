@@ -261,6 +261,9 @@ public class GroupIndex extends Index
         allColumns.addAll(rootwardHKeyColumns);
         indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
         computeHKeyDerivations(ordinalMap);
+        // Need allColumns to include rootwardHKeyColumns for purposes of computeHKeyDerivations. But after that,
+        // callers of Index.getAllColumns should not see rootwardHKeyColumns.
+        allColumns.removeAll(rootwardHKeyColumns);
     }
 
     private void computeHKeyDerivations(Map<Table, Integer> ordinalMap)
