@@ -480,6 +480,8 @@ public class JoinAndIndexPicker extends BaseRule
             JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
+            if (joinType == JoinType.SEMI)
+                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
             return join;
         }
     }
