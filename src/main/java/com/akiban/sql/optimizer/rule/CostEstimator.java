@@ -305,6 +305,9 @@ public abstract class CostEstimator implements TableRowCounts
             return missingStatsSelectivity();
         }
         Histogram histogram = indexStats.getHistogram(1);
+        if ((histogram == null) || histogram.getEntries().isEmpty()) {
+            return missingStatsSelectivity();
+        }
         boolean before = (loBytes != null);
         long rowCount = 0;
         byte[] entryStartBytes, entryEndBytes = null;
