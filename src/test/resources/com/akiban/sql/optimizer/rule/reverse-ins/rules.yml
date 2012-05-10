@@ -7,7 +7,7 @@
 - com.akiban.sql.optimizer.rule.InConditionReverser
 - com.akiban.sql.optimizer.rule.IndexPicker
 - com.akiban.sql.optimizer.rule.NestedLoopMapper
-- com.akiban.sql.optimizer.rule.BranchJoiner
+- com.akiban.sql.optimizer.rule.BranchJoiner_Old
 - com.akiban.sql.optimizer.rule.SelectPreponer
 #- com.akiban.sql.optimizer.rule.SortSplitter
 - com.akiban.sql.optimizer.rule.MapFolder

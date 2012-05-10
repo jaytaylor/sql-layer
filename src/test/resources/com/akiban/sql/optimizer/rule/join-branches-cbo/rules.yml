@@ -4,4 +4,4 @@
 - com.akiban.sql.optimizer.rule.GroupJoinFinder
 - com.akiban.sql.optimizer.rule.JoinAndIndexPicker
 #- com.akiban.sql.optimizer.rule.NestedLoopFolder
-- com.akiban.sql.optimizer.rule.BranchJoiner_CBO
+- com.akiban.sql.optimizer.rule.BranchJoiner
