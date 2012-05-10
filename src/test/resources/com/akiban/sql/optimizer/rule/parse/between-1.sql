@@ -1,0 +1,2 @@
+SELECT iid FROM items
+ WHERE quan BETWEEN 10 AND 100

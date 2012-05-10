@@ -886,10 +886,9 @@ public class ASTStatementLoader extends BaseRule
                                                    List<ExpressionNode> projects,
                                                    ValueNode condition) 
                 throws StandardException {
-            List<ConditionExpression> operands = new ArrayList<ConditionExpression>();
             String functionName;
+            List<ConditionExpression> operands = null;
             if (condition instanceof UnaryLogicalOperatorNode) {
-                addCondition(operands, ((UnaryLogicalOperatorNode)condition).getOperand(), projects);
                 switch (condition.getNodeType()) {
                 case NodeTypes.NOT_NODE:
                     functionName = "not";
@@ -897,6 +896,9 @@ public class ASTStatementLoader extends BaseRule
                 default:
                     throw new UnsupportedSQLException("Unsuported condition", condition);
                 }
+                operands = new ArrayList<ConditionExpression>(1);
+                operands.add(toCondition(((UnaryLogicalOperatorNode)condition).getOperand(),
+                                         projects));
             }
             else if (condition instanceof BinaryLogicalOperatorNode) {
                 ValueNode leftOperand = ((BinaryLogicalOperatorNode)
@@ -904,6 +906,12 @@ public class ASTStatementLoader extends BaseRule
                 ValueNode rightOperand = ((BinaryLogicalOperatorNode)
                                           condition).getRightOperand();
                 switch (condition.getNodeType()) {
+                case NodeTypes.AND_NODE:
+                    // Can just fold straight into conjunction.
+                    addCondition(conditions, leftOperand, projects);
+                    if (!rightOperand.isBooleanTrue())
+                        addCondition(conditions, rightOperand, projects);
+                    return;
                 case NodeTypes.OR_NODE:
                     if (rightOperand.isBooleanFalse()) {
                         addCondition(conditions, leftOperand, projects);
@@ -911,29 +919,12 @@ public class ASTStatementLoader extends BaseRule
                     }
                     functionName = "or";
                     break;
-                case NodeTypes.AND_NODE:
-                    if (rightOperand.isBooleanTrue()) {
-                        addCondition(conditions, leftOperand, projects);
-                        return;
-                    }
-                    functionName = "and";
-                    break;
                 default:
                     throw new UnsupportedSQLException("Unsuported condition", condition);
                 }
-                addCondition(operands, leftOperand, projects);
-                addCondition(operands, rightOperand, projects);
-                switch (operands.size()) {
-                case 0:
-                    if (functionName.equals("or"))
-                        conditions.add(new BooleanConstantExpression(Boolean.FALSE));
-                    return;
-                case 1:
-                    conditions.add(operands.get(0));
-                    return;
-                default:
-                    break;
-                }
+                operands = new ArrayList<ConditionExpression>(2);
+                operands.add(toCondition(leftOperand, projects));
+                operands.add(toCondition(rightOperand, projects));
             }
             else
                 throw new UnsupportedSQLException("Unsuported condition", condition);
@@ -980,10 +971,28 @@ public class ASTStatementLoader extends BaseRule
                 return new BooleanConstantExpression(Boolean.TRUE);
             case 1:
                 return conditions.get(0);
-            default:
+            case 2:
                 // CASE WHEN x BETWEEN a AND b means multiple conditions from single one in AST.
                 return new LogicalFunctionCondition("and", conditions,
                                                     condition.getType(), condition);
+            default:
+                {
+                    // Make calls to binary AND function.
+                    Collections.reverse(conditions);
+                    ConditionExpression rhs = null;
+                    for (ConditionExpression lhs : conditions) {
+                        if (rhs == null) {
+                            rhs = lhs;
+                            continue;
+                        }
+                        List<ConditionExpression> operands = new ArrayList<ConditionExpression>(2);
+                        operands.add(lhs);
+                        operands.add(rhs);
+                        rhs = new LogicalFunctionCondition("and", operands,
+                                                           condition.getType(), null);
+                    }
+                    return rhs;
+                }
             }
         }
 
