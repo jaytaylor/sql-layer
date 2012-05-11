@@ -83,6 +83,14 @@ public class PowExpressionTest extends ComposedExpressionTestBase
         param(pb, 1d, Double.NaN, Double.NaN);
         param(pb, Double.NaN, Double.NaN, Double.NaN);
         
+        // test negative exponent
+        param(pb, -5d, -1d, -0.2);
+        param(pb, 25d, -0.5d, 0.2);
+        
+        // test exponents in (0, 1)
+        param(pb, 144d, 0.5, 12d);
+        param(pb, 32.0, 0.2, 2d);
+        
         return pb.asList();
     }
     
