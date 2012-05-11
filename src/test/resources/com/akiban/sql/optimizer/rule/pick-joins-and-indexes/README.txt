@@ -6,6 +6,8 @@ covering-or-group-scan: covering index or group scan?
 
 distinct-sorted: DISTINCT + ORDER BY from index.
 
+duplicate-condition: More than one comparison on same field
+
 group-equals: two equals on group index
 
 in-index: IN that can use index
