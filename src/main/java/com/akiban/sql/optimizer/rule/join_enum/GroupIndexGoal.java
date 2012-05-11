@@ -702,6 +702,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (int i=0; i < ncols; ++i) {
                 ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
                 ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
+                if ((firstCol == null) || (secondCol == null))
+                    break;
                 if (!equivs.areEquivalent(firstCol, secondCol))
                     break;
                 result.add(firstCol.getColumn());
