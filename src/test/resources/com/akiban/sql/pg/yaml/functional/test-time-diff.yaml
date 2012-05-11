@@ -22,13 +22,14 @@
 - Statement: select TIMEDIFF(time_field, ?) from all_types;
 - params: [['00:00:01']]
 - output: [['01:05:05']]
-#--- #bug 903498
+--- #bug 903498
 # NOTE: Not valid. Two arguments of TIMEDIFF must have the same type
 # Or one is a DATE/TIME/DATETIME/TIMESTAMP and the other is a VARCHAR that is
 # convertible to the other's type
-#- Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
-#- params: [['00:00:01']]
-#- output: [['12:30:59']]
+## BUG 921117: TIMEDIFF of mis-matched args return NULL
+- Statement: select TIMEDIFF(timestamp_field, ?) from all_types;
+- params: [['00:00:01']]
+- output: [[null]]
 ---
 - Statement: select TIMEDIFF(varchar_field, ?) from all_types;
 - params: [['2012-03-04 00:00:01']]
@@ -44,12 +45,12 @@
 --- #fields in select
 - Statement: select TIMEDIFF(time_field, '00:00:01') from all_types;
 - output: [['01:05:05']]
-#--- #bug 903498 --> Not valid. Two types must be the same
-#- Statement: select TIMEDIFF(timestamp_field, '00:00:01') from all_types;
-#- output: [['01:05:05']]
-#---
-#- Statement: select TIMEDIFF(varchar_field, '00:00:01') from all_types;
-#- output: [['18:22:14']]
+--- #bug 921117: return NULL
+- Statement: select TIMEDIFF(timestamp_field, '00:00:01') from all_types;
+- output: [[null]]
+---
+- Statement: select TIMEDIFF(varchar_field, '00:00:01') from all_types;
+- output: [[null]]
 ---  #fields in where  # bug 921088
 - Statement: select 1 from all_types where TIMEDIFF(time_field, '00:00:01') < '12:31:31';
 - output: [['1']]
@@ -74,9 +75,9 @@
 #--- # bug 921117
 #- Statement: select TIMEDIFF('12:34:55', '2012-04-05 01:59:59') from all_types;
 #- output: [['null']]
-#--- # bug 921117
-#- Statement: select TIMEDIFF('2012-04-05 13:59:59', '03:34:55') from all_types;
-#- output: [['null']]
+--- # bug 921117
+- Statement: select TIMEDIFF('2012-04-05 13:59:59', '03:34:55') from all_types;
+- output: [[null]]
 ---
 - Statement: select TIMEDIFF('12:34:55', '00:04:00') from all_types;
 - output: [['12:30:55']]

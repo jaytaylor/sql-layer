@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2012 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -104,6 +115,7 @@ public class BranchJoiner_CBO extends BaseRule
             requiredTables = indexScan.getRequiredTables();
         }
         markBranches(tableGroup, requiredTables);
+        top:
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             TableSource indexTable = indexScan.getLeafMostTable();
@@ -124,23 +136,29 @@ public class BranchJoiner_CBO extends BaseRule
                 // side branch.
                 PlanNode sideScan = trySideBranch(scan, leafTable, rootTable,
                                                   indexTable, ancestors);
-                if (sideScan != null)
-                    return sideScan;
+                if (sideScan != null) {
+                    scan = sideScan;
+                    break top;
+                }
             }
             if (!ancestors.isEmpty())
                 scan = new AncestorLookup(scan, indexTable, ancestors);
             scan = flatten(scan, leafTable, rootTable);
-            return fillSideBranches(scan, leafTable, rootTable);
+            scan = fillSideBranches(scan, leafTable, rootTable);
         }
         else if (scan instanceof GroupScan) {
             GroupScan groupScan = (GroupScan)scan;
             List<TableSource> tables = new ArrayList<TableSource>();
             groupScan.setTables(tables);
-            return fillBranch(scan, tables, rootTable, null);
+            scan = fillBranch(scan, tables, rootTable, rootTable, rootTable);
         }
         else {
             throw new AkibanInternalException("Unknown TableGroupJoinTree scan");
         }
+        for (TableGroupJoinNode table : tableGroup) {
+            assert !isPending(table) : table;
+        }
+        return scan;
     }
 
     /** Try to switch from the main branch over to a side branch.
@@ -213,24 +231,22 @@ public class BranchJoiner_CBO extends BaseRule
                 scan = new AncestorLookup(scan, sideBranch.getTable(), ancestors);
         }
         // And flatten up through root-most ancestor.
-        return fillBranch(scan, tables, sideBranch, rootTable);
+        return fillBranch(scan, tables, sideBranch, rootTable, rootTable);
     }
 
     /** Given a <code>BranchLookup</code> / <code>GroupScan</code>,
-     * pick a primary branch, flatten it onto <code>input</code> and
-     * then <code>Product</code> that with any remaining branches.
+     * pick a primary branch under <code>underRoot</code>, flatten it
+     * up to <code>flattenRoot</code> onto <code>input</code> and then
+     * <code>Product</code> that with any remaining branches up to
+     * <code>sideRoot</code>.
      */
     protected PlanNode fillBranch(PlanNode input, List<TableSource> lookupTables,
-                                  TableGroupJoinNode rootTable, 
-                                  TableGroupJoinNode flattenRoot) {
-        TableGroupJoinNode leafTable = singleBranchPending(rootTable, lookupTables);
-        if (flattenRoot == null)
-            // If from a side-branch, we flatten up one extra level to
-            // get connected coverage of the graph. Otherwise, it's
-            // the same branch.
-            flattenRoot = rootTable;
+                                  TableGroupJoinNode underRoot, 
+                                  TableGroupJoinNode flattenRoot,
+                                  TableGroupJoinNode sideRoot) {
+        TableGroupJoinNode leafTable = singleBranchPending(underRoot, lookupTables);
         return fillSideBranches(flatten(input, leafTable, flattenRoot),
-                                leafTable, rootTable);
+                                leafTable, sideRoot);
     }
 
     /** Generate single branch <code>Flatten</code> joins from
@@ -286,13 +302,15 @@ public class BranchJoiner_CBO extends BaseRule
                 subplans.add(input);
                 for (TableGroupJoinNode sibling = parent.getFirstChild();
                      sibling != null; sibling = sibling.getNextSibling()) {
-                    if (sibling == branchTable) continue;
+                    if ((sibling == branchTable) ||
+                        (leafLeftMostPending(sibling) == null))
+                        continue;
                     List<TableSource> tables = new ArrayList<TableSource>();
                     PlanNode subplan = new BranchLookup(null, // no input means _Nested.
                                                         parent.getTable().getTable(),
                                                         sibling.getTable().getTable(), 
                                                         tables);
-                    subplan = fillBranch(subplan, tables, sibling, parent);
+                    subplan = fillBranch(subplan, tables, sibling, parent, sibling);
                     if (subplans == null)
                         subplans = new ArrayList<PlanNode>();
                     subplans.add(subplan);

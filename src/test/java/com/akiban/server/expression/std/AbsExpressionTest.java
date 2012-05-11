@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.expression.std;
@@ -51,7 +62,7 @@ public class AbsExpressionTest extends ComposedExpressionTestBase
         AkType testType = AkType.FLOAT;
         Expression posOutput = new AbsExpression(new LiteralExpression(testType, 10.456f));
         Expression negOutput = new AbsExpression(new LiteralExpression(testType, -2.23f));
-        
+
         float absValueOfPos = posOutput.evaluation().eval().getFloat();
         float absValueOfNeg = negOutput.evaluation().eval().getFloat();
         
@@ -73,12 +84,48 @@ public class AbsExpressionTest extends ComposedExpressionTestBase
         Assert.assertEquals("ABS posOutput should be BIGINT", testType, posOutput.valueType());
         Assert.assertEquals(posLiteral, absValueOfPos);
     }
+    
+    @Test
+    public void testUnsignedInt()
+    {
+        AkType testType = AkType.U_INT;
+        long posLiteral = 40;
+        Expression posOutput = new AbsExpression(new LiteralExpression(testType, posLiteral) );       
+        long absValueOfPos = posOutput.evaluation().eval().getUInt();
 
+        Assert.assertEquals("ABS posOutput should be UINT", testType, posOutput.valueType());
+        Assert.assertEquals(posLiteral, absValueOfPos);
+    }
+    
+    @Test
+    public void testUnsignedFloat()
+    {
+        AkType testType = AkType.U_FLOAT;
+        float posLiteral = 23.22f;
+        Expression posOutput = new AbsExpression(new LiteralExpression(testType, posLiteral) );       
+        float absValueOfPos = posOutput.evaluation().eval().getUFloat();
+
+        Assert.assertEquals("ABS posOutput should be UFLOAT", testType, posOutput.valueType());
+        Assert.assertEquals(posLiteral, absValueOfPos, 0.0001);
+    }
+        
+    @Test
+    public void testUnsignedDouble()
+    {
+        AkType testType = AkType.U_DOUBLE;
+        double posLiteral = 23.22;
+        Expression posOutput = new AbsExpression(new LiteralExpression(testType, posLiteral) );       
+        double absValueOfPos = posOutput.evaluation().eval().getUDouble();
+
+        Assert.assertEquals("ABS posOutput should be UDOUBLE", testType, posOutput.valueType());
+        Assert.assertEquals(posLiteral, absValueOfPos, 0.0001);
+    }
+    
     @Test
     public void testDecimal()
     {
         AkType testType = AkType.DECIMAL;
-        BigDecimal posLiteral = new BigDecimal("123454321"), negLiteral = new BigDecimal("-123454321");
+        BigDecimal posLiteral = new BigDecimal("123454321.123"), negLiteral = new BigDecimal("-123454321.123");
         
         Expression posOutput = new AbsExpression(new LiteralExpression(testType, posLiteral) );
         Expression negOutput = new AbsExpression(new LiteralExpression(testType, negLiteral) );
@@ -123,23 +170,6 @@ public class AbsExpressionTest extends ComposedExpressionTestBase
         Assert.assertEquals("ABS negOutput should be INT", testType, negOutput.valueType());
         Assert.assertEquals(1234, absValueOfPos);
         Assert.assertEquals(4321, absValueOfNeg); 
-    }
-    
-    @Test
-    public void testVarchar()
-    {
-        AkType testType = AkType.VARCHAR;
-        Expression posOutput = new AbsExpression(new LiteralExpression(testType, "1234"));
-        Expression negOutput = new AbsExpression(new LiteralExpression(testType, "-4321"));
-        
-        // getInt() still returns a Java long
-        double absValueOfPos = posOutput.evaluation().eval().getDouble();
-        double absValueOfNeg = negOutput.evaluation().eval().getDouble();
-
-        Assert.assertEquals("ABS posOutput should be DOUBLE for VARCHAR input", testType, posOutput.valueType());
-        Assert.assertEquals("ABS negOutput should be DOUBLE for VARCHAR input", testType, negOutput.valueType());
-        Assert.assertEquals(1234, absValueOfPos, 0.0001);
-        Assert.assertEquals(4321, absValueOfNeg, 0.0001); 
     }
     
     @Test

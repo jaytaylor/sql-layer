@@ -1,5 +1,5 @@
 SelectQuery@1144823
   ResultSet@8c02cc[cid, name]
-    Project@bbd1b[user.customers.cid, user.customers.name]
-      Select@ac576f[or(and(Cast(1 AS BOOLEAN NOT NULL),Cast(foo AS BOOLEAN NOT NULL)),Cast(user.customers.name AS BOOLEAN NOT NULL) == true)]
-        TableSource@a07440(user.customers)
+    Project@bbd1b[customers.cid, customers.name]
+      Select@ac576f[or(and(Cast(1 AS BOOLEAN NOT NULL),Cast(foo AS BOOLEAN NOT NULL)),Cast(customers.name AS BOOLEAN NOT NULL) == true)]
+        TableSource@a07440(customers)

@@ -1,1 +1,1 @@
-SELECT _G_1.child$name AS name FROM user._akiban_parent AS _G_1 WHERE (_G_1.parent$state = 'MA') AND (TRUE AND TRUE)
+SELECT _G_1.child$name AS name FROM test._akiban_parent AS _G_1 WHERE (_G_1.parent$state = 'MA') AND (TRUE AND TRUE)

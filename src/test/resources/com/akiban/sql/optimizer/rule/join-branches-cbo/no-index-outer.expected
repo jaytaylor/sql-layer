@@ -1,9 +1,9 @@
 SelectQuery@1873eb2
   ResultSet@25491d[name, order_date]
-    Project@1e32382[user.customers.name, user.orders.order_date]
+    Project@1e32382[customers.name, orders.order_date]
       Select@1304043[]
-        Flatten@cb07ef(user.customers LEFT user.orders)
-          Select@176086d[user.orders.order_date > $0]
-            GroupScan@234265(Group(customers -> user._akiban_customers))
-              TableSource@59e2afb2(user.customers - TableGroup@6aadae91(customers))
-              TableSource@317cfd38(user.orders - TableGroupJoin@265a2eaa(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+        Flatten@cb07ef(customers LEFT orders)
+          Select@176086d[orders.order_date > $0]
+            GroupScan@234265(Group(customers -> test._akiban_customers))
+              TableSource@59e2afb2(customers - TableGroup@6aadae91(customers))
+              TableSource@317cfd38(orders - TableGroupJoin@265a2eaa(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

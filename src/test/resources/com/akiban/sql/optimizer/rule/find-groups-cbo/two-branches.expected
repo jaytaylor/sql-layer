@@ -1,9 +1,9 @@
 SelectQuery@79fb80c9
   ResultSet@6ec44aaf[cid, name, iid, oid, sku, quan, price, oid, cid, order_date, aid, cid, state, city]
-    Project@19035ff9[user.customers.cid, user.customers.name, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price, user.orders.oid, user.orders.cid, user.orders.order_date, user.addresses.aid, user.addresses.cid, user.addresses.state, user.addresses.city]
+    Project@19035ff9[customers.cid, customers.name, items.iid, items.oid, items.sku, items.quan, items.price, orders.oid, orders.cid, orders.order_date, addresses.aid, addresses.cid, addresses.state, addresses.city]
       Select@2c91e143[]
         TableGroupJoinTree@1d5c0c91(TableGroup@7e6a60d5(customers), customers INNER addresses INNER orders INNER items)
-          TableSource@2d83e895(user.customers - TableGroup@7e6a60d5(customers))
-            TableSource@2f1aa58b(user.addresses - TableGroupJoin@63d12a6(Join(user/customers/cid/user/user.addresses/cid: user.addresses -> user.customers, group(customers))))
-            TableSource@4a32ef2d(user.orders - TableGroupJoin@1393537d(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@55f49969(user.items - TableGroupJoin@2d4e3d95(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+          TableSource@2d83e895(customers - TableGroup@7e6a60d5(customers))
+            TableSource@2f1aa58b(addresses - TableGroupJoin@63d12a6(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+            TableSource@4a32ef2d(orders - TableGroupJoin@1393537d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@55f49969(items - TableGroupJoin@2d4e3d95(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

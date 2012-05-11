@@ -1,0 +1,1 @@
+SELECT order_date, COUNT(*) FROM orders GROUP BY order_date

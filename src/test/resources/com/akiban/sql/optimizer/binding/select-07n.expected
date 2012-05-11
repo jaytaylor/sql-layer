@@ -1,0 +1,81 @@
+com.akiban.sql.parser.CursorNode@87e9ce2
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@306dbdc9
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@74c6eff5
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@30b3f9b8
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@77cfb802
+			columnName: x
+			tableName: null
+			type: null
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@58b51c29
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@6639c8c1
+		exposedName: _SQL_COL_1
+		name: _SQL_COL_1
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.SubqueryNode@5bab2b55
+			subqueryType: EXPRESSION
+			type: null
+			resultSet: 				
+				com.akiban.sql.parser.SelectNode@42aa0877
+				isDistinct: false
+				resultColumns: 					
+					com.akiban.sql.parser.ResultColumnList@2911ded2
+
+					[0]:					
+					com.akiban.sql.parser.ResultColumn@543bc20e
+					exposedName: _SQL_COL_2
+					name: _SQL_COL_2
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.AggregateNode@1f415056
+						aggregateName: MAX
+						operator: null
+						methodName: null
+						type: null
+						operand: 							
+							com.akiban.sql.parser.ColumnReference@79014e21
+							columnName: x
+							tableName: null
+							type: null
+							userData: t1.x from com.akiban.sql.parser.FromBaseTable@256eb6bc
+				fromList: 					
+					com.akiban.sql.parser.FromList@44b09697
+
+					[0]:					
+					com.akiban.sql.parser.FromBaseTable@256eb6bc
+					tableName: t1
+					updateOrDelete: null
+					null
+					correlation Name: null
+					null
+					userData: test.t1
+	fromList: 		
+		com.akiban.sql.parser.FromList@79f03d7
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@58b51c29
+		tableName: t1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: test.t1

@@ -1,1 +1,1 @@
-SELECT user.t1.x AS x, user.t1.y AS y FROM user.t1, user.t2 AS tt WHERE user.t1.y > tt.w
+SELECT test.t1.x AS x, test.t1.y AS y FROM test.t1, test.t2 AS tt WHERE test.t1.y > tt.w

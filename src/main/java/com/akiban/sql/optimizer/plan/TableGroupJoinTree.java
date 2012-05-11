@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.plan;
@@ -106,7 +117,7 @@ public class TableGroupJoinTree extends BaseJoinable
         @Override
         public String toString() {
             return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16) +
-                "(" + table + ")";
+                "(" + table + ", " + state + ")";
         }
     }
 
@@ -207,6 +218,16 @@ public class TableGroupJoinTree extends BaseJoinable
 
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
+            if (scan instanceof IndexScan) {
+                // Could just do scan.accept(v), but then it'd explain
+                // on a separate line.
+                if (v instanceof ExpressionRewriteVisitor) {
+                    ((IndexScan)scan).visitComparands((ExpressionRewriteVisitor)v);
+                }
+                else if (v instanceof ExpressionVisitor) {
+                    ((IndexScan)scan).visitComparands((ExpressionVisitor)v);
+                }
+            }
             TableGroupJoinNode next = root;
             top:
             while (true) {
@@ -255,7 +276,7 @@ public class TableGroupJoinTree extends BaseJoinable
                 str.append(node.getParentJoinType());
                 str.append(" ");
             }
-            str.append(node.getTable().getTable().getTable().getName().getTableName());
+            str.append(node.getTable().getName());
             if (node.getJoinConditions() != null) {
                 boolean first = true;
                 for (ConditionExpression joinCondition : node.getJoinConditions()) {

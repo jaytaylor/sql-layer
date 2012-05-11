@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule.join_enum;
@@ -41,7 +52,7 @@ public abstract class DPhyp<P>
     // possibly joins handled atomically wrt this phase.
     private List<Joinable> tables;
     // The join operators, from JOINs and WHERE clause.
-    private List<JoinOperator> operators, evaluateOperators;
+    private List<JoinOperator> operators, evaluateOperators, outsideOperators;
     // The hypergraph: since these are unordered, traversal pattern is
     // to go through in order pairing with adjacent (complement bit 1).
     private long[] edges;
@@ -216,11 +227,21 @@ public abstract class DPhyp<P>
                 evaluateOperators.add(operator);
             }
         }
+        outsideOperators.clear();
+        for (JoinOperator operator : operators) {
+            if (JoinableBitSet.overlaps(operator.predicateTables, s) &&
+                !JoinableBitSet.isSubset(operator.predicateTables, s) &&
+                !evaluateOperators.contains(operator))
+                // An operator involving tables in this join with others.
+                outsideOperators.add(operator);
+        }
         P plan = getPlan(s);
         if (join12 != null)
-            plan = evaluateJoin(s1, p1, s2, p2, s, plan, join12, evaluateOperators);
+            plan = evaluateJoin(s1, p1, s2, p2, s, plan, 
+                                join12, evaluateOperators, outsideOperators);
         if (join21 != null)
-            plan = evaluateJoin(s2, p2, s1, p1, s, plan, join21, evaluateOperators);
+            plan = evaluateJoin(s2, p2, s1, p1, s, plan, 
+                                join21, evaluateOperators, outsideOperators);
         setPlan(s, plan);
     }
 
@@ -232,7 +253,7 @@ public abstract class DPhyp<P>
      * conditions taken from the given joins.
      */
     public abstract P evaluateJoin(long bitset1, P p1, long bitset2, P p2, long bitsetJoined, P existing,
-                                   JoinType joinType, Collection<JoinOperator> joins);
+                                   JoinType joinType, Collection<JoinOperator> joins, Collection<JoinOperator> outsideJoins);
 
     /** Return a leaf of the tree. */
     public Joinable getTable(int index) {
@@ -287,6 +308,7 @@ public abstract class DPhyp<P>
             }
         }
         evaluateOperators = new ArrayList<JoinOperator>(noperators);
+        outsideOperators = new ArrayList<JoinOperator>(noperators);
     }
 
     protected void addTables(Joinable n) {
@@ -648,9 +670,11 @@ public abstract class DPhyp<P>
         assert (count > 1) : "Found less than 2 unconnected subgraphs";
         noperators += count - 1;
         nedges = noperators * 2;
-        long[] newEdges = new long[nedges];
-        System.arraycopy(edges, 0, newEdges, 0, edges.length);
-        edges = newEdges;
+        if (edges.length < nedges) { // Length was a conservative guess and might be large enough already.
+            long[] newEdges = new long[nedges];
+            System.arraycopy(edges, 0, newEdges, 0, edges.length);
+            edges = newEdges;
+        }
         // Just connect them all up. This is by no means an optimal
         // set of new edges, but the plan is trouble to begin with
         // since it involved a cross product. Would need something

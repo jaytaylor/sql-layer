@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.persistitadapter;
@@ -21,7 +32,6 @@ import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
-import com.akiban.qp.persistitadapter.sort.Sorter;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -37,13 +47,11 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
@@ -90,12 +98,7 @@ public class PersistitAdapter extends StoreAdapter
                        API.SortOption sortOption,
                        InOutTap loadTap)
     {
-        try {
-            return new Sorter(context, input, rowType, ordering, sortOption, loadTap).sort();
-        } catch (PersistitException e) {
-            handlePersistitException(e);
-            throw new AssertionError();
-        }
+        return new SorterToCursorAdapter(this, context, input, rowType, ordering, sortOption, loadTap);
     }
 
     @Override
@@ -247,11 +250,6 @@ public class PersistitAdapter extends StoreAdapter
         return persistit.getExchange(session, index);
     }
 
-    public Exchange takeExchangeForSorting(TreeLink treeLink)
-    {
-        return treeService.getExchange(session, treeLink);
-    }
-
     public Key newKey()
     {
         return new Key(persistit.getDb());
@@ -286,7 +284,7 @@ public class PersistitAdapter extends StoreAdapter
     public int enterUpdateStep()
     {
         Transaction transaction = transaction();
-        int step = transaction.getCurrentStep();
+        int step = transaction.getStep();
         if (step > 0)
             transaction.incrementStep();
         return step;

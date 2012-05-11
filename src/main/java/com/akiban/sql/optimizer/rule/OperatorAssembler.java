@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -283,11 +294,11 @@ public class OperatorAssembler extends BaseRule
             intersect = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
-                    outputScan.rowType,
-                    selectorScan.rowType,
+                    (IndexRowType) outputScan.rowType,
+                    (IndexRowType) selectorScan.rowType,
                     index.getOutputOrderingFields(),
                     index.getSelectorOrderingFields(),
-                    index.getComparisonFields(),
+                    index.getComparisonFieldDirections(),
                     JoinType.INNER_JOIN,
                     IntersectOutputOption.OUTPUT_LEFT
             );
@@ -531,8 +542,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
+            int pos = pushBoundRow(null); // Allocate slot in case loops in outer.
             RowStream ostream = assembleStream(mapJoin.getOuter());
-            pushBoundRow(ostream.fieldOffsets);
+            boundRows.set(pos, ostream.fieldOffsets);
             RowStream stream = assembleStream(mapJoin.getInner());
             stream.operator = API.map_NestedLoops(ostream.operator, 
                                                   stream.operator,
@@ -805,19 +817,27 @@ public class OperatorAssembler extends BaseRule
             pushBoundRow(fieldOffsets);
             PlanNode subquery = sexpr.getSubquery().getQuery();
             ExpressionNode expression = null;
+            boolean distinct = false;
             if ((sexpr instanceof AnyCondition) ||
                 (sexpr instanceof SubqueryValueExpression)) {
                 if (subquery instanceof ResultSet)
                     subquery = ((ResultSet)subquery).getInput();
-                if (!(subquery instanceof Project))
-                    throw new AkibanInternalException("subquery does not have project");
-                Project project = (Project)subquery;
-                subquery = project.getInput();
-                expression = project.getFields().get(0);
+                if (subquery instanceof Distinct) {
+                    distinct = true;
+                }
+                else {
+                    if (!(subquery instanceof Project))
+                        throw new AkibanInternalException("subquery does not have Project");
+                    Project project = (Project)subquery;
+                    subquery = project.getInput();
+                    expression = project.getFields().get(0);
+                }
             }
             RowStream stream = assembleQuery(subquery);
             Expression innerExpression = null;
-            if (expression != null)
+            if (distinct)
+                innerExpression = Expressions.field(stream.rowType, 0);
+            else if (expression != null)
                 innerExpression = assembleExpression(expression, stream.fieldOffsets);
             Expression result = assembleSubqueryExpression(sexpr, 
                                                            stream.operator,
@@ -913,7 +933,11 @@ public class OperatorAssembler extends BaseRule
                     (lowComparand == null) && (highComparand == null))
                 return IndexKeyRange.unbounded(indexRowType);
 
-            int nkeys = index.getIndex().getKeyColumns().size();
+            int nkeys = 0;
+            if (equalityComparands != null)
+                nkeys = equalityComparands.size();
+            if ((lowComparand != null) || (highComparand != null))
+                nkeys++;
             Expression[] keys = new Expression[nkeys];
             Arrays.fill(keys, LiteralExpression.forNull());
 
@@ -1027,12 +1051,12 @@ public class OperatorAssembler extends BaseRule
          * of a row of the index's user table. */
         protected ColumnSelector getIndexColumnSelector(final Index index, 
                                                         final int nkeys) {
-            assert nkeys <= index.getKeyColumns().size() : index + " " + nkeys;
-                return new ColumnSelector() {
-                        public boolean includesColumn(int columnPosition) {
-                            return columnPosition < nkeys;
-                        }
-                    };
+            assert nkeys <= index.getAllColumns().size() : index + " " + nkeys;
+            return new ColumnSelector() {
+                    public boolean includesColumn(int columnPosition) {
+                        return columnPosition < nkeys;
+                    }
+                };
         }
 
         /** Return a {@link Row} for the given index containing the given
@@ -1084,8 +1108,10 @@ public class OperatorAssembler extends BaseRule
             loopBindingsOffset = expressionBindingsOffset;
         }
 
-        protected void pushBoundRow(ColumnExpressionToIndex boundRow) {
+        protected int pushBoundRow(ColumnExpressionToIndex boundRow) {
+            int position = boundRows.size();
             boundRows.push(boundRow);
+            return position;
         }
 
         protected void popBoundRow() {
@@ -1174,6 +1200,11 @@ public class OperatorAssembler extends BaseRule
             else
                 return column.getPosition();
         }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + source + ")";
+        }
     }
 
     // Index used as field source (e.g., covering).
@@ -1190,6 +1221,12 @@ public class OperatorAssembler extends BaseRule
         // (Covering index or condition before lookup.)
         public int getIndex(ColumnExpression column) {
             return index.getColumns().indexOf(column);
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + index + ")";
         }
     }
 
@@ -1242,6 +1279,12 @@ public class OperatorAssembler extends BaseRule
                                 other.tableOffsets.get(otherTable));
                 }
             }
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + tableOffsets.keySet() + ")";
         }
     }
 

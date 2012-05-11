@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -55,6 +66,7 @@ public class GroupJoinFinder extends BaseRule
     }
     
     static class JoinIslandFinder implements PlanVisitor, ExpressionVisitor {
+        private ColumnEquivalenceStack equivs = new ColumnEquivalenceStack();
         List<JoinIsland> result = new ArrayList<JoinIsland>();
 
         public List<JoinIsland> find(PlanNode root) {
@@ -64,11 +76,13 @@ public class GroupJoinFinder extends BaseRule
 
         @Override
         public boolean visitEnter(PlanNode n) {
+            equivs.enterNode(n);
             return visit(n);
         }
 
         @Override
         public boolean visitLeave(PlanNode n) {
+            equivs.leaveNode(n);
             return true;
         }
 
@@ -78,7 +92,7 @@ public class GroupJoinFinder extends BaseRule
                 Joinable joinable = (Joinable)n;
                 PlanWithInput output = joinable.getOutput();
                 if (!(output instanceof Joinable)) {
-                    result.add(new JoinIsland(joinable, output));
+                    result.add(new JoinIsland(joinable, output, equivs.get()));
                 }
             }
             return true;
@@ -106,10 +120,12 @@ public class GroupJoinFinder extends BaseRule
         PlanWithInput output;
         ConditionList whereConditions;
         List<TableGroupJoin> whereJoins;
+        EquivalenceFinder<ColumnExpression> columnEquivs;
 
-        public JoinIsland(Joinable root, PlanWithInput output) {
+        public JoinIsland(Joinable root, PlanWithInput output, EquivalenceFinder<ColumnExpression> columnEquivs) {
             this.root = root;
             this.output = output;
+            this.columnEquivs = columnEquivs;
             if (output instanceof Select)
                 whereConditions = ((Select)output).getConditions();
         }
@@ -274,7 +290,8 @@ public class GroupJoinFinder extends BaseRule
         for (JoinIsland island : islands) {
             List<TableGroupJoin> whereJoins = new ArrayList<TableGroupJoin>();
             findGroupJoins(island.root, new ArrayDeque<JoinNode>(), 
-                           island.whereConditions, whereJoins);
+                           island.whereConditions, whereJoins,
+                           island.columnEquivs);
             island.whereJoins = whereJoins;
         }
         for (JoinIsland island : islands) {
@@ -285,18 +302,19 @@ public class GroupJoinFinder extends BaseRule
     protected void findGroupJoins(Joinable joinable, 
                                   Deque<JoinNode> outputJoins,
                                   ConditionList whereConditions,
-                                  List<TableGroupJoin> whereJoins) {
+                                  List<TableGroupJoin> whereJoins,
+                                  EquivalenceFinder<ColumnExpression> columnEquivs) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
             for (JoinNode output : outputJoins) {
                 ConditionList conditions = output.getJoinConditions();
-                TableGroupJoin tableJoin = findParentJoin(table, conditions);
+                TableGroupJoin tableJoin = findParentJoin(table, conditions, columnEquivs);
                 if (tableJoin != null) {
                     output.setGroupJoin(tableJoin);
                     return;
                 }
             }
-            TableGroupJoin tableJoin = findParentJoin(table, whereConditions);
+            TableGroupJoin tableJoin = findParentJoin(table, whereConditions, columnEquivs);
             if (tableJoin != null) {
                 whereJoins.add(tableJoin); // Position after reordering.
                 return;
@@ -307,8 +325,8 @@ public class GroupJoinFinder extends BaseRule
             Joinable right = join.getRight();
             outputJoins.push(join);
             if (join.isInnerJoin()) {
-                findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins);
-                findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins);
+                findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins, columnEquivs);
+                findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins, columnEquivs);
             }
             else {
                 Deque<JoinNode> singleJoin = new ArrayDeque<JoinNode>(1);
@@ -316,13 +334,13 @@ public class GroupJoinFinder extends BaseRule
                 // In a LEFT OUTER JOIN, the outer half is allowed to
                 // take from higher conditions.
                 if (join.getJoinType() == JoinType.LEFT)
-                    findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins);
+                    findGroupJoins(join.getLeft(), outputJoins, whereConditions, whereJoins, columnEquivs);
                 else
-                    findGroupJoins(join.getLeft(), singleJoin, null, null);
+                    findGroupJoins(join.getLeft(), singleJoin, null, null, columnEquivs);
                 if (join.getJoinType() == JoinType.RIGHT)
-                    findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins);
+                    findGroupJoins(join.getRight(), outputJoins, whereConditions, whereJoins, columnEquivs);
                 else
-                    findGroupJoins(join.getRight(), singleJoin, null, null);
+                    findGroupJoins(join.getRight(), singleJoin, null, null, columnEquivs);
             }
             outputJoins.pop();
         }
@@ -331,7 +349,8 @@ public class GroupJoinFinder extends BaseRule
     // Find a condition among the given conditions that matches the
     // parent join for the given table.
     protected TableGroupJoin findParentJoin(TableSource childTable,
-                                            ConditionList conditions) {
+                                            ConditionList conditions,
+                                            EquivalenceFinder<ColumnExpression> columnEquivs) {
         if ((conditions == null) || conditions.isEmpty()) return null;
         TableNode childNode = childTable.getTable();
         Join groupJoin = childNode.getTable().getParentJoin();
@@ -344,8 +363,8 @@ public class GroupJoinFinder extends BaseRule
 
         for (int i = 0; i < ncols; ++i) {
             JoinColumn joinColumn = joinColumns.get(i);
-            if (!findGroupCondition(joinColumns, i, childTable, conditions, true, parentTables)) {
-                if (!findGroupCondition(joinColumns, i, childTable, conditions, false, parentTables)) {
+            if (!findGroupCondition(joinColumns, i, childTable, conditions, true, parentTables, columnEquivs)) {
+                if (!findGroupCondition(joinColumns, i, childTable, conditions, false, parentTables, columnEquivs)) {
                     return null; // join column had no direct or equivalent group joins, so we know the answer
                 }
             }
@@ -402,7 +421,8 @@ public class GroupJoinFinder extends BaseRule
 
     private boolean findGroupCondition(List<JoinColumn> joinColumns, int i, TableSource childTable,
                                        ConditionList conditions, boolean requireExact,
-                                       Map<TableSource, GroupJoinConditions> parentTables)
+                                       Map<TableSource, GroupJoinConditions> parentTables,
+                                       EquivalenceFinder<ColumnExpression> columnEquivs)
     {
         int ncols = joinColumns.size();
         boolean found = false;
@@ -422,7 +442,8 @@ public class GroupJoinFinder extends BaseRule
                                     lcol,
                                     rcol,
                                     ccond,
-                                    requireExact
+                                    requireExact,
+                                    columnEquivs
                             );
                             if (normalized != null) {
                                 found = true;
@@ -472,7 +493,8 @@ public class GroupJoinFinder extends BaseRule
 
     private ComparisonCondition normalizedCond(JoinColumn join, TableSource childSource,
                                                ColumnExpression lcol, ColumnExpression rcol,
-                                               ComparisonCondition originalCond, boolean requireExact)
+                                               ComparisonCondition originalCond, boolean requireExact,
+                                               EquivalenceFinder<ColumnExpression> columnEquivs)
     {
         // look for child
         ColumnExpression childEquiv = null;
@@ -480,7 +502,7 @@ public class GroupJoinFinder extends BaseRule
             childEquiv = lcol;
         }
         else {
-            for (ColumnExpression equivalent : lcol.getEquivalents()) {
+            for (ColumnExpression equivalent : columnEquivs.findEquivalents(lcol)) {
                 if (equivalent.getTable() == childSource && equivalent.getColumn() == join.getChild()) {
                     childEquiv = equivalent;
                     break;
@@ -496,7 +518,7 @@ public class GroupJoinFinder extends BaseRule
             parentEquiv = rcol;
         }
         else {
-            for (ColumnExpression equivalent : rcol.getEquivalents()) {
+            for (ColumnExpression equivalent : columnEquivs.findEquivalents(rcol)) {
                 if (equivalent.getColumn() == join.getParent()) {
                     parentEquiv = equivalent;
                     break;
@@ -662,7 +684,14 @@ public class GroupJoinFinder extends BaseRule
             Group g2 = tg2.getGroup();
             if (g1 != g2)
                 return g1.getName().compareTo(g2.getName());
-            return tg1.getMinOrdinal() - tg2.getMinOrdinal();
+            int o1 = tg1.getMinOrdinal();
+            int o2 = tg2.getMinOrdinal();
+            if (o1 == o2) {
+                TableSource ts1 = tg1.findByOrdinal(o1);
+                TableSource ts2 = tg2.findByOrdinal(o2);
+                return ts1.getName().compareTo(ts2.getName());
+            }
+            return o1 - o2;
         }
     };
 
@@ -695,8 +724,11 @@ public class GroupJoinFinder extends BaseRule
         TableGroup tg2 = ts2.getGroup();
         if (g1 != g2)
             return g1.getName().compareTo(g2.getName());
-        if (tg1 == tg2)         // Including null because not yet computed.
+        if (tg1 == tg2) {       // Including null because not yet computed.
+            if (ut1 == ut2)
+                return ts1.getName().compareTo(ts2.getName());
             return t1.getOrdinal() - t2.getOrdinal();
+        }
         return tg1.getMinOrdinal() - tg2.getMinOrdinal();
     }
 

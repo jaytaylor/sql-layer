@@ -1,1 +1,1 @@
-SELECT DISTINCT user.parent.title AS title FROM user.parent WHERE (user.parent.id <> $1) AND TRUE
+SELECT DISTINCT test.parent.title AS title FROM test.parent WHERE (test.parent.id <> $1) AND TRUE

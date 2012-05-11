@@ -1,20 +1,32 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
@@ -23,16 +35,11 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public class AbsExpression extends AbstractUnaryExpression 
 {    
-    @Scalar("absolute")
+    @Scalar ({"absolute", "abs"})
     public static final ExpressionComposer COMPOSER = new InternalComposer();
-    
-    @Scalar("abs")
-    public static final ExpressionComposer COMPOSER_ALIAS = COMPOSER;
     
     private static class InternalComposer extends UnaryComposer
     {
@@ -47,16 +54,17 @@ public class AbsExpression extends AbstractUnaryExpression
         {
             if (argumentTypes.size() != 1) 
                 throw new WrongExpressionArityException(1, argumentTypes.size());
-            
-            // We want to return the original type with ABS, but cast VARCHAR to DOUBLE
+           
             ExpressionType argExpType = argumentTypes.get(0);
             AkType argAkType = argExpType.getType();
-            if (argAkType == AkType.VARCHAR)
-                argAkType = AkType.DOUBLE;
             
-            argumentTypes.setType(0, argAkType);
+            // Cast both VARCHAR and UNSUPPORTED; UNSUPPORTED appearing on SQL params (ABS(?) query)
+            if (argAkType == AkType.VARCHAR || argAkType == AkType.UNSUPPORTED)
+            {
+                argumentTypes.setType(0, AkType.DOUBLE);
+            }
             
-            return ExpressionTypes.newType(argAkType, argExpType.getPrecision(), argExpType.getScale());
+            return argumentTypes.get(0);
         }
     }
     
@@ -75,22 +83,36 @@ public class AbsExpression extends AbstractUnaryExpression
             AkType operandType = operand().getConversionType();
             
             switch (operandType) {
-                case DOUBLE:
-                    valueHolder().putDouble( Math.abs(operand().getDouble()) ); break;       
-                case FLOAT:
-                    valueHolder().putFloat( Math.abs(operand().getFloat()) ); break;
-                case LONG:
-                    valueHolder().putLong( Math.abs(operand().getLong()) ); break;
-                case INT:
-                    valueHolder().putInt( Math.abs(operand().getInt()) ); break;
-                case U_BIGINT:
-                    valueHolder().putUBigInt( operand().getUBigInt() ); break;
-                case DECIMAL:
-                    valueHolder().putDecimal( operand().getDecimal().abs()); break;
                 case VARCHAR:
-                    valueHolder().putDouble(Math.abs (Double.parseDouble(operand().getString()) )); break;
+                    valueHolder().putDouble( Math.abs(Double.parseDouble(operand().getString())));
+                    break;
+                case DOUBLE:
+                    valueHolder().putDouble( Math.abs(operand().getDouble()) ); 
+                    break;   
+                case FLOAT:
+                    valueHolder().putFloat( Math.abs(operand().getFloat()) ); 
+                    break;
+                case LONG:
+                    valueHolder().putLong( Math.abs(operand().getLong()) ); 
+                    break;
+                case INT:
+                    valueHolder().putInt( Math.abs(operand().getInt()) ); 
+                    break;
+                case DECIMAL:
+                    valueHolder().putDecimal( operand().getDecimal().abs()); 
+                    break;
+                case U_DOUBLE: 
+                case U_BIGINT: 
+                case U_FLOAT: 
+                case U_INT:
+                    // Unsigned values remain the same
+                    valueHolder().copyFrom(operand()); 
+                    break;
                 default:
-                    throw new InvalidArgumentTypeException("ABS: " + operandType.name()); 
+                    QueryContext context = queryContext();
+                    if (context != null)
+                        context.warnClient(new InvalidArgumentTypeException("ABS: " + operandType.name()));
+                    return NullValueSource.only();
             }
             
             return valueHolder();

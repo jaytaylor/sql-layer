@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
@@ -155,6 +166,41 @@ public class SelectIT extends OperatorITBase
             row(addressRowType, 5001L, 5L, "555 1111 st"),
         };
         compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            select_HKeyOrdered(
+                groupScan_Default(coi), itemRowType, itemOidEQ(12L));
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(customerRowType, 1L, "northbridge"),
+                    row(orderRowType, 11L, 1L, "ori"),
+                    row(orderRowType, 12L, 1L, null),
+                    row(itemRowType, 121L, 12L),
+                    row(itemRowType, 122L, 12L),
+                    row(addressRowType, 1001L, 1L, "111 1111 st"),
+                    row(addressRowType, 1002L, 1L, null),
+                    row(customerRowType, 2L, "foundation"),
+                    row(orderRowType, 21L, 2L, "tom"),
+                    row(orderRowType, 22L, 2L, null),
+                    row(addressRowType, 2001L, 2L, "222 1111 st"),
+                    row(addressRowType, 2002L, 2L, null),
+                    row(orderRowType, 31L, 3L, "peter"),
+                    row(customerRowType, 4L, "highland"),
+                    row(addressRowType, 4001L, 4L, "444 1111 st"),
+                    row(addressRowType, 4002L, 4L, null),
+                    row(addressRowType, 5001L, 5L, "555 1111 st"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     // For use by this class

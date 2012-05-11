@@ -1,21 +1,33 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
@@ -45,9 +57,7 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void rebind(HKey hKey, boolean deep)
     {
-        if (exchange != null) {
-            throw new IllegalStateException("can't rebind while PersistitGroupCursor is open");
-        }
+        CursorLifecycle.checkIdle(this);
         this.hKey = (PersistitHKey) hKey;
         this.hKeyDeep = deep;
     }
@@ -58,12 +68,14 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void open()
     {
-        assert exchange == null;
         try {
-            exchange = adapter.takeExchange(groupTable).clear();
+            CursorLifecycle.checkIdle(this);
+            this.exchange = adapter.takeExchange(groupTable);
+            exchange.clear();
             groupScan =
                 hKey == null ? new FullScan() :
                 hKeyDeep ? new HKeyAndDescendentsScan(hKey) : new HKeyWithoutDescendentsScan(hKey);
+            idle = false;
         } catch (PersistitException e) {
             adapter.handlePersistitException(e);
         }
@@ -73,10 +85,11 @@ class PersistitGroupCursor implements GroupCursor
     public Row next()
     {
         try {
-            boolean next = exchange != null;
+            CursorLifecycle.checkIdleOrActive(this);
+            boolean next = !idle;
             if (next) {
                 groupScan.advance();
-                next = exchange != null;
+                next = !idle;
                 if (next) {
                     PersistitGroupRow row = unsharedRow().get();
                     row.copyFromExchange(exchange);
@@ -97,11 +110,37 @@ class PersistitGroupCursor implements GroupCursor
     @Override
     public void close()
     {
-        if (exchange != null) {
+        CursorLifecycle.checkIdleOrActive(this);
+        if (!idle) {
+            groupScan = null;
             adapter.returnExchange(exchange);
             exchange = null;
-            groupScan = null;
+            idle = true;
         }
+    }
+
+    @Override
+    public void destroy()
+    {
+        destroyed = true;
+    }
+
+    @Override
+    public boolean isIdle()
+    {
+        return !destroyed && idle;
+    }
+
+    @Override
+    public boolean isActive()
+    {
+        return !destroyed && !idle;
+    }
+
+    @Override
+    public boolean isDestroyed()
+    {
+        return destroyed;
     }
 
     // For use by this package
@@ -113,6 +152,7 @@ class PersistitGroupCursor implements GroupCursor
         this.groupTable = groupTable;
         this.row = new ShareHolder<PersistitGroupRow>(adapter.newGroupRow());
         this.controllingHKey = adapter.newKey();
+        this.idle = true;
     }
 
     // For use by this class
@@ -141,7 +181,7 @@ class PersistitGroupCursor implements GroupCursor
      * 3) Scan one hkey without descendents: The key is copied to the exchange.
      *
      *  General:
-     *  - exchange == null iff this cursor is closed
+     *  - exchange == null iff this cursor is idle
      */
 
     private final PersistitAdapter adapter;
@@ -152,6 +192,8 @@ class PersistitGroupCursor implements GroupCursor
     private PersistitHKey hKey;
     private boolean hKeyDeep;
     private GroupScan groupScan;
+    private boolean idle;
+    private boolean destroyed = false;
 
     // static state
     private static final PointTap TRAVERSE_COUNT = Tap.createCount("traverse_pgc");

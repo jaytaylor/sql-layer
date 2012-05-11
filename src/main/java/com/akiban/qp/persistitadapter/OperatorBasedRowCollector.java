@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.persistitadapter;
@@ -38,12 +49,12 @@ import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
 import java.util.*;
 import java.util.concurrent.atomic.AtomicLong;
 
@@ -66,29 +77,42 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     }
 
     @Override
-    public boolean collectNextRow(ByteBuffer payload)
+    public boolean collectNextRow(GrowableByteBuffer payload)
     {
          // The handling of currentRow is slightly tricky: If writing to the payload results in BufferOverflowException,
          // then there is likely to be another call of this method, expecting to get the same row and write it into
          // another payload with room, (resulting from a ScanRowsMoreRequest). currentRow is used only to hold onto
          // the current row across these two invocations.
+        boolean wasHeld = false;
         boolean wroteToPayload = false;
         PersistitGroupRow row;
         if (currentRow.isEmpty()) {
             row = (PersistitGroupRow) cursor.next();
         } else {
+            wasHeld = true;
             row = (PersistitGroupRow) currentRow.get();
             currentRow.release();
         }
         if (row == null) {
             close();
         } else {
+            boolean doHold = false;
             RowData rowData = row.rowData();
-            try {
-                payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
-                wroteToPayload = true;
-                rowCount++;
-            } catch (BufferOverflowException e) {
+
+            // Only grow past cache size if we haven't written a single row
+            if (rowCount == 0 || wasHeld || (payload.position() + rowData.getRowSize() < payload.getMaxCacheSize())) {
+                try {
+                    payload.put(rowData.getBytes(), rowData.getRowStart(), rowData.getRowSize());
+                    wroteToPayload = true;
+                    rowCount++;
+                } catch (BufferOverflowException e) {
+                    doHold = true;
+                }
+            } else {
+                doHold = true;
+            }
+
+            if (doHold) {
                 assert !wroteToPayload;
                 currentRow.hold(row);
             }
@@ -123,9 +147,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (!closed) {
             currentRow.release();
             if (cursor != null) {
-                cursor.close();
+                cursor.destroy();
+                cursor = null;
             }
-            cursor = null;
             closed = true;
         }
     }

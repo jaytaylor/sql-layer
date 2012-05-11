@@ -8,6 +8,14 @@ group-equals: Group index and ancestor lookup from there.
 
 group-sort: Group index for sorting and ancestor lookup from there.
 
+multiindex-single-branch: Intersection on single branch.
+
+multiindex-multi-branch: Intersection on two branches.
+
+multiindex-multi-duplicate: Intersection of two of the same index.
+
+multiindex-multi-ordered: With ORDER BY.
+
 no-index: Group scan and flatten.
 
 no-index-branch: Group scan and flatten along one branch and then
@@ -49,3 +57,5 @@ two-same-branches-2: Output parent and one child.
 two-same-branches-2b: Output parent and other child.
 
 two-same-branches-3: Output parent and both children.
+
+two-side-branches: Two branches beside the condition one.

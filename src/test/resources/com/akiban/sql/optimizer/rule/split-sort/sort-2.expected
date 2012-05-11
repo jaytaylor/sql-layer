@@ -2,13 +2,13 @@ SelectQuery@2094257f
   ResultSet@5e29c58e[order_date, name]
     Sort@61578aab[SELECT[1], SELECT[0]]
       MapJoin@62a2220f()
-        Flatten@26a3960(user.customers INNER user.orders)
-          GroupScan@bdccedd(Group(customers -> user._akiban_customers))
-            TableSource@35f03691(user.customers - TableGroup@2339e351(customers))
-            TableSource@2d8e8541(user.orders - TableGroupJoin@4d911540(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-        Project@700a4488[user.orders.order_date, user.child.name]
+        Flatten@26a3960(customers INNER orders)
+          GroupScan@bdccedd(Group(customers -> test._akiban_customers))
+            TableSource@35f03691(customers - TableGroup@2339e351(customers))
+            TableSource@2d8e8541(orders - TableGroupJoin@4d911540(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+        Project@700a4488[orders.order_date, child.name]
           Select@2d2bf892[]
-            Flatten@3219762f(user.child)
-              BranchLookup@259e215b(user.parent -> user.parent)
-                IndexScan@309ff0a8(Index(user.parent.name[IndexColumn(name)]), NONE, =user.customers.name)
-                TableSource@27b03c1a(user.child - TableGroupJoin@5470be88(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+            Flatten@3219762f(child)
+              BranchLookup@259e215b(parent -> parent)
+                IndexScan@309ff0a8(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name)
+                TableSource@27b03c1a(child - TableGroupJoin@5470be88(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))

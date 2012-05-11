@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
@@ -20,6 +31,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -47,6 +59,7 @@ import java.util.List;
 
 import static com.akiban.qp.operator.API.cursor;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
@@ -136,6 +149,83 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 222L, 22L)};
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+    }
+
+    protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase)
+    {
+        Cursor cursor = cursor(scan, queryContext);
+        // Check idle following creation
+        assertTrue(cursor.isIdle());
+        // Check active following open
+        testCase.firstSetup();
+        cursor.open();
+        assertTrue(cursor.isActive());
+        // Check idle following close
+        cursor.close();
+        assertTrue(cursor.isIdle());
+        // Check active following re-open
+        testCase.firstSetup();
+        cursor.open();
+        assertTrue(cursor.isActive());
+        cursor.close();
+        // Check active during iteration
+        testCase.firstSetup();
+        if (testCase.hKeyComparison()) {
+            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor);
+        } else {
+            compareRows(testCase.firstExpectedRows(), cursor);
+        }
+        assertTrue(cursor.isIdle());
+        // Check close during iteration.
+        if (testCase.hKeyComparison()
+            ? testCase.firstExpectedHKeys().length > 1
+            : testCase.firstExpectedRows().length > 1) {
+            testCase.firstSetup();
+            cursor.open();
+            cursor.next();
+            assertTrue(cursor.isActive());
+            cursor.close();
+            assertTrue(cursor.isIdle());
+        }
+        // Check that a second execution works
+        testCase.secondSetup();
+        if (testCase.hKeyComparison()) {
+            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor);
+        } else {
+            compareRows(testCase.secondExpectedRows(), cursor);
+        }
+        assertTrue(cursor.isIdle());
+        // Check close of idle cursor is permitted
+        try {
+            cursor.close();
+        } catch (CursorLifecycle.WrongStateException e) {
+            fail();
+        }
+        // Check destroyed following destroy
+        cursor.destroy();
+        assertTrue(cursor.isDestroyed());
+        // Check open after destroy disallowed
+        try {
+            testCase.firstSetup();
+            cursor.open();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
+        // Check next after destroy disallowed
+        try {
+            cursor.next();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
+        // Check close after destroy disallowed
+        try {
+            cursor.close();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
     }
 
     protected void use(NewRow[] db)
@@ -278,6 +368,21 @@ public class OperatorITBase extends ITBase
         dumpToAssertion(cursor(plan, queryContext));
     }
 
+    protected void dump(Cursor cursor)
+    {
+        cursor.open();
+        Row row;
+        while ((row = cursor.next()) != null) {
+            System.out.println(String.valueOf(row));
+        }
+        cursor.close();
+    }
+    
+    protected void dump(Operator plan)
+    {
+        dump(cursor(plan, queryContext));
+    }
+
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
     {
         int count;
@@ -330,4 +435,40 @@ public class OperatorITBase extends ITBase
     protected int orderOrdinal;
     protected int itemOrdinal;
     protected int addressOrdinal;
+
+    protected static abstract class CursorLifecycleTestCase
+    {
+        public boolean hKeyComparison()
+        {
+            return false;
+        }
+
+        public void firstSetup()
+        {}
+
+        public RowBase[] firstExpectedRows()
+        {
+            fail();
+            return null;
+        }
+
+        public String[] firstExpectedHKeys()
+        {
+            fail();
+            return null;
+        }
+
+        public void secondSetup()
+        {}
+
+        public RowBase[] secondExpectedRows()
+        {
+            return firstExpectedRows();
+        }
+
+        public String[] secondExpectedHKeys()
+        {
+            return firstExpectedHKeys();
+        }
+    }
 }

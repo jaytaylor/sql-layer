@@ -1,5 +1,5 @@
 SelectQuery@127fa12
   ResultSet@192c8d9[_SQL_COL_1]
-    Project@1c05ffd[user.items.quan]
+    Project@1c05ffd[items.quan]
       Select@de1b8a[]
-        TableSource@e70e30(user.items)
+        TableSource@e70e30(items)

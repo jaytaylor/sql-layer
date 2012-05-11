@@ -2,6 +2,8 @@
 # AUTOGEN: SKIP
 # row id not supported
 ---
+- Message: Suppressed due to ROWID not supported
+---
 - Properties: all
 - suppressed: true
 ---

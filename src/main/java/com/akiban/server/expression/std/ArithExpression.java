@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.expression.std;
@@ -19,7 +30,9 @@ import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
@@ -33,8 +46,9 @@ import java.util.List;
 public class ArithExpression extends AbstractBinaryExpression
 {
     protected final ArithOp op;
-    protected final AkType topT;
-
+    protected AkType topT;
+    protected ExpressionType top;
+    
     /**
      * SUPPORTED_TYPES: contains all types that are supported in ArithExpression.
      *
@@ -48,6 +62,9 @@ public class ArithExpression extends AbstractBinaryExpression
      */
     protected static final BidirectionalMap SUPPORTED_TYPES = new BidirectionalMap(10, 0.5f);
     private static final int HIGHEST_KEY;
+    protected static final int DEFAULT_PRECISION = 20; 
+    protected static final int DEFAULT_SCALE = 9;
+    
     static
     {
         // date/time types : key is even
@@ -67,13 +84,22 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.LONG, 9);
         SUPPORTED_TYPES.put(AkType.INT, 11);
     }
+    
+    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType topT)
+    {
+        super(getTopType(lhs.valueType(), rhs.valueType(), op), lhs, rhs);
+        this.op = op;
+        this.topT = super.valueType();
+        assert this.topT == topT.getType() : "mismatched top type";
+        top = topT;
+    }
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
     {
         super(getTopType(lhs.valueType(), rhs.valueType(), op),lhs, rhs);
-        
         this.op = op; 
         topT = super.valueType();
+        top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
 
     /**
@@ -88,11 +114,14 @@ public class ArithExpression extends AbstractBinaryExpression
     protected ArithExpression (Expression lhs, ArithOp op, Expression rhs, AkType top)
     {
         super(top, lhs, rhs);
-        getTopType(lhs.valueType(), rhs.valueType(), op); // this is to issue an exception, if any.
-                                                          // the output is not used         
         this.op = op;
-        topT = top;
+        if (lhs.valueType() != rhs.valueType()) // mis-matched arguments result in NULL
+            topT = AkType.NULL;
+        else
+            topT = top;
+        this.top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
+    
     @Override
     protected void describe(StringBuilder sb)
     {
@@ -102,7 +131,7 @@ public class ArithExpression extends AbstractBinaryExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(op, this,childrenEvaluations());
+        return new InnerEvaluation(op, this,childrenEvaluations(), top);
     }
 
     /**
@@ -182,14 +211,19 @@ public class ArithExpression extends AbstractBinaryExpression
             {
                AkType interval = l2 == 0 ? SUPPORTED_TYPES.get(l) : SUPPORTED_TYPES.get(r);
                char opName = op.opName();
-               if ((opName == '/' || opName == '%')&& l2 == 0 || opName == '*') return interval;
+               if ((opName == '/' || opName == '%' || opName == 'd')&& l2 == 0 || opName == '*') return interval;
                else throw new InvalidArgumentTypeException(msg);
             }
         }
         else if (prod2 > 0) // both are supported and none is an interval
         {
             if (prod2 % 2 == 1) // odd => numeric values only
-                return SUPPORTED_TYPES.get(l < r ? l : r);
+            {
+                int f = SUPPORTED_TYPES.get(AkType.FLOAT);
+                return op.opName() == '/' && r > f && l > f // turn any exact type 
+                        ? AkType.DOUBLE                     // into DOUBLE
+                        : SUPPORTED_TYPES.get(l < r ? l : r);
+            }
             else // even => at least one is datetime
             {
                 if (l == r && op.opName() == '-') return AkType.INTERVAL_MILLIS;
@@ -206,18 +240,19 @@ public class ArithExpression extends AbstractBinaryExpression
     protected static boolean isNumeric (AkType type)
     {
         int t = SUPPORTED_TYPES.get(type);
-        if (t < 0) throw new InvalidArgumentTypeException(type + " is not supported");
+        if (t < 0) return false;
         else return t % 2 == 1;
     }
     
     protected static boolean isDateTime (AkType type)
     {
         int t = SUPPORTED_TYPES.get(type);
-        if (t < 0) throw new InvalidArgumentTypeException(type + " is not supported");
+        if (t < 0) return false;
         else return t % 2 == 0;
     }
+    
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }
@@ -238,17 +273,21 @@ public class ArithExpression extends AbstractBinaryExpression
         @Override
         public ValueSource eval() 
         {  
-            valueSource.setOperands(left(), right());
+            if (valueSource.getConversionType() == AkType.NULL)
+                return NullValueSource.only();
+            valueSource.setOperands(left(), right(), top);
             return valueSource;
         }
         
         protected InnerEvaluation (ArithOp op, ArithExpression ex,
-                List<? extends ExpressionEvaluation> children)
+                List<? extends ExpressionEvaluation> children, ExpressionType t)
         {
             super(children);
             valueSource = ex.getValueSource(op);
+            top = t;
         }
         
+        private final ExpressionType top;
         protected final InnerValueSource valueSource;
     }
 
@@ -258,18 +297,20 @@ public class ArithExpression extends AbstractBinaryExpression
        protected ValueSource left;
        protected ValueSource right;
        private AkType topT;
+       private ExpressionType top;
        public InnerValueSource (ArithOp op,  AkType topT )
        {
            this.op = op;
            this.topT = topT;
        }
        
-       public void setOperands (ValueSource left, ValueSource right)
+       public void setOperands (ValueSource left, ValueSource right, ExpressionType t)
        {
            ArgumentValidation.notNull("Left", left);
            ArgumentValidation.notNull("Right", right);
            this.left = left;
            this.right = right;
+           top = t;
        }
        
        @Override
@@ -285,28 +326,29 @@ public class ArithExpression extends AbstractBinaryExpression
                     Extractors.getLongExtractor(
                         (left.getConversionType() == AkType.VARCHAR ? topT : left.getConversionType())).getLong(left),
                     Extractors.getLongExtractor(
-                        (right.getConversionType() == AkType.VARCHAR ? topT : right.getConversionType())).getLong(right));
+                        (right.getConversionType() == AkType.VARCHAR ? topT : right.getConversionType())).getLong(right),
+                    top);
         }
 
         @Override
         protected double rawDouble()
         {
             return op.evaluate(Extractors.getDoubleExtractor().getDouble(left),
-                    Extractors.getDoubleExtractor().getDouble(right));
+                    Extractors.getDoubleExtractor().getDouble(right), top);
         }  
 
         @Override
         protected BigInteger rawBigInteger() 
         {                   
            return op.evaluate(Extractors.getUBigIntExtractor().getObject(left),
-                   Extractors.getUBigIntExtractor().getObject(right));
+                   Extractors.getUBigIntExtractor().getObject(right), top);
         }
 
         @Override
         protected BigDecimal rawDecimal() 
         {
             return op.evaluate(Extractors.getDecimalExtractor().getObject(left),
-                    Extractors.getDecimalExtractor().getObject(right));
+                    Extractors.getDecimalExtractor().getObject(right), top);
         }
 
         @Override
@@ -349,7 +391,7 @@ public class ArithExpression extends AbstractBinaryExpression
             long leftUnix = lEx.stdLongToUnix(lEx.getLong(left));
             long rightUnix = rEx.stdLongToUnix(rEx.getLong(right));               
             return Extractors.getLongExtractor(SUPPORTED_TYPES.get(pos)). 
-                    unixToStdLong(op.evaluate(leftUnix, rightUnix));
+                    unixToStdLong(op.evaluate(leftUnix, rightUnix, top));
         }
         
      

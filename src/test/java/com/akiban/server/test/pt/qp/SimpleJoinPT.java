@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.pt.qp;
@@ -26,6 +37,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.util.tap.Tap;
 import com.akiban.util.tap.TapReport;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -33,6 +45,7 @@ import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
 
+@Ignore
 public class SimpleJoinPT extends QPProfilePTBase
 {
     @Before
@@ -40,28 +53,32 @@ public class SimpleJoinPT extends QPProfilePTBase
     {
         customer = createTable(
             "schema", "customer",
-            "cid int not null key",
-            "name varchar(20)," +
-            "index(name)");
+            "cid int not null",
+            "name varchar(20)",
+            "primary key(cid)");
         order = createTable(
-            "schema", "order",
-            "oid int not null key",
+            "schema", "orders",
+            "oid int not null",
             "cid int",
             "salesman varchar(20)",
-            "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)",
-            "index(salesman)");
+            "primary key(oid)",
+            "grouping foreign key (cid) references customer(cid)");
         item = createTable(
             "schema", "item",
-            "iid int not null key",
+            "iid int not null",
             "oid int",
-            "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
+            "primary key(iid)",
+            "grouping foreign key (oid) references orders(oid)");
         address = createTable(
             "schema", "address",
-            "aid int not null key",
+            "aid int not null",
             "cid int",
             "address varchar(100)",
-            "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
-            "index(address)");
+            "primary key(aid)",
+            "grouping foreign key (cid) references customer(cid)");
+        createIndex("schema", "customer", "idx_cname", "name");
+        createIndex("schema", "orders", "idx_osalesman", "salesman");
+        createIndex("schema", "address", "idx_aaddress", "address");
         schema = new Schema(rowDefCache().ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
@@ -100,7 +117,7 @@ public class SimpleJoinPT extends QPProfilePTBase
     @Test
     public void profileGroupScan()
     {
-        final int SCANS = 100;
+        final int SCANS = 100000000;
         final int CUSTOMERS = 1000;
         final int ORDERS_PER_CUSTOMER = 5;
         final int ITEMS_PER_ORDER = 2;

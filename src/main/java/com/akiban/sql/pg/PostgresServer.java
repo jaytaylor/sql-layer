@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
@@ -61,9 +72,9 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     private Thread thread;
     private final AtomicBoolean instrumentationEnabled = new AtomicBoolean(false);
     // AIS-dependent state
-    private final Object aisLock = new Object();
     private volatile long aisTimestamp = -1;
-    private volatile ServerStatementCache<PostgresStatement> statementCache;
+    private volatile int statementCacheCapacity;
+    private final Map<Object,ServerStatementCache<PostgresStatement>> statementCaches = new HashMap<Object,ServerStatementCache<PostgresStatement>>();
     private final Map<String, LoadablePlan<?>> loadablePlans = new HashMap<String, LoadablePlan<?>>();
     // end AIS-dependent state
     private volatile Date overrideCurrentTime;
@@ -80,9 +91,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             throw new InvalidPortException(port);
         
         String capacityString = properties.getProperty("statementCacheCapacity");
-        int statementCacheCapacity = Integer.parseInt(capacityString);
-        if (statementCacheCapacity > 0)
-            statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
+        statementCacheCapacity = Integer.parseInt(capacityString);
     }
 
     public Properties getProperties() {
@@ -144,7 +153,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
 
     public void run() {
         logger.debug("Postgres server listening on port {}", port);
-        int pid = 0;
+        int sessionId = 0;
         Random rand = new Random();
         try {
             synchronized(this) {
@@ -154,11 +163,11 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             }
             while (running) {
                 Socket sock = socket.accept();
-                pid++;
+                sessionId++;
                 int secret = rand.nextInt();
                 PostgresServerConnection connection = 
-                    new PostgresServerConnection(this, sock, pid, secret, reqs);
-                connections.put(pid, connection);
+                    new PostgresServerConnection(this, sock, sessionId, secret, reqs);
+                connections.put(sessionId, connection);
                 connection.start();
             }
         }
@@ -182,25 +191,48 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         return listening;
     }
 
-    public synchronized PostgresServerConnection getConnection(int pid) {
-        return connections.get(pid);
+    public synchronized PostgresServerConnection getConnection(int sessionId) {
+        return connections.get(sessionId);
     }
    
-    public synchronized void removeConnection(int pid) {
-        connections.remove(pid);
+    public synchronized void removeConnection(int sessionId) {
+        connections.remove(sessionId);
     }
     
     @Override
-    public String getSqlString(int pid) {
-        return getConnection(pid).getSqlString();
+    public String getSqlString(int sessionId) {
+        return getConnection(sessionId).getSqlString();
     }
     
     @Override
-    public String getRemoteAddress(int pid) {
-        return getConnection(pid).getRemoteAddress();
+    public String getRemoteAddress(int sessionId) {
+        return getConnection(sessionId).getRemoteAddress();
     }
 
-    public ServerStatementCache<PostgresStatement> getStatementCache() {
+    @Override
+    public void cancelQuery(int sessionId) {
+        getConnection(sessionId).cancelQuery();
+    }
+
+    @Override
+    public void killConnection(int sessionId) {
+        PostgresServerConnection conn = getConnection(sessionId);
+        conn.cancelQuery();
+        conn.stop();
+    }
+
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key) {
+        if (statementCacheCapacity <= 0) 
+            return null;
+
+        ServerStatementCache<PostgresStatement> statementCache;
+        synchronized (statementCaches) {
+            statementCache = statementCaches.get(key);
+            if (statementCache == null) {
+                statementCache = new ServerStatementCache<PostgresStatement>(statementCacheCapacity);
+                statementCaches.put(key, statementCache);
+            }
+        }
         return statementCache;
     }
 
@@ -209,57 +241,69 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     }
 
     /** This is the version for use by connections. */
-    // TODO: This could create a new one if we didn't want to share them.
-    public ServerStatementCache<PostgresStatement> getStatementCache(long timestamp)
-    {
-        synchronized (aisLock) {
+    public ServerStatementCache<PostgresStatement> getStatementCache(Object key, long timestamp) {
+        synchronized (statementCaches) {
             if (aisTimestamp != timestamp) {
                 assert aisTimestamp < timestamp : timestamp;
-                if (statementCache != null) {
+                for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
                     statementCache.invalidate();
                 }
                 clearPlans();
                 aisTimestamp = timestamp;
             }
         }
-        return statementCache;
+        return getStatementCache(key);
     }
 
     @Override
     public int getStatementCacheCapacity() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getCapacity();
+        return statementCacheCapacity;
     }
 
     @Override
     public void setStatementCacheCapacity(int capacity) {
-        if (capacity <= 0) {
-            statementCache = null;
+        statementCacheCapacity = capacity;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                statementCache.setCapacity(capacity);
+            }
+            if (capacity <= 0) {
+                statementCaches.clear();
+            }
         }
-        else if (statementCache == null)
-            statementCache = new ServerStatementCache<PostgresStatement>(capacity);
-        else
-            statementCache.setCapacity(capacity);
     }
 
     @Override
     public int getStatementCacheHits() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getHits();
+        int total = 0;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                total += statementCache.getHits();
+            }        
+        }
+        return total;
     }
 
     @Override
     public int getStatementCacheMisses() {
-        if (statementCache == null)
-            return 0;
-        else
-            return statementCache.getMisses();
+        int total = 0;
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                total += statementCache.getMisses();
+            }        
+        }
+        return total;
     }
     
+    @Override
+    public void resetStatementCache() {
+        synchronized (statementCaches) {
+            for (ServerStatementCache<PostgresStatement> statementCache : statementCaches.values()) {
+                statementCache.reset();
+            }        
+        }
+    }
+
     @Override
     public Set<Integer> getCurrentSessions() {
         return new HashSet<Integer>(connections.keySet());

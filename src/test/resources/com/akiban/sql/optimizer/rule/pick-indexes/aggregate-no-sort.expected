@@ -1,8 +1,8 @@
 SelectQuery@47d978ea
   ResultSet@16916f80[_SQL_COL_1, _SQL_COL_2]
-    Project@262f4813[MIN(user.items.sku), MAX(user.items.sku)]
+    Project@262f4813[MIN(items.sku), MAX(items.sku)]
       Select@6a24eafa[]
-        AggregateSource@1dbef987(SORT,[user.items.quan],[])
+        AggregateSource@1dbef987(SORT,[items.quan],[])
           Select@64f01d52[]
-            TableJoins@50152643(TableGroup@1c8321c8(customers) - IndexScan@651ee017(Index(user.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =$0))
-              TableSource@354124d6(user.items - TableGroup@1c8321c8(customers))
+            TableJoins@50152643(TableGroup@1c8321c8(customers) - IndexScan@651ee017(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =$0))
+              TableSource@354124d6(items - TableGroup@1c8321c8(customers))

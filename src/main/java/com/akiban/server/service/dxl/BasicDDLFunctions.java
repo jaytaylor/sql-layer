@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.service.dxl;
@@ -23,14 +34,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Pattern;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
@@ -48,6 +63,8 @@ import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.error.UnsupportedDropException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.PersistitStore;
+import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
@@ -360,13 +377,15 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {
         final Table table = getTable(session, tableName);
-        Collection<? extends Index> indexes;
+        Collection<Index> indexes = new HashSet<Index>();
         if (indexesToUpdate == null) {
-            indexes = table.getIndexes();
-            // TODO: Group indexes that include this table? That terminate with it?
+            indexes.addAll(table.getIndexes());
+            for (Index index : table.getGroup().getIndexes()) {
+                if (table == index.leafMostTable())
+                    indexes.add(index);
+            }
         }
         else {
-            Set<Index> namedIndexes = new HashSet<Index>();
             for (String indexName : indexesToUpdate) {
                 Index index = table.getIndex(indexName);
                 if (index == null) {
@@ -374,11 +393,69 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
                     if (index == null)
                         throw new NoSuchIndexException(indexName);
                 }
-                namedIndexes.add(index);
+                indexes.add(index);
             }
-            indexes = namedIndexes;
         }
         indexStatisticsService.updateIndexStatistics(session, indexes);
+    }
+
+    @Override
+    public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
+        long startNs = System.nanoTime();
+        Pattern schemaPattern = Pattern.compile(schemaRegex);
+        Pattern tablePattern = Pattern.compile(tableRegex);
+        List<IndexCheckResult> results = new ArrayList<IndexCheckResult>();
+        AkibanInformationSchema ais = getAIS(session);
+
+        for (Map.Entry<TableName,UserTable> entry : ais.getUserTables().entrySet()) {
+            TableName tName = entry.getKey();
+            if (schemaPattern.matcher(tName.getSchemaName()).find()
+                    && tablePattern.matcher(tName.getTableName()).find())
+            {
+                UserTable uTable = entry.getValue();
+                List<Index> indexes = new ArrayList<Index>();
+                indexes.add(uTable.getPrimaryKeyIncludingInternal().getIndex());
+                for (Index gi : uTable.getGroup().getIndexes()) {
+                    if (gi.leafMostTable().equals(uTable))
+                        indexes.add(gi);
+                }
+                for (Index index : indexes) {
+                    IndexCheckResult indexCheckResult = checkAndFixIndex(session, index);
+                    results.add(indexCheckResult);
+                }
+            }
+        }
+        long endNs = System.nanoTime();
+        return new IndexCheckSummary(results,  endNs - startNs);
+    }
+
+    private IndexCheckResult checkAndFixIndex(Session session, Index index) {
+        try {
+            long expected = indexStatisticsService.countEntries(session, index);
+            long actual = indexStatisticsService.countEntriesManually(session, index);
+            if (expected != actual) {
+                PersistitStore pStore = this.store().getPersistitStore();
+                if (index.isTableIndex()) {
+                    pStore.getTableStatus(((TableIndex) index).getTable()).setRowCount(actual);
+                }
+                else {
+                    final Exchange ex = pStore.getExchange(session, index);
+                    try {
+                        AccumulatorAdapter accum =
+                                new AccumulatorAdapter(AccumInfo.ROW_COUNT, treeService(), ex.getTree());
+                        accum.set(actual);
+                    }
+                    finally {
+                        pStore.releaseExchange(session, ex);
+                    }
+                }
+            }
+            return new IndexCheckResult(index.getIndexName(), expected, actual, indexStatisticsService.countEntries(session, index));
+        }
+        catch (Exception e) {
+            logger.error("while checking/fixing " + index, e);
+            return new IndexCheckResult(index.getIndexName(), -1, -1, -1);
+        }
     }
 
     private void checkCursorsForDDLModification(Session session, Table table) {

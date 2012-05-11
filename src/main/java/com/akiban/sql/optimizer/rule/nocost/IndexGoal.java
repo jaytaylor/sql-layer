@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule.nocost;
@@ -152,7 +163,7 @@ public class IndexGoal implements Comparator<IndexScan>
     /** Populate given index usage according to goal.
      * @return <code>false</code> if the index is useless.
      */
-    public boolean usable(IndexScan index) {
+    public boolean usable(SingleIndexScan index) {
         // TODO: This could be getIndexColumns(), but that would change test results.
         List<IndexColumn> indexColumns = ((SingleIndexScan)index).getIndex().getKeyColumns();
         int ncols = indexColumns.size();
@@ -248,8 +259,7 @@ public class IndexGoal implements Comparator<IndexScan>
 
     // Determine how well this index does against the target.
     // Also, correct traversal order to match sort if possible.
-    protected IndexScan.OrderEffectiveness
-        determineOrderEffectiveness(IndexScan index) {
+    protected IndexScan.OrderEffectiveness determineOrderEffectiveness(SingleIndexScan index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
         BitSet reverse = new BitSet(indexOrdering.size());
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
@@ -418,13 +428,14 @@ public class IndexGoal implements Comparator<IndexScan>
      * @param groupOnly 
      */
     public IndexScan pickBestIndex(TableSource table, Set<TableSource> required) {
-        IndexScan bestIndex = null;
+        SingleIndexScan bestIndex = null;
         // If this table is the optional part of a LEFT join, can
         // still consider group indexes to it, but not single table
-        // indexes on it.
+        // indexes on it. WHERE conditions are removed before this
+        // is called, see IndexPicker#determineIndexGoal().
         if (required.contains(table)) {
             for (TableIndex index : table.getTable().getTable().getIndexes()) {
-                IndexScan candidate = new SingleIndexScan(index, table);
+                SingleIndexScan candidate = new SingleIndexScan(index, table);
                 bestIndex = betterIndex(bestIndex, candidate);
             }
         }
@@ -486,7 +497,7 @@ public class IndexGoal implements Comparator<IndexScan>
                         (rootRequired == null))
                         continue;
                 }
-                IndexScan candidate = new SingleIndexScan(index, rootTable,
+                SingleIndexScan candidate = new SingleIndexScan(index, rootTable,
                                                     rootRequired, leafRequired, 
                                                     table);
                 bestIndex = betterIndex(bestIndex, candidate);
@@ -495,7 +506,7 @@ public class IndexGoal implements Comparator<IndexScan>
         return bestIndex;
     }
 
-    protected IndexScan betterIndex(IndexScan bestIndex, IndexScan candidate) {
+    protected SingleIndexScan betterIndex(SingleIndexScan bestIndex, SingleIndexScan candidate) {
         if (usable(candidate)) {
             if (bestIndex == null) {
                 logger.debug("Selecting {}", candidate);

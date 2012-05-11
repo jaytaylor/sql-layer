@@ -1,13 +1,13 @@
-SelectQuery@1342256f
-  ResultSet@5ba7a449[name, oid, oid]
-    Project@5b12e3a1[user.customers.name, user.orders.oid, user.orders.oid]
-      Select@351e8dbd[user.orders.order_date == 2012-01-01]
-        Product@46a6177c(user.customers)
-          Flatten@424ff220(user.customers INNER user.orders)
-            AncestorLookup@ea134e3(user.orders -> [user.customers, user.orders])
-              IndexScan@79972a95(Index(user.orders.order_date[IndexColumn(order_date)]), NONE, =2011-12-31, rows = 10, cost = 1000.19)
-              TableSource@66f82265(user.customers - TableGroup@68f574d1(customers))
-              TableSource@2c9a49b3(user.orders - TableGroupJoin@336cda90(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-          Flatten@2f813e50(user.customers INNER user.orders)
-            BranchLookup@4e220e8d(user.customers -> user.orders)
-              TableSource@bcbc73(user.orders - TableGroupJoin@1de9730e(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+SelectQuery@4ed357ce
+  ResultSet@1529bdd0[name, oid, oid]
+    Project@676cad8a[customers.name, o1.oid, o2.oid]
+      Select@ff57412[o2.order_date == 2012-01-01]
+        Product@4bc1ae26(customers)
+          Flatten@189067a5(customers INNER o1)
+            AncestorLookup@30848e3c(orders -> [customers, orders])
+              SingleIndexScan@9f0bd05(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, =2011-12-31, rows = 10, cost = 1000.77)
+              TableSource@32fe03ae(customers - TableGroup@11800a9(customers))
+              TableSource@42a3aea9(o1 - TableGroupJoin@6b16d658(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          Flatten@28526255(customers INNER o2)
+            BranchLookup@38b5cf21(customers -> orders)
+              TableSource@81ffb6d(o2 - TableGroupJoin@28319c9d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

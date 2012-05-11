@@ -1,4 +1,4 @@
-InsertStatement@50502819(user.child[child.pid, child.name])
-  Project@2ff11e0f[user.parent.id, user.parent.name]
-    Select@6401d98a[like(user.parent.name,X%)]
-      TableSource@35712651(user.parent)
+InsertStatement@50502819(child[child.pid, child.name])
+  Project@2ff11e0f[parent.id, parent.name]
+    Select@6401d98a[like(parent.name,X%)]
+      TableSource@35712651(parent)

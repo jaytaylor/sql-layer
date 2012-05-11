@@ -1,36 +1,58 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.expression.std.LiteralExpression;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.junit.Before;
 import org.junit.Test;
 
-import static com.akiban.qp.operator.API.cursor;
-import static com.akiban.qp.operator.API.groupScan_Default;
-import static com.akiban.qp.operator.API.indexScan_Default;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import static com.akiban.qp.operator.API.*;
 import static junit.framework.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
@@ -524,6 +546,27 @@ public class IndexScanIT extends OperatorITBase
         compareRenderedHKeys(expected, cursor);
     }
 
+    @Test
+    public void testCursor()
+    {
+        Operator indexScan = indexScan_Default(itemIidIndexRowType, true, iidKeyRange(100, false, 125, false));
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public boolean hKeyComparison()
+            {
+                return true;
+            }
+
+            @Override
+            public String[] firstExpectedHKeys()
+            {
+                return new String[]{hkey(1, 12, 122), hkey(1, 12, 121), hkey(1, 11, 112), hkey(1, 11, 111)};
+            }
+        };
+        testCursorLifecycle(indexScan, testCase);
+    }
+
     // Inspired by bug 898013
     @Test
     public void testAliasingOfPersistitIndexRowFields()
@@ -557,5 +600,19 @@ public class IndexScanIT extends OperatorITBase
     private String hkey(int cid, int oid, int iid)
     {
         return String.format("{1,(long)%s,2,(long)%s,3,(long)%s}", cid, oid, iid);
+    }
+
+    private Row intRow(RowType rowType, int x)
+    {
+        return new ExpressionRow(rowType, queryContext,
+                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
+    }
+
+    private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
+        List<BindableRow> result = new ArrayList<BindableRow>();
+        for (Row row : rows) {
+            result.add(BindableRow.of(row));
+        }
+        return result;
     }
 }

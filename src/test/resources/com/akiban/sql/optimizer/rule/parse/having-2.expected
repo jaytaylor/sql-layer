@@ -1,0 +1,9 @@
+SelectQuery@5586f865
+  ResultSet@101ddac1[order_date, total]
+    Project@1804bd2b[orders.order_date, SUM(times(items.price,items.quan))]
+      Select@5f1f5e5e[SUM(times(items.price,items.quan)) > 1000.00]
+        AggregateSource@46c9e1c([orders.order_date],[])
+          Select@77004288[]
+            JoinNode@32102bc1(INNER[orders.oid == items.oid])
+              TableSource@43a8a594(items)
+              TableSource@750eba3f(orders)

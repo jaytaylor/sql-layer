@@ -1,1 +1,0 @@
-SELECT user.parent.name AS name, user.child.name AS name FROM user.parent INNER JOIN user.child ON ((user.parent.id = user.child.pid) AND TRUE)

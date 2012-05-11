@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.expression.std;
@@ -59,6 +70,49 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
     {
         ParameterizationBuilder pb = new ParameterizationBuilder();
         
+        // test tricky case
+        param(pb, LikeExpression.LIKE_COMPOSER, "xbz123babcabcab", "%babcabcab%", "\\", true, false, false);
+        
+        // test with periodic patterns (where you can kind-of 'connect' the head to the tail and make it a circular queue
+        param(pb, LikeExpression.LIKE_COMPOSER, "abxabcabcab", "%abcabcab%", "\\", true, false, false);
+        param(pb, LikeExpression.LIKE_COMPOSER, "abcabxabcabc", "%abcabc%", "\\", true, false, false);
+        
+        param(pb, LikeExpression.LIKE_COMPOSER, "zcbacba", "%acba%", "\\", true, false, false);
+        
+        // test empty/illegal escaped char
+        // select 'ab' like '%ab\\%'
+        // escape char at end-of-string . => returns NULL + warning 
+        param(pb, LikeExpression.LIKE_COMPOSER, "ab", "%ab\\", "\\", false, true, false);
+        
+        // select 'ab' like '\\'
+        // string contains ONLY the escape character => return NULL + warning
+        param(pb, LikeExpression.LIKE_COMPOSER, "ab", "\\", "\\", false, true, false);
+        
+        // select 'abc' like 'abc\\'
+        // this returns FALSE as opposed to a NULL
+        param(pb, LikeExpression.LIKE_COMPOSER, "abc", "abc\\", "\\", false, false, false);
+        
+        // select 'ab' like '%\\'
+        param(pb, LikeExpression.LIKE_COMPOSER, "ab", "%\\", "\\", false, true, false);
+        
+        
+        //select '-A-abx' like '%-Ab%';
+        param(pb, LikeExpression.LIKE_COMPOSER, "-A-abx", "%-Ab%", "\\", true, false, false);
+        
+        //'xxxA-AAbx' LIKE '%-AAb%' (duplicate characters in pattern)
+        param(pb, LikeExpression.LIKE_COMPOSER, "xxxA-AAbx", "%-AAb%", "\\", true, false, false);
+        param(pb, LikeExpression.LIKE_COMPOSER, "xxxA-AAbx-ABC", "%-Ax_%", "\\", false, false, false);
+
+        
+        // '-bb-Abx' LIKE '%-Ab%' 
+        param(pb, LikeExpression.LIKE_COMPOSER, "-bb-Abx", "%-Ab%", "\\", true, false, false);
+        param(pb, LikeExpression.LIKE_COMPOSER, "-bb-bbb-abx", "-bb%-ab%", "\\", true, false, false);
+        
+        param(pb, LikeExpression.ILIKE_COMPOSER, "ab123b124", "a%%%%%%b%", "\\", true, false, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "ab123b124", "a%%%%%%%", "\\", true, false, false);
+        param(pb, LikeExpression.BLIKE_COMPOSER, "ab123b124", "a%%%%%%%4", "\\", true, false, false);
+        param(pb, LikeExpression.LIKE_COMPOSER, "-A-Abx", "%-Ab%", "\\", true, false, false);
+             
         param(pb, LikeExpression.BLIKE_COMPOSER, "aX", "axx", "x", false, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "aX", "axx", "x", true, false, false);
         
@@ -98,7 +152,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
 
         param(pb, LikeExpression.ILIKE_COMPOSER, "x===b", "_=====__", "=", false, false, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "Axydam", "A%d=am", "=", false, false, true); // invalide escape sequence =a
+        param(pb, LikeExpression.ILIKE_COMPOSER, "Axydam", "A%d=am", "=", true, false, false); 
         param(pb, LikeExpression.ILIKE_COMPOSER, "Ja%vas", "J_\\%%", "\\", true, false, false);
 
         param(pb, LikeExpression.ILIKE_COMPOSER, "", "", "\\",true, false, false);
@@ -113,7 +167,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "", "\\",false, true, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "abc", "", "\\",false, true, false);
 
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abc=_", "abc===_", "==",true, false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc=_", "abc===_", "=",true, false, false);
 
         // underscore as escape
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_", "abc__", "_", true, false, false);
@@ -123,7 +177,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc_%def", "abc___%def", "_", true, false, false);
         param(pb, LikeExpression.BLIKE_COMPOSER, "axybc", "a%bc", "_", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abcd", "abc_", "_", true, false, true); // exception invalid escape sequence
-        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxde", "abc_de", "_", true, false, true);  // exception
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abcxde", "abc_de", "_", false, false, false);  
 
 
         // percent as escape
@@ -131,6 +185,8 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc%", "abc%%", "%", true, false, false);
         param(pb, LikeExpression.ILIKE_COMPOSER, "abcxyz", "abc%", "%", true, false, true); // % by itself exception
         param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "abc%%", "%", false, false, false); // two %s => not a wildcard anymore
+        param(pb, LikeExpression.ILIKE_COMPOSER, "abc", "abc%%", "\\", true, false, false); 
+        
         param(pb, LikeExpression.ILIKE_COMPOSER, "ab%c%cde", "ab%%c%%%", "%", true, false, true);  // exception be thrown
 
         // null as escape, then \\ is used

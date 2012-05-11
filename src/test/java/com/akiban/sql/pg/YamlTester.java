@@ -1,20 +1,32 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
 
+import static com.akiban.util.AssertUtils.assertCollectionEquals;
 import static org.hamcrest.CoreMatchers.anyOf;
 import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.not;
@@ -27,7 +39,8 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.Connection;
@@ -64,9 +77,6 @@ import org.yaml.snakeyaml.nodes.Node;
 import org.yaml.snakeyaml.nodes.NodeTuple;
 import org.yaml.snakeyaml.nodes.ScalarNode;
 import org.yaml.snakeyaml.nodes.Tag;
-
-import com.akiban.server.manage.ManageMXBean;
-import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /**
  * A utility for testing SQL access over a Postgres server connection based on
@@ -153,8 +163,15 @@ import com.akiban.server.store.statistics.IndexStatisticsMXBean;
    if used, please suppress the IT level calls or place tests in AAS directly
    
    - JMX: <objectName>   (i.e com.akiban:type=IndexStatistics)
+   ** Only one allowed of the following three (3) per command set
+   - set: <set method>
+   - method: <method>
+   - get: <get method>
+   
    - params: [<parameter value>, ...]
-   - output: [<output value>, ...]
+   - output: [[<output value>, ...], ...]
+
+
 
 */
 class YamlTester {
@@ -250,6 +267,8 @@ class YamlTester {
 		    dropTableCommand(value);
 		} else if ("Statement".equals(commandName)) {
 		    statementCommand(value, sequence);
+		} else if ("Message".equals(commandName)) {
+	        messageCommand(value);
 		} else if ("Bulkload".equals(commandName)) {
                     bulkloadCommand(value, sequence); 
                 } else if ("JMX".equals(commandName)) {
@@ -301,7 +320,7 @@ class YamlTester {
 	}
 	Reader in = null;
 	try {
-	    in = new FileReader(include);
+	    in = new InputStreamReader(new FileInputStream(include), "UTF-8");
 	} catch (IOException e) {
 	    throw new ContextAssertionError("Problem accessing include file "
 		    + include + ": " + e, e);
@@ -322,6 +341,11 @@ class YamlTester {
 	    } catch (IOException e) {
 	    }
 	}
+    }
+
+    private void messageCommand(Object value) {
+        String message = string(value, "Message");
+        System.err.println("FTS Message: " + message);
     }
 
     private void propertiesCommand(Object value, List<Object> sequence) {
@@ -475,9 +499,11 @@ class YamlTester {
 	}
     }
 
+    
     private void dropTableCommand(Object value) throws SQLException {
-	new DropTableCommand(value).execute();
+        new DropTableCommand(value).execute();
     }
+    
 
     private class DropTableCommand extends AbstractStatementCommand {
 	DropTableCommand(Object value) {
@@ -591,7 +617,7 @@ class YamlTester {
 		if (output != null) {
 		    assertEquals("The row_count attribute must be the same"
 			    + " as the length of the rows in the output"
-			    + " attribute:", output.get(0).size(), rowCount);
+			    + " attribute:", output.size(), rowCount);
 		} else if (outputTypes != null) {
 		    assertEquals("The row_count attribute must be the same"
 			    + " as the length of the output_types"
@@ -1024,29 +1050,6 @@ class YamlTester {
 		assertEquals("Wrong output type for column " + i + ":",
 			outputTypes.get(i - 1), columnTypeName);
 	    }
-	}
-
-	private void debugPrintResults(ResultSet rs) throws SQLException {
-	    System.err.println(context() + "Result output:");
-	    ResultSetMetaData md = rs.getMetaData();
-	    int nc = md.getColumnCount();
-	    for (int i = 1; i <= nc; i++) {
-		if (i != 1) {
-		    System.err.print(", ");
-		}
-		System.err.print(md.getColumnName(i));
-	    }
-	    System.err.println();
-	    while (rs.next()) {
-		for (int i = 1; i <= nc; i++) {
-		    if (i != 1) {
-			System.err.print(", ");
-		    }
-		    System.err.print(rs.getObject(i));
-		}
-		System.err.println();
-	    }
-	    rs.beforeFirst();
 	}
     }
 
@@ -1568,10 +1571,13 @@ class YamlTester {
     private class JMXCommand extends AbstractStatementCommand {
 
         ArrayList<Object> output = null;
+        ArrayList<Object> split_output = null;
         String objectName = null;
-        ArrayList<String> params = null;
+        Object[] params = null;
         String method = null;
-
+        String set = null;
+        String get = null;
+        
         public JMXCommand(Object value, List<Object> sequence) {
             super(string(value, "JMX value"));
             if (value != null & String.valueOf(value).trim().length() > 1) {
@@ -1582,15 +1588,21 @@ class YamlTester {
 
             for (int i = 1; i < sequence.size(); i++) {
                 Entry<Object, Object> map = onlyEntry(sequence.get(i),
-                        "JMX attribute");
+                "JMX attribute");
                 String attribute = string(map.getKey(), "JMX attribute name");
                 Object attributeValue = map.getValue();
                 if ("params".equals(attribute)) {
                     parseParams(attributeValue);
                 } else if ("method".equals(attribute)) {
                     method = String.valueOf(attributeValue).trim();
+                } else if ("set".equals(attribute)) {
+                    set = String.valueOf(attributeValue).trim();
+                } else if ("get".equals(attribute)) {
+                    get = String.valueOf(attributeValue).trim();
                 } else if ("output".equals(attribute)) {
                     parseOutput(attributeValue);
+                } else if ("split_result".equals(attribute)) {
+                    parseSplit(attributeValue);
                 } else {
                     fail("The '" + attribute + "' attribute name was not"
                             + " recognized");
@@ -1605,87 +1617,97 @@ class YamlTester {
             }
             assertNull("The params attribute must not appear more than once",
                     params);
-            params = new ArrayList<String>(
+            ArrayList<Object> list = new ArrayList<Object>(
                     stringSequence(value, "params value"));
+            params = list.toArray(new Object[list.size()]);
         }
 
-        private void parseOutput(Object value) {
+        private void parseSplit (Object value) {
             if (value == null) {
+                split_output = null;
                 return;
             }
-            assertNull("The output attribute must not appear more than once",
-                    output);
-            List<Object> row = rows(value, "output value").get(0);
-            output = (ArrayList<Object>) row;
-        }
-
-        protected boolean rowsEqual(List<Object> pattern, List<Object> row) {
-            
-            int size = pattern.size();
-            if (size != row.size()) {
-            return false;
+            assertNull ("The split_result attribute must not appear more than once", split_output);
+            assertNull ("The output and split_result attributes can not appear together", output);
+            List<List<Object>> rows = rows(value, "output split value");
+            split_output = new ArrayList<Object>(rows.size());
+            for (List<?> row : rows) {
+                assertEquals("number of entries in row "+ row, 1, row.size());
+                split_output.add(row.get(0));
             }
-            for (int i = 0; i < size; i++) {
-            Object patternElem = pattern.get(i);
-            Object rowElem = row.get(i);
-            if (patternElem instanceof OutputComparator) {
-                return ((OutputComparator) patternElem)
-                        .compareOutput(rowElem);
-            } else if (patternElem == null) {
-                if (rowElem != null) {
-                    return false;
-                }
-            } else if (!objectToString(patternElem).equals(
-                objectToString(rowElem))) {
-                return false;
-            }
-            }
-            return true;
         }
         
-        public void execute() {
-            JMXInterpreter conn = new JMXInterpreter();
-            conn.openConnection("localhost", "8082");
-            if (objectName.equalsIgnoreCase("com.akiban:type=IndexStatistics")) {
-                IndexStatisticsMXBean bean = conn.getIndexStatisticsMXBean(conn
-                        .getConnector());
-                assertNotNull(bean);
-                if (method.equalsIgnoreCase("dumpIndexStatistics")) {
-                    try {
-                        bean.dumpIndexStatistics(params.get(0), params.get(1));
-                    } catch (IOException e) {
-                        System.out.println("Error: " + e.getMessage());
-                        fail("Error: " + e.getMessage());
-                    }
-                } else {
-                    fail("Method not supported");
-                }
-            } else if (objectName.equalsIgnoreCase("com.akiban:type=AKSERVER")) {
-                try {
-                    ManageMXBean bean = conn.getAkServer(conn
-                            .getConnector());
-                    assertNotNull("bean is null", bean);
-                    if (method.equalsIgnoreCase("getVersionString")) {
-                        if (output != null) {
-                            List<Object> row = new ArrayList<Object>();
-
-                            row.add(bean.getVersionString());
-                            if (!rowsEqual(output.subList(0, 1), row)) {
-                                fail("Version does not match");
-                            }
-                        } else {
-                              System.out.println(bean.getVersionString());
-                        }
-                    } else {
-                        fail("Method not supported");
-                    }
-                } catch (java.lang.reflect.UndeclaredThrowableException e) {
-                    fail("error: " + e.getCause());
-                }
-
-            } else {
-                fail("JMX call not supported currently");
+        private void parseOutput(Object value) {
+            if (value == null) {
+                output = null;
+                return;
+            }
+            assertNull("The output attribute must not appear more than once", output);
+            assertNull("The split_result and output attributes can not appear together", split_output);
+            
+            List<List<Object>> rows = rows(value, "output value");
+            output = new ArrayList<Object>(rows.size());
+            for (List<?> row : rows) {
+                assertEquals("number of entries in row " + row, 1, row.size());
+                output.add(row.get(0));
             }
         }
+
+        public void execute() {
+            JMXInterpreter conn = new JMXInterpreter(DEBUG);
+            Object result = null;
+            try {
+                if (method != null) {
+                    result = conn.makeBeanCall("localhost", 8082, objectName,
+                            method, params, "method");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+method+")");
+//                        System.out.println(result);
+//                    }
+                }
+                if (set != null) {
+                    conn.makeBeanCall("localhost", 8082, objectName, set, params, "set");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+set+")");
+//                    }
+                }
+                if (get != null) {
+                    result = conn.makeBeanCall("localhost", 8082, objectName, get, params, "get");
+//                    if (DEBUG) {
+//                        System.out.println("makeBeanCall(localhost, 8082, "+objectName+", "+get+")");
+//                        System.out.println(result);
+//                    }
+
+                }
+                
+            } catch (Exception e) {
+                e.printStackTrace();
+                System.out.println("Error: " + e.getMessage());
+                fail("Error: " + e.getMessage());
+            }
+            
+            if (split_output != null) {
+                if (result == null)
+                    fail("found null; expected: " + split_output);
+                List<Object> actuals = new ArrayList<Object>(Arrays.asList(result.toString().split("\\n")));
+                int highestCommon = Math.min(actuals.size(), split_output.size());
+                for (int i = 0; i < highestCommon; ++i) {
+                    if (split_output.get(i) == DontCare.INSTANCE)
+                        actuals.set(i, DontCare.INSTANCE);
+                }
+                assertCollectionEquals(split_output, actuals);
+            } else if (output != null) {
+                if (result == null) 
+                    fail ("found null; expected: " + output);
+                List<Object> actuals = new ArrayList<Object>(Arrays.asList(result.toString()));
+                int highestCommon = Math.min(actuals.size(), output.size());
+                for (int i = 0; i < highestCommon; i++) {
+                    if (output.get(i) == DontCare.INSTANCE)
+                        actuals.set(i, DontCare.INSTANCE);
+                }
+                assertCollectionEquals(output, actuals);
+            }
+        }
+
     }
 }

@@ -1,11 +1,11 @@
 SelectQuery@b4ef239
   ResultSet@6c0081fb[cid, name, oid, cid, order_date, id, name, state, id, pid, name]
-    Project@1555bd22[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name]
+    Project@1555bd22[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, parent.id, parent.name, parent.state, child.id, child.pid, child.name]
       Select@2ff40e1f[]
-        JoinNode@3fcb2dd1(LEFT[user.parent.name == user.customers.name])
+        JoinNode@3fcb2dd1(LEFT[parent.name == customers.name])
           TableGroupJoinTree@342d150f(TableGroup@7bc1a68b(customers), customers INNER orders)
-            TableSource@22862041(user.customers - TableGroup@7bc1a68b(customers))
-              TableSource@13af9d1c(user.orders - TableGroupJoin@669d2f26(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+            TableSource@22862041(customers - TableGroup@7bc1a68b(customers))
+              TableSource@13af9d1c(orders - TableGroupJoin@669d2f26(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
           TableGroupJoinTree@59829c6b(TableGroup@deb62b6(parent), parent INNER child)
-            TableSource@6e73a35c(user.parent - TableGroup@deb62b6(parent))
-              TableSource@69ea25aa(user.child - TableGroupJoin@589da1dd(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+            TableSource@6e73a35c(parent - TableGroup@deb62b6(parent))
+              TableSource@69ea25aa(child - TableGroupJoin@589da1dd(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))

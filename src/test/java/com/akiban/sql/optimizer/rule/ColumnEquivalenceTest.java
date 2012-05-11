@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -28,11 +39,11 @@ import com.akiban.sql.optimizer.plan.ExpressionVisitor;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
-import com.akiban.sql.optimizer.plan.Subquery;
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.AssertUtils;
 import com.akiban.util.Strings;
+import com.google.common.collect.Sets;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -55,6 +66,7 @@ import java.util.TreeMap;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static com.akiban.util.AssertUtils.assertCollectionEquals;
 import static com.akiban.util.Strings.stripr;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -111,15 +123,7 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     }
 
     private static String[] readEquivalences(String columnEquivalenceLine) {
-        String[] results = columnEquivalenceLine.split("\\s+");
-        for (int i = 0; i < results.length; ++i) {
-            String elem = results[i];
-            if (elem.split("\\.").length == 2) {
-                elem = DEFAULT_SCHEMA + '.' + elem;
-                results[i] = elem;
-            }
-        }
-        return results;
+        return columnEquivalenceLine.split("\\s+");
     }
 
     @Before
@@ -158,31 +162,39 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         rules.applyRules(plan);
 
         Map<Set<Map<String,Boolean>>,Integer> result = new HashMap<Set<Map<String, Boolean>>, Integer>();
-        Map<Collection<ColumnExpression>,Integer> columnExpressionsToDepth = new ColumnFinder().find(plan.getPlan());
-        for (Map.Entry<Collection<ColumnExpression>,Integer> entry : columnExpressionsToDepth.entrySet()) {
-            Collection<ColumnExpression> columnExpressions = entry.getKey();
-            Integer depth = entry.getValue();
-            Set<Map<String, Boolean>> byName = collectEquivalentColumns(columnExpressions);
+        Collection<EquivalenceScope> scopes = new ColumnFinder().find(plan.getPlan());
+        for (EquivalenceScope scope : scopes) {
+            Collection<ColumnExpression> columnExpressions = scope.columns;
+            int depth = scope.depth;
+            Set<Map<String, Boolean>> byName = collectEquivalentColumns(columnExpressions, scope.equivs);
             Object old = result.put(byName, depth);
             assertNull("bumped: " + old, old);
+            // anything in the equivs participants must also be in the scope's columns.
+            HashSet<ColumnExpression> columnsSet = new HashSet<ColumnExpression>(scope.columns);
+            assertEquals("columns in equivalencies", columnsSet, new HashSet<ColumnExpression>(scope.columns));
+            Set<ColumnExpression> inScopeParticipants = Sets.intersection(scope.equivs.findParticipants(), columnsSet);
+            assertCollectionEquals("columns in equivalencies", inScopeParticipants, scope.equivs.findParticipants());
         }
         return result;
     }
 
-    private Set<Map<String, Boolean>> collectEquivalentColumns(Collection<ColumnExpression> columnExpressions) {
+    private Set<Map<String, Boolean>> collectEquivalentColumns(Collection<ColumnExpression> columnExpressions,
+                                                               EquivalenceFinder<ColumnExpression> equivs) {
         Set<Set<ColumnExpression>> set = new HashSet<Set<ColumnExpression>>();
         for (ColumnExpression columnExpression : columnExpressions) {
             Set<ColumnExpression> belongsToSet = null;
             for (Set<ColumnExpression> equivalentExpressions : set) {
                 Iterator<ColumnExpression> equivalentIters = equivalentExpressions.iterator();
-                boolean isInSet = areEquivalent(equivalentIters.next(), columnExpression);
+                boolean isInSet = areEquivalent(equivalentIters.next(), columnExpression, equivs);
                 // as a sanity check, ensure that this is consistent for the rest of them
                 while (equivalentIters.hasNext()) {
                     ColumnExpression next = equivalentIters.next();
+                    boolean bothEquivalent = areEquivalent(next, columnExpression, equivs)
+                            && areEquivalent(columnExpression, next, equivs);
                     assertEquals(
                             "equivalence for " + columnExpression + " against " + next + " in " + equivalentExpressions,
                             isInSet,
-                            areEquivalent(next, columnExpression) && areEquivalent(columnExpression, next)
+                            bothEquivalent
                     );
                 }
                 if (isInSet) {
@@ -208,8 +220,9 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
         return byName;
     }
 
-    private static boolean areEquivalent(ColumnExpression one, ColumnExpression two) {
-        return one.getEquivalenceFinder().areEquivalent(one, two) && two.getEquivalenceFinder().areEquivalent(two, one);
+    private static boolean areEquivalent(ColumnExpression one, ColumnExpression two,
+                                         EquivalenceFinder<ColumnExpression> equivs) {
+        return equivs.areEquivalent(one, two) && equivs.areEquivalent(two, one);
     }
 
     public ColumnEquivalenceTest(File schemaFile, String sql, Map<Set<Map<String,Boolean>>,Integer> equivalences) {
@@ -222,38 +235,51 @@ public final class ColumnEquivalenceTest extends OptimizerTestBase {
     private Map<Set<Map<String,Boolean>>,Integer> equivalences;
     private RulesContext rules;
     
+    private static class EquivalenceScope {
+        Collection<ColumnExpression> columns;
+        EquivalenceFinder<ColumnExpression> equivs;
+        int depth;
+
+        private EquivalenceScope(int depth, Collection<ColumnExpression> columns,
+                                 EquivalenceFinder<ColumnExpression> equivs) {
+            this.depth = depth;
+            this.columns = columns;
+            this.equivs = equivs;
+        }
+
+        @Override
+        public String toString() {
+            return String.format("scope(cols=%s, depth=%d, %s", columns, depth, equivs);
+        }
+    }
+    
     private static class ColumnFinder implements PlanVisitor, ExpressionVisitor {
+        ColumnEquivalenceStack equivsStack = new ColumnEquivalenceStack();
         Deque<List<ColumnExpression>> columnExpressionsStack = new ArrayDeque<List<ColumnExpression>>();
-        Map<Collection<ColumnExpression>,Integer> results = new HashMap<Collection<ColumnExpression>, Integer>();
+        Collection<EquivalenceScope> results = new ArrayList<EquivalenceScope>();
 
-        public Map<Collection<ColumnExpression>,Integer> find(PlanNode root) {
-            pushCollector();
+        public Collection<EquivalenceScope> find(PlanNode root) {
             root.accept(this);
-            installCollection();
             assertTrue("stack isn't empty: " + columnExpressionsStack, columnExpressionsStack.isEmpty());
+            assertTrue("equivs stack aren't empty", equivsStack.isEmpty());
             return results;
-        }
-
-        private void pushCollector() {
-            columnExpressionsStack.push(new ArrayList<ColumnExpression>());
-        }
-
-        private void installCollection() {
-            Collection<ColumnExpression> collected = columnExpressionsStack.pop();
-            int depth = columnExpressionsStack.size();
-            results.put(collected, depth);
         }
 
         @Override
         public boolean visitEnter(PlanNode n) {
-            if (n instanceof Subquery)
-                pushCollector();
+            if (equivsStack.enterNode(n))
+                columnExpressionsStack.push(new ArrayList<ColumnExpression>());
             return visit(n);
         }
         @Override
         public boolean visitLeave(PlanNode n) {
-            if (n instanceof Subquery)
-                installCollection();
+            EquivalenceFinder<ColumnExpression> nodeEquivs = equivsStack.leaveNode(n);
+            if (nodeEquivs != null) {
+                Collection<ColumnExpression> collected = columnExpressionsStack.pop();
+                int depth = columnExpressionsStack.size();
+                EquivalenceScope scope = new EquivalenceScope(depth, collected, nodeEquivs);
+                results.add(scope);
+            }
             return true;
         }
         @Override

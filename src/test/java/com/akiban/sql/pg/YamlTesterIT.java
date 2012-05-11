@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
@@ -488,16 +499,16 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
     public void testCreateTableErrorRightErrorMessage() throws Exception {
 	testYaml(
 	    "---\n" +
-	    "- Statement: SELECT * FR\n" +
+	    "- CreateTable: a (i int\n" +
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
+	    "    ERROR: Encountered \"<EOF>\" at line 1, column 21.\n" +
 	    "    Was expecting one of:\n" +
-	    "        \"from\" ...\n" +
+	    "        \")\" ...\n" +
 	    "        \",\" ...\n" +
 	    "        \n" +
-	    "      Position: 10");
+	    "      Position: 21");
     }
 
     @Test
@@ -1328,7 +1339,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- Statement: SELECT * FROM c\n" +
 	    "- explain: |\n" +
 	    "    project([Field(0), Field(1)])\n" +
-	    "      Filter_Default([user.c])\n" +
+	    "      Filter_Default(["+PostgresServerITBase.SCHEMA_NAME+".c])\n" +
 	    "        GroupScan_Default(full scan on _akiban_c)\n");
     }
 
@@ -1474,9 +1485,23 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 	    "- error:\n" +
 	    "  - 42000\n" +
 	    "  - |\n" +
-	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
+ 	    "    ERROR: Encountered \" <IDENTIFIER> \"FR \"\" at line 1, column 10.\n" +
 	    "    Was expecting one of:\n" +
+	    "        <EOF> \n" +
+	    "        \"except\" ...\n" +
+	    "        \"fetch\" ...\n" +
+	    "        \"for\" ...\n" +
 	    "        \"from\" ...\n" +
+	    "        \"group\" ...\n" +
+	    "        \"having\" ...\n" +
+	    "        \"intersect\" ...\n" +
+	    "        \"order\" ...\n" +
+	    "        \"union\" ...\n" +
+	    "        \"where\" ...\n" +
+	    "        \"window\" ...\n" +
+	    "        \"with\" ...\n" +
+	    "        \"offset\" ...\n" +
+	    "        \"limit\" ...\n" +
 	    "        \",\" ...\n" +
 	    "        \n" +
 	    "      Position: 10");
@@ -1823,6 +1848,260 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- Statement: INSERT INTO t VALUES ('a')\n");
     }
 
+    @Test
+    public void testNegativeColumnCount_too_small() throws Exception {
+        testYamlFail("---\n" +
+                    "- CreateTable: testA (c1 int)\n"+
+                    "---\n"+
+                    "- Statement: INSERT INTO testA values (1)\n"+
+                    "---\n"+
+            "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                    "- output: [[1,5,7,8,9,1,2]]");
+    }
+    
+    @Test
+    public void testNegativeColumnCount_too_many() throws Exception {
+        testYamlFail("---\n" +
+                    "- CreateTable: testA (c1 int)\n"+
+                    "---\n"+
+                    "- Statement: INSERT INTO testA values (1)\n"+
+                    "---\n"+
+            "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                    "- output: [[1,5,7,8,9,1,2,6,99]]");
+    }
+    
+    @Test
+    public void testRowCount_post() throws Exception {
+        testYaml("---\n" +
+                    "- CreateTable: testA (c1 int)\n"+
+                    "---\n"+
+                    "- Statement: INSERT INTO testA values (1)\n"+
+                    "---\n"+
+                    "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                    "- output: [[1,5,7,8,9,1,2,6]]\n"+
+                    "- row_count: 1");
+    } 
+    
+    @Test
+    public void testRowCount_pre() throws Exception {
+        testYaml("---\n" +
+                "- CreateTable: testA (c1 int)\n"+
+                "---\n"+
+                "- Statement: INSERT INTO testA values (1)\n"+
+                "---\n"+
+        "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                "- row_count: 1\n"+
+                "- output: [[1,5,7,8,9,1,2,6]]\n");
+    }
+     
+    @Test
+    public void testRowCount_negative_pre() throws Exception {
+        testYamlFail("---\n" +
+                "- CreateTable: testA (c1 int)\n"+
+                "---\n"+
+                "- Statement: INSERT INTO testA values (1)\n"+
+                "---\n"+
+        "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                "- row_count: 8\n"+
+                "- output: [[1,5,7,8,9,1,2,6]]\n");
+    }
+    
+    @Test
+    public void testRowCount() throws Exception {
+        testYamlFail("---\n" +
+                "- CreateTable: testA (c1 int)\n"+
+                "---\n"+
+                "- Statement: INSERT INTO testA values (1)\n"+
+                "---\n"+
+                "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                "- row_count: 8\n");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: testA (c1 int)\n"+
+                "---\n"+
+                "- Statement: INSERT INTO testA values (1)\n"+
+                "---\n"+
+        "- Statement: SELECT 1,5,7,8,9,1,2,6 FROM testA\n"+
+                "- output: [[1,5,7,8,9,1,2,6]]\n" +
+                "- row_count: 8\n");
+    }
+    
+    @Test
+    public void testOutput() throws Exception {
+        testYaml("---\n" +
+            "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+            "---\n" +
+            "- Statement: SELECT * from test2 order by c1\n" +
+            "- output: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output: [[-4, 'abc', 'fake'],[1, 'A'],[234,'Z']]");
+
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output: [[-4],[1, 'A'],[234,'Z']]");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output: [[-4, 'abc'],[1, 'A'],[234,'Z'],[999,'abba']]");
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output: [[-4, 'abc'],[1, 'A']]");
+    }
+    
+    @Test
+    public void testOrderedOutput() throws Exception {
+        testYaml("---\n" +
+            "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+            "---\n" +
+            "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+            "---\n" +
+            "- Statement: SELECT * from test2 order by c1\n" +
+            "- output_ordered: [[-4, 'abc'],[1, 'A'],[234,'Z']]");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output_ordered: [[-4, 'abc', 'fake'],[1, 'A'],[234,'Z']]");
+
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output_ordered: [[-4],[1, 'A'],[234,'Z']]");
+        
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output_ordered: [[-4, 'abc'],[1, 'A'],[234,'Z'],[999,'abba']]");
+        testYamlFail("---\n" +
+                "- CreateTable: test2 (c1 int, c2 varchar(25))\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (1, 'A')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (-4, 'abc')\n" +
+                "---\n" +
+                "- Statement: INSERT INTO test2 values (234, 'Z')\n" +
+                "---\n" +
+                "- Statement: SELECT * from test2 order by c1\n" +
+                "- output_ordered: [[-4, 'abc'],[1, 'A']]");
+    }
+    
+    
+    @Test
+    public void testJMXOutputWrongSize() throws Exception {
+        testYamlFail ("---\n" +
+                "- JMX: com.akiban:type=PostgresServer\n" + 
+                "- get: StatementCacheCapacity\n" + 
+                "- output: [['100', '200']]");
+        testYamlFail ("---\n" +
+                "- JMX: com.akiban:type=PostgresServer\n" + 
+                "- get: StatementCacheCapacity\n" + 
+                "- output: [['100'], ['200']]");
+    }
+    
+    @Test
+    public void testJMXSplitWrongSize() throws Exception {
+        testYamlFail ("---\n" +
+                "- JMX: com.akiban:type=PostgresServer\n" + 
+                "- get: StatementCacheCapacity\n" + 
+                "- split_result: [['100', '200']]");
+    }
+    
+    @Test
+    public void testJMXoutputAndSplit() throws Exception {
+        testYamlFail ("---\n" +
+                "- JMX: com.akiban:type=PostgresServer\n" + 
+                "- get: StatementCacheCapacity\n" + 
+                "- split_result: ['100']]\n" + 
+                "- output: [['100']]");
+        testYamlFail ("---\n" +
+                "- JMX: com.akiban:type=PostgresServer\n" + 
+                "- get: StatementCacheCapacity\n" + 
+                "- output: [['100']]\n" +
+                "- split_result: ['100']]"); 
+        
+    }
+    
+    @Test 
+    public void testJMXOutput() throws Exception {
+        testYaml ("---\n" +
+        "- JMX: com.akiban:type=PostgresServer\n" + 
+        "- get: StatementCacheCapacity\n" + 
+        "- output: [['0']]");
+    }
+    
+    @Test 
+    public void testJMXSplit() throws Exception {
+        testYaml("---\n" +
+        "- JMX: com.akiban:type=PostgresServer\n" + 
+        "- get: StatementCacheCapacity\n" + 
+        "- split_result: [['0']]");
+    }
+    
     /* Other methods */
 
     private void testYaml(String yaml) throws Exception {
