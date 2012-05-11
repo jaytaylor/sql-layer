@@ -130,7 +130,7 @@ public final class SingleIndexScan extends IndexScan {
                 List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
                 operands.add(lowComparand);
                 operands.add(comparand);
-                lowComparand = new FunctionExpression("max",
+                lowComparand = new FunctionExpression("_max",
                         operands,
                         lowComparand.getSQLtype(),
                         null);
@@ -150,7 +150,7 @@ public final class SingleIndexScan extends IndexScan {
                 List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
                 operands.add(highComparand);
                 operands.add(comparand);
-                highComparand = new FunctionExpression("min",
+                highComparand = new FunctionExpression("_min",
                         operands,
                         highComparand.getSQLtype(),
                         null);
