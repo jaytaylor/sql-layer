@@ -1,15 +1,13 @@
 SelectQuery@33847a42
   ResultSet@3e769d7a[cid, name]
     MapJoin@654e3615()
-      Flatten@71c0d0a8(customers)
-        GroupScan@29c2fff0(Group(customers -> test._akiban_customers))
-          TableSource@299e421e(customers - TableGroup@4130fafb(customers))
+      SingleIndexScan@65d717c(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
       Project@5d5cd49f[customers.cid, customers.name]
         Select@798b429b[]
           Limit@76ad962c(LIMIT 1)
             Select@7e5e5f92[]
-              Flatten@65d4ab0e(orders)
-                Select@6d2a585c[orders.order_date > 2011-03-02]
-                  BranchLookup@770f3801(customers -> customers)
-                    IndexScan@82606b8(Index(test.customers.name[IndexColumn(name)]), NONE, =customers.name)
-                    TableSource@4183aedf(orders - TableGroupJoin@78831e35(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              Flatten@28bcd765(c2)
+                Select@51e7b969[customers.name == c2.name]
+                  AncestorLookup@443dc681(orders -> [customers])
+                    SingleIndexScan@33b36227(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >2011-03-02, rows = 853, cost = 6585.09)
+                    TableSource@66208c2a(c2 - TableGroup@45f108f5(customers))
