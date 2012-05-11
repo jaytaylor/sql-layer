@@ -45,7 +45,7 @@ class TableIndexesMatchGroupIndexes implements AISValidation {
         for (UserTable table : ais.getUserTables().values()) {
             if (table.getGroup() == null) { continue; }
             for (TableIndex index : table.getIndexesIncludingInternal()) {
-                if (table.getGroup().getGroupTable().getIndex(names.generateGroupIndexName(index)) == null) {
+                if (table.getGroup().getGroupTable().getIndex(names.generateGroupTableIndexName(index)) == null) {
                     output.reportFailure(new AISValidationFailure (
                             new GroupMissingIndexException (table.getGroup().getGroupTable().getName(), index.getIndexName().getName())));
                 }
