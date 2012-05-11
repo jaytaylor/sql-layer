@@ -1,0 +1,21 @@
+## Test the POW (POWER) function
+---
+- Inclulde: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(bigint_field, double_field) VALUES (16, 0.5);
+---
+- Statement: SELECT pow(2,3);
+- output: [['8']]
+---
+- Statement: SELECT POW(0, 10000000000000000000);
+- output: [['0']]
+---
+- Statment: SELECT power(11111111111111111111111111111111, 0);
+- output: [['1']]
+---
+- Statement: SELECT POWER ('1', 0);
+- output: [['1']]
+---
+- Statement: SELECT pow (bigint_fied, double_field) from all_types;
+- output: [['3']]
+...
