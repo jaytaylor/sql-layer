@@ -36,7 +36,7 @@ import com.akiban.ais.model.AISBuilder.ColumnName;
 import com.akiban.util.Strings;
 
 public class DefaultNameGenerator implements NameGenerator {
-    public static String TREE_NAME_SEPARATOR = ".";
+    public static final String TREE_NAME_SEPARATOR = ".";
 
     /**
      * For truncated columns [only], we record a mapping of the original
