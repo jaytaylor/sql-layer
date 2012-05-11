@@ -141,15 +141,22 @@ import com.persistit.exception.PersistitException;
  * </p>
  */
 public class PersistitStoreSchemaManager implements Service<SchemaManager>, SchemaManager {
+    public static enum SerializationType {
+        NONE,
+        META_MODEL,
+        PROTOBUF,
+        UNKNOWN
+    }
+
+    public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
+    public static final SerializationType DEFAULT_SERIALIZATION = SerializationType.PROTOBUF;
+
     private static final String METAMODEL_PARENT_KEY = "byAIS";
     private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
     private static final int PROTOBUF_PSSM_VERSION = 1;
 
+    private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
     private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
-
-    private final static String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
-
-    public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
 
     private final AisHolder aish;
     private final SessionService sessionService;
@@ -158,7 +165,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private final ConfigurationService config;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
-    private boolean useMetaModelSerialization;
+    private SerializationType serializationType = SerializationType.NONE;
 
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
@@ -601,6 +608,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         this.aish.setAis(null);
         this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
+        this.serializationType = SerializationType.NONE;
     }
 
     @Override
@@ -713,30 +721,26 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             treeService.visitStorage(session, new TreeVisitor() {
                 @Override
                 public void visit(Exchange ex) throws PersistitException{
-                    // Simple heuristic to determine which style AIS storage we have
+
                     // TODO: This is where the "automatic upgrade" would go
 
-                    boolean hasMetaModel = ex.clear().append(METAMODEL_PARENT_KEY).isValueDefined();
-                    boolean hasProtobuf = ex.clear().append(PROTOBUF_PARENT_KEY).hasChildren();
-
-                    if(hasMetaModel && hasProtobuf) {
-                        throw new IllegalStateException("Both AIS and Protobuf serializations");
-                    }
-
-                    if(hasMetaModel) {
-                        useMetaModelSerialization = true;
-                        loadMetaModel(ex, newAIS);
-                    } else if(hasProtobuf) {
-                        if(useMetaModelSerialization) {
-                            throw new IllegalStateException("Mixed AIS and Protobuf serializations: " + ex);
-                        }
-                        loadProtobuf(ex, newAIS);
-                    } else {
-                        ex.clear().append(Key.BEFORE);
-                        if(ex.next(true)) {
+                    SerializationType typeForVolume = detectSerializationType(ex);
+                    switch(typeForVolume) {
+                        case NONE:
+                            // Empty tree, nothing to do
+                        break;
+                        case META_MODEL:
+                            checkAndSetSerialization(typeForVolume);
+                            loadMetaModel(ex, newAIS);
+                        break;
+                        case PROTOBUF:
+                            checkAndSetSerialization(typeForVolume);
+                            loadProtobuf(ex, newAIS);
+                        break;
+                        case UNKNOWN:
                             throw new IllegalStateException("Unknown AIS serialization: " + ex);
-                        }
-                        // else: nothing in SCHEMA_TREE_NAME
+                        default:
+                            throw new IllegalStateException("Unhandled serialization type: " + typeForVolume);
                     }
                 }
             }, SCHEMA_TREE_NAME);
@@ -801,7 +805,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     /**
      * Serialize the given AIS into a ByteBuffer, either appropriate format according to the
-     * {@link #useMetaModelSerialization} variable. An exception will be thrown in the required
+     * {@link #serializationType} variable. An exception will be thrown in the required
      * size exceeds the {@link #maxAISBufferSize} setting.
      *
      * @param newAIS The AIS to serialize.
@@ -811,10 +815,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
         GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
         try {
-            if(useMetaModelSerialization) {
-                saveMetaModel(ex, byteBuffer, newAIS, getVolumeForSchemaTree(schemaName));
-            } else {
-                saveProtobuf(ex, byteBuffer, newAIS, schemaName);
+            if(serializationType == SerializationType.NONE) {
+                serializationType = DEFAULT_SERIALIZATION;
+            }
+            switch(serializationType) {
+                case META_MODEL:
+                    saveMetaModel(ex, byteBuffer, newAIS, getVolumeForSchemaTree(schemaName));
+                break;
+                case PROTOBUF:
+                    saveProtobuf(ex, byteBuffer, newAIS, schemaName);
+                break;
+                default:
+                    throw new IllegalStateException("Unsupported serialization: " + serializationType);
             }
         }
         catch(BufferOverflowException e) {
@@ -896,6 +908,75 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 treeService.releaseExchange(session, schemaEx);
             }
         }
+    }
+
+    public static SerializationType detectSerializationType(Exchange ex) {
+        try {
+            SerializationType type = SerializationType.NONE;
+
+            // Simple heuristic to determine which style AIS storage we have
+            boolean hasMetaModel = ex.clear().append(METAMODEL_PARENT_KEY).isValueDefined();
+            boolean hasProtobuf = ex.clear().append(PROTOBUF_PARENT_KEY).hasChildren();
+
+            if(hasMetaModel && hasProtobuf) {
+                throw new IllegalStateException("Both AIS and Protobuf serializations");
+            }
+            else if(hasMetaModel) {
+                type = SerializationType.META_MODEL;
+            }
+            else if(hasProtobuf) {
+                type = SerializationType.PROTOBUF;
+            }
+            else {
+                ex.clear().append(Key.BEFORE);
+                if(ex.next(true)) {
+                    type = SerializationType.UNKNOWN;
+                }
+            }
+
+            return type;
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
+    }
+
+    private void checkAndSetSerialization(SerializationType newSerializationType) {
+        if((serializationType != SerializationType.NONE) && (serializationType != newSerializationType)) {
+            throw new IllegalStateException("Mixed serialization types: " + serializationType + " vs " + newSerializationType);
+        }
+        serializationType = newSerializationType;
+    }
+
+    /**
+     * @return All serialization types from all volumes
+     */
+    public List<SerializationType> getAllSerializationTypes(Session session) {
+        final List<SerializationType> allTypes = new ArrayList<SerializationType>();
+        try {
+            treeService.visitStorage(session, new TreeVisitor() {
+                @Override
+                public void visit(Exchange exchange) throws PersistitException {
+                    allTypes.add(detectSerializationType(exchange));
+                }
+            }, SCHEMA_TREE_NAME);
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
+        return allTypes;
+    }
+
+    /**
+     * @return Current serialization type
+     */
+    public SerializationType getSerializationType() {
+        return serializationType;
+    }
+
+    /**
+     * @param serializationType Serialization type to use
+     */
+    public void setSerializationType(SerializationType serializationType) {
+        this.serializationType = serializationType;
     }
 
     /**
