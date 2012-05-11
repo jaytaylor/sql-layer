@@ -1,5 +1,5 @@
 CREATE TABLE parent(id INT NOT NULL, PRIMARY KEY(id), name VARCHAR(256) NOT NULL, UNIQUE(name), state CHAR(2));
-CREATE TABLE child(id INT NOT NULL, PRIMARY KEY(id), pid INT, GROUPING FOREIGN KEY(pid) REFERENCES parent(id), name VARCHAR(256) NOT NULL);
+CREATE TABLE child(id INT NOT NULL, PRIMARY KEY(id), pid INT, GROUPING FOREIGN KEY (pid) REFERENCES parent(id), name VARCHAR(256) NOT NULL);
 
 CREATE TABLE customers
 (
@@ -41,25 +41,3 @@ CREATE TABLE items
   GROUPING FOREIGN KEY (oid) REFERENCES orders(oid)
 );
 CREATE INDEX sku ON items(sku);
-
-CREATE TABLE blogs
-(
-  bid1 int NOT NULL,
-  bid2 int NOT NULL,
-  PRIMARY KEY(bid1, bid2),
-  title varchar(56),
-  bcol1 int,
-  bcol2 int
-);
-
-CREATE TABLE comments
-(
-  cid int NOT NULL,
-  PRIMARY KEY(cid),
-  bfk1 int NOT NULL,
-  bfk2 int NOT NULL,
-  content varchar(56),
-  ccol1 int,
-  ccol2 int,
-  GROUPING FOREIGN KEY (bfk1, bfk2) REFERENCES blogs(bid1, bid2)
-);

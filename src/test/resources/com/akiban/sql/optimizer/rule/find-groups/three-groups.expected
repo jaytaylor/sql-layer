@@ -1,14 +1,13 @@
-SelectQuery@14d5bc9
-  ResultSet@1c4f0f8[order_date, name]
-    Project@a83a13[orders.order_date, child.name]
-      Select@7cd37a[child.name == parent.name, parent.name == customers.name]
-        JoinNode@1202d69(INNER)
-          TableJoins@1855562(TableGroup@a89ce3(customers))
-            JoinNode@1d439fe(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@2b7db1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-              TableSource@7a4489(customers - TableGroup@a89ce3(customers))
-              TableSource@129b0e1(orders - TableGroupJoin@2b7db1(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-          JoinNode@148f8c8(INNER)
-            TableJoins@1c5466b(TableGroup@922804(parent))
-              TableSource@1ba94d(parent - TableGroup@922804(parent))
-            TableJoins@1815338(TableGroup@17e845a(parent))
-              TableSource@82751(child - TableGroup@17e845a(parent))
+SelectQuery@48e2fa0e
+  ResultSet@2d8ed284[order_date, name]
+    Project@7b9eef79[orders.order_date, child.name]
+      Select@7f7c3056[child.name == parent.name, parent.name == customers.name]
+        JoinNode@32499f7d(INNER)
+          TableGroupJoinTree@7f85e155(TableGroup@769fe666(customers), customers INNER orders)
+            TableSource@24226649(customers - TableGroup@769fe666(customers))
+              TableSource@4e695527(orders - TableGroupJoin@2e8cd4db(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+          JoinNode@1fea8dbd(INNER)
+            TableGroupJoinTree@5fff83a9(TableGroup@7bcf6f61(parent), parent)
+              TableSource@65559ba8(parent - TableGroup@7bcf6f61(parent))
+            TableGroupJoinTree@1cfd7c(TableGroup@6f9988c7(parent), child)
+              TableSource@575e6691(child - TableGroup@6f9988c7(parent))

@@ -1,15 +1,15 @@
-SelectQuery@6770526a
-  ResultSet@7f32e233[cid, name, cid, name, id, pid, name, id, name, state]
-    Project@65a0c382[c1.cid, c1.name, c2.cid, c2.name, child.id, child.pid, child.name, parent.id, parent.name, parent.state]
-      Select@1d83bfee[]
-        JoinNode@34adb165(LEFT[parent.name == c1.name])
-          JoinNode@775978e7(INNER[child.name == c2.name])
-            JoinNode@1310c2e8(INNER[c2.name == c1.name, c2.cid != c1.cid])
-              TableJoins@316c171f(TableGroup@2f620d92(customers))
-                TableSource@2c10d16b(c1 - TableGroup@2f620d92(customers))
-              TableJoins@4e69048b(TableGroup@50a969e4(customers))
-                TableSource@424de67(c2 - TableGroup@50a969e4(customers))
-            TableJoins@2267211b(TableGroup@20ae8542(parent))
-              TableSource@10853e51(child - TableGroup@20ae8542(parent))
-          TableJoins@21aec0d1(TableGroup@57f4ea9d(parent))
-            TableSource@1bbe4050(parent - TableGroup@57f4ea9d(parent))
+SelectQuery@2be26d42
+  ResultSet@1e731e90[cid, name, cid, name, id, pid, name, id, name, state]
+    Project@17db8f8e[c1.cid, c1.name, c2.cid, c2.name, child.id, child.pid, child.name, parent.id, parent.name, parent.state]
+      Select@4fadbfde[]
+        JoinNode@180fb0b0(LEFT[parent.name == c1.name])
+          JoinNode@2e18ff27(INNER[child.name == c2.name])
+            JoinNode@6b177115(INNER[c2.name == c1.name, c2.cid != c1.cid])
+              TableGroupJoinTree@500150a0(TableGroup@6546169(customers), c1)
+                TableSource@4fff395a(c1 - TableGroup@6546169(customers))
+              TableGroupJoinTree@dc737be(TableGroup@121ca203(customers), c2)
+                TableSource@7d0e6cbd(c2 - TableGroup@121ca203(customers))
+            TableGroupJoinTree@15d07c3f(TableGroup@2a8d1749(parent), child)
+              TableSource@3e052c6f(child - TableGroup@2a8d1749(parent))
+          TableGroupJoinTree@14f3cf72(TableGroup@12b8501d(parent), parent)
+            TableSource@45a84b38(parent - TableGroup@12b8501d(parent))

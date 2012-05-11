@@ -1,0 +1,5 @@
+SelectQuery@df8b14
+  ResultSet@7db06a21[name]
+    Project@4907dcfe[customers.name]
+      Select@1e8fa70[]
+        IndexScan@15c929a(Index(test.customers.name[IndexColumn(name)]), covering/SORTED)

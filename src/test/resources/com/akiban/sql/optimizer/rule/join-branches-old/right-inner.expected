@@ -1,0 +1,11 @@
+SelectQuery@7ce1eae7
+  ResultSet@540523be[name, order_date, sku, quan]
+    Project@1d6dba0a[customers.name, orders.order_date, items.sku, items.quan]
+      Select@ed0f59e[]
+        Flatten@69555185(customers RIGHT orders INNER items)
+          AncestorLookup@605b28c9(orders -> [customers])
+            BranchLookup@d2d58b(orders -> orders)
+              IndexScan@11c19919(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >Cast(2011-01-01 AS DATE NOT NULL))
+              TableSource@46798249(orders - TableGroupJoin@488d12e4(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@4d898115(items - TableGroupJoin@3d2a416a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            TableSource@7e79b177(customers - TableGroup@212cb585(customers))

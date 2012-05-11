@@ -1,8 +1,8 @@
-SelectQuery@6b98e8b4
-  ResultSet@4054824[cid, name]
-    Project@76c3358b[customers.cid, customers.name]
-      Select@444b0bbb[]
-        Flatten@3b8e80a6(customers)
-          AncestorLookup@1aef4504(customers -> [customers])
-            IndexScan@529c176c(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith)
-            TableSource@56b61c3(customers - TableGroup@1de4eb5b(customers))
+SelectQuery@3c9353
+  ResultSet@ec574c[iid, oid, sku, quan]
+    Project@575bc6[items.iid, items.oid, items.sku, items.quan]
+      Select@14a36cd[]
+        Flatten@1b57da2(items)
+          AncestorLookup@4b530d(items -> [items])
+            IndexScan@139aad8(Index(test.items.sku[IndexColumn(sku)]), NONE, =1234, rows = 97, cost = 734.773)
+            TableSource@1d3e40f(items - TableGroup@ff5cf9(customers))

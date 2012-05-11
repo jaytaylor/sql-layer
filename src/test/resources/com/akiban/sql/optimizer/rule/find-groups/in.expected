@@ -1,10 +1,10 @@
-SelectQuery@7f81497d
-  ResultSet@659adc2c[cid, name]
-    Project@19ed00d1[customers.cid, customers.name]
-      Select@22a010ba[ANY(Subquery@3aaa3518)]
-        TableJoins@21144823(TableGroup@7f81497d(customers))
-          TableSource@7c83d8be(customers - TableGroup@7f81497d(customers))
+SelectQuery@2d4c8822
+  ResultSet@7b7d8769[cid, name]
+    Project@6e453dd5[customers.cid, customers.name]
+      Select@3dea382[ANY(Subquery@dc0adca)]
+        TableGroupJoinTree@64d1afd3(TableGroup@26e795b(customers), customers)
+          TableSource@4c84f665(customers - TableGroup@26e795b(customers))
 
-Subquery@3aaa3518
-  Project@7481933a[customers.name == VALUES[0]]
-    ExpressionsSource@340ae1cf([[Smith], [Jones], [Sanchez]])
+Subquery@dc0adca
+  Project@22e1469c[customers.name == VALUES[0]]
+    ExpressionsSource@73e2bda7([[Smith], [Jones], [Sanchez]])

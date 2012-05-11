@@ -1,11 +1,8 @@
-SelectQuery@7a49182
-  ResultSet@454cf1b9[id, name, state, id, pid, name, id, pid, name]
-    Project@3e91cc3a[p.id, p.name, p.state, c1.id, c1.pid, c1.name, c2.id, c2.pid, c2.name]
-      Select@55f713ed[c2.pid == p.id]
-        JoinNode@503d58b2(INNER)
-          TableJoins@6b8a3745(TableGroup@62e01873(parent))
-            JoinNode@3f32ca2b(INNER/GROUP[c1.pid == p.id] - TableGroupJoin@1f76ed77(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
-              TableSource@1775831e(p - TableGroup@62e01873(parent))
-              TableSource@23f3329a(c1 - TableGroupJoin@1f76ed77(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
-          TableJoins@38e02fc4(TableGroup@666558bb(parent))
-            TableSource@337f2ee6(c2 - TableGroup@666558bb(parent))
+SelectQuery@615724a0
+  ResultSet@2025b64d[id, name, state, id, pid, name, id, pid, name]
+    Project@be389b8[p.id, p.name, p.state, c1.id, c1.pid, c1.name, c2.id, c2.pid, c2.name]
+      Select@7669521[]
+        TableGroupJoinTree@5fc8ad52(TableGroup@5dee69d3(parent), p INNER c1 INNER c2)
+          TableSource@37f808e6(p - TableGroup@5dee69d3(parent))
+            TableSource@7d1050be(c1 - TableGroupJoin@6feb139e(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+            TableSource@3a252a17(c2 - TableGroupJoin@32552379(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
