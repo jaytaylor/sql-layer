@@ -26,10 +26,7 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexRowComposition;
+import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
@@ -90,11 +87,11 @@ public class GroupIndexRowIT extends OperatorITBase
         // Index row: e.uid, m.lastLogin, e.eugid, m.profileID
         // HKey for eug table: [U, e.uid, M, E, e.eugid]
         GroupIndex gi = (GroupIndex) groupIndexRowType.index();
-        IndexRowComposition rowComposition = gi.indexRowComposition();
-        assertEquals(4, rowComposition.getFieldPosition(0));
-        assertEquals(2, rowComposition.getFieldPosition(1));
-        assertEquals(3, rowComposition.getFieldPosition(2));
-        assertEquals(1, rowComposition.getFieldPosition(3));
+        GroupIndexRowComposition rowComposition = gi.groupIndexRowComposition();
+        assertEquals(4, rowComposition.positionInFlattenedRow(0));
+        assertEquals(2, rowComposition.positionInFlattenedRow(1));
+        assertEquals(3, rowComposition.positionInFlattenedRow(2));
+        assertEquals(1, rowComposition.positionInFlattenedRow(3));
     }
 
     @Test

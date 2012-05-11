@@ -26,10 +26,7 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.IndexRowComposition;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.PersistitKeyValueTarget;
@@ -41,7 +38,10 @@ import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Value;
 import com.persistit.exception.PersistitException;
+
+import java.util.BitSet;
 
 class OperatorStoreGIHandler {
 
@@ -56,26 +56,7 @@ class OperatorStoreGIHandler {
 
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
-            Key key = exchange.getKey();
-            key.clear();
-            target.attach(key);
-            IndexRowComposition irc = groupIndex.indexRowComposition();
-
-            for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
-                assert irc.isInRowData(i);
-                assert ! irc.isInHKey(i);
-
-                final int flattenedIndex = irc.getFieldPosition(i);
-                Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
-
-                ValueSource source = row.eval(flattenedIndex);
-                Converters.convert(source, target.expectingType(column));
-            }
-            // The group index row's value contains a bitmap indicating which of the tables covered by the index
-            // have rows contributing to this index row. The leafmost table of the index is represented by bit position 0.
-            exchange.getValue().clear();
-            exchange.getValue().put(tableBitmap(groupIndex, row));
-
+            prepareIndexRow(groupIndex, row, exchange);
             switch (action) {
             case STORE:
                 storeExchange(groupIndex, exchange);
@@ -137,19 +118,76 @@ class OperatorStoreGIHandler {
         }
     }
 
-    private static long tableBitmap(GroupIndex groupIndex, Row row) {
-        long result = 0;
-         int indexFromEnd = 0;
-         for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
-                !(table == null || table.equals(END));
-                table = table.parentTable()
-        ){
-            if (row.containsRealRowOf(table)) {
-                result |= 1 << table.getDepth();
+    private void prepareIndexRow(GroupIndex groupIndex, Row row, Exchange exchange)
+    {
+        Key key = exchange.getKey();
+        Value value = exchange.getValue();
+        key.clear();
+        value.clear();
+        // Ancestor bitmap
+        long ancestorBitmap = ancestorBitmap(groupIndex, row);
+        value.put(ancestorBitmap);
+        // Declared columns, leafward hkey columns, rootward hkey columns
+        int groupIndexColumns = groupIndex.getAllColumns().size();
+        target.attach(key);
+        GroupIndexRowComposition irc = groupIndex.groupIndexRowComposition();
+        int fields = irc.size();
+        // copiedFromSource[f] will be set to true for columns written from source, (i.e., target not set to null).
+        BitSet copiedFromSource = new BitSet(fields);
+        for (int f = 0; f < fields; f++) {
+            int flattenedIndex = irc.positionInFlattenedRow(f);
+            Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+            target.expectingType(column);
+            // Write a null if the column comes from a missing row
+            if ((ancestorBitmap & (1 << column.getUserTable().getDepth())) == 0) {
+                // No source row, so write a null
+                target.putNull();
+            } else {
+                // We have a source row
+                boolean needToCopySource;
+                if (f <= groupIndexColumns) {
+                    // declared column or leafward hkey column
+                    needToCopySource = true;
+                } else {
+                    // We're working on a rootward hkey column. We can avoid actually storing the value if some
+                    // hkey-equivalent column already has written a non-null value. (If the row is present, as
+                    // indicated by the ancestor bitmap, then a reader knows to consult that equivalent column.
+                    // If the row is missing, we've already written a null and the reader will see that null.)
+                    int[] equivalentHKeyColumnPositions = irc.equivalentHKeyIndexPositions(f);
+                    assert equivalentHKeyColumnPositions != null;
+                    needToCopySource = true;
+                    for (int equivalentHKeyColumnPosition : equivalentHKeyColumnPositions) {
+                        if (copiedFromSource.get(equivalentHKeyColumnPosition)) {
+                            needToCopySource = false;
+                        }
+                    }
+                    if (!needToCopySource) {
+                        target.putNull();
+                    }
+                }
+                if (needToCopySource) {
+                    ValueSource source = row.eval(flattenedIndex);
+                    Converters.convert(source, target);
+                    copiedFromSource.set(f, true);
+                }
             }
-            ++indexFromEnd;
         }
-        return result;
+    }
+
+    // Return a bitmap indicating what ancestors of the indexed row are present. Bit i represents the table whose
+    // depth is i. 1 means the row is present, 0 means the row is missing.
+    private static long ancestorBitmap(GroupIndex groupIndex, Row row)
+    {
+        long bitmap = 0;
+        UserTable table = groupIndex.leafMostTable();
+        int indexRootDepth = groupIndex.rootMostTable().getDepth();
+        while (table != null && table.getDepth() >= indexRootDepth) {
+            if (row.containsRealRowOf(table)) {
+                bitmap |= 1 << table.getDepth();
+            }
+            table = table.parentTable();
+        }
+        return bitmap;
     }
 
     private static GroupIndexPosition positionWithinBranch(GroupIndex groupIndex, UserTable table) {

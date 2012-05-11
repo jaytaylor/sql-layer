@@ -43,7 +43,7 @@ import java.util.Arrays;
 import static com.akiban.qp.operator.API.ancestorLookup_Default;
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.*;
 
 // Inspired by bug 987942
 
@@ -53,7 +53,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     public void before()
     {
         createSchema();
-        loadDatabase();
+        // loadDatabase();
     }
 
     private void createSchema()
@@ -191,62 +191,91 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         //     declared: I.ix  H.hx
         //     leafward hkey: H.cid
         //     rootward hkey: I.cid
-        irc = ihLeftIndexRowType.index().indexRowComposition();
-        assertEquals(4, irc.getLength());
-        assertEquals(5, irc.getFieldPosition(0));
-        assertEquals(7, irc.getFieldPosition(1));
-        assertEquals(6, irc.getFieldPosition(2));
-        assertEquals(4, irc.getFieldPosition(3));
-        irc = ihRightIndexRowType.index().indexRowComposition();
-        assertEquals(4, irc.getLength());
-        assertEquals(5, irc.getFieldPosition(0));
-        assertEquals(7, irc.getFieldPosition(1));
-        assertEquals(6, irc.getFieldPosition(2));
-        assertEquals(4, irc.getFieldPosition(3));
+        GroupIndexRowComposition girc;
+        girc = ((GroupIndex)ihLeftIndexRowType.index()).groupIndexRowComposition();
+        assertEquals(4, girc.size());
+        assertEquals(5, girc.positionInFlattenedRow(0));
+        assertEquals(7, girc.positionInFlattenedRow(1));
+        assertEquals(6, girc.positionInFlattenedRow(2));
+        assertEquals(4, girc.positionInFlattenedRow(3));
+        assertNull(girc.equivalentHKeyIndexPositions(0));
+        assertNull(girc.equivalentHKeyIndexPositions(1));
+        assertNull(girc.equivalentHKeyIndexPositions(2));
+        assertArrayEquals(intArray(2), girc.equivalentHKeyIndexPositions(3));
+        girc = ((GroupIndex)ihRightIndexRowType.index()).groupIndexRowComposition();
+        assertEquals(4, girc.size());
+        assertEquals(5, girc.positionInFlattenedRow(0));
+        assertEquals(7, girc.positionInFlattenedRow(1));
+        assertEquals(6, girc.positionInFlattenedRow(2));
+        assertEquals(4, girc.positionInFlattenedRow(3));
+        assertNull(girc.equivalentHKeyIndexPositions(0));
+        assertNull(girc.equivalentHKeyIndexPositions(1));
+        assertNull(girc.equivalentHKeyIndexPositions(2));
+        assertArrayEquals(intArray(2), girc.equivalentHKeyIndexPositions(3));
         // (ox, ix, hx) index row:
         //     declared: O.ox  I.ix  H.hx
         //     leafward hkey: H.cid
         //     rootward hkey: O.cid  I.cid
-        irc = ohLeftIndexRowType.index().indexRowComposition();
-        assertEquals(6, irc.getLength());
-        assertEquals(3, irc.getFieldPosition(0));
-        assertEquals(5, irc.getFieldPosition(1));
-        assertEquals(7, irc.getFieldPosition(2));
-        assertEquals(6, irc.getFieldPosition(3));
-        assertEquals(2, irc.getFieldPosition(4));
-        assertEquals(4, irc.getFieldPosition(5));
-        irc = ohRightIndexRowType.index().indexRowComposition();
-        assertEquals(6, irc.getLength());
-        assertEquals(3, irc.getFieldPosition(0));
-        assertEquals(5, irc.getFieldPosition(1));
-        assertEquals(7, irc.getFieldPosition(2));
-        assertEquals(6, irc.getFieldPosition(3));
-        assertEquals(2, irc.getFieldPosition(4));
-        assertEquals(4, irc.getFieldPosition(5));
+        girc = ((GroupIndex)ohLeftIndexRowType.index()).groupIndexRowComposition();
+        assertEquals(6, girc.size());
+        assertEquals(3, girc.positionInFlattenedRow(0));
+        assertEquals(5, girc.positionInFlattenedRow(1));
+        assertEquals(7, girc.positionInFlattenedRow(2));
+        assertEquals(6, girc.positionInFlattenedRow(3));
+        assertEquals(2, girc.positionInFlattenedRow(4));
+        assertEquals(4, girc.positionInFlattenedRow(5));
+        assertNull(girc.equivalentHKeyIndexPositions(0));
+        assertNull(girc.equivalentHKeyIndexPositions(1));
+        assertNull(girc.equivalentHKeyIndexPositions(2));
+        assertNull(girc.equivalentHKeyIndexPositions(3));
+        assertArrayEquals(intArray(3), girc.equivalentHKeyIndexPositions(4));
+        assertArrayEquals(intArray(3, 4), girc.equivalentHKeyIndexPositions(5));
+        girc = ((GroupIndex)ohRightIndexRowType.index()).groupIndexRowComposition();
+        assertEquals(6, girc.size());
+        assertEquals(3, girc.positionInFlattenedRow(0));
+        assertEquals(5, girc.positionInFlattenedRow(1));
+        assertEquals(7, girc.positionInFlattenedRow(2));
+        assertEquals(6, girc.positionInFlattenedRow(3));
+        assertEquals(2, girc.positionInFlattenedRow(4));
+        assertEquals(4, girc.positionInFlattenedRow(5));
+        assertNull(girc.equivalentHKeyIndexPositions(0));
+        assertNull(girc.equivalentHKeyIndexPositions(1));
+        assertNull(girc.equivalentHKeyIndexPositions(2));
+        assertNull(girc.equivalentHKeyIndexPositions(3));
+        assertArrayEquals(intArray(3), girc.equivalentHKeyIndexPositions(4));
+        assertArrayEquals(intArray(3, 4), girc.equivalentHKeyIndexPositions(5));
         // (cx, ox, ix, hx) index row:
         //     declared: C.cx  O.ox  I.ix  H.hx
         //     leafward hkey: H.cid
         //     rootward hkey: C.cid  O.cid  I.cid
-        irc = chLeftIndexRowType.index().indexRowComposition();
-        assertEquals(8, irc.getLength());
-        assertEquals(1, irc.getFieldPosition(0));
-        assertEquals(3, irc.getFieldPosition(1));
-        assertEquals(5, irc.getFieldPosition(2));
-        assertEquals(7, irc.getFieldPosition(3));
-        assertEquals(6, irc.getFieldPosition(4));
-        assertEquals(0, irc.getFieldPosition(5));
-        assertEquals(2, irc.getFieldPosition(6));
-        assertEquals(4, irc.getFieldPosition(7));
-        irc = chRightIndexRowType.index().indexRowComposition();
-        assertEquals(8, irc.getLength());
-        assertEquals(1, irc.getFieldPosition(0));
-        assertEquals(3, irc.getFieldPosition(1));
-        assertEquals(5, irc.getFieldPosition(2));
-        assertEquals(7, irc.getFieldPosition(3));
-        assertEquals(6, irc.getFieldPosition(4));
-        assertEquals(0, irc.getFieldPosition(5));
-        assertEquals(2, irc.getFieldPosition(6));
-        assertEquals(4, irc.getFieldPosition(7));
+        girc = ((GroupIndex)chLeftIndexRowType.index()).groupIndexRowComposition();
+        assertEquals(8, girc.size());
+        assertEquals(1, girc.positionInFlattenedRow(0));
+        assertEquals(3, girc.positionInFlattenedRow(1));
+        assertEquals(5, girc.positionInFlattenedRow(2));
+        assertEquals(7, girc.positionInFlattenedRow(3));
+        assertEquals(6, girc.positionInFlattenedRow(4));
+        assertEquals(0, girc.positionInFlattenedRow(5));
+        assertEquals(2, girc.positionInFlattenedRow(6));
+        assertEquals(4, girc.positionInFlattenedRow(7));
+        assertNull(girc.equivalentHKeyIndexPositions(0));
+        assertNull(girc.equivalentHKeyIndexPositions(1));
+        assertNull(girc.equivalentHKeyIndexPositions(2));
+        assertNull(girc.equivalentHKeyIndexPositions(3));
+        assertNull(girc.equivalentHKeyIndexPositions(4));
+        assertArrayEquals(intArray(4), girc.equivalentHKeyIndexPositions(5));
+        assertArrayEquals(intArray(4, 5), girc.equivalentHKeyIndexPositions(6));
+        assertArrayEquals(intArray(4, 5, 6), girc.equivalentHKeyIndexPositions(7));
+        girc = ((GroupIndex)chRightIndexRowType.index()).groupIndexRowComposition();
+        assertEquals(8, girc.size());
+        assertEquals(1, girc.positionInFlattenedRow(0));
+        assertEquals(3, girc.positionInFlattenedRow(1));
+        assertEquals(5, girc.positionInFlattenedRow(2));
+        assertEquals(7, girc.positionInFlattenedRow(3));
+        assertEquals(6, girc.positionInFlattenedRow(4));
+        assertEquals(0, girc.positionInFlattenedRow(5));
+        assertEquals(2, girc.positionInFlattenedRow(6));
+        assertEquals(4, girc.positionInFlattenedRow(7));
     }
 
     @Test
@@ -651,6 +680,11 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(hRowType, 4L, 40009999L),
         };
         compareRows(expected, cursor(plan, queryContext));
+    }
+
+    private int[] intArray(int ... ints)
+    {
+        return ints;
     }
 
     private int c;
