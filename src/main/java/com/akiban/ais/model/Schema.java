@@ -24,10 +24,43 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.error;
+package com.akiban.ais.model;
 
-public class AISTooLargeException extends InvalidOperationException {
-    public AISTooLargeException(int maxSize) {
-        super(ErrorCode.AIS_TOO_LARGE, maxSize);
+import java.util.Map;
+import java.util.TreeMap;
+
+public class Schema {
+    public static Schema create(AkibanInformationSchema ais, String schemaName) {
+        ais.checkMutability();
+        Schema schema = new Schema(schemaName);
+        ais.addSchema(schema);
+        return schema;
     }
+
+    public String getName() {
+        return name;
+    }
+
+    public Map<String, UserTable> getUserTables() {
+        return userTables;
+    }
+
+    public UserTable getUserTable(String tableName) {
+        return userTables.get(tableName);
+    }
+
+    void addUserTable(UserTable userTable) {
+        userTables.put(userTable.getName().getTableName(), userTable);
+    }
+
+    void removeTable(String tableName) {
+        userTables.remove(tableName);
+    }
+
+    Schema(String name) {
+        this.name = name;
+    }
+
+    private final String name;
+    private final Map<String, UserTable> userTables = new TreeMap<String, UserTable>();
 }
