@@ -183,4 +183,4 @@
 - output_ordered: [['Smith',null],['Smith','1234'],['Smith','4567']]
 #- comment: ['select-9g: LEFT join covering group index']
 ---
-- Statement: SET cbo TO 'false'
+- Statement: SET cbo TO DEFAULT
