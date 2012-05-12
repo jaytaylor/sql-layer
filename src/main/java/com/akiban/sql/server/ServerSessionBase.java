@@ -63,6 +63,7 @@ public abstract class ServerSessionBase implements ServerSession
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
 
+    protected Long queryTimeoutSec = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
 
@@ -112,6 +113,10 @@ public abstract class ServerSessionBase implements ServerSession
             maxNotificationLevel = (value == null) ? 
                 QueryContext.NotificationLevel.INFO :
                 QueryContext.NotificationLevel.valueOf(value);
+            return true;
+        }
+        if ("queryTimeoutSec".equals(key)) {
+            queryTimeoutSec = Long.valueOf(value);
             return true;
         }
         return false;
@@ -239,6 +244,11 @@ public abstract class ServerSessionBase implements ServerSession
     @Override
     public Date currentTime() {
         return new Date();
+    }
+
+    @Override
+    public Long getQueryTimeoutSec() {
+        return queryTimeoutSec;
     }
 
     @Override
