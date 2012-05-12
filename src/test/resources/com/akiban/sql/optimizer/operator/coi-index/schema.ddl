@@ -29,3 +29,10 @@ CREATE TABLE items
 );
 CREATE INDEX sku ON items(sku);
 
+CREATE TABLE handling
+(
+  hid int NOT NULL, 
+  PRIMARY KEY(hid),
+  iid int NOT NULL,
+  GROUPING FOREIGN KEY (iid) REFERENCES items(iid)
+);
