@@ -116,7 +116,7 @@ public abstract class ServerSessionBase implements ServerSession
             return true;
         }
         if ("queryTimeoutSec".equals(key)) {
-            queryTimeoutSec = Long.valueOf(value);
+            queryTimeoutSec = (value == null) ? null : Long.valueOf(value);
             return true;
         }
         return false;
