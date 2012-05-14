@@ -619,7 +619,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TEXT:
             return new DataTypeDescriptor(TypeId.LONGVARCHAR_ID, isNullable);
         case VARBINARY:
-            return new DataTypeDescriptor(TypeId.LONGVARBIT_ID, isNullable);
+            return new DataTypeDescriptor(TypeId.VARBIT_ID, isNullable);
         case NULL:
             return null;
         case DATETIME:
