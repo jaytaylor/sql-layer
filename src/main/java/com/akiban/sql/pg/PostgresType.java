@@ -323,7 +323,7 @@ public class PostgresType extends ServerType
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
             oid = TypeOid.BIT_TYPE_OID.getOid();
-            akType = AkType.VARBINARY;
+            akType = AkType.INT;
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             oid = TypeOid.BOOL_TYPE_OID.getOid();
