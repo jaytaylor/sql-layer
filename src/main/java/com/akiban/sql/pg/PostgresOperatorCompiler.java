@@ -104,6 +104,7 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
             return type;
         }
 
+        @Override
         public String toString() {
             return super.toString() + ":" + type;
         }
