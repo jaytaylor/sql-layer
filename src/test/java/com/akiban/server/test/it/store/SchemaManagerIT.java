@@ -52,9 +52,11 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
+import com.google.inject.ProvisionException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -62,6 +64,8 @@ import org.junit.Test;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.config.Property;
+
+import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 
 public final class SchemaManagerIT extends ITBase {
     private final static String SCHEMA = "my_schema";
@@ -118,6 +122,11 @@ public final class SchemaManagerIT extends ITBase {
                 return statements;
             }
         });
+    }
+
+    private void safeRestart() throws Exception {
+        safeRestartTestServices();
+        schemaManager = serviceManager().getSchemaManager();
     }
     
     @Override
@@ -432,11 +441,10 @@ public final class SchemaManagerIT extends ITBase {
         assertEquals("group tables count before", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
 
-        safeRestartTestServices();
-
-        schemaManager = serviceManager().getSchemaManager();
+        safeRestart();
         ais = schemaManager.getAis(session());
         assertNotNull(ais);
+
         assertEquals("user tables count after", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
         assertEquals("group tables count after", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA, tableNames);
@@ -460,11 +468,10 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA+"2", "t2");
         assertTablesInSchema(SCHEMA+"3", "t3");
 
-        safeRestartTestServices();
-
-        schemaManager = serviceManager().getSchemaManager();
+        safeRestart();
         ais = schemaManager.getAis(session());
         assertNotNull("ais exists", ais);
+
         assertEquals("user tables count", TABLE_COUNT + UT_COUNT, ais.getUserTables().size());
         assertEquals("group tables count", TABLE_COUNT + GT_COUNT, ais.getGroupTables().size());
         assertTablesInSchema(SCHEMA+"1", "t1");
@@ -478,7 +485,9 @@ public final class SchemaManagerIT extends ITBase {
                 // These broke simple concat(s,'.',t) that was in RowDefCache
                 {new TableName("foo.bar", "baz"), new TableName("foo", "bar.baz")},
                 // These broke actual tree name generation
-                {new TableName("foo$$_akiban_bar", "baz"), new TableName("foo", "bar$$_akiban_baz")}
+                {new TableName("foo$$_akiban_bar", "baz"), new TableName("foo", "bar$$_akiban_baz")},
+                // New tree name separator
+                {new TableName("tes.", "tt1"), new TableName("tes", ".tt1")}
         };
 
         for(TableName pair[] : testNames) {
@@ -488,6 +497,33 @@ public final class SchemaManagerIT extends ITBase {
             String treeName2 = ddl().getAIS(session()).getUserTable(pair[1]).getTreeName();
             assertFalse("Non unique tree name: " + treeName1, treeName1.equals(treeName2));
         }
+    }
+
+    @Test
+    public void crossSchemaGroups() throws Exception {
+        final String SCHEMA1 = "schema1";
+        final String SCHEMA2 = "schema2";
+        final TableName PARENT1 = new TableName(SCHEMA1, "parent1");
+        final TableName CHILD1 = new TableName(SCHEMA2, "child1");
+        final TableName PARENT2 = new TableName(SCHEMA2, "parent2");
+        final TableName CHILD2 = new TableName(SCHEMA1, "child2");
+        final String T2_CHILD_DDL = T2_DDL + ", t1id int, grouping foreign key(t1id) references %s";
+
+        // parent in schema1, child in schema2
+        createTable(PARENT1.getSchemaName(), PARENT1.getTableName(), T1_DDL);
+        createTable(CHILD1.getSchemaName(), CHILD1.getTableName(), String.format(T2_CHILD_DDL, PARENT1));
+        // child in schema1, child in schema2
+        createTable(PARENT2.getSchemaName(), PARENT2.getTableName(), T1_DDL);
+        createTable(CHILD2.getSchemaName(), CHILD2.getTableName(), String.format(T2_CHILD_DDL, PARENT2));
+
+        safeRestart();
+
+        assertTablesInSchema(SCHEMA1, PARENT1.getTableName(), CHILD2.getTableName());
+        assertTablesInSchema(SCHEMA2, PARENT2.getTableName(), CHILD1.getTableName());
+        UserTable parent1 = ddl().getUserTable(session(), PARENT1);
+        assertEquals("parent1 and child1 group", parent1.getGroup(), ddl().getUserTable(session(), CHILD1).getGroup());
+        UserTable parent2 = ddl().getUserTable(session(), PARENT2);
+        assertEquals("parent2 and child2 group", parent2.getGroup(), ddl().getUserTable(session(), CHILD2).getGroup());
     }
 
     @Test
@@ -521,6 +557,76 @@ public final class SchemaManagerIT extends ITBase {
         assertNotNull("Entry table present", entryDef);
         assertEquals("Entry DDL", ENTRY_DDL, entryDef.getDDL());
     }
+
+    @Test
+    public void renameAndRecreate() throws Exception {
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        ddl().renameTable(session(), tableName(SCHEMA, T1_NAME), tableName("foo", "bar"));
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+
+        String originalTreeName = getUserTable(SCHEMA, T1_NAME).getTreeName();
+        String newTreeName = getUserTable("foo", "bar").getTreeName();
+        assertTrue("Unique tree names", !originalTreeName.equals(newTreeName));
+    }
+
+
+    /*
+     * Next three tests are confirming that the MetaModel and Protobuf
+     * serialization switch behaves as is claimed.
+     *
+     * TODO: These will need to change when the upgrade code goes in
+     */
+
+    private PersistitStoreSchemaManager castToPSSM() {
+        if(schemaManager instanceof PersistitStoreSchemaManager) {
+            return (PersistitStoreSchemaManager)schemaManager;
+        }
+        throw new IllegalStateException("Expected PersistitStoreSchemaManager!");
+    }
+
+    @Test
+    public void existingMetaModelReadAndSavedAsIs() throws Exception {
+        PersistitStoreSchemaManager pssm = castToPSSM();
+        pssm.setSerializationType(SerializationType.META_MODEL);
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        pssm.setSerializationType(PersistitStoreSchemaManager.DEFAULT_SERIALIZATION);
+
+        safeRestart();
+        pssm = castToPSSM();
+
+        assertEquals("Saw MetaModel on load", SerializationType.META_MODEL, pssm.getSerializationType());
+        createTable(SCHEMA, T2_NAME, T2_DDL);
+        assertEquals("Still MetaModel after save", "[META_MODEL]", pssm.getAllSerializationTypes(session()).toString());
+    }
+
+    @Test
+    public void newDataSetReadAndSavedAsProtobuf() throws Exception {
+        PersistitStoreSchemaManager pssm = castToPSSM();
+        assertEquals("No type on new volume", SerializationType.NONE, pssm.getSerializationType());
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        assertEquals("Saved as PROTOBUF", SerializationType.PROTOBUF, pssm.getSerializationType());
+
+        safeRestart();
+        pssm = castToPSSM();
+
+        assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
+    }
+
+    // Provision = error during startup of PSSM
+    @Test(expected=ProvisionException.class)
+    public void mixedMetaModelAndProtobufIsIllegal() throws Exception {
+        PersistitStoreSchemaManager pssm = castToPSSM();
+
+        // Create a bad volume on purpose to make sure we detect on load
+        pssm.setSerializationType(SerializationType.META_MODEL);
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+
+        pssm.setSerializationType(SerializationType.PROTOBUF);
+        createTable(SCHEMA, T2_NAME, T2_DDL);
+
+        safeRestart();
+    }
+
 
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also

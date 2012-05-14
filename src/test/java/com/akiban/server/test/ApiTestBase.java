@@ -252,7 +252,9 @@ public class ApiTestBase {
             }
         }
 
-        session.close();
+        if(session != null) {
+            session.close();
+        }
         sm.stopServices();
         sm = null;
         session = null;

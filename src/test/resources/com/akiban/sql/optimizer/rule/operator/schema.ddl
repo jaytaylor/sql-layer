@@ -19,6 +19,7 @@ CREATE TABLE addresses
   GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
 );
 CREATE INDEX state ON addresses(state);
+CREATE INDEX "__akiban_fk_2" ON addresses(cid);
 
 CREATE TABLE orders
 (
@@ -29,6 +30,7 @@ CREATE TABLE orders
   GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
 );
 CREATE INDEX order_date ON orders(order_date);
+CREATE INDEX "__akiban_fk_0" ON orders(cid);
 
 CREATE TABLE items
 (
@@ -41,6 +43,7 @@ CREATE TABLE items
   GROUPING FOREIGN KEY (oid) REFERENCES orders(oid)
 );
 CREATE INDEX sku ON items(sku);
+CREATE INDEX "__akiban_fk_1" ON items(oid);
 
 CREATE INDEX cname_and_sku ON customers(customers.name, items.sku) USING LEFT JOIN;
 CREATE INDEX sku_and_date ON customers(items.sku, orders.order_date) USING LEFT JOIN;

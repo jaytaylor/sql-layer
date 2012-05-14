@@ -10,7 +10,7 @@
 #- comment: ['select-0: single column of primary key match']
 ---
 - Statement: SELECT * FROM customers 
-- output: [['1','Smith'],['2','Jones']]
+- output_ordered: [['1','Smith'],['2','Jones']]
 #- comment: ['select-1: all fields of single table']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku = '1234' ORDER BY order_date 
@@ -82,7 +82,7 @@
 #- comment: ['select-1c: sorted covering index']
 --- 
 - Statement: SELECT cid AS id, name as "Customer Name" FROM customers 
-- output: [['1','Smith'],['2','Jones']]
+- output_ordered: [['1','Smith'],['2','Jones']]
 #- comment: ['select-1n: name column']
 --- 
 - Statement: SELECT customers.name,order_date,sku,quan FROM customers,orders,items WHERE customers.cid = orders.cid AND orders.oid = items.oid AND items.sku < '8888' 
@@ -103,7 +103,7 @@
 #- comment: ['select-22: EXISTS as expression (extra OR prevents unnesting)']
 ---
 - Statement: SELECT * FROM customers WHERE name IN (SELECT c2.name FROM customers c2, orders WHERE c2.cid = orders.cid AND order_date > '2011-01-01') 
-- output: [['1','Smith'],['2','Jones']]
+- output_ordered: [['1','Smith'],['2','Jones']]
 #- comment: ['select-23: IN / ANY as expression ']
 ---
 - Statement: SELECT customers.name,order_date,sku,quan FROM items INNER JOIN orders ON orders.oid = items.oid LEFT OUTER JOIN customers ON customers.cid = orders.cid WHERE order_date < '2011-03-01' 

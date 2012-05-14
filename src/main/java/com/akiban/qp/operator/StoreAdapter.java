@@ -65,7 +65,7 @@ public abstract class StoreAdapter
                                 API.SortOption sortOption,
                                 InOutTap loadTap);
 
-    public abstract void checkQueryCancelation(long queryStartMsec);
+    public abstract long getQueryTimeoutSec();
 
     public abstract long rowCount(RowType tableType);
 
