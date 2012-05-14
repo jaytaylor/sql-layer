@@ -4,11 +4,7 @@ SelectQuery@771c9fcc
       Select@4774e78a[]
         MapJoin@7ea33d00(SEMI)
           Select@adb24[items.sku != customers.name]
-            Flatten@2d15fd37(customers INNER orders INNER items)
-              GroupScan@48b91881(Group(customers -> test._akiban_customers))
-                TableSource@74b90ff7(customers - TableGroup@4848268a(customers))
-                TableSource@27aa7aac(orders - TableGroupJoin@6ff7e273(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-                TableSource@68c8a04(items - TableGroupJoin@7b342572(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))
+            SingleIndexScan@10dd4b9d(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/NONE, rows = 20000, cost = 32469.7)
           Select@4226c7da[]
             Flatten@efa0bf4(child)
               Select@1c869e8f[customers.name == child.name, child.pid == 1]

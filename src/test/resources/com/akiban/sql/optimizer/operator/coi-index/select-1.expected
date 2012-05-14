@@ -1,4 +1,4 @@
-PhysicalSelect[cid:int[INT], name:varchar(32)[VARCHAR]]
-  project([Field(0), Field(1)])
-    Filter_Default([test.customers])
+PhysicalSelect[iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
+  project([Field(0), Field(1), Field(2), Field(3)])
+    Filter_Default([test.items])
       GroupScan_Default(full scan on _akiban_customers)

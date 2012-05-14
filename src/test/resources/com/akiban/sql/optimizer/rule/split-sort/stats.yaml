@@ -1,0 +1,561 @@
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 1
+    eq: 1
+    key: [2]
+    lt: 1
+  - distinct: 2
+    eq: 1
+    key: [5]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [6]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [7]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [10]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [13]
+    lt: 2
+  - distinct: 6
+    eq: 1
+    key: [20]
+    lt: 6
+  - distinct: 0
+    eq: 1
+    key: [21]
+    lt: 0
+  - distinct: 5
+    eq: 1
+    key: [27]
+    lt: 5
+  - distinct: 5
+    eq: 1
+    key: [33]
+    lt: 5
+  - distinct: 2
+    eq: 1
+    key: [36]
+    lt: 2
+  - distinct: 1
+    eq: 1
+    key: [38]
+    lt: 1
+  - distinct: 2
+    eq: 1
+    key: [41]
+    lt: 2
+  - distinct: 5
+    eq: 1
+    key: [47]
+    lt: 5
+  - distinct: 0
+    eq: 1
+    key: [48]
+    lt: 0
+  - distinct: 12
+    eq: 1
+    key: [61]
+    lt: 12
+  - distinct: 1
+    eq: 1
+    key: [63]
+    lt: 1
+  - distinct: 3
+    eq: 1
+    key: [67]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [68]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [69]
+    lt: 0
+  - distinct: 3
+    eq: 1
+    key: [73]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [76]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [77]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [78]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [79]
+    lt: 0
+  - distinct: 5
+    eq: 1
+    key: [85]
+    lt: 5
+  - distinct: 4
+    eq: 1
+    key: [90]
+    lt: 4
+  - distinct: 3
+    eq: 1
+    key: [94]
+    lt: 3
+  - distinct: 2
+    eq: 1
+    key: [97]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [98]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [99]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [100]
+    lt: 0
+Table: addresses
+Timestamp: 2012-01-18T00:23:59.528Z
+---
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 1
+    eq: 1
+    key: [2]
+    lt: 1
+  - distinct: 10
+    eq: 1
+    key: [13]
+    lt: 10
+  - distinct: 0
+    eq: 1
+    key: [14]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [15]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [17]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [18]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [19]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [20]
+    lt: 0
+  - distinct: 6
+    eq: 1
+    key: [27]
+    lt: 6
+  - distinct: 1
+    eq: 1
+    key: [29]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [30]
+    lt: 0
+  - distinct: 3
+    eq: 1
+    key: [34]
+    lt: 3
+  - distinct: 3
+    eq: 1
+    key: [38]
+    lt: 3
+  - distinct: 3
+    eq: 1
+    key: [42]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [43]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [46]
+    lt: 2
+  - distinct: 2
+    eq: 1
+    key: [49]
+    lt: 2
+  - distinct: 1
+    eq: 1
+    key: [51]
+    lt: 1
+  - distinct: 0
+    eq: 1
+    key: [52]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [53]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [54]
+    lt: 0
+  - distinct: 10
+    eq: 1
+    key: [65]
+    lt: 10
+  - distinct: 7
+    eq: 1
+    key: [73]
+    lt: 7
+  - distinct: 0
+    eq: 1
+    key: [74]
+    lt: 0
+  - distinct: 2
+    eq: 1
+    key: [77]
+    lt: 2
+  - distinct: 0
+    eq: 1
+    key: [78]
+    lt: 0
+  - distinct: 1
+    eq: 1
+    key: [80]
+    lt: 1
+  - distinct: 4
+    eq: 1
+    key: [85]
+    lt: 4
+  - distinct: 1
+    eq: 1
+    key: [87]
+    lt: 1
+  - distinct: 7
+    eq: 1
+    key: [95]
+    lt: 7
+  - distinct: 3
+    eq: 1
+    key: [99]
+    lt: 3
+  - distinct: 0
+    eq: 1
+    key: [100]
+    lt: 0
+Table: customers
+Timestamp: 2012-01-18T00:23:14.602Z
+---
+Index: PRIMARY
+RowCount: 20000
+SampledCount: 20000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 115
+    eq: 1
+    key: [116]
+    lt: 115
+  - distinct: 129
+    eq: 1
+    key: [246]
+    lt: 129
+  - distinct: 467
+    eq: 1
+    key: [714]
+    lt: 467
+  - distinct: 847
+    eq: 1
+    key: [1562]
+    lt: 847
+  - distinct: 285
+    eq: 1
+    key: [1848]
+    lt: 285
+  - distinct: 707
+    eq: 1
+    key: [2556]
+    lt: 707
+  - distinct: 431
+    eq: 1
+    key: [2988]
+    lt: 431
+  - distinct: 271
+    eq: 1
+    key: [3260]
+    lt: 271
+  - distinct: 179
+    eq: 1
+    key: [3440]
+    lt: 179
+  - distinct: 801
+    eq: 1
+    key: [4242]
+    lt: 801
+  - distinct: 1703
+    eq: 1
+    key: [5946]
+    lt: 1703
+  - distinct: 253
+    eq: 1
+    key: [6200]
+    lt: 253
+  - distinct: 902
+    eq: 1
+    key: [7103]
+    lt: 902
+  - distinct: 595
+    eq: 1
+    key: [7699]
+    lt: 595
+  - distinct: 166
+    eq: 1
+    key: [7866]
+    lt: 166
+  - distinct: 1128
+    eq: 1
+    key: [8995]
+    lt: 1128
+  - distinct: 27
+    eq: 1
+    key: [9023]
+    lt: 27
+  - distinct: 1680
+    eq: 1
+    key: [10704]
+    lt: 1680
+  - distinct: 1377
+    eq: 1
+    key: [12082]
+    lt: 1377
+  - distinct: 1241
+    eq: 1
+    key: [13324]
+    lt: 1241
+  - distinct: 391
+    eq: 1
+    key: [13716]
+    lt: 391
+  - distinct: 517
+    eq: 1
+    key: [14234]
+    lt: 517
+  - distinct: 133
+    eq: 1
+    key: [14368]
+    lt: 133
+  - distinct: 385
+    eq: 1
+    key: [14754]
+    lt: 385
+  - distinct: 544
+    eq: 1
+    key: [15299]
+    lt: 544
+  - distinct: 19
+    eq: 1
+    key: [15319]
+    lt: 19
+  - distinct: 2783
+    eq: 1
+    key: [18103]
+    lt: 2783
+  - distinct: 526
+    eq: 1
+    key: [18630]
+    lt: 526
+  - distinct: 48
+    eq: 1
+    key: [18679]
+    lt: 48
+  - distinct: 187
+    eq: 1
+    key: [18867]
+    lt: 187
+  - distinct: 175
+    eq: 1
+    key: [19043]
+    lt: 175
+  - distinct: 956
+    eq: 1
+    key: [20000]
+    lt: 956
+Table: items
+Timestamp: 2012-01-18T00:23:43.288Z
+---
+Index: PRIMARY
+RowCount: 1000
+SampledCount: 1000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 21
+    eq: 1
+    key: [22]
+    lt: 21
+  - distinct: 15
+    eq: 1
+    key: [38]
+    lt: 15
+  - distinct: 1
+    eq: 1
+    key: [40]
+    lt: 1
+  - distinct: 24
+    eq: 1
+    key: [65]
+    lt: 24
+  - distinct: 31
+    eq: 1
+    key: [97]
+    lt: 31
+  - distinct: 10
+    eq: 1
+    key: [108]
+    lt: 10
+  - distinct: 115
+    eq: 1
+    key: [224]
+    lt: 115
+  - distinct: 37
+    eq: 1
+    key: [262]
+    lt: 37
+  - distinct: 34
+    eq: 1
+    key: [297]
+    lt: 34
+  - distinct: 4
+    eq: 1
+    key: [302]
+    lt: 4
+  - distinct: 17
+    eq: 1
+    key: [320]
+    lt: 17
+  - distinct: 1
+    eq: 1
+    key: [322]
+    lt: 1
+  - distinct: 27
+    eq: 1
+    key: [350]
+    lt: 27
+  - distinct: 16
+    eq: 1
+    key: [367]
+    lt: 16
+  - distinct: 91
+    eq: 1
+    key: [459]
+    lt: 91
+  - distinct: 33
+    eq: 1
+    key: [493]
+    lt: 33
+  - distinct: 51
+    eq: 1
+    key: [545]
+    lt: 51
+  - distinct: 8
+    eq: 1
+    key: [554]
+    lt: 8
+  - distinct: 13
+    eq: 1
+    key: [568]
+    lt: 13
+  - distinct: 12
+    eq: 1
+    key: [581]
+    lt: 12
+  - distinct: 13
+    eq: 1
+    key: [595]
+    lt: 13
+  - distinct: 3
+    eq: 1
+    key: [599]
+    lt: 3
+  - distinct: 54
+    eq: 1
+    key: [654]
+    lt: 54
+  - distinct: 30
+    eq: 1
+    key: [685]
+    lt: 30
+  - distinct: 64
+    eq: 1
+    key: [750]
+    lt: 64
+  - distinct: 21
+    eq: 1
+    key: [772]
+    lt: 21
+  - distinct: 81
+    eq: 1
+    key: [854]
+    lt: 81
+  - distinct: 36
+    eq: 1
+    key: [891]
+    lt: 36
+  - distinct: 33
+    eq: 1
+    key: [925]
+    lt: 33
+  - distinct: 19
+    eq: 1
+    key: [945]
+    lt: 19
+  - distinct: 49
+    eq: 1
+    key: [995]
+    lt: 49
+  - distinct: 4
+    eq: 1
+    key: [1000]
+    lt: 4
+Table: orders
+Timestamp: 2012-01-18T00:23:28.324Z
+---
+Index: PRIMARY
+RowCount: 100
+SampledCount: 100
+Statistics: []
+Table: parent
+Timestamp: 2012-03-12T23:56:19.252Z
+---
+Index: PRIMARY
+RowCount: 1000
+SampledCount: 1000
+Statistics: []
+Table: child
+Timestamp: 2012-03-12T23:56:26.043Z
