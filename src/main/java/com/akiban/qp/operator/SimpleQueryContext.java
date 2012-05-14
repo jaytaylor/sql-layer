@@ -88,8 +88,10 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public void checkQueryCancelation() {
-        // Don't have a session, so can't check cancelation in it.
-        // Could still check timeout.
+        // If don't have a session, so can't check cancelation in it.
+        if (adapter instanceof PersistitAdapter) {
+            super.checkQueryCancelation();
+        }
     }
 
 }
