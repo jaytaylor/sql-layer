@@ -26,10 +26,14 @@
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.*;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
+import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -39,6 +43,7 @@ import org.junit.Test;
 import java.util.Arrays;
 
 import static com.akiban.qp.operator.API.ancestorLookup_Default;
+import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.assertEquals;
 
@@ -84,14 +89,14 @@ public class GroupIndexRowIT extends OperatorITBase
     @Test
     public void testIndexMetadata()
     {
-        // Index row: e.uid, m.lastLogin, e.eugid, m.profileID
+        // Index row: e.uid, m.lastLogin, m.profileID, e.eugid
         // HKey for eug table: [U, e.uid, M, E, e.eugid]
         GroupIndex gi = (GroupIndex) groupIndexRowType.index();
-        GroupIndexRowComposition rowComposition = gi.groupIndexRowComposition();
-        assertEquals(4, rowComposition.positionInFlattenedRow(0));
-        assertEquals(2, rowComposition.positionInFlattenedRow(1));
-        assertEquals(3, rowComposition.positionInFlattenedRow(2));
-        assertEquals(1, rowComposition.positionInFlattenedRow(3));
+        IndexRowComposition rowComposition = gi.indexRowComposition();
+        assertEquals(4, rowComposition.getFieldPosition(0));
+        assertEquals(2, rowComposition.getFieldPosition(1));
+        assertEquals(1, rowComposition.getFieldPosition(2));
+        assertEquals(3, rowComposition.getFieldPosition(3));
     }
 
     @Test
@@ -101,8 +106,6 @@ public class GroupIndexRowIT extends OperatorITBase
                                                IndexKeyRange.unbounded(groupIndexRowType),
                                                new API.Ordering(),
                                                memberInfoRowType);
-        System.out.println("index scan:");
-        dump(indexScan);
         Operator plan =
             ancestorLookup_Default(
                 indexScan,
@@ -110,8 +113,11 @@ public class GroupIndexRowIT extends OperatorITBase
                 groupIndexRowType,
                 Arrays.asList(userRowType, memberInfoRowType),
                 API.LookupOption.DISCARD_INPUT);
-        System.out.println("ancestor lookup:");
-        dump(plan);
+        RowBase[] expected = new RowBase[] {
+            row(userRowType, 1L),
+            row(memberInfoRowType, 1L, 20120424L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
     }
 
 

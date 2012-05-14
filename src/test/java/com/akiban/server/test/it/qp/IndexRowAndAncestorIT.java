@@ -43,7 +43,7 @@ import java.util.Arrays;
 import static com.akiban.qp.operator.API.ancestorLookup_Default;
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 // Inspired by bug 987942
 
@@ -53,7 +53,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     public void before()
     {
         createSchema();
-        // loadDatabase();
+        loadDatabase();
     }
 
     private void createSchema()
@@ -61,46 +61,49 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         // A bizarre coih schema in which all FKs are PKs. I.e., all joins are 1:1.
         c = createTable(
             "s", "c",
-            "cid int not null",
+            "id int not null",
             "cx int not null",
-            "primary key(cid)");
+            "primary key(id)");
         o = createTable(
             "s", "o",
-            "cid int not null",
+            "id int not null",
             "ox int",
-            "primary key(cid)",
-            "grouping foreign key (cid) references c(cid)");
+            "primary key(id)",
+            "grouping foreign key (id) references c(id)");
         i = createTable(
             "s", "i",
-            "cid int not null",
+            "id int not null",
             "ix int",
-            "primary key(cid)",
-            "grouping foreign key (cid) references o(cid)");
+            "primary key(id)",
+            "grouping foreign key (id) references o(id)");
         h = createTable(
             "s", "h",
-            "cid int not null",
+            "id int not null",
             "hx int",
-            "primary key(cid)",
-            "grouping foreign key (cid) references i(cid)");
+            "primary key(id)",
+            "grouping foreign key (id) references i(id)");
         idxH = createIndex("s", "h", "idxH", "hx");
-        idxIHLeft = createGroupIndex("c", "idxIHLeft", "i.ix, h.hx", Index.JoinType.LEFT);
-        idxIHRight = createGroupIndex("c", "idxIHRight", "i.ix, h.hx", Index.JoinType.RIGHT);
-        idxOHLeft = createGroupIndex("c", "idxOHLeft", "o.ox, i.ix, h.hx", Index.JoinType.LEFT);
-        idxOHRight = createGroupIndex("c", "idxOHRight", "o.ox, i.ix, h.hx", Index.JoinType.RIGHT);
-        idxCHLeft = createGroupIndex("c", "idxCHLeft", "c.cx, o.ox, i.ix, h.hx", Index.JoinType.LEFT);
-        idxCHRight = createGroupIndex("c", "idxCHRight", "c.cx, o.ox, i.ix, h.hx", Index.JoinType.RIGHT);
+        // ih left/right indexes declare an hkey column from the leafmost table
+        idxIHLeft = createGroupIndex("c", "idxIHLeft", "i.ix, h.hx, h.id", Index.JoinType.LEFT);
+        idxIHRight = createGroupIndex("c", "idxIHRight", "i.ix, h.hx, h.id", Index.JoinType.RIGHT);
+        // oh left/right indexes declare an hkey column from the rootmost table
+        idxOHLeft = createGroupIndex("c", "idxOHLeft", "o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
+        idxOHRight = createGroupIndex("c", "idxOHRight", "o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
+        // ch left/right indexes declare an hky column from an internal table (neither leafmost nor rootmost)
+        idxCHLeft = createGroupIndex("c", "idxCHLeft", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.LEFT);
+        idxCHRight = createGroupIndex("c", "idxCHRight", "c.cx, o.ox, i.ix, h.hx, o.id", Index.JoinType.RIGHT);
         schema = new com.akiban.qp.rowtype.Schema(rowDefCache().ais());
         cRowType = schema.userTableRowType(userTable(c));
         oRowType = schema.userTableRowType(userTable(o));
         iRowType = schema.userTableRowType(userTable(i));
         hRowType = schema.userTableRowType(userTable(h));
         hIndexRowType = indexType(h, "hx");
-        ihLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "i.ix", "h.hx");
-        ihRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "i.ix", "h.hx");
-        ohLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "o.ox", "i.ix", "h.hx");
-        ohRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "o.ox", "i.ix", "h.hx");
-        chLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "c.cx", "o.ox", "i.ix", "h.hx");
-        chRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "c.cx", "o.ox", "i.ix", "h.hx");
+        ihLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "i.ix", "h.hx", "h.id");
+        ihRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "i.ix", "h.hx", "h.id");
+        ohLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "o.ox", "i.ix", "h.hx", "o.id");
+        ohRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "o.ox", "i.ix", "h.hx", "o.id");
+        chLeftIndexRowType = groupIndexType(Index.JoinType.LEFT, "c.cx", "o.ox", "i.ix", "h.hx", "o.id");
+        chRightIndexRowType = groupIndexType(Index.JoinType.RIGHT, "c.cx", "o.ox", "i.ix", "h.hx", "o.id");
         cOrdinal = ddl().getTable(session(), c).rowDef().getOrdinal();
         oOrdinal = ddl().getTable(session(), o).rowDef().getOrdinal();
         iOrdinal = ddl().getTable(session(), i).rowDef().getOrdinal();
@@ -144,22 +147,22 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     public void testHKeyMetadata()
     {
         HKey hKey;
-        // h HKey: [C, H.cid, O, I, H]
+        // h HKey: [C, H.id, O, I, H]
         hKey = hRowType.userTable().hKey();
         assertEquals(1, hKey.nColumns());
-        assertEquals("s.h.cid", hKey.column(0).getDescription());
-        // i HKey: [C, I.cid, O, I]
+        assertEquals("s.h.id", hKey.column(0).getDescription());
+        // i HKey: [C, I.id, O, I]
         hKey = iRowType.userTable().hKey();
         assertEquals(1, hKey.nColumns());
-        assertEquals("s.i.cid", hKey.column(0).getDescription());
-        // o HKey: [C, O.cid, O]
+        assertEquals("s.i.id", hKey.column(0).getDescription());
+        // o HKey: [C, O.id, O]
         hKey = oRowType.userTable().hKey();
         assertEquals(1, hKey.nColumns());
-        assertEquals("s.o.cid", hKey.column(0).getDescription());
-        // c HKey: [C, C.cid]
+        assertEquals("s.o.id", hKey.column(0).getDescription());
+        // c HKey: [C, C.id]
         hKey = cRowType.userTable().hKey();
         assertEquals(1, hKey.nColumns());
-        assertEquals("s.c.cid", hKey.column(0).getDescription());
+        assertEquals("s.c.id", hKey.column(0).getDescription());
     }
 
     @Test
@@ -168,114 +171,82 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         IndexRowComposition irc;
         // H(hx) index row:
         //     declared: H.hx
-        //     leafward hkey: H.cid
-        //     rootward hkey: (not relevant for table index)
+        //     hkey: H.id
         irc = hIndexRowType.index().indexRowComposition();
         assertEquals(2, irc.getLength());
         assertEquals(1, irc.getFieldPosition(0));
         assertEquals(0, irc.getFieldPosition(1));
         // Field numbers for flattened row:
         // c:
-        //     0: cid
+        //     0: id
         //     1: cx
         // o:
-        //     2: cid
+        //     2: id
         //     3: ox
         // i:
-        //     4: cid
+        //     4: id
         //     5: ix
         // h:
-        //     6: cid
+        //     6: id
         //     7: hx
-        // (ix, hx) index row:
-        //     declared: I.ix  H.hx
-        //     leafward hkey: H.cid
-        //     rootward hkey: I.cid
-        GroupIndexRowComposition girc;
-        girc = ((GroupIndex)ihLeftIndexRowType.index()).groupIndexRowComposition();
-        assertEquals(4, girc.size());
-        assertEquals(5, girc.positionInFlattenedRow(0));
-        assertEquals(7, girc.positionInFlattenedRow(1));
-        assertEquals(6, girc.positionInFlattenedRow(2));
-        assertEquals(4, girc.positionInFlattenedRow(3));
-        assertNull(girc.equivalentHKeyIndexPositions(0));
-        assertNull(girc.equivalentHKeyIndexPositions(1));
-        assertNull(girc.equivalentHKeyIndexPositions(2));
-        assertArrayEquals(intArray(2), girc.equivalentHKeyIndexPositions(3));
-        girc = ((GroupIndex)ihRightIndexRowType.index()).groupIndexRowComposition();
-        assertEquals(4, girc.size());
-        assertEquals(5, girc.positionInFlattenedRow(0));
-        assertEquals(7, girc.positionInFlattenedRow(1));
-        assertEquals(6, girc.positionInFlattenedRow(2));
-        assertEquals(4, girc.positionInFlattenedRow(3));
-        assertNull(girc.equivalentHKeyIndexPositions(0));
-        assertNull(girc.equivalentHKeyIndexPositions(1));
-        assertNull(girc.equivalentHKeyIndexPositions(2));
-        assertArrayEquals(intArray(2), girc.equivalentHKeyIndexPositions(3));
-        // (ox, ix, hx) index row:
-        //     declared: O.ox  I.ix  H.hx
-        //     leafward hkey: H.cid
-        //     rootward hkey: O.cid  I.cid
-        girc = ((GroupIndex)ohLeftIndexRowType.index()).groupIndexRowComposition();
-        assertEquals(6, girc.size());
-        assertEquals(3, girc.positionInFlattenedRow(0));
-        assertEquals(5, girc.positionInFlattenedRow(1));
-        assertEquals(7, girc.positionInFlattenedRow(2));
-        assertEquals(6, girc.positionInFlattenedRow(3));
-        assertEquals(2, girc.positionInFlattenedRow(4));
-        assertEquals(4, girc.positionInFlattenedRow(5));
-        assertNull(girc.equivalentHKeyIndexPositions(0));
-        assertNull(girc.equivalentHKeyIndexPositions(1));
-        assertNull(girc.equivalentHKeyIndexPositions(2));
-        assertNull(girc.equivalentHKeyIndexPositions(3));
-        assertArrayEquals(intArray(3), girc.equivalentHKeyIndexPositions(4));
-        assertArrayEquals(intArray(3, 4), girc.equivalentHKeyIndexPositions(5));
-        girc = ((GroupIndex)ohRightIndexRowType.index()).groupIndexRowComposition();
-        assertEquals(6, girc.size());
-        assertEquals(3, girc.positionInFlattenedRow(0));
-        assertEquals(5, girc.positionInFlattenedRow(1));
-        assertEquals(7, girc.positionInFlattenedRow(2));
-        assertEquals(6, girc.positionInFlattenedRow(3));
-        assertEquals(2, girc.positionInFlattenedRow(4));
-        assertEquals(4, girc.positionInFlattenedRow(5));
-        assertNull(girc.equivalentHKeyIndexPositions(0));
-        assertNull(girc.equivalentHKeyIndexPositions(1));
-        assertNull(girc.equivalentHKeyIndexPositions(2));
-        assertNull(girc.equivalentHKeyIndexPositions(3));
-        assertArrayEquals(intArray(3), girc.equivalentHKeyIndexPositions(4));
-        assertArrayEquals(intArray(3, 4), girc.equivalentHKeyIndexPositions(5));
-        // (cx, ox, ix, hx) index row:
-        //     declared: C.cx  O.ox  I.ix  H.hx
-        //     leafward hkey: H.cid
-        //     rootward hkey: C.cid  O.cid  I.cid
-        girc = ((GroupIndex)chLeftIndexRowType.index()).groupIndexRowComposition();
-        assertEquals(8, girc.size());
-        assertEquals(1, girc.positionInFlattenedRow(0));
-        assertEquals(3, girc.positionInFlattenedRow(1));
-        assertEquals(5, girc.positionInFlattenedRow(2));
-        assertEquals(7, girc.positionInFlattenedRow(3));
-        assertEquals(6, girc.positionInFlattenedRow(4));
-        assertEquals(0, girc.positionInFlattenedRow(5));
-        assertEquals(2, girc.positionInFlattenedRow(6));
-        assertEquals(4, girc.positionInFlattenedRow(7));
-        assertNull(girc.equivalentHKeyIndexPositions(0));
-        assertNull(girc.equivalentHKeyIndexPositions(1));
-        assertNull(girc.equivalentHKeyIndexPositions(2));
-        assertNull(girc.equivalentHKeyIndexPositions(3));
-        assertNull(girc.equivalentHKeyIndexPositions(4));
-        assertArrayEquals(intArray(4), girc.equivalentHKeyIndexPositions(5));
-        assertArrayEquals(intArray(4, 5), girc.equivalentHKeyIndexPositions(6));
-        assertArrayEquals(intArray(4, 5, 6), girc.equivalentHKeyIndexPositions(7));
-        girc = ((GroupIndex)chRightIndexRowType.index()).groupIndexRowComposition();
-        assertEquals(8, girc.size());
-        assertEquals(1, girc.positionInFlattenedRow(0));
-        assertEquals(3, girc.positionInFlattenedRow(1));
-        assertEquals(5, girc.positionInFlattenedRow(2));
-        assertEquals(7, girc.positionInFlattenedRow(3));
-        assertEquals(6, girc.positionInFlattenedRow(4));
-        assertEquals(0, girc.positionInFlattenedRow(5));
-        assertEquals(2, girc.positionInFlattenedRow(6));
-        assertEquals(4, girc.positionInFlattenedRow(7));
+        // (i.ix, h.hx, h.id) left join index row:
+        //     declared: I.ix  H.hx  H.id
+        //     hkey: I.id
+        irc = ihLeftIndexRowType.index().indexRowComposition();
+        assertEquals(4, irc.getLength());
+        assertEquals(5, irc.getFieldPosition(0));
+        assertEquals(7, irc.getFieldPosition(1));
+        assertEquals(6, irc.getFieldPosition(2));
+        assertEquals(4, irc.getFieldPosition(3));
+        // (i.ix, h.hx, h.id) right join index row:
+        //     declared: I.ix  H.hx  H.id
+        //     hkey:
+        irc = ihRightIndexRowType.index().indexRowComposition();
+        assertEquals(3, irc.getLength());
+        assertEquals(5, irc.getFieldPosition(0));
+        assertEquals(7, irc.getFieldPosition(1));
+        assertEquals(6, irc.getFieldPosition(2));
+        // (o.ox, i.ix, h.hx, o.id) left join index row:
+        //     declared: O.ox  I.ix  H.hx  o.id
+        //     hkey:
+        irc = ohLeftIndexRowType.index().indexRowComposition();
+        assertEquals(4, irc.getLength());
+        assertEquals(3, irc.getFieldPosition(0));
+        assertEquals(5, irc.getFieldPosition(1));
+        assertEquals(7, irc.getFieldPosition(2));
+        assertEquals(2, irc.getFieldPosition(3));
+        // (o.ox, i.ix, h.hx, o.id) right join index row:
+        //     declared: O.ox  I.ix  H.hx  O.id
+        //     hkey: H.id
+        irc = ohRightIndexRowType.index().indexRowComposition();
+        assertEquals(5, irc.getLength());
+        assertEquals(3, irc.getFieldPosition(0));
+        assertEquals(5, irc.getFieldPosition(1));
+        assertEquals(7, irc.getFieldPosition(2));
+        assertEquals(2, irc.getFieldPosition(3));
+        assertEquals(6, irc.getFieldPosition(4));
+        // (c.cx, o.ox, i.ix, h.hx, o.id) left join index row:
+        //     declared: C.cx  O.ox  I.ix  H.hx, O.id
+        //     hkey: C.id
+        irc = chLeftIndexRowType.index().indexRowComposition();
+        assertEquals(6, irc.getLength());
+        assertEquals(1, irc.getFieldPosition(0));
+        assertEquals(3, irc.getFieldPosition(1));
+        assertEquals(5, irc.getFieldPosition(2));
+        assertEquals(7, irc.getFieldPosition(3));
+        assertEquals(2, irc.getFieldPosition(4));
+        assertEquals(0, irc.getFieldPosition(5));
+        // (c.cx, o.ox, i.ix, h.hx, o.id) right join index row:
+        //     declared: C.cx  O.ox  I.ix  H.hx, O.id
+        //     hkey: H.id
+        irc = chRightIndexRowType.index().indexRowComposition();
+        assertEquals(6, irc.getLength());
+        assertEquals(1, irc.getFieldPosition(0));
+        assertEquals(3, irc.getFieldPosition(1));
+        assertEquals(5, irc.getFieldPosition(2));
+        assertEquals(7, irc.getFieldPosition(3));
+        assertEquals(2, irc.getFieldPosition(4));
+        assertEquals(6, irc.getFieldPosition(5));
     }
 
     @Test
@@ -283,9 +254,8 @@ public class IndexRowAndAncestorIT extends OperatorITBase
     {
         // H(hx) index row:
         //     declared: H.hx
-        //     leafward hkey: H.cid
-        //     rootward hkey: (not relevant for table index)
-        // H hkey: [C, H.cid, O, I, H]
+        //     hkey: H.id
+        // H hkey: [C, H.id, O, I, H]
         TableIndex tableIndex = (TableIndex) hIndexRowType.index();
         IndexToHKey ih = tableIndex.indexToHKey();
         assertEquals(5, ih.getLength());
@@ -294,12 +264,11 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
         assertEquals(hOrdinal, ih.getOrdinal(4));
-        // (ix, hx) index row:
-        //     declared: I.ix  H.hx
-        //     leafward hkey: H.cid
-        //     rootward hkey: I.cid
+        // (i.ix, h.hx, h.id) left join index row:
+        //     declared: I.ix  H.hx, H.id
+        //     hkey: I.id
         GroupIndex groupIndex = (GroupIndex) ihLeftIndexRowType.index();
-        // H hkey: [C, H.cid, O, I, H]
+        // H hkey: [C, H.id, O, I, H]
         ih = groupIndex.indexToHKey(3);
         assertEquals(5, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
@@ -307,27 +276,29 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
         assertEquals(hOrdinal, ih.getOrdinal(4));
-        // I hkey: [C, I.cid, O, I]
+        // I hkey: [C, I.id, O, I]
         ih = groupIndex.indexToHKey(2);
         assertEquals(4, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
         assertEquals(3, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
-        // O hkey: [C, I.cid, O]
+        // O hkey: [C, I.id, O]
         ih = groupIndex.indexToHKey(1);
         assertEquals(3, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
         assertEquals(3, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
-        // C hkey: [C, I.cid]
+        // C hkey: [C, I.id]
         ih = groupIndex.indexToHKey(0);
         assertEquals(2, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
         assertEquals(3, ih.getIndexRowPosition(1));
-        // right join version of (ix, hx) is the same
+        // (i.ix, h.hx, h.id) right join index row:
+        //     declared: I.ix  H.hx, H.id
+        //     hkey:
         groupIndex = (GroupIndex) ihRightIndexRowType.index();
-        // H hkey: [C, H.cid, O, I, H]
+        // H hkey: [C, H.id, O, I, H]
         ih = groupIndex.indexToHKey(3);
         assertEquals(5, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
@@ -335,30 +306,29 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
         assertEquals(hOrdinal, ih.getOrdinal(4));
-        // I hkey: [C, I.cid, O, I]
+        // I hkey: [C, H.id, O, I]
         ih = groupIndex.indexToHKey(2);
         assertEquals(4, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(3, ih.getIndexRowPosition(1));
+        assertEquals(2, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
-        // O hkey: [C, I.cid, O]
+        // O hkey: [C, H.id, O]
         ih = groupIndex.indexToHKey(1);
         assertEquals(3, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(3, ih.getIndexRowPosition(1));
+        assertEquals(2, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
-        // C hkey: [C, I.cid]
+        // C hkey: [C, H.id]
         ih = groupIndex.indexToHKey(0);
         assertEquals(2, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(3, ih.getIndexRowPosition(1));
-        // (ox, ix, hx) index row:
-        //     declared: O.ox  I.ix  H.hx
-        //     leafward hkey: H.cid
-        //     rootward hkey: O.cid  I.cid
+        assertEquals(2, ih.getIndexRowPosition(1));
+        // (o.ox, i.ix, h.hx, o.id) left join index row:
+        //     declared: O.ox  I.ix  H.hx, O.id
+        //     hkey:
         groupIndex = (GroupIndex) ohLeftIndexRowType.index();
-        // H hkey: [C, H.cid, O, I, H]
+        // H hkey: [C, O.id, O, I, H]
         ih = groupIndex.indexToHKey(3);
         assertEquals(5, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
@@ -366,58 +336,59 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
         assertEquals(hOrdinal, ih.getOrdinal(4));
-        // I hkey: [C, I.cid, O, I]
+        // I hkey: [C, O.id, O, I]
         ih = groupIndex.indexToHKey(2);
         assertEquals(4, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(5, ih.getIndexRowPosition(1));
+        assertEquals(3, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
-        // O hkey: [C, O.cid, O]
+        // O hkey: [C, O.id, O]
         ih = groupIndex.indexToHKey(1);
         assertEquals(3, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(4, ih.getIndexRowPosition(1));
+        assertEquals(3, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
-        // C hkey: [C, I.cid]
+        // C hkey: [C, O.id]
         ih = groupIndex.indexToHKey(0);
         assertEquals(2, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(4, ih.getIndexRowPosition(1));
-        // right join version of (ox, ix, hx) is the same
+        assertEquals(3, ih.getIndexRowPosition(1));
+        // (o.ox, i.ix, h.hx, o.id) right join index row:
+        //     declared: O.ox  I.ix  H.hx, O.id
+        //     hkey: H.id
         groupIndex = (GroupIndex) ohRightIndexRowType.index();
-        // H hkey: [C, H.cid, O, I, H]
+        // H hkey: [C, H.id, O, I, H]
         ih = groupIndex.indexToHKey(3);
         assertEquals(5, ih.getLength());
+        assertEquals(cOrdinal, ih.getOrdinal(0));
+        assertEquals(4, ih.getIndexRowPosition(1));
+        assertEquals(oOrdinal, ih.getOrdinal(2));
+        assertEquals(iOrdinal, ih.getOrdinal(3));
+        assertEquals(hOrdinal, ih.getOrdinal(4));
+        // I hkey: [C, I.id, O, I]
+        ih = groupIndex.indexToHKey(2);
+        assertEquals(4, ih.getLength());
+        assertEquals(cOrdinal, ih.getOrdinal(0));
+        assertEquals(4, ih.getIndexRowPosition(1));
+        assertEquals(oOrdinal, ih.getOrdinal(2));
+        assertEquals(iOrdinal, ih.getOrdinal(3));
+        // O hkey: [C, O.id, O]
+        ih = groupIndex.indexToHKey(1);
+        assertEquals(3, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
         assertEquals(3, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
-        assertEquals(iOrdinal, ih.getOrdinal(3));
-        assertEquals(hOrdinal, ih.getOrdinal(4));
-        // I hkey: [C, I.cid, O, I]
-        ih = groupIndex.indexToHKey(2);
-        assertEquals(4, ih.getLength());
-        assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(5, ih.getIndexRowPosition(1));
-        assertEquals(oOrdinal, ih.getOrdinal(2));
-        assertEquals(iOrdinal, ih.getOrdinal(3));
-        // O hkey: [C, O.cid, O]
-        ih = groupIndex.indexToHKey(1);
-        assertEquals(3, ih.getLength());
-        assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(4, ih.getIndexRowPosition(1));
-        assertEquals(oOrdinal, ih.getOrdinal(2));
-        // C hkey: [C, I.cid]
+        // C hkey: [C, O.id]
         ih = groupIndex.indexToHKey(0);
         assertEquals(2, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(4, ih.getIndexRowPosition(1));
-        // (cx, ox, ix, hx) index row:
-        //     declared: C.cx  O.ox  I.ix  H.hx
-        //     leafward hkey: H.cid
-        //     rootward hkey: C.cid  O.cid  I.cid
+        assertEquals(3, ih.getIndexRowPosition(1));
+        // (c.cx, o.ox, i.ix, h.hx, o.id) left join index row:
+        //     declared: C.cx  O.ox  I.ix  H.hx  O.id
+        //     hkey: C.id
         groupIndex = (GroupIndex) chLeftIndexRowType.index();
-        // H hkey: [C, H.cid, O, I, H]
+        // H hkey: [C, O.id, O, I, H]
         ih = groupIndex.indexToHKey(3);
         assertEquals(5, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
@@ -425,52 +396,54 @@ public class IndexRowAndAncestorIT extends OperatorITBase
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
         assertEquals(hOrdinal, ih.getOrdinal(4));
-        // I hkey: [C, I.cid, O, I]
+        // I hkey: [C, O.id, O, I]
         ih = groupIndex.indexToHKey(2);
         assertEquals(4, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(7, ih.getIndexRowPosition(1));
+        assertEquals(4, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
-        // O hkey: [C, O.cid, O]
+        // O hkey: [C, O.id, O]
         ih = groupIndex.indexToHKey(1);
         assertEquals(3, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(6, ih.getIndexRowPosition(1));
+        assertEquals(4, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
-        // C hkey: [C, C.cid]
+        // C hkey: [C, C.id]
         ih = groupIndex.indexToHKey(0);
         assertEquals(2, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
         assertEquals(5, ih.getIndexRowPosition(1));
-        // right join versino of (cx, ox, ix, hx) is the same
+        // (c.cx, o.ox, i.ix, h.hx, o.id) right join index row:
+        //     declared: C.cx  O.ox  I.ix  H.hx  O.id
+        //     hkey: H.id
         groupIndex = (GroupIndex) chRightIndexRowType.index();
-        // H hkey: [C, H.cid, O, I, H]
+        // H hkey: [C, H.id, O, I, H]
         ih = groupIndex.indexToHKey(3);
         assertEquals(5, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(4, ih.getIndexRowPosition(1));
+        assertEquals(5, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
         assertEquals(hOrdinal, ih.getOrdinal(4));
-        // I hkey: [C, I.cid, O, I]
+        // I hkey: [C, H.id, O, I]
         ih = groupIndex.indexToHKey(2);
         assertEquals(4, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(7, ih.getIndexRowPosition(1));
+        assertEquals(5, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
         assertEquals(iOrdinal, ih.getOrdinal(3));
-        // O hkey: [C, O.cid, O]
+        // O hkey: [C, O.id, O]
         ih = groupIndex.indexToHKey(1);
         assertEquals(3, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(6, ih.getIndexRowPosition(1));
+        assertEquals(4, ih.getIndexRowPosition(1));
         assertEquals(oOrdinal, ih.getOrdinal(2));
-        // C hkey: [C, C.cid]
+        // C hkey: [C, O.id]
         ih = groupIndex.indexToHKey(0);
         assertEquals(2, ih.getLength());
         assertEquals(cOrdinal, ih.getOrdinal(0));
-        assertEquals(5, ih.getIndexRowPosition(1));
+        assertEquals(4, ih.getIndexRowPosition(1));
     }
 
     @Test
@@ -680,11 +653,6 @@ public class IndexRowAndAncestorIT extends OperatorITBase
             row(hRowType, 4L, 40009999L),
         };
         compareRows(expected, cursor(plan, queryContext));
-    }
-
-    private int[] intArray(int ... ints)
-    {
-        return ints;
     }
 
     private int c;

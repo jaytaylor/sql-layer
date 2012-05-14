@@ -71,11 +71,8 @@ public class IndexRowComposition {
                " hkeyPos: " + Arrays.toString(hkeyPositions);
     }
 
-    // If set, value >= 0, is the field position for index position i
+    /** If set, value >= 0, is the field position for index position i **/
     private final int[] fieldPositions;
-    // If set, value >= 0, is the hkey position for index position i
+    /** If set, value >= 0, is the hkey position for index position i **/
     private final int[] hkeyPositions;
-    // For group indexes: equivalentHKeyIndexPositions[i] is null if index position i is not an hkey column.
-    // Otherwise, it is an array of other index positions where hkey-equivalent columns
-    // can be found.
 }

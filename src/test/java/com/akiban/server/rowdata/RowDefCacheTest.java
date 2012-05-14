@@ -927,7 +927,13 @@ public class RowDefCacheTest
             AkibanInformationSchema ais = SCHEMA_FACTORY.ais(ddl);
             Table customerTable = ais.getTable(SCHEMA, "customer");
             Table ordersTable = ais.getTable(SCHEMA, "orders");
-            GroupIndex index = GroupIndex.create(ais, customerTable.getGroup(), "cName_oDate", 100, false, Index.KEY_CONSTRAINT,  Index.JoinType.LEFT);
+            GroupIndex index = GroupIndex.create(ais,
+                                                 customerTable.getGroup(),
+                                                 "cName_oDate",
+                                                 100,
+                                                 false,
+                                                 Index.KEY_CONSTRAINT,
+                                                 Index.JoinType.LEFT);
             index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0, true, null));
             index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 1, true, null));
             rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
@@ -941,7 +947,9 @@ public class RowDefCacheTest
         RowDef orders = rowDefCache.getRowDef(tableName("orders"));
         assertEquals(customer.getGroupRowDefId(), orders.getGroupRowDefId());
         RowDef customer_group = rowDefCache.getRowDef(customer.getGroupRowDefId());
-        // group index on c.name,o.date
+        // left join group index on (c.name,o.date):
+        //     declared: c.name  o.date
+        //     hkey: o.cid  c.oid
         index = customer_group.getGroupIndex("cName_oDate");
         assertNotNull(index);
         assertFalse(index.isPrimaryKey());
@@ -951,21 +959,20 @@ public class RowDefCacheTest
         assertEquals(1, rowComp.getFieldPosition(0)); // c.name
         assertEquals(4, rowComp.getFieldPosition(1)); // o.date
         // order hkey
-        assertEquals(3, rowComp.getFieldPosition(2)); // o.cid
+        assertEquals(0, rowComp.getFieldPosition(2)); // c.cid
         assertEquals(2, rowComp.getFieldPosition(3)); // o.oid
-        assertEquals(0, rowComp.getFieldPosition(4)); // c.oid
-        assertEquals(5, rowComp.getLength());
+        assertEquals(4, rowComp.getLength());
         // group index row: c.name, o.date, o.cid, o.oid, c.cid
         // group index -> order hkey
         indexToHKey = index.indexToHKey(orders.userTable().getDepth());
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
-        assertEquals(2, indexToHKey.getIndexRowPosition(1));            // o.cid
+        assertEquals(2, indexToHKey.getIndexRowPosition(1));            // c.cid
         assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2));   // o ordinal
         assertEquals(3, indexToHKey.getIndexRowPosition(3));            // o.oid
         // group index -> customer hkey
         indexToHKey = index.indexToHKey(customer.userTable().getDepth());
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
-        assertEquals(4, indexToHKey.getIndexRowPosition(1));            // c.cid
+        assertEquals(2, indexToHKey.getIndexRowPosition(1));            // c.cid
     }
 
     @Test
@@ -994,7 +1001,9 @@ public class RowDefCacheTest
         RowDef items = rowDefCache.getRowDef(tableName("items"));
         assertEquals(orders.getGroupRowDefId(), items.getGroupRowDefId());
         RowDef customer_group = rowDefCache.getRowDef(customer.getGroupRowDefId());
-        // group index on c.name,o.date,i.sku
+        // left join group index on (c.name,o.date,i.sku):
+        //    declared: c.name  o.date  i.sku
+        //    hkey:  c.cid  o.oid  i.iid
         index = customer_group.getGroupIndex("cName_oDate_iSku");
         assertNotNull(index);
         assertFalse(index.isPrimaryKey());
@@ -1005,31 +1014,28 @@ public class RowDefCacheTest
         assertEquals(4, rowComp.getFieldPosition(1)); // o.date
         assertEquals(7, rowComp.getFieldPosition(2)); // i.sku
         // item hkey
-        assertEquals(3, rowComp.getFieldPosition(3)); // o.cid
-        assertEquals(6, rowComp.getFieldPosition(4)); // i.oid
+        assertEquals(0, rowComp.getFieldPosition(3)); // c.cid
+        assertEquals(2, rowComp.getFieldPosition(4)); // o.oid
         assertEquals(5, rowComp.getFieldPosition(5)); // i.iid
-        assertEquals(0, rowComp.getFieldPosition(6)); // c.cid
-        assertEquals(2, rowComp.getFieldPosition(7)); // o.oid
-        assertEquals(8, rowComp.getLength());
-        // group index row: c.name, o.date, i.sku, o.cid, i.oid, i.iid, c.cid, o.oid
+        assertEquals(6, rowComp.getLength());
         // group index -> i hkey
         indexToHKey = index.indexToHKey(items.userTable().getDepth());
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
-        assertEquals(3, indexToHKey.getIndexRowPosition(1));            // o.cid
+        assertEquals(3, indexToHKey.getIndexRowPosition(1));            // c.cid
         assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2));   // o ordinal
-        assertEquals(4, indexToHKey.getIndexRowPosition(3));            // i.oid
+        assertEquals(4, indexToHKey.getIndexRowPosition(3));            // o.oid
         assertEquals(items.getOrdinal(), indexToHKey.getOrdinal(4));    // i ordinal
         assertEquals(5, indexToHKey.getIndexRowPosition(5));            // i.iid
         // group index -> o hkey
         indexToHKey = index.indexToHKey(orders.userTable().getDepth());
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
-        assertEquals(3, indexToHKey.getIndexRowPosition(1));            // o.cid
+        assertEquals(3, indexToHKey.getIndexRowPosition(1));            // c.cid
         assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2));   // o ordinal
-        assertEquals(7, indexToHKey.getIndexRowPosition(3));            // o.oid
+        assertEquals(4, indexToHKey.getIndexRowPosition(3));            // o.oid
         // group index -> c hkey
         indexToHKey = index.indexToHKey(customer.userTable().getDepth());
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
-        assertEquals(6, indexToHKey.getIndexRowPosition(1));            // c.cid
+        assertEquals(3, indexToHKey.getIndexRowPosition(1));            // c.cid
     }
 
     @Test
@@ -1058,7 +1064,9 @@ public class RowDefCacheTest
         RowDef items = rowDefCache.getRowDef(tableName("items"));
         assertEquals(orders.getGroupRowDefId(), items.getGroupRowDefId());
         RowDef customer_group = rowDefCache.getRowDef(customer.getGroupRowDefId());
-        // group index on o.date,i.sku
+        // left join group index on o.date,i.sku
+        //     declared:  o.date  i.sku
+        //     hkey:  o.cid  o.oid  i.iid
         index = customer_group.getGroupIndex("oDate_iSku");
         assertNotNull(index);
         assertFalse(index.isPrimaryKey());
@@ -1069,17 +1077,15 @@ public class RowDefCacheTest
         assertEquals(7, rowComp.getFieldPosition(1)); // i.sku
         // item hkey
         assertEquals(3, rowComp.getFieldPosition(2)); // o.cid
-        assertEquals(6, rowComp.getFieldPosition(3)); // i.oid
+        assertEquals(2, rowComp.getFieldPosition(3)); // o.oid
         assertEquals(5, rowComp.getFieldPosition(4)); // i.iid
-        assertEquals(2, rowComp.getFieldPosition(5)); // o.oid
-        assertEquals(6, rowComp.getLength());
-        // group index row: o.date, i.sku, o.cid, i.oid, i.iid, o.oid
+        assertEquals(5, rowComp.getLength());
         // group index -> i hkey
         indexToHKey = index.indexToHKey(items.userTable().getDepth());
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
         assertEquals(2, indexToHKey.getIndexRowPosition(1));            // o.cid
         assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2));   // o ordinal
-        assertEquals(3, indexToHKey.getIndexRowPosition(3));            // i.oid
+        assertEquals(3, indexToHKey.getIndexRowPosition(3));            // o.oid
         assertEquals(items.getOrdinal(), indexToHKey.getOrdinal(4));    // i ordinal
         assertEquals(4, indexToHKey.getIndexRowPosition(5));            // i.iid
         // group index -> o hkey
@@ -1087,7 +1093,7 @@ public class RowDefCacheTest
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal
         assertEquals(2, indexToHKey.getIndexRowPosition(1));            // o.cid
         assertEquals(orders.getOrdinal(), indexToHKey.getOrdinal(2));   // o ordinal
-        assertEquals(5, indexToHKey.getIndexRowPosition(3));            // o.oid
+        assertEquals(3, indexToHKey.getIndexRowPosition(3));            // o.oid
         // group index -> c hkey
         indexToHKey = index.indexToHKey(customer.userTable().getDepth());
         assertEquals(customer.getOrdinal(), indexToHKey.getOrdinal(0)); // c ordinal

@@ -126,11 +126,6 @@ public class GroupIndex extends Index
 
     // GroupIndex interface
 
-    public GroupIndexRowComposition groupIndexRowComposition()
-    {
-        return indexRowComposition;
-    }
-
     // A row of the given table is being changed in the columns described by modifiedColumnPositions.
     // Return true iff there are any columns in common with those columns of the table contributing to the
     // index. A result of false means that the row change need not result in group index maintenance.
@@ -214,100 +209,33 @@ public class GroupIndex extends Index
                                           Map<? extends Table, Integer> flattenedRowOffsets)
     {
         freezeColumns();
-        allColumns = new ArrayList<IndexColumn>(keyColumns);
+        allColumns = new ArrayList<IndexColumn>();
+        allColumns.addAll(keyColumns);
+        AssociationBuilder toIndexRowBuilder = new AssociationBuilder();
         List<Column> indexColumns = new ArrayList<Column>();
         // Add index key fields
         for (IndexColumn iColumn : getKeyColumns()) {
             Column column = iColumn.getColumn();
             indexColumns.add(column);
-            indexRowComposition.addField(columnPosition(flattenedRowOffsets, column));
+            toIndexRowBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
         }
-        // Add leafward-biased hkey fields not already included
+        // Add hkey fields not already included
         int indexColumnPosition = indexColumns.size();
-        int indexRootDepth = rootMostTable().getDepth();
-        int indexLeafDepth = leafMostTable().getDepth();
-        List<Column> rootwardColumns = new ArrayList<Column>();
         HKey hKey = hKey();
         for (HKeySegment hKeySegment : hKey.segments()) {
             Integer ordinal = ordinalMap.get(hKeySegment.table());
             assert ordinal != null : hKeySegment.table();
             for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                Column leafwardColumn = hKeyColumn.column();
-                // Get rootward columns among the tables covered by the index: equivalent columns minus
-                // leafwardColumn, that aren't already included elsewhere.
-                for (Column equivalentColumn : hKeyColumn.equivalentColumns()) {
-                    int equivalentColumnTableDepth = equivalentColumn.getUserTable().getDepth();
-                    if (equivalentColumnTableDepth >= indexRootDepth &&
-                        equivalentColumnTableDepth <= indexLeafDepth &&
-                        equivalentColumn != leafwardColumn &&
-                        !indexColumns.contains(equivalentColumn) &&
-                        !rootwardColumns.contains(equivalentColumn)) {
-                        rootwardColumns.add(equivalentColumn);
-                    }
-                }
-                if (!indexColumns.contains(leafwardColumn)) {
-                    indexRowComposition.addField(columnPosition(flattenedRowOffsets, leafwardColumn));
-                    indexColumns.add(leafwardColumn);
-                    allColumns.add(new IndexColumn(this, leafwardColumn, indexColumnPosition++, true, 0));
+                Column undeclaredHKeyColumn = undeclaredHKeyColumn(hKeyColumn);
+                if (!indexColumns.contains(undeclaredHKeyColumn)) {
+                    toIndexRowBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, undeclaredHKeyColumn), -1);
+                    indexColumns.add(undeclaredHKeyColumn);
+                    allColumns.add(new IndexColumn(this, undeclaredHKeyColumn, indexColumnPosition++, true, 0));
                 }
             }
         }
-        // Need a mapping from rootward column to hkey-equivalent columns. (c, e) is such a mapping if c is
-        // a rootward column, and e is either:
-        //     1) A (leafward) hkey column such that e.equivalentColumns contains c, or
-        //     2) A member of the same equivalentColumn set containing c. I.e., there is some leafward key column
-        //        x such that x.equivalentColumns contains {c, e}.
-        Map<Column, Set<Column>> rootwardHKeyColumnEquivalents = new HashMap<Column, Set<Column>>();
-        for (HKeySegment hKeySegment : hKey.segments()) {
-            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                for (Column hKeyEquivalentColumn : hKeyColumn.equivalentColumns()) {
-                    if (rootwardColumns.contains(hKeyEquivalentColumn)) {
-                        // Case 1
-                        associateWithColumn(rootwardHKeyColumnEquivalents, hKeyEquivalentColumn, hKeyColumn.column());
-                        // Case 2
-                        for (Column otherHKeyEquivalentColumn : hKeyColumn.equivalentColumns()) {
-                            if (otherHKeyEquivalentColumn != hKeyEquivalentColumn) {
-                                associateWithColumn(rootwardHKeyColumnEquivalents, hKeyEquivalentColumn, otherHKeyEquivalentColumn);
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        // Complete metadata for rootward-biased hkey fields
-        List<IndexColumn> rootwardHKeyColumns = new ArrayList<IndexColumn>();
-        for (Column rootwardColumn : rootwardColumns) {
-            IndexColumn indexColumn = new IndexColumn(this, rootwardColumn, indexColumnPosition++, true, 0);
-            rootwardHKeyColumns.add(indexColumn);
-            allColumns.add(indexColumn);
-            // Need positions of hkey-equivalent columns for rootward hkey columns
-            List<Integer> equivalentColumnPositions = new ArrayList<Integer>();
-            for (Column hKeyEquivalentColumn : rootwardHKeyColumnEquivalents.get(rootwardColumn)) {
-                if (hKeyEquivalentColumn != rootwardColumn) {
-                    int hKeyEquivalentColumnPosition = positionOf(hKeyEquivalentColumn);
-                    if (hKeyEquivalentColumnPosition != -1) {
-                        equivalentColumnPositions.add(hKeyEquivalentColumnPosition);
-                    }
-                }
-            }
-            indexRowComposition.addField(columnPosition(flattenedRowOffsets, rootwardColumn),
-                                         equivalentColumnPositions);
-        }
-        indexRowComposition.close();
+        indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
         computeHKeyDerivations(ordinalMap);
-        // Need allColumns to include rootwardHKeyColumns for purposes of computeHKeyDerivations. But after that,
-        // callers of Index.getAllColumns should not see rootwardHKeyColumns.
-        allColumns.removeAll(rootwardHKeyColumns);
-    }
-
-    private void associateWithColumn(Map<Column, Set<Column>> columnSetMap, Column column, Column associated)
-    {
-        Set<Column> columnSet = columnSetMap.get(column);
-        if (columnSet == null) {
-            columnSet = new HashSet<Column>();
-            columnSetMap.put(column, columnSet);
-        }
-        columnSet.add(associated);
     }
 
     private void computeHKeyDerivations(Map<Table, Integer> ordinalMap)
@@ -322,16 +250,9 @@ public class GroupIndex extends Index
             for (HKeySegment hKeySegment : hKey.segments()) {
                 hKeyBuilder.toHKeyEntry(ordinalMap.get(hKeySegment.table()), -1);
                 for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                    Column column = hKeyColumn.column();
-                    int indexColumnPosition = positionOf(column);
+                    int indexColumnPosition = positionOf(hKeyColumn.column());
                     if (indexColumnPosition == -1) {
-                        for (Column equivalentColumn : hKeyColumn.equivalentColumns()) {
-                            int equivalentColumnPosition = positionOf(equivalentColumn);
-                            if (indexColumnPosition == -1 && equivalentColumnPosition != -1) {
-                                indexColumnPosition = equivalentColumnPosition;
-                            }
-                        }
-                        assert indexColumnPosition != -1 : column;
+                        indexColumnPosition = substituteHKeyColumnPosition(hKeyColumn);
                     }
                     hKeyBuilder.toHKeyEntry(-1, indexColumnPosition);
                 }
@@ -339,6 +260,90 @@ public class GroupIndex extends Index
             indexToHKeys[tableDepth] = hKeyBuilder.createIndexToHKey();
             table = table.parentTable();
         }
+    }
+
+    private Column undeclaredHKeyColumn(HKeyColumn hKeyColumn)
+    {
+        Column undeclaredHKeyColumn = null;
+        int rootMostDepth = rootMostTable().getDepth();
+        List<Column> equivalentColumns = hKeyColumn.equivalentColumns();
+        switch (getJoinType()) {
+            case LEFT:
+                // use a rootward bias, but no more rootward than the rootmost table
+                for (Column equivalentColumn : equivalentColumns) {
+                    int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+                    if (undeclaredHKeyColumn == null && equivalentColumnDepth >= rootMostDepth) {
+                        undeclaredHKeyColumn = equivalentColumn;
+                    }
+                }
+                break;
+            case RIGHT:
+                // use a leafward bias, but no more leafward than the leafdmost table
+                int leafMostDepth = leafMostTable().getDepth();
+                for(ListIterator<Column> reverseCols = equivalentColumns.listIterator(equivalentColumns.size());
+                    reverseCols.hasPrevious();)
+                {
+                    Column equivalentColumn = reverseCols.previous();
+                    int equivalentColumnDepth = equivalentColumn.getUserTable().getDepth();
+                    if (undeclaredHKeyColumn == null && equivalentColumnDepth <= leafMostDepth) {
+                        undeclaredHKeyColumn = equivalentColumn;
+                    }
+                }
+                break;
+        }
+        if (undeclaredHKeyColumn == null) {
+            undeclaredHKeyColumn = hKeyColumn.column();
+        }
+        return undeclaredHKeyColumn;
+    }
+
+    private int substituteHKeyColumnPosition(HKeyColumn hKeyColumn)
+    {
+        int substituteHKeyColumnPosition = -1;
+        // Given an hkey row, we need to construct an hkey for some table, either a table covered by the index
+        // or some ancestor table. hKeyColumn is an hkey column of that table. If we're here, then
+        // hKeyColumn.column() cannot be obtained from the index row itself, so the question is: which of the
+        // hKeyColumn's equivalent columns should be used.
+        // - If the hkey column is above the root: Use the rootmost equivalent column.
+        // - Otherwise the hkey column belongs to a table covered by the index.
+        //     - For a left join index, use the nearest rootward equivalent column.
+        //     - For a right join index, use the nearest leafward equivalent column.
+        List<Column> equivalentColumns = hKeyColumn.equivalentColumns(); // sorted by depth, root first
+        Integer targetTableDepth = hKeyColumn.column().getUserTable().getDepth();
+        if (targetTableDepth < rootMostTable().getDepth()) {
+            for (int i = 0; substituteHKeyColumnPosition == -1 && i < equivalentColumns.size(); i++) {
+                Column equivalentColumn = equivalentColumns.get(i);
+                substituteHKeyColumnPosition = positionOf(equivalentColumn);
+            }
+        } else {
+            switch (getJoinType()) {
+                case LEFT:
+                    for (int i = 0; i < equivalentColumns.size(); i++) {
+                        Column equivalentColumn = equivalentColumns.get(i);
+                        int equivalentColumnPosition = positionOf(equivalentColumn);
+                        if (equivalentColumnPosition != -1 && depth(equivalentColumn) < targetTableDepth) {
+                            substituteHKeyColumnPosition = equivalentColumnPosition;
+                        }
+                    }
+                    break;
+                case RIGHT:
+                    for (int i = equivalentColumns.size() - 1; i >= 0; i--) {
+                        Column equivalentColumn = equivalentColumns.get(i);
+                        int equivalentColumnPosition = positionOf(equivalentColumn);
+                        if (equivalentColumnPosition != -1 && depth(equivalentColumn) > targetTableDepth) {
+                            substituteHKeyColumnPosition = equivalentColumnPosition;
+                        }
+                    }
+                    break;
+            }
+        }
+        assert substituteHKeyColumnPosition != -1 : hKeyColumn;
+        return substituteHKeyColumnPosition;
+    }
+
+    private int depth(Column column)
+    {
+        return column.getUserTable().getDepth();
     }
 
     private int positionOf(Column column)
@@ -399,7 +404,6 @@ public class GroupIndex extends Index
     private final NavigableMap<Integer, ParticipatingTable> tablesByDepth = new TreeMap<Integer, ParticipatingTable>();
     private List<Column> columnsPerFlattenedField;
     private IndexToHKey[] indexToHKeys;
-    private GroupIndexRowComposition indexRowComposition = new GroupIndexRowComposition();
 
     // Inner classes
 
