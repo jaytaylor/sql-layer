@@ -37,6 +37,7 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
+import com.google.common.base.Function;
 
 import java.util.Collection;
 import java.util.List;
@@ -377,4 +378,18 @@ public final class HookableDDLFunctions implements DDLFunctions {
         }
     }
 
+    @Override
+    public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
+        Throwable thrown = null;
+        try {
+            hook.hookFunctionIn(session, DXLFunction.CHECK_AND_FIX_INDEXES);
+            return delegate.checkAndFixIndexes(session, schemaRegex, tableRegex);
+        } catch (Throwable t) {
+            thrown = t;
+            hook.hookFunctionCatch(session, DXLFunction.CHECK_AND_FIX_INDEXES, t);
+            throw throwAlways(t);
+        } finally {
+            hook.hookFunctionFinally(session, DXLFunction.CHECK_AND_FIX_INDEXES, thrown);
+        }
+    }
 }

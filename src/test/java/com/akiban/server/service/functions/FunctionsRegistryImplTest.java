@@ -145,6 +145,12 @@ public final class FunctionsRegistryImplTest {
         {
             throw new UnsupportedOperationException("Not supported yet.");
         }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.RETURN_NULL;
+        }
     };
 
     static Map<String, Map<AkType, AggregatorFactory>> expectedAggregatorFactories() {

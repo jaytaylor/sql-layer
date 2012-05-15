@@ -39,6 +39,17 @@ import java.util.List;
  * @see com.akiban.server.service.functions.Scalar.
  */
 public interface ExpressionComposer {
+    public static enum NullTreating
+    {
+        IGNORE,       // The function will treat NULL as if it were any regular value
+       
+        RETURN_NULL,  // The function will return NULL if at least one of its operands is NULL
+        
+        REMOVE        // The function essentially ignores NULL, so constant NULL could be removed from the operand-list
+                      // The differene between this and IGNORE is that
+                                // This doesn't care about NULL, NULL operand(s) will simply be skipped
+                                // while IGNORE might do something with NULL
+    }
     /**
      * - Adjust input types, if needed
      * - Return the type of a composed expression when passed the given types.
@@ -68,4 +79,16 @@ public interface ExpressionComposer {
      * @return 
      */
     Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList);
+    
+    /**
+     * 
+     * @return IGNORE 
+     *                  If NULL operand(s) will simply be ignored
+     *         RETURN_NULL
+     *                  If NULL operand(s) will make this expression return NULL
+     *         REMOVE
+     *                  If NULL expression(s) should be removed (optimisation purpose)
+     *         
+     */
+    NullTreating getNullTreating();
 }

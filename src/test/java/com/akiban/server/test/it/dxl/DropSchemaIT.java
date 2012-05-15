@@ -129,4 +129,23 @@ public final class DropSchemaIT extends ITBase {
         expectTables("one", "c", "o");
         expectNotTables("two", "i");
     }
+    
+    @Test
+    public void createDropRecreateDropAndRestart() throws Exception {
+        createTable("test2", "customer", "id int not null primary key");
+        createTable("test2", "order", "name varchar(32)");
+        createTable("test2", "item", "cost int");
+
+        ddl().dropSchema(session(), "test2");
+        expectNotTables("test2", "customer", "order", "item");
+
+        createTable("test2", "order", "id int not null primary key");
+        createTable("test2", "customer", "id int not null primary key, oid int, grouping foreign key(oid) references \"order\"(id)");
+
+        ddl().dropSchema(session(), "test2");
+        expectNotTables("test2", "customer", "order");
+
+        safeRestartTestServices();
+        expectNotTables("test2", "customer", "order");
+    }
 }

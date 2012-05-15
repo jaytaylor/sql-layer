@@ -130,7 +130,7 @@ public final class SingleIndexScan extends IndexScan {
                 List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
                 operands.add(lowComparand);
                 operands.add(comparand);
-                lowComparand = new FunctionExpression("max",
+                lowComparand = new FunctionExpression("_max",
                         operands,
                         lowComparand.getSQLtype(),
                         null);
@@ -150,7 +150,7 @@ public final class SingleIndexScan extends IndexScan {
                 List<ExpressionNode> operands = new ArrayList<ExpressionNode>(2);
                 operands.add(highComparand);
                 operands.add(comparand);
-                highComparand = new FunctionExpression("min",
+                highComparand = new FunctionExpression("_min",
                         operands,
                         highComparand.getSQLtype(),
                         null);
@@ -316,4 +316,33 @@ public final class SingleIndexScan extends IndexScan {
             conditions = new ArrayList<ConditionExpression>();
         return conditions;
     }
+
+    @Override
+    public void visitComparands(ExpressionRewriteVisitor v) {
+        if (equalityComparands != null) {
+            for (int i = 0; i < equalityComparands.size(); i++) {
+                if (equalityComparands.get(i) != null)
+                    equalityComparands.set(i, equalityComparands.get(i).accept(v));
+            }
+        }
+        if (lowComparand != null)
+            lowComparand = lowComparand.accept(v);
+        if (highComparand != null)
+            highComparand = highComparand.accept(v);
+    }
+
+    @Override
+    public void visitComparands(ExpressionVisitor v) {
+        if (equalityComparands != null) {
+            for (ExpressionNode comparand : equalityComparands) {
+                if (comparand != null)
+                    comparand.accept(v);
+            }
+        }
+        if (lowComparand != null)
+            lowComparand.accept(v);
+        if (highComparand != null)
+            highComparand.accept(v);
+    }
+
 }

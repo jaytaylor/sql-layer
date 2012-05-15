@@ -64,9 +64,15 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
     public synchronized void drop(int tableID) throws PersistitInterruptedException {
         InternalTableStatus ts = tableStatusMap.remove(tableID);
         if(ts != null) {
-            ts.setAutoIncrement(0, true);
-            ts.setRowCount(0);
-            ts.setOrdinal(0);
+            if(ts.autoIncrement != null) {
+                ts.setAutoIncrement(0, true);
+            }
+            if(ts.rowCount != null) {
+                ts.internalSetRowCount(0);
+            }
+            if(ts.ordinal != null) {
+                ts.setOrdinal(0);
+            }
             ts.setRowDef(null, null);
         }
     }
@@ -161,6 +167,16 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         @Override
+        public void setRowCount(long rowCount) {
+            try {
+                internalSetRowCount(rowCount);
+            }
+            catch (PersistitInterruptedException e) {
+                throw new PersistitAdapterException(e);
+            }
+        }
+
+        @Override
         public long getApproximateRowCount() {
             return rowCount.getLiveValue();
         }
@@ -183,7 +199,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
             rowCount.updateAndGet(1);
         }
 
-        void setRowCount(long rowCountValue) throws PersistitInterruptedException {
+        void internalSetRowCount(long rowCountValue) throws PersistitInterruptedException {
             rowCount.set(rowCountValue);
         }
 
@@ -211,7 +227,7 @@ public class PersistitAccumulatorTableStatusCache implements TableStatusCache {
         }
 
         void truncate() throws PersistitInterruptedException {
-            setRowCount(0);
+            internalSetRowCount(0);
             setAutoIncrement(0, true);
         }
     }

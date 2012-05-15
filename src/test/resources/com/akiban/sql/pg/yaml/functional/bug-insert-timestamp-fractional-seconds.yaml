@@ -1,8 +1,0 @@
-# Insert a timestamp with a fractional number of seconds fails
-# BUG 889300
-# Status fix committed (still in progress)
----
-- CreateTable: t (timestamp_field timestamp)
----
-- Statement: INSERT INTO t (timestamp_field) VALUES ('2000-01-02 04:00:00.0')
-...

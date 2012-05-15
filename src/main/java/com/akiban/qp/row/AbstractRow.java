@@ -43,7 +43,7 @@ public abstract class AbstractRow implements Row
         throw new UnsupportedOperationException();
     }
 
-    // Row interface
+    // RowBase interface
 
     @Override
     public abstract RowType rowType();
@@ -58,8 +58,9 @@ public abstract class AbstractRow implements Row
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable) {
-        return false;
+    public boolean containsRealRowOf(UserTable userTable)
+    {
+        throw new UnsupportedOperationException(getClass().toString());
     }
 
     @Override
@@ -68,7 +69,7 @@ public abstract class AbstractRow implements Row
         return rowType() == subRowType ? this : null;
     }
 
-    // Row interface
+    // Shareable interface
 
     @Override
     public void acquire()
@@ -113,17 +114,6 @@ public abstract class AbstractRow implements Row
     protected void afterRelease() {}
     protected void beforeAcquire() {}
 
-    protected static boolean containRealRowOf(
-            ShareHolder<? extends Row> one,
-            ShareHolder<? extends Row> two,
-            UserTable rowType
-    ) {
-        return     (one.isHolding() && one.get().rowType().hasUserTable() && one.get().rowType().userTable() == rowType)
-                || (two.isHolding() && two.get().rowType().hasUserTable() && two.get().rowType().userTable() == rowType)
-                || (one.isHolding() && one.get().containsRealRowOf(rowType))
-                || (two.isHolding() && two.get().containsRealRowOf(rowType))
-                ;
-    }
     // Object state
 
     private int references = 0;

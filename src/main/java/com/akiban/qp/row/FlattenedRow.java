@@ -63,11 +63,6 @@ public class FlattenedRow extends AbstractRow
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable) {
-        return containRealRowOf(parenth, childh, userTable);
-    }
-
-    @Override
     public HKey hKey()
     {
         return hKey;
@@ -89,6 +84,16 @@ public class FlattenedRow extends AbstractRow
             }
         }
         return subRow;
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable)
+    {
+        return     (parenth.isHolding() && parenth.get().rowType().hasUserTable() && parenth.get().rowType().userTable() == userTable)
+                   || (childh.isHolding() && childh.get().rowType().hasUserTable() && childh.get().rowType().userTable() == userTable)
+                   || (parenth.isHolding() && parenth.get().containsRealRowOf(userTable))
+                   || (childh.isHolding() && childh.get().containsRealRowOf(userTable))
+            ;
     }
 
     // FlattenedRow interface

@@ -1,0 +1,10 @@
+# Insert a timestamp with a fractional number of seconds fails
+# BUG 889300
+---
+- CreateTable: t (timestamp_field timestamp)
+---
+- Statement: INSERT INTO t (timestamp_field) VALUES ('2000-01-02 04:00:00.0')
+---
+- Statement: SELECT * FROM t
+- output: [[!re '2000-01-02 04:00:00(\.0)?']]
+...

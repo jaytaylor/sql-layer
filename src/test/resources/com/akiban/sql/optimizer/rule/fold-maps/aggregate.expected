@@ -6,12 +6,12 @@ SelectQuery@7e3b014c
           MapJoin@2aa05bc3()
             Flatten@5e87512(parent INNER child)
               AncestorLookup@605df3c5(child -> [parent, child])
-                IndexScan@382f3bf0(Index(test.child.name[IndexColumn(name)]), GROUPED)
+                SingleIndexScan@382f3bf0(Index(test.child.name[IndexColumn(name)]), GROUPED, rows = 1000, cost = 105967)
                 TableSource@2389b9bd(parent - TableGroup@41675ec4(parent))
                 TableSource@44d79c75(child - TableGroupJoin@25082661(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
             Project@3a0fbd45[child.name, orders.order_date]
               Select@7ab05cd7[]
                 Flatten@5f531aca(orders)
                   BranchLookup@4903f4aa(customers -> customers)
-                    IndexScan@22b3ea59(Index(test.customers.name[IndexColumn(name)]), NONE, =parent.name)
+                    SingleIndexScan@22b3ea59(Index(test.customers.name[IndexColumn(name)]), NONE, =parent.name, rows = 10, cost = 812.894)
                     TableSource@2760e8a2(orders - TableGroupJoin@51de8adb(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

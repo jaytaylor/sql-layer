@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.dxl.IndexCheckSummary;
 import org.junit.Before;
 import org.junit.Test;
 import static org.junit.Assert.assertTrue;
@@ -318,6 +319,11 @@ public class TableDDLTest {
 
         @Override
         public void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate) {}
+
+        @Override
+        public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
+            return null;
+        }
     } // END class DDLFunctionsMock
 
     /*"CREATE TABLE t1 (c1 INT)";*/

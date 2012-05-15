@@ -211,7 +211,19 @@ public class Select_BloomFilterIT extends OperatorITBase
     @Test
     public void testCursor()
     {
-        fail();
+        Operator plan = plan(6);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(outputRowType, 6L, 61L, 601L),
+                    row(outputRowType, 6L, 62L, 602L),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     public Operator plan(long testId)

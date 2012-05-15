@@ -82,11 +82,6 @@ public class ProductRow extends AbstractRow
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable) {
-        return containRealRowOf(left, right, userTable);
-    }
-
-    @Override
     public Row subRow(RowType subRowType)
     {
         Row subRow;
