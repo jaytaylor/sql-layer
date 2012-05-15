@@ -154,8 +154,7 @@ public abstract class Index implements Traversable
     }
 
     /**
-     * Return all columns that make up the physical index key. This includes declared columns and leafward
-     * hkey columns, but excludes rightward hkey columns.
+     * Return all columns that make up the physical index key. This includes declared columns and hkey columns.
      * @return list of columns
      */
     public List<IndexColumn> getAllColumns() {

@@ -304,7 +304,8 @@ public class GroupIndex extends Index
         // or some ancestor table. hKeyColumn is an hkey column of that table. If we're here, then
         // hKeyColumn.column() cannot be obtained from the index row itself, so the question is: which of the
         // hKeyColumn's equivalent columns should be used.
-        // - If the hkey column is above the root: Use the rootmost equivalent column.
+        // - If the hkey column is above the root: Use the rootmost equivalent column of the hkey columns in the index
+        //   row.
         // - Otherwise the hkey column belongs to a table covered by the index.
         //     - For a left join index, use the nearest rootward equivalent column.
         //     - For a right join index, use the nearest leafward equivalent column.
