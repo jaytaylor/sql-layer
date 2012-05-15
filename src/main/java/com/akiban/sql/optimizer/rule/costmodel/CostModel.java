@@ -135,6 +135,13 @@ public class CostModel
         return (nLeftRows + nRightRows) * HKEY_UNION_PER_ROW;
     }
 
+    public double selectWithFilter(int inputRows, int filterRows, double selectivity)
+    {
+        return
+            filterRows * BLOOM_FILTER_LOAD_PER_ROW +
+            inputRows * (BLOOM_FILTER_SCAN_PER_ROW + selectivity * BLOOM_FILTER_SCAN_SELECTIVITY_COEFFICIENT);
+    }
+
     private double hKeyBoundGroupScanSingleRow(UserTableRowType rootTableRowType)
     {
         TreeStatistics treeStatistics = treeStatistics(rootTableRowType);

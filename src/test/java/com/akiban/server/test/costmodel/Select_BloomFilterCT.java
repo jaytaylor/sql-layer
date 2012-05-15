@@ -35,6 +35,7 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.TimeOperator;
 import com.akiban.qp.row.BindableRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
@@ -43,11 +44,11 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.Expressions;
 import org.junit.Test;
 
+import javax.swing.*;
 import java.util.Arrays;
 import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class Select_BloomFilterCT extends CostModelBase
 {
@@ -56,8 +57,14 @@ public class Select_BloomFilterCT extends CostModelBase
     {
         createSchema();
         populateDB();
-        run(WARMUP_RUNS, false);
-        run(MEASURED_RUNS, true);
+        // Load-only
+        run(WARMUP_RUNS, true, 0, false);
+        run(MEASURED_RUNS, true, 0, true);
+        // Load and scan. Vary the starting value to control the amount of overlap with the filter rows.
+        run(WARMUP_RUNS, false, 0, false);
+        for (int start = 0; start <= FILTER_ROWS; start += FILTER_ROWS / 10) {
+            run(MEASURED_RUNS, false, start, true);
+        }
     }
 
     private void createSchema() throws InvalidOperationException
@@ -72,12 +79,13 @@ public class Select_BloomFilterCT extends CostModelBase
         f = createTable(
             schemaName, fTableName,
             "x int");
-        Index dIndex = createIndex(schemaName, dTableName, "idx_dx", "x");
-        Index fab = createIndex(schemaName, fTableName, "idx_fx", "x");
+        Index dx = createIndex(schemaName, dTableName, "idx_dx", "x");
+        Index fx = createIndex(schemaName, fTableName, "idx_fx", "x");
         schema = new Schema(rowDefCache().ais());
         dRowType = schema.userTableRowType(userTable(d));
         fRowType = schema.userTableRowType(userTable(f));
-        fIndexRowType = fRowType.indexRowType(fab);
+        dIndexRowType = dRowType.indexRowType(dx);
+        fIndexRowType = fRowType.indexRowType(fx);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         schema = new Schema(rowDefCache().ais());
@@ -87,61 +95,66 @@ public class Select_BloomFilterCT extends CostModelBase
 
     protected void populateDB()
     {
-        for (int f = 0; f < FILTER_ROWS; f++) {
-            dml().writeRow(session(), createNewRow(f, f)); // x, akiban_pk
+        for (int x = 0; x < FILTER_ROWS; x++) {
+            dml().writeRow(session(), createNewRow(f, x, x)); // x, akiban_pk
         }
-        for (int d = 0; d < DRIVING_ROWS; d++) {
-            dml().writeRow(session(), createNewRow(d, d)); // x, akiban_pk
+        for (int x = 0; x < DRIVING_ROWS; x++) {
+            dml().writeRow(session(), createNewRow(d, x, x)); // x, akiban_pk
         }
     }
     
-    private void run(int runs, boolean report)
+    private void run(int runs, boolean loadOnly, int startScan, boolean report)
     {
-/*
-        Operator setupOuter = groupScan_Default(group);
-        TimeOperator timeSetupOuter = new TimeOperator(setupOuter);
-        Operator setupInner = limit_Default(groupScan_Default(group), innerRows);
-        TimeOperator timeSetupInner = new TimeOperator(setupInner);
-        Operator plan = map_NestedLoops(timeSetupOuter, timeSetupInner, 0);
+        Operator plan = loadOnly ? planLoadOnly() : planLoadAndSelect(startScan);
         long start = System.nanoTime();
         for (int r = 0; r < runs; r++) {
             Cursor cursor = cursor(plan, queryContext);
             cursor.open();
-            while (cursor.next() != null);
+            Row row;
+            while ((row = cursor.next()) != null) {
+                // System.out.println(row);
+            }
         }
         long stop = System.nanoTime();
-        long mapNsec = stop - start - timeSetupInner.elapsedNsec() - timeSetupOuter.elapsedNsec();
-        if (report) {
-            // Report the difference
-            double averageUsecPerRow = mapNsec / (1000.0 * runs * (FILTER_ROWS * (innerRows + 1)));
-            System.out.println(String.format("inner/outer = %s: %s usec/row",
-                                             innerRows, averageUsecPerRow));
+        long planNsec = stop - start;
+        if (loadOnly) {
+            planNsec -= timeFilterInput.elapsedNsec();
+            if (report) {
+                double averageUsecPerRow = planNsec / (1000.0 * runs * FILTER_ROWS);
+                System.out.println(String.format("load only: %s usec/row", averageUsecPerRow));
+            }
+        } else {
+            planNsec -= (timeFilterInput.elapsedNsec() + timeScanInput.elapsedNsec());
+            if (report) {
+                double averageUsecPerRow = planNsec / (1000.0 * runs * (DRIVING_ROWS - startScan));
+                double selected = (double) (FILTER_ROWS - startScan) / DRIVING_ROWS;
+                System.out.println(String.format("scan %s: %s usec/row", selected, averageUsecPerRow));
+            }
         }
-*/
     }
 
     public Operator planLoadOnly()
     {
-        // loadFilter loads the filter with F rows containing the given testId.
+        // filterInput loads the filter with F rows containing the given testId.
         Operator filterInput =
             project_Default(
                 groupScan_Default(groupTable(f)),
                 fRowType,
                 Arrays.asList(Expressions.field(fRowType, 0)));
         timeFilterInput = new TimeOperator(filterInput);
-        // For the  index scan retrieving rows from the F(a, b) index given a D index row
-        IndexBound xBound = new IndexBound(
+        // For the  index scan retrieving rows from the F(x) index given a D index row
+        IndexBound fxBound = new IndexBound(
             new RowBasedUnboundExpressions(
                 filterInput.rowType(),
-                Arrays.asList(Expressions.boundField(dRowType, 0, 0))),
+                Arrays.asList(Expressions.boundField(dIndexRowType, 0, 0))),
             new SetColumnSelector(0));
-        IndexKeyRange fKeyRange = IndexKeyRange.bounded(fIndexRowType, xBound, true, xBound, true);
-        // Use a bloom filter loaded by loadFilter. Then for each input row, check the filter (projecting
+        IndexKeyRange fKeyRange = IndexKeyRange.bounded(fIndexRowType, fxBound, true, fxBound, true);
+        // Use a bloom filter loaded by filterInput. Then for each input row, check the filter (projecting
         // D rows on (x)), and, for positives, check F using an index scan keyed by D.x.
         Operator plan =
             using_BloomFilter(
                 // filterInput
-                filterInput,
+                timeFilterInput,
                 // filterRowType
                 filterInput.rowType(),
                 // estimatedRowCount
@@ -151,43 +164,52 @@ public class Select_BloomFilterCT extends CostModelBase
                 // streamInput
                 select_BloomFilter(
                     // input
-                    valuesScan_Default(Collections.<BindableRow>emptyList(), dRowType),
+                    valuesScan_Default(Collections.<BindableRow>emptyList(), dIndexRowType),
                     // onPositive
                     indexScan_Default(
                         fIndexRowType,
                         fKeyRange,
                         new Ordering()),
                     // filterFields
-                    Arrays.asList(Expressions.field(dRowType, 0)),
+                    Arrays.asList(Expressions.field(dIndexRowType, 0)),
                     // filterBindingPosition
                     0));
         return plan;
     }
 
-    public Operator plan()
+    public Operator planLoadAndSelect(int start)
     {
-        // loadFilter loads the filter with F rows containing the given testId.
-        Operator loadFilter =
+        // filterInput loads the filter with F rows containing the given testId.
+        Operator filterInput =
             project_Default(
                 groupScan_Default(groupTable(f)),
                 fRowType,
                 Arrays.asList(Expressions.field(fRowType, 0)));
-        TimeOperator timeLoadFilter = new TimeOperator(loadFilter);
-        // For the  index scan retrieving rows from the F(a, b) index given a D index row
-        IndexBound xBound = new IndexBound(
+        timeFilterInput = new TimeOperator(filterInput);
+        // For the index scan retriving rows from the D(x) index
+        IndexBound dxLo =
+            new IndexBound(row(dIndexRowType, start), new SetColumnSelector(0));
+        IndexBound dxHi =
+            new IndexBound(row(dIndexRowType, Integer.MAX_VALUE), new SetColumnSelector(0));
+        IndexKeyRange dKeyRange =
+            IndexKeyRange.bounded(dIndexRowType, dxLo, true, dxHi, false);
+        // For the  index scan retrieving rows from the F(x) index given a D index row
+        IndexBound fxBound = new IndexBound(
             new RowBasedUnboundExpressions(
-                loadFilter.rowType(),
-                Arrays.asList(Expressions.boundField(dRowType, 0, 0))),
+                filterInput.rowType(),
+                Arrays.asList(Expressions.boundField(dIndexRowType, 0, 0))),
             new SetColumnSelector(0));
-        IndexKeyRange fKeyRange = IndexKeyRange.bounded(fIndexRowType, xBound, true, xBound, true);
-        // Use a bloom filter loaded by loadFilter. Then for each input row, check the filter (projecting
+        IndexKeyRange fKeyRange = IndexKeyRange.bounded(fIndexRowType, fxBound, true, fxBound, true);
+        // Use a bloom filter loaded by filterInput. Then for each input row, check the filter (projecting
         // D rows on (x)), and, for positives, check F using an index scan keyed by D.x.
+        Operator scanInput = indexScan_Default(dIndexRowType, dKeyRange, new Ordering());
+        timeScanInput = new TimeOperator(scanInput);
         Operator plan =
             using_BloomFilter(
                 // filterInput
-                loadFilter,
+                timeFilterInput,
                 // filterRowType
-                loadFilter.rowType(),
+                filterInput.rowType(),
                 // estimatedRowCount
                 FILTER_ROWS,
                 // filterBindingPosition
@@ -195,14 +217,14 @@ public class Select_BloomFilterCT extends CostModelBase
                 // streamInput
                 select_BloomFilter(
                     // input
-                    groupScan_Default(groupTable(d)),
+                    timeScanInput,
                     // onPositive
                     indexScan_Default(
                         fIndexRowType,
                         fKeyRange,
                         new Ordering()),
                     // filterFields
-                    Arrays.asList(Expressions.field(dRowType, 0)),
+                    Arrays.asList(Expressions.field(dIndexRowType, 0)),
                     // filterBindingPosition
                     0));
         return plan;
@@ -210,14 +232,16 @@ public class Select_BloomFilterCT extends CostModelBase
 
     private static final int WARMUP_RUNS = 2;
     private static final int MEASURED_RUNS = 5;
-    private static final int FILTER_ROWS = 1000;
-    private static final int DRIVING_ROWS = 10000;
+    private static final long FILTER_ROWS = 100000;
+    private static final long DRIVING_ROWS = 200000;
 
     private int d;
     private int f;
     private UserTableRowType dRowType;
     private UserTableRowType fRowType;
+    private IndexRowType dIndexRowType;
     private IndexRowType fIndexRowType;
     private GroupTable group;
     private TimeOperator timeFilterInput;
+    private TimeOperator timeScanInput;
 }

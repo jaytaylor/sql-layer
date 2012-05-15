@@ -208,6 +208,12 @@ public class Select_BloomFilterIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
+    @Test
+    public void testCursor()
+    {
+        fail();
+    }
+
     public Operator plan(long testId)
     {
         // loadFilter loads the filter with F rows containing the given testId.
