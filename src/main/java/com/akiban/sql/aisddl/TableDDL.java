@@ -164,7 +164,8 @@ public class TableDDL
                 typeParameter1, typeParameter2, 
                 type.isNullable(), 
                 cdn.isAutoincrementColumn(),
-                null, null);
+                null, 
+                type.getCollation());
         if (cdn.isAutoincrementColumn()) {
             builder.userTableInitialAutoIncrement(schemaName, tableName, 
                     cdn.getAutoincrementStart());
