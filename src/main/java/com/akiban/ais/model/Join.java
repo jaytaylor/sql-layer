@@ -196,6 +196,16 @@ public class Join implements Traversable, HasGroup
         return null;
     }
 
+    public Column getMatchingParent(Column childColumn)
+    {
+        for (JoinColumn joinColumn : joinColumns) {
+            if (joinColumn.getChild() == childColumn) {
+                return joinColumn.getParent();
+            }
+        }
+        return null;
+    }
+
     @Override
     public void traversePreOrder(Visitor visitor)
     {

@@ -106,9 +106,9 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public HKey newHKey(RowType rowType)
+    public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata)
     {
-        return new PersistitHKey(this, rowType.hKey());
+        return new PersistitHKey(this, hKeyMetadata);
     }
 
     @Override
@@ -225,7 +225,10 @@ public class PersistitAdapter extends StoreAdapter
 
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
     {
-        return new PersistitIndexRow(this, indexRowType);
+        return
+            indexRowType.index().isTableIndex()
+            ? PersistitIndexRow.tableIndexRow(this, indexRowType)
+            : PersistitIndexRow.groupIndexRow(this, indexRowType);
     }
 
 

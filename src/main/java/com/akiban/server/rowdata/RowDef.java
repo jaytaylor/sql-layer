@@ -31,15 +31,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
@@ -104,7 +96,7 @@ public class RowDef implements TreeLink {
     /**
      * Array of index definitions for this row
      */
-    private Index[] indexes;
+    private TableIndex[] indexes;
 
     /**
      * Array of group index definitions for this row. Populated only if this
@@ -436,11 +428,11 @@ public class RowDef implements TreeLink {
         return groupIndexes;
     }
 
-    public Index getIndex(final String indexName) {
+    public TableIndex getIndex(final String indexName) {
         return table.getIndex(indexName);
     }
     
-    public Index getGroupIndex(final String indexName) {
+    public GroupIndex getGroupIndex(final String indexName) {
         return table.getGroup().getIndex(indexName);
     }
 
@@ -505,7 +497,7 @@ public class RowDef implements TreeLink {
         return !isGroupTable();
     }
 
-    public void setIndexes(Index[] indexes) {
+    public void setIndexes(TableIndex[] indexes) {
         this.indexes = indexes;
     }
 
@@ -538,7 +530,7 @@ public class RowDef implements TreeLink {
         this.columnOffset = columnOffset;
     }
 
-    public Index getPKIndex() {
+    public TableIndex getPKIndex() {
         if (!isGroupTable() && indexes != null && indexes.length > 0) {
             return indexes[0];
         } else {
