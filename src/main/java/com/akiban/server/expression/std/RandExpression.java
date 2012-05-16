@@ -29,6 +29,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.TypesList;
@@ -68,6 +69,12 @@ public class RandExpression extends AbstractCompositeExpression
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new RandExpression(arguments);
+        }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.IGNORE;
         }
         
     };
@@ -111,7 +118,7 @@ public class RandExpression extends AbstractCompositeExpression
     }
     
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return false;
     }

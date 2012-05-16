@@ -561,7 +561,7 @@ public abstract class CostEstimator implements TableRowCounts
         table.setState(table.getState() | (1 << b));
     }
 
-    /** Like {@link BranchJoiner_CBO#markBranches} but simpler without
+    /** Like {@link BranchJoiner#markBranches} but simpler without
      * having to worry about the exact <em>order</em> in which
      * operations are performed.
      */

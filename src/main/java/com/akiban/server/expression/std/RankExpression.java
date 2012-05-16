@@ -49,7 +49,7 @@ public final class RankExpression extends CompareExpression {
     }
 
     @Override
-    protected boolean nullIsContaminating() {
+    public boolean nullIsContaminating() {
         return false;
     }
 

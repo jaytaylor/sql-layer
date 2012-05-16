@@ -84,6 +84,12 @@ public final class ValueSourceExpression implements Expression
 
     private final ValueSource valueSource;
 
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
+
 
     private class InnerEvaluation extends ExpressionEvaluation.Base
     {

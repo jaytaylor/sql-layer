@@ -45,6 +45,14 @@ abstract class BinaryComposer implements ExpressionComposer {
         throw new UnsupportedOperationException("not supported");
     }
     
+    // For most expressions, NULL is contaminating
+    // Any expressions that treat NULL specially should override this
+    @Override
+    public NullTreating getNullTreating()
+    {
+        return NullTreating.RETURN_NULL;
+    }
+    
     @Override
     public Expression compose (List<? extends Expression> arguments, List<ExpressionType> typesList)
     {

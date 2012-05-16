@@ -60,6 +60,7 @@ public class AISBinder implements Visitor
     private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
     private boolean allowSubqueryMultipleColumns;
+    private Set<ValueNode> havingClauses;
 
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
         this.ais = ais;
@@ -102,6 +103,7 @@ public class AISBinder implements Visitor
     public void bind(StatementNode stmt) throws StandardException {
         visited = new HashSet<QueryTreeNode>();
         bindingContexts = new ArrayDeque<BindingContext>();
+        havingClauses = new HashSet<ValueNode>();
         try {
             stmt.accept(this);
         }
@@ -155,6 +157,10 @@ public class AISBinder implements Visitor
         case NodeTypes.GROUP_BY_LIST:
             getBindingContext().resultColumnsAvailable = true;
             break;
+        default:
+            if (havingClauses.contains(node)) // No special node type.
+                getBindingContext().resultColumnsAvailable = true;
+            break;
         }
 
         return first;
@@ -173,6 +179,10 @@ public class AISBinder implements Visitor
         case NodeTypes.ORDER_BY_LIST:
         case NodeTypes.GROUP_BY_LIST:
             getBindingContext().resultColumnsAvailable = false;
+            break;
+        default:
+            if (havingClauses.contains(node))
+                getBindingContext().resultColumnsAvailable = false;
             break;
         }
     }
@@ -376,6 +386,8 @@ public class AISBinder implements Visitor
             addFromTable(fromList.get(i));
         }
         expandAllsAndNameColumns(selectNode.getResultColumns(), fromList);
+        if (selectNode.getHavingClause() != null)
+            havingClauses.add(selectNode.getHavingClause());
     }
 
     // Process a FROM list table, finding the table binding.

@@ -44,7 +44,7 @@ import static org.junit.Assert.assertTrue;
 
 public class ExtractExpressionTest extends ComposedExpressionTestBase
 {
-    private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
+    private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, true);
       
     @Test
     public void testNull() // test null for Extract functions
