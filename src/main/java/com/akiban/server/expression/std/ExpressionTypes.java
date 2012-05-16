@@ -58,7 +58,11 @@ public class ExpressionTypes
     }
 
     public static ExpressionType varchar(int length) {
-        return newType(AkType.VARCHAR, length);
+        return varchar(length, null);
+    }
+
+    public static ExpressionType varchar(int length, String collation) {
+        return newType(AkType.VARCHAR, length, 0, collation);
     }
 
     public static ExpressionType varbinary(int length) {
@@ -66,15 +70,20 @@ public class ExpressionTypes
     }
 
     private static ExpressionType newType(AkType type) {
-        return new ExpressionTypeImpl(type, 0, 0);
+        return new ExpressionTypeImpl(type, 0, 0, null);
     }
 
     private static ExpressionType newType(AkType type, int precision) {
-        return new ExpressionTypeImpl(type, precision, 0);
+        return new ExpressionTypeImpl(type, precision, 0, null);
     }
 
     public static ExpressionType newType(AkType type, int precision, int scale) {
-        return new ExpressionTypeImpl(type, precision, scale);
+        return new ExpressionTypeImpl(type, precision, scale, null);
+    }
+
+    public static ExpressionType newType(AkType type, int precision, int scale, 
+                                         String collation) {
+        return new ExpressionTypeImpl(type, precision, scale, collation);
     }
 
     static class ExpressionTypeImpl implements ExpressionType {
@@ -94,18 +103,29 @@ public class ExpressionTypes
         }
 
         @Override
+        public String getCollation() {
+            return collation;
+        }
+
+        @Override
         public String toString() {
-            return type + "(" + precision + "," + scale + ")";
+            StringBuilder str = new StringBuilder(type.toString());
+            str.append("(").append(precision).append(",").append(scale).append(")");
+            if (collation != null)
+                str.append(" COLLATE ").append(collation);
+            return str.toString();
         }
         
-        ExpressionTypeImpl(AkType type, int precision, int scale) {
+        ExpressionTypeImpl(AkType type, int precision, int scale, String collation) {
             this.type = type;
             this.precision = precision;
             this.scale = scale;
+            this.collation = collation;
         }
 
         private AkType type;
         private int precision, scale;
+        private String collation;
     }
     
     private ExpressionTypes() {

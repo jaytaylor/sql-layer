@@ -50,4 +50,9 @@ public interface ExpressionType {
      * Others return <code>0</code>.
      */
     int getScale();
+
+    /**
+     * The collation of the value or <code>null</code>.
+     */
+    String getCollation();
 }
