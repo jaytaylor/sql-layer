@@ -513,8 +513,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             return ExpressionTypes.BOOL;
-        case TypeId.FormatIds.CHAR_TYPE_ID:
-            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
         case TypeId.FormatIds.DATE_TYPE_ID:
             return ExpressionTypes.DATE;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
@@ -559,8 +557,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
                 return ExpressionTypes.DATETIME;
             else
                 return ExpressionTypes.TIMESTAMP;
+        case TypeId.FormatIds.BIT_TYPE_ID:
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+        case TypeId.FormatIds.CHAR_TYPE_ID:
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             return ExpressionTypes.varchar(sqlType.getMaximumWidth());
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
