@@ -43,7 +43,7 @@ public class HKeyCache<HKEY extends HKey>
         if (ordinalToHKey.isDefined(ordinal)) {
             hKey = ordinalToHKey.get(ordinal);
         } else {
-            hKey = adapter.newHKey(table.hKey());
+            hKey = (HKEY) adapter.newHKey(table.hKey());
             ordinalToHKey.set(ordinal, hKey);
         }
         return hKey;
