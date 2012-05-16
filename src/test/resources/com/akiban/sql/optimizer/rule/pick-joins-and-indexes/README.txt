@@ -18,6 +18,8 @@ equals-sorted: Same with = for comparison.
 
 in-subquery: IN SELECT to semi-join (not indexable).
 
+in-subquery-indexed: IN that is indexed.
+
 join-across-subquery: group join in subquery expression
 
 join-cond-too-complex: A join condition that will not work with a group join.

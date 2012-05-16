@@ -100,7 +100,7 @@ public abstract class OperatorExecutionBase /* TODO: Temporary */ implements Cur
     protected void checkQueryCancelation()
     {
         try {
-            adapter().checkQueryCancelation(context.getStartTime());
+            context.checkQueryCancelation();
         } catch (QueryCanceledException e) {
             close();
             throw e;

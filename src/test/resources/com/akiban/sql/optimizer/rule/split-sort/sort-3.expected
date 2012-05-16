@@ -10,5 +10,5 @@ SelectQuery@69236cd5
           Select@67dacccc[]
             Flatten@62770d2e(child)
               BranchLookup@76027982(parent -> parent)
-                IndexScan@1c778255(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name)
+                SingleIndexScan@1c778255(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 640.731)
                 TableSource@2830ae41(child - TableGroupJoin@6a0da90c(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))

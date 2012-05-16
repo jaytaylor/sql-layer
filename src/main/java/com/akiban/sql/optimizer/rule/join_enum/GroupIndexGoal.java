@@ -579,12 +579,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         Subquery subquery = ((SubquerySource)comparisonTable).getSubquery();
         if (subquery != queryGoal.getQuery())
             return false;
-        if (!(subquery.getQuery() instanceof ResultSet))
+        PlanNode input = subquery.getQuery();
+        if (input instanceof ResultSet)
+            input = ((ResultSet)input).getInput();
+        if (!(input instanceof Project))
             return false;
-        ResultSet results = (ResultSet)subquery.getQuery();
-        if (!(results.getInput() instanceof Project))
-            return false;
-        Project project = (Project)results.getInput();
+        Project project = (Project)input;
         ExpressionNode insideExpression = project.getFields().get(comparisonColumn.getPosition());
         return indexExpressionMatches(indexExpression, insideExpression, enumerator);
     }
@@ -702,6 +702,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (int i=0; i < ncols; ++i) {
                 ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
                 ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
+                if ((firstCol == null) || (secondCol == null))
+                    break;
                 if (!equivs.areEquivalent(firstCol, secondCol))
                     break;
                 result.add(firstCol.getColumn());

@@ -123,7 +123,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
             compiler.initFunctionsRegistry(new FunctionsRegistryImpl());
-            if ("true".equals(properties.getProperty("cbo")))
+            if (Boolean.parseBoolean(properties.getProperty("cbo", "true")))
                 compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
             else
                 compiler.initCostEstimator(null);

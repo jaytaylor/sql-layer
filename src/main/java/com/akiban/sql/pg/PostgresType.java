@@ -187,13 +187,21 @@ public class PostgresType extends ServerType
             return type;
         }
 
+        public static TypeOid fromOid(int oid) {
+            for (TypeOid inst : values()) {
+                if (inst.getOid() == oid) {
+                    return inst;
+                }
+            }
+            return null;
+        }
+
     }
     
     /*** Representation. ***/
     private int oid;
     private short length;
     private int modifier;
-    private AkType akType;
 
     public PostgresType(int oid, short length, int modifier, AkType akType) {
         super(akType);
@@ -442,6 +450,21 @@ public class PostgresType extends ServerType
         }
         
         return new PostgresType(oid, length, modifier, akType);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        if (length >= 0) {
+            str.append("(").append(length);
+            if (modifier >= 0)
+                str.append(",").append(modifier);
+            str.append(")");
+        }
+        TypeOid inst = TypeOid.fromOid(oid);
+        if (inst != null)
+            str.append("/").append(inst.getName());
+        return str.toString();
     }
 
 }
