@@ -257,6 +257,11 @@ public class
         LOG.info("basicSchemaIsComplete");
         for (UserTable userTable : ais.getUserTables().values()) {
             userTable.endTable();
+            // endTable may have created new index, set its tree name if so
+            Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+            if (index.getTreeName() == null) {
+                index.setTreeName(nameGenerator.generateIndexTreeName(index));
+            }
         }
         for (ForwardTableReference forwardTableReference : forwardReferences.values()) {
             UserTable childTable = forwardTableReference.childTable();
