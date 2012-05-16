@@ -91,8 +91,16 @@ public class ColumnBinding
             case 0:
                 return new DataTypeDescriptor(typeId, nullable);
             case 1:
-                return new DataTypeDescriptor(typeId, nullable, 
-                                              column.getTypeParameter1().intValue());
+                {
+                    DataTypeDescriptor type = new DataTypeDescriptor(typeId, nullable, 
+                                                                     column.getTypeParameter1().intValue());
+                    if (typeId.isStringTypeId() &&
+                        (column.getCharsetAndCollation() != null))
+                        type = new DataTypeDescriptor(type,
+                                                      column.getCharsetAndCollation().collation(),
+                                                      DataTypeDescriptor.CollationDerivation.IMPLICIT);
+                    return type;
+                }
             case 2:
                 {
                     int precision = column.getTypeParameter1().intValue();
