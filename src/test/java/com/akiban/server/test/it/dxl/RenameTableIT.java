@@ -299,4 +299,19 @@ public class RenameTableIT extends ITBase {
 
         }
     }
+
+    /**
+     * bug999467, simulate many repeated alters
+     */
+    @Test
+    public void renameSameTablesMultipleTimes() {
+        final int LOOPS = 5;
+        createTable("test", "t1", "c1 INT");
+        for(int i = 0; i < LOOPS; ++i) {
+            createTable("test", "sql#foo-1", "c1 INT");
+            ddl().renameTable(session(), tableName("test", "t1"), tableName("test", "sql#foo_2"));
+            ddl().renameTable(session(), tableName("test", "sql#foo-1"), tableName("test", "t1"));
+            ddl().dropTable(session(),  tableName("test", "sql#foo_2"));
+        }
+    }
 }
