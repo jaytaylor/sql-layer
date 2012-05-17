@@ -60,7 +60,6 @@ public abstract class Index implements Traversable
         this.indexId = indexId;
         this.isUnique = isUnique;
         this.constraint = constraint;
-        this.treeName = this.indexName.toString();
         this.joinType = joinType;
         this.isValid = isValid;
         keyColumns = new ArrayList<IndexColumn>();

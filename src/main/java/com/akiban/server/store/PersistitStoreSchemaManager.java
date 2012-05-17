@@ -217,6 +217,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         nameChanger.setNewTableName(newName.getTableName());
         nameChanger.doChange();
 
+        // AISTableNameChanger doesn't bother with group names or group tables, fix them with the builder
+        AISBuilder builder = new AISBuilder(newAIS);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+        newAIS.freeze();
+
         if(curSchema.equals(newSchema)) {
             commitAISChange(session, newAIS, Collections.singleton(curSchema));
         } else {
@@ -882,8 +888,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * @param schemaNames The schemas affected by the change.
      */
     private void commitAISChange(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
-
-        //TODO: Verify the newAIS.isFrozen(), if not throw an exception. 
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
 
         Exchange schemaEx = null;
         try {

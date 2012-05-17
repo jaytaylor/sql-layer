@@ -298,7 +298,7 @@ public class AISMerge {
             if(table.getParentJoin() == null) {
                 treeNames.add(table.getTreeName());
             }
-            for(Index index : table.getIndexes()) {
+            for(Index index : table.getIndexesIncludingInternal()) {
                 treeNames.add(index.getTreeName());
             }
         }

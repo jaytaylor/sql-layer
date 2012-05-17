@@ -105,8 +105,7 @@ public final class CreateIndexesIT extends ITBase {
             Column refCol = Column.create(newTable, col.getName(), col.getPosition(), col.getType());
             refCol.setTypeParameter1(col.getTypeParameter1());
             refCol.setTypeParameter2(col.getTypeParameter2());
-            Integer indexedLen = col.getMaxStorageSize().intValue();
-            index.addColumn(new IndexColumn(index, refCol, pos++, true, indexedLen));
+            index.addColumn(new IndexColumn(index, refCol, pos++, true, null));
         }
         return index;
     }

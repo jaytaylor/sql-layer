@@ -64,6 +64,7 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
+        builder.setTableTreeNamesForTest();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
         Assert.assertEquals(0, ais.getGroupTables().size());
@@ -723,6 +724,7 @@ public class AISBuilderTest
         builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
         builder.userTableInitialAutoIncrement("s", "b", 5L);
         builder.basicSchemaIsComplete();
+        builder.setTableTreeNamesForTest();
         // Check autoinc state
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("s", "b");
@@ -746,6 +748,7 @@ public class AISBuilderTest
         builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
         builder.userTableInitialAutoIncrement("s", "b", 5L);
         builder.basicSchemaIsComplete();
+        builder.setTableTreeNamesForTest();
         // Check autoinc state
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("s", "b");
