@@ -31,9 +31,12 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.IndexTreeNameIsNullException;
 import com.akiban.server.error.TableTreeNameIsNullException;
+
+import java.util.Collection;
 
 /**
  * Check all table and index tree names are not null.
@@ -59,7 +62,13 @@ public class TreeNamesAreNotNull implements AISValidation {
         if(table.getTreeName() == null) {
             throw new TableTreeNameIsNullException(table);
         }
-        for(Index index : table.getIndexes()) {
+        final Collection<TableIndex> indexes;
+        if(table.isUserTable()) {
+            indexes = ((UserTable)table).getIndexesIncludingInternal();
+        } else {
+            indexes = table.getIndexes();
+        }
+        for(Index index : indexes) {
             checkIndex(index);
         }
     }
