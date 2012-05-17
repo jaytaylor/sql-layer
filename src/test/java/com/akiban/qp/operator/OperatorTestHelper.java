@@ -194,8 +194,9 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public void checkQueryCancelation(long startTimeMsec)
+        public long getQueryTimeoutSec()
         {
+            return -1;
         }
 
         @Override

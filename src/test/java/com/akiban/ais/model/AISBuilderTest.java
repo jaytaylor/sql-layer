@@ -1264,10 +1264,10 @@ public class AISBuilderTest
             builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
             builder.basicSchemaIsComplete();
             builder.createGroup("coi", "test", "_akiban_c");
-            builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT);
         builder.groupIndexColumn("coi", "name_date", "test", "c",  "name", 0);
     }
 

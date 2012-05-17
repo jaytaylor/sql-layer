@@ -74,4 +74,12 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
         }
     }
 
+    @Override
+    public long getQueryTimeoutSec() {
+        Long setting = server.getQueryTimeoutSec();
+        if (setting != null)
+            return setting.longValue();
+        return super.getQueryTimeoutSec();
+    }
+
 }

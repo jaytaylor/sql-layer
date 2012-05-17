@@ -1,0 +1,12 @@
+SelectQuery@771c9fcc
+  ResultSet@783f472b[cid]
+    Project@25995ba[customers.cid]
+      Select@4774e78a[]
+        MapJoin@7ea33d00(SEMI)
+          Select@adb24[items.sku != customers.name]
+            SingleIndexScan@10dd4b9d(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]), covering/NONE, rows = 20000, cost = 32469.7)
+          Select@4226c7da[]
+            Flatten@efa0bf4(child)
+              Select@1c869e8f[customers.name == child.name, child.pid == 1]
+                GroupScan@4a13ccea(Group(parent -> test._akiban_parent))
+                  TableSource@295bc68c(child - TableGroup@59f23ca4(parent))
