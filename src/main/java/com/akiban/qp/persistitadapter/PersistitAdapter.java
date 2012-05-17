@@ -102,21 +102,6 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public void checkQueryCancelation(long queryStartMsec)
-    {
-        if (session.isCurrentQueryCanceled()) {
-            throw new QueryCanceledException(session);
-        }
-        long queryTimeoutSec = config.queryTimeoutSec();
-        if (queryTimeoutSec >= 0) {
-            long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
-            if (runningTimeMsec > queryTimeoutSec * 1000) {
-                throw new QueryTimedOutException(runningTimeMsec);
-            }
-        }
-    }
-
-    @Override
     public HKey newHKey(RowType rowType)
     {
         return new PersistitHKey(this, rowType.hKey());
@@ -134,7 +119,7 @@ public class PersistitAdapter extends StoreAdapter
         RowData newRowData = rowData(rowDef, newRow);
         int oldStep = enterUpdateStep();
         try {
-            persistit.updateRow(session, oldRowData, newRowData, null);
+            persistit.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
@@ -149,7 +134,7 @@ public class PersistitAdapter extends StoreAdapter
         RowData newRowData = rowData (rowDef, newRow);
         int oldStep = enterUpdateStep();
         try {
-            persistit.writeRow(session, newRowData);
+            persistit.writeRow(getSession(), newRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
@@ -165,7 +150,7 @@ public class PersistitAdapter extends StoreAdapter
         RowData oldRowData = rowData(rowDef, oldRow);
         int oldStep = enterUpdateStep();
         try {
-            persistit.deleteRow(session, oldRowData);
+            persistit.deleteRow(getSession(), oldRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
@@ -181,16 +166,11 @@ public class PersistitAdapter extends StoreAdapter
         try {
             return rowDef.getTableStatus().getRowCount();
         } catch(PersistitInterruptedException e) {
-            throw new QueryCanceledException(session);
+            throw new QueryCanceledException(getSession());
         }
     }
 
     // PersistitAdapter interface
-
-    public Session session()
-    {
-        return session;
-    }
 
     public PersistitStore persistit()
     {
@@ -242,12 +222,12 @@ public class PersistitAdapter extends StoreAdapter
 
     public Exchange takeExchange(GroupTable table) throws PersistitException
     {
-        return persistit.getExchange(session, table.rowDef());
+        return persistit.getExchange(getSession(), table.rowDef());
     }
 
     public Exchange takeExchange(Index index)
     {
-        return persistit.getExchange(session, index);
+        return persistit.getExchange(getSession(), index);
     }
 
     public Key newKey()
@@ -257,7 +237,7 @@ public class PersistitAdapter extends StoreAdapter
 
     public void handlePersistitException(PersistitException e)
     {
-        handlePersistitException(session, e);
+        handlePersistitException(getSession(), e);
     }
 
     public static void handlePersistitException(Session session, PersistitException e)
@@ -274,11 +254,11 @@ public class PersistitAdapter extends StoreAdapter
 
     public void returnExchange(Exchange exchange)
     {
-        persistit.releaseExchange(session, exchange);
+        persistit.releaseExchange(getSession(), exchange);
     }
     
     public Transaction transaction() {
-        return treeService.getTransaction(session);
+        return treeService.getTransaction(getSession());
     }
 
     public int enterUpdateStep()
@@ -300,17 +280,13 @@ public class PersistitAdapter extends StoreAdapter
                             Session session,
                             ConfigurationService config)
     {
-        super(schema);
-        this.config = config;
+        super(schema, session, config);
         this.persistit = persistit;
-        this.session = session;
         this.treeService = treeService;
     }
     
     // Object state
 
     private final TreeService treeService;
-    private final ConfigurationService config;
     private final PersistitStore persistit;
-    private final Session session;
 }

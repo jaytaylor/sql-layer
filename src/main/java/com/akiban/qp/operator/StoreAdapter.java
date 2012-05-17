@@ -33,6 +33,10 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.error.QueryTimedOutException;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.session.Session;
 import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
@@ -65,18 +69,44 @@ public abstract class StoreAdapter
                                 API.SortOption sortOption,
                                 InOutTap loadTap);
 
-    public abstract void checkQueryCancelation(long queryStartMsec);
 
     public abstract long rowCount(RowType tableType);
 
     // For use by subclasses
+    public void checkQueryCancelation(long queryStartMsec) {
+        if (session.isCurrentQueryCanceled()) {
+            throw new QueryCanceledException(session);
+        }
+        long queryTimeoutSec = config.queryTimeoutSec();
+        if (queryTimeoutSec >= 0) {
+            long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
+            if (runningTimeMsec > queryTimeoutSec * 1000) {
+                throw new QueryTimedOutException(runningTimeMsec);
+            }
+        }
+    }
 
-    protected StoreAdapter(Schema schema)
+    public final Session getSession() {
+        return session;
+    }
+
+    protected final ConfigurationService getConfig() {
+        return config;
+    }
+
+    protected StoreAdapter(Schema schema,
+            Session session,
+            ConfigurationService config)
     {
         this.schema = schema;
+        this.session = session;
+        this.config = config;
     }
 
     // Object state
 
     protected final Schema schema;
+    private final Session session;
+    private final ConfigurationService config;
+
 }
