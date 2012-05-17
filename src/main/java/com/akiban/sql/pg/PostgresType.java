@@ -322,8 +322,8 @@ public class PostgresType extends ServerType
             akType = AkType.INTERVAL_MONTH;
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
-            oid = TypeOid.BIT_TYPE_OID.getOid();
-            akType = AkType.INT;
+            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             oid = TypeOid.BOOL_TYPE_OID.getOid();
@@ -404,7 +404,7 @@ public class PostgresType extends ServerType
             akType = AkType.INT;
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
-            oid = TypeOid.VARBIT_TYPE_OID.getOid();
+            oid = TypeOid.BYTEA_TYPE_OID.getOid();
             akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:

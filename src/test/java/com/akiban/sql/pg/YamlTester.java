@@ -180,6 +180,7 @@ class YamlTester {
     private static final Map<String, Integer> typeNameToNumber = new HashMap<String, Integer>();
     private static final Map<Integer, String> typeNumberToName = new HashMap<Integer, String>();
     static {
+	addTypeNameAndNumber("VARBINARY", Types.BINARY); // name to number overwritten below
 	addTypeNameAndNumber("BIGINT", Types.BIGINT);
 	addTypeNameAndNumber("BLOB", Types.BLOB);
 	addTypeNameAndNumber("BOOLEAN", Types.BOOLEAN);
