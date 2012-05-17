@@ -1,0 +1,10 @@
+SelectQuery@7862af46
+  ResultSet@16e15a69[cid]
+    Distinct@24f6af3b
+      Project@3f6a5d72[customers.cid]
+        Select@601d07e4[addresses.city == customers.name]
+          Flatten@3c32fb80(customers INNER addresses)
+            BranchLookup@371daf60(customers -> customers)
+              SingleIndexScan@159576c3(Index(test.customers.PRIMARY[IndexColumn(cid)]), SORTED, rows = 100, cost = 28727.1)
+              TableSource@745a936b(customers - TableGroup@45135cd9(customers))
+              TableSource@6684917a(addresses - TableGroupJoin@7a34cdfc(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))

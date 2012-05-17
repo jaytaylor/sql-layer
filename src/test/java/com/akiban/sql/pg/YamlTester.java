@@ -180,6 +180,7 @@ class YamlTester {
     private static final Map<String, Integer> typeNameToNumber = new HashMap<String, Integer>();
     private static final Map<Integer, String> typeNumberToName = new HashMap<Integer, String>();
     static {
+	addTypeNameAndNumber("VARBINARY", Types.BINARY); // name to number overwritten below
 	addTypeNameAndNumber("BIGINT", Types.BIGINT);
 	addTypeNameAndNumber("BLOB", Types.BLOB);
 	addTypeNameAndNumber("BOOLEAN", Types.BOOLEAN);
@@ -267,6 +268,8 @@ class YamlTester {
 		    dropTableCommand(value);
 		} else if ("Statement".equals(commandName)) {
 		    statementCommand(value, sequence);
+		} else if ("Message".equals(commandName)) {
+	        messageCommand(value);
 		} else if ("Bulkload".equals(commandName)) {
                     bulkloadCommand(value, sequence); 
                 } else if ("JMX".equals(commandName)) {
@@ -339,6 +342,11 @@ class YamlTester {
 	    } catch (IOException e) {
 	    }
 	}
+    }
+
+    private void messageCommand(Object value) {
+        String message = string(value, "Message");
+        System.err.println("FTS Message: " + message);
     }
 
     private void propertiesCommand(Object value, List<Object> sequence) {
@@ -492,9 +500,11 @@ class YamlTester {
 	}
     }
 
+    
     private void dropTableCommand(Object value) throws SQLException {
-	new DropTableCommand(value).execute();
+        new DropTableCommand(value).execute();
     }
+    
 
     private class DropTableCommand extends AbstractStatementCommand {
 	DropTableCommand(Object value) {

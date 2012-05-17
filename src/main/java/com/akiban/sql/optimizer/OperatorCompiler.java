@@ -90,7 +90,7 @@ public class OperatorCompiler extends SchemaRulesContext
     @Override
     protected void initCostEstimator(CostEstimator costEstimator) {
         super.initCostEstimator(costEstimator);
-        initRules((costEstimator != null) ? DEFAULT_RULES_CBO : DEFAULT_RULES);
+        initRules((costEstimator != null) ? DEFAULT_RULES_CBO : DEFAULT_RULES_OLD);
     }
 
     @Override

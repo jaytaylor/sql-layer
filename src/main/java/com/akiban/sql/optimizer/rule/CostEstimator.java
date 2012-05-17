@@ -305,6 +305,9 @@ public abstract class CostEstimator implements TableRowCounts
             return missingStatsSelectivity();
         }
         Histogram histogram = indexStats.getHistogram(1);
+        if ((histogram == null) || histogram.getEntries().isEmpty()) {
+            return missingStatsSelectivity();
+        }
         boolean before = (loBytes != null);
         long rowCount = 0;
         byte[] entryStartBytes, entryEndBytes = null;
@@ -561,7 +564,7 @@ public abstract class CostEstimator implements TableRowCounts
         table.setState(table.getState() | (1 << b));
     }
 
-    /** Like {@link BranchJoiner_CBO#markBranches} but simpler without
+    /** Like {@link BranchJoiner#markBranches} but simpler without
      * having to worry about the exact <em>order</em> in which
      * operations are performed.
      */

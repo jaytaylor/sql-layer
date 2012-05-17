@@ -111,7 +111,7 @@ public final class HKeySegmentTest {
         checkHKeyColumn(
                 ais, "c",
                 expectedSegments(1).checkSegment(0).expectedCols(1).checkCol(0).expectAtIndex(0),
-                c("c", "cid"), c("o", "c_id"));
+                c("c", "cid"), c("o", "c_id"), c("i", "c__id"));
 
         checkHKeyColumn(
                 ais, "o",

@@ -13,6 +13,8 @@
 ---
 - Statement: INSERT INTO rc VALUES(10, 100),(10, 110),(10, 120),(20, 200),(20, 210),(20, 220)
 ---
+- Statement: SET cbo TO 'false'
+---
 - Statement: SELECT * FROM rc WHERE locid = 110 AND rid = 10
 - output: [[10, 110]]
 ---
@@ -33,5 +35,5 @@
 - Statement: SELECT * FROM rc WHERE locid = 110 AND rid = 11
 - row_count: 0
 ---
-- Statement: SET cbo TO 'false'
+- Statement: SET cbo TO DEFAULT
 ...

@@ -56,7 +56,8 @@ public final class AISValidations {
     public static final AISValidation TABLE_TREE_NAMES_UNIQUE = new TableTreeNamesUnique();
     public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
     public static final AISValidation GROUP_INDEX_DEPTH = new GroupIndexDepth();
-    
+    public static final AISValidation TREE_NAMES_NOT_NULL = new TreeNamesAreNotNull();
+
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
     static {
@@ -83,7 +84,8 @@ public final class AISValidations {
                 TABLE_TREE_NAMES_UNIQUE,
                 INDEX_TREE_NAMES_UNIQUE,
                 TYPES_ARE_FROM_STATIC,
-                GROUP_INDEX_DEPTH
+                GROUP_INDEX_DEPTH,
+                TREE_NAMES_NOT_NULL
                 //CHARACTER_SET_SUPPORTED
                 ));
     }

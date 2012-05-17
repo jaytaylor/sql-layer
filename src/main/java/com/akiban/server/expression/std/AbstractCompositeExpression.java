@@ -38,8 +38,6 @@ import java.util.List;
 
 public abstract class AbstractCompositeExpression implements Expression {
 
-    protected abstract boolean nullIsContaminating ();
-
     // Expression interface
 
     @Override

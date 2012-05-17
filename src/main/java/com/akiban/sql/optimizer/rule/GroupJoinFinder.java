@@ -30,6 +30,7 @@ import com.akiban.server.error.UnsupportedSQLException;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
+import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.server.expression.std.Comparison;
 
@@ -39,6 +40,7 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.UserTable;
 
 import com.akiban.util.ListUtils;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -545,14 +547,6 @@ public class GroupJoinFinder extends BaseRule
     }
 
     protected boolean tableAllowedInGroup(TableGroup group, TableSource childTable) {
-        // TODO: Avoid duplicate group joins. Really, they should be
-        // recognized but only one allowed to Flatten and the other
-        // forced to use a nested loop, but still with BranchLookup.
-        for (TableSource otherChild : group.getTables()) {
-            if ((otherChild.getTable() == childTable.getTable()) &&
-                (otherChild != childTable))
-                return false;
-        }
         return true;
     }
 
@@ -577,57 +571,206 @@ public class GroupJoinFinder extends BaseRule
     // multiple TableJoins.
     protected void isolateGroups(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
-            TableGroup group = isolateGroups(island.root);
-            if (group != null) {
-                Joinable nroot = getTableJoins(island.root, group);
+            TableGroupJoinNode tree = isolateGroupJoins(island.root);
+            if (tree != null) {
+                Joinable nroot = groupJoinTree(tree, island.root);
                 island.output.replaceInput(island.root, nroot);
                 island.root = nroot;
             }
         }
     }
 
-    protected TableGroup isolateGroups(Joinable joinable) {
+    protected TableGroupJoinNode isolateGroupJoins(Joinable joinable) {
         if (joinable.isTable()) {
             TableSource table = (TableSource)joinable;
             assert (table.getGroup() != null);
-            return table.getGroup();
+            return new TableGroupJoinNode(table);
         }
         if (!joinable.isJoin())
             return null;
-        // Both sides must be matching groups.
         JoinNode join = (JoinNode)joinable;
         Joinable left = join.getLeft();
         Joinable right = join.getRight();
-        TableGroup leftGroup = isolateGroups(left);
-        TableGroup rightGroup = isolateGroups(right);
-        if ((leftGroup == rightGroup) && (leftGroup != null))
-            return leftGroup;
-        if (leftGroup != null)
-            join.setLeft(getTableJoins(left, leftGroup));
-        if (rightGroup != null)
-            join.setRight(getTableJoins(right, rightGroup));
+        TableGroupJoinNode leftTree = isolateGroupJoins(left);
+        TableGroupJoinNode rightTree = isolateGroupJoins(right);
+        if ((leftTree != null) && (rightTree != null) &&
+            // All tables below the two sides must be from the same group.
+            (leftTree.getTable().getGroup() == rightTree.getTable().getGroup())) {
+            // An outer join condition must be one that can be
+            // done before flattening because after that it's too
+            // late to get back the outer side if the test never
+            // succeeds.
+            boolean joinOK;
+            switch (join.getJoinType()) {
+            case INNER:
+                joinOK = true;
+                break;
+            case LEFT:
+                joinOK = checkJoinConditions(join.getJoinConditions(), leftTree, rightTree);
+                break;
+            case RIGHT:
+                // Cannot allow any non-group conditions, since even
+                // one only on parent would kill the child because
+                // that's how Select_HKeyOrdered works.
+                joinOK = checkJoinConditions(join.getJoinConditions(), null, leftTree);
+                break;
+            default:
+                joinOK = false;
+            }
+            if (joinOK) {
+                // Still need to be able to splice them together.
+                TableGroupJoinNode tree;
+                int leftDepth = leftTree.getTable().getTable().getDepth();
+                int rightDepth = rightTree.getTable().getTable().getDepth();
+                if (leftDepth < rightDepth)
+                    tree = spliceGroupJoins(leftTree, rightTree, join.getJoinType());
+                else if (rightDepth < leftDepth)
+                    tree = spliceGroupJoins(rightTree, leftTree, join.getJoinType());
+                else
+                    tree = null;
+                if (tree != null) {
+                    return tree;
+                }
+            }
+        }
+        // Did not manage to coalesce. Put in any intermediate trees.
+        if (leftTree != null)
+            join.setLeft(groupJoinTree(leftTree, left));
+        if (rightTree != null)
+            join.setRight(groupJoinTree(rightTree, right));
         // Make arbitrary joins LEFT not RIGHT.
         if (join.getJoinType() == JoinType.RIGHT)
             join.reverse();
         return null;
     }
 
-    // Make a TableJoins from tables in a single TableGroup.
-    protected Joinable getTableJoins(Joinable joins, TableGroup group) {
-        TableJoins tableJoins = new TableJoins(joins, group);
-        getTableJoinsTables(joins, tableJoins);
-        return tableJoins;
+    protected TableGroupJoinTree groupJoinTree(TableGroupJoinNode root, Joinable joins) {
+        TableGroupJoinTree tree = new TableGroupJoinTree(root);
+        Set<TableSource> required = new HashSet<TableSource>();
+        getRequiredTables(joins, required);
+        tree.setRequired(required);
+        return tree;
     }
 
-    protected void getTableJoinsTables(Joinable joinable, TableJoins tableJoins) {
-        if (joinable.isJoin()) {
-            JoinNode join = (JoinNode)joinable;
-            getTableJoinsTables(join.getLeft(), tableJoins);
-            getTableJoinsTables(join.getRight(), tableJoins);
+    // Get all the tables reachable via inner joins from here.
+    protected void getRequiredTables(Joinable joinable, Set<TableSource> required) {
+        if (joinable instanceof TableSource) {
+            required.add((TableSource)joinable);
         }
-        else {
-            assert joinable.isTable();
-            tableJoins.addTable((TableSource)joinable);
+        else if (joinable instanceof JoinNode) {
+            JoinNode join = (JoinNode)joinable;
+            if (join.getJoinType() != JoinType.RIGHT)
+                getRequiredTables(join.getLeft(), required);
+            if (join.getJoinType() != JoinType.LEFT)
+                getRequiredTables(join.getRight(), required);
+        }
+    }
+
+    // Combine trees at the proper branch point.
+    protected TableGroupJoinNode spliceGroupJoins(TableGroupJoinNode parent, 
+                                                  TableGroupJoinNode child,
+                                                  JoinType joinType) {
+        TableGroupJoinNode branch = parent.findTable(child.getTable().getParentTable());
+        if (branch == null)
+            return null;
+        child.setParent(branch);
+        child.setParentJoinType(joinType);
+        TableGroupJoinNode prev = null;
+        while (true) {
+            TableGroupJoinNode next = (prev == null) ? branch.getFirstChild() : prev.getNextSibling();
+            if ((next == null) || 
+                (next.getTable().getTable().getOrdinal() > child.getTable().getTable().getOrdinal())) {
+                child.setNextSibling(next);
+                if (prev == null)
+                    branch.setFirstChild(child);
+                else
+                    prev.setNextSibling(child);
+                break;
+            }
+            prev = next;
+        }
+        return parent;
+    }
+
+    protected boolean checkJoinConditions(ConditionList joinConditions,
+                                          TableGroupJoinNode outer,
+                                          TableGroupJoinNode inner) {
+        if (hasIllegalReferences(joinConditions, outer))
+            return false;
+        inner.setJoinConditions(joinConditions);
+        return true;
+    }
+
+    // See whether any expression in the join condition other than the
+    // grouping join references a table under the given tree.
+    protected boolean hasIllegalReferences(ConditionList joinConditions,
+                                           TableGroupJoinNode fromTree) {
+        JoinedReferenceFinder finder = null;
+        if (joinConditions != null) {
+            for (ConditionExpression condition : joinConditions) {
+                if (condition.getImplementation() == ConditionExpression.Implementation.GROUP_JOIN)
+                    continue;   // Group condition okay.
+                if (fromTree == null)
+                    return true; // All non-group disallowed.
+                if (finder == null)
+                    finder = new JoinedReferenceFinder(fromTree);
+                if (finder.find(condition))
+                    return true; // Has references to other side.
+            }
+        }
+        return false;
+    }
+
+    static class JoinedReferenceFinder implements PlanVisitor, ExpressionVisitor {
+        private TableGroupJoinNode fromTree;
+        private boolean found;
+
+        public JoinedReferenceFinder(TableGroupJoinNode fromTree) {
+            this.fromTree = fromTree;
+        }
+
+        public boolean find(ExpressionNode expression) {
+            found = false;
+            expression.accept(this);
+            return found;
+        }
+
+        @Override
+        public boolean visitEnter(PlanNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(PlanNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visitEnter(ExpressionNode n) {
+            return visit(n);
+        }
+
+        @Override
+        public boolean visitLeave(ExpressionNode n) {
+            return true;
+        }
+
+        @Override
+        public boolean visit(ExpressionNode n) {
+            if (n instanceof ColumnExpression) {
+                ColumnSource table = ((ColumnExpression)n).getTable();
+                if (table instanceof TableSource) {
+                    if (fromTree.findTable((TableSource)table) != null) {
+                        found = true;
+                    }
+                }
+            }
+            return true;
         }
     }
 
@@ -636,44 +779,35 @@ public class GroupJoinFinder extends BaseRule
     // original query and reject any group joins that now cross TableJoins.
     protected void moveJoinConditions(List<JoinIsland> islands) {
         for (JoinIsland island : islands) {
-            moveJoinConditions(island.root, null, null, 
-                               island.whereConditions, island.whereJoins);
+            moveJoinConditions(island.root, island.whereConditions, island.whereJoins);
         }        
     }
 
-    protected void moveJoinConditions(Joinable joinable, JoinNode output, TableJoins tableJoins,
+    protected void moveJoinConditions(Joinable joinable,
                                       ConditionList whereConditions, List<TableGroupJoin> whereJoins) {
-        if (joinable.isTable()) {
-            TableSource table = (TableSource)joinable;
-            TableGroupJoin tableJoin = table.getParentJoin();
-            if (tableJoin != null) {
-                if ((tableJoins == null) ||
-                    !tableJoins.getTables().contains(tableJoin.getParent())) {
-                    tableJoin.reject(); // Did not make it into the group.
-                    if ((output != null) &&
-                        (output.getGroupJoin() == tableJoin))
-                        output.setGroupJoin(null);
-                }
-                else if (whereJoins.contains(tableJoin)) {
-                    assert (output != null);
-                    output.setGroupJoin(tableJoin);
-                    List<ComparisonCondition> joinConditions = tableJoin.getConditions();
-                    // Move down from WHERE conditions to join conditions.
-                    if (output.getJoinConditions() == null)
-                        output.setJoinConditions(new ConditionList());
-                    output.getJoinConditions().addAll(joinConditions);
-                    whereConditions.removeAll(joinConditions);
+        if (joinable instanceof TableGroupJoinTree) {
+            for (TableGroupJoinNode table : (TableGroupJoinTree)joinable) {
+                TableGroupJoin tableJoin = table.getTable().getParentJoin();
+                if (tableJoin != null) {
+                    if (table.getParent() == null) {
+                        tableJoin.reject(); // Did not make it into the group.
+                    }
+                    else if (whereJoins.contains(tableJoin)) {
+                        List<ComparisonCondition> joinConditions = tableJoin.getConditions();
+                        // Move down from WHERE conditions to join conditions.
+                        if (table.getJoinConditions() == null)
+                            table.setJoinConditions(new ConditionList());
+                        table.getJoinConditions().addAll(joinConditions);
+                        whereConditions.removeAll(joinConditions);
+                    }
                 }
             }
         }
-        else if (joinable.isJoin()) {
+        else if (joinable instanceof JoinNode) {
             JoinNode join = (JoinNode)joinable;
-            moveJoinConditions(join.getLeft(), join, tableJoins, whereConditions, whereJoins);
-            moveJoinConditions(join.getRight(), join, tableJoins, whereConditions, whereJoins);
-        }
-        else if (joinable instanceof TableJoins) {
-            tableJoins = (TableJoins)joinable;
-            moveJoinConditions(tableJoins.getJoins(), output, tableJoins, whereConditions, whereJoins);
+            join.setGroupJoin(null);
+            moveJoinConditions(join.getLeft(), whereConditions, whereJoins);
+            moveJoinConditions(join.getRight(), whereConditions, whereJoins);
         }
     }
 
@@ -740,6 +874,7 @@ public class GroupJoinFinder extends BaseRule
             countInnerJoins(((JoinNode)joinable).getLeft()) +
             countInnerJoins(((JoinNode)joinable).getRight());
     }
+
 
     // Accumulate operands of directly-reachable subtree of simple inner joins.
     protected static void getInnerJoins(Joinable joinable, Collection<Joinable> into) {

@@ -74,7 +74,14 @@ public class EltExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported in ELT yet.");
+        }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.IGNORE; // This is a special case. NULL only makes the top NULL 
+                                                   // if it's the first arg
         }
         
     };
@@ -98,7 +105,7 @@ public class EltExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return false; // This is a fun case. NULL is only contaminating if it is        
     }                 // the first arg.

@@ -119,6 +119,12 @@ public final class LiteralExpression implements Expression {
     private static final Expression BOOL_TRUE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_TRUE));
     private static final Expression BOOL_FALSE = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_FALSE));
     private static final Expression BOOL_NULL = new LiteralExpression(new InternalEvaluation(BoolValueSource.OF_NULL));
+
+    @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
     
     // nested classes
     

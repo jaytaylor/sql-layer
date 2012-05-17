@@ -343,13 +343,19 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
+        public HKey ancestorHKey(UserTable table)
+        {
+            return delegate.ancestorHKey(table);
+        }
+
+        @Override
         public boolean ancestorOf(RowBase that) {
             return delegate.ancestorOf(that);
         }
 
         @Override
         public boolean containsRealRowOf(UserTable userTable) {
-            return delegate.containsRealRowOf(userTable);
+            throw new UnsupportedOperationException(getClass().toString());
         }
 
         @Override

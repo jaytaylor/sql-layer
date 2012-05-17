@@ -267,6 +267,14 @@ public class JoinAndIndexPicker extends BaseRule
             groupGoal.install(scan, conditionSources);
             return groupGoal.getTables();
         }
+
+        public boolean orderedForDistinct(Distinct distinct) {
+            if (!((distinct.getInput() instanceof Project) &&
+                  (scan instanceof IndexScan)))
+                return false;
+            return groupGoal.orderedForDistinct((Project)distinct.getInput(),
+                                                (IndexScan)scan);
+        }
     }
 
     static class GroupPlanClass extends PlanClass {
@@ -336,7 +344,12 @@ public class JoinAndIndexPicker extends BaseRule
         public void addDistinct() {
             Subquery output = subquery.getSubquery();
             PlanNode input = output.getInput();
-            output.replaceInput(input, new Distinct(input));
+            Distinct distinct = new Distinct(input);
+            output.replaceInput(input, distinct);
+            if ((rootPlan instanceof GroupPlan) &&
+                ((GroupPlan)rootPlan).orderedForDistinct(distinct)) {
+                distinct.setImplementation(Distinct.Implementation.PRESORTED);
+            }
         }
     }
 
@@ -480,6 +493,8 @@ public class JoinAndIndexPicker extends BaseRule
             JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
+            if (joinType == JoinType.SEMI)
+                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
             return join;
         }
     }
@@ -541,11 +556,13 @@ public class JoinAndIndexPicker extends BaseRule
             if (planClass == null)
                 planClass = new JoinPlanClass(this, bitset);
             joins = new ArrayList<JoinOperator>(joins);
+            Collection<JoinOperator> condJoins = joins; // Joins with conditions for indexing.
             if (subqueryJoins != null) {
                 // "Push down" joins into the subquery. Since these
                 // are joins to the dervived table, they still need to
                 // be recognized to match an indexable column.
-                joins.addAll(subqueryJoins);
+                condJoins = new ArrayList<JoinOperator>(joins);
+                condJoins.addAll(subqueryJoins);
             }
             if (subqueryOutsideJoins != null) {
                 outsideJoins.addAll(subqueryOutsideJoins);
@@ -553,7 +570,7 @@ public class JoinAndIndexPicker extends BaseRule
             outsideJoins.addAll(joins); // Total set for outer; inner must subtract.
             // TODO: Divvy up sorting. Consider group joins. Consider merge joins.
             Plan leftPlan = left.bestPlan(outsideJoins);
-            Plan rightPlan = right.bestNestedPlan(left, joins, outsideJoins);
+            Plan rightPlan = right.bestNestedPlan(left, condJoins, outsideJoins);
             CostEstimate costEstimate = leftPlan.costEstimate.nest(rightPlan.costEstimate);
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                                              joinType, JoinNode.Implementation.NESTED_LOOPS,
@@ -644,7 +661,10 @@ public class JoinAndIndexPicker extends BaseRule
         public boolean visitLeave(PlanNode n) {
             if (n instanceof Subquery) {
                 SubqueryState s = subqueries.pop();
-                s.subquery.setOuterTables(s.getTablesReferencedButNotDefined());
+                Set<ColumnSource> outerTables = s.getTablesReferencedButNotDefined();
+                s.subquery.setOuterTables(outerTables);
+                if (!subqueries.isEmpty())
+                    subqueries.peek().tablesReferenced.addAll(outerTables);
             }
             return true;
         }

@@ -35,7 +35,15 @@ import java.util.List;
 public abstract class AbstractUnaryExpression implements Expression {
 
     // Expression interface
-
+    
+    // for most expressions this returns TRUE
+    // Those that treat NULL specially must override the method
+    @Override
+    public boolean nullIsContaminating() 
+    {
+        return true;
+    }
+    
     @Override
     public boolean isConstant() {
         return operand.isConstant();

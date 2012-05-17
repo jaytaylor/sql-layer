@@ -40,6 +40,7 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
+import org.joda.time.DateTimeZone;
 import org.joda.time.IllegalFieldValueException;
 
 
@@ -67,7 +68,7 @@ public class ToDaysExpression  extends AbstractUnaryExpression
 
     private static class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        private static final long BEGINNING = Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(33);
+        private static final long BEGINNING = Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(33, DateTimeZone.UTC);
         private  static final long FACTOR = 3600L * 1000 * 24;
         
         public InnerEvaluation (ExpressionEvaluation eval)
@@ -84,7 +85,7 @@ public class ToDaysExpression  extends AbstractUnaryExpression
             
             try
             {
-                valueHolder().putLong((Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(date.getDate())
+                valueHolder().putLong((Extractors.getLongExtractor(AkType.DATE).stdLongToUnix(date.getDate(), DateTimeZone.UTC)
                                         - BEGINNING) / FACTOR);
                 return valueHolder();
             }

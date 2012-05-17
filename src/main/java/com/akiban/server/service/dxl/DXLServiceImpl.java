@@ -44,7 +44,6 @@ import com.akiban.server.store.statistics.IndexStatisticsService;
 import com.google.inject.Inject;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -54,7 +53,7 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
 
     private final Object MONITOR = new Object();
 
-    private volatile DDLFunctions ddlFunctions;
+    private volatile HookableDDLFunctions ddlFunctions;
     private volatile DMLFunctions dmlFunctions;
     private final SchemaManager schemaManager;
     private final Store store;
@@ -81,7 +80,8 @@ public class DXLServiceImpl implements DXLService, Service<DXLService>, JmxManag
     public void start() {
         List<DXLFunctionsHook> hooks = getHooks();
         BasicDXLMiddleman middleman = BasicDXLMiddleman.create();
-        DDLFunctions localDdlFunctions = new HookableDDLFunctions(createDDLFunctions(middleman), hooks, sessionService);
+        HookableDDLFunctions localDdlFunctions
+                = new HookableDDLFunctions(createDDLFunctions(middleman), hooks,sessionService);
         DMLFunctions localDmlFunctions = new HookableDMLFunctions(createDMLFunctions(middleman, localDdlFunctions),
                 hooks, sessionService);
         synchronized (MONITOR) {

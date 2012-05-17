@@ -26,8 +26,11 @@
 
 package com.akiban.qp.persistitadapter;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.AbstractRow;
+import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.rowdata.RowData;
@@ -61,7 +64,8 @@ public class PersistitGroupRow extends AbstractRow
     }
 
     @Override
-    public ValueSource eval(int i) {
+    public ValueSource eval(int i)
+    {
         FieldDef fieldDef = rowDef().getFieldDef(i);
         RowData rowData = rowData();
         RowDataValueSource valueSource = valueSource(i);
@@ -69,9 +73,25 @@ public class PersistitGroupRow extends AbstractRow
         return valueSource;
     }
 
+    @Override
     public PersistitHKey hKey()
     {
         return currentHKey;
+    }
+
+    @Override
+    public HKey ancestorHKey(UserTable table)
+    {
+        PersistitHKey ancestorHKey = hKeyCache.hKey(table);
+        currentHKey.copyTo(ancestorHKey);
+        ancestorHKey.useSegments(table.getDepth() + 1);
+        return ancestorHKey;
+    }
+
+    @Override
+    public boolean containsRealRowOf(UserTable userTable)
+    {
+        return row.getRowDef().userTable() == userTable;
     }
 
     // PersistitGroupRow interface
@@ -89,9 +109,11 @@ public class PersistitGroupRow extends AbstractRow
 
     // For use by this package
 
-    RowDef rowDef() {
-        if (row != null)
+    RowDef rowDef()
+    {
+        if (row != null) {
             return row.getRowDef();
+        }
         if (rowData != null) {
             return adapter.rowDef(rowData.getRowDefId());
         }
@@ -124,7 +146,7 @@ public class PersistitGroupRow extends AbstractRow
                 int newSize = rowData.getBytes().length * 2;
                 if (newSize >= MAX_ROWDATA_SIZE_BYTES) {
                     LOG.error("{}: Unable to copy from exchange for key {}: {}",
-                              new Object[]{this, exchange.getKey(), exception.getMessage()});
+                              new Object[] {this, exchange.getKey(), exception.getMessage()});
                     throw exception;
                 }
                 rowData.reset(new byte[newSize]);
@@ -141,16 +163,7 @@ public class PersistitGroupRow extends AbstractRow
 
     private PersistitHKey persistitHKey()
     {
-        RowDef rowDef = row.getRowDef();
-        int ordinal = rowDef.getOrdinal();
-        if (!typedHKeys.isDefined(ordinal)) {
-            currentHKey = new PersistitHKey(adapter, rowDef.userTable().hKey());
-            PersistitHKey old = typedHKeys.set(ordinal, currentHKey);
-            assert old == null : old;
-        }
-        else {
-            currentHKey = typedHKeys.get(ordinal);
-        }
+        currentHKey = hKeyCache.hKey(row.getRowDef().userTable());
         return currentHKey;
     }
 
@@ -163,8 +176,9 @@ public class PersistitGroupRow extends AbstractRow
     {
         this.adapter = adapter;
         this.rowData = rowData;
+        this.hKeyCache = new HKeyCache(adapter);
     }
-    
+
     private RowDataValueSource valueSource(int i)
     {
         return valueSources.get(i);
@@ -174,14 +188,15 @@ public class PersistitGroupRow extends AbstractRow
 
     private static final Logger LOG = LoggerFactory.getLogger(PersistitGroupRow.class);
     private static final int INITIAL_ROW_SIZE = 500;
-    private static final int INITIAL_ARRAY_SIZE = 10;
     private static final int MAX_ROWDATA_SIZE_BYTES = 5000000;
 
     // Object state
 
-    private final SparseArray<RowDataValueSource> valueSources = new SparseArray<RowDataValueSource>() {
+    private final SparseArray<RowDataValueSource> valueSources = new SparseArray<RowDataValueSource>()
+    {
         @Override
-        protected RowDataValueSource initialValue() {
+        protected RowDataValueSource initialValue()
+        {
             return new RowDataValueSource();
         }
     };
@@ -189,5 +204,5 @@ public class PersistitGroupRow extends AbstractRow
     private RowData rowData;
     private LegacyRowWrapper row;
     private PersistitHKey currentHKey;
-    private final SparseArray<PersistitHKey> typedHKeys = new SparseArray<PersistitHKey>();
+    private HKeyCache<PersistitHKey> hKeyCache;
 }

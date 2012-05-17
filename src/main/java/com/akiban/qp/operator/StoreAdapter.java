@@ -27,9 +27,9 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -45,7 +45,7 @@ public abstract class StoreAdapter
                                           API.Ordering ordering,
                                           IndexScanSelector scanSelector);
 
-    public abstract HKey newHKey(RowType rowType);
+    public abstract <HKEY extends com.akiban.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
 
     public final Schema schema()
     {
@@ -65,7 +65,7 @@ public abstract class StoreAdapter
                                 API.SortOption sortOption,
                                 InOutTap loadTap);
 
-    public abstract void checkQueryCancelation(long queryStartMsec);
+    public abstract long getQueryTimeoutSec();
 
     public abstract long rowCount(RowType tableType);
 

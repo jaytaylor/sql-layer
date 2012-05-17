@@ -32,6 +32,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.RankExpression;
@@ -124,7 +125,7 @@ class HKeyUnion_Ordered extends Operator
         return String.format("%s\n%s", describePlan(left), describePlan(right));
     }
 
-    // Project_Default interface
+    // HKeyUnion_Ordered interface
 
     public HKeyUnion_Ordered(Operator left,
                              Operator right,
@@ -238,7 +239,7 @@ class HKeyUnion_Ordered extends Operator
                         close();
                     } else if (previousHKey == null || !previousHKey.prefixOf(nextRow.hKey())) {
                         HKey nextHKey = outputHKey(nextRow);
-                        nextRow = new HKeyRow(outputHKeyRowType, nextHKey);
+                        nextRow = new HKeyRow(outputHKeyRowType, nextHKey, hKeyCache);
                         previousHKey = nextHKey;
                     } else {
                         nextRow = null;
@@ -302,6 +303,7 @@ class HKeyUnion_Ordered extends Operator
                 fieldRankingEvaluations[f] = 
                     (AbstractTwoArgExpressionEvaluation) fieldRankingExpressions[f].evaluation();
             }
+            hKeyCache = new HKeyCache<HKey>(context.getStore());
         }
         
         // For use by this class
@@ -348,7 +350,7 @@ class HKeyUnion_Ordered extends Operator
 
         private HKey outputHKey(Row row)
         {
-            HKey outputHKey = adapter().newHKey(outputHKeyTableRowType);
+            HKey outputHKey = adapter().newHKey(outputHKeyTableRowType.hKey());
             row.hKey().copyTo(outputHKey);
             outputHKey.useSegments(outputHKeySegments);
             return outputHKey;
@@ -364,6 +366,7 @@ class HKeyUnion_Ordered extends Operator
         private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
         private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
         private final AbstractTwoArgExpressionEvaluation[] fieldRankingEvaluations;
+        private final HKeyCache<HKey> hKeyCache;
         private HKey previousHKey;
         private boolean closed = true;
     }

@@ -12,4 +12,4 @@
 - Statement: SELECT c.name, x.order_date FROM customers c LEFT JOIN (SELECT cid, order_date FROM orders WHERE order_date < '2011-03-01') x ON c.cid = x.cid;
 - output_ordered: [['Smith',null],['Jones','2011-02-28']]
 ---
-- Statement: SET cbo TO 'false'
+- Statement: SET cbo TO DEFAULT

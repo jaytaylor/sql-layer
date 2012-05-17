@@ -45,9 +45,7 @@ import java.util.List;
 
 public class FieldFunctionExpression extends AbstractCompositeExpression
 {
-    // probably needs another name
-    // either that or change the FieldExpression to something else
-    @Scalar("getField")
+    @Scalar("field")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer()
     {
 
@@ -72,6 +70,12 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
             // don't really care about the types (for now)
             return new FieldFunctionExpression(arguments);
         }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.IGNORE;
+        }
         
     };
     
@@ -86,7 +90,6 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
         public ValueSource eval()
         {
             ValueSource first = children().get(0).eval();
-            
             long ret = 0;
               
             if (!first.isNull())
@@ -135,7 +138,7 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return false;
     }

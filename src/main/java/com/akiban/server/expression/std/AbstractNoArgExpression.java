@@ -34,6 +34,12 @@ public abstract class AbstractNoArgExpression implements Expression {
     // Expression interface
 
     @Override
+    public boolean nullIsContaminating()
+    {
+        return true;
+    }
+    
+    @Override
     public boolean isConstant() {
         return true;
     }

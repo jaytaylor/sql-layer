@@ -1,0 +1,2 @@
+SELECT iid FROM items
+ WHERE sku BETWEEN '3' AND '8' AND quan BETWEEN 10 AND 100

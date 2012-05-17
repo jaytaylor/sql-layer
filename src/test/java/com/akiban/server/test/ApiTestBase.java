@@ -252,7 +252,9 @@ public class ApiTestBase {
             }
         }
 
-        session.close();
+        if(session != null) {
+            session.close();
+        }
         sm.stopServices();
         sm = null;
         session = null;
@@ -450,6 +452,10 @@ public class ApiTestBase {
         }
         unifiedDef.setLength(unifiedDef.length() - 1);
         return createTable(schema, table, unifiedDef.toString());
+    }
+
+    protected final int createTable(TableName tableName, String... definitions) throws InvalidOperationException {
+        return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
     }
 
     private AkibanInformationSchema createIndexInternal(String schema, String table, String indexName, String... indexCols) {
