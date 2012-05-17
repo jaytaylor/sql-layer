@@ -210,7 +210,12 @@ public class BranchJoiner extends BaseRule
         if (sideBranch == null)
             return null;
         List<TableSource> tables = new ArrayList<TableSource>();
-        if (leafMostChild.getTable().getTable() == sideBranch.getTable().getTable()) {
+        // TODO: BranchLookup first is only superior when there are relatively fewer of
+        // the side branch (perhaps even none); otherwise the AncestorLookup is repeated
+        // for each instead of once. Also, if the flattening is an outer join to the side
+        // branch, it needs to come second.
+        if (true ||
+            leafMostChild.getTable().getTable() == sideBranch.getTable().getTable()) {
             // Jumping to the same rowtype. That won't just work, so
             // go up to ancestor first.
             if (!ancestors.contains(leafMostParent.getTable()))
