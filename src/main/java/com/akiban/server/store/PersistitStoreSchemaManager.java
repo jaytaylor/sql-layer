@@ -793,11 +793,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         reader.loadAIS();
 
-        // ProtobufWriter does not save group tables (by design) so generate columns
+        // ProtobufWriter does not save group tables (by design) so generate columns and indexes
         AISBuilder builder = new AISBuilder(newAIS);
-        for(Group group : newAIS.getGroups().values()) {
-            builder.generateGroupTableColumns(group);
-        }
+        builder.groupingIsComplete();
     }
 
     private void buildRowDefCache(final AkibanInformationSchema newAis) throws PersistitException {
