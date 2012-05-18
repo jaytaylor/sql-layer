@@ -381,6 +381,9 @@ public class ValueSources
      * 
      *          12] otherwise, return false
      * 
+     * 
+     * TODO: Support comparison between VARBINARY  and other types (VARCHAR)
+     * 
      * @param v1
      * @param v2
      * @return 
@@ -469,7 +472,8 @@ public class ValueSources
             case TEXT:      ObjectExtractor<String> ext = Extractors.getStringExtractor();
                             return ext.getObject(l).compareTo(ext.getObject(r));
             case NULL:      return 1;
-            default:        return 0;
+            case VARBINARY: return l.getVarBinary().compareTo(r.getVarBinary());
+            default:        throw new UnsupportedOperationException("Unsupported type: " + l.getConversionType());
     }
 }
     
