@@ -5,20 +5,20 @@
 #
 # BUG 994757:
 # Status: new
-#---
-#- CreateTable: t(varchar_field varchar(64))
-#---
-#- Statement: SELECT aes_decrypt(aes_encrypt('hello world!!!', 'this is key'), 'this is key');
-#- output: [['hello world!!!']]
-#--- VARBINARY is not suppoted
+---
+- CreateTable: t(varchar_field varchar(64))
+---
+- Statement: SELECT aes_decrypt(aes_encrypt('hello world!!!', 'this is key'), 'this is key');
+- output: [[!!binary 'aGVsbG8gd29ybGQhISE=']]
+#--- VARBINARY field is not suppoted
 #- Statement: insert into t(varchar_field) VALUES(aes_encrypt('xtremely secret info', 'password'));
 #---
 #- Statement: SELECT aes_decrypt(varchar_field, 'password') from t;
 #- output: [['xtremely secret info']]
-#---
-#- Statement: select aes_decrypt(aes_encrypt('abc', '893456789123456712'), '123456789123456789');
-#- output: [['abc']]
-#---
-#- Statement: select aes_decrypt(aes_encrypt('helloworld', '1234567891234567'), '1234567891234567');
-#- output: [['helloworld']]
+---
+- Statement: select aes_decrypt(aes_encrypt('abc', '893456789123456712'), '123456789123456789');
+- output: [[!!binary 'YWJj']]
+---
+- Statement: select aes_decrypt(aes_encrypt('helloworld', '1234567891234567'), '1234567891234567');
+- output: [[!!binary 'aGVsbG93b3JsZA==']]
 ...

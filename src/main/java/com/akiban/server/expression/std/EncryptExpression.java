@@ -191,7 +191,7 @@ public class EncryptExpression extends AbstractBinaryExpression
     
        
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }
