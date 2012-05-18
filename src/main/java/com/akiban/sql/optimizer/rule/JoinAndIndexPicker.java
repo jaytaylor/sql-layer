@@ -172,7 +172,7 @@ public class JoinAndIndexPicker extends BaseRule
             GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
             List<JoinOperator> empty = Collections.emptyList(); // No more joins / bound tables.
             groupGoal.updateRequiredColumns(empty, empty);
-            PlanNode scan = groupGoal.pickBestScan();
+            BaseScan scan = groupGoal.pickBestScan();
             groupGoal.install(scan, null);
         }
 
@@ -207,8 +207,8 @@ public class JoinAndIndexPicker extends BaseRule
                 // In this block because we were not a JoinNode, query has no joins itself
                 List<JoinOperator> queryJoins = Collections.emptyList();
                 List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true);
-                PlanNode scan = groupGoal.pickBestScan();
-                CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
+                BaseScan scan = groupGoal.pickBestScan();
+                CostEstimate costEstimate = scan.getCostEstimate();
                 return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources);
             }
             if (joinable instanceof JoinNode) {
@@ -259,11 +259,11 @@ public class JoinAndIndexPicker extends BaseRule
     static class GroupPlan extends Plan {
         GroupIndexGoal groupGoal;
         long outerTables;
-        PlanNode scan;
+        BaseScan scan;
         List<ConditionList> conditionSources;
 
         public GroupPlan(GroupIndexGoal groupGoal,
-                         long outerTables, PlanNode scan, 
+                         long outerTables, BaseScan scan, 
                          CostEstimate costEstimate,
                          List<ConditionList> conditionSources) {
             super(costEstimate);
@@ -320,8 +320,8 @@ public class JoinAndIndexPicker extends BaseRule
                 }
             }
             List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, joins.isEmpty());
-            PlanNode scan = groupGoal.pickBestScan();
-            CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
+            BaseScan scan = groupGoal.pickBestScan();
+            CostEstimate costEstimate = scan.getCostEstimate();
             GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources);
             bestPlans.add(groupPlan);
             return groupPlan;

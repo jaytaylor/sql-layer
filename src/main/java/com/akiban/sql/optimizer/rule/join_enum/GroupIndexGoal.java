@@ -586,7 +586,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     /** Find the best index among the branches. */
-    public PlanNode pickBestScan() {
+    public BaseScan pickBestScan() {
         Set<TableSource> required = tables.getRequired();
         IndexScan bestIndex = null;
 
@@ -598,10 +598,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 bestIndex = tableIndex;
         }
         bestIndex = pickBestIntersection(bestIndex, intersections);
-        if (bestIndex == null)
-            return new GroupScan(tables.getGroup());
-        else
+        if (bestIndex != null)
             return bestIndex;
+
+        GroupScan groupScan = new GroupScan(tables.getGroup());
+        groupScan.setCostEstimate(estimateCost(groupScan));
+        return groupScan;
     }
 
     private IndexScan pickBestIntersection(IndexScan previousBest, IntersectionEnumerator enumerator) {
@@ -710,30 +712,6 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         private List<ExpressionNode> orderingCols(IndexScan index) {
             List<ExpressionNode> result = index.getColumns();
             return result.subList(index.getPeggedCount(), result.size());
-        }
-    }
-
-    public CostEstimate costEstimateScan(PlanNode scan) {
-        // TODO: Until more nodes have this stored in them.
-        if (scan instanceof IndexScan) {
-            return ((IndexScan)scan).getCostEstimate();
-        }
-        else if (scan instanceof GroupScan) {
-            CostEstimator costEstimator = queryGoal.getCostEstimator();
-            CostEstimate cost = costEstimator.costGroupScan(((GroupScan)scan).getGroup().getGroup());
-            CostEstimate flatten = costEstimator.costFlattenGroup(tables,
-                                                                  requiredColumns.getTables());
-            cost = cost.sequence(flatten);
-            if (!conditions.isEmpty()) {
-                CostEstimate select = costEstimator.costSelect(conditions,
-                                                               selectivityConditions(conditions, requiredColumns.getTables()),
-                                                               cost.getRowCount());
-                cost = cost.sequence(select);
-            }
-            return cost;
-        }
-        else {
-            return null;
         }
     }
 
@@ -998,6 +976,21 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             index.setScanCostEstimate(result);
         }
         return result;
+    }
+
+    public CostEstimate estimateCost(GroupScan scan) {
+        CostEstimator costEstimator = queryGoal.getCostEstimator();
+        CostEstimate cost = costEstimator.costGroupScan(scan.getGroup().getGroup());
+        CostEstimate flatten = costEstimator.costFlattenGroup(tables,
+                                                              requiredColumns.getTables());
+        cost = cost.sequence(flatten);
+        if (!conditions.isEmpty()) {
+            CostEstimate select = costEstimator.costSelect(conditions,
+                                                           selectivityConditions(conditions, requiredColumns.getTables()),
+                                                           cost.getRowCount());
+            cost = cost.sequence(select);
+        }
+        return cost;
     }
 
     // Conditions that might have a recognizable selectivity.
