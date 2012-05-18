@@ -726,6 +726,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             cost = cost.sequence(flatten);
             if (!conditions.isEmpty()) {
                 CostEstimate select = costEstimator.costSelect(conditions,
+                                                               selectivityConditions(conditions, requiredColumns.getTables()),
                                                                cost.getRowCount());
                 cost = cost.sequence(select);
             }
@@ -939,7 +940,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
             CostEstimate select = costEstimator.costSelect(unhandledConditions,
-                                                           selectivityConditions(index, unhandledConditions),
+                                                           selectivityConditions(unhandledConditions, index.getRequiredTables()),
                                                            cost.getRowCount());
             cost = cost.sequence(select);
         }
@@ -1000,7 +1001,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     // Conditions that might have a recognizable selectivity.
-    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(IndexScan index, Collection<ConditionExpression> conditions) {
+    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Set<TableSource> requiredTables) {
         Map<ColumnExpression,Collection<ComparisonCondition>> result = new
             HashMap<ColumnExpression,Collection<ComparisonCondition>>();
         for (ConditionExpression condition : conditions) {
@@ -1009,7 +1010,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 if (ccond.getLeft() instanceof ColumnExpression) {
                     ColumnExpression column = (ColumnExpression)ccond.getLeft();
                     if ((column.getColumn() != null) &&
-                        index.getRequiredTables().contains(column.getTable()) &&
+                        requiredTables.contains(column.getTable()) &&
                         constantOrBound(ccond.getRight())) {
                         Collection<ComparisonCondition> entry = result.get(column);
                         if (entry == null) {
