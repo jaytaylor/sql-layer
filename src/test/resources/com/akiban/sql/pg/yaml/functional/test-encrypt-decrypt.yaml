@@ -5,20 +5,26 @@
 #
 # BUG 994757:
 # Status: new
+#
+# BUG 1001289:
+# Status: new
 ---
 - CreateTable: t(varchar_field varchar(64))
 ---
-- Statement: SELECT aes_decrypt(aes_encrypt('hello world!!!', 'this is key'), 'this is key');
-- output: [[!!binary 'aGVsbG8gd29ybGQhISE=']]
+- Statement: SELECT aes_decrypt(aes_encrypt( X'68656C6C6F2C20776F726C642121', 'this is key'), 'this is key');
+- output: [[!!binary 'aGVsbG8sIHdvcmxkISE=']]
+---
+- Statement: select aes_decrypt(aes_encrypt(X'616263', '893456789123456712'), '123456789123456789');
+- output: [[!!binary 'YWJj']]
+--- # Test mysql's bug (encrypting and decrypting msg with different keys
+- Statement: select aes_decrypt(aes_encrypt(X'68656C6C6F776F726C64', '1234567891234567'), '1234567891234567');
+- output: [[!!binary 'aGVsbG93b3JsZA==']]
 #--- VARBINARY field is not suppoted
 #- Statement: insert into t(varchar_field) VALUES(aes_encrypt('xtremely secret info', 'password'));
 #---
 #- Statement: SELECT aes_decrypt(varchar_field, 'password') from t;
 #- output: [['xtremely secret info']]
----
-- Statement: select aes_decrypt(aes_encrypt('abc', '893456789123456712'), '123456789123456789');
-- output: [[!!binary 'YWJj']]
----
-- Statement: select aes_decrypt(aes_encrypt('helloworld', '1234567891234567'), '1234567891234567');
-- output: [[!!binary 'aGVsbG93b3JsZA==']]
+#--- #BUG 1001289 casting VARCHAR to VARBINARY is not supported
+#- Statement: SELECT aes_decrypt(aes_encrypt('text', 'key'), 'key');
+#- output: [[!!binary 'dGV4dA==']]
 ...

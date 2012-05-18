@@ -105,7 +105,7 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         // decrypt the encrypted string
         Expression decrypted = getDecrypted(encrypted, key);
         
-        assertEquals(text.getBytes(),
+        assertEquals(text,
                      new String(decrypted.evaluation().eval().getVarBinary().byteArray()));
     }
     

@@ -37,7 +37,6 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
 import com.akiban.util.WrappingByteSource;
 import java.io.UnsupportedEncodingException;
@@ -55,7 +54,6 @@ import javax.crypto.spec.SecretKeySpec;
 
 public class EncryptExpression extends AbstractBinaryExpression
 {
-
     @Scalar("aes_encrypt")
     public static final ExpressionComposer ENCRYPT 
             = new InnerComposer(Cipher.ENCRYPT_MODE);
@@ -84,19 +82,18 @@ public class EncryptExpression extends AbstractBinaryExpression
         {
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
-            
+         
             argumentTypes.setType(0, AkType.VARBINARY);
             argumentTypes.setType(1, AkType.VARCHAR);
             
             int l = argumentTypes.get(0).getPrecision();
-            return ExpressionTypes.varchar((l / 16 + 1) * 16);
+            return ExpressionTypes.varbinary((l / 16 + 1) * 16);
         }    
     }
     
     private static final class Encryption
     {   
-        public static void decrypt_encrypt (ValueSource text, ValueSource key, 
-                                            ValueHolder ret,
+        public static byte[] decrypt_encrypt (ValueSource text, ValueSource key, 
                                             int length, int mode) throws
                     NoSuchAlgorithmException, NoSuchPaddingException, 
                     IllegalBlockSizeException, BadPaddingException, 
@@ -110,11 +107,8 @@ public class EncryptExpression extends AbstractBinaryExpression
             switch(mode)
             {
                 case Cipher.ENCRYPT_MODE:
-                    ret.putVarBinary(new WrappingByteSource(cipher.doFinal(text.getVarBinary().byteArray())));
-                    break;
                 case Cipher.DECRYPT_MODE:
-                    ret.putVarBinary(new WrappingByteSource(cipher.doFinal(text.getVarBinary().byteArray())));
-                    break;
+                    return cipher.doFinal(text.getVarBinary().byteArray());
                 default:
                     throw new IllegalArgumentException("Unexpected MODE: " + mode);
             }
@@ -167,9 +161,10 @@ public class EncryptExpression extends AbstractBinaryExpression
                 
             try
             {
-                Encryption.decrypt_encrypt(text, key, valueHolder(),
-                                            DEFAULT_KEY_LENGTH, 
-                                            MODE);
+                valueHolder().putVarBinary(new WrappingByteSource(
+                                                    Encryption.decrypt_encrypt(text, key,
+                                                                    DEFAULT_KEY_LENGTH, 
+                                                                    MODE)));
                 return valueHolder();
             }
             catch (Exception e)
