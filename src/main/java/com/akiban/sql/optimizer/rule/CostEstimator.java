@@ -564,7 +564,7 @@ public abstract class CostEstimator implements TableRowCounts
                 long nrows = getTableRowCount(node.getTable().getTable().getTable());
                 // Cost of flattening these children with their ancestor.
                 cost += model.flatten((int)nrows);
-                if (!isAncestor(node)) {
+                if (isSideBranchLeaf(node)) {
                     // Leaf of a new branch.
                     branchCount++;
                     rowCount *= nrows;
