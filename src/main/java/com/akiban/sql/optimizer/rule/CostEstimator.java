@@ -74,6 +74,13 @@ public abstract class CostEstimator implements TableRowCounts
 
     @Override
     public long getTableRowCount(Table table) {
+        long count = getTableRowCountFromStatistics(table);
+        if (count >= 0)
+            return count;
+        return 1;
+    }
+
+    protected long getTableRowCountFromStatistics(Table table) {
         // This implementation is only for testing; normally overridden by real server.
         // Return row count (not sample count) from analysis time.
         for (Index index : table.getIndexes()) {
@@ -81,7 +88,7 @@ public abstract class CostEstimator implements TableRowCounts
             if (istats != null)
                 return istats.getRowCount();
         }
-        return 1;
+        return -1;              // Not analyzed.
     }
 
     public abstract IndexStatistics getIndexStatistics(Index index);
