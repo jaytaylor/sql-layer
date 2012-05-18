@@ -14,7 +14,7 @@
               VALUES ('416B736572766572', 20, 'f');
 --- # test non-ascii character
 - Statement: SELECT UNHEX('FF');
-- output: [[!!binary 'abcde']]
+- output: [[!!binary '/w==']]
 ---
 - Statement: SELECT UNHEX('f8Ac') = UNHEX('F8aC');
 - output: [['true']]
