@@ -570,6 +570,18 @@ public final class SchemaManagerIT extends ITBase {
     }
 
 
+    @Test
+    public void createRestartAndCreateMore() throws Exception {
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        createTable(SCHEMA, T3_CHILD_T1_NAME, T3_CHILD_T1_DDL);
+        createTable(SCHEMA, T2_NAME, T2_DDL);
+        assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME, T3_CHILD_T1_NAME);
+        safeRestart();
+        assertTablesInSchema(SCHEMA, T1_NAME, T2_NAME, T3_CHILD_T1_NAME);
+        createIndex(SCHEMA, T2_NAME, "id_2", "id");
+    }
+
+
     /*
      * Next three tests are confirming that the MetaModel and Protobuf
      * serialization switch behaves as is claimed.
