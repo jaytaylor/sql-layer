@@ -46,7 +46,7 @@ class IndexTreeNamesUnique implements AISValidation {
         Map<String,Index> treeNameMap = new HashMap<String, Index>();
 
         for(UserTable table : ais.getUserTables().values()) {
-            checkIndexes(output, treeNameMap, table.getIndexes());
+            checkIndexes(output, treeNameMap, table.getIndexesIncludingInternal());
         }
 
         for(Group group : ais.getGroups().values()) {

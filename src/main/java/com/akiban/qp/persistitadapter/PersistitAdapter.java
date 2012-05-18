@@ -42,7 +42,6 @@ import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.QueryCanceledException;
-import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
@@ -102,24 +101,14 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public void checkQueryCancelation(long queryStartMsec)
-    {
-        if (session.isCurrentQueryCanceled()) {
-            throw new QueryCanceledException(session);
-        }
-        long queryTimeoutSec = config.queryTimeoutSec();
-        if (queryTimeoutSec >= 0) {
-            long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
-            if (runningTimeMsec > queryTimeoutSec * 1000) {
-                throw new QueryTimedOutException(runningTimeMsec);
-            }
-        }
+    public long getQueryTimeoutSec() {
+        return config.queryTimeoutSec();
     }
 
     @Override
-    public HKey newHKey(RowType rowType)
+    public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata)
     {
-        return new PersistitHKey(this, rowType.hKey());
+        return new PersistitHKey(this, hKeyMetadata);
     }
 
     @Override
@@ -236,7 +225,10 @@ public class PersistitAdapter extends StoreAdapter
 
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType) throws PersistitException
     {
-        return new PersistitIndexRow(this, indexRowType);
+        return
+            indexRowType.index().isTableIndex()
+            ? PersistitIndexRow.tableIndexRow(this, indexRowType)
+            : PersistitIndexRow.groupIndexRow(this, indexRowType);
     }
 
 

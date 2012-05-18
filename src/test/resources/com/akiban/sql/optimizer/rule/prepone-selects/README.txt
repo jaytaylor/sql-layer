@@ -16,3 +16,11 @@ group-index: Test against a group index.
 cross-group: Push through cross-group join.
 
 in: Push through semi-join.
+
+multiple-table: Right after Flatten.
+
+multiple-table-2: Product conditions do not move currently because branch not accessible.
+
+multiple-table-3: Just indexes.
+
+multiple-table-in: Can be before the semi-join.

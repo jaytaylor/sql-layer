@@ -36,6 +36,7 @@ import com.akiban.ais.model.AISBuilder.ColumnName;
 import com.akiban.util.Strings;
 
 public class DefaultNameGenerator implements NameGenerator {
+    public static final String TREE_NAME_SEPARATOR = ".";
 
     /**
      * For truncated columns [only], we record a mapping of the original
@@ -46,6 +47,7 @@ public class DefaultNameGenerator implements NameGenerator {
     private final HashMap<ColumnName, String> generatedColumnNames = new HashMap<ColumnName, String>();
     private final Set<String> groupNames = new HashSet<String>();
     private final Set<String> indexNames = new HashSet<String>();
+    private final Set<String> treeNames = new HashSet<String>();
     
     @Override
     public String generateColumnName(Column column) {
@@ -100,7 +102,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public String generateGroupIndexName(TableIndex userTableIndex) {
+    public String generateGroupTableIndexName(TableIndex userTableIndex) {
         return userTableIndex.getTable().getName().getTableName() + "$"
         + userTableIndex.getIndexName().getName();
     }
@@ -112,22 +114,8 @@ public class DefaultNameGenerator implements NameGenerator {
     
     @Override
     public String generateGroupName(final String tableName) {
-        String startingName = tableName;
-        if (groupNames.add(startingName)) {
-            return startingName;
-        }
-        int i = 0;
-        StringBuilder builder = new StringBuilder(startingName).append('$');
-        final int appendAt = builder.length();
-        String ret;
-
-        do {
-            builder.setLength(appendAt);
-            builder.append(i++);
-        }
-        while(!groupNames.add(ret = builder.toString()));
-        
-        return ret;
+        String proposed = tableName;
+        return makeUnique(groupNames, proposed);
     }
 
     @Override
@@ -137,6 +125,11 @@ public class DefaultNameGenerator implements NameGenerator {
 
     public DefaultNameGenerator setDefaultGroupNames (Set<String> initialSet) {
         groupNames.addAll(initialSet);
+        return this;
+    }
+
+    public DefaultNameGenerator setDefaultTreeNames (Set<String> initialSet) {
+        treeNames.addAll(initialSet);
         return this;
     }
     
@@ -177,5 +170,65 @@ public class DefaultNameGenerator implements NameGenerator {
                 childTable, // TODO: This shold be getTableName(), but preserve old behavior for test existing output
                 Strings.join(fkColNames, ","));
         return ret.toLowerCase().replace(',', '_');
+    }
+
+    public String generateIndexTreeName(Index index) {
+        // schema.table.index
+        final TableName tableName;
+        switch(index.getIndexType()) {
+            case TABLE:
+                tableName = ((TableIndex)index).getTable().getName();
+            break;
+            case GROUP:
+                UserTable root = ((GroupIndex)index).getGroup().getGroupTable().getRoot();
+                if(root == null) {
+                    throw new IllegalArgumentException("Grouping incomplete (no root)");
+                }
+                tableName = root.getName();
+            break;
+            default:
+                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
+        }
+        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
+                          escapeForTreeName(tableName.getTableName()) + TREE_NAME_SEPARATOR +
+                          escapeForTreeName(index.getIndexName().getName());
+        return makeUnique(treeNames, proposed);
+    }
+
+    @Override
+    public String generateGroupTreeName(Group group) {
+        // schema.group_name
+        TableName tableName = group.getGroupTable().getName();
+        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
+                          escapeForTreeName(group.getName());
+        return makeUnique(treeNames, proposed);
+    }
+
+    private static String makeUnique(Set<String> set, String original) {
+        int counter = 1;
+        String proposed = original;
+        while(!set.add(proposed)) {
+            proposed = original + "$" + counter++;
+        }
+        return proposed;
+    }
+
+    public static String escapeForTreeName(String name) {
+        return name.replace(TREE_NAME_SEPARATOR, "\\" + TREE_NAME_SEPARATOR);
+    }
+
+    public static String schemaNameForIndex(Index index) {
+        final Table table;
+        switch(index.getIndexType()) {
+            case TABLE:
+                table = ((TableIndex)index).getTable();
+                break;
+            case GROUP:
+                table = ((GroupIndex)index).getGroup().getGroupTable();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
+        }
+        return table.getName().getSchemaName();
     }
 }

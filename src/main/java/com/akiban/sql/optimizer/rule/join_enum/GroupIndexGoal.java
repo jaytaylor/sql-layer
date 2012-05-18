@@ -447,25 +447,40 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
         else if (queryGoal.getProjectDistinct() != null) {
             assert (queryGoal.getOrdering() == null);
-            boolean allFound = true;
-            List<ExpressionNode> distinct = queryGoal.getProjectDistinct().getFields();
-            for (ExpressionNode targetExpression : distinct) {
-                int found = -1;
-                for (int i = nequals; i < indexOrdering.size(); i++) {
-                    if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
-                        found = i - nequals;
-                        break;
-                    }
-                }
-                if ((found < 0) || (found >= distinct.size())) {
-                    allFound = false;
+            if (orderedForDistinct(queryGoal.getProjectDistinct(), 
+                                   indexOrdering, nequals)) {
+                return IndexScan.OrderEffectiveness.SORTED;
+            }
+        }
+        return result;
+    }
+
+    /** For use with a Distinct that gets added later. */
+    public boolean orderedForDistinct(Project projectDistinct, IndexScan index) {
+        List<OrderByExpression> indexOrdering = index.getOrdering();
+        if (indexOrdering == null) return false;
+        List<ExpressionNode> equalityComparands = index.getEqualityComparands();
+        int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
+        return orderedForDistinct(projectDistinct, indexOrdering, nequals);
+    }
+
+    protected boolean orderedForDistinct(Project projectDistinct, 
+                                         List<OrderByExpression> indexOrdering,
+                                         int nequals) {
+        List<ExpressionNode> distinct = projectDistinct.getFields();
+        for (ExpressionNode targetExpression : distinct) {
+            int found = -1;
+            for (int i = nequals; i < indexOrdering.size(); i++) {
+                if (targetExpression.equals(indexOrdering.get(i).getExpression())) {
+                    found = i - nequals;
                     break;
                 }
             }
-            if (allFound)
-                return IndexScan.OrderEffectiveness.SORTED;
+            if ((found < 0) || (found >= distinct.size())) {
+                return false;
+            }
         }
-        return result;
+        return true;
     }
 
     // Does the column expression coming from the index match the ORDER BY target,
@@ -560,12 +575,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         Subquery subquery = ((SubquerySource)comparisonTable).getSubquery();
         if (subquery != queryGoal.getQuery())
             return false;
-        if (!(subquery.getQuery() instanceof ResultSet))
+        PlanNode input = subquery.getQuery();
+        if (input instanceof ResultSet)
+            input = ((ResultSet)input).getInput();
+        if (!(input instanceof Project))
             return false;
-        ResultSet results = (ResultSet)subquery.getQuery();
-        if (!(results.getInput() instanceof Project))
-            return false;
-        Project project = (Project)results.getInput();
+        Project project = (Project)input;
         ExpressionNode insideExpression = project.getFields().get(comparisonColumn.getPosition());
         return indexExpressionMatches(indexExpression, insideExpression);
     }
@@ -595,8 +610,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             CostEstimate previousBestCost = previousBest.getCostEstimate();
             for (Iterator<SingleIndexScan> iter = enumerator.leavesIterator(); iter.hasNext(); ) {
                 SingleIndexScan scan = iter.next();
-                if (scan.getScanCostEstimate().compareTo(previousBestCost) > 0)
+                if (scan.getScanCostEstimate().compareTo(previousBestCost) > 0) {
+                    logger.debug("Not intersecting {} {}", scan, scan.getScanCostEstimate());
                     iter.remove();
+                }
             }
         }
         Function<? super IndexScan,Void> hook = intersectionEnumerationHook;
@@ -681,6 +698,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             for (int i=0; i < ncols; ++i) {
                 ColumnExpression firstCol = (ColumnExpression) firstOrdering.get(i);
                 ColumnExpression secondCol = (ColumnExpression) secondOrdering.get(i);
+                if ((firstCol == null) || (secondCol == null))
+                    break;
                 if (!equivs.areEquivalent(firstCol, secondCol))
                     break;
                 result.add(firstCol.getColumn());

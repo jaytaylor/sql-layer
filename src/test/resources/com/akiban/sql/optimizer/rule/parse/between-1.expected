@@ -1,0 +1,5 @@
+SelectQuery@65ccc86d
+  ResultSet@677aa051[iid]
+    Project@23b35aea[items.iid]
+      Select@5415caf5[items.quan >= 10, items.quan <= 100]
+        TableSource@62bfc5f3(items)

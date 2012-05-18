@@ -35,6 +35,10 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+// IndexScanSelector reflects USAGE of the index in a query.
+// leftJoinAfter(Index, UserTable): query has inner joins down to the table then left (further down)
+// rightJoinUntil(Index, UserTable): query has right joins down to the table then inner (further down)
+
 public abstract class IndexScanSelector {
 
     public abstract boolean matchesAll();
@@ -213,14 +217,10 @@ public abstract class IndexScanSelector {
         private SelectiveGiSelector(GroupIndex index, Collection<? extends UserTable> tables, String description) {
             long tmpMap = 0;
             for (UserTable table : tables) {
-                tmpMap |= (1 << distanceFromLeaf(index, table));
+                tmpMap |= (1 << table.getDepth());
             }
             requiredMap = tmpMap;
             this.description = description;
-        }
-
-        private long distanceFromLeaf(GroupIndex index, UserTable table) {
-            return index.leafMostTable().getDepth() - table.getDepth();
         }
 
         private final long requiredMap;

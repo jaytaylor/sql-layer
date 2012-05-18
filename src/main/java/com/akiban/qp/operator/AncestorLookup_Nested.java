@@ -124,7 +124,7 @@ class AncestorLookup_Nested extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), rowType, ancestorTypes);
+        return String.format("%s(%s -> %s)", getClass().getSimpleName(), rowType, ancestors);
     }
 
     // Operator interface
@@ -150,7 +150,7 @@ class AncestorLookup_Nested extends Operator
 
     public AncestorLookup_Nested(GroupTable groupTable,
                                  RowType rowType,
-                                 Collection<? extends RowType> ancestorTypes,
+                                 Collection<UserTableRowType> ancestorTypes,
                                  int inputBindingPosition)
     {
         validateArguments(groupTable, rowType, ancestorTypes, inputBindingPosition);
@@ -158,24 +158,20 @@ class AncestorLookup_Nested extends Operator
         this.rowType = rowType;
         this.inputBindingPosition = inputBindingPosition;
         // Sort ancestor types by depth
-        this.ancestorTypes = new ArrayList<RowType>(ancestorTypes);
-        if (this.ancestorTypes.size() > 1) {
-            Collections.sort(this.ancestorTypes,
-                             new Comparator<RowType>()
+        this.ancestors = new ArrayList<UserTable>(ancestorTypes.size());
+        for (UserTableRowType ancestorType : ancestorTypes) {
+            this.ancestors.add(ancestorType.userTable());
+        }
+        if (this.ancestors.size() > 1) {
+            Collections.sort(this.ancestors,
+                             new Comparator<UserTable>()
                              {
                                  @Override
-                                 public int compare(RowType x, RowType y)
+                                 public int compare(UserTable x, UserTable y)
                                  {
-                                     UserTable xTable = x.userTable();
-                                     UserTable yTable = y.userTable();
-                                     return xTable.getDepth() - yTable.getDepth();
+                                     return x.getDepth() - y.getDepth();
                                  }
                              });
-        }
-        this.ancestorTypeDepth = new int[ancestorTypes.size()];
-        int a = 0;
-        for (RowType ancestorType : this.ancestorTypes) {
-            this.ancestorTypeDepth[a++] = ancestorType.userTable().getDepth() + 1;
         }
     }
 
@@ -229,8 +225,7 @@ class AncestorLookup_Nested extends Operator
 
     private final GroupTable groupTable;
     private final RowType rowType;
-    private final List<RowType> ancestorTypes;
-    private final int[] ancestorTypeDepth;
+    private final List<UserTable> ancestors;
     private final int inputBindingPosition;
 
     // Inner classes
@@ -250,8 +245,7 @@ class AncestorLookup_Nested extends Operator
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
                 assert rowFromBindings.rowType() == rowType : rowFromBindings;
-                rowFromBindings.hKey().copyTo(hKey);
-                findAncestors();
+                findAncestors(rowFromBindings);
                 closed = false;
             } finally {
                 TAP_OPEN.out();
@@ -319,26 +313,21 @@ class AncestorLookup_Nested extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.pending = new PendingRows(ancestorTypeDepth.length);
+            this.pending = new PendingRows(ancestors.size() + 1);
             this.ancestorCursor = adapter().newGroupCursor(groupTable);
-            this.hKey = adapter().newHKey(rowType);
         }
 
         // For use by this class
 
-        private void findAncestors()
+        private void findAncestors(Row row)
         {
             assert pending.isEmpty();
-            int nSegments = hKey.segments();
-            for (int depth : ancestorTypeDepth) {
-                hKey.useSegments(depth);
-                Row row = readAncestorRow(hKey);
-                if (row != null) {
-                    pending.add(row);
+            for (int i = 0; i < ancestors.size(); i++) {
+                Row ancestorRow = readAncestorRow(row.ancestorHKey(ancestors.get(i)));
+                if (ancestorRow != null) {
+                    pending.add(ancestorRow);
                 }
             }
-            // Restore the hkey to its original state
-            hKey.useSegments(nSegments);
         }
 
         private Row readAncestorRow(HKey hKey)
@@ -360,7 +349,6 @@ class AncestorLookup_Nested extends Operator
 
         private final GroupCursor ancestorCursor;
         private final PendingRows pending;
-        private final HKey hKey;
         private boolean closed = true;
     }
 }

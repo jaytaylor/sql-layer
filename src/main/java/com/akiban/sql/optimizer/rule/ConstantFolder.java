@@ -26,11 +26,14 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
 import com.akiban.server.expression.std.Comparison;
 
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 
@@ -222,11 +225,16 @@ public class ConstantFolder extends BaseRule
             }
             if (allConstant && isIdempotent(fun))
                 return evalNow(fun);
-            // All the functions that treat NULL specially are caught before we get here.
+
             if (anyNull)
-                return new BooleanConstantExpression(null, 
+                switch(expressionAssembler.getFunctionRegistry().composer(fname).getNullTreating())
+                {
+                    case REMOVE:       return removeNull(fun);
+                    case RETURN_NULL: return new BooleanConstantExpression(null, 
                                                      fun.getSQLtype(), 
                                                      fun.getSQLsource());
+                }
+            
             return fun;
         }
 
@@ -434,6 +442,30 @@ public class ConstantFolder extends BaseRule
                                                   col.getSQLtype(), AkType.NULL, col.getSQLsource());
             }
             return col;
+        }
+
+         
+        protected ExpressionNode removeNull(FunctionExpression fun)
+        {
+            List<ExpressionNode> operands = fun.getOperands();
+                       
+            if (operands.isEmpty())
+                return new BooleanConstantExpression(null, 
+                                                     fun.getSQLtype(), 
+                                                     fun.getSQLsource());
+              int i = 0;
+              while (i < operands.size())
+              {
+                  ExpressionNode operand = operands.get(i);
+                  Constantness c = isConstant(operand);
+                  if (c == Constantness.NULL)
+                  {
+                      operands.remove(i);
+                      continue;
+                  }
+                  i++;
+              }
+            return fun;
         }
 
         protected void selectNode(Select select) {

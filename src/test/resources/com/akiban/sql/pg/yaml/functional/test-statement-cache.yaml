@@ -1,7 +1,7 @@
 # Test statement cache
 ---
 # Set the CBO to the setting this test requires. 
-- Statement: SET cbo TO 'False'
+- Statement: SET cbo TO 'false'
 ---
 - JMX: com.akiban:type=PostgresServer
 - set: StatementCacheCapacity

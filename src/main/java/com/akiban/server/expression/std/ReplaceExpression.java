@@ -67,7 +67,7 @@ public class ReplaceExpression extends AbstractTernaryExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported in REPLACE yet.");
         }
     };
 
@@ -100,7 +100,7 @@ public class ReplaceExpression extends AbstractTernaryExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

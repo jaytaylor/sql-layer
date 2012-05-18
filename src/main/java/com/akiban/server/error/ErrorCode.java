@@ -317,6 +317,8 @@ public enum ErrorCode {
     TYPES_ARE_STATIC        ("50", "01N", Importance.DEBUG, TypesAreStaticException.class),
     GROUP_INDEX_DEPTH       ("50", "01O", Importance.DEBUG, GroupIndexDepthException.class),
     DUPLICATE_INDEXID       ("50", "01P", Importance.DEBUG, DuplicateIndexIdException.class),
+    TABLE_TREE_NAME_IS_NULL ("50", "01Q", Importance.DEBUG, TableTreeNameIsNullException.class),
+    INDEX_TREE_NAME_IS_NULL ("50", "01R", Importance.DEBUG, IndexTreeNameIsNullException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

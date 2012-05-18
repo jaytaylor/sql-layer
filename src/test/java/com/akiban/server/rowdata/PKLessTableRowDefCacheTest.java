@@ -31,6 +31,7 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertSame;
+import static junit.framework.Assert.fail;
 
 public class PKLessTableRowDefCacheTest
 {
@@ -53,7 +54,7 @@ public class PKLessTableRowDefCacheTest
         UserTable t = (UserTable) test.table();
         Assert.assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
         checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
-        Index index;
+        TableIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // e, d index
@@ -98,7 +99,7 @@ public class PKLessTableRowDefCacheTest
             "create index c2_c1 on child(c2, c1);"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        Index index;
+        TableIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // ------------------------- parent ----------------------------------------------------------------------------
@@ -123,19 +124,18 @@ public class PKLessTableRowDefCacheTest
         checkHKey(c.hKey(),
                   p, c, "p1",
                   c, c, Column.AKIBAN_PK_NAME);
-        // c2, c1 index
+        // c2, c1 index. Row is (c.c2, c.c1, c.p1, c.HIDDEN_PK)
         index = c.getIndex("c2_c1");
         Assert.assertTrue(!index.isPrimaryKey());
         Assert.assertTrue(!index.isUnique());
-        // assertTrue(!index.isHKeyEquivalent());
         rowComp = index.indexRowComposition();
         Assert.assertEquals(1, rowComp.getFieldPosition(0)); // child.c2
         Assert.assertEquals(0, rowComp.getFieldPosition(1)); // child.c1
         indexToHKey = index.indexToHKey();
         Assert.assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
-        Assert.assertEquals(2, indexToHKey.getFieldPosition(1)); // child p1
+        Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // child p1
         Assert.assertEquals(child.getOrdinal(), indexToHKey.getOrdinal(2)); // child ordinal
-        Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // child row counter
+        Assert.assertEquals(3, indexToHKey.getIndexRowPosition(3)); // child row counter
     }
 
     private TableName tableName(String name)

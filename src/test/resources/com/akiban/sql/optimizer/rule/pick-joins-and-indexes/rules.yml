@@ -4,6 +4,6 @@
 - com.akiban.sql.optimizer.rule.ConstantFolder
 #- com.akiban.sql.optimizer.rule.OuterJoinPromoter
 - com.akiban.sql.optimizer.rule.ColumnEquivalenceFinder
-- com.akiban.sql.optimizer.rule.GroupJoinFinder_CBO
+- com.akiban.sql.optimizer.rule.GroupJoinFinder
 - com.akiban.sql.optimizer.rule.InConditionReverser
 - com.akiban.sql.optimizer.rule.JoinAndIndexPicker

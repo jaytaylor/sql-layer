@@ -206,7 +206,11 @@ public class InConditionReverser extends BaseRule
         assert ((join.getJoinType() == JoinType.SEMI) ||
                 (join.getJoinType() == JoinType.SEMI_INNER_ALREADY_DISTINCT) ||
                 (join.getJoinType() == JoinType.SEMI_INNER_IF_DISTINCT));
-        Joinable right = join.getRight();
+        cleanUpSemiJoin(join, join.getRight());
+        join.setJoinType(JoinType.SEMI);
+    }
+
+    public static void cleanUpSemiJoin(JoinNode join, Joinable right) {
         if (right instanceof SubquerySource) {
             // Undo part of what we did above. Specifically,
             // splice out the SubquerySource, Subquery, Project
@@ -226,17 +230,21 @@ public class InConditionReverser extends BaseRule
             }
             if (!(input instanceof Joinable))
                 return;
-            ConditionList conds = join.getJoinConditions();
-            ConditionExpression cond = conds.get(0);
-            if (!(cond instanceof ComparisonCondition))
-                return;
-            ComparisonCondition ccond = (ComparisonCondition)cond;
-            ccond.setRight(project.getFields().get(0));
-            if (select != null)
-                conds.addAll(select.getConditions());
+            if (join.hasJoinConditions()) {
+                ConditionList conds = join.getJoinConditions();
+                ConditionExpression cond = conds.get(0);
+                if (!(cond instanceof ComparisonCondition))
+                    return;
+                ComparisonCondition ccond = (ComparisonCondition)cond;
+                ccond.setRight(project.getFields().get(0));
+                if (select != null)
+                    conds.addAll(select.getConditions());
+            }
+            else if (select != null) {
+                join.setJoinConditions(select.getConditions());
+            }
             join.replaceInput(right, input);
         }
-        join.setJoinType(JoinType.SEMI);
     }
 
     public void convert(Select select, ExistsCondition exists) {

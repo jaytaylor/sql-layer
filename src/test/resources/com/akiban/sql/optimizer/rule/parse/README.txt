@@ -8,6 +8,16 @@ arithmetic-1: basic arithmetic
 
 arithmetic-2: arithmetic functions
 
+between-1: BETWEEN condition
+
+between-2: AND of two BETWEEN conditions
+
+between-2v: AND as value
+
+between-3: OR of two BETWEEN conditions
+
+between-3: NOT BETWEEN condition
+
 case-1: CASE statement
 
 cast-1: explicit CAST
@@ -37,6 +47,8 @@ group-by-2: GROUP BY ordinal
 group-by-3: GROUP BY (and ORDER BY) alias
 
 having-1: HAVING condition
+
+having-2: HAVING condition with alias
 
 in-l1: IN with one literal
 

@@ -283,6 +283,14 @@ public class JoinAndIndexPicker extends BaseRule
             groupGoal.install(scan, conditionSources);
             return groupGoal.getTables();
         }
+
+        public boolean orderedForDistinct(Distinct distinct) {
+            if (!((distinct.getInput() instanceof Project) &&
+                  (scan instanceof IndexScan)))
+                return false;
+            return groupGoal.orderedForDistinct((Project)distinct.getInput(),
+                                                (IndexScan)scan);
+        }
     }
 
     static class GroupPlanClass extends PlanClass {
@@ -352,7 +360,12 @@ public class JoinAndIndexPicker extends BaseRule
         public void addDistinct() {
             Subquery output = subquery.getSubquery();
             PlanNode input = output.getInput();
-            output.replaceInput(input, new Distinct(input));
+            Distinct distinct = new Distinct(input);
+            output.replaceInput(input, distinct);
+            if ((rootPlan instanceof GroupPlan) &&
+                ((GroupPlan)rootPlan).orderedForDistinct(distinct)) {
+                distinct.setImplementation(Distinct.Implementation.PRESORTED);
+            }
         }
     }
 
@@ -496,6 +509,8 @@ public class JoinAndIndexPicker extends BaseRule
             JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
+            if (joinType == JoinType.SEMI)
+                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
             return join;
         }
     }

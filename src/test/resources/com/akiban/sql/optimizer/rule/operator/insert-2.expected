@@ -1,7 +1,6 @@
 PhysicalUpdate@55a7b0bf
-  Insert_Default(project to table test.child ([Literal(NULL), Field(0), Field(1)]))
-    project to table test.child ([Literal(NULL), Field(0), Field(1)])
-      AncestorLookup_Default(Index(test.parent.name[IndexColumn(name)]) -> [test.parent])
-        UnionAll_Default
-          IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(IGNORE)]))
-          IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(IGNORE)],<UnboundExpressions[Literal(NULL)]))
+  Insert_Default(project to table test.child ([Literal(NULL), Field(1), Field(0)]))
+    project to table test.child ([Literal(NULL), Field(1), Field(0)])
+      UnionAll_Default
+        IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(NULL)],<UnboundExpressions[Literal(IGNORE)]))
+        IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (>UnboundExpressions[Literal(IGNORE)],<UnboundExpressions[Literal(NULL)]))
