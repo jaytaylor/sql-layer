@@ -723,7 +723,17 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             return ((IndexScan)scan).getCostEstimate();
         }
         else if (scan instanceof GroupScan) {
-            return queryGoal.getCostEstimator().costGroupScan(((GroupScan)scan).getGroup().getGroup());
+            CostEstimator costEstimator = queryGoal.getCostEstimator();
+            CostEstimate cost = costEstimator.costGroupScan(((GroupScan)scan).getGroup().getGroup());
+            CostEstimate flatten = costEstimator.costFlattenGroup(tables,
+                                                                  requiredColumns.getTables());
+            cost = cost.sequence(flatten);
+            if (!conditions.isEmpty()) {
+                CostEstimate select = costEstimator.costSelect(conditions,
+                                                               cost.getRowCount());
+                cost = cost.sequence(select);
+            }
+            return cost;
         }
         else {
             return null;
