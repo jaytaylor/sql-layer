@@ -34,6 +34,7 @@ import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
+import com.akiban.util.WrappingByteSource;
 import java.util.Arrays;
 import java.util.Collection;
 import org.junit.Test;
@@ -78,7 +79,9 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
     private static Expression getEncrypted (String st, String k)
     {
         return  EncryptExpression.ENCRYPT.compose(Arrays.asList(
-                st == null ? LiteralExpression.forNull() : new LiteralExpression(AkType.VARCHAR, st),
+                st == null 
+                    ? LiteralExpression.forNull() 
+                    : new LiteralExpression(AkType.VARBINARY, new WrappingByteSource(st.getBytes())),
                 k == null ? LiteralExpression.forNull() : new LiteralExpression(AkType.VARCHAR, k)));
     }
     
@@ -102,7 +105,8 @@ public class EncryptExpressionTest extends ComposedExpressionTestBase
         // decrypt the encrypted string
         Expression decrypted = getDecrypted(encrypted, key);
         
-        assertEquals(text, new String(decrypted.evaluation().eval().getVarBinary().byteArray()));
+        assertEquals(text.getBytes(),
+                     new String(decrypted.evaluation().eval().getVarBinary().byteArray()));
     }
     
     @OnlyIfNot("alreadyExc()")

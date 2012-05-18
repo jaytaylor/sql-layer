@@ -85,7 +85,7 @@ public class EncryptExpression extends AbstractBinaryExpression
             if (argumentTypes.size() != 2)
                 throw new WrongExpressionArityException(2, argumentTypes.size());
             
-            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(0, AkType.VARBINARY);
             argumentTypes.setType(1, AkType.VARCHAR);
             
             int l = argumentTypes.get(0).getPrecision();
@@ -110,7 +110,7 @@ public class EncryptExpression extends AbstractBinaryExpression
             switch(mode)
             {
                 case Cipher.ENCRYPT_MODE:
-                    ret.putVarBinary(new WrappingByteSource(cipher.doFinal(text.getString().getBytes())));
+                    ret.putVarBinary(new WrappingByteSource(cipher.doFinal(text.getVarBinary().byteArray())));
                     break;
                 case Cipher.DECRYPT_MODE:
                     ret.putVarBinary(new WrappingByteSource(cipher.doFinal(text.getVarBinary().byteArray())));
