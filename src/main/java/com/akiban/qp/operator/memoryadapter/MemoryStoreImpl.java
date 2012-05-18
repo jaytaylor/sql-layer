@@ -29,7 +29,7 @@ package com.akiban.qp.operator.memoryadapter;
 import java.util.HashMap;
 import java.util.Map;
 
-import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
@@ -42,16 +42,16 @@ public class MemoryStoreImpl implements MemoryStore, Service<MemoryStore> {
     public MemoryStoreImpl (SchemaManager schema)
     {
         this.schema = schema;
-        map = new HashMap<String, MemoryTableFactory>();
+        map = new HashMap<TableName, MemoryTableFactory>();
     }
 
     @Override
-    public MemoryTableFactory getFactory(String name) {
+    public MemoryTableFactory getFactory(TableName name) {
         return map.get(name);
     }
 
     @Override
-    public void registerTable(String name, MemoryTableFactory factory) {
+    public void registerTable(TableName name, MemoryTableFactory factory) {
         map.put(name, factory);
         schema.createTableDefinition((Session)null, (UserTable) factory.getTableDefinition());
     }
@@ -84,5 +84,5 @@ public class MemoryStoreImpl implements MemoryStore, Service<MemoryStore> {
         
     }
     private final SchemaManager schema;
-    private Map<String, MemoryTableFactory> map; 
+    private Map<TableName, MemoryTableFactory> map; 
 }

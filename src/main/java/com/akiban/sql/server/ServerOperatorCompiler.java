@@ -26,7 +26,6 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.sql.StandardException;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.rule.BaseRule;
 import com.akiban.sql.parser.DMLStatementNode;

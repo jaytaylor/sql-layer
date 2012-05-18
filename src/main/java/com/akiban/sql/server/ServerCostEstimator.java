@@ -30,10 +30,8 @@ import com.akiban.sql.optimizer.rule.CostEstimator;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
-import java.util.Properties;
 
 public class ServerCostEstimator extends CostEstimator
 {

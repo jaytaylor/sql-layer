@@ -49,6 +49,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     public StoreAdapter getStore() {
         return server.getStore();
     }
+    
+    @Override
+    public StoreAdapter getStore (StoreAdapter.AdapterType type) {
+        return server.getStore(type);
+    }
 
     @Override
     public Session getSession() {

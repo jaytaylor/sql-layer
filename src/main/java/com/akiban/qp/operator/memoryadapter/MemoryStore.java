@@ -26,7 +26,9 @@
 
 package com.akiban.qp.operator.memoryadapter;
 
+import com.akiban.ais.model.TableName;
+
 public interface MemoryStore {
-    public void registerTable (String name, MemoryTableFactory factory);
-    public MemoryTableFactory getFactory (String name);
+    public void registerTable (TableName name, MemoryTableFactory factory);
+    public MemoryTableFactory getFactory (TableName name);
 }
