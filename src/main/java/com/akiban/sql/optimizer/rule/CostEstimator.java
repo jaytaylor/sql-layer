@@ -532,6 +532,29 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(rowCount, cost);
     }
 
+    /** Estimate the cost of starting from a group scan and joining
+     * with Flatten and Product. */
+    public CostEstimate costFlattenGroup(TableGroupJoinTree tableGroup,
+                                         Set<TableSource> requiredTables) {
+        TableGroupJoinNode rootNode = tableGroup.getRoot();
+        coverBranches(tableGroup, rootNode, requiredTables);
+        int branchCount = 0;
+        long rowCount = 1;
+        double cost = 0.0;
+        for (TableGroupJoinNode node : tableGroup) {
+            if (isFlattenable(node)) {
+                long nrows = getTableRowCount(node.getTable().getTable().getTable());
+                branchCount++;
+                rowCount *= nrows;
+                // Cost of flattening these children with their ancestor.
+                cost += model.flatten((int)nrows);
+            }
+        }
+        if (branchCount > 1)
+            cost += model.product((int)rowCount);
+        return new CostEstimate(rowCount, cost);
+    }
+
     /** This table needs to be included in flattens. */
     protected static final long REQUIRED = 1;
     /** This table is on the main branch. */
