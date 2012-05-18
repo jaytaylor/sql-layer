@@ -21,9 +21,9 @@
 ---
 - Statement: SELECT UNHEX('f8Ab') = UNHEX('F8aC');
 - output: [['false']]
----
-- Statement: SELECT unhex(char_field) from all_types;
-- output: [['']]
+#--- varbinary field
+#- Statement: SELECT unhex(char_field) from all_types;
+#- output: [['']]
 --- # akiban
 - Statement: SELECT UNHEX('616B6962616E');
 - output: [[!!binary 'YWtpYmFu']]
