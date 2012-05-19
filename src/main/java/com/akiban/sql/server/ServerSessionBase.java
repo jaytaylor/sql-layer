@@ -27,6 +27,7 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.NoTransactionInProgressException;
@@ -182,11 +183,6 @@ public abstract class ServerSessionBase implements ServerSession
         return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
     
-    @Override
-    public StoreAdapter getStore(final StoreAdapter.AdapterType type) {
-        return adapters.get(type);
-    }
-
     @Override
     public TreeService getTreeService() {
         return reqs.treeService();

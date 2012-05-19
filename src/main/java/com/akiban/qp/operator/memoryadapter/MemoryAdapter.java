@@ -28,6 +28,7 @@ package com.akiban.qp.operator.memoryadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
@@ -48,34 +49,38 @@ public class MemoryAdapter extends StoreAdapter {
 
     public MemoryAdapter(Schema schema, 
             Session session,
-            ConfigurationService config) {
+            ConfigurationService config,
+            MemoryStore memoryStore) {
         super(schema, session, config);
+        this.memoryStore = memoryStore;
     }
 
     @Override
     public GroupCursor newGroupCursor(GroupTable groupTable) {
-        // TODO Auto-generated method stub
-        return null;
+        return memoryStore.getFactory(groupTable.getName()).getGroupCursor(getSession());
     }
 
     @Override
     public HKey newHKey(RowType rowType) {
-        // TODO Auto-generated method stub
-        return null;
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Cursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector) {
-        // TODO Auto-generated method stub
-        return null;
+        TableName name = new TableName(index.getIndexName().getSchemaName(), index.getIndexName().getTableName());
+        return memoryStore.getFactory(name).getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
     }
 
     @Override
     public long rowCount(RowType tableType) {
-        // TODO Auto-generated method stub
-        return 0;
+        long count = 0;
+        if (tableType.hasUserTable()) {
+            TableName name= tableType.userTable().getName();
+            count = memoryStore.getFactory(name).rowCount();
+        }
+        return count;
     }
 
     @Override
@@ -99,4 +104,6 @@ public class MemoryAdapter extends StoreAdapter {
     public void deleteRow(Row oldRow) {
         throw new UnsupportedOperationException();
     }
+    
+    private final MemoryStore memoryStore;
 }

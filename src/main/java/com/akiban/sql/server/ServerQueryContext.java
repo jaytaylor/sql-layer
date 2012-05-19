@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
@@ -51,8 +52,8 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     }
     
     @Override
-    public StoreAdapter getStore (StoreAdapter.AdapterType type) {
-        return server.getStore(type);
+    public StoreAdapter getStore (final TableName name) {
+        return server.getStore(name);
     }
 
     @Override
