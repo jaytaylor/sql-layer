@@ -24,14 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.optimizer.rule.cost;
 
-import com.akiban.ais.model.*;
-import com.akiban.sql.optimizer.rule.costmodel.CostModel;
-import com.akiban.sql.optimizer.rule.costmodel.TableRowCounts;
+import com.akiban.sql.optimizer.rule.SchemaRulesContext;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
+import com.akiban.ais.model.*;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.PersistitKeyValueTarget;

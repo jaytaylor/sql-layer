@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.*;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 

@@ -27,9 +27,9 @@
 package com.akiban.sql.optimizer.rule.join_enum;
 
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.sql.optimizer.rule.CostEstimator;
-import com.akiban.sql.optimizer.rule.CostEstimator.IndexIntersectionCoster;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;

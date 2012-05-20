@@ -26,7 +26,7 @@
 
 package com.akiban.sql.optimizer.rule.join_enum;
 
-import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.IndexScan.OrderEffectiveness;
