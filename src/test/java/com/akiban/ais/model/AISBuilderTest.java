@@ -151,7 +151,7 @@ public class AISBuilderTest
             Assert.assertEquals('x', groupCol1.charAt(i));
         }
         Assert.assertEquals(groupCol2,
-                columnOne.substring(columnOne.length()-AISBuilder.MAX_COLUMN_NAME_LENGTH, columnOne.length()-2) + "$1"
+                columnOne.substring(columnOne.length()-AISBuilder.MAX_COLUMN_NAME_LENGTH, columnOne.length()) + "$1"
         );
         Assert.assertFalse("equal names: " + groupCol1, groupCol1.equals(groupCol2));
 
