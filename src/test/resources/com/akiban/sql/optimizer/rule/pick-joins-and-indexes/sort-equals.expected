@@ -1,0 +1,6 @@
+SelectQuery@429eb52e
+  ResultSet@4189012d[name]
+    Project@9ac52f8[customers.name]
+      Select@107b1cbe[]
+        TableGroupJoinTree@29c0666(TableGroup@516813e0(customers), customers - SingleIndexScan@7f100e1(Index(test.customers.name[IndexColumn(name)]), covering/NONE, =Smith, rows = 1, cost = 85.0422))
+          TableSource@417930fb(customers - TableGroup@516813e0(customers))
