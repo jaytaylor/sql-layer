@@ -68,12 +68,15 @@ public class DefaultNameGenerator implements NameGenerator {
         }
 
         int anonId = 0;
+        int keepLen = ret.length();
         String retValue;
-        while (generatedColumnNames.containsValue((retValue = ret.toString()))) {
+        while (generatedColumnNames.containsValue(retValue = ret.toString())) {
+            ret.setLength(keepLen);
             int digits = countDigits(++anonId);
-            int len = ret.length();
-            if (anonId != 1) {
-                ret.delete(len - (digits + 1), len);
+            int newLenOverflow = AISBuilder.MAX_COLUMN_NAME_LENGTH - (keepLen + digits + 1);
+            if (newLenOverflow < 0) {
+                keepLen += newLenOverflow;
+                ret.setLength(keepLen);
             }
             ret.append('$').append(anonId);
         }
