@@ -600,4 +600,14 @@ public final class CBasicIT extends ITBase {
 
         expectRows(request, createNewRow(tid, 1L, -5L), createNewRow(tid, 2L, -1L));
     }
+
+    /**
+     * bug1002359: Grouped tables, different schemas, same table name, same column name
+     */
+    @Test
+    public void groupedTablesWithSameNameAndColumnNames() {
+        createTable("s1", "t1", "id int not null primary key");
+        createTable("s2", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s1.t1(id)");
+        createTable("s3", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s2.t1(id)");
+    }
 }
