@@ -53,14 +53,8 @@ public class DefaultNameGenerator implements NameGenerator {
     public String generateColumnName(Column column) {
         UserTable table = (UserTable) column.getTable();
 
-        StringBuilder ret = new StringBuilder(table.getName()
-                .getTableName()).append("$").append(column.getName());
-
-        if (ret.length() <= AISBuilder.MAX_COLUMN_NAME_LENGTH) {
-            return ret.toString();
-        }
-        final ColumnName id = new ColumnName(table.getName(),
-                column.getName());
+        // Return existing if we've already generated one for this column
+        final ColumnName id = new ColumnName(table.getName(), column.getName());
         {
             String possible = generatedColumnNames.get(id);
             if (possible != null) {
@@ -68,16 +62,19 @@ public class DefaultNameGenerator implements NameGenerator {
             }
         }
 
-        // We need to truncate, but first see if this column name is already
-        // known
-        ret.delete(0, ret.length() - AISBuilder.MAX_COLUMN_NAME_LENGTH);
+        StringBuilder ret = new StringBuilder(table.getName().getTableName()).append("$").append(column.getName());
+        if (ret.length() > AISBuilder.MAX_COLUMN_NAME_LENGTH) {
+            ret.delete(0, ret.length() - AISBuilder.MAX_COLUMN_NAME_LENGTH);
+        }
+
         int anonId = 0;
         String retValue;
-        while (generatedColumnNames.containsValue((retValue = ret
-                .toString()))) {
+        while (generatedColumnNames.containsValue((retValue = ret.toString()))) {
             int digits = countDigits(++anonId);
             int len = ret.length();
-            ret.delete(len - (digits + 1), len);
+            if (anonId != 1) {
+                ret.delete(len - (digits + 1), len);
+            }
             ret.append('$').append(anonId);
         }
 
