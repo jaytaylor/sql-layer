@@ -210,14 +210,18 @@ public class BranchJoiner extends BaseRule
         if (sideBranch == null)
             return null;
         List<TableSource> tables = new ArrayList<TableSource>();
-        // TODO: BranchLookup first is only superior when there are relatively fewer of
-        // the side branch (perhaps even none); otherwise the AncestorLookup is repeated
-        // for each instead of once. Also, if the flattening is an outer join to the side
-        // branch, it needs to come second.
-        if (true ||
-            leafMostChild.getTable().getTable() == sideBranch.getTable().getTable()) {
-            // Jumping to the same rowtype. That won't just work, so
+        // If both AncestorLookup and BranchLookup are needed, the
+        // same index row cannot be used for both, as such a
+        // heterogeneous rowtype stream is not allowed.
+        // TODO: BranchLookup first is only superior when there are
+        // relatively fewer of the side branch (perhaps even none);
+        // otherwise the AncestorLookup is repeated for each instead
+        // of once. Also, if the flattening is an outer join to the
+        // side branch, it needs to come second.
+        if (!ancestors.isEmpty() ||
+            // Also, jumping to the same rowtype won't just work; must
             // go up to ancestor first.
+            (leafMostChild.getTable().getTable() == sideBranch.getTable().getTable())) {
             if (!ancestors.contains(leafMostParent.getTable()))
                 ancestors.add(leafMostParent.getTable());
             scan = new AncestorLookup(scan, indexTable, ancestors);
