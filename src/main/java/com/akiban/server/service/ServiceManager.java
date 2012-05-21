@@ -26,7 +26,7 @@
 
 package com.akiban.server.service;
 
-import com.akiban.server.AkServer;
+import com.akiban.qp.memoryadapter.MemoryStore;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
@@ -54,6 +54,8 @@ public interface ServiceManager {
     AkServerInterface getAkSserver();
 
     Store getStore();
+
+    MemoryStore getMemoryStore(); 
     
     TreeService getTreeService();
 
