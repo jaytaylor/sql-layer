@@ -43,6 +43,7 @@ import java.util.List;
 import org.junit.Test;
 
 import static com.akiban.server.expression.std.ExprUtil.*;
+import java.math.BigInteger;
 import static org.junit.Assert.*;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -64,19 +65,54 @@ public class RoundExpressionTest extends ComposedExpressionTestBase
     {
         ParameterizationBuilder p = new ParameterizationBuilder();
         
-//        param(p, Arrays.asList(lit(150.12345), lit(2)), lit(150.12));
-//        param(p, Arrays.asList(lit(12L), lit(-1L)), lit(10L));
-//        param(p, Arrays.asList(lit(16.1234), lit(-1)), lit(20.0));
-//        param(p, Arrays.asList(lit(5L), lit(3L)), lit(5L));
-//        param(p, 
-//                Arrays.asList(new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(5.123000).setScale(6)),
-//                              lit(4L)), 
-//                new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(5.1230).setScale(4)));
+        // test with primitive types (double/float, long/int)
+        param(p, Arrays.asList(lit(150.12345), lit(2)), lit(150.12));
+        param(p, Arrays.asList(lit(123.3f), lit(-1)), lit(120.0f));
+        param(p, Arrays.asList(lit(12L), lit(-1L)), lit(10L));
+        param(p, Arrays.asList(lit(123.4), lit(-10L)), lit(0.0d));
+        param(p, Arrays.asList(lit(16.1234), lit(-1)), lit(20.0));
+        param(p, Arrays.asList(lit(5L), lit(3L)), lit(5L));
+        param(p, Arrays.asList(lit(10L), lit(-5L)), lit(0L));
+        
+        // test with objects (BigDecimal/String/BigInteger)
+        param(p, 
+                Arrays.asList(new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(5.123000).setScale(6)),
+                              lit(4L)), 
+                new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(5.1230).setScale(4)));
         
         param(p,
                 Arrays.asList(new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(12345.123).setScale(3)),
                               lit(-2L)),
                 new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(12300).setScale(0)));
+        
+        param(p,
+                Arrays.asList(new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(123.0).setScale(1)),
+                              lit(-10L)),
+                new LiteralExpression(AkType.DECIMAL, BigDecimal.ZERO));
+        
+        param(p,
+              Arrays.asList(new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(16)),
+                            lit(-1L)),
+              new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(20)));
+        
+        param(p,
+              Arrays.asList(new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(12)),
+                            lit(4L)),
+              new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(12)));
+        
+        param(p, Arrays.asList(lit("123.456")), lit(123.0d));
+        param(p, Arrays.asList(lit("456.780"), lit(-2L)), lit(500.0d));
+        param(p, Arrays.asList(lit("12"), lit(-5L)), lit(0.0d));
+        
+        // test with nulls
+        param(p, Arrays.asList(LiteralExpression.forNull()), null);
+        param(p, Arrays.asList(lit(12.3d), LiteralExpression.forNull()), null);
+        param(p, Arrays.asList(LiteralExpression.forNull(), LiteralExpression.forNull()), null);
+        
+        // test invalid arg type
+        param(p, Arrays.asList(new LiteralExpression(AkType.DATE, 231231L)), null);
+        param(p, Arrays.asList(new LiteralExpression(AkType.TIME, 123010L), lit(2L)), null);
+        
         return p.asList();
     }
     

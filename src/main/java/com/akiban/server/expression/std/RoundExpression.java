@@ -26,6 +26,9 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidArgumentTypeException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -40,6 +43,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.math.MathContext;
 import java.math.RoundingMode;
 import java.util.List;
@@ -61,6 +65,7 @@ public class RoundExpression extends AbstractCompositeExpression
             }
             
             // return type has the same type with the same preceiosn/scale as the argument
+            // since that's the best we could do for now
             return argumentTypes.get(0);
         }
 
@@ -110,46 +115,83 @@ public class RoundExpression extends AbstractCompositeExpression
             
             AkType type = left.getConversionType();
             double factor = Math.pow(10, scale);
-            switch(type)
+            try
             {
-                case INT:
-                case LONG:
-                case U_INT:
-                    valueHolder().putRaw(type,
-                            (long)(Math.round(factor * Extractors.getDoubleExtractor().getDouble(left)) / factor));
-                    break;
-                case DOUBLE:
-                case U_DOUBLE:
-                    valueHolder().putRaw(type,
-                            Math.round(factor * Extractors.getDoubleExtractor().getDouble(left)) / factor);
-                    break;
-                case FLOAT:
-                case U_FLOAT:
-                    valueHolder().putRaw(type,
-                            (float)(Math.round(factor * Extractors.getDoubleExtractor().getDouble(left)) / factor));
-                    break;
-                case DECIMAL:
-                    BigDecimal num = left.getDecimal();
-                    
-                    if (scale >= 0)
-                        valueHolder().putDecimal(
-                                num.round(new MathContext(scale + num.precision() - num.scale(), RoundingMode.HALF_UP)));
-                    else
-                        valueHolder().putDecimal(
-                                num.multiply(BigDecimal.valueOf(factor), new MathContext(num.)))
-                    break;
-                case U_BIGINT:
-                    
-//                    valueHolder().putRaw(type,
-//                            left.getUBigInt().);
-                default:
-                    // TODO: return NULL and warnings
-                    throw new UnsupportedOperationException("not supported for now");
+                switch(type)
+                {
+                    case INT:
+                    case LONG:
+                    case U_INT:
+                        long val = Extractors.getLongExtractor(type).getLong(left);
+                        valueHolder().putRaw(type,
+                                scale < 0
+                                    ? (long)(Math.round(factor * val) / factor)
+                                    : val);
+                        break;
+                    case VARCHAR:   type = AkType.DOUBLE; // fall thru
+                    case DOUBLE:
+                    case U_DOUBLE:
+                        valueHolder().putRaw(type,
+                                Math.round(factor * Extractors.getDoubleExtractor().getDouble(left)) / factor);
+                        break;
+                    case FLOAT:
+                    case U_FLOAT:
+                        valueHolder().putRaw(type,
+                                (float)(Math.round(factor * Extractors.getDoubleExtractor().getDouble(left)) / factor));
+                        break;
+                    case DECIMAL:
+                        BigDecimal num = left.getDecimal();
+                        int precision = num.precision() - num.scale() + scale;
+                        if (scale >= 0)
+                            valueHolder().putDecimal(
+                                    num.round(new MathContext(precision, RoundingMode.HALF_UP)));
+                        else
+                        {
+                            if (precision <= 0)
+                                valueHolder().putDecimal(BigDecimal.ZERO);
+                            else
+                            {
+                                BigDecimal decFactor = BigDecimal.valueOf(factor);
+                                valueHolder().putDecimal(
+                                        num.multiply(decFactor, 
+                                                    new MathContext(precision,RoundingMode.HALF_UP))
+                                        .divide(decFactor, 0, RoundingMode.FLOOR));
+                            }
+                        }
+                        break;
+                    case U_BIGINT:
+                        if (scale >= 0)
+                            valueHolder().putUBigInt(left.getUBigInt());
+                        else
+                        {
+                            BigDecimal decVal = new BigDecimal(left.getUBigInt());
+                            int pre = decVal.precision() - decVal.scale() + scale;
+                            if (pre <= 0)
+                                valueHolder().putUBigInt(BigInteger.ZERO);
+                            else
+                            {
+                                BigDecimal decFactor = BigDecimal.valueOf(factor);
+                                valueHolder().putUBigInt(
+                                        decVal.multiply(decFactor, 
+                                                        new MathContext(pre, RoundingMode.HALF_UP))
+                                            .divide(decFactor, 0, RoundingMode.FLOOR).toBigInteger());
+                            }
+                        }
+                        break;
+
+                    default:
+                        throw new InvalidArgumentTypeException("Type " + type + "is not supported in ROUND");
+                }
+                return valueHolder();
             }
-            
-            return valueHolder();
+            catch (InvalidOperationException e)
+            {
+                QueryContext qc = queryContext();
+                if (qc != null)
+                    qc.warnClient(e);
+                return NullValueSource.only();
+            }
         }
-        
     }
     
     RoundExpression (List<? extends Expression> args)
@@ -181,5 +223,4 @@ public class RoundExpression extends AbstractCompositeExpression
     {
         return new InnerEvaluation(childrenEvaluations());
     }
-    
 }
