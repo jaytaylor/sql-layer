@@ -42,7 +42,7 @@ import com.akiban.server.expression.TypesList;
 
 public class LengthExpression  extends AbstractUnaryExpression
 {
-    @Scalar ("getDB2Length")
+    @Scalar ("charLength")
     public static final ExpressionComposer COMPOSER = new UnaryComposer ()
     {
         @Override
