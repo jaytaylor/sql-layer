@@ -29,7 +29,6 @@ package com.akiban.sql.server;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
@@ -40,8 +39,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.parser.SQLParser;
-
-import org.joda.time.DateTime;
 
 import java.util.*;
 
@@ -56,7 +53,9 @@ public abstract class ServerSessionBase implements ServerSession
     protected Session session;
     protected long aisTimestamp = -1;
     protected AkibanInformationSchema ais;
-    protected StoreAdapter adapter;
+    protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
+        new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
+    //protected StoreAdapter adapter;
     protected String defaultSchemaName;
     protected SQLParser parser;
     protected ServerTransaction transaction;
@@ -185,7 +184,12 @@ public abstract class ServerSessionBase implements ServerSession
 
     @Override
     public StoreAdapter getStore() {
-        return adapter;
+        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
+    }
+    
+    @Override
+    public StoreAdapter getStore(final StoreAdapter.AdapterType type) {
+        return adapters.get(type);
     }
 
     @Override

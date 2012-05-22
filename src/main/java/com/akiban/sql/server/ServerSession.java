@@ -98,6 +98,9 @@ public interface ServerSession
     /** Return an adapter for the session's store. */
     public StoreAdapter getStore();
 
+    /** Return an adapter for the session's store. */
+    public StoreAdapter getStore(final StoreAdapter.AdapterType type);
+
     /** Return the tree service. */
     public TreeService getTreeService();
 
