@@ -26,46 +26,30 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
-import com.akiban.sql.StandardException;
-import com.akiban.server.expression.TypesList;
 
 /**
  * 
- * This implement the CHAR_LENGTH function, which returns the number of
- * characters in the argument
+ * This implements the (byte) LENGTH function, which returns the number of byte in
+ * the string argument. 
+ * 
+ * This differs from LengthExpression in that if a string st has 5 2-byte characters
+ *      - LenthExpression would return 5
+ *      - ByteLengthExpression would return 10
+ * 
  */
-public class LengthExpression  extends AbstractUnaryExpression
+public class ByteLengthExpression extends AbstractUnaryExpression
 {
-    @Scalar ("charLength")
-    public static final ExpressionComposer COMPOSER = new InternalComposer();
-    
-    protected static class InternalComposer extends UnaryComposer
-    {
-        @Override
-        protected Expression compose(Expression argument) 
-        {
-            return new LengthExpression(argument);
-        }
-
-        @Override
-        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
-        {
-            if (argumentTypes.size() != 1)
-                throw new WrongExpressionArityException(1, argumentTypes.size());
-            return ExpressionTypes.LONG;
-        }
-    }
+    @Scalar ("getDB2Length")
+    public static final ExpressionComposer COMPOSER = new LengthExpression.InternalComposer();
         
     private static final class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
@@ -83,12 +67,12 @@ public class LengthExpression  extends AbstractUnaryExpression
            ObjectExtractor<String> sExtractor = Extractors.getStringExtractor();
            String st = sExtractor.getObject(source);
 
-           valueHolder().putLong(st.length());
+           valueHolder().putLong(st.getBytes().length);
            return valueHolder();
         }        
     }
     
-    public LengthExpression (Expression e)
+    public ByteLengthExpression (Expression e)
     {
         super(AkType.LONG, e);
     }
@@ -96,12 +80,12 @@ public class LengthExpression  extends AbstractUnaryExpression
     @Override
     protected String name() 
     {
-        return "CHAR_LENGTH";
+        return "LENGTH";
     }
 
     @Override
     public ExpressionEvaluation evaluation() 
     {
-        return new InnerEvaluation(this.operandEvaluation());
+        return new InnerEvaluation(operandEvaluation());
     }    
 }
