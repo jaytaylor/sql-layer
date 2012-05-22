@@ -51,10 +51,7 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public Session getSession() {
-        if (adapter instanceof PersistitAdapter)
-            return ((PersistitAdapter)adapter).getSession();
-        else
-            throw new UnsupportedOperationException();
+	return adapter.getSession();
     }
 
     @Override
@@ -84,10 +81,8 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public void checkQueryCancelation() {
-        // If don't have a session, so can't check cancelation in it.
-        if (adapter instanceof PersistitAdapter) {
-            super.checkQueryCancelation();
+        if (adapter.getSession() != null) {
+           super.checkQueryCancelation();
         }
     }
-
 }
