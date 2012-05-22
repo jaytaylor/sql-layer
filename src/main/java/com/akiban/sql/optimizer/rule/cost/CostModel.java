@@ -192,7 +192,8 @@ public class CostModel
     {
         this.schema = schema;
         this.tableRowCounts = tableRowCounts;
-        for (UserTableRowType tableRowType : schema.userTableTypes()) {
+        for (RowType rowType : schema.allTableTypes()) {
+            UserTableRowType tableRowType = (UserTableRowType)rowType;
             TreeStatistics tableStatistics = TreeStatistics.forTable(tableRowType, tableRowCounts);
             statisticsMap.put(tableRowType.typeId(), tableStatistics);
             for (IndexRowType indexRowType : tableRowType.indexRowTypes()) {
