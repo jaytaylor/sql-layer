@@ -26,13 +26,10 @@
 
 package com.akiban.sql.optimizer.rule.join_enum;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.sql.optimizer.rule.EquivalenceFinder;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.PlanCostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
-import com.akiban.sql.optimizer.rule.range.RangeSegment;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
@@ -903,13 +900,15 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     }
 
     protected CostEstimate estimateCost(IndexScan index) {
-        CostEstimator costEstimator = queryGoal.getCostEstimator();
-        CostEstimate cost = getScanOnlyCost(index, costEstimator);
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        Set<TableSource> requiredTables = index.getRequiredTables();
+
+        estimator.indexScan(index);
+
         if (!index.isCovering()) {
-            CostEstimate flatten = costEstimator.costFlatten(tables,
-                                                             index.getLeafMostTable(),
-                                                             index.getRequiredTables());
-            cost = cost.nest(flatten);
+            estimator.flatten(tables, 
+                              index.getLeafMostTable(), requiredTables);
         }
 
         Collection<ConditionExpression> unhandledConditions = 
@@ -917,80 +916,31 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (index.getConditions() != null)
             unhandledConditions.removeAll(index.getConditions());
         if (!unhandledConditions.isEmpty()) {
-            CostEstimate select = costEstimator.costSelect(unhandledConditions,
-                                                           selectivityConditions(unhandledConditions, index.getRequiredTables()),
-                                                           cost.getRowCount());
-            cost = cost.sequence(select);
+            estimator.select(unhandledConditions,
+                             selectivityConditions(unhandledConditions, requiredTables));
         }
 
         if (queryGoal.needSort(index.getOrderEffectiveness())) {
-            CostEstimate sort = costEstimator.costSort(cost.getRowCount());
-            cost = cost.sequence(sort);
+            estimator.sort();
         }
 
-        return cost;
-    }
-
-    private CostEstimate getScanOnlyCost(IndexScan index, CostEstimator costEstimator) {
-        CostEstimate result = index.getScanCostEstimate();
-        if (result == null) {
-            if (index instanceof SingleIndexScan) {
-                SingleIndexScan singleIndex = (SingleIndexScan) index;
-                if (singleIndex.getConditionRange() == null) {
-                    result = costEstimator.costIndexScan(singleIndex.getIndex(),
-                            singleIndex.getEqualityComparands(),
-                            singleIndex.getLowComparand(),
-                            singleIndex.isLowInclusive(),
-                            singleIndex.getHighComparand(),
-                            singleIndex.isHighInclusive());
-                }
-                else {
-                    CostEstimate cost = null;
-                    for (RangeSegment segment : singleIndex.getConditionRange().getSegments()) {
-                        CostEstimate acost = costEstimator.costIndexScan(singleIndex.getIndex(),
-                                singleIndex.getEqualityComparands(),
-                                segment.getStart().getValueExpression(),
-                                segment.getStart().isInclusive(),
-                                segment.getEnd().getValueExpression(),
-                                segment.getEnd().isInclusive());
-                        if (cost == null)
-                            cost = acost;
-                        else
-                            cost = cost.union(acost);
-                    }
-                    result = cost;
-                }
-            }
-            else if (index instanceof MultiIndexIntersectScan) {
-                MultiIndexIntersectScan multiIndex = (MultiIndexIntersectScan) index;
-                result = costEstimator.costIndexIntersection(multiIndex, new IndexIntersectionCoster() {
-                    @Override
-                    public CostEstimate singleIndexScanCost(SingleIndexScan scan, CostEstimator costEstimator) {
-                        return getScanOnlyCost(scan, costEstimator);
-                    }
-                });
-            }
-            else {
-                throw new AkibanInternalException("unknown index type: " + index + "(" + index.getClass() + ")");
-            }
-            index.setScanCostEstimate(result);
-        }
-        return result;
+        return estimator.getCostEstimate();
     }
 
     public CostEstimate estimateCost(GroupScan scan) {
-        CostEstimator costEstimator = queryGoal.getCostEstimator();
-        CostEstimate cost = costEstimator.costGroupScan(scan.getGroup().getGroup());
-        CostEstimate flatten = costEstimator.costFlattenGroup(tables,
-                                                              requiredColumns.getTables());
-        cost = cost.sequence(flatten);
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        Set<TableSource> requiredTables = requiredColumns.getTables();
+
+        estimator.groupScan(scan);
+        estimator.flattenGroup(tables, requiredTables);
+
         if (!conditions.isEmpty()) {
-            CostEstimate select = costEstimator.costSelect(conditions,
-                                                           selectivityConditions(conditions, requiredColumns.getTables()),
-                                                           cost.getRowCount());
-            cost = cost.sequence(select);
+            estimator.select(conditions,
+                             selectivityConditions(conditions, requiredTables));
         }
-        return cost;
+
+        return estimator.getCostEstimate();
     }
 
     // Conditions that might have a recognizable selectivity.
