@@ -1,0 +1,6 @@
+## test the "potential' bug in inserting a double into a varchar field
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types (varchar_field,  numeric_field) VALUES ('xyz', 120.5);
+...
