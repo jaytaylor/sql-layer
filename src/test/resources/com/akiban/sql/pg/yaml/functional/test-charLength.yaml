@@ -1,0 +1,11 @@
+## Test the CHAR_LENGTH/CHARACTER_LENGTH function
+---
+- Statement: SELECT char_length('1234');
+- output: [[4]]
+---
+- Statement: SELECT char_length('☃');
+- output: [[1]]
+---
+- Statement: SELECT length('☃');
+- output: [[3]]
+...

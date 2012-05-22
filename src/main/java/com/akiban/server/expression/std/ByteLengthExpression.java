@@ -49,7 +49,14 @@ import com.akiban.server.types.extract.ObjectExtractor;
 public class ByteLengthExpression extends AbstractUnaryExpression
 {
     @Scalar ("getDB2Length")
-    public static final ExpressionComposer COMPOSER = new LengthExpression.InternalComposer();
+    public static final ExpressionComposer COMPOSER = new LengthExpression.InternalComposer()
+    {       
+        @Override
+        protected Expression compose(Expression argument) 
+        {
+            return new ByteLengthExpression(argument);
+        }
+    };
         
     private static final class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
@@ -66,7 +73,7 @@ public class ByteLengthExpression extends AbstractUnaryExpression
            
            ObjectExtractor<String> sExtractor = Extractors.getStringExtractor();
            String st = sExtractor.getObject(source);
-
+           
            valueHolder().putLong(st.getBytes().length);
            return valueHolder();
         }        
