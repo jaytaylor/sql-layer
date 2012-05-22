@@ -39,6 +39,7 @@ import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.SQLParserFeature;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -675,6 +676,15 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresCallStatementGenerator(this),
             new PostgresExplainStatementGenerator(this)
         };
+    }
+
+    @Override
+    public StoreAdapter getStore(final TableName name) {
+        if (reqs.getMemoryStore().getFactory(name) != null ) {
+            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
+        }
+        
+        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
     protected void sessionChanged() {

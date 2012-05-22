@@ -31,6 +31,7 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.optimizer.rule.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -99,7 +100,7 @@ public interface ServerSession
     public StoreAdapter getStore();
 
     /** Return an adapter for the session's store. */
-    public StoreAdapter getStore(final StoreAdapter.AdapterType type);
+    public StoreAdapter getStore(final TableName name);
 
     /** Return the tree service. */
     public TreeService getTreeService();
