@@ -27,9 +27,9 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
@@ -49,7 +49,7 @@ public abstract class StoreAdapter
                                           API.Ordering ordering,
                                           IndexScanSelector scanSelector);
 
-    public abstract HKey newHKey(RowType rowType);
+    public abstract <HKEY extends com.akiban.qp.row.HKey> HKEY newHKey(HKey hKeyMetadata);
 
     public final Schema schema()
     {
@@ -69,22 +69,11 @@ public abstract class StoreAdapter
                                 API.SortOption sortOption,
                                 InOutTap loadTap);
 
+    public long getQueryTimeoutSec() {
+        return config.queryTimeoutSec();
+    }
 
     public abstract long rowCount(RowType tableType);
-
-    // For use by subclasses
-    public void checkQueryCancelation(long queryStartMsec) {
-        if (session.isCurrentQueryCanceled()) {
-            throw new QueryCanceledException(session);
-        }
-        long queryTimeoutSec = config.queryTimeoutSec();
-        if (queryTimeoutSec >= 0) {
-            long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
-            if (runningTimeMsec > queryTimeoutSec * 1000) {
-                throw new QueryTimedOutException(runningTimeMsec);
-            }
-        }
-    }
 
     public final Session getSession() {
         return session;

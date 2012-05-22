@@ -42,7 +42,6 @@ import com.akiban.server.error.TableColumnNotInGroupException;
  */
 class TableColumnsMatchGroupColumns implements AISValidation {
 
-    NameGenerator name = new DefaultNameGenerator();
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (UserTable table : ais.getUserTables().values()) {
@@ -55,8 +54,15 @@ class TableColumnsMatchGroupColumns implements AISValidation {
                     output.reportFailure(new AISValidationFailure (
                             new TableColumnNotInGroupException (table.getName(),column.getName())));
                 }
-                String groupColumnName = name.generateColumnName(column);
-                if (groupTable.getColumn(groupColumnName) == null) {
+
+                Column matchingColumn = null;
+                for (Column groupTableColumn : groupTable.getColumns()) {
+                    if (groupTableColumn.getUserColumn() == column) {
+                        matchingColumn = groupTableColumn;
+                        break;
+                    }
+                }
+                if (matchingColumn == null) {
                     output.reportFailure(new AISValidationFailure (
                             new GroupMissingTableColumnException (groupTable.getName(), table.getName(), column.getName())));
                 }

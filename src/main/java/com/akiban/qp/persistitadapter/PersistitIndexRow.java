@@ -26,12 +26,13 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.*;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -44,12 +45,12 @@ import com.persistit.exception.PersistitException;
 
 import static java.lang.Math.min;
 
-public class PersistitIndexRow extends AbstractRow
+public abstract class PersistitIndexRow extends AbstractRow
 {
     // Object interface
 
     @Override
-    public String toString()
+    public final String toString()
     {
         ValueTarget buffer = AkibanAppender.of(new StringBuilder()).asValueTarget();
         buffer.putString("(");
@@ -60,7 +61,7 @@ public class PersistitIndexRow extends AbstractRow
             Converters.convert(eval(i), buffer);
         }
         buffer.putString(")->");
-        buffer.putString(hKey.toString());
+        buffer.putString(hKey().toString());
         return buffer.toString();
     }
     
@@ -80,7 +81,7 @@ public class PersistitIndexRow extends AbstractRow
      * this row had the smaller value.
      */
     @Override
-    public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+    public final int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
         PersistitIndexRow that = (PersistitIndexRow) row;
         int thisPosition = this.indexRow.indexTo(leftStartIndex).getIndex();
@@ -118,38 +119,63 @@ public class PersistitIndexRow extends AbstractRow
     // RowBase interface
 
     @Override
-    public RowType rowType()
+    public HKey hKey()
+    {
+        return hKeyCache.hKey(leafmostTable);
+    }
+
+    @Override
+    public final RowType rowType()
     {
         return indexRowType;
     }
 
     @Override
-    public ValueSource eval(int i) 
+    public final ValueSource eval(int i)
     {
         PersistitKeyValueSource keySource = keySource(i);
         keySource.attach(indexRow, i, akTypes[i]);
         return keySource;
     }
 
-    @Override
-    public HKey hKey()
-    {
-        return hKey;
-    }
-
     // PersistitIndexRow interface
 
-    public boolean keyEmpty()
+    public abstract IndexToHKey indexToHKey();
+
+    public final boolean keyEmpty()
     {
         return indexRow.getEncodedSize() == 0;
     }
 
     public long tableBitmap()
     {
-        return tableBitmap;
+        throw new UnsupportedOperationException(getClass().toString());
     }
 
-    public PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType) throws PersistitException
+    public static PersistitIndexRow tableIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+        throws PersistitException
+    {
+        return new PersistitTableIndexRow(adapter, indexRowType);
+    }
+
+    public static PersistitIndexRow groupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+        throws PersistitException
+    {
+        return new PersistitGroupIndexRow(adapter, indexRowType);
+    }
+
+    // For use by this package
+
+    void copyFromExchange(Exchange exchange) throws PersistitException
+    {
+        PersistitHKey leafmostHKey = hKeyCache.hKey(leafmostTable);
+        exchange.getKey().copyTo(indexRow);
+        adapter.persistit().constructHKeyFromIndexKey(leafmostHKey.key(), indexRow, indexToHKey());
+    }
+
+    // For use by subclasses
+
+    protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType) throws PersistitException
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;
@@ -160,23 +186,8 @@ public class PersistitIndexRow extends AbstractRow
         }
         this.keySources = new PersistitKeyValueSource[indexRowType.nFields()];
         this.indexRow = adapter.persistit().getKey(adapter.getSession());
-        this.hKey = new PersistitHKey(adapter, this.indexRowType.index().hKey());
-    }
-
-    // For use by this package
-
-    void copyFromExchange(Exchange exchange) throws PersistitException
-    {
-        // Extract the hKey from the exchange, using indexRow as a convenient Key to bridge Exchange
-        // and PersistitHKey.
-        adapter.persistit().constructHKeyFromIndexKey(indexRow, exchange.getKey(), indexRowType.index());
-        hKey.copyFrom(indexRow);
-        // Now copy the entire index record into indexRow.
-        exchange.getKey().copyTo(indexRow);
-        // Get the tableBitmap if this is a group index row
-        if (indexRowType.index().isGroupIndex()) {
-            tableBitmap = exchange.getValue().getLong();
-        }
+        this.leafmostTable = (UserTable) indexRowType.index().leafMostTable();
+        this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
     }
 
     // For use by this class
@@ -188,14 +199,96 @@ public class PersistitIndexRow extends AbstractRow
         }
         return keySources[i];
     }
-    
+
     // Object state
 
-    private final PersistitAdapter adapter;
-    private final IndexRowType indexRowType;
-    private AkType[] akTypes;
-    private final PersistitKeyValueSource[] keySources;
-    private final Key indexRow;
-    private long tableBitmap;
-    private PersistitHKey hKey;
+    protected final PersistitAdapter adapter;
+    protected final IndexRowType indexRowType;
+    protected AkType[] akTypes;
+    protected final PersistitKeyValueSource[] keySources;
+    protected final Key indexRow;
+    protected final HKeyCache<PersistitHKey> hKeyCache;
+    protected final UserTable leafmostTable;
+
+    private static class PersistitTableIndexRow extends PersistitIndexRow
+    {
+        // RowBase interface
+        
+        @Override
+        public HKey ancestorHKey(UserTable table)
+        {
+            PersistitHKey ancestorHKey;
+            PersistitHKey leafmostHKey = hKeyCache.hKey(leafmostTable);
+            if (table == leafmostTable) {
+                ancestorHKey = leafmostHKey;
+            } else {
+                ancestorHKey = hKeyCache.hKey(table);
+                leafmostHKey.copyTo(ancestorHKey);
+                ancestorHKey.useSegments(table.getDepth() + 1);
+            }
+            return ancestorHKey;
+        }
+
+        // PersistitTableIndexRow interface
+
+        @Override
+        public IndexToHKey indexToHKey()
+        {
+            return index.indexToHKey();
+        }
+
+        public PersistitTableIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+            throws PersistitException
+        {
+            super(adapter, indexRowType);
+            this.index = (TableIndex) indexRowType.index();
+        }
+
+        private final TableIndex index;
+    }
+
+    private static class PersistitGroupIndexRow extends PersistitIndexRow
+    {
+        // RowBase interface
+
+        @Override
+        public HKey ancestorHKey(UserTable table)
+        {
+            PersistitHKey ancestorHKey = hKeyCache.hKey(table);
+            adapter.persistit().constructHKeyFromIndexKey(ancestorHKey.key(),
+                                                          indexRow,
+                                                          index.indexToHKey(table.getDepth()));
+            return ancestorHKey;
+        }
+
+        // PersistitGroupIndexRow interface
+
+        public IndexToHKey indexToHKey()
+        {
+            return index.indexToHKey(index.leafMostTable().getDepth());
+        }
+
+        public long tableBitmap()
+        {
+            return tableBitmap;
+        }
+
+        public PersistitGroupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+            throws PersistitException
+        {
+            super(adapter, indexRowType);
+            this.index = (GroupIndex) indexRowType.index();
+        }
+
+        // For use by this package
+
+        void copyFromExchange(Exchange exchange) throws PersistitException
+        {
+            super.copyFromExchange(exchange);
+            tableBitmap = exchange.getValue().getLong();
+        }
+
+        private final GroupIndex index;
+        private long tableBitmap;
+    }
 }

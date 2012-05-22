@@ -40,12 +40,17 @@ public abstract class Index implements Traversable
     public abstract HKey hKey();
     public abstract boolean isTableIndex();
     public abstract void computeFieldAssociations(Map<Table,Integer> ordinalMap);
-    protected abstract Column indexRowCompositionColumn(HKeyColumn hKeyColumn);
     public abstract Table leafMostTable();
     public abstract Table rootMostTable();
     public abstract void checkMutability();
 
-    protected Index(TableName tableName, String indexName, Integer indexId, Boolean isUnique, String constraint, JoinType joinType, boolean isValid)
+    protected Index(TableName tableName,
+                    String indexName,
+                    Integer indexId,
+                    Boolean isUnique,
+                    String constraint,
+                    JoinType joinType,
+                    boolean isValid)
     {
         if ( (indexId != null) && (indexId | INDEX_ID_BITS) != INDEX_ID_BITS)
             throw new IllegalArgumentException("index ID out of range: " + indexId + " > " + INDEX_ID_BITS);
@@ -55,7 +60,6 @@ public abstract class Index implements Traversable
         this.indexId = indexId;
         this.isUnique = isUnique;
         this.constraint = constraint;
-        this.treeName = this.indexName.toString();
         this.joinType = joinType;
         this.isValid = isValid;
         keyColumns = new ArrayList<IndexColumn>();
@@ -149,17 +153,7 @@ public abstract class Index implements Traversable
     }
 
     /**
-     * Return columns included in the index key but <b>were not</b> declared in
-     * the definition (e.g. HKey columns).
-     * @return list of columns
-     */
-    public List<IndexColumn> getValueColumns()
-    {
-        return valueColumns;
-    }
-
-    /**
-     * Return all columns that make up the physical index key (declared and not).
+     * Return all columns that make up the physical index key. This includes declared columns and hkey columns.
      * @return list of columns
      */
     public List<IndexColumn> getAllColumns() {
@@ -219,16 +213,6 @@ public abstract class Index implements Traversable
         return indexRowComposition;
     }
 
-    public IndexToHKey indexToHKey()
-    {
-        return indexToHKey;
-    }
-
-    public boolean isHKeyEquivalent()
-    {
-        return isHKeyEquivalent;
-    }
-
     protected static class AssociationBuilder {
         /**
          * @param fieldPosition entry of {@link IndexRowComposition#fieldPositions}
@@ -241,10 +225,9 @@ public abstract class Index implements Traversable
         /**
          * @param ordinal entry of {@link IndexToHKey#ordinals}
          * @param indexRowPosition entry of {@link IndexToHKey#indexRowPositions}
-         * @param fieldPosition entry of {@link IndexToHKey#fieldPositions}
          */
-        void toHKeyEntry(int ordinal, int indexRowPosition, int fieldPosition) {
-            list1.add(ordinal); list2.add(indexRowPosition); list3.add(fieldPosition);
+        void toHKeyEntry(int ordinal, int indexRowPosition) {
+            list1.add(ordinal); list2.add(indexRowPosition);
         }
 
         IndexRowComposition createIndexRowComposition() {
@@ -252,7 +235,7 @@ public abstract class Index implements Traversable
         }
 
         IndexToHKey createIndexToHKey() {
-            return new IndexToHKey(asArray(list1), asArray(list2), asArray(list3));
+            return new IndexToHKey(asArray(list1), asArray(list2));
         }
 
         private int[] asArray(List<Integer> list) {
@@ -265,103 +248,8 @@ public abstract class Index implements Traversable
 
         private List<Integer> list1 = new ArrayList<Integer>();
         private List<Integer> list2 = new ArrayList<Integer>();
-        private List<Integer> list3 = new ArrayList<Integer>();
     }
     
-    private static int columnPosition(Map<? extends Table,Integer> flattenedRowOffsets, Column column) {
-        int position = column.getPosition();
-        if (flattenedRowOffsets != null) {
-            Integer offset = flattenedRowOffsets.get(column.getTable());
-            if (offset == null) {
-                throw new NullPointerException("no offset for " + column.getTable() + " in " + flattenedRowOffsets);
-            }
-            position += offset;
-        }
-        return position;
-    }
-
-    /**
-     * @param ordinalMap Map of Tables to Ordinal values
-     * @param indexTable If specified, prefer columns from this table over the hkey
-     * @param flattenedRowOffsets if not null, a mapping of each table's field offset within the flattened row
-     */
-    protected void computeFieldAssociations(Map<Table,Integer> ordinalMap, Table indexTable, Map<? extends Table,Integer> flattenedRowOffsets) {
-        freezeColumns();
-        computeHKeyEquivalent();
-
-        AssociationBuilder rowCompBuilder = new AssociationBuilder();
-        AssociationBuilder toHKeyBuilder = new AssociationBuilder();
-        List<Column> indexColumns = new ArrayList<Column>();
-
-        // Add index key fields
-        for (IndexColumn iColumn : getKeyColumns()) {
-            Column column = iColumn.getColumn();
-            indexColumns.add(column);
-            rowCompBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
-        }
-
-        // Add hkey fields not already included
-        valueColumns = new ArrayList<IndexColumn>();
-        HKey hKey = hKey();
-        for (HKeySegment hKeySegment : hKey.segments()) {
-            Integer ordinal = ordinalMap.get(hKeySegment.table());
-            assert ordinal != null : hKeySegment.table();
-            toHKeyBuilder.toHKeyEntry(ordinal, -1, -1);
-
-            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
-                Column column = indexRowCompositionColumn(hKeyColumn);
-
-                if (!indexColumns.contains(column)) {
-                    if (indexTable == null) {
-                        rowCompBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
-                    }
-                    else if (indexTable.getColumnsIncludingInternal().contains(column)) {
-                        rowCompBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, column), -1);
-                    }
-                    else {
-                        assert hKeySegment.table().isUserTable() : this;
-                        rowCompBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
-                    }
-                    indexColumns.add(column);
-                    valueColumns.add(new IndexColumn(this, column, keyColumns.size() + valueColumns.size(), true, 0));
-                }
-
-                int indexRowPos = indexColumns.indexOf(column);
-                int fieldPos = column == null ? -1 : columnPosition(flattenedRowOffsets, column);
-                toHKeyBuilder.toHKeyEntry(-1, indexRowPos, fieldPos);
-            }
-        }
-        allColumns = new ArrayList<IndexColumn>(keyColumns.size() + valueColumns.size());
-        allColumns.addAll(keyColumns);
-        allColumns.addAll(valueColumns);
-
-        indexRowComposition = rowCompBuilder.createIndexRowComposition();
-        indexToHKey = toHKeyBuilder.createIndexToHKey();
-    }
-
-    private void computeHKeyEquivalent() {
-        isHKeyEquivalent = false;
-        /*
-        isHKeyEquivalent = true;
-        // Collect the HKeyColumns of the index's hkey
-        List<HKeyColumn> hKeyColumns = new ArrayList<HKeyColumn>();
-        for (HKeySegment hKeySegment : index.hKey().segments()) {
-            hKeyColumns.addAll(hKeySegment.columns());
-        }
-        // Scan hkey columns and index columns and see if they match
-        Iterator<HKeyColumn> hKeyColumnScan = hKeyColumns.iterator();
-        Iterator<IndexColumn> indexColumnScan = index.getKeyColumns().iterator();
-        while (hkeyEquivalent && hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
-            Column hKeyColumn = hKeyColumnScan.next().column();
-            Column indexColumn = indexColumnScan.next().getColumn();
-            isHKeyEquivalent = hKeyColumn == indexColumn;
-        }
-        if (hkeyEquivalent && !hKeyColumnScan.hasNext() && indexColumnScan.hasNext()) {
-            isHKeyEquivalent = false;
-        }
-        */
-    }
-
     private static JoinType extractJoinType(Integer idAndFlags) {
         if (idAndFlags == null)
             return  null;
@@ -404,7 +292,23 @@ public abstract class Index implements Traversable
     private static final int IS_VALID_FLAG = INDEX_ID_BITS + 1;
     private static final int IS_RIGHT_JOIN_FLAG = IS_VALID_FLAG << 1;
 
-    static final int MAX_INDEX_ID = INDEX_ID_BITS;
+    private final Integer indexId;
+    private final Boolean isUnique;
+    private final String constraint;
+    private final JoinType joinType;
+    private final boolean isValid;
+    private IndexName indexName;
+    private boolean columnsStale = true;
+    private boolean columnsFrozen = false;
+    private String treeName;
+    private IndexDef indexDef;
+    protected IndexRowComposition indexRowComposition;
+    protected List<IndexColumn> keyColumns;
+    protected List<IndexColumn> allColumns;
+
+    public enum JoinType {
+        LEFT, RIGHT
+    }
 
     public static enum IndexType {
         TABLE("TABLE"),
@@ -431,24 +335,4 @@ public abstract class Index implements Traversable
         this.treeName = treeName;
     }
 
-    private final Integer indexId;
-    private final Boolean isUnique;
-    private final String constraint;
-    private final JoinType joinType;
-    private final boolean isValid;
-    private IndexName indexName;
-    private boolean columnsStale = true;
-    private boolean columnsFrozen = false;
-    private String treeName;
-    private IndexDef indexDef;
-    private IndexRowComposition indexRowComposition;
-    private IndexToHKey indexToHKey;
-    private boolean isHKeyEquivalent;
-    private List<IndexColumn> keyColumns;
-    private List<IndexColumn> valueColumns;
-    private List<IndexColumn> allColumns;
-
-    public enum JoinType {
-        LEFT, RIGHT
-    }
 }

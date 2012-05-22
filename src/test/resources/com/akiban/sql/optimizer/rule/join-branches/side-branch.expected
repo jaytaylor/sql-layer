@@ -3,8 +3,8 @@ SelectQuery@1422384
     Project@de26e52[customers.name, orders.order_date]
       Select@114a947[]
         Flatten@17599cc(customers LEFT orders)
-          AncestorLookup@1388e5e(orders -> [customers])
-            BranchLookup@1c45731(addresses -> orders via customers)
+          BranchLookup@1c45731(customers -> orders)
+            AncestorLookup@1388e5e(addresses -> [customers])
               IndexScan@ad483(Index(test.addresses.state[IndexColumn(state)]), NONE, =MA, rows = 150, cost = 13366.9)
-              TableSource@192425a(orders - TableGroupJoin@1f52460(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
-            TableSource@1bef1ac(customers - TableGroup@1861086(customers))
+              TableSource@1bef1ac(customers - TableGroup@1861086(customers))
+            TableSource@192425a(orders - TableGroupJoin@1f52460(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

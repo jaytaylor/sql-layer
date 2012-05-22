@@ -65,7 +65,6 @@ public class Sorter
         this.context = context;
         this.adapter = (PersistitAdapter)context.getStore();
         this.input = input;
-        this.queryStartTimeMsec = context.getStartTime();
         this.rowType = rowType;
         this.ordering = ordering.copy();
         String sortTreeName = SORT_TREE_NAME_PREFIX + SORTER_ID_GENERATOR.getAndIncrement();
@@ -134,7 +133,7 @@ public class Sorter
             try {
                 Row row = input.next();
                 while (row != null) {
-                    adapter.checkQueryCancelation(queryStartTimeMsec);
+                    context.checkQueryCancelation();
                     createKey(row);
                     createValue(row);
                     exchange.store();
@@ -229,7 +228,6 @@ public class Sorter
     final AkType fieldTypes[], orderingTypes[];
     Exchange exchange;
     long rowCount = 0;
-    long queryStartTimeMsec;
     private final InOutTap loadTap;
 
     // Inner classes

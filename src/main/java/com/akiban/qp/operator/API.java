@@ -221,7 +221,7 @@ public class API
 
     public static Operator ancestorLookup_Nested(GroupTable groupTable,
                                                  RowType rowType,
-                                                 Collection<? extends RowType> ancestorTypes,
+                                                 Collection<UserTableRowType> ancestorTypes,
                                                  int hKeyBindingPosition)
     {
         return new AncestorLookup_Nested(groupTable, rowType, ancestorTypes, hKeyBindingPosition);

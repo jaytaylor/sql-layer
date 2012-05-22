@@ -55,11 +55,13 @@ public class ServerCostEstimator extends CostEstimator
 
     @Override
     public long getTableRowCount(Table table) {
-        if (scaleIndexStatistics)
-            return table.rowDef().getTableStatus().getApproximateRowCount();
-        else
-            // Unscaled test mode: return count from statistics.
-            return super.getTableRowCount(table);
+        if (!scaleIndexStatistics) {
+            // Unscaled test mode: return count from statistics, if present.
+            long count = getTableRowCountFromStatistics(table);
+            if (count >= 0)
+                return count;
+        }
+        return table.rowDef().getTableStatus().getApproximateRowCount();
     }
 
 }

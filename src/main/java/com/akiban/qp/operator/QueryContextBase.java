@@ -32,6 +32,8 @@ import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
@@ -180,6 +182,25 @@ public abstract class QueryContextBase implements QueryContext
     @Override
     public void warnClient(InvalidOperationException exception) {
         notifyClient(NotificationLevel.WARNING, exception.getCode(), exception.getShortMessage());
+    }
+
+    @Override
+    public long getQueryTimeoutSec() {
+        return getStore().getQueryTimeoutSec();
+    }
+
+    @Override
+    public void checkQueryCancelation() {
+        if (getSession().isCurrentQueryCanceled()) {
+            throw new QueryCanceledException(getSession());
+        }
+        long queryTimeoutSec = getQueryTimeoutSec();
+        if (queryTimeoutSec >= 0) {
+            long runningTimeMsec = System.currentTimeMillis() - getStartTime();
+            if (runningTimeMsec > queryTimeoutSec * 1000) {
+                throw new QueryTimedOutException(runningTimeMsec);
+            }
+        }
     }
 
 }

@@ -1,0 +1,50 @@
+## Test the UNHEX(str) function
+## BUG 890232
+## Status triaged
+##
+## BUG 994757:
+## Status: new
+##
+## BUG 997247
+## Status fix committed
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(varchar_field, bigint_field, char_field) 
+              VALUES ('416B736572766572', 20, 'f');
+--- # test non-ascii character
+- Statement: SELECT UNHEX('FF');
+- output: [[!!binary '/w==']]
+---
+- Statement: SELECT UNHEX('f8Ac') = UNHEX('F8aC');
+- output: [['true']]
+---
+- Statement: SELECT UNHEX('f8Ab') = UNHEX('F8aC');
+- output: [['false']]
+#--- varbinary field
+#- Statement: SELECT unhex(char_field) from all_types;
+#- output: [['']]
+--- # akiban
+- Statement: SELECT UNHEX('616B6962616E');
+- output: [[!!binary 'YWtpYmFu']]
+#--- VARCHAR and VARBINARY comparison
+#- Statement: SELECT bigint_field from all_types where unhex(bigint_field) = ' ';
+#- output: [[20]]
+#---
+#- Statement: SELECT bigint_field from all_types where UNHEX(?) = '9';
+#- params: [['39']]
+#- output: [[20]]
+--- # Akserveer
+- Statement: SELECT UNHEX(varchar_field) from all_types;
+- output: [[!!binary 'QWtzZXJ2ZXI=']]
+--- # Hello, world
+- Statement: SELECT UNHEX(HEX('Hello, world'));
+- output: [[!!binary 'SGVsbG8sIHdvcmxk']]
+---
+- Statement: SELECT unhex(?);
+- params: [['56']]
+- output: [[!!binary 'Vg==']]
+---
+- Statement: SELECT unhex('xyz');
+- output: [[null]]
+...

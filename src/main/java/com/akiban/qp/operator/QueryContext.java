@@ -162,4 +162,11 @@ public interface QueryContext
      * Send a warning notification to the remote client from the given exception.
      */
     public void warnClient(InvalidOperationException exception);
+
+    /** Get the query timeout in seconds or <code>-1</code> if no limit. */
+    public long getQueryTimeoutSec();
+
+    /** Check whether query has been cancelled or timeout has been exceeded. */
+    public void checkQueryCancelation();
+
 }
