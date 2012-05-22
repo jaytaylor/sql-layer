@@ -63,6 +63,12 @@ class SorterToCursorAdapter implements Cursor
     }
 
     @Override
+    public Row jump(Row row)
+    {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    @Override
     public void close()
     {
         CursorLifecycle.checkIdleOrActive(this);

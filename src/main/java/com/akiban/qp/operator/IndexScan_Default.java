@@ -234,6 +234,12 @@ class IndexScan_Default extends Operator
         }
 
         @Override
+        public Row jump(Row row)
+        {
+            return cursor.jump(row);
+        }
+
+        @Override
         public void close()
         {
             cursor.close();

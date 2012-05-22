@@ -26,8 +26,8 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.operator.*;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.sort.IterationHelper;
 import com.akiban.qp.persistitadapter.sort.SortCursor;
 import com.akiban.qp.row.Row;
@@ -68,6 +68,13 @@ class PersistitIndexCursor implements Cursor
         } while (needAnother);
         assert (next == null) == idle;
         return next;
+    }
+
+    @Override
+    public Row jump(Row row)
+    {
+        sortCursor.jump(row);
+        return next();
     }
 
     @Override
