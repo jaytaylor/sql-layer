@@ -29,7 +29,6 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
 import com.persistit.exception.PersistitException;
 

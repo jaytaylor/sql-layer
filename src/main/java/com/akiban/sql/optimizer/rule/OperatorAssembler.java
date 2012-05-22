@@ -28,7 +28,6 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
-import com.akiban.qp.operator.API.IntersectOutputOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
@@ -300,7 +299,7 @@ public class OperatorAssembler extends BaseRule
                     index.getSelectorOrderingFields(),
                     index.getComparisonFieldDirections(),
                     JoinType.INNER_JOIN,
-                    IntersectOutputOption.OUTPUT_LEFT
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT)
             );
             stream.operator = intersect;
             stream.rowType = outputScan.rowType;

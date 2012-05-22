@@ -37,12 +37,10 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
@@ -156,7 +154,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
         } catch (IllegalArgumentException e) {
         }
         try {
@@ -168,7 +166,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -186,7 +184,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -199,7 +197,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -217,7 +215,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               null,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
         } catch (IllegalArgumentException e) {
         }
         try {
@@ -229,7 +227,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.FULL_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
         } catch (IllegalArgumentException e) {
         }
     }
@@ -261,7 +259,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           1,
                           ascending(true),
                           JoinType.INNER_JOIN,
-                          IntersectOutputOption.OUTPUT_LEFT);
+                          EnumSet.of(IntersectOption.OUTPUT_LEFT));
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
@@ -270,7 +268,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           1,
                           ascending(true),
                           JoinType.INNER_JOIN,
-                          IntersectOutputOption.OUTPUT_RIGHT);
+                          EnumSet.of(IntersectOption.OUTPUT_RIGHT));
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
@@ -279,7 +277,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           1,
                           ascending(true),
                           JoinType.LEFT_JOIN,
-                          IntersectOutputOption.OUTPUT_LEFT);
+                          EnumSet.of(IntersectOption.OUTPUT_LEFT));
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -289,7 +287,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.LEFT_JOIN,
-                              IntersectOutputOption.OUTPUT_RIGHT);
+                              EnumSet.of(IntersectOption.OUTPUT_RIGHT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -302,7 +300,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.RIGHT_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -314,7 +312,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           1,
                           ascending(true),
                           JoinType.RIGHT_JOIN,
-                          IntersectOutputOption.OUTPUT_RIGHT);
+                          EnumSet.of(IntersectOption.OUTPUT_RIGHT));
     }
 
     @Test
@@ -329,7 +327,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -342,7 +340,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -355,7 +353,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               -1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -368,7 +366,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               3,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -381,7 +379,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               -1,
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              IntersectOption.OUTPUT_LEFT);
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -394,7 +392,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true, true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -588,7 +586,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                 1,
                 0,
                 JoinType.INNER_JOIN,
-                IntersectOutputOption.OUTPUT_LEFT);
+                IntersectOption.OUTPUT_LEFT);
         RowBase[] expected = new RowBase[]{
             row(parentPidIndexRowType, 1000L),
             row(parentPidIndexRowType, 1001L),
@@ -642,7 +640,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                 1,
                 ascending(ascending),
                 JoinType.INNER_JOIN,
-                IntersectOutputOption.OUTPUT_LEFT);
+                EnumSet.of(IntersectOption.OUTPUT_LEFT));
         return plan;
     }
 
@@ -665,7 +663,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                     2,
                     ascending(ascending),
                     joinType,
-                    IntersectOutputOption.OUTPUT_RIGHT);
+                    EnumSet.of(IntersectOption.OUTPUT_RIGHT));
         return plan;
     }
 

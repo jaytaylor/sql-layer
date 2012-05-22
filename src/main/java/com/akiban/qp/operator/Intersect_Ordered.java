@@ -36,10 +36,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.qp.operator.API.IntersectOutputOption;
+import static com.akiban.qp.operator.API.IntersectOption;
 import static com.akiban.qp.operator.API.JoinType;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
@@ -70,7 +71,7 @@ import static java.lang.Math.min;
      <li>FULL_JOIN: Not supported
    </ul>
  (Nothing else is supported currently).
-<li><b>IntersectOutputOption intersectOutput:</b> OUTPUT_LEFT or OUTPUT_RIGHT, depending on which streams rows
+<li><b>IntersectOption intersectOutput:</b> OUTPUT_LEFT or OUTPUT_RIGHT, depending on which streams rows
  should be emitted as output.
 
  <h1>Behavior</h1>
@@ -113,7 +114,8 @@ class Intersect_Ordered extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context);
+        return
+            skipScan ? new SkipScan(context) : new SequentialScan(context);
     }
 
     @Override
@@ -138,7 +140,7 @@ class Intersect_Ordered extends Operator
         return String.format("%s\n%s", describePlan(left), describePlan(right));
     }
 
-    // Project_Default interface
+    // Intersect_Ordered interface
 
     public Intersect_Ordered(Operator left,
                              Operator right,
@@ -148,7 +150,7 @@ class Intersect_Ordered extends Operator
                              int rightOrderingFields,
                              boolean[] ascending,
                              JoinType joinType,
-                             IntersectOutputOption intersectOutput)
+                             EnumSet<IntersectOption> options)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -162,19 +164,34 @@ class Intersect_Ordered extends Operator
         ArgumentValidation.isGTE("ascending.length()", ascending.length, 0);
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
         ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
-        ArgumentValidation.notNull("intersectOutput", intersectOutput);
+        ArgumentValidation.notNull("options", options);
+        // scan algorithm
+        boolean skipScan = options.contains(IntersectOption.SKIP_SCAN);
+        boolean sequentialScan = options.contains(IntersectOption.SEQUENTIAL_SCAN);
+        // skip scan is the default until everyone is explicit about it
+        if (!skipScan && !sequentialScan) {
+            skipScan = true;
+        }
+        ArgumentValidation.isTrue("options for scanning",
+                                  (skipScan || sequentialScan) &&
+                                  !(skipScan && sequentialScan));
+        this.skipScan = skipScan;
+        // output
+        this.outputLeft = options.contains(IntersectOption.OUTPUT_LEFT);
+        boolean outputRight = options.contains(IntersectOption.OUTPUT_RIGHT);
+        ArgumentValidation.isTrue("options for output",
+                                  (outputLeft || outputRight) &&
+                                  !(outputLeft && outputRight));
         ArgumentValidation.isTrue("joinType consistent with intersectOutput",
                                   joinType == JoinType.INNER_JOIN ||
-                                  joinType == JoinType.LEFT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_LEFT ||
-                                  joinType == JoinType.RIGHT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_RIGHT);
+                                  joinType == JoinType.LEFT_JOIN && options.contains(IntersectOption.OUTPUT_LEFT) ||
+                                  joinType == JoinType.RIGHT_JOIN && options.contains(IntersectOption.OUTPUT_RIGHT));
         this.left = left;
         this.right = right;
         this.ascending = ascending;
         // outerjoins
         this.keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN;
         this.keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN;
-        // output
-        this.outputLeft = intersectOutput == IntersectOutputOption.OUTPUT_LEFT;
         // Setup for row comparisons
         leftSkip = leftRowType.nFields() - leftOrderingFields;
         rightSkip = rightRowType.nFields() - rightOrderingFields;
@@ -195,11 +212,12 @@ class Intersect_Ordered extends Operator
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
     private final boolean outputLeft;
+    private final boolean skipScan;
     private final boolean[] ascending;
 
     // Inner classes
 
-    private class Execution extends OperatorExecutionBase implements Cursor
+    private abstract class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -233,14 +251,18 @@ class Intersect_Ordered extends Operator
                         if (keepUnmatchedLeft) {
                             assert outputLeft;
                             next = leftRow.get();
+                            nextLeftRow();
+                        } else {
+                            nextLeftRowSkip();
                         }
-                        nextLeftRow();
                     } else if (c > 0) {
                         if (keepUnmatchedRight) {
                             assert !outputLeft;
                             next = rightRow.get();
+                            nextRightRow();
+                        } else {
+                            nextRightRowSkip();
                         }
-                        nextRightRow();
                     } else {
                         // left and right rows match
                         if (outputLeft) {
@@ -316,10 +338,8 @@ class Intersect_Ordered extends Operator
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
         }
-        
-        // For use by this class
-        
-        private void nextLeftRow()
+
+        final void nextLeftRow()
         {
             Row row = leftInput.next();
             leftRow.hold(row);
@@ -327,8 +347,8 @@ class Intersect_Ordered extends Operator
                 LOG.debug("Intersect_Ordered: left {}", row);
             }
         }
-        
-        private void nextRightRow()
+
+        final void nextRightRow()
         {
             Row row = rightInput.next();
             rightRow.hold(row);
@@ -336,7 +356,13 @@ class Intersect_Ordered extends Operator
                 LOG.debug("Intersect_Ordered: right {}", row);
             }
         }
-        
+
+        abstract void nextLeftRowSkip();
+
+        abstract void nextRightRowSkip();
+
+        // For use by this class
+
         private long compareRows()
         {
             long c = 0;
@@ -364,9 +390,43 @@ class Intersect_Ordered extends Operator
         // ShareHolders, so they are needed here.
 
         private boolean closed = true;
-        private final Cursor leftInput;
-        private final Cursor rightInput;
-        private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
-        private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
+        protected final Cursor leftInput;
+        protected final Cursor rightInput;
+        protected final ShareHolder<Row> leftRow = new ShareHolder<Row>();
+        protected final ShareHolder<Row> rightRow = new ShareHolder<Row>();
+    }
+
+    private class SequentialScan extends Execution
+    {
+        void nextLeftRowSkip()
+        {
+            nextLeftRow();
+        }
+
+        void nextRightRowSkip()
+        {
+            nextRightRow();
+        }
+
+        SequentialScan(QueryContext context)
+        {
+            super(context);
+        }
+    }
+
+    private class SkipScan extends Execution
+    {
+        void nextLeftRowSkip()
+        {
+        }
+
+        void nextRightRowSkip()
+        {
+        }
+
+        SkipScan(QueryContext context)
+        {
+            super(context);
+        }
     }
 }

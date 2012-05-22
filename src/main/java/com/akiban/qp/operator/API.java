@@ -460,7 +460,7 @@ public class API
                                             int rightOrderingFields,
                                             int comparisonFields,
                                             JoinType joinType,
-                                            IntersectOutputOption intersectOutput)
+                                            IntersectOption intersectOutput)
     {
         if (comparisonFields < 0) {
             throw new IllegalArgumentException();
@@ -473,7 +473,7 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     intersectOutput);
+                                     EnumSet.of(intersectOutput));
     }
     
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -482,7 +482,7 @@ public class API
                                             int rightOrderingFields,
                                             boolean[] ascending,
                                             JoinType joinType,
-                                            IntersectOutputOption intersectOutput)
+                                            EnumSet<IntersectOption> intersectOptions)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
@@ -490,7 +490,7 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     intersectOutput);
+                                     intersectOptions);
     }
     
     // HKeyUnion
@@ -572,9 +572,12 @@ public class API
 
     // Intersect output flags
 
-    public static enum IntersectOutputOption {
+    public static enum IntersectOption
+    {
         OUTPUT_LEFT,
-        OUTPUT_RIGHT
+        OUTPUT_RIGHT,
+        SEQUENTIAL_SCAN,
+        SKIP_SCAN
     }
 
     // Ordering specification

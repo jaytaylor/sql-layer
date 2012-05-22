@@ -40,6 +40,8 @@ import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.EnumSet;
+
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
 import static junit.framework.Assert.assertEquals;
@@ -103,25 +105,25 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     @Test
     public void test1()
     {
-        plan = intersectPlan(1, IntersectOutputOption.OUTPUT_LEFT, true);
+        plan = intersectPlan(1, IntersectOption.OUTPUT_LEFT, true);
         expected = new RowBase[]{
             row(idxRowType, 1L, 0L, 502L, "x", 999L, 1001L),
             row(idxRowType, 1L, 0L, 502L, "x", 999L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(1, IntersectOutputOption.OUTPUT_RIGHT, true);
+        plan = intersectPlan(1, IntersectOption.OUTPUT_RIGHT, true);
         expected = new RowBase[]{
             row(idxRowType, 1L, 1L, 502L, "x", 999L, 1005L),
             row(idxRowType, 1L, 1L, 502L, "x", 999L, 1006L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(1, IntersectOutputOption.OUTPUT_LEFT, false);
+        plan = intersectPlan(1, IntersectOption.OUTPUT_LEFT, false);
         expected = new RowBase[]{
             row(idxRowType, 1L, 0L, 502L, "x", 999L, 1001L),
             row(idxRowType, 1L, 0L, 502L, "x", 999L, 1002L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(1, IntersectOutputOption.OUTPUT_RIGHT, false);
+        plan = intersectPlan(1, IntersectOption.OUTPUT_RIGHT, false);
         expected = new RowBase[]{
             row(idxRowType, 1L, 1L, 502L, "x", 999L, 1005L),
             row(idxRowType, 1L, 1L, 502L, "x", 999L, 1006L),
@@ -132,25 +134,25 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     @Test
     public void test2()
     {
-        plan = intersectPlan(2, IntersectOutputOption.OUTPUT_LEFT, true);
+        plan = intersectPlan(2, IntersectOption.OUTPUT_LEFT, true);
         expected = new RowBase[]{
             row(idxRowType, 2L, 0L, 500L, "xxx", 999L, 1009L),
             row(idxRowType, 2L, 0L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(2, IntersectOutputOption.OUTPUT_RIGHT, true);
+        plan = intersectPlan(2, IntersectOption.OUTPUT_RIGHT, true);
         expected = new RowBase[]{
             row(idxRowType, 2L, 1L, 500L, "xxx", 999L, 1013L),
             row(idxRowType, 2L, 1L, 500L, "xxx", 999L, 1014L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(2, IntersectOutputOption.OUTPUT_LEFT, false);
+        plan = intersectPlan(2, IntersectOption.OUTPUT_LEFT, false);
         expected = new RowBase[]{
             row(idxRowType, 2L, 0L, 500L, "xxx", 999L, 1009L),
             row(idxRowType, 2L, 0L, 500L, "xxx", 999L, 1010L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(2, IntersectOutputOption.OUTPUT_RIGHT, false);
+        plan = intersectPlan(2, IntersectOption.OUTPUT_RIGHT, false);
         expected = new RowBase[]{
             row(idxRowType, 2L, 1L, 500L, "xxx", 999L, 1013L),
             row(idxRowType, 2L, 1L, 500L, "xxx", 999L, 1014L),
@@ -161,25 +163,25 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     @Test
     public void test3()
     {
-        plan = intersectPlan(3, IntersectOutputOption.OUTPUT_LEFT, true);
+        plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, true);
         expected = new RowBase[]{
             row(idxRowType, 3L, 0L, 500L, "x", 902L, 1017L),
             row(idxRowType, 3L, 0L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(3, IntersectOutputOption.OUTPUT_RIGHT, true);
+        plan = intersectPlan(3, IntersectOption.OUTPUT_RIGHT, true);
         expected = new RowBase[]{
             row(idxRowType, 3L, 1L, 500L, "x", 902L, 1021L),
             row(idxRowType, 3L, 1L, 500L, "x", 902L, 1022L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(3, IntersectOutputOption.OUTPUT_LEFT, false);
+        plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, false);
         expected = new RowBase[]{
             row(idxRowType, 3L, 0L, 500L, "x", 902L, 1017L),
             row(idxRowType, 3L, 0L, 500L, "x", 902L, 1018L),
         };
         compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPlan(3, IntersectOutputOption.OUTPUT_RIGHT, false);
+        plan = intersectPlan(3, IntersectOption.OUTPUT_RIGHT, false);
         expected = new RowBase[]{
             row(idxRowType, 3L, 1L, 500L, "x", 902L, 1021L),
             row(idxRowType, 3L, 1L, 500L, "x", 902L, 1022L),
@@ -190,7 +192,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     @Test
     public void testCursor()
     {
-        plan = intersectPlan(3, IntersectOutputOption.OUTPUT_LEFT, true);
+        plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, true);
         expected = new RowBase[]{
             row(idxRowType, 3L, 0L, 500L, "x", 902L, 1017L),
             row(idxRowType, 3L, 0L, 500L, "x", 902L, 1018L),
@@ -206,7 +208,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
         testCursorLifecycle(plan, testCase);
     }
 
-    private Operator intersectPlan(int testId, IntersectOutputOption side, boolean k2Ascending)
+    private Operator intersectPlan(int testId, IntersectOption side, boolean k2Ascending)
     {
         Ordering ordering = ordering(field(idxRowType, 0), true,  // test
                                      field(idxRowType, 1), true,  // input_side
@@ -231,7 +233,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
                 4,
                 ascending,
                 JoinType.INNER_JOIN,
-                side);
+                EnumSet.of(side));
         return plan;
     }
 
