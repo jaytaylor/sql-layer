@@ -73,20 +73,6 @@ public abstract class StoreAdapter
 
     public abstract long rowCount(RowType tableType);
 
-    // For use by subclasses
-    public void checkQueryCancelation(long queryStartMsec) {
-        if (session.isCurrentQueryCanceled()) {
-            throw new QueryCanceledException(session);
-        }
-        long queryTimeoutSec = config.queryTimeoutSec();
-        if (queryTimeoutSec >= 0) {
-            long runningTimeMsec = System.currentTimeMillis() - queryStartMsec;
-            if (runningTimeMsec > queryTimeoutSec * 1000) {
-                throw new QueryTimedOutException(runningTimeMsec);
-            }
-        }
-    }
-
     public final Session getSession() {
         return session;
     }
