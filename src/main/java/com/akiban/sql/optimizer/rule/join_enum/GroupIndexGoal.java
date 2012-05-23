@@ -924,6 +924,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             estimator.sort(queryGoal.sortFields());
         }
 
+        estimator.setLimit(queryGoal.getLimit());
+
         return estimator.getCostEstimate();
     }
 
@@ -938,6 +940,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             estimator.select(conditions,
                              selectivityConditions(conditions, requiredTables));
         }
+        
+        estimator.setLimit(queryGoal.getLimit());
 
         return estimator.getCostEstimate();
     }

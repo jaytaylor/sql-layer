@@ -63,3 +63,10 @@ outer-index: LEFT using an index
 outer-no-index-extra-conditions: LEFT with extra conditions cannot use index
 
 cross-product: Conditions but no joins
+
+group-scan-no-limit: group scan and flatten
+
+group-scan-large-limit: with limit larger than expected
+
+group-scan-small-limit: with much smaller limit
+

@@ -299,12 +299,12 @@ public class PlanCostEstimator
             return null;
         Map<UserTable,Long> tableCounts = new HashMap<UserTable,Long>();
         tableCounts.put(lastRequired.getTable(), limit);
-        TableNode ancestor = lastRequired;
+        UserTable ancestor = lastRequired.getTable();
         while (true) {
-            ancestor = ancestor.getParent();
+            ancestor = ancestor.parentTable();
             if (ancestor == null) break;
-            long ancestorCount = costEstimator.getTableRowCount(ancestor.getTable());
-            tableCounts.put(ancestor.getTable(), 
+            long ancestorCount = costEstimator.getTableRowCount(ancestor);
+            tableCounts.put(ancestor, 
                             // Ceiling number of ancestor needed to get limit of child.
                             (limit * ancestorCount + (childCount - 1)) / childCount);
         }
@@ -313,9 +313,9 @@ public class PlanCostEstimator
         for (UserTable table : lastRequired.getTable().getAIS().getUserTables().values()) {
             if (table.getGroup() == group) {
                 UserTable commonAncestor = table;
-                do {
+                while (!tableCounts.containsKey(commonAncestor)) {
                     commonAncestor = commonAncestor.parentTable();
-                } while (!tableCounts.containsKey(commonAncestor));
+                }
                 if (commonAncestor == table) continue;
                 long ancestorCount = tableCounts.get(commonAncestor);
                 if (table.rowDef().getOrdinal() > lastRequired.getOrdinal())
