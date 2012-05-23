@@ -204,9 +204,12 @@ public class PlanCostEstimator
 
         @Override
         protected void estimateCost() {
+            double selectivity = costEstimator.conditionsSelectivity(selectivityConditions);
+            // Need enough input rows before selection.
+            input.setLimit(hasLimit() ? Math.round(limit / selectivity) : NO_LIMIT);
             CostEstimate inputCost = inputCostEstimate();
             CostEstimate selectCost = costEstimator.costSelect(conditions,
-                                                               selectivityConditions, 
+                                                               selectivity, 
                                                                inputCost.getRowCount());
             costEstimate = inputCost.sequence(selectCost);
         }

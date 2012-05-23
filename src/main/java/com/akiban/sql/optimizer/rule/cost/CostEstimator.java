@@ -700,13 +700,19 @@ public abstract class CostEstimator implements TableRowCounts
     /** Estimate the cost of testing some conditions. */
     // TODO: Assumes that each condition turns into a separate select.
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
-                                   Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions,
+                                   double selectivity,
                                    long size) {
-        return new CostEstimate(Math.max(1, round(size * conditionsSelectivity(selectivityConditions))),
+        return new CostEstimate(Math.max(1, round(size * selectivity)),
                                 model.select((int)size) * conditions.size());
     }
 
-    protected double conditionsSelectivity(Map<ColumnExpression,Collection<ComparisonCondition>> conditions) {
+    public CostEstimate costSelect(Collection<ConditionExpression> conditions,
+                                   Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions,
+                                   long size) {
+        return costSelect(conditions, conditionsSelectivity(selectivityConditions), size);
+    }
+
+    public double conditionsSelectivity(Map<ColumnExpression,Collection<ComparisonCondition>> conditions) {
         double selectivity = 1.0;
         for (Map.Entry<ColumnExpression,Collection<ComparisonCondition>> entry : conditions.entrySet()) {
             Index index = null;
