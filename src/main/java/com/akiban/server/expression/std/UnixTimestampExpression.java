@@ -23,22 +23,91 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
+
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.TypesList;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.ValueSource;
+import com.akiban.sql.StandardException;
 import java.util.List;
+import org.joda.time.DateTime;
 
 public class UnixTimestampExpression extends AbstractCompositeExpression
 {
-   // @Scalar("unix_timestamp")
+    @Scalar("unix_timestamp")
+    public static final ExpressionComposer COMPOSER= new ExpressionComposer()
+    {
+        @Override
+        public ExpressionType composeType(TypesList argumentTypes) throws StandardException
+        {   
+            switch(argumentTypes.size())
+            {
+                case 1:     argumentTypes.setType(0, AkType.TIMESTAMP); // fall thru;
+                case 0:     break;
+                default:    throw new WrongExpressionArityException(2, argumentTypes.size());
+            }
+
+            return ExpressionTypes.TIMESTAMP;
+        }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments)
+        {
+            return new UnixTimestampExpression(arguments);
+        }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            return new UnixTimestampExpression(arguments);
+        }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.RETURN_NULL;
+        }
+    };
             
+    private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
+    {
+        public InnerEvaluation (List<? extends ExpressionEvaluation> evals)
+        {
+            super(evals);
+        }
+        
+        @Override
+        public ValueSource eval()
+        {
+            switch(children().size())
+            {
+                case 1:
+                    ValueSource ts = children().get(0).eval();
+                    if (ts.isNull())
+                        return NullValueSource.only();
+                    
+                    long millis = ts.getTimestamp();
+                    valueHolder().putTimestamp(millis <= 0L ? 0L : millis);
+                    break;
+                case 0: // if called w/o argument, returns the current timestamp (similar to current_timestamp
+                    valueHolder().putTimestamp(new DateTime(queryContext().getCurrentDate()));
+                    break;
+                default:
+                    throw new WrongExpressionArityException(1, children().size());
+            }
+            return valueHolder();
+        }
+    }
+    
     UnixTimestampExpression(List<? extends Expression> args)
     {
         super(AkType.TIMESTAMP, args);
@@ -59,7 +128,6 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return null; //return new Inn
+        return new InnerEvaluation(childrenEvaluations());
     }
-    
 }
