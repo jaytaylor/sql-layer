@@ -286,6 +286,9 @@ public class PlanCostEstimator
     protected Map<UserTable,Long> groupScanTableCountsToLimit(Set<TableSource> requiredTables, long limit) {
         // Find the required table with the highest ordinal; we'll need limit of those
         // rows and however many of the others come before it.
+        // TODO: Not as good if multiple branches are being flattened;
+        // fewer are needed to start, but repeats come in via branch
+        // lookup.
         TableNode lastRequired = null;
         for (TableSource table : requiredTables) {
             if ((lastRequired == null) ||
