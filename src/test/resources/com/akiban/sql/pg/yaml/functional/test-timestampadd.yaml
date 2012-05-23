@@ -1,0 +1,8 @@
+## Test the TIMESTAMPADD function
+---
+- Statement: SELECT TIMESTAMPADD(MONTH, 1, '2009-12-12')
+- output: [['2010-01-12']]
+---
+- Statement: SELECT TIMESTAMPADD(DAY, 1, '2009-12-31 23:59:59')
+- output: [[!re '2010-01-01 23:59:59([.]0)?']]
+...
