@@ -59,10 +59,6 @@ public class PlanCostEstimator
         planEstimator = new IndexScanEstimator(index);
     }
 
-    public void groupScan(GroupScan scan) {
-        planEstimator = new GroupScanEstimator(scan);
-    }
-
     public void flatten(TableGroupJoinTree tableGroup,
                         TableSource indexTable,
                         Set<TableSource> requiredTables) {
@@ -70,10 +66,10 @@ public class PlanCostEstimator
                                              tableGroup, indexTable, requiredTables);
     }
 
-    public void flattenGroup(TableGroupJoinTree tableGroup,
-                             Set<TableSource> requiredTables) {
-        planEstimator = new FlattenGroupEstimator(planEstimator, 
-                                                  tableGroup, requiredTables);
+    public void groupScan(GroupScan scan,
+                          TableGroupJoinTree tableGroup,
+                          Set<TableSource> requiredTables) {
+        planEstimator = new GroupScanEstimator(scan, tableGroup, requiredTables);
     }
 
     public void select(Collection<ConditionExpression> conditions,
@@ -135,20 +131,6 @@ public class PlanCostEstimator
         }
     }
 
-    protected class GroupScanEstimator extends PlanEstimator {
-        GroupScan scan;
-
-        protected GroupScanEstimator(GroupScan scan) {
-            super(null);
-            this.scan = scan;
-        }
-
-        @Override
-        protected void estimateCost() {
-            costEstimate = costEstimator.costGroupScan(scan.getGroup().getGroup());
-        }
-    }
-
     protected class FlattenEstimator extends PlanEstimator {
         private TableGroupJoinTree tableGroup;
         private TableSource indexTable;
@@ -171,22 +153,25 @@ public class PlanCostEstimator
         }
     }
 
-    protected class FlattenGroupEstimator extends PlanEstimator {
+    protected class GroupScanEstimator extends PlanEstimator {
+        private GroupScan scan;
         private TableGroupJoinTree tableGroup;
         private Set<TableSource> requiredTables;
 
-        protected FlattenGroupEstimator(PlanEstimator input,
-                                        TableGroupJoinTree tableGroup,
-                                        Set<TableSource> requiredTables) {
-            super(input);
+        protected GroupScanEstimator(GroupScan scan,
+                                     TableGroupJoinTree tableGroup,
+                                     Set<TableSource> requiredTables) {
+            super(null);
+            this.scan = scan;
             this.tableGroup = tableGroup;
             this.requiredTables = requiredTables;
         }
 
         @Override
         protected void estimateCost() {
-            costEstimate = inputCostEstimate()
-                .sequence(costEstimator.costFlattenGroup(tableGroup, requiredTables));
+            CostEstimate scanCost = costEstimator.costGroupScan(scan.getGroup().getGroup());
+            CostEstimate flattenCost = costEstimator.costFlattenGroup(tableGroup, requiredTables);
+            costEstimate = scanCost.sequence(flattenCost);
         }
     }
 

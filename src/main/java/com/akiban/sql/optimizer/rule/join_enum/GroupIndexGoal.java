@@ -932,8 +932,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             new PlanCostEstimator(queryGoal.getCostEstimator());
         Set<TableSource> requiredTables = requiredColumns.getTables();
 
-        estimator.groupScan(scan);
-        estimator.flattenGroup(tables, requiredTables);
+        estimator.groupScan(scan, tables, requiredTables);
 
         if (!conditions.isEmpty()) {
             estimator.select(conditions,
