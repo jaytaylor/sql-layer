@@ -68,6 +68,13 @@ public class CostModel
         return cost;
     }
 
+    public double partialGroupScan(UserTableRowType rowType, long rowCount)
+    {
+        TreeStatistics treeStatistics = statisticsMap.get(rowType.typeId());
+        return treeScan(treeStatistics.rowWidth(), rowCount) 
+             - treeScan(treeStatistics.rowWidth(), 0);
+    }
+
     public double ancestorLookup(List<UserTableRowType> ancestorTableTypes)
     {
         // Overhead of AncestorLookup_Default not measured

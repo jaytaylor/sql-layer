@@ -575,6 +575,38 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(rowCount, cost);
     }
 
+    /** Estimate the cost of getting the desired number of flattened
+     * rows from a group scan. This combined costing of the partial
+     * scan itself and the flatten, since they are tied together. */
+    public CostEstimate costPartialGroupScanAndFlatten(TableGroupJoinTree tableGroup,
+                                                       Set<TableSource> requiredTables,
+                                                       Map<UserTable,Long> tableCounts) {
+        TableGroupJoinNode rootNode = tableGroup.getRoot();
+        coverBranches(tableGroup, rootNode, requiredTables);
+        int branchCount = 0;
+        long rowCount = 1;
+        double cost = 0.0;
+        for (Map.Entry<UserTable,Long> entry : tableCounts.entrySet()) {
+            cost += model.partialGroupScan(schema.userTableRowType(entry.getKey()), 
+                                           entry.getValue());
+        }
+        for (TableGroupJoinNode node : tableGroup) {
+            if (isFlattenable(node)) {
+                long nrows = tableCounts.get(node.getTable().getTable().getTable());
+                // Cost of flattening these children with their ancestor.
+                cost += model.flatten((int)nrows);
+                if (isSideBranchLeaf(node)) {
+                    // Leaf of a new branch.
+                    branchCount++;
+                    rowCount *= nrows;
+                }
+            }
+        }
+        if (branchCount > 1)
+            cost += model.product((int)rowCount);
+        return new CostEstimate(rowCount, cost);
+    }
+
     /** This table needs to be included in flattens. */
     protected static final long REQUIRED = 1;
     /** This table is on the main branch. */

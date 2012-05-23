@@ -29,9 +29,12 @@ package com.akiban.sql.optimizer.rule.cost;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
 import static com.akiban.sql.optimizer.rule.OperatorAssembler.INSERTION_SORT_MAX_LIMIT;
+import static com.akiban.sql.optimizer.rule.cost.CostEstimator.simpleRound;
 
 import com.akiban.sql.optimizer.plan.*;
 
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.AkibanInternalException;
 
 import java.util.*;
@@ -169,6 +172,13 @@ public class PlanCostEstimator
 
         @Override
         protected void estimateCost() {
+            if (hasLimit()) {
+                Map<UserTable,Long> tableCounts = groupScanTableCountsToLimit(requiredTables, limit);
+                if (tableCounts != null) {
+                    costEstimate = costEstimator.costPartialGroupScanAndFlatten(tableGroup, requiredTables, tableCounts);
+                    return;
+                }
+            }
             CostEstimate scanCost = costEstimator.costGroupScan(scan.getGroup().getGroup());
             CostEstimate flattenCost = costEstimator.costFlattenGroup(tableGroup, requiredTables);
             costEstimate = scanCost.sequence(flattenCost);
@@ -271,6 +281,54 @@ public class PlanCostEstimator
             index.setScanCostEstimate(result);
         }
         return result;
+    }
+
+    protected Map<UserTable,Long> groupScanTableCountsToLimit(Set<TableSource> requiredTables, long limit) {
+        // Find the required table with the highest ordinal; we'll need limit of those
+        // rows and however many of the others come before it.
+        TableNode lastRequired = null;
+        for (TableSource table : requiredTables) {
+            if ((lastRequired == null) ||
+                (lastRequired.getOrdinal() < table.getTable().getOrdinal())) {
+                lastRequired = table.getTable();
+            }
+        }
+        long childCount = costEstimator.getTableRowCount(lastRequired.getTable());
+        if (childCount <= limit)
+            // Turns out we need the whole group before reaching the limit.
+            return null;
+        Map<UserTable,Long> tableCounts = new HashMap<UserTable,Long>();
+        tableCounts.put(lastRequired.getTable(), limit);
+        TableNode ancestor = lastRequired;
+        while (true) {
+            ancestor = ancestor.getParent();
+            if (ancestor == null) break;
+            long ancestorCount = costEstimator.getTableRowCount(ancestor.getTable());
+            tableCounts.put(ancestor.getTable(), 
+                            // Ceiling number of ancestor needed to get limit of child.
+                            (limit * ancestorCount + (childCount - 1)) / childCount);
+        }
+        Group group = lastRequired.getTable().getGroup();
+        Map<UserTable,Long> moreCounts = new HashMap<UserTable,Long>();
+        for (UserTable table : lastRequired.getTable().getAIS().getUserTables().values()) {
+            if (table.getGroup() == group) {
+                UserTable commonAncestor = table;
+                do {
+                    commonAncestor = commonAncestor.parentTable();
+                } while (!tableCounts.containsKey(commonAncestor));
+                if (commonAncestor == table) continue;
+                long ancestorCount = tableCounts.get(commonAncestor);
+                if (table.rowDef().getOrdinal() > lastRequired.getOrdinal())
+                    // A table that isn't required; number skipped
+                    // depends on relative position.
+                    ancestorCount--;
+                moreCounts.put(table,
+                               simpleRound(costEstimator.getTableRowCount(table) * ancestorCount,
+                                           costEstimator.getTableRowCount(commonAncestor)));
+            }
+        }
+        tableCounts.putAll(moreCounts);
+        return tableCounts;
     }
 
 }
