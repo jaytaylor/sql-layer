@@ -56,7 +56,7 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
                 default:    throw new WrongExpressionArityException(2, argumentTypes.size());
             }
 
-            return ExpressionTypes.TIMESTAMP;
+            return ExpressionTypes.LONG;
         }
 
         @Override
@@ -96,10 +96,10 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
                         return NullValueSource.only();
                     
                     long millis = ts.getTimestamp();
-                    valueHolder().putTimestamp(millis <= 0L ? 0L : millis);
+                    valueHolder().putLong(millis <= 0L ? 0L : millis);
                     break;
                 case 0: // if called w/o argument, returns the current timestamp (similar to current_timestamp
-                    valueHolder().putTimestamp(new DateTime(queryContext().getCurrentDate()));
+                    valueHolder().putLong(new DateTime(queryContext().getCurrentDate()).getMillis() / 1000L);
                     break;
                 default:
                     throw new WrongExpressionArityException(1, children().size());
@@ -110,7 +110,7 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
     
     UnixTimestampExpression(List<? extends Expression> args)
     {
-        super(AkType.TIMESTAMP, args);
+        super(AkType.LONG, args);
     }
 
     @Override

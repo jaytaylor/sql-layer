@@ -61,7 +61,7 @@ public class UnixTimestampExpressionTest extends ComposedExpressionTestBase
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong(ts));
        
         Expression top = new UnixTimestampExpression(Arrays.asList(arg));
-        assertEquals(expected.getMillis() / 1000, top.evaluation().eval().getTimestamp());
+        assertEquals(expected.getMillis() / 1000, top.evaluation().eval().getLong());
     }
     
     @Test
@@ -69,7 +69,8 @@ public class UnixTimestampExpressionTest extends ComposedExpressionTestBase
     {
         Expression arg = new LiteralExpression(AkType.TIMESTAMP, 
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("1970-01-01 00:00:00"));
-        assertEquals(0L, arg.evaluation().eval().getTimestamp());
+        Expression top = new UnixTimestampExpression(Arrays.asList(arg));
+        assertEquals(0L, top.evaluation().eval().getLong());
     }
     
     @Test
@@ -78,7 +79,7 @@ public class UnixTimestampExpressionTest extends ComposedExpressionTestBase
         Expression arg = new LiteralExpression(AkType.TIMESTAMP,
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("1920-01-01 00:00:00"));
         Expression top = new UnixTimestampExpression(Arrays.asList(arg));
-        assertEquals(0L, top.evaluation().eval().getTimestamp());
+        assertEquals(0L, top.evaluation().eval().getLong());
     }
     
     @Override
