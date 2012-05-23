@@ -52,7 +52,7 @@ public class ConvExpression extends AbstractTernaryExpression
         // of FROM_BASE and TO_BASE
         // It is not possible yet to get these values at this point.
         //
-        // But this current value of FACTOR is the largest possible length expansion
+        // But this current value of FACTOR is the largest possible expansion
         // of a string converted from base x to base y, where x,y ∈ [2, 36]
         private static final double FACTOR = Math.log(36) / Math.log(2);
         
@@ -116,7 +116,7 @@ public class ConvExpression extends AbstractTernaryExpression
                 valueHolder().putString(
                         Long.toString(
                             Long.parseLong(
-                                    Extractors.getStringExtractor().getObject(num), 
+                                    truncate(Extractors.getStringExtractor().getObject(num)), 
                                     fromBase), 
                             toBase));
                 return valueHolder();
@@ -130,6 +130,25 @@ public class ConvExpression extends AbstractTernaryExpression
         private static boolean isInRange(int num, int start, int end)
         {
             return num <= end && num >= start;
+        }
+        
+        /**
+         * 
+         * @param st: a numeric string
+         * @return the substring starting from [0,n-1], where n is the position
+         *         of the first '.'
+         */
+        private static String truncate (String st)
+        {
+            StringBuilder b = new StringBuilder();
+            
+            char ch;
+            for (int n = 0; n < st.length(); ++n)
+                if ((ch = st.charAt(n)) == '.')
+                    return b.toString();
+                 else
+                    b.append(ch);
+            return b.toString();
         }
     }
     
