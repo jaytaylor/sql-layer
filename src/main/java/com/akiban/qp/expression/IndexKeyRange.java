@@ -26,6 +26,7 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
 
@@ -35,12 +36,12 @@ public class IndexKeyRange
     {
         StringBuilder buffer = new StringBuilder();
         buffer.append('(');
-        if (lo != null) {
+        if (lo != null && boundColumns > 0) {
             buffer.append(loInclusive() ? ">=" : ">");
             buffer.append(lo.toString());
         }
         buffer.append(',');
-        if (hi != null) {
+        if (hi != null && boundColumns > 0) {
             buffer.append(hiInclusive() ? "<=" : "<");
             buffer.append(hi.toString());
         }
@@ -73,11 +74,6 @@ public class IndexKeyRange
         return hiInclusive;
     }
 
-    public boolean unbounded()
-    {
-        return lo == null && hi == null;
-    }
-
     public int boundColumns()
     {
         return boundColumns;
@@ -90,7 +86,8 @@ public class IndexKeyRange
      */
     public static IndexKeyRange unbounded(IndexRowType indexRowType)
     {
-        return new IndexKeyRange(indexRowType);
+        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType), ZERO_COLUMNS_SELECTOR);
+        return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false);
     }
 
     /**
@@ -168,18 +165,7 @@ public class IndexKeyRange
 
     public boolean lexicographic()
     {
-        // return (lo == null || hi == null) && lo != hi;
         return lexicographic;
-    }
-
-    private IndexKeyRange(IndexRowType indexRowType)
-    {
-        this.boundColumns = 0;
-        this.indexRowType = indexRowType;
-        this.lo = null;
-        this.loInclusive = false;
-        this.hi = null;
-        this.hiInclusive = false;
     }
 
     private IndexKeyRange(IndexRowType indexRowType,
@@ -225,7 +211,6 @@ public class IndexKeyRange
                 }
             }
         }
-        assert boundColumns > 0;
         return boundColumns;
     }
 
@@ -251,6 +236,18 @@ public class IndexKeyRange
         assert boundColumns > 0;
         return boundColumns;
     }
+
+    // Class state
+
+    private final static ColumnSelector ZERO_COLUMNS_SELECTOR =
+        new ColumnSelector()
+        {
+            @Override
+            public boolean includesColumn(int columnPosition)
+            {
+                return false;
+            }
+        };
 
     // Object state
 

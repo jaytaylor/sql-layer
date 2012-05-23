@@ -270,6 +270,9 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
+        if (indexKeyRange == null) {
+            indexKeyRange = IndexKeyRange.unbounded(indexType);
+        }
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
 

@@ -57,6 +57,12 @@ public abstract class SortCursor implements Cursor
     }
 
     @Override
+    public Row jump(Row row)
+    {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
+    @Override
     public final void close()
     {
         CursorLifecycle.checkIdleOrActive(this);

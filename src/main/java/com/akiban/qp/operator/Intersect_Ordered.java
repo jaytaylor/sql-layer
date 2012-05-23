@@ -424,28 +424,33 @@ class Intersect_Ordered extends Operator
     {
         void nextLeftRowSkip()
         {
+            nextLeftRow();
+/*
             addSuffixToSkipRow(leftSkipRow(),
                                leftFixedFields,
                                rightRow.get(),
                                rightFixedFields,
                                ascending.length);
             leftInput.jump(leftSkipRow);
+*/
         }
 
         void nextRightRowSkip()
         {
+            nextRightRow();
+/*
             addSuffixToSkipRow(rightSkipRow(),
                                rightFixedFields,
                                leftRow.get(),
                                leftFixedFields,
                                ascending.length);
             rightInput.jump(rightSkipRow);
+*/
         }
 
         SkipScan(QueryContext context)
         {
             super(context);
-            leftSkipRowType = new ValuesRowType(adapter().schema(), )
         }
 
         private void addSuffixToSkipRow(ValuesHolderRow skipRow, int skipRowFixedFields,
@@ -482,8 +487,6 @@ class Intersect_Ordered extends Operator
             return rightSkipRow;
         }
 
-        private final ValuesRowType leftSkipRowType;
-        private final ValuesRowType rightSkipRowType;
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
     }

@@ -59,8 +59,8 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 
     protected void evaluateBoundaries(QueryContext context)
     {
-        if (start == null) {
-            startKey = null;
+        if (boundColumns == 0 || start == null) {
+            startKey.append(startBoundary);
         } else {
             BoundExpressions startExpressions = start.boundExpressions(context);
             startKey.clear();
@@ -70,7 +70,7 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
                 Converters.convert(startExpressions.eval(f), startKeyTarget);
             }
         }
-        if (end == null) {
+        if (boundColumns == 0 || end == null) {
             endKey = null;
         } else {
             BoundExpressions endExpressions = end.boundExpressions(context);

@@ -26,16 +26,18 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
 import java.util.ArrayList;
 import java.util.List;
 
-abstract class SortCursorMixedOrder extends SortCursor
+class SortCursorMixedOrder extends SortCursor
 {
     // Cursor interface
 
@@ -86,15 +88,69 @@ abstract class SortCursorMixedOrder extends SortCursor
                                               IndexKeyRange keyRange,
                                               API.Ordering ordering)
     {
-        return
-            // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
-            // IndexRowType in that case, so an IndexKeyRange can't be created.
-            keyRange == null || keyRange.unbounded()
-            ? new SortCursorMixedOrderUnbounded(context, iterationHelper, keyRange, ordering)
-            : new SortCursorMixedOrderBounded(context, iterationHelper, keyRange, ordering);
+        return new SortCursorMixedOrder(context, iterationHelper, keyRange, ordering);
     }
 
-    public abstract void initializeScanStates() throws PersistitException;
+    public void initializeScanStates() throws PersistitException
+    {
+        int f = 0;
+        if (boundColumns > 0) {
+            BoundExpressions lo = keyRange.lo().boundExpressions(context);
+            BoundExpressions hi = keyRange.hi().boundExpressions(context);
+            // Set lo and hi bounds for each key segment
+            while (f < boundColumns()) {
+                ValueSource loSource = lo.eval(f);
+                ValueSource hiSource = hi.eval(f);
+                MixedOrderScanStateBounded scanState = new MixedOrderScanStateBounded
+                    (this,
+                     f,
+                     f >= orderingColumns() || ordering.ascending(f),
+                     f == boundColumns() - 1);
+                scanState.setRange(loSource, hiSource);
+                scanStates.add(scanState);
+                f++;
+            }
+        }
+        while (f < orderingColumns()) {
+            MixedOrderScanStateUnbounded scanState = new MixedOrderScanStateUnbounded(this, f);
+            scanStates.add(scanState);
+            f++;
+        }
+        if (f < keyColumns()) {
+            MixedOrderScanStateRestOfKey scanState = new MixedOrderScanStateRestOfKey(this, orderingColumns());
+            scanStates.add(scanState);
+        }
+        if (boundColumns() > 0) {
+            /*
+                * An index restriction is described by an IndexKeyRange which contains
+                * two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
+                * described by the IndexBound's ColumnSelector. The only index restrictions supported specify:
+                * a) equality for zero or more fields of the index,
+                * b) 0-1 inequality, and
+                * c) any remaining columns unbounded.
+                *
+                * The key range's loInclusive and hiInclusive flags apply to b. For a, the comparisons
+                * are always inclusive. E.g. if the range is >(x, y, p) and <(x, y, q), then the bounds
+                * on the individual fields are (>=x, <=x), (>=y, <=y) and (>p, <q). So we want inclusive for
+                * a, and whatever the key range specified for inclusivity for b. Checking the type of scan state f + 1
+                * is how we distinguish cases a and b.
+                *
+                * The observant reader will wonder: what about >(x, y, p) and <(x, z, q)? This is a violation of condition
+                * b since there are two inequalities (y != z, p != q) and it should not be possible to get this far with
+                * such an IndexKeyRange.
+                *
+                * So for scanStates:
+                * - lo(f) = hi(f), f < boundColumns - 1
+                * - lo(f) - hi(f) defines a range, with limits described by keyRange.lo/hiInclusive,
+                *   f = boundColumns - 1
+                * The last argument to setRangeLimits determines which condition is checked.
+                */
+            for (f = 0; f < boundColumns() - 1; f++) {
+                scanState(f).setRangeLimits(true, true, false);
+            }
+            scanState(boundColumns() - 1).setRangeLimits(keyRange().loInclusive(), keyRange().hiInclusive(), true);
+        }
+    }
 
     // For use by subclasses
 
@@ -106,10 +162,15 @@ abstract class SortCursorMixedOrder extends SortCursor
         super(context, iterationHelper);
         this.keyRange = keyRange;
         this.ordering = ordering;
-        keyColumns =
-            keyRange == null
-            ? ordering.sortColumns()
-            : keyRange.indexRowType().index().indexRowComposition().getLength();
+        // keyRange == null occurs when Sorter is used, (to sort an arbitrary input stream). There is no
+        // IndexRowType in that case, so an IndexKeyRange can't be created.
+        if (keyRange == null) {
+            keyColumns = ordering.sortColumns();
+            boundColumns = 0;
+        } else {
+            keyColumns = keyRange.indexRowType().index().indexRowComposition().getLength();
+            boundColumns = keyRange.boundColumns();
+        }
     }
 
     // For use by this package
@@ -133,7 +194,7 @@ abstract class SortCursorMixedOrder extends SortCursor
 
     protected int boundColumns()
     {
-        return keyRange.boundColumns();
+        return boundColumns;
     }
 
     protected int keyColumns()
@@ -168,12 +229,18 @@ abstract class SortCursorMixedOrder extends SortCursor
         }
     }
 
+    private MixedOrderScanStateBounded scanState(int field)
+    {
+        return (MixedOrderScanStateBounded) scanStates.get(field);
+    }
+
     // Object state
 
     protected final IndexKeyRange keyRange;
     protected final API.Ordering ordering;
     protected final List<MixedOrderScanState> scanStates = new ArrayList<MixedOrderScanState>();
     private final int keyColumns; // Number of columns in the key. keyFields >= orderingColumns.
+    private final int boundColumns;
     private boolean more;
     private boolean justOpened;
 }
