@@ -341,7 +341,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
         List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-        int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
+        int nequals = 0;
+        List<ExpressionNode> equalityColumns = null;
+        if (equalityComparands != null) {
+            nequals = equalityComparands.size();
+            equalityColumns = index.getColumns().subList(0, nequals);
+        }
         try_sorted:
         if (queryGoal.getOrdering() != null) {
             int idx = nequals;
@@ -387,12 +392,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                     idx++;
                     continue;
                 }
-                if (equalityComparands != null) {
+                if (equalityColumns != null) {
                     // Another possibility is that target ordering is
                     // in fact unchanged due to equality condition.
                     // TODO: Should this have been noticed earlier on
                     // so that it can be taken out of the sort?
-                    if (equalityComparands.contains(targetExpression))
+                    if (equalityColumns.contains(targetExpression))
                         continue;
                 }
                 break try_sorted;
@@ -421,8 +426,8 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 }
                 if (found < 0) {
                     allFound = false;
-                    if ((equalityComparands == null) ||
-                        !equalityComparands.contains(targetExpression))
+                    if ((equalityColumns == null) ||
+                        !equalityColumns.contains(targetExpression))
                         continue;
                 }
                 else if (found >= groupBy.size()) {
