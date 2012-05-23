@@ -3,9 +3,15 @@
 - Statement: SELECT char_length('1234');
 - output: [[4]]
 ---
+- Statement: SELECT OCTET_LENGTH('1234');
+- output: [[4]]
+---
 - Statement: SELECT char_length('☃');
 - output: [[1]]
 ---
 - Statement: SELECT length('☃');
+- output: [[3]]
+---
+- Statement: SELECT octet_length('☃');
 - output: [[3]]
 ...
