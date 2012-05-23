@@ -131,6 +131,22 @@ public class PlanCostEstimator
         @Override
         protected void estimateCost() {
             costEstimate = getScanOnlyCost(index);
+            long totalCount = costEstimate.getRowCount();
+            if (hasLimit() && (limit < totalCount)) {
+                if (index instanceof SingleIndexScan) {
+                    SingleIndexScan single = (SingleIndexScan)index;
+                    if (single.getConditionRange() == null) {
+                        costEstimate = costEstimator.costIndexScan(single.getIndex(), 
+                                                                   limit);
+                        return;
+                    }
+                }
+                // Multiple scans are involved; assume proportional.
+                double setupCost = getScanSetupCost(index);
+                double scanCost = costEstimate.getCost() - setupCost;
+                costEstimate = new CostEstimate(limit,
+                                                setupCost + scanCost * limit / totalCount);
+            }
         }
     }
 
@@ -151,8 +167,13 @@ public class PlanCostEstimator
 
         @Override
         protected void estimateCost() {
-            costEstimate = inputCostEstimate()
-                .nest(costEstimator.costFlatten(tableGroup, indexTable, requiredTables));
+            CostEstimate flattenCost = costEstimator.costFlatten(tableGroup, indexTable, requiredTables);
+            long flattenScale = flattenCost.getRowCount();
+            input.setLimit(hasLimit() ? 
+                           // Ceiling number of inputs needed to get limit flattened.
+                           ((limit + flattenScale - 1) / flattenScale) : 
+                           NO_LIMIT);
+            costEstimate = inputCostEstimate().nest(flattenCost);
         }
     }
 
@@ -201,7 +222,9 @@ public class PlanCostEstimator
         protected void estimateCost() {
             double selectivity = costEstimator.conditionsSelectivity(selectivityConditions);
             // Need enough input rows before selection.
-            input.setLimit(hasLimit() ? Math.round(limit / selectivity) : NO_LIMIT);
+            input.setLimit(hasLimit() ? 
+                           Math.round(limit / selectivity) : 
+                           NO_LIMIT);
             CostEstimate inputCost = inputCostEstimate();
             CostEstimate selectCost = costEstimator.costSelect(conditions,
                                                                selectivity, 
@@ -281,6 +304,27 @@ public class PlanCostEstimator
             index.setScanCostEstimate(result);
         }
         return result;
+    }
+
+    protected double getScanSetupCost(IndexScan index) {
+        if (index instanceof SingleIndexScan) {
+            SingleIndexScan singleIndex = (SingleIndexScan)index;
+            if (singleIndex.getConditionRange() == null) {
+                return costEstimator.costIndexScan(singleIndex.getIndex(), 0).getCost();
+            }
+            else {
+                return costEstimator.costIndexScan(singleIndex.getIndex(), 0).getCost() *
+                    singleIndex.getConditionRange().getSegments().size();
+            }
+        }
+        else if (index instanceof MultiIndexIntersectScan) {
+            MultiIndexIntersectScan multiIndex = (MultiIndexIntersectScan)index;
+            return getScanSetupCost(multiIndex.getOutputIndexScan()) +
+                   getScanSetupCost(multiIndex.getSelectorIndexScan());
+        }
+        else {
+            return 0.0;
+        }
     }
 
     protected Map<UserTable,Long> groupScanTableCountsToLimit(Set<TableSource> requiredTables, long limit) {
