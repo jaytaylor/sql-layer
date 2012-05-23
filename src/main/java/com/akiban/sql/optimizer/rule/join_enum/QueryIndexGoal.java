@@ -109,6 +109,16 @@ public class QueryIndexGoal
         return false;
     }
 
+    public int sortFields() {
+        if (ordering != null)
+            return ordering.getOrderBy().size();
+        if (projectDistinct != null)
+            return projectDistinct.getFields().size();
+        if (grouping != null)
+            return grouping.getNGroupBy();
+        return 0;
+    }
+
     /** Change GROUP BY, and ORDER BY upstream of <code>node</code> as
      * a consequence of <code>orderEffectiveness</code> being used.
      */

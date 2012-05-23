@@ -921,7 +921,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         if (queryGoal.needSort(index.getOrderEffectiveness())) {
-            estimator.sort();
+            estimator.sort(queryGoal.sortFields());
         }
 
         return estimator.getCostEstimate();

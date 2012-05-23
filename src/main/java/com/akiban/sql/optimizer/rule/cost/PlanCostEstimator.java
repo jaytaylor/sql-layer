@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer.rule.cost;
 
 import com.akiban.sql.optimizer.rule.cost.CostEstimator.IndexIntersectionCoster;
 import com.akiban.sql.optimizer.rule.range.RangeSegment;
+import static com.akiban.sql.optimizer.rule.OperatorAssembler.INSERTION_SORT_MAX_LIMIT;
 
 import com.akiban.sql.optimizer.plan.*;
 
@@ -47,6 +48,8 @@ public class PlanCostEstimator
     public CostEstimate getCostEstimate() {
         return planEstimator.getCostEstimate();
     }
+
+    public static final long NO_LIMIT = -1;
 
     public void setLimit(long limit) {
         planEstimator.setLimit(limit);
@@ -79,14 +82,14 @@ public class PlanCostEstimator
                                             conditions, selectivityConditions);
     }
 
-    public void sort() {
-        planEstimator = new SortEstimator(planEstimator);
+    public void sort(int nfields) {
+        planEstimator = new SortEstimator(planEstimator, nfields);
     }
 
     protected abstract class PlanEstimator {
         protected PlanEstimator input;
         protected CostEstimate costEstimate = null;
-        protected long limit = -1;
+        protected long limit = NO_LIMIT;
 
         protected PlanEstimator(PlanEstimator input) {
             this.input = input;
@@ -106,6 +109,10 @@ public class PlanCostEstimator
             costEstimate = null;    // Invalidate any previously computed cost.
             // NB: not passed to input; only set on end, which must then
             // propagate some limit back accordingly.
+        }
+
+        protected boolean hasLimit() {
+            return (limit > 0);
         }
 
         protected CostEstimate inputCostEstimate() {
@@ -206,15 +213,27 @@ public class PlanCostEstimator
     }
 
     protected class SortEstimator extends PlanEstimator {
+        private int nfields;
 
-        protected SortEstimator(PlanEstimator input) {
+        protected SortEstimator(PlanEstimator input, int nfields) {
             super(input);
+            this.nfields = nfields;
         }
 
         @Override
         protected void estimateCost() {
+            input.setLimit(NO_LIMIT);
             CostEstimate inputCost = inputCostEstimate();
-            CostEstimate sortCost = costEstimator.costSort(inputCost.getRowCount());
+            CostEstimate sortCost;
+            if (hasLimit() && 
+                (limit <= INSERTION_SORT_MAX_LIMIT)) {
+                sortCost = costEstimator.costSortWithLimit(inputCost.getRowCount(),
+                                                           Math.min(limit, inputCost.getRowCount()),
+                                                           nfields);
+            }
+            else {
+                sortCost = costEstimator.costSort(inputCost.getRowCount());
+            }
             costEstimate = inputCost.sequence(sortCost);
         }
     }
