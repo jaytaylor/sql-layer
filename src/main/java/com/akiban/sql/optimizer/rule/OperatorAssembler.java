@@ -265,6 +265,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleLimit((Limit) node);
             else if (node instanceof NullIfEmpty)
                 return assembleNullIfEmpty((NullIfEmpty) node);
+            else if (node instanceof OnlyIfEmpty)
+                return assembleOnlyIfEmpty((OnlyIfEmpty) node);
             else if (node instanceof Project)
                 return assembleProject((Project) node);
             else if (node instanceof ExpressionsSource)
@@ -764,6 +766,23 @@ public class OperatorAssembler extends BaseRule
             stream.operator = API.ifEmpty_Default(stream.operator,
                                                   stream.rowType,
                                                   Arrays.asList(nulls));
+            return stream;
+        }
+
+        protected RowStream assembleOnlyIfEmpty(OnlyIfEmpty onlyIfEmpty) {
+            RowStream stream = assembleStream(onlyIfEmpty.getInput());
+            // TODO: Until there is a nicer operator for this.
+            stream.operator = API.limit_Default(stream.operator, 0, false, 1, false);
+            stream.operator = API.project_Default(stream.operator,
+                                                  stream.rowType,
+                                                  Arrays.asList(LiteralExpression.forBool(Boolean.FALSE)));
+            stream.rowType = stream.operator.rowType();
+            stream.operator = API.ifEmpty_Default(stream.operator,
+                                                  stream.rowType,
+                                                  Arrays.asList(LiteralExpression.forBool(Boolean.TRUE)));
+            stream.operator = API.select_HKeyOrdered(stream.operator,
+                                                     stream.rowType,
+                                                     Expressions.field(stream.rowType, 0));
             return stream;
         }
 
