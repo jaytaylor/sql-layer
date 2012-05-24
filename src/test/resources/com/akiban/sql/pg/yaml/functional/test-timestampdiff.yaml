@@ -1,0 +1,17 @@
+## Test TIMESTAMPDIFF
+---
+- Statement: SELECT TIMESTAMPDIFF(DAY, '2009-12-12', '2009-12-11');
+- output: [[null]]
+---
+- Statement: SELECT TIMESTAMPDIFF(WEEK, '2009-12-12', '2009-12-11');
+- output: [[null]]
+---
+- Statement: SELECT TIMESTAMPDIFF(MONTH, '2009-12-12', '2009-12-11');
+- output: [[null]]
+---
+- Statement: SELECT TIMESTAMPDIFF(QUARTER, '2009-12-12', '2009-12-11');
+- output: [[null]]
+---
+- Statement: SELECT TIMESTAMPDIFF(YEAR, '2009-12-12', '2009-12-11');
+- output: [[null]]
+...

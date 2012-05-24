@@ -418,7 +418,14 @@ public class ArithExpression extends AbstractBinaryExpression
                 throw new ValueSourceIsNullException();
             }
 
-            if (op.opName() == '+' && interval >= 0)
+            return doArithMonth(ymd_hms, interval, topT, op.opName());
+        }
+
+        protected static long doArithMonth (long[] ymd_hms, long interval, AkType topT, char op)
+        {
+            LongExtractor extract = Extractors.getLongExtractor(topT);
+
+            if (op == '+' && interval >= 0)
             {
                 ymd_hms[1] += interval;
                 if (ymd_hms[1] > 12)
@@ -431,7 +438,7 @@ public class ArithExpression extends AbstractBinaryExpression
             }
             else
             {
-                ymd_hms[1] -= (interval *= op.opName() == '+' ? -1 : 1) % 12;
+                ymd_hms[1] -= (interval *= op == '+' ? -1 : 1) % 12;
                 ymd_hms[0] -= interval / 12;
                 if (ymd_hms[1] <= 0)
                 {
@@ -463,9 +470,10 @@ public class ArithExpression extends AbstractBinaryExpression
                 default: throw new InvalidParameterValueException();
             }
             return extract.getEncoded(ymd_hms);
+        
         }
-
-        private static boolean vallidDayMonth (long y, long m, long d)
+        
+        protected static boolean vallidDayMonth (long y, long m, long d)
         {
             switch ((int)m)
             {
