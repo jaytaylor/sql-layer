@@ -316,11 +316,13 @@ public class ApiTestBase {
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
+        ServiceManagerImpl.setServiceManager(null);
         sm = createServiceManager( properties );
         sm.startServices();
         session = sm.getSessionService().createSession();
         lastStartupConfigProperties = properties;
         ddl(); // loads up the schema manager et al
+        ServiceManagerImpl.setServiceManager(sm);
     }
 
     public final Session createNewSession()
