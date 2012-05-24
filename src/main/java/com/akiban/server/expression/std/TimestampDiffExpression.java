@@ -110,10 +110,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     case TernaryOperatorNode.YEAR_INTERVAL:
                     case TernaryOperatorNode.QUARTER_INTERVAL:
                     case TernaryOperatorNode.MONTH_INTERVAL:
-                        // SYNTAX: TIMESTAMPDIFF(<INTERVAL SPEC>, date1, date2)
-                        // return  date2 - date1
-                        // (NOT date1 - date2)
-                        valueHolder().putLong(doSubstract(tryGetYMD(date2), tryGetYMD(date1)));
+                        valueHolder().putLong(doSubstract(tryGetYMD(date1), tryGetYMD(date2)));
                         break;
                     case TernaryOperatorNode.WEEK_INTERVAL:
                     case TernaryOperatorNode.DAY_INTERVAL:
@@ -121,7 +118,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     case TernaryOperatorNode.MINUTE_INTERVAL:
                     case TernaryOperatorNode.SECOND_INTERVAL:
                     case TernaryOperatorNode.FRAC_SECOND_INTERVAL:
-                        valueHolder().putLong((tryGetUnix(date2) - tryGetUnix(date1)) 
+                        valueHolder().putLong((tryGetUnix(date1) - tryGetUnix(date2)) 
                                 / DIVISORS[(int)intervalType.getLong() - BASE]);
                         break;
                     default:
@@ -143,7 +140,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
             if (!ArithExpression.InnerValueSource.vallidDayMonth(d1[0], d1[1], d1[2])
                     || !ArithExpression.InnerValueSource.vallidDayMonth(d2[0], d2[1], d2[2]))
                 throw new InvalidParameterValueException("Invalid date/time values");
-        
+
             return (d1[0] - d2[0]) * 12 + d1[1] - d2[1];
         }
         

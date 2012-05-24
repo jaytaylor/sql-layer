@@ -1,16 +1,19 @@
 ## Test TIMESTAMPDIFF
-#---
-#- Statement: SELECT TIMESTAMPDIFF(DAY, '2009-12-12', '2009-12-11');
-#- output: [[1]]
-#---
-#- Statement: SELECT TIMESTAMPDIFF(WEEK, '2009-12-12', '2009-12-11');
-#- output: [[0]]
-#---
-#- Statement: SELECT TIMESTAMPDIFF(MONTH, '2009-12-12', '2009-12-11');
-#- output: [[0]]
-#---
-#- Statement: select timestampdiff(MONTH, '1991-9-29', '1990-8-1');
-#- output: [[-13]]
+---
+- Statement: SELECT TIMESTAMPDIFF(DAY, '2009-12-12', '2009-12-11');
+- output: [[-1]]
+---
+- Statement: SELECT TIMESTAMPDIFF(DAY, '2009-12-11', '2009-12-12');
+- output: [[1]]
+---
+- Statement: SELECT TIMESTAMPDIFF(WEEK, '2009-12-12', '2009-12-11');
+- output: [[0]]
+---
+- Statement: SELECT TIMESTAMPDIFF(MONTH, '2009-12-12', '2009-12-11');
+- output: [[0]]
+---
+- Statement: select timestampdiff(MONTH, '1991-9-29', '1990-8-1');
+- output: [[-13]]
 ---
 - Statement: select timestampdiff(MONTH, '1990-8-1', '1991-9-29');
 - output: [[13]]
