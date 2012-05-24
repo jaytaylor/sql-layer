@@ -11,5 +11,5 @@ PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
                 GroupScan_Default(full scan on _akiban_customers)
         Map_NestedLoops
           IndexScan_Default(Index(test.customers.PRIMARY[IndexColumn(cid)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
-          IfEmpty_Default(Literal(NULL), Literal(NULL))
+          IfEmpty_Default(Literal(NULL), Literal(NULL), KEEP_INPUT)
             IndexScan_Default(Index(test.orders.PRIMARY[IndexColumn(oid)]) (>=UnboundExpressions[Bound(0,Field(1))],<=UnboundExpressions[Bound(0,Field(1))]))

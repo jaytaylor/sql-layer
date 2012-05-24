@@ -111,19 +111,19 @@ public class BranchLookup_NestedIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testBLNGroupTableNull()
     {
-        branchLookup_Nested(null, aRowType, bRowType, LookupOption.KEEP_INPUT, 0);
+        branchLookup_Nested(null, aRowType, bRowType, InputPreservationOption.KEEP_INPUT, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBLNInputRowTypeNull()
     {
-        branchLookup_Nested(rabc, null, bRowType, LookupOption.KEEP_INPUT, 0);
+        branchLookup_Nested(rabc, null, bRowType, InputPreservationOption.KEEP_INPUT, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBLNOutputRowTypeNull()
     {
-        branchLookup_Nested(rabc, aRowType, null, LookupOption.KEEP_INPUT, 0);
+        branchLookup_Nested(rabc, aRowType, null, InputPreservationOption.KEEP_INPUT, 0);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -135,19 +135,19 @@ public class BranchLookup_NestedIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testBLNBadInputBindingPosition()
     {
-        branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.KEEP_INPUT, -1);
+        branchLookup_Nested(rabc, aRowType, bRowType, InputPreservationOption.KEEP_INPUT, -1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBLNInputTypeNotDescendent()
     {
-        branchLookup_Nested(rabc, aRowType, bRowType, bRowType, LookupOption.KEEP_INPUT, -1);
+        branchLookup_Nested(rabc, aRowType, bRowType, bRowType, InputPreservationOption.KEEP_INPUT, -1);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testBLNOutputTypeNotDescendent()
     {
-        branchLookup_Nested(rabc, aRowType, aRowType, bRowType, LookupOption.KEEP_INPUT, -1);
+        branchLookup_Nested(rabc, aRowType, aRowType, bRowType, InputPreservationOption.KEEP_INPUT, -1);
     }
 
     // Test operator execution
@@ -158,7 +158,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 indexScan_Default(aValueIndexRowType),
-                branchLookup_Nested(rabc, aValueIndexRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
+                branchLookup_Nested(rabc, aValueIndexRowType, rRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0);
         Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
@@ -205,8 +205,8 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     rabc,
                     aValueIndexRowType,
                     Collections.singleton(aRowType),
-                    LookupOption.DISCARD_INPUT),
-                branchLookup_Nested(rabc, aRowType, rRowType, LookupOption.DISCARD_INPUT, 0),
+                    InputPreservationOption.DISCARD_INPUT),
+                branchLookup_Nested(rabc, aRowType, rRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0);
         Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
@@ -251,7 +251,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 filter_Default(
                     groupScan_Default(rabc),
                     Collections.singleton(aRowType)),
-                branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.DISCARD_INPUT, 0),
+                branchLookup_Nested(rabc, aRowType, bRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0);
         Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
@@ -276,9 +276,9 @@ public class BranchLookup_NestedIT extends OperatorITBase
                     filter_Default(
                         groupScan_Default(rabc),
                         Collections.singleton(aRowType)),
-                    branchLookup_Nested(rabc, aRowType, bRowType, LookupOption.DISCARD_INPUT, 0),
+                    branchLookup_Nested(rabc, aRowType, bRowType, InputPreservationOption.DISCARD_INPUT, 0),
                     0),
-                branchLookup_Nested(rabc, bRowType, cRowType, LookupOption.KEEP_INPUT, 1),
+                branchLookup_Nested(rabc, bRowType, cRowType, InputPreservationOption.KEEP_INPUT, 1),
                 1);
         Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
@@ -328,7 +328,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
         Operator plan =
             map_NestedLoops(
                 abIndexScan,
-                branchLookup_Nested(rabc, abIndexScan.rowType(), cRowType, LookupOption.DISCARD_INPUT, 0),
+                branchLookup_Nested(rabc, abIndexScan.rowType(), cRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0);
         Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
@@ -346,7 +346,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                         filter_Default(
                                 groupScan_Default(rabc),
                                 Collections.singleton(aRowType)),
-                        branchLookup_Nested(rabc, aRowType, rRowType, aRowType, LookupOption.DISCARD_INPUT, 0),
+                        branchLookup_Nested(rabc, aRowType, rRowType, aRowType, InputPreservationOption.DISCARD_INPUT, 0),
                         0);
         Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
@@ -370,7 +370,7 @@ public class BranchLookup_NestedIT extends OperatorITBase
                 filter_Default(
                     groupScan_Default(rabc),
                     Collections.singleton(aRowType)),
-                branchLookup_Nested(rabc, aRowType, rRowType, aRowType, LookupOption.DISCARD_INPUT, 0),
+                branchLookup_Nested(rabc, aRowType, rRowType, aRowType, InputPreservationOption.DISCARD_INPUT, 0),
                 0);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {

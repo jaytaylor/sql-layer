@@ -31,7 +31,6 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -81,7 +80,7 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                                coi,
                                customerRowType,
                                list(),
-                               LookupOption.KEEP_INPUT);
+                               InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -91,7 +90,7 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                                coi,
                                customerRowType,
                                list(itemRowType),
-                               LookupOption.KEEP_INPUT);
+                               InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -101,7 +100,7 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                                coi,
                                customerRowType,
                                list(customerRowType),
-                               LookupOption.KEEP_INPUT);
+                               InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -111,7 +110,7 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                                coi,
                                customerNameIndexRowType,
                                list(customerRowType),
-                               LookupOption.KEEP_INPUT);
+                               InputPreservationOption.KEEP_INPUT);
     }
 
     // Test ancestor lookup given index row
@@ -356,7 +355,7 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                 coi,
                 orderRowType,
                 Collections.singleton(customerRowType),
-                LookupOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -383,7 +382,7 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                  coi,
                  itemIidIndexRowType,
                  list(rowTypes),
-                 LookupOption.DISCARD_INPUT);
+                 InputPreservationOption.DISCARD_INPUT);
     }
 
     private Operator groupRowToAncestorPlan(int iid, boolean keepInput, UserTableRowType ... rowTypes)
@@ -395,11 +394,11 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                       coi,
                       itemIidIndexRowType,
                       itemRowType,
-                      LookupOption.DISCARD_INPUT),
+                      InputPreservationOption.DISCARD_INPUT),
                  coi,
                  itemRowType,
                  list(rowTypes),
-                 keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
+                 keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT);
     }
 
     private Operator orderHKeyToCustomerAndOrderPlan(String salesman)
@@ -419,7 +418,7 @@ public class AncestorLookup_DefaultIT extends OperatorITBase
                 coi,
                 indexMerge.rowType(),
                 Arrays.asList(customerRowType, orderRowType),
-                LookupOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT);
     }
 
     private IndexKeyRange itemIidEQ(int iid)

@@ -35,9 +35,6 @@ import com.akiban.qp.operator.UpdateFunction;
 import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -45,7 +42,6 @@ import static com.akiban.qp.operator.API.*;
 
 import com.persistit.Transaction;
 
-import org.junit.Ignore;
 import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 
@@ -110,7 +106,7 @@ public class UpdateIT extends OperatorITBase
                 coi,
                 itemIidIndexRowType,
                 Arrays.asList(itemRowType),
-                LookupOption.DISCARD_INPUT),
+                InputPreservationOption.DISCARD_INPUT),
             Arrays.asList(itemRowType));
         
         UpdateFunction updateFunction = new UpdateFunction() {
@@ -159,7 +155,7 @@ public class UpdateIT extends OperatorITBase
                 coi,
                 itemIidIndexRowType,
                 Arrays.asList(itemRowType),
-                LookupOption.DISCARD_INPUT),
+                InputPreservationOption.DISCARD_INPUT),
             Arrays.asList(itemRowType));
         
         UpdateFunction updateFunction = new UpdateFunction() {
