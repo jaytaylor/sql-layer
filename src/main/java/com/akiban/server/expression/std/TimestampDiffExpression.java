@@ -72,7 +72,6 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
         {
             return new TimestampDiffExpression(arguments);
         }
-        
     };
     
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
@@ -122,8 +121,8 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     case TernaryOperatorNode.MINUTE_INTERVAL:
                     case TernaryOperatorNode.SECOND_INTERVAL:
                     case TernaryOperatorNode.FRAC_SECOND_INTERVAL:
-                        valueHolder().putLong(Math.round(tryGetUnix(date2) - tryGetUnix(date1) 
-                                                          / DIVISORS[(int)intervalType.getLong() - BASE]));
+                        valueHolder().putLong((tryGetUnix(date2) - tryGetUnix(date1)) 
+                                / DIVISORS[(int)intervalType.getLong() - BASE]);
                         break;
                     default:
                         throw new UnsupportedOperationException("Unknown INTERVAL_TYPE: " + intervalType.getLong());
@@ -137,20 +136,18 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     qc.warnClient(ex);
                 return NullValueSource.only();
             }
-            
-            
         }
         
-        static long doSubstract (long d1[], long d2[])
+        private static long doSubstract (long d1[], long d2[])
         {
             if (!ArithExpression.InnerValueSource.vallidDayMonth(d1[0], d1[1], d1[2])
                     || !ArithExpression.InnerValueSource.vallidDayMonth(d2[0], d2[1], d2[2]))
                 throw new InvalidParameterValueException("Invalid date/time values");
         
-            return (d1[0] - d2[0]) * 12 + d1[1] + d2[1];
+            return (d1[0] - d2[0]) * 12 + d1[1] - d2[1];
         }
         
-        static long[] tryGetYMD(ValueSource source)
+        private static long[] tryGetYMD(ValueSource source)
         {
             long val = 0;
             LongExtractor extractor = Extractors.getLongExtractor(AkType.DATE);
@@ -169,7 +166,8 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
             }
             return Extractors.getLongExtractor(t).getYearMonthDayHourMinuteSecond(val);
         }
-        static long tryGetUnix (ValueSource source)
+        
+        private static long tryGetUnix (ValueSource source)
         {
             AkType t = source.getConversionType();
             long val = 0;
