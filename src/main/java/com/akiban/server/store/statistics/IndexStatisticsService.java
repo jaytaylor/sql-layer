@@ -28,6 +28,7 @@ package com.akiban.server.store.statistics;
 
 import com.akiban.server.service.session.Session;
 import com.akiban.ais.model.Index;
+import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
 import java.io.Writer;
@@ -42,6 +43,8 @@ public interface IndexStatisticsService
     
     /** Get <em>approximate</em> count of number of entries in the given index. */
     public long countEntriesApproximate(Session session, Index index);
+
+    public long countEntriesManually(Session session, Index index) throws PersistitException;
     
     /** Get available statistics for the given index. */
     public IndexStatistics getIndexStatistics(Session session, Index index);

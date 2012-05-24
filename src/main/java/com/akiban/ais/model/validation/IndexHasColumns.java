@@ -36,7 +36,7 @@ class IndexHasColumns implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (UserTable table : ais.getUserTables().values()) {
-            for (TableIndex index : table.getIndexes()) {
+            for (TableIndex index : table.getIndexesIncludingInternal()) {
                 if (index.getKeyColumns().size() == 0) {
                     output.reportFailure(new AISValidationFailure (
                             new IndexLacksColumnsException(table.getName(), index.getIndexName().getName())));

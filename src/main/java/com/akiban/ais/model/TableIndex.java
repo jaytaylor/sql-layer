@@ -26,14 +26,20 @@
 
 package com.akiban.ais.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.akiban.ais.model.validation.AISInvariants;
 
 public class TableIndex extends Index
 {
-    public static TableIndex create(AkibanInformationSchema ais, Table table, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint)
+    public static TableIndex create(AkibanInformationSchema ais,
+                                    Table table,
+                                    String indexName,
+                                    Integer indexId,
+                                    Boolean isUnique,
+                                    String constraint)
     {
         table.checkMutability();
         ais.checkMutability();
@@ -57,23 +63,57 @@ public class TableIndex extends Index
     }
 
     @Override
-    public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
-        computeFieldAssociations(ordinalMap, getTable(), null);
-    }
-
-    @Override
-    protected Column indexRowCompositionColumn(HKeyColumn hKeyColumn) {
-        return hKeyColumn.column();
+    public void computeFieldAssociations(Map<Table, Integer> ordinalMap)
+    {
+        freezeColumns();
+        AssociationBuilder toIndexRowBuilder = new AssociationBuilder();
+        AssociationBuilder toHKeyBuilder = new AssociationBuilder();
+        List<Column> indexColumns = new ArrayList<Column>();
+        // Add index key fields
+        for (IndexColumn iColumn : getKeyColumns()) {
+            Column column = iColumn.getColumn();
+            indexColumns.add(column);
+            toIndexRowBuilder.rowCompEntry(column.getPosition(), -1);
+        }
+        // Add leafward-biased hkey fields not already included
+        int indexColumnPosition = indexColumns.size();
+        hKeyColumns = new ArrayList<IndexColumn>();
+        HKey hKey = hKey();
+        for (HKeySegment hKeySegment : hKey.segments()) {
+            Integer ordinal = ordinalMap.get(hKeySegment.table());
+            assert ordinal != null : hKeySegment.table();
+            toHKeyBuilder.toHKeyEntry(ordinal, -1);
+            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                Column column = hKeyColumn.column();
+                if (!indexColumns.contains(column)) {
+                    if (table.getColumnsIncludingInternal().contains(column)) {
+                        toIndexRowBuilder.rowCompEntry(column.getPosition(), -1);
+                    } else {
+                        assert hKeySegment.table().isUserTable() : this;
+                        toIndexRowBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
+                    }
+                    indexColumns.add(column);
+                    hKeyColumns.add(new IndexColumn(this, column, indexColumnPosition, true, 0));
+                    indexColumnPosition++;
+                }
+                toHKeyBuilder.toHKeyEntry(-1, indexColumns.indexOf(column));
+            }
+        }
+        allColumns = new ArrayList<IndexColumn>();
+        allColumns.addAll(keyColumns);
+        allColumns.addAll(hKeyColumns);
+        indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
+        indexToHKey = toHKeyBuilder.createIndexToHKey();
     }
 
     @Override
     public Table leafMostTable() {
-        return getTable();
+        return table;
     }
 
     @Override
     public Table rootMostTable() {
-        return getTable();
+        return table;
     }
 
     @Override
@@ -84,6 +124,11 @@ public class TableIndex extends Index
     public Table getTable()
     {
         return table;
+    }
+
+    public IndexToHKey indexToHKey()
+    {
+        return indexToHKey;
     }
 
     // For a user table index: the user table hkey
@@ -117,4 +162,6 @@ public class TableIndex extends Index
 
     private final Table table;
     private HKey hKey;
+    private List<IndexColumn> hKeyColumns;
+    private IndexToHKey indexToHKey;
 }

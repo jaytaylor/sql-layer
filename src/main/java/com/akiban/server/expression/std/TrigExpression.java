@@ -125,7 +125,13 @@ public class TrigExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported i TRIG yet.");
+        }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.RETURN_NULL;
         }
     }
     
@@ -231,7 +237,7 @@ public class TrigExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

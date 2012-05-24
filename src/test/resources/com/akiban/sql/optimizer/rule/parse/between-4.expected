@@ -1,0 +1,5 @@
+SelectQuery@6ae97dd4
+  ResultSet@7442022[_SQL_COL_1]
+    Project@9999be8[not(and(items.quan >= 10,items.quan <= 100))]
+      Select@43caa144[]
+        TableSource@2c219a21(items)

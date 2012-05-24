@@ -40,7 +40,7 @@ public final class MultiIndexIntersectScan extends IndexScan {
     private IndexScan outputScan;
     private IndexScan selectorScan;
     private int comparisonColumns;
-    private List<ConditionExpression> coveringConditions;
+    private List<ConditionExpression> conditions;
 
     public MultiIndexIntersectScan(IndexScan outerScan, IndexScan selectorScan, int comparisonColumns)
     {
@@ -99,17 +99,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public List<ConditionExpression> getGroupConditions() {
-        return coveringConditions;
-    }
-
-    @Override
     public List<ExpressionNode> getEqualityComparands() {
         return outputScan.getEqualityComparands();
-    }
-
-    public void setGroupConditions(Collection<ConditionExpression> coveringConditions) {
-        this.coveringConditions = new ArrayList<ConditionExpression>(coveringConditions);
     }
 
     @Override
@@ -134,12 +125,16 @@ public final class MultiIndexIntersectScan extends IndexScan {
 
     @Override
     public List<ConditionExpression> getConditions() {
-        return outputScan.getConditions();
+        return conditions;
     }
 
     @Override
     public boolean hasConditions() {
-        return outputScan.hasConditions();
+        return !conditions.isEmpty();
+    }
+
+    public void setConditions(List<ConditionExpression> conditions) {
+        this.conditions = conditions;
     }
 
     @Override
@@ -220,4 +215,17 @@ public final class MultiIndexIntersectScan extends IndexScan {
     public UserTable findCommonAncestor(IndexScan other) {
         return outputScan.findCommonAncestor(other);
     }
+
+    @Override
+    public void visitComparands(ExpressionRewriteVisitor v) {
+        outputScan.visitComparands(v);
+        selectorScan.visitComparands(v);
+    }
+
+    @Override
+    public void visitComparands(ExpressionVisitor v) {
+        outputScan.visitComparands(v);
+        selectorScan.visitComparands(v);
+    }
+
 }

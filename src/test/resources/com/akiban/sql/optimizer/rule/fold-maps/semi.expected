@@ -1,0 +1,16 @@
+SelectQuery@7bd349e2
+  ResultSet@6c97d3f0[order_date]
+    Project@63db6942[orders.order_date]
+      Select@59db9f45[or(EXISTS(Subquery@61b59919),orders.order_date == Cast(0000-00-00 AS DATE NOT NULL))]
+        SingleIndexScan@f35b47c(Index(test.orders.order_date[IndexColumn(order_date)]), covering/NONE, rows = 1000, cost = 1527.39)
+
+Subquery@61b59919
+  MapJoin@1bb0889a()
+    Select@76898587[items.oid == orders.oid]
+      SingleIndexScan@9eb67cb(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =1234, rows = 97, cost = 238.521)
+    Select@14db38a4[]
+      Flatten@21453d72(child)
+        Select@2136bdda[child.name != Astro]
+          AncestorLookup@48c5186e(child -> [child])
+            SingleIndexScan@3a87d472(Index(test.child.PRIMARY[IndexColumn(id)]), NONE, =items.iid, rows = 1, cost = 16.0882)
+            TableSource@4df8b14(child - TableGroup@213c2d7f(parent))

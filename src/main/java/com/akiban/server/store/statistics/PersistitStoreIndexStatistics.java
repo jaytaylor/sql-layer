@@ -37,11 +37,13 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.IndexVisitor;
 import com.akiban.server.store.PersistitStore;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
+import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.RollbackException;
 import com.persistit.exception.TransactionFailedException;
@@ -341,4 +343,22 @@ public class PersistitStoreIndexStatistics
         }
     }
 
+    public long manuallyCountEntries(Session session, Index index) throws PersistitException {
+        CountingVisitor countingVisitor = new CountingVisitor();
+        store.traverse(session, index, countingVisitor);
+        return countingVisitor.getCount();
+    }
+
+    private static class CountingVisitor extends IndexVisitor {
+        long count = 0;
+
+        @Override
+        protected void visit(Key key, Value value) throws PersistitException, InvalidOperationException {
+            ++count;
+        }
+
+        public long getCount() {
+            return count;
+        }
+    }
 }

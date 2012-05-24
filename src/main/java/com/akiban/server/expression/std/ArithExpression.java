@@ -250,8 +250,9 @@ public class ArithExpression extends AbstractBinaryExpression
         if (t < 0) return false;
         else return t % 2 == 0;
     }
+    
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }

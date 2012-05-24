@@ -42,4 +42,9 @@ public abstract class ServerType
         return akType;
     }
 
+    @Override
+    public String toString() {
+        return String.valueOf(akType);
+    }
+
 }

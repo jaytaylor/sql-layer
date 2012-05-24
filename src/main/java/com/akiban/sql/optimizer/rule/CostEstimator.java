@@ -74,6 +74,13 @@ public abstract class CostEstimator implements TableRowCounts
 
     @Override
     public long getTableRowCount(Table table) {
+        long count = getTableRowCountFromStatistics(table);
+        if (count >= 0)
+            return count;
+        return 1;
+    }
+
+    protected long getTableRowCountFromStatistics(Table table) {
         // This implementation is only for testing; normally overridden by real server.
         // Return row count (not sample count) from analysis time.
         for (Index index : table.getIndexes()) {
@@ -81,7 +88,7 @@ public abstract class CostEstimator implements TableRowCounts
             if (istats != null)
                 return istats.getRowCount();
         }
-        return 1;
+        return -1;              // Not analyzed.
     }
 
     public abstract IndexStatistics getIndexStatistics(Index index);
@@ -305,6 +312,9 @@ public abstract class CostEstimator implements TableRowCounts
             return missingStatsSelectivity();
         }
         Histogram histogram = indexStats.getHistogram(1);
+        if ((histogram == null) || histogram.getEntries().isEmpty()) {
+            return missingStatsSelectivity();
+        }
         boolean before = (loBytes != null);
         long rowCount = 0;
         byte[] entryStartBytes, entryEndBytes = null;
@@ -529,6 +539,32 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(rowCount, cost);
     }
 
+    /** Estimate the cost of starting from a group scan and joining
+     * with Flatten and Product. */
+    public CostEstimate costFlattenGroup(TableGroupJoinTree tableGroup,
+                                         Set<TableSource> requiredTables) {
+        TableGroupJoinNode rootNode = tableGroup.getRoot();
+        coverBranches(tableGroup, rootNode, requiredTables);
+        int branchCount = 0;
+        long rowCount = 1;
+        double cost = 0.0;
+        for (TableGroupJoinNode node : tableGroup) {
+            if (isFlattenable(node)) {
+                long nrows = getTableRowCount(node.getTable().getTable().getTable());
+                // Cost of flattening these children with their ancestor.
+                cost += model.flatten((int)nrows);
+                if (!isAncestor(node)) {
+                    // Leaf of a new branch.
+                    branchCount++;
+                    rowCount *= nrows;
+                }
+            }
+        }
+        if (branchCount > 1)
+            cost += model.product((int)rowCount);
+        return new CostEstimate(rowCount, cost);
+    }
+
     /** This table needs to be included in flattens. */
     protected static final long REQUIRED = 1;
     /** This table is on the main branch. */
@@ -561,7 +597,7 @@ public abstract class CostEstimator implements TableRowCounts
         table.setState(table.getState() | (1 << b));
     }
 
-    /** Like {@link BranchJoiner_CBO#markBranches} but simpler without
+    /** Like {@link BranchJoiner#markBranches} but simpler without
      * having to worry about the exact <em>order</em> in which
      * operations are performed.
      */

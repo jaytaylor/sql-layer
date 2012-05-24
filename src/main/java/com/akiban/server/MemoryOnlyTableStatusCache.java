@@ -125,6 +125,11 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
 
         @Override
+        public synchronized void setRowCount(long rowCount) {
+            this.rowCount = rowCount;
+        }
+
+        @Override
         public synchronized long getApproximateRowCount() {
             return rowCount;
         }

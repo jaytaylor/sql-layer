@@ -1,5 +1,6 @@
 name	order_date	sku	quan
 Jones	2011-03-03	9876	1
+Adams	2011-03-04	9876	2
 Smith	2011-03-01	4567	50
 Jones	2011-02-28	1234	99
 Smith	2011-03-01	1234	100

@@ -27,10 +27,11 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.akiban.ais.gwtutils.GwtLogger;
 import com.akiban.ais.gwtutils.GwtLogging;
@@ -130,8 +131,8 @@ public class
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table",
                 concat(schemaName, tableName));
-        TableIndex.create(ais, table, indexName, indexIdGenerator++, unique,
-                constraint);
+        Index index = TableIndex.create(ais, table, indexName, indexIdGenerator++, unique, constraint);
+        index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
     public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
@@ -140,7 +141,8 @@ public class
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
-        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
+        Index index = GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
+        index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
     @Deprecated
@@ -176,9 +178,6 @@ public class
         Index index = group.getIndex(indexName);
         checkFound(index, "creating group index column", "index", concat(groupName, indexName));
         Table table = ais.getTable(schemaName, tableName);
-        if (table.getGroup() == null) {
-            throw new IllegalArgumentException("table is ungrouped: " + table);
-        }
         if (!table.getGroup().getName().equals(groupName)) {
             throw new IllegalArgumentException("group name mismatch: " + groupName + " != " + table.getGroup());
         }
@@ -258,6 +257,11 @@ public class
         LOG.info("basicSchemaIsComplete");
         for (UserTable userTable : ais.getUserTables().values()) {
             userTable.endTable();
+            // endTable may have created new index, set its tree name if so
+            Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+            if (index.getTreeName() == null) {
+                index.setTreeName(nameGenerator.generateIndexTreeName(index));
+            }
         }
         for (ForwardTableReference forwardTableReference : forwardReferences.values()) {
             UserTable childTable = forwardTableReference.childTable();
@@ -283,34 +287,16 @@ public class
         forwardReferences.clear();
     }
 
-    private String computeTreeName(String groupSchemaName, String groupTableName) {
-        String proposedName = groupSchemaName + "$$" + groupTableName;
-        Collection<GroupTable> groupTables = ais.getGroupTables().values();
-        int saw = 0;
-        while(saw < groupTables.size()) {
-            saw = 0;
-            for(GroupTable table : groupTables) {
-                if(table.getTreeName().equals(proposedName)) {
-                    proposedName += "+";
-                    break;
-                }
-                ++saw;
-            }
-        }
-        return proposedName;
-    }
-
     // API for describing groups
 
     public void createGroup(String groupName, String groupSchemaName,
             String groupTableName) {
         LOG.info("createGroup: " + groupName + " -> " + groupSchemaName + "."
                 + groupTableName);
-        String treeName = computeTreeName(groupSchemaName, groupTableName);
         GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
-        groupTable.setTreeName(treeName);
         groupTable.setGroup(group);
+        groupTable.setTreeName(nameGenerator.generateGroupTreeName(group));
     }
 
     public void deleteGroup(String groupName) {
@@ -592,7 +578,7 @@ public class
                 + groupTable + " and user table " + userTable);
 
         for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
-            String indexName = nameGenerator.generateGroupIndexName(userIndex);
+            String indexName = nameGenerator.generateGroupTableIndexName(userIndex);
 
             // Check if the index we're about to add is already in the table.
             // This can happen if the user alters one or more groups, then
@@ -780,6 +766,19 @@ public class
     
     public int getIndexIdOffset() {
         return indexIdGenerator;
+    }
+
+    /**
+     * Tree names are normally set when adding a table to a group (all tables in a group
+     * must have the same tree name). If testing parts of builder that aren't grouped and
+     * LIVE_VALIDATIONS are called, this is a simple work around for that.
+     */
+    public void setTableTreeNamesForTest() {
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getTreeName() == null) {
+                table.setTreeName(table.getName().getDescription());
+            }
+        }
     }
 
     // State

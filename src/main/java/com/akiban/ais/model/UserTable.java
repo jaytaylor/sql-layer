@@ -113,7 +113,7 @@ public class UserTable extends Table
             if (descendantJoinColumn != null) {
                 Column descendantColumn = descendantJoinColumn.getChild();
                 matchingColumns.add(descendantColumn);
-                findMatchingDescendantColumns(descendantJoinColumn.getChild(), matchingColumns);
+                join.getChild().findMatchingDescendantColumns(descendantJoinColumn.getChild(), matchingColumns);
             }
         }
     }

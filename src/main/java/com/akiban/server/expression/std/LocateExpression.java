@@ -89,7 +89,13 @@ public class LocateExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported yet.");
+            throw new UnsupportedOperationException("Not supported in LOCATE yet.");
+        }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.RETURN_NULL;
         }
         
     };
@@ -143,7 +149,7 @@ public class LocateExpression extends AbstractCompositeExpression
     }
     
     @Override
-    protected boolean nullIsContaminating() 
+    public boolean nullIsContaminating() 
     {
         return true;
     }

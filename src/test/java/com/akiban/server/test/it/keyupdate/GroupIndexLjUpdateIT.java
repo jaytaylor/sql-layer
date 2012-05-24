@@ -157,7 +157,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(c, o, i),
                 "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
         );
-        // delete grandparent
+        // delete parent
         deleteAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
@@ -212,7 +212,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
 
-        // delete from root on up
+        // delete from root on down
         dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
 
@@ -236,7 +236,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
 
-        // delete from root on up
+        // delete from root on down
 
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h));
@@ -436,6 +436,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 null
         );
 
+        // TODO: This test fails on the first row. last two nulls are 101, 1001, reflecting the old home
+        // TODO: of the row. Ancestor lookup broken due to use of wrong column?
         checkIndex(
                 indexName,
                 "1111, don't break, 2, 12, 101, 1001 => " + containing(i, h),
@@ -521,8 +523,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(o, 12L, 2L, "02-02-2002"),
                 createNewRow(i, 102L, 12L, "2222"),
 
-                createNewRow(o, 66L, 6L,
- "03-03-2003"),
+                createNewRow(o, 66L, 6L, "03-03-2003"),
                 createNewRow(i, 666L, 66L, "6666")
         );
         checkIndex(

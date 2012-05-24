@@ -1,0 +1,16 @@
+#
+# DATETIME did not allow for fractional seconds
+#
+--- 
+- CreateTable: t1 (
+     id INT NOT NULL PRIMARY KEY,
+     value DATETIME)
+---
+- Statement: INSERT INTO t1 VALUES (1, '2012-04-24 14:11:27'), (2, '2012-04-17 14:11:40')
+---
+- Statement: SELECT * FROM t1 WHERE value <= '2012-04-21 00:00:00'
+- output: [[2, !re '2012-04-17 14:11:40(\.0)?']]
+---
+- Statement: SELECT * FROM t1 WHERE value <= '2012-04-21 23:59:59.999999'
+- output: [[2, !re '2012-04-17 14:11:40(\.0)?']]
+...
