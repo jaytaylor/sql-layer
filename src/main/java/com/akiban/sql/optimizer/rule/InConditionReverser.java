@@ -54,10 +54,12 @@ public class InConditionReverser extends BaseRule
         List<TopLevelSubqueryCondition> conds = 
             new ConditionFinder().find(planContext.getPlan());
         for (TopLevelSubqueryCondition cond : conds) {
-            if (cond.condition instanceof AnyCondition)
-                convert(cond.select, (AnyCondition)cond.condition);
-            else if (cond.condition instanceof ExistsCondition)
-                convert(cond.select, (ExistsCondition)cond.condition);
+            if (cond.subqueryCondition instanceof AnyCondition)
+                convert(cond.select, cond.selectElement, 
+                        (AnyCondition)cond.subqueryCondition, cond.isNegated());
+            else if (cond.subqueryCondition instanceof ExistsCondition)
+                convert(cond.select, cond.selectElement,
+                        (ExistsCondition)cond.subqueryCondition, cond.isNegated());
         }
     }
 
@@ -67,7 +69,8 @@ public class InConditionReverser extends BaseRule
      * reversible. This requires knowing that it is distinct or how to make it so.
      * @see IndexPicker#pickIndexesTableValues.
      */
-    public void convert(Select select, AnyCondition any) {
+    public void convert(Select select, ConditionExpression selectElement,
+                        AnyCondition any, boolean negated) {
         PlanNode sinput = select.getInput();
         if (!(sinput instanceof Joinable))
             return;
@@ -94,43 +97,47 @@ public class InConditionReverser extends BaseRule
         for (ExpressionNode cexpr : projectFields) {
             joinConditions.add((ConditionExpression)cexpr);
         }
-        if (input instanceof ExpressionsSource) {
-            ExpressionsSource expressionsSource = (ExpressionsSource)input;
-            // If the source was VALUES, see if it's distinct. If so,
-            // we can possibly reverse the join and benefit from an
-            // index.
-            JoinType semiType = JoinType.SEMI;
-            DistinctState distinct = expressionsSource.getDistinctState();
-            switch (distinct) {
-            case DISTINCT:
-            case DISTINCT_WITH_NULL:
-                semiType = JoinType.SEMI_INNER_ALREADY_DISTINCT;
-                break;
-            case HAS_PARAMETERS:
-                semiType = JoinType.SEMI_INNER_IF_DISTINCT;
-                break;
+        if (!negated) {
+            if (input instanceof ExpressionsSource) {
+                ExpressionsSource expressionsSource = (ExpressionsSource)input;
+                // If the source was VALUES, see if it's distinct. If so,
+                // we can possibly reverse the join and benefit from an
+                // index.
+                JoinType semiType = JoinType.SEMI;
+                DistinctState distinct = expressionsSource.getDistinctState();
+                switch (distinct) {
+                case DISTINCT:
+                case DISTINCT_WITH_NULL:
+                    semiType = JoinType.SEMI_INNER_ALREADY_DISTINCT;
+                    break;
+                case HAS_PARAMETERS:
+                    semiType = JoinType.SEMI_INNER_IF_DISTINCT;
+                    break;
+                }
+                convertToSemiJoin(select, selectElement, selectInput, expressionsSource,
+                                  joinConditions, semiType);
+                return;
             }
-            convertToSemiJoin(select, any, selectInput, expressionsSource,
-                              joinConditions, semiType);
-            return;
-        }
-        if (convertToSubquerySource(select, any, selectInput, input,
-                                    project, projectFields, 
-                                    joinConditions, hasDistinct))
-            return;
-        if (input instanceof Select) {
-            Select inselect = (Select)input;
-            joinConditions.addAll(inselect.getConditions());
-            input = inselect.getInput();
+            if (convertToSubquerySource(select, selectElement, any, selectInput, input,
+                                        project, projectFields, 
+                                        joinConditions, hasDistinct))
+                return;
+            if (input instanceof Select) {
+                Select inselect = (Select)input;
+                joinConditions.addAll(inselect.getConditions());
+                input = inselect.getInput();
+            }
         }
         if (input instanceof Joinable) {
-            convertToSemiJoin(select, any, selectInput, (Joinable)input,
-                              joinConditions, JoinType.SEMI);
+            convertToSemiJoin(select, selectElement, selectInput, 
+                              (Joinable)input, joinConditions, 
+                              (negated) ? JoinType.ANTI : JoinType.SEMI);
             return;
         }
     }
         
-    protected boolean convertToSubquerySource(Select select, AnyCondition any, 
+    protected boolean convertToSubquerySource(Select select, 
+                                              ConditionExpression selectElement, AnyCondition any, 
                                               Joinable selectInput, PlanNode input,
                                               Project project, List<ExpressionNode> projectFields,
                                               ConditionList joinConditions, 
@@ -163,19 +170,19 @@ public class InConditionReverser extends BaseRule
                                                 cright.getAkType(),
                                                 cright.getSQLsource()));
         }
-        convertToSemiJoin(select, any, selectInput, subquerySource,
+        convertToSemiJoin(select, selectElement, selectInput, subquerySource,
                           joinConditions, 
                           hasDistinct ? JoinType.SEMI_INNER_IF_DISTINCT : JoinType.SEMI);
         return true;
     }
 
-    protected void convertToSemiJoin(Select select, AnyCondition any,
+    protected void convertToSemiJoin(Select select, ConditionExpression selectElement,
                                      Joinable selectInput, Joinable semiInput,
                                      ConditionList joinConditions, 
                                      JoinType semiType) {
         JoinNode join = new JoinNode(selectInput, semiInput, semiType);
         join.setJoinConditions(joinConditions);
-        select.getConditions().remove(any);
+        select.getConditions().remove(selectElement);
         select.replaceInput(selectInput, join);
     }
 
@@ -247,7 +254,8 @@ public class InConditionReverser extends BaseRule
         }
     }
 
-    public void convert(Select select, ExistsCondition exists) {
+    public void convert(Select select, ConditionExpression selectElement,
+                        ExistsCondition exists, boolean negated) {
         Subquery subquery = exists.getSubquery();
         PlanNode input = subquery.getInput();
         PlanNode sinput = select.getInput();
@@ -259,20 +267,29 @@ public class InConditionReverser extends BaseRule
         }
         if (!((sinput instanceof Joinable) && (input instanceof Joinable)))
             return;
-        JoinNode join = new JoinNode((Joinable)sinput, (Joinable)input, JoinType.SEMI);
+        JoinNode join = new JoinNode((Joinable)sinput, (Joinable)input,
+                                     (negated) ? JoinType.ANTI : JoinType.SEMI);
         if (conditions != null)
             join.setJoinConditions(conditions);
-        select.getConditions().remove(exists);
+        select.getConditions().remove(selectElement);
         select.replaceInput(sinput, join);
     }
     
     static class TopLevelSubqueryCondition {
         Select select;
-        SubqueryExpression condition;
+        ConditionExpression selectElement;
+        SubqueryExpression subqueryCondition;
 
-        public TopLevelSubqueryCondition(Select select, SubqueryExpression condition) {
+        public TopLevelSubqueryCondition(Select select, 
+                                         ConditionExpression selectElement,
+                                         SubqueryExpression subqueryCondition) {
             this.select = select;
-            this.condition = condition;
+            this.selectElement = selectElement;
+            this.subqueryCondition = subqueryCondition;
+        }
+
+        public boolean isNegated() {
+            return (selectElement != subqueryCondition);
         }
     }
 
@@ -301,7 +318,14 @@ public class InConditionReverser extends BaseRule
                 Select select = (Select)n;
                 for (ConditionExpression cond : select.getConditions()) {
                     if (cond instanceof SubqueryExpression) {
-                        result.add(new TopLevelSubqueryCondition(select, (SubqueryExpression)cond));
+                        result.add(new TopLevelSubqueryCondition(select, cond, (SubqueryExpression)cond));
+                    }
+                    else if (cond instanceof LogicalFunctionCondition) {
+                        LogicalFunctionCondition lcond = (LogicalFunctionCondition)cond;
+                        if (lcond.getFunction().equals("not") &&
+                            (lcond.getOperands().get(0) instanceof SubqueryExpression)) {
+                            result.add(new TopLevelSubqueryCondition(select, cond, (SubqueryExpression)lcond.getOperands().get(0)));
+                            }
                     }
                 }
             }

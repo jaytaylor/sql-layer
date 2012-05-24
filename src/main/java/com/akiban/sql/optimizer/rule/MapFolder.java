@@ -117,6 +117,9 @@ public class MapFolder extends BaseRule
         case SEMI:
             map.setInner(new Limit(map.getInner(), 1));
             break;
+        case ANTI:
+            map.setInner(new OnlyIfEmpty(map.getInner()));
+            break;
         default:
             throw new UnsupportedSQLException("complex join type " + map, null);
         }
