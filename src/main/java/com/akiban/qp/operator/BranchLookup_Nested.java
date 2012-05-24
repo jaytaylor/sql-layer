@@ -69,7 +69,7 @@ import static java.lang.Math.min;
  <li><b>UserTableRowType outputRowType:</b> Type at the root of the branch to be
  retrieved.
 
- <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
  discarded (flag = DISCARD_INPUT).
 
@@ -169,15 +169,15 @@ public class BranchLookup_Nested extends Operator
                                RowType inputRowType,
                                UserTableRowType ancestorRowType,
                                UserTableRowType outputRowType,
-                               API.LookupOption flag,
+                               API.InputPreservationOption flag,
                                int inputBindingPosition)
     {
         ArgumentValidation.notNull("groupTable", groupTable);
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("flag", flag);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
-                                  inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
+                                  inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
         ArgumentValidation.isGTE("hKeyBindingPosition", inputBindingPosition, 0);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
@@ -198,7 +198,7 @@ public class BranchLookup_Nested extends Operator
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
-        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
+        this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         this.inputBindingPosition = inputBindingPosition;
         if (ancestorRowType == null) {
             this.commonAncestor = commonAncestor(inputTable, outputTable);
