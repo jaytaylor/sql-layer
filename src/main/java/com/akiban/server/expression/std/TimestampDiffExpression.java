@@ -29,6 +29,7 @@ package com.akiban.server.expression.std;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -62,11 +63,6 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
         {
             if (argumentTypes.size() != 3)
                 throw new WrongExpressionArityException(3, argumentTypes.size());
-            
-//            // 1st argument is 'guarenteed' to always be a LONG
-//            // => only adjust the 2nd and 3rd arguments (if neccessary)
-//            adjustType(argumentTypes, 1);
-//            adjustType(argumentTypes, 2);
 
             return ExpressionTypes.LONG;
         }
@@ -77,29 +73,12 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
             return new TimestampDiffExpression(arguments);
         }
         
-        protected void adjustType (TypesList argumentTypes, int index) throws StandardException
-        {
-        
-            //AkType t = source.getConversionType();
-            long val = 0;
-            switch (argumentTypes.get(index).getType())
-            {
-                case DATE:      
-                case DATETIME:  argumentTypes.setType(index, AkType.TIMESTAMP);
-                case TIMESTAMP: break;
-                default:        argumentTypes.setType(index, argumentTypes.get(index).getPrecision() > 10
-                                                             ? AkType.TIMESTAMP
-                                                             : AkType.DATE);
-            }
-        }
-    
-        
     };
     
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
         private static final long[] DIVISORS = new long[6];
-        
+        private static final int BASE = 3;
         static
         {
             int mul[] = {7, 24, 60, 60, 1000};
@@ -127,18 +106,15 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
             
             try
             {
-
-                
                 switch((int)intervalType.getLong())
                 {
                     case TernaryOperatorNode.YEAR_INTERVAL:
-                        valueHolder().putLong(ymd2[0] - ymd1[0]);
-                        break;
                     case TernaryOperatorNode.QUARTER_INTERVAL:
-                        valueHolder().putLong(3 * (ymd2[1] - ymd1[1]));
-                        break;
                     case TernaryOperatorNode.MONTH_INTERVAL:
-                        valueHolder().putLong(ymd2[2])
+                        // SYNTAX: TIMESTAMPDIFF(<INTERVAL SPEC>, date1, date2)
+                        // return  date2 - date1
+                        // (NOT date1 - date2)
+                        valueHolder().putLong(doSubstract(tryGetYMD(date2), tryGetYMD(date1)));
                         break;
                     case TernaryOperatorNode.WEEK_INTERVAL:
                     case TernaryOperatorNode.DAY_INTERVAL:
@@ -146,8 +122,8 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     case TernaryOperatorNode.MINUTE_INTERVAL:
                     case TernaryOperatorNode.SECOND_INTERVAL:
                     case TernaryOperatorNode.FRAC_SECOND_INTERVAL:
-                        double ret = tryGetUnix(date2) - tryGetUnix(date1);
-                        valueHolder().putLong(Math.round(ret / DIVISORS[(int)intervalType.getLong()]));
+                        valueHolder().putLong(Math.round(tryGetUnix(date2) - tryGetUnix(date1) 
+                                                          / DIVISORS[(int)intervalType.getLong() - BASE]));
                         break;
                     default:
                         throw new UnsupportedOperationException("Unknown INTERVAL_TYPE: " + intervalType.getLong());
@@ -165,6 +141,34 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
             
         }
         
+        static long doSubstract (long d1[], long d2[])
+        {
+            if (!ArithExpression.InnerValueSource.vallidDayMonth(d1[0], d1[1], d1[2])
+                    || !ArithExpression.InnerValueSource.vallidDayMonth(d2[0], d2[1], d2[2]))
+                throw new InvalidParameterValueException("Invalid date/time values");
+        
+            return (d1[0] - d2[0]) * 12 + d1[1] + d2[1];
+        }
+        
+        static long[] tryGetYMD(ValueSource source)
+        {
+            long val = 0;
+            LongExtractor extractor = Extractors.getLongExtractor(AkType.DATE);
+            AkType t = source.getConversionType();
+            
+            switch(t)
+            {
+                case DATE:      val = source.getDate(); break;
+                case DATETIME:  val = source.getDateTime(); break;
+                case TIMESTAMP: val = source.getTimestamp(); break;
+                case VARCHAR:   val = extractor.getLong(source.getString());
+                                t = AkType.DATE;
+                                break;
+                default:        throw new InvalidArgumentTypeException("Invalid Type for TIMESTAMPDIFF: " + t);
+                    
+            }
+            return Extractors.getLongExtractor(t).getYearMonthDayHourMinuteSecond(val);
+        }
         static long tryGetUnix (ValueSource source)
         {
             AkType t = source.getConversionType();
