@@ -769,18 +769,14 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleOnlyIfEmpty(OnlyIfEmpty onlyIfEmpty) {
             RowStream stream = assembleStream(onlyIfEmpty.getInput());
-            // TODO: Until there is a nicer operator for this.
             stream.operator = API.limit_Default(stream.operator, 0, false, 1, false);
-            stream.operator = API.project_Default(stream.operator,
-                                                  stream.rowType,
-                                                  Arrays.asList(LiteralExpression.forBool(Boolean.FALSE)));
-            stream.rowType = stream.operator.rowType();
-            stream.operator = API.ifEmpty_Default(stream.operator,
-                                                  stream.rowType,
-                                                  Arrays.asList(LiteralExpression.forBool(Boolean.TRUE)));
-            stream.operator = API.select_HKeyOrdered(stream.operator,
-                                                     stream.rowType,
-                                                     Expressions.field(stream.rowType, 0));
+            // Nulls here have no semantic meaning, but they're easier than trying to
+            // figure out an interesting non-null value for each
+            // AkType in the row. All that really matters is that the
+            // row is there.
+            Expression[] nulls = new Expression[stream.rowType.nFields()];
+            Arrays.fill(nulls, LiteralExpression.forNull());
+            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.DISCARD_INPUT);
             return stream;
         }
 
