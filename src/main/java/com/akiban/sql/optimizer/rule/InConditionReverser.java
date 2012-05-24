@@ -122,11 +122,11 @@ public class InConditionReverser extends BaseRule
                                         project, projectFields, 
                                         joinConditions, hasDistinct))
                 return;
-            if (input instanceof Select) {
-                Select inselect = (Select)input;
-                joinConditions.addAll(inselect.getConditions());
-                input = inselect.getInput();
-            }
+        }
+        if (input instanceof Select) {
+            Select inselect = (Select)input;
+            joinConditions.addAll(inselect.getConditions());
+            input = inselect.getInput();
         }
         if (input instanceof Joinable) {
             convertToSemiJoin(select, selectElement, selectInput, 
