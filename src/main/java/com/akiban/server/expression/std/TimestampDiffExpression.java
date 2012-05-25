@@ -46,6 +46,7 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.TernaryOperatorNode;
 import java.util.List;
 import org.joda.time.DateTimeZone;
+import org.joda.time.IllegalFieldValueException;
 
 public class TimestampDiffExpression extends AbstractTernaryExpression
 {
@@ -76,15 +77,19 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
     
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
-        private static final long[] DIVISORS = new long[6];
-        private static final int BASE = 3;
+        private static final long[] MILLIS_DIV = new long[6];
+        private static final long[] MONTH_DIV = {12L, 4L, 1L};
+        
+        private static final int MILLIS_BASE = TernaryOperatorNode.WEEK_INTERVAL;
+        private static final int MONTH_BASE = TernaryOperatorNode.YEAR_INTERVAL;
+        
         static
         {
             int mul[] = {7, 24, 60, 60, 1000};
 
-            DIVISORS[5] = 1;
+            MILLIS_DIV[5] = 1;
             for (int n = 4; n >= 0; --n)
-                DIVISORS[n] = DIVISORS[n + 1] * mul[n];
+                MILLIS_DIV[n] = MILLIS_DIV[n + 1] * mul[n];
         }
         
         InnerEvaluation (List<? extends ExpressionEvaluation> evals)
@@ -103,14 +108,16 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
             if (intervalType.isNull() || date1.isNull() || date2.isNull())
                 return NullValueSource.only();
             
+            int type = (int)intervalType.getLong();
             try
             {
-                switch((int)intervalType.getLong())
+                switch(type)
                 {
                     case TernaryOperatorNode.YEAR_INTERVAL:
                     case TernaryOperatorNode.QUARTER_INTERVAL:
                     case TernaryOperatorNode.MONTH_INTERVAL:
-                        valueHolder().putLong(doSubstract(tryGetYMD(date1), tryGetYMD(date2)));
+                        valueHolder().putLong(doSubstract(tryGetYMD(date1), tryGetYMD(date2))
+                                / MONTH_DIV[type - MONTH_BASE]);
                         break;
                     case TernaryOperatorNode.WEEK_INTERVAL:
                     case TernaryOperatorNode.DAY_INTERVAL:
@@ -119,10 +126,10 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     case TernaryOperatorNode.SECOND_INTERVAL:
                     case TernaryOperatorNode.FRAC_SECOND_INTERVAL:
                         valueHolder().putLong((tryGetUnix(date1) - tryGetUnix(date2)) 
-                                / DIVISORS[(int)intervalType.getLong() - BASE]);
+                                / MILLIS_DIV[type - MILLIS_BASE]);
                         break;
                     default:
-                        throw new UnsupportedOperationException("Unknown INTERVAL_TYPE: " + intervalType.getLong());
+                        throw new UnsupportedOperationException("Unknown INTERVAL_TYPE: " + type);
                 }
                 return valueHolder();
             }
@@ -133,6 +140,13 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     qc.warnClient(ex);
                 return NullValueSource.only();
             }
+            catch (IllegalFieldValueException e)
+            {
+                QueryContext qc = queryContext();
+                if (qc != null)
+                    qc.warnClient(new InvalidParameterValueException(e.getMessage()));
+                return NullValueSource.only();
+            }
         }
         
         private static long doSubstract (long d1[], long d2[])
@@ -141,7 +155,13 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     || !ArithExpression.InnerValueSource.vallidDayMonth(d2[0], d2[1], d2[2]))
                 throw new InvalidParameterValueException("Invalid date/time values");
 
-            return (d1[0] - d2[0]) * 12 + d1[1] - d2[1];
+            long ret = (d1[0] - d2[0]) * 12 + d1[1] - d2[1];
+            
+            // adust the day difference
+            if (ret > 0 && d1[2] < d2[2]) --ret;
+            else if (ret < 0 && d1[2] > d2[2]) ++ret;
+                            
+            return ret;
         }
         
         private static long[] tryGetYMD(ValueSource source)
@@ -200,7 +220,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
     @Override
     public boolean nullIsContaminating()
     {
-        return false;
+        return true;
     }
 
     @Override
