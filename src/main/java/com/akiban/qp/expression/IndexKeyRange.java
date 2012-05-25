@@ -168,6 +168,13 @@ public class IndexKeyRange
         return lexicographic;
     }
 
+    public void restart(IndexBound restart)
+    {
+        this.boundColumns = boundColumns(indexRowType, restart);
+        this.lo = restart;
+        this.loInclusive = true;
+    }
+
     private IndexKeyRange(IndexRowType indexRowType,
                           IndexBound lo,
                           boolean loInclusive,
@@ -252,9 +259,9 @@ public class IndexKeyRange
     // Object state
 
     private final IndexRowType indexRowType;
-    private final int boundColumns;
-    private final IndexBound lo;
-    private final boolean loInclusive;
+    private int boundColumns;
+    private IndexBound lo;
+    private boolean loInclusive;
     private final IndexBound hi;
     private final boolean hiInclusive;
     private boolean lexicographic = false;

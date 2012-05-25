@@ -27,6 +27,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.error.QueryCanceledException;
 
 public abstract class OperatorExecutionBase implements RowOrientedCursorBase<Row>
@@ -68,7 +69,7 @@ public abstract class OperatorExecutionBase implements RowOrientedCursorBase<Row
     }
 
     @Override
-    public Row jump(Row row)
+    public void jump(Row row, ColumnSelector columnSelector)
     {
         throw new UnsupportedOperationException(getClass().getName());
     }

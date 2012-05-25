@@ -30,10 +30,9 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.types.conversion.Converters;
 
-// For a semi-bounded (mysqlish) index scan
+// For a lexicographic (mysqlish) index scan
 
 class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 {
@@ -59,24 +58,24 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 
     protected void evaluateBoundaries(QueryContext context)
     {
-        if (boundColumns == 0 || start == null) {
+        if (endBoundColumns == 0 || start == null) {
             startKey.append(startBoundary);
         } else {
             BoundExpressions startExpressions = start.boundExpressions(context);
             startKey.clear();
             startKeyTarget.attach(startKey);
-            for (int f = 0; f < boundColumns; f++) {
+            for (int f = 0; f < endBoundColumns; f++) {
                 startKeyTarget.expectingType(types[f]);
                 Converters.convert(startExpressions.eval(f), startKeyTarget);
             }
         }
-        if (boundColumns == 0 || end == null) {
+        if (endBoundColumns == 0 || end == null) {
             endKey = null;
         } else {
             BoundExpressions endExpressions = end.boundExpressions(context);
             endKey.clear();
             endKeyTarget.attach(endKey);
-            for (int f = 0; f < boundColumns; f++) {
+            for (int f = 0; f < endBoundColumns; f++) {
                 endKeyTarget.expectingType(types[f]);
                 Converters.convert(endExpressions.eval(f), endKeyTarget);
             }

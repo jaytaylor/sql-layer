@@ -33,6 +33,7 @@ import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
@@ -57,7 +58,7 @@ public abstract class SortCursor implements Cursor
     }
 
     @Override
-    public Row jump(Row row)
+    public void jump(Row row, ColumnSelector columnSelector)
     {
         throw new UnsupportedOperationException(getClass().getName());
     }

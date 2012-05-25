@@ -64,6 +64,7 @@ The Cursor lifecycle is as follows:
 
 
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.server.api.dml.ColumnSelector;
 
 public interface RowOrientedCursorBase<T extends BoundExpressions> extends CursorBase<T>
 {
@@ -79,11 +80,14 @@ public interface RowOrientedCursorBase<T extends BoundExpressions> extends Curso
     T next();
 
     /**
-     * Advances to the first row, r, such that r.compareTo(row) >= 0.
+     * Advances to the first row, r, such that r.compareTo(row) >= 0. (Call next to get the row.)
+     *
+     *
      * @param row
+     * @param columnSelector
      * @return
      */
-    T jump(T row);
+    void jump(T row, ColumnSelector columnSelector);
 
     /**
      * Terminates the current cursor scan.

@@ -30,7 +30,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.ValuesRowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -371,7 +371,7 @@ class Intersect_Ordered extends Operator
 
         private long compareRows()
         {
-            long c = 0;
+            long c;
             assert !closed;
             assert !(leftRow.isEmpty() && rightRow.isEmpty());
             if (leftRow.isEmpty()) {
@@ -424,33 +424,49 @@ class Intersect_Ordered extends Operator
     {
         void nextLeftRowSkip()
         {
-            nextLeftRow();
-/*
             addSuffixToSkipRow(leftSkipRow(),
                                leftFixedFields,
                                rightRow.get(),
                                rightFixedFields,
                                ascending.length);
-            leftInput.jump(leftSkipRow);
-*/
+            leftInput.jump(leftSkipRow, leftSkipRowColumnSelector);
+            leftRow.hold(leftInput.next());
         }
 
         void nextRightRowSkip()
         {
-            nextRightRow();
-/*
             addSuffixToSkipRow(rightSkipRow(),
                                rightFixedFields,
                                leftRow.get(),
                                leftFixedFields,
                                ascending.length);
-            rightInput.jump(rightSkipRow);
-*/
+            rightInput.jump(rightSkipRow, rightSkipRowColumnSelector);
+            rightRow.hold(rightInput.next());
         }
 
         SkipScan(QueryContext context)
         {
             super(context);
+            final int leftSkipRowColumns = leftFixedFields + ascending.length; 
+            leftSkipRowColumnSelector =
+                new ColumnSelector()
+                {
+                    @Override
+                    public boolean includesColumn(int columnPosition)
+                    {
+                        return columnPosition < leftSkipRowColumns; 
+                    }
+                };
+            final int rightSkipRowColumns = rightFixedFields + ascending.length; 
+            rightSkipRowColumnSelector =
+                new ColumnSelector()
+                {
+                    @Override
+                    public boolean includesColumn(int columnPosition)
+                    {
+                        return columnPosition < rightSkipRowColumns; 
+                    }
+                };
         }
 
         private void addSuffixToSkipRow(ValuesHolderRow skipRow, int skipRowFixedFields,
@@ -487,6 +503,8 @@ class Intersect_Ordered extends Operator
             return rightSkipRow;
         }
 
+        private final ColumnSelector leftSkipRowColumnSelector;
+        private final ColumnSelector rightSkipRowColumnSelector;
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
     }

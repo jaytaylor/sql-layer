@@ -35,6 +35,7 @@ import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
@@ -54,21 +55,7 @@ class SortCursorUnidirectional extends SortCursor
     public void open()
     {
         super.open();
-        exchange.clear();
-        evaluateBoundaries(context);
-        // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
-        // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
-        if ((boundColumns > 0 && start != null) &&
-            (direction == FORWARD && !startInclusive || direction == BACKWARD && startInclusive)) {
-            // - direction == FORWARD && !startInclusive: If the search key is (10, 5) and there are
-            //   rows (10, 5, ...) then we do not want them if !startInclusive. Making the search key
-            //   (10, 5, AFTER) will cause these records to be skipped.
-            // - direction == BACKWARD && startInclusive: Similarly, going in the other direction, we do the
-            //   (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
-            //   for (10, 5, AFTER).
-            startKey.append(Key.AFTER);
-        }
-        startKey.copyTo(exchange.getKey());
+        initializeOpen(true);
     }
 
     @Override
@@ -98,6 +85,15 @@ class SortCursorUnidirectional extends SortCursor
         return next;
     }
 
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        assert keyRange != null;
+        keyRange.restart(new IndexBound(row, columnSelector));
+        initializeCursor(keyRange, ordering);
+        initializeOpen(false);
+    }
+
     // SortCursorUnidirectional interface
 
     public static SortCursorUnidirectional create(QueryContext context,
@@ -119,44 +115,38 @@ class SortCursorUnidirectional extends SortCursor
                                        API.Ordering ordering)
     {
         super(context, iterationHelper);
-        this.lo = keyRange.lo();
-        this.hi = keyRange.hi();
-        if (ordering.allAscending()) {
-            this.direction = FORWARD;
-            this.start = this.lo;
-            this.startInclusive = keyRange.loInclusive();
-            this.end = this.hi;
-            this.endInclusive = keyRange.hiInclusive();
-            this.keyComparison = startInclusive ? Key.GTEQ : Key.GT;
-            this.subsequentKeyComparison = Key.GT;
-            this.startBoundary = Key.BEFORE;
-        } else if (ordering.allDescending()) {
-            this.direction = BACKWARD;
-            this.start = this.hi;
-            this.startInclusive = keyRange.hiInclusive();
-            this.end = this.lo;
-            this.endInclusive = keyRange.loInclusive();
-            this.keyComparison = startInclusive ? Key.LTEQ : Key.LT;
-            this.subsequentKeyComparison = Key.LT;
-            this.startBoundary = Key.AFTER;
-        } else {
-            assert false : ordering;
-        }
-        this.boundColumns = keyRange.boundColumns();
-        this.startKey = adapter.newKey();
-        this.endKey = boundColumns == 0 ? null : adapter.newKey();
-        this.types = new AkType[boundColumns];
-        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
-        for (int f = 0; f < boundColumns; f++) {
-            this.types[f] = indexColumns.get(f).getColumn().getType().akType();
-        }
+        // endBoundColumns never changes. startBoundColumns can change on a jump, so it is set in initializeCursor.
+        this.endBoundColumns = keyRange.boundColumns();
+        initializeCursor(keyRange, ordering);
     }
 
-    protected void evaluateBoundaries(QueryContext context)
+    protected void evaluateBoundaries(QueryContext context, boolean firstOpen)
     {
-        if (boundColumns == 0) {
+        if (startBoundColumns == 0) {
             startKey.append(startBoundary);
         } else {
+            if (firstOpen) {
+                // Check constraints on start and end
+                BoundExpressions loExpressions = lo.boundExpressions(context);
+                BoundExpressions hiExpressions = hi.boundExpressions(context);
+                for (int f = 0; f < endBoundColumns - 1; f++) {
+                    ValueSource loValueSource = loExpressions.eval(f);
+                    ValueSource hiValueSource = hiExpressions.eval(f);
+                    if (loValueSource.isNull() && hiValueSource.isNull()) {
+                        // OK, they're equal
+                    } else if (loValueSource.isNull() || hiValueSource.isNull()) {
+                        throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
+                    } else {
+                        Expression loEQHi =
+                            Expressions.compare(Expressions.valueSource(loValueSource),
+                                                Comparison.EQ,
+                                                Expressions.valueSource(hiValueSource));
+                        if (!loEQHi.evaluation().eval().getBool()) {
+                            throw new IllegalArgumentException();
+                        }
+                    }
+                }
+            }
             /*
                 Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
                 two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
@@ -180,33 +170,15 @@ class SortCursorUnidirectional extends SortCursor
                 - lo and hi are both null: This is NOT an unbounded case. This means that we are restricting both
                   lo and hi to be null, so write null, not Key.AFTER to endKey.
             */
-            // Check constraints on start and end
-            BoundExpressions loExpressions = lo.boundExpressions(context);
-            BoundExpressions hiExpressions = hi.boundExpressions(context);
-            for (int f = 0; f < boundColumns - 1; f++) {
-                ValueSource loValueSource = loExpressions.eval(f);
-                ValueSource hiValueSource = hiExpressions.eval(f);
-                if (loValueSource.isNull() && hiValueSource.isNull()) {
-                    // OK, they're equal
-                } else if (loValueSource.isNull() || hiValueSource.isNull()) {
-                    throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
-                } else {
-                    Expression loEQHi =
-                        Expressions.compare(Expressions.valueSource(loValueSource),
-                                            Comparison.EQ,
-                                            Expressions.valueSource(hiValueSource));
-                    if (!loEQHi.evaluation().eval().getBool()) {
-                        throw new IllegalArgumentException();
-                    }
-                }
-            }
             // Construct start and end keys
             BoundExpressions startExpressions = start.boundExpressions(context);
             BoundExpressions endExpressions = end.boundExpressions(context);
-            ValueSource[] startValues = new ValueSource[boundColumns];
-            ValueSource[] endValues = new ValueSource[boundColumns];
-            for (int f = 0; f < boundColumns; f++) {
+            ValueSource[] startValues = new ValueSource[startBoundColumns];
+            ValueSource[] endValues = new ValueSource[endBoundColumns];
+            for (int f = 0; f < startBoundColumns; f++) {
                 startValues[f] = startExpressions.eval(f);
+            }
+            for (int f = 0; f < endBoundColumns; f++) {
                 endValues[f] = endExpressions.eval(f);
             }
             startKey.clear();
@@ -215,80 +187,80 @@ class SortCursorUnidirectional extends SortCursor
             endKeyTarget.attach(endKey);
             // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
             // interpret the nulls literally.
-            int f = 0;
-            while (f < boundColumns - 1) {
+            for (int f = 0; f < startBoundColumns; f++) {
                 startKeyTarget.expectingType(types[f]);
                 Converters.convert(startValues[f], startKeyTarget);
-                endKeyTarget.expectingType(types[f]);
-                Converters.convert(endValues[f], endKeyTarget);
-                f++;
             }
-            // For the last column:
-            //  0   >   null      <   null:      (null, AFTER)
-            //  1   >   null      <   non-null:  (null, end)
-            //  2   >   null      <=  null:      Shouldn't happen
-            //  3   >   null      <=  non-null:  (null, end]
-            //  4   >   non-null  <   null:      (start, AFTER)
-            //  5   >   non-null  <   non-null:  (start, end)
-            //  6   >   non-null  <=  null:      Shouldn't happen
-            //  7   >   non-null  <=  non-null:  (start, end]
-            //  8   >=  null      <   null:      [null, AFTER)
-            //  9   >=  null      <   non-null:  [null, end)
-            // 10   >=  null      <=  null:      [null, null]
-            // 11   >=  null      <=  non-null:  [null, end]
-            // 12   >=  non-null  <   null:      [start, AFTER)
-            // 13   >=  non-null  <   non-null:  [start, end)
-            // 14   >=  non-null  <=  null:      Shouldn't happen
-            // 15   >=  non-null  <=  non-null:  [start, end]
-            //
-            if (direction == FORWARD) {
-                // Start values
-                startKeyTarget.expectingType(types[f]);
-                Converters.convert(startValues[f], startKeyTarget);
-                // End values
-                if (endValues[f].isNull()) {
-                    if (endInclusive) {
-                        if (startInclusive && startValues[f].isNull()) {
-                            // Case 10:
-                            endKeyTarget.expectingType(types[f]);
-                            Converters.convert(endValues[f], endKeyTarget);
-                        } else {
-                            // Cases 2, 6, 14:
-                            throw new IllegalArgumentException();
-                        }
-                    } else {
-                        // Cases 0, 4, 8, 12
-                        endKey.append(Key.AFTER);
-                    }
-                } else {
-                    // Cases 1, 3, 5, 7, 9, 11, 13, 15
+            if (firstOpen) {
+                int f = 0;
+                while (f < endBoundColumns - 1) {
                     endKeyTarget.expectingType(types[f]);
                     Converters.convert(endValues[f], endKeyTarget);
+                    f++;
                 }
-            } else {
-                // Same as above, swapping start and end
-                // End values
-                endKeyTarget.expectingType(types[f]);
-                Converters.convert(endValues[f], endKeyTarget);
-                // Start values
-                if (startValues[f].isNull()) {
-                    if (startInclusive) {
-                        if (endInclusive && endValues[f].isNull()) {
-                            // Case 10:
-                            startKeyTarget.expectingType(types[f]);
-                            Converters.convert(startValues[f], startKeyTarget);
+                // For the last column:
+                //  0   >   null      <   null:      (null, AFTER)
+                //  1   >   null      <   non-null:  (null, end)
+                //  2   >   null      <=  null:      Shouldn't happen
+                //  3   >   null      <=  non-null:  (null, end]
+                //  4   >   non-null  <   null:      (start, AFTER)
+                //  5   >   non-null  <   non-null:  (start, end)
+                //  6   >   non-null  <=  null:      Shouldn't happen
+                //  7   >   non-null  <=  non-null:  (start, end]
+                //  8   >=  null      <   null:      [null, AFTER)
+                //  9   >=  null      <   non-null:  [null, end)
+                // 10   >=  null      <=  null:      [null, null]
+                // 11   >=  null      <=  non-null:  [null, end]
+                // 12   >=  non-null  <   null:      [start, AFTER)
+                // 13   >=  non-null  <   non-null:  [start, end)
+                // 14   >=  non-null  <=  null:      Shouldn't happen
+                // 15   >=  non-null  <=  non-null:  [start, end]
+                //
+                if (direction == FORWARD) {
+                    if (endValues[f].isNull()) {
+                        if (endInclusive) {
+                            if (startInclusive && startValues[f].isNull()) {
+                                // Case 10:
+                                endKeyTarget.expectingType(types[f]);
+                                Converters.convert(endValues[f], endKeyTarget);
+                            } else {
+                                // Cases 2, 6, 14:
+                                throw new IllegalArgumentException();
+                            }
                         } else {
-                            // Cases 2, 6, 14:
-                            throw new IllegalArgumentException();
+                            // Cases 0, 4, 8, 12
+                            endKey.append(Key.AFTER);
                         }
                     } else {
-                        // Cases 0, 4, 8, 12
-                        startKey.append(Key.AFTER);
+                        // Cases 1, 3, 5, 7, 9, 11, 13, 15
+                        endKeyTarget.expectingType(types[f]);
+                        Converters.convert(endValues[f], endKeyTarget);
                     }
                 } else {
-                    // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    startKeyTarget.expectingType(types[f]);
-                    Converters.convert(startValues[f], startKeyTarget);
+                    // Same as above, swapping start and end
+                    // End values
+                    endKeyTarget.expectingType(types[f]);
+                    Converters.convert(endValues[f], endKeyTarget);
+                    // Start values
+                    if (startValues[f].isNull()) {
+                        if (startInclusive) {
+                            if (endInclusive && endValues[f].isNull()) {
+                                // Case 10:
+                                startKeyTarget.expectingType(types[f]);
+                                Converters.convert(startValues[f], startKeyTarget);
+                            } else {
+                                // Cases 2, 6, 14:
+                                throw new IllegalArgumentException();
+                            }
+                        } else {
+                            // Cases 0, 4, 8, 12
+                            startKey.append(Key.AFTER);
+                        }
+                    } else {
+                        // Cases 1, 3, 5, 7, 9, 11, 13, 15
+                        startKeyTarget.expectingType(types[f]);
+                        Converters.convert(startValues[f], startKeyTarget);
+                    }
                 }
             }
         }
@@ -310,11 +282,69 @@ class SortCursorUnidirectional extends SortCursor
 
     // For use by this class
 
+    private void initializeCursor(IndexKeyRange keyRange, API.Ordering ordering)
+    {
+        this.keyRange = keyRange;
+        this.startBoundColumns = keyRange.boundColumns();
+        this.ordering = ordering;
+        this.lo = keyRange.lo();
+        this.hi = keyRange.hi();
+        if (ordering.allAscending()) {
+            this.direction = FORWARD;
+            this.start = this.lo;
+            this.startInclusive = keyRange.loInclusive();
+            this.end = this.hi;
+            this.endInclusive = keyRange.hiInclusive();
+            this.keyComparison = startInclusive ? Key.GTEQ : Key.GT;
+            this.subsequentKeyComparison = Key.GT;
+            this.startBoundary = Key.BEFORE;
+        } else if (ordering.allDescending()) {
+            this.direction = BACKWARD;
+            this.start = this.hi;
+            this.startInclusive = keyRange.hiInclusive();
+            this.end = this.lo;
+            this.endInclusive = keyRange.loInclusive();
+            this.keyComparison = startInclusive ? Key.LTEQ : Key.LT;
+            this.subsequentKeyComparison = Key.LT;
+            this.startBoundary = Key.AFTER;
+        } else {
+            assert false : ordering;
+        }
+        this.startKey = adapter.newKey();
+        this.endKey = endBoundColumns == 0 ? null : adapter.newKey();
+        this.types = new AkType[startBoundColumns];
+        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
+        for (int f = 0; f < startBoundColumns; f++) {
+            this.types[f] = indexColumns.get(f).getColumn().getType().akType();
+        }
+    }
+
+    private void initializeOpen(boolean firstOpen)
+    {
+        exchange.clear();
+        evaluateBoundaries(context, firstOpen);
+        // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
+        // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
+        if ((startBoundColumns > 0 && start != null) &&
+            (direction == FORWARD && !startInclusive || direction == BACKWARD && startInclusive)) {
+            // - direction == FORWARD && !startInclusive: If the search key is (10, 5) and there are
+            //   rows (10, 5, ...) then we do not want them if !startInclusive. Making the search key
+            //   (10, 5, AFTER) will cause these records to be skipped.
+            // - direction == BACKWARD && startInclusive: Similarly, going in the other direction, we do the
+            //   (10, 5, ...) records if startInclusive. But an LTEQ traversal would miss it unless we search
+            //   for (10, 5, AFTER).
+            startKey.append(Key.AFTER);
+        }
+        startKey.copyTo(exchange.getKey());
+    }
+
     private SortCursorUnidirectional(QueryContext context,
                                      IterationHelper iterationHelper,
                                      API.Ordering ordering)
     {
         super(context, iterationHelper);
+        this.keyRange = null;
+        this.ordering = ordering;
         if (ordering.allAscending()) {
             this.startBoundary = Key.BEFORE;
             this.keyComparison = Key.GT;
@@ -328,7 +358,8 @@ class SortCursorUnidirectional extends SortCursor
         }
         this.startKey = adapter.newKey();
         this.endKey = null;
-        this.boundColumns = 0;
+        this.startBoundColumns = 0;
+        this.endBoundColumns = 0;
     }
 
     // Class state
@@ -338,11 +369,16 @@ class SortCursorUnidirectional extends SortCursor
 
     // Object state
 
+    private IndexKeyRange keyRange;
+    private API.Ordering ordering;
     protected int direction; // +1 = ascending, -1 = descending
     protected Key.Direction keyComparison;
     protected Key.Direction subsequentKeyComparison;
     protected Key.EdgeValue startBoundary; // Start of a scan that is unbounded at the start
-    protected int boundColumns; // Number of index fields with restrictions
+    // start/endBoundColumns is the number of index fields with restrictions. They start out having the same value.
+    // But jump(Row) resets state pertaining to the start of a scan, including startBoundColumns.
+    protected int startBoundColumns;
+    protected int endBoundColumns;
     protected AkType[] types;
     protected IndexBound lo;
     protected IndexBound hi;

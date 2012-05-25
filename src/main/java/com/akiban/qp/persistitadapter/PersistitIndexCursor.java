@@ -32,6 +32,7 @@ import com.akiban.qp.persistitadapter.sort.IterationHelper;
 import com.akiban.qp.persistitadapter.sort.SortCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -71,10 +72,9 @@ class PersistitIndexCursor implements Cursor
     }
 
     @Override
-    public Row jump(Row row)
+    public void jump(Row row, ColumnSelector columnSelector)
     {
-        sortCursor.jump(row);
-        return next();
+        sortCursor.jump(row, columnSelector);
     }
 
     @Override
