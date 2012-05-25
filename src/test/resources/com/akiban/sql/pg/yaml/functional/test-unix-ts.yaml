@@ -1,0 +1,8 @@
+## Test the unix_timestamp function
+---
+- Statement: SELECT UNIX_TIMESTAMP('1920-01-01 00:00:00');
+- output: [[0]]
+--- # only tests for output type, since unix_timestamp() (w/o any argument) will return the current timestamp.
+- Statement: SELECT UNIX_TIMESTAMP();
+- output_types: [BIGINT]
+...
