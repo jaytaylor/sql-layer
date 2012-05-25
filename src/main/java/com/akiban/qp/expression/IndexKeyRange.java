@@ -168,11 +168,22 @@ public class IndexKeyRange
         return lexicographic;
     }
 
-    public void restart(IndexBound restart)
+    public IndexKeyRange resetLo(IndexBound newLo)
     {
-        this.boundColumns = boundColumns(indexRowType, restart);
-        this.lo = restart;
-        this.loInclusive = true;
+        IndexKeyRange restart = new IndexKeyRange(this);
+        restart.boundColumns = boundColumns(indexRowType, newLo);
+        restart.lo = newLo;
+        restart.loInclusive = true;
+        return restart;
+    }
+
+    public IndexKeyRange resetHi(IndexBound newHi)
+    {
+        IndexKeyRange restart = new IndexKeyRange(this);
+        restart.boundColumns = boundColumns(indexRowType, newHi);
+        restart.hi = newHi;
+        restart.hiInclusive = true;
+        return restart;
     }
 
     private IndexKeyRange(IndexRowType indexRowType,
@@ -192,6 +203,17 @@ public class IndexKeyRange
         this.loInclusive = loInclusive;
         this.hi = hi;
         this.hiInclusive = hiInclusive;
+    }
+
+    private IndexKeyRange(IndexKeyRange indexKeyRange)
+    {
+        this.indexRowType = indexKeyRange.indexRowType;
+        this.boundColumns = indexKeyRange.boundColumns;
+        this.lo = indexKeyRange.lo;
+        this.loInclusive = indexKeyRange.loInclusive;
+        this.hi = indexKeyRange.hi;
+        this.hiInclusive = indexKeyRange.hiInclusive;
+        this.lexicographic = indexKeyRange.lexicographic;
     }
 
     private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi)
@@ -262,7 +284,7 @@ public class IndexKeyRange
     private int boundColumns;
     private IndexBound lo;
     private boolean loInclusive;
-    private final IndexBound hi;
-    private final boolean hiInclusive;
+    private IndexBound hi;
+    private boolean hiInclusive;
     private boolean lexicographic = false;
 }

@@ -431,6 +431,7 @@ class Intersect_Ordered extends Operator
                                ascending.length);
             leftInput.jump(leftSkipRow, leftSkipRowColumnSelector);
             leftRow.hold(leftInput.next());
+            // System.out.println(String.format("left skip: FROM %s TO %s", rightRow.get(), leftRow.get()));
         }
 
         void nextRightRowSkip()
@@ -442,6 +443,7 @@ class Intersect_Ordered extends Operator
                                ascending.length);
             rightInput.jump(rightSkipRow, rightSkipRowColumnSelector);
             rightRow.hold(rightInput.next());
+            // System.out.println(String.format("right skip: FROM %s TO %s", leftRow.get(), rightRow.get()));
         }
 
         SkipScan(QueryContext context)
@@ -473,8 +475,14 @@ class Intersect_Ordered extends Operator
                                         Row suffixRow, int suffixRowFixedFields,
                                         int orderingFields)
         {
-            for (int f = 0; f < orderingFields; f++) {
-                skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
+            if (suffixRow == null) {
+                for (int f = 0; f < orderingFields; f++) {
+                    skipRow.holderAt(skipRowFixedFields + f).putNull();
+                }
+            } else {
+                for (int f = 0; f < orderingFields; f++) {
+                    skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
+                }
             }
         }
 

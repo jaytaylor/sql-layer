@@ -81,9 +81,17 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             createNewRow(parent, 6002L, 66L, 66L),
             createNewRow(parent, 6003L, 66L, -1L),
             createNewRow(parent, 6004L, 66L, -1L),
-            createNewRow(parent, 6005L, -1L, 66L),
+            createNewRow(parent, 6005L, 66L, 66L),
             createNewRow(parent, 6006L, -1L, 66L),
             createNewRow(parent, 6007L, -1L, 66L),
+            createNewRow(parent, 6008L, -1L, 66L),
+            createNewRow(parent, 6009L, -1L, 66L),
+            createNewRow(parent, 6010L, 66L, 66L),
+            createNewRow(parent, 6011L, 66L, 66L),
+            createNewRow(parent, 6012L, 66L, 66L),
+            createNewRow(parent, 6013L, 66L, -1L),
+            createNewRow(parent, 6014L, 66L, -1L),
+            createNewRow(parent, 6015L, 66L, -1L),
         };
         use(db);
     }

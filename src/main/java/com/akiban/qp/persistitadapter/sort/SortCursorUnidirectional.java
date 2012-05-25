@@ -55,7 +55,8 @@ class SortCursorUnidirectional extends SortCursor
     public void open()
     {
         super.open();
-        initializeOpen(true);
+        evaluateBoundaries(context);
+        initializeOpen();
     }
 
     @Override
@@ -89,9 +90,13 @@ class SortCursorUnidirectional extends SortCursor
     public void jump(Row row, ColumnSelector columnSelector)
     {
         assert keyRange != null;
-        keyRange.restart(new IndexBound(row, columnSelector));
+        keyRange =
+            direction == FORWARD
+            ? keyRange.resetLo(new IndexBound(row, columnSelector))
+            : keyRange.resetHi(new IndexBound(row, columnSelector));
         initializeCursor(keyRange, ordering);
-        initializeOpen(false);
+        reevaluateBoundaries(context);
+        initializeOpen();
     }
 
     // SortCursorUnidirectional interface
@@ -115,35 +120,34 @@ class SortCursorUnidirectional extends SortCursor
                                        API.Ordering ordering)
     {
         super(context, iterationHelper);
-        // endBoundColumns never changes. startBoundColumns can change on a jump, so it is set in initializeCursor.
+        // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
+        this.endKey = endBoundColumns == 0 ? null : adapter.newKey();
         initializeCursor(keyRange, ordering);
     }
 
-    protected void evaluateBoundaries(QueryContext context, boolean firstOpen)
+    protected void evaluateBoundaries(QueryContext context)
     {
         if (startBoundColumns == 0) {
             startKey.append(startBoundary);
         } else {
-            if (firstOpen) {
-                // Check constraints on start and end
-                BoundExpressions loExpressions = lo.boundExpressions(context);
-                BoundExpressions hiExpressions = hi.boundExpressions(context);
-                for (int f = 0; f < endBoundColumns - 1; f++) {
-                    ValueSource loValueSource = loExpressions.eval(f);
-                    ValueSource hiValueSource = hiExpressions.eval(f);
-                    if (loValueSource.isNull() && hiValueSource.isNull()) {
-                        // OK, they're equal
-                    } else if (loValueSource.isNull() || hiValueSource.isNull()) {
-                        throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
-                    } else {
-                        Expression loEQHi =
-                            Expressions.compare(Expressions.valueSource(loValueSource),
-                                                Comparison.EQ,
-                                                Expressions.valueSource(hiValueSource));
-                        if (!loEQHi.evaluation().eval().getBool()) {
-                            throw new IllegalArgumentException();
-                        }
+            // Check constraints on start and end
+            BoundExpressions loExpressions = lo.boundExpressions(context);
+            BoundExpressions hiExpressions = hi.boundExpressions(context);
+            for (int f = 0; f < endBoundColumns - 1; f++) {
+                ValueSource loValueSource = loExpressions.eval(f);
+                ValueSource hiValueSource = hiExpressions.eval(f);
+                if (loValueSource.isNull() && hiValueSource.isNull()) {
+                    // OK, they're equal
+                } else if (loValueSource.isNull() || hiValueSource.isNull()) {
+                    throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
+                } else {
+                    Expression loEQHi =
+                        Expressions.compare(Expressions.valueSource(loValueSource),
+                                            Comparison.EQ,
+                                            Expressions.valueSource(hiValueSource));
+                    if (!loEQHi.evaluation().eval().getBool()) {
+                        throw new IllegalArgumentException();
                     }
                 }
             }
@@ -173,12 +177,13 @@ class SortCursorUnidirectional extends SortCursor
             // Construct start and end keys
             BoundExpressions startExpressions = start.boundExpressions(context);
             BoundExpressions endExpressions = end.boundExpressions(context);
+            // startBoundColumns == endBoundColumns because jump() hasn't been called.
+            // If it had we'd be in reevaluateBoundaries, not here.
+            assert startBoundColumns == endBoundColumns;
             ValueSource[] startValues = new ValueSource[startBoundColumns];
             ValueSource[] endValues = new ValueSource[endBoundColumns];
             for (int f = 0; f < startBoundColumns; f++) {
                 startValues[f] = startExpressions.eval(f);
-            }
-            for (int f = 0; f < endBoundColumns; f++) {
                 endValues[f] = endExpressions.eval(f);
             }
             startKey.clear();
@@ -187,80 +192,125 @@ class SortCursorUnidirectional extends SortCursor
             endKeyTarget.attach(endKey);
             // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
             // interpret the nulls literally.
-            for (int f = 0; f < startBoundColumns; f++) {
+            int f = 0;
+            while (f < startBoundColumns - 1) {
                 startKeyTarget.expectingType(types[f]);
                 Converters.convert(startValues[f], startKeyTarget);
+                endKeyTarget.expectingType(types[f]);
+                Converters.convert(endValues[f], endKeyTarget);
+                f++;
             }
-            if (firstOpen) {
-                int f = 0;
-                while (f < endBoundColumns - 1) {
-                    endKeyTarget.expectingType(types[f]);
-                    Converters.convert(endValues[f], endKeyTarget);
-                    f++;
-                }
-                // For the last column:
-                //  0   >   null      <   null:      (null, AFTER)
-                //  1   >   null      <   non-null:  (null, end)
-                //  2   >   null      <=  null:      Shouldn't happen
-                //  3   >   null      <=  non-null:  (null, end]
-                //  4   >   non-null  <   null:      (start, AFTER)
-                //  5   >   non-null  <   non-null:  (start, end)
-                //  6   >   non-null  <=  null:      Shouldn't happen
-                //  7   >   non-null  <=  non-null:  (start, end]
-                //  8   >=  null      <   null:      [null, AFTER)
-                //  9   >=  null      <   non-null:  [null, end)
-                // 10   >=  null      <=  null:      [null, null]
-                // 11   >=  null      <=  non-null:  [null, end]
-                // 12   >=  non-null  <   null:      [start, AFTER)
-                // 13   >=  non-null  <   non-null:  [start, end)
-                // 14   >=  non-null  <=  null:      Shouldn't happen
-                // 15   >=  non-null  <=  non-null:  [start, end]
-                //
-                if (direction == FORWARD) {
-                    if (endValues[f].isNull()) {
-                        if (endInclusive) {
-                            if (startInclusive && startValues[f].isNull()) {
-                                // Case 10:
-                                endKeyTarget.expectingType(types[f]);
-                                Converters.convert(endValues[f], endKeyTarget);
-                            } else {
-                                // Cases 2, 6, 14:
-                                throw new IllegalArgumentException();
-                            }
+            // For the last column:
+            //  0   >   null      <   null:      (null, AFTER)
+            //  1   >   null      <   non-null:  (null, end)
+            //  2   >   null      <=  null:      Shouldn't happen
+            //  3   >   null      <=  non-null:  (null, end]
+            //  4   >   non-null  <   null:      (start, AFTER)
+            //  5   >   non-null  <   non-null:  (start, end)
+            //  6   >   non-null  <=  null:      Shouldn't happen
+            //  7   >   non-null  <=  non-null:  (start, end]
+            //  8   >=  null      <   null:      [null, AFTER)
+            //  9   >=  null      <   non-null:  [null, end)
+            // 10   >=  null      <=  null:      [null, null]
+            // 11   >=  null      <=  non-null:  [null, end]
+            // 12   >=  non-null  <   null:      [start, AFTER)
+            // 13   >=  non-null  <   non-null:  [start, end)
+            // 14   >=  non-null  <=  null:      Shouldn't happen
+            // 15   >=  non-null  <=  non-null:  [start, end]
+            //
+            if (direction == FORWARD) {
+                // Start values
+                startKeyTarget.expectingType(types[f]);
+                Converters.convert(startValues[f], startKeyTarget);
+                // End values
+                if (endValues[f].isNull()) {
+                    if (endInclusive) {
+                        if (startInclusive && startValues[f].isNull()) {
+                            // Case 10:
+                            endKeyTarget.expectingType(types[f]);
+                            Converters.convert(endValues[f], endKeyTarget);
                         } else {
-                            // Cases 0, 4, 8, 12
-                            endKey.append(Key.AFTER);
+                            // Cases 2, 6, 14:
+                            throw new IllegalArgumentException();
                         }
                     } else {
-                        // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                        endKeyTarget.expectingType(types[f]);
-                        Converters.convert(endValues[f], endKeyTarget);
+                        // Cases 0, 4, 8, 12
+                        endKey.append(Key.AFTER);
                     }
                 } else {
-                    // Same as above, swapping start and end
-                    // End values
+                    // Cases 1, 3, 5, 7, 9, 11, 13, 15
                     endKeyTarget.expectingType(types[f]);
                     Converters.convert(endValues[f], endKeyTarget);
-                    // Start values
-                    if (startValues[f].isNull()) {
-                        if (startInclusive) {
-                            if (endInclusive && endValues[f].isNull()) {
-                                // Case 10:
-                                startKeyTarget.expectingType(types[f]);
-                                Converters.convert(startValues[f], startKeyTarget);
-                            } else {
-                                // Cases 2, 6, 14:
-                                throw new IllegalArgumentException();
-                            }
+                }
+            } else {
+                // Same as above, swapping start and end
+                // End values
+                endKeyTarget.expectingType(types[f]);
+                Converters.convert(endValues[f], endKeyTarget);
+                // Start values
+                if (startValues[f].isNull()) {
+                    if (startInclusive) {
+                        if (endInclusive && endValues[f].isNull()) {
+                            // Case 10:
+                            startKeyTarget.expectingType(types[f]);
+                            Converters.convert(startValues[f], startKeyTarget);
                         } else {
-                            // Cases 0, 4, 8, 12
-                            startKey.append(Key.AFTER);
+                            // Cases 2, 6, 14:
+                            throw new IllegalArgumentException();
                         }
                     } else {
-                        // Cases 1, 3, 5, 7, 9, 11, 13, 15
+                        // Cases 0, 4, 8, 12
+                        startKey.append(Key.AFTER);
+                    }
+                } else {
+                    // Cases 1, 3, 5, 7, 9, 11, 13, 15
+                    startKeyTarget.expectingType(types[f]);
+                    Converters.convert(startValues[f], startKeyTarget);
+                }
+            }
+        }
+    }
+
+    // A lot like evaluateBoundaries, but simplified because end state can be left alone.
+    protected void reevaluateBoundaries(QueryContext context)
+    {
+        if (startBoundColumns == 0) {
+            startKey.append(startBoundary);
+        } else {
+            // Construct start key
+            BoundExpressions startExpressions = start.boundExpressions(context);
+            ValueSource[] startValues = new ValueSource[startBoundColumns];
+            for (int f = 0; f < startBoundColumns; f++) {
+                startValues[f] = startExpressions.eval(f);
+            }
+            startKey.clear();
+            startKeyTarget.attach(startKey);
+            // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
+            // interpret the nulls literally.
+            int f = 0;
+            while (f < startBoundColumns - 1) {
+                startKeyTarget.expectingType(types[f]);
+                Converters.convert(startValues[f], startKeyTarget);
+                f++;
+            }
+            if (direction == FORWARD) {
+                startKeyTarget.expectingType(types[f]);
+                Converters.convert(startValues[f], startKeyTarget);
+            } else {
+                if (startValues[f].isNull()) {
+                    if (startInclusive) {
+                        // Assume case 10, the only valid choice here. On evaluateBoundaries, cases 2, 6, 14
+                        // would have thrown IllegalArgumentException.
                         startKeyTarget.expectingType(types[f]);
                         Converters.convert(startValues[f], startKeyTarget);
+                    } else {
+                        // Cases 0, 4, 8, 12
+                        startKey.append(Key.AFTER);
                     }
+                } else {
+                    // Cases 1, 3, 5, 7, 9, 11, 13, 15
+                    startKeyTarget.expectingType(types[f]);
+                    Converters.convert(startValues[f], startKeyTarget);
                 }
             }
         }
@@ -311,7 +361,6 @@ class SortCursorUnidirectional extends SortCursor
             assert false : ordering;
         }
         this.startKey = adapter.newKey();
-        this.endKey = endBoundColumns == 0 ? null : adapter.newKey();
         this.types = new AkType[startBoundColumns];
         List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
         for (int f = 0; f < startBoundColumns; f++) {
@@ -319,10 +368,9 @@ class SortCursorUnidirectional extends SortCursor
         }
     }
 
-    private void initializeOpen(boolean firstOpen)
+    private void initializeOpen()
     {
         exchange.clear();
-        evaluateBoundaries(context, firstOpen);
         // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null
         // could happen in a lexicographic scan, and indicates no lower bound (so we're starting at BEFORE or AFTER).
         if ((startBoundColumns > 0 && start != null) &&
