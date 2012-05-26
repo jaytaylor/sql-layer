@@ -231,7 +231,8 @@ public abstract class CostEstimator implements TableRowCounts
         long nrows = Math.max(1, round(selectivity * statsCount));
         if (scaleCount) {
             checkRowCountChanged(indexedTable, stats, rowCount);
-            nrows = simpleRound((nrows * rowCount), statsCount);
+            if ((rowCount > 0) && (statsCount > 0))
+                nrows = simpleRound((nrows * rowCount), statsCount);
         }
         return indexAccessCost(nrows, index);
     }
