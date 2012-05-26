@@ -38,7 +38,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.parser.SQLParser;
 
 import org.joda.time.DateTime;

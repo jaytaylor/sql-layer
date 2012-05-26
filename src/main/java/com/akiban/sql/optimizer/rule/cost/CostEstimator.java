@@ -24,14 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.optimizer.rule.cost;
 
-import com.akiban.ais.model.*;
-import com.akiban.sql.optimizer.rule.costmodel.CostModel;
-import com.akiban.sql.optimizer.rule.costmodel.TableRowCounts;
+import com.akiban.sql.optimizer.rule.SchemaRulesContext;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
+import com.akiban.ais.model.*;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.PersistitKeyValueTarget;
@@ -163,13 +162,22 @@ public abstract class CostEstimator implements TableRowCounts
     public CostEstimate costIndexScan(Index index,
                                       List<ExpressionNode> equalityComparands,
                                       ExpressionNode lowComparand, boolean lowInclusive,
-                                      ExpressionNode highComparand, boolean highInclusive)
-    {
+                                      ExpressionNode highComparand, boolean highInclusive) {
+        return costIndexScan(index, sizeIndexScan(index, equalityComparands,
+                                                  lowComparand, lowInclusive,
+                                                  highComparand, highInclusive));
+    }
+
+    /** Estimate number of rows returned from this index. */
+    public long sizeIndexScan(Index index,
+                              List<ExpressionNode> equalityComparands,
+                              ExpressionNode lowComparand, boolean lowInclusive,
+                              ExpressionNode highComparand, boolean highInclusive) {
         if (index.isUnique()) {
             if ((equalityComparands != null) &&
                 (equalityComparands.size() >= index.getKeyColumns().size())) {
                 // Exact match from unique index; probably one row.
-                return indexAccessCost(1, index);
+                return 1;
             }
         }
         UserTable indexedTable = (UserTable) index.leafMostTable();
@@ -189,12 +197,12 @@ public abstract class CostEstimator implements TableRowCounts
             columnCount++;
         if (columnCount == 0) {
             // Index just used for ordering.
-            return indexAccessCost(rowCount, index);
+            return rowCount;
         }
         boolean scaleCount = true;
         double selectivity = 1.0;
         if (equalityComparands != null && !equalityComparands.isEmpty()) {
-            selectivity = fractionEqual(equalityComparands, index,
+            selectivity = fractionEqual(equalityComparands,
                                         indexColumnsIndexes, indexColumnsStats);
         }
         if (lowComparand != null || highComparand != null) {
@@ -215,7 +223,7 @@ public abstract class CostEstimator implements TableRowCounts
         long nrows = Math.max(1, round(selectivity * statsCount));
         if (scaleCount)
             nrows = simpleRound((nrows * rowCount), statsCount);
-        return indexAccessCost(nrows, index);
+        return nrows;
     }
 
     private long rowsInTableAccordingToIndex(UserTable indexedTable, Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats)
@@ -234,64 +242,66 @@ public abstract class CostEstimator implements TableRowCounts
         return -1;
     }
     
-    // Estimate cost of fetching nrows from index.
-    // One random access to get there, then nrows-1 sequential accesses following,
-    // Plus a surcharge for copying something as wide as the index.
-    private CostEstimate indexAccessCost(long nrows, Index index) {
+    /** Estimate cost of scanning given number of rows from this index. 
+     * One random access to get there, then nrows-1 sequential accesses following,
+     * Plus a surcharge for copying something as wide as the index.
+     */
+    public CostEstimate costIndexScan(Index index, long nrows) {
         return new CostEstimate(nrows, 
                                 model.indexScan(schema.indexRowType(index), (int)nrows));
     }
 
     protected double fractionEqual(List<ExpressionNode> eqExpressions, 
-                                   Index index, 
                                    Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats) {
         double selectivity = 1.0;
         keyTarget.attach(key);
         for (int column = 0; column < eqExpressions.size(); column++) {
             ExpressionNode node = eqExpressions.get(column);
-            key.clear();
-            // encodeKeyValue evaluates to true iff node is a constant expression. key is initialized as a side-effect.
-            byte[] columnValue = encodeKeyValue(node, index, column) ? keyCopy() : null;
-            selectivity *= fractionEqual(indexColumnsIndexes, indexColumnsStats, column, columnValue);
+            Index index = indexColumnsIndexes[column];
+            IndexStatistics indexStats = indexColumnsStats[column];
+            selectivity *= fractionEqual(index, indexStats, node);
         }
         return selectivity;
     }
     
-    protected double fractionEqual(Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats, int column, byte[] columnValue) {
-        Index index = indexColumnsIndexes[column];
-        IndexStatistics indexStats = indexColumnsStats[column];
+    protected double fractionEqual(Index index, IndexStatistics indexStats, ExpressionNode expr) {
         if (indexStats == null) {
             return missingStatsSelectivity();
         } else {
             Histogram histogram = indexStats.getHistogram(1);
             if ((histogram == null) || histogram.getEntries().isEmpty()) {
                 return missingStatsSelectivity();
-            }
-            else if (columnValue == null) {
-                // Variable expression. Use average selectivity for histogram.
-                return
-                    mostlyDistinct(indexStats)
-                    ? 1.0 / indexStats.getSampledCount()
-                    : 1.0 / histogram.totalDistinctCount();
             } else {
-                // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
-                List<HistogramEntry> entries = histogram.getEntries();
-                for (HistogramEntry entry : entries) {
-                    // Constant expression
-                    int compare = bytesComparator.compare(columnValue, entry.getKeyBytes());
-                    if (compare == 0) {
-                        return ((double) entry.getEqualCount()) / indexStats.getSampledCount();
-                    } else if (compare < 0) {
-                        long d = entry.getDistinctCount();
-                        return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
+                key.clear();
+                keyTarget.attach(key);
+                // encodeKeyValue evaluates non-null iff node is a constant expression. key is initialized as a side-effect.
+                byte[] columnValue = encodeKeyValue(expr, index, 0) ? keyCopy() : null;
+                if (columnValue == null) {
+                    // Variable expression. Use average selectivity for histogram.
+                    return
+                        mostlyDistinct(indexStats)
+                        ? 1.0 / indexStats.getSampledCount()
+                        : 1.0 / histogram.totalDistinctCount();
+                } else {
+                    // TODO: Could use Collections.binarySearch if we had something that looked like a HistogramEntry.
+                    List<HistogramEntry> entries = histogram.getEntries();
+                    for (HistogramEntry entry : entries) {
+                        // Constant expression
+                        int compare = bytesComparator.compare(columnValue, entry.getKeyBytes());
+                        if (compare == 0) {
+                            return ((double) entry.getEqualCount()) / indexStats.getSampledCount();
+                        } else if (compare < 0) {
+                            long d = entry.getDistinctCount();
+                            return d == 0 ? 0.0 : ((double) entry.getLessCount()) / (d * indexStats.getSampledCount());
+                        }
                     }
+                    HistogramEntry lastEntry = entries.get(entries.size() - 1);
+                    long d = lastEntry.getDistinctCount();
+                    if (d == 0) {
+                        return 1;
+                    }
+                    return 0.00483;
                 }
-                HistogramEntry lastEntry = entries.get(entries.size() - 1);
-                long d = lastEntry.getDistinctCount();
-                if (d == 0) {
-                    return 1;
-                }
-                return 0.00483;
             }
         }
     }
@@ -553,7 +563,39 @@ public abstract class CostEstimator implements TableRowCounts
                 long nrows = getTableRowCount(node.getTable().getTable().getTable());
                 // Cost of flattening these children with their ancestor.
                 cost += model.flatten((int)nrows);
-                if (!isAncestor(node)) {
+                if (isSideBranchLeaf(node)) {
+                    // Leaf of a new branch.
+                    branchCount++;
+                    rowCount *= nrows;
+                }
+            }
+        }
+        if (branchCount > 1)
+            cost += model.product((int)rowCount);
+        return new CostEstimate(rowCount, cost);
+    }
+
+    /** Estimate the cost of getting the desired number of flattened
+     * rows from a group scan. This combined costing of the partial
+     * scan itself and the flatten, since they are tied together. */
+    public CostEstimate costPartialGroupScanAndFlatten(TableGroupJoinTree tableGroup,
+                                                       Set<TableSource> requiredTables,
+                                                       Map<UserTable,Long> tableCounts) {
+        TableGroupJoinNode rootNode = tableGroup.getRoot();
+        coverBranches(tableGroup, rootNode, requiredTables);
+        int branchCount = 0;
+        long rowCount = 1;
+        double cost = 0.0;
+        for (Map.Entry<UserTable,Long> entry : tableCounts.entrySet()) {
+            cost += model.partialGroupScan(schema.userTableRowType(entry.getKey()), 
+                                           entry.getValue());
+        }
+        for (TableGroupJoinNode node : tableGroup) {
+            if (isFlattenable(node)) {
+                long nrows = tableCounts.get(node.getTable().getTable().getTable());
+                // Cost of flattening these children with their ancestor.
+                cost += model.flatten((int)nrows);
+                if (isSideBranchLeaf(node)) {
                     // Leaf of a new branch.
                     branchCount++;
                     rowCount *= nrows;
@@ -690,13 +732,96 @@ public abstract class CostEstimator implements TableRowCounts
     /** Estimate the cost of testing some conditions. */
     // TODO: Assumes that each condition turns into a separate select.
     public CostEstimate costSelect(Collection<ConditionExpression> conditions,
+                                   double selectivity,
                                    long size) {
-        return new CostEstimate(size, model.select((int)size) * conditions.size());
+        return new CostEstimate(Math.max(1, round(size * selectivity)),
+                                model.select((int)size) * conditions.size());
+    }
+
+    public CostEstimate costSelect(Collection<ConditionExpression> conditions,
+                                   Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions,
+                                   long size) {
+        return costSelect(conditions, conditionsSelectivity(selectivityConditions), size);
+    }
+
+    public double conditionsSelectivity(Map<ColumnExpression,Collection<ComparisonCondition>> conditions) {
+        double selectivity = 1.0;
+        for (Map.Entry<ColumnExpression,Collection<ComparisonCondition>> entry : conditions.entrySet()) {
+            Index index = null;
+            IndexStatistics indexStatistics = null;
+            Column column = entry.getKey().getColumn();
+            // Find a TableIndex whose first column is leadingColumn
+            for (TableIndex tableIndex : column.getTable().getIndexes()) {
+                if (tableIndex.getKeyColumns().get(0).getColumn() == column) {
+                    indexStatistics = getIndexStatistics(tableIndex);
+                    if (indexStatistics != null) {
+                        index = tableIndex;
+                        break;
+                    }
+                }
+            }
+            // If none, find a GroupIndex whose first column is leadingColumn
+            if (indexStatistics == null) {
+                groupLoop: for (Group group : schema.ais().getGroups().values()) {
+                    for (GroupIndex groupIndex : group.getIndexes()) {
+                        if (groupIndex.getKeyColumns().get(0).getColumn() == column) {
+                            indexStatistics = getIndexStatistics(groupIndex);
+                            if (indexStatistics != null) {
+                                index = groupIndex;
+                                break groupLoop;
+                            }
+                        }
+                    }
+                }
+            }
+            if (indexStatistics == null) continue;
+            ExpressionNode eq = null, ne = null, lo = null, hi = null;
+            boolean loInc = false, hiInc = false;
+            for (ComparisonCondition cond : entry.getValue()) {
+                switch (cond.getOperation()) {
+                case EQ:
+                    eq = cond.getRight();
+                    break;
+                case NE:
+                    ne = cond.getRight();
+                    break;
+                case LT:
+                    hi = cond.getRight();
+                    hiInc = false;
+                    break;
+                case LE:
+                    hi = cond.getRight();
+                    hiInc = true;
+                    break;
+                case GT:
+                    lo = cond.getRight();
+                    loInc = false;
+                    break;
+                case GE:
+                    lo = cond.getRight();
+                    loInc = true;
+                    break;
+                }
+            }
+            if (eq != null)
+                selectivity *= fractionEqual(index, indexStatistics, eq);
+            else if (ne != null) 
+                selectivity *= (1.0 - fractionEqual(index, indexStatistics, eq));
+            else if ((lo != null) || (hi != null))
+                selectivity *= fractionBetween(index, indexStatistics, lo, loInc, hi, hiInc);
+        }
+        return selectivity;
     }
 
     /** Estimate the cost of a sort of the given size. */
     public CostEstimate costSort(long size) {
         return new CostEstimate(size, model.sort((int)size, false));
+    }
+
+    /** Estimate the cost of a sort of the given size and limit. */
+    public CostEstimate costSortWithLimit(long size, long limit, int nfields) {
+        return new CostEstimate(Math.min(size, limit),
+                                model.sortWithLimit((int)size, nfields));
     }
 
     /** Estimate cost of scanning the whole group. */

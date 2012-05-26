@@ -28,7 +28,7 @@ package com.akiban.sql.server;
 
 import com.akiban.sql.parser.SQLParser;
 
-import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.loadableplan.LoadablePlan;

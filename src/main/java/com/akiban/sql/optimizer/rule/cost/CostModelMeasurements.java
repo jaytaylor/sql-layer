@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.rule.costmodel;
+package com.akiban.sql.optimizer.rule.cost;
 
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;

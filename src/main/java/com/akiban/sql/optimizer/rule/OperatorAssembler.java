@@ -90,6 +90,7 @@ public class OperatorAssembler extends BaseRule
     private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
     private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
 
+    public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
     @Override
     protected Logger getLogger() {
@@ -688,8 +689,6 @@ public class OperatorAssembler extends BaseRule
             }
             return stream;
         }
-
-        static final int INSERTION_SORT_MAX_LIMIT = 100;
 
         protected RowStream assembleSort(Sort sort) {
             return assembleSort(sort, 
