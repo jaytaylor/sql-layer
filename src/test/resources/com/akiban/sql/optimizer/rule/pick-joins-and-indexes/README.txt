@@ -34,6 +34,8 @@ single-subquery: just derived table (should push down condition)
 
 single-table: whole row from indexed table
 
+sort-equals: ORDER BY an equality condition
+
 subquery: join to subquery (with condition pushed down and combined into index)
 
 three-groups: second group dividing two halves
