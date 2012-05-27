@@ -486,11 +486,11 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(ancestorLookup.getInput());
             GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
             RowType inputRowType = stream.rowType; // The index row type.
-            API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
+            API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
             if (!(inputRowType instanceof IndexRowType)) {
                 // Getting from branch lookup.
                 inputRowType = tableRowType(ancestorLookup.getDescendant());
-                flag = API.LookupOption.KEEP_INPUT;
+                flag = API.InputPreservationOption.KEEP_INPUT;
             }
             List<UserTableRowType> ancestorTypes =
                 new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
@@ -513,11 +513,11 @@ public class OperatorAssembler extends BaseRule
             if (branchLookup.getInput() != null) {
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
-                API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
+                API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
                 if (!(inputRowType instanceof IndexRowType)) {
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
-                    flag = API.LookupOption.KEEP_INPUT;
+                    flag = API.InputPreservationOption.KEEP_INPUT;
                 }
                 stream.operator = API.branchLookup_Default(stream.operator, 
                                                            groupTable, 
@@ -527,7 +527,7 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 stream = new RowStream();
-                API.LookupOption flag = API.LookupOption.KEEP_INPUT;
+                API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
                 stream.operator = API.branchLookup_Nested(groupTable, 
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getAncestor()),
@@ -760,9 +760,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleNullIfEmpty(RowStream stream) {
             Expression[] nulls = new Expression[stream.rowType.nFields()];
             Arrays.fill(nulls, LiteralExpression.forNull());
-            stream.operator = API.ifEmpty_Default(stream.operator,
-                                                  stream.rowType,
-                                                  Arrays.asList(nulls));
+            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.KEEP_INPUT);
             return stream;
         }
 

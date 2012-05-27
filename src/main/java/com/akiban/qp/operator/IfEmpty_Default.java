@@ -45,8 +45,8 @@ import java.util.Set;
 
  <h1>Overview</h1>
 
- If the input stream has at least one row, the output stream is identical to the input stream.
- Otherwise, the output stream contains one row, composed by a specified list of expressions.
+ If the input stream has no rows, the output stream contains one row, composed by a specified list of expressions.
+ Otherwise, the output is either the input rows or no rows at all, controlled by an InputPreservationOption.
 
  <h1>Arguments</h1>
 
@@ -59,12 +59,15 @@ import java.util.Set;
  <li>List<? extends Expression>:</li> Expressions computing the columns of the row that is output
  in case the input stream is empty.
 
+ <li>InputPreservationOption inputPreservation:</li> indicates whether input rows are output when present.
+
  <ul>
 
  <h1>Behavior</h1>
 
- If the input stream has at least one row, the output stream is identical to the input stream.
- Otherwise, the output stream contains one row, composed by a specified list of expressions.
+ If the input stream has no rows, then a row, composed by a specified list of expressions, is written to the output
+ stream. Otherwise, input rows are written to output if inputPreservation is KEEP_INPUT; otherwise input rows
+ are not written to output.
 
  <h1>Output</h1>
 
@@ -103,6 +106,8 @@ class IfEmpty_Default extends Operator
             }
             buffer.append(expression.toString());
         }
+        buffer.append(", ");
+        buffer.append(inputPreservation);
         buffer.append(')');
         return buffer.toString();
     }
@@ -139,15 +144,18 @@ class IfEmpty_Default extends Operator
 
     public IfEmpty_Default(Operator inputOperator,
                            RowType rowType,
-                           List<? extends Expression> expressions)
+                           List<? extends Expression> expressions,
+                           API.InputPreservationOption inputPreservation)
     {
         ArgumentValidation.notNull("inputOperator", inputOperator);
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notNull("expressions", expressions);
+        ArgumentValidation.notNull("inputPreservation", inputPreservation);
         ArgumentValidation.isEQ("rowType.nFields()", rowType.nFields(), "expressions.size()", expressions.size());
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.expressions = new ArrayList<Expression>(expressions);
+        this.inputPreservation = inputPreservation;
     }
 
     // Class state
@@ -161,12 +169,13 @@ class IfEmpty_Default extends Operator
     private final Operator inputOperator;
     private final RowType rowType;
     private final List<Expression> expressions;
+    private final API.InputPreservationOption inputPreservation;
 
     // Inner classes
 
     enum InputState
     {
-        UNKNOWN, EMPTY, NON_EMPTY
+        UNKNOWN, DONE, ECHO_INPUT
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor
@@ -200,15 +209,18 @@ class IfEmpty_Default extends Operator
                         row = input.next();
                         if (row == null) {
                             row = emptySubstitute();
-                            inputState = InputState.EMPTY;
+                            inputState = InputState.DONE;
+                        } else if (inputPreservation == API.InputPreservationOption.KEEP_INPUT) {
+                            inputState = InputState.ECHO_INPUT;
                         } else {
-                            inputState = InputState.NON_EMPTY;
+                            row = null;
+                            inputState = InputState.DONE;
                         }
                         break;
-                    case EMPTY:
+                    case DONE:
                         row = null;
                         break;
-                    case NON_EMPTY:
+                    case ECHO_INPUT:
                         row = input.next();
                         break;
                 }

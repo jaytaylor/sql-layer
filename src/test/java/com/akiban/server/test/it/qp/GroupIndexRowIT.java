@@ -112,7 +112,7 @@ public class GroupIndexRowIT extends OperatorITBase
                 group,
                 groupIndexRowType,
                 Arrays.asList(userRowType, memberInfoRowType),
-                API.LookupOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[] {
             row(userRowType, 1L),
             row(memberInfoRowType, 1L, 20120424L),
