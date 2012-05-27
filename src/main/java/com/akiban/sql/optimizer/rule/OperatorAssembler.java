@@ -814,25 +814,23 @@ public class OperatorAssembler extends BaseRule
             pushBoundRow(fieldOffsets);
             PlanNode subquery = sexpr.getSubquery().getQuery();
             ExpressionNode expression = null;
-            boolean distinct = false;
+            boolean fieldExpression = false;
             if ((sexpr instanceof AnyCondition) ||
                 (sexpr instanceof SubqueryValueExpression)) {
                 if (subquery instanceof ResultSet)
                     subquery = ((ResultSet)subquery).getInput();
-                if (subquery instanceof Distinct) {
-                    distinct = true;
-                }
-                else {
-                    if (!(subquery instanceof Project))
-                        throw new AkibanInternalException("subquery does not have Project");
+                if (subquery instanceof Project) {
                     Project project = (Project)subquery;
                     subquery = project.getInput();
                     expression = project.getFields().get(0);
                 }
+                else {
+                    fieldExpression = true;
+                }
             }
             RowStream stream = assembleQuery(subquery);
             Expression innerExpression = null;
-            if (distinct)
+            if (fieldExpression)
                 innerExpression = Expressions.field(stream.rowType, 0);
             else if (expression != null)
                 innerExpression = assembleExpression(expression, stream.fieldOffsets);
