@@ -46,11 +46,16 @@ import com.persistit.Persistit;
 
 import com.google.common.primitives.UnsignedBytes;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.*;
 import static java.lang.Math.round;
 
 public abstract class CostEstimator implements TableRowCounts
 {
+    private static final Logger logger = LoggerFactory.getLogger(CostEstimator.class);
+
     private final Schema schema;
     private final Properties properties;
     private final CostModel model;
@@ -97,13 +102,13 @@ public abstract class CostEstimator implements TableRowCounts
         int i = 0;
         // For the first column, the index supplied by the optimizer is likely to be a better choice than an arbitrary
         // index with the right leading column.
+        indexColumnsIndexes[i] = index;
         IndexStatistics statsForRequestedIndex = getIndexStatistics(index);
         if (statsForRequestedIndex != null) {
-            indexColumnsIndexes[i] = index;
             indexColumnsStats[i++] = statsForRequestedIndex;
         }
         while (i < allIndexColumns.size()) {
-            Index indexColumnsIndex = null;
+            Index indexColumnsIndex = (i == 0) ? index : null;
             IndexStatistics indexStatistics = null;
             Column leadingColumn = allIndexColumns.get(i).getColumn();
             // Find a TableIndex whose first column is leadingColumn
@@ -113,6 +118,9 @@ public abstract class CostEstimator implements TableRowCounts
                     if (indexStatistics != null) {
                         indexColumnsIndex = tableIndex;
                         break;
+                    }
+                    else if (indexColumnsIndex == null) {
+                        indexColumnsIndex = tableIndex;
                     }
                 }
             }
@@ -125,6 +133,9 @@ public abstract class CostEstimator implements TableRowCounts
                             if (indexStatistics != null) {
                                 indexColumnsIndex = groupIndex;
                                 break groupLoop;
+                            }
+                            else if (indexColumnsIndex == null) {
+                                indexColumnsIndex = groupIndex;
                             }
                         }
                     }
@@ -202,11 +213,13 @@ public abstract class CostEstimator implements TableRowCounts
         boolean scaleCount = true;
         double selectivity = 1.0;
         if (equalityComparands != null && !equalityComparands.isEmpty()) {
-            selectivity = fractionEqual(equalityComparands,
-                                        indexColumnsIndexes, indexColumnsStats);
+            selectivity = fractionEqual(index,
+                                        indexColumnsIndexes, indexColumnsStats,
+                                        equalityComparands);
         }
         if (lowComparand != null || highComparand != null) {
-            selectivity *= fractionBetween(indexColumnsIndexes[columnCount - 1],
+            selectivity *= fractionBetween(index.getAllColumns().get(columnCount - 1).getColumn(),
+                                           indexColumnsIndexes[columnCount - 1],
                                            indexColumnsStats[columnCount - 1],
                                            lowComparand, lowInclusive,
                                            highComparand, highInclusive);
@@ -215,31 +228,37 @@ public abstract class CostEstimator implements TableRowCounts
         // statsCount: Number of rows in the table based on an index of the table, according to index
         //    statistics, which may be stale.
         // rowCount: Approximate number of rows in the table, reasonably up to date.
-        long statsCount = rowsInTableAccordingToIndex(indexedTable, indexColumnsIndexes, indexColumnsStats);
-        if (statsCount <= 0) {
+        long statsCount;
+        IndexStatistics stats = tableIndexStatistics(indexedTable, indexColumnsIndexes, indexColumnsStats);
+        if (stats != null) {
+            statsCount = stats.getSampledCount();
+        }
+        else {
             statsCount = rowCount;
             scaleCount = false;
         }
         long nrows = Math.max(1, round(selectivity * statsCount));
-        if (scaleCount)
-            nrows = simpleRound((nrows * rowCount), statsCount);
+        if (scaleCount) {
+            checkRowCountChanged(indexedTable, stats, rowCount);
+            if ((rowCount > 0) && (statsCount > 0))
+                nrows = simpleRound((nrows * rowCount), statsCount);
+        }
         return nrows;
     }
 
-    private long rowsInTableAccordingToIndex(UserTable indexedTable, Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats)
-    {
+    private IndexStatistics tableIndexStatistics(UserTable indexedTable, Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats) {
         // At least one of the index columns must be from the indexed table
         for (int i = 0; i < indexColumnsIndexes.length; i++) {
             Index index = indexColumnsIndexes[i];
             if (index != null) {
                 Column leadingColumn = index.getKeyColumns().get(0).getColumn();
                 if (leadingColumn.getTable() == indexedTable) {
-                    return indexColumnsStats[i].getSampledCount();
+                    return indexColumnsStats[i];
                 }
             }
         }
         // No index stats available.
-        return -1;
+        return null;
     }
     
     /** Estimate cost of scanning given number of rows from this index. 
@@ -251,25 +270,30 @@ public abstract class CostEstimator implements TableRowCounts
                                 model.indexScan(schema.indexRowType(index), (int)nrows));
     }
 
-    protected double fractionEqual(List<ExpressionNode> eqExpressions, 
-                                   Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats) {
+    protected double fractionEqual(Index index, 
+                                   Index[] indexColumnsIndexes, IndexStatistics[] indexColumnsStats,
+                                   List<ExpressionNode> eqExpressions) {
         double selectivity = 1.0;
         keyTarget.attach(key);
         for (int column = 0; column < eqExpressions.size(); column++) {
             ExpressionNode node = eqExpressions.get(column);
-            Index index = indexColumnsIndexes[column];
-            IndexStatistics indexStats = indexColumnsStats[column];
-            selectivity *= fractionEqual(index, indexStats, node);
+            selectivity *= fractionEqual(index.getAllColumns().get(column).getColumn(),
+                                         indexColumnsIndexes[column], indexColumnsStats[column],
+                                         node);
         }
         return selectivity;
     }
-    
-    protected double fractionEqual(Index index, IndexStatistics indexStats, ExpressionNode expr) {
+
+    protected double fractionEqual(Column column, 
+                                   Index index, IndexStatistics indexStats,
+                                   ExpressionNode expr) {
         if (indexStats == null) {
+            missingStats(column, index);
             return missingStatsSelectivity();
         } else {
             Histogram histogram = indexStats.getHistogram(1);
             if ((histogram == null) || histogram.getEntries().isEmpty()) {
+                missingStats(column, index);
                 return missingStatsSelectivity();
             } else {
                 key.clear();
@@ -306,11 +330,13 @@ public abstract class CostEstimator implements TableRowCounts
         }
     }
 
-    protected double fractionBetween(Index index, IndexStatistics indexStats,
+    protected double fractionBetween(Column column,
+                                     Index index, IndexStatistics indexStats,
                                      ExpressionNode lo, boolean lowInclusive,
                                      ExpressionNode hi, boolean highInclusive)
     {
         if (indexStats == null) {
+            missingStats(column, index);
             return missingStatsSelectivity();
         }
         keyTarget.attach(key);
@@ -323,6 +349,7 @@ public abstract class CostEstimator implements TableRowCounts
         }
         Histogram histogram = indexStats.getHistogram(1);
         if ((histogram == null) || histogram.getEntries().isEmpty()) {
+            missingStats(column, index);
             return missingStatsSelectivity();
         }
         boolean before = (loBytes != null);
@@ -804,11 +831,11 @@ public abstract class CostEstimator implements TableRowCounts
                 }
             }
             if (eq != null)
-                selectivity *= fractionEqual(index, indexStatistics, eq);
+                selectivity *= fractionEqual(column, index, indexStatistics, eq);
             else if (ne != null) 
-                selectivity *= (1.0 - fractionEqual(index, indexStatistics, eq));
+                selectivity *= (1.0 - fractionEqual(column, index, indexStatistics, eq));
             else if ((lo != null) || (hi != null))
-                selectivity *= fractionBetween(index, indexStatistics, lo, loInc, hi, hiInc);
+                selectivity *= fractionBetween(column, index, indexStatistics, lo, loInc, hi, hiInc);
         }
         return selectivity;
     }
@@ -888,4 +915,44 @@ public abstract class CostEstimator implements TableRowCounts
             }
         }
     }
+    
+    protected void missingStats(Column column, Index index) {
+        if (logger.isWarnEnabled()) {
+            if (index == null) {
+                logger.warn("No single column index for {}.{}; cost estimates will not be accurate", column.getTable().getName(), column.getName());
+            }
+            else if (index.isTableIndex()) {
+                Table table = ((TableIndex)index).getTable();
+                logger.warn("No statistics for table {}; cost estimates will not be accurate", table.getName());
+            }
+            else {
+                logger.warn("No statistics for index {}; cost estimates will not be accurate", index.getIndexName());
+            }
+        }
+    }
+
+    public static final double MIN_ROW_COUNT_SMALLER = 0.2;
+    public static final double MAX_ROW_COUNT_LARGER = 5.0;
+
+    protected void checkRowCountChanged(UserTable table, IndexStatistics stats, 
+                                        long rowCount) {
+        if (logger.isWarnEnabled()) {
+            double ratio = (double)Math.max(rowCount, 1) / 
+                           (double)Math.max(stats.getRowCount(), 1);
+            String msg = null;
+            long change = 1;
+            if (ratio < MIN_ROW_COUNT_SMALLER) {
+                msg = "smaller";
+                change = Math.round(1.0 / ratio);
+            }
+            else if (ratio > MAX_ROW_COUNT_LARGER) {
+                msg = "larger";
+                change = Math.round(ratio);
+            }
+            if (msg != null) {
+                logger.warn("Table {} is {} times {} than on {}; cost estimates will not be accurate until statistics are updated", new Object[] { table.getName(), change, msg, new Date(stats.getAnalysisTimestamp()) });
+            }
+        }
+    }
+
 }
