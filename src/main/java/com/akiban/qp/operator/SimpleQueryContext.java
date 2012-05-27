@@ -29,10 +29,6 @@ package com.akiban.qp.operator;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -54,11 +50,13 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
+    public StoreAdapter getStore(StoreAdapter.AdapterType type) {
+        return adapter;
+    }
+    
+    @Override
     public Session getSession() {
-        if (adapter instanceof PersistitAdapter)
-            return ((PersistitAdapter)adapter).session();
-        else
-            throw new UnsupportedOperationException();
+	return adapter.getSession();
     }
 
     @Override
@@ -88,10 +86,8 @@ public class SimpleQueryContext extends QueryContextBase
 
     @Override
     public void checkQueryCancelation() {
-        // If don't have a session, so can't check cancelation in it.
-        if (adapter instanceof PersistitAdapter) {
-            super.checkQueryCancelation();
+        if (adapter.getSession() != null) {
+           super.checkQueryCancelation();
         }
     }
-
 }

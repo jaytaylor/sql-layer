@@ -4,7 +4,7 @@ SelectQuery@7a5d5033
       Select@3be5d207[]
         MapJoin@655538e5(INNER)
           Select@7addc524[parent.id > 1]
-            SingleIndexScan@75b9fd80(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 352.270)
+            SingleIndexScan@75b9fd80(Index(test.parent.name[IndexColumn(name)]), covering/NONE, rows = 85, cost = 352.270)
           Flatten@5692900d(customers INNER items)
             Select@5b21ae2[items.quan > 100]
               AncestorLookup@7002ee59(items -> [customers, items])

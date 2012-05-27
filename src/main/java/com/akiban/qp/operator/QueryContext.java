@@ -109,6 +109,7 @@ public interface QueryContext
      * Get the store associated with this query.
      */
     public StoreAdapter getStore();
+    public StoreAdapter getStore(StoreAdapter.AdapterType store);
 
     /**
      * Get the session associated with this context.
