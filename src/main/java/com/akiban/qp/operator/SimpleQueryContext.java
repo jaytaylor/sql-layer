@@ -50,6 +50,11 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
+    public StoreAdapter getStore(StoreAdapter.AdapterType type) {
+        return adapter;
+    }
+    
+    @Override
     public Session getSession() {
 	return adapter.getSession();
     }

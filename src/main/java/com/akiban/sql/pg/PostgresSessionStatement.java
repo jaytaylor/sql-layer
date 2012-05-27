@@ -28,15 +28,12 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.error.UnsupportedConfigurationException;
-import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
 import com.akiban.sql.parser.AccessMode;
-import com.akiban.sql.parser.IsolationLevel;
 import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
-import com.akiban.sql.parser.SetTransactionIsolationNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StatementType;
 

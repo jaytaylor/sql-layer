@@ -75,6 +75,11 @@ public abstract class StoreAdapter
         return session;
     }
 
+    public enum AdapterType {
+        PERSISTIT_ADAPTER,
+        MEMORY_ADAPTER;
+    }
+    
     protected final ConfigurationService getConfig() {
         return config;
     }
