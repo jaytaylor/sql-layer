@@ -502,6 +502,7 @@
                         <configuration>
                               <izpackBasedir>${izpack.staging.dir}</izpackBasedir>
                               <customPanelDirectory>${izpack.staging.dir}</customPanelDirectory>
+                              <installerFile>${project.build.directory}/${project.build.finalName}-installer.jar</installerFile>
                         </configuration>
                         <executions>
                             <execution>
@@ -518,7 +519,7 @@
             <properties>
                 <izpack.staging.dir>${project.build.directory}/izpack</izpack.staging.dir>
                 <izpack.appname>${project.name}</izpack.appname>
-                <izpack.appversion>${project.name}</izpack.appversion>
+                <izpack.appversion>${project.version}</izpack.appversion>
                 <izpack.jarfile>${project.build.finalName}-jar-with-dependencies.jar</izpack.jarfile>
             </properties>
         </profile>

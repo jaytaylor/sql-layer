@@ -3,6 +3,7 @@
     <info>
         <appname>${izpack.appname}</appname>
         <appversion>${izpack.appversion}</appversion>
+        <appsubpath>Akiban</appsubpath>
         <url>http://www.akiban.org/</url>
         <javaversion>1.6</javaversion>
         <requiresjdk>yes</requiresjdk>
@@ -13,12 +14,15 @@
         <variable name="logdir" value="${INSTALL_PATH}/log" />
         <variable name="tempdir" value="${INSTALL_PATH}/tmp" />
     </dynamicvariables>
-    <guiprefs width="640" height="480" resizable="no" />
+    <guiprefs width="640" height="480" resizable="no">
+    </guiprefs>
     <locale>
         <langpack iso3="eng" />
     </locale>
     <resources>
         <res id="LicencePanel.licence" src="LICENSE.txt" />
+        <res id="userInputSpec.xml" src="userInputSpec.xml" />
+        <res id="shortcutSpec.xml" src="shortcutSpec.xml" />
     </resources>
     <panels>
         <panel classname="HelloPanel" />
@@ -28,8 +32,10 @@
         <panel classname="LicencePanel" />
         <panel classname="TargetPanel" />
         <panel classname="PacksPanel" />
+        <panel classname="UserInputPanel" id="UserInputPanel.0" condition="izpack.windowsinstall" />
+        <panel classname="ShortcutPanel" />
         <panel classname="InstallPanel" />
-        <panel classname="FinishPanel" />
+        <panel classname="SimpleFinishPanel" />
     </panels>
     <packs>
         <pack name="Server" required="yes">
@@ -46,6 +52,13 @@
             </fileset>
             <parsable targetfile="$INSTALL_PATH/config/log4j.properties" type="javaprop" />
             <parsable targetfile="$INSTALL_PATH/config/server.properties" type="javaprop" />
+            <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="postinstall" condition="windows.service">
+                <args><arg value="install" /></args>
+            </executable>
+            <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="uninstall" condition="windows.service">
+                <args><arg value="uninstall" /></args>
+            </executable>
         </pack>
     </packs>
+    <native type="izpack" name="ShellLink.dll" />
 </installation>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
+<userInput>
+    <panel order="0">
+        <createForPack name="Server" />
+        <field type="title" txt="Windows Service" bold="true" size="1" />
+        <field type="divider" align="top"/>
+        <field type="check" align="left" variable="windows.service">
+            <spec txt=" Run as Windows Service" true="true" false="false" set="true" />
+        </field>
+        <field type="divider" align="bottom"/>
+    </panel>
+</userInput>
