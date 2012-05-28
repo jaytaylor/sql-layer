@@ -15,12 +15,12 @@ REM along with this program.  If not, see http://www.gnu.org/licenses.
 
 SETLOCAL
 
-SET SERVER_JAR=akiban-server-1.1.0-SNAPSHOT-jar-with-dependencies.jar
+SET SERVER_JAR=akiban-server-1.2.2-SNAPSHOT-jar-with-dependencies.jar
 SET SERVICE_NAME=akserver
 SET SERVICE_DNAME=Akiban Server
 SET SERVICE_DESC=Akiban Database Server
 
-IF EXIST "%~dp0..\..\pom.xml" GOTO FROM_BUILD
+IF EXIST "%~dp0..\pom.xml" GOTO FROM_BUILD
 
 REM Installation Configuration
 
@@ -49,11 +49,11 @@ GOTO PARSE_CMD
 
 REM Build Configuration
 
-FOR %%P IN ("%~dp0..\..") DO SET BUILD_HOME=%%~fP
+FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
 SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
-SET AKIBAN_CONF=%BUILD_HOME%\windows
-SET AKIBAN_LOGDIR=%~d0\akiban\log
+SET AKIBAN_CONF=%BUILD_HOME%\conf
+SET AKIBAN_LOGDIR=\tmp\akiban_server
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr
 

@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="iso-8859-1" standalone="yes" ?>
+<installation version="1.0">
+    <info>
+        <appname>${izpack.appname}</appname>
+        <appversion>${izpack.appversion}</appversion>
+        <url>http://www.akiban.org/</url>
+        <javaversion>1.6</javaversion>
+        <requiresjdk>yes</requiresjdk>
+        <run-privileged condition="izpack.windowsinstall" />
+    </info>
+    <variables>
+        <variable name="datadir" value="$INSTALL_PATH/data" />
+        <variable name="logdir" value="$INSTALL_PATH/log" />
+        <variable name="tempdir" value="$INSTALL_PATH/tmp" />
+    </variables>
+    <guiprefs width="640" height="480" resizable="no" />
+    <locale>
+        <langpack iso3="eng" />
+    </locale>
+    <resources>
+        <res id="LicencePanel.licence" src="LICENSE.txt" />
+    </resources>
+    <panels>
+        <panel classname="HelloPanel" />
+        <panel classname="InfoPanel" />
+        <panel classname="LicencePanel" />
+        <panel classname="TargetPanel" />
+        <panel classname="PacksPanel" />
+        <panel classname="InstallPanel" />
+        <panel classname="FinishPanel" />
+    </panels>
+    <packs>
+        <pack name="Base" required="yes">
+            <description>The base files</description>
+            <fileset dir="." targetdir="$INSTALL_PATH">
+              <include name="lib" />
+              <include name="bin" />
+              <include name="config" />
+              <include name="doc" />
+              <include name="LICENSE.txt" />
+            </fileset>
+            <parsable targetfile="$INSTALL_PATH/config/log4j.properties" />
+            <parsable targetfile="$INSTALL_PATH/config/server.properties" />
+        </pack>
+    </packs>
+</installation>
