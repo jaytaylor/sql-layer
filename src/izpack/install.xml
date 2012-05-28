@@ -27,6 +27,9 @@
             </condition>
         </condition>
     </conditions>
+    <installerrequirements>
+        <installerrequirement conditon="izpack.windowsinstall" message="This installer only works on Windows at present." />
+    </installerrequirements>
     <guiprefs width="640" height="480" resizable="no">
     </guiprefs>
     <locale>
