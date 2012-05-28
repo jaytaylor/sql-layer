@@ -8,11 +8,11 @@
         <requiresjdk>yes</requiresjdk>
         <run-privileged condition="izpack.windowsinstall" />
     </info>
-    <variables>
-        <variable name="datadir" value="$INSTALL_PATH/data" />
-        <variable name="logdir" value="$INSTALL_PATH/log" />
-        <variable name="tempdir" value="$INSTALL_PATH/tmp" />
-    </variables>
+    <dynamicvariables>
+        <variable name="datadir" value="${INSTALL_PATH}/data" />
+        <variable name="logdir" value="${INSTALL_PATH}/log" />
+        <variable name="tempdir" value="${INSTALL_PATH}/tmp" />
+    </dynamicvariables>
     <guiprefs width="640" height="480" resizable="no" />
     <locale>
         <langpack iso3="eng" />
@@ -22,7 +22,9 @@
     </resources>
     <panels>
         <panel classname="HelloPanel" />
+        <!--
         <panel classname="InfoPanel" />
+        -->
         <panel classname="LicencePanel" />
         <panel classname="TargetPanel" />
         <panel classname="PacksPanel" />
@@ -30,17 +32,19 @@
         <panel classname="FinishPanel" />
     </panels>
     <packs>
-        <pack name="Base" required="yes">
-            <description>The base files</description>
+        <pack name="Server" required="yes">
+            <description>Akiban Server</description>
             <fileset dir="." targetdir="$INSTALL_PATH">
-              <include name="lib" />
-              <include name="bin" />
-              <include name="config" />
-              <include name="doc" />
+              <include name="bin/*" />
+              <include name="config/*" />
+              <include name="data" />
+              <include name="doc/**/*" />
+              <include name="lib/*" />
+              <include name="log" />
               <include name="LICENSE.txt" />
             </fileset>
-            <parsable targetfile="$INSTALL_PATH/config/log4j.properties" />
-            <parsable targetfile="$INSTALL_PATH/config/server.properties" />
+            <parsable targetfile="$INSTALL_PATH/config/log4j.properties" type="javaprop" />
+            <parsable targetfile="$INSTALL_PATH/config/server.properties" type="javaprop" />
         </pack>
     </packs>
 </installation>

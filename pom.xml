@@ -477,6 +477,8 @@
                                         <copy todir="${izpack.staging.dir}/lib">
                                             <fileset dir="${project.build.directory}" includes="${izpack.jarfile}" />
                                         </copy>
+                                        <mkdir dir="${izpack.staging.dir}/log" />
+                                        <mkdir dir="${izpack.staging.dir}/data" />
                                     </tasks>
                                 </configuration>
                             </execution>
