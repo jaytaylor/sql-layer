@@ -27,6 +27,8 @@
 package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.memoryadapter.MemoryStore;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
@@ -59,6 +61,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     private static final Logger log = LoggerFactory.getLogger(IndexStatisticsServiceImpl.class);
 
     private final PersistitStore store;
+    private final MemoryStore memoryStore;
     private final TreeService treeService;
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
@@ -69,11 +72,13 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     @Inject
     public IndexStatisticsServiceImpl(Store store, TreeService treeService,
-                                      SchemaManager schemaManager, SessionService sessionService) {
+                                      SchemaManager schemaManager, SessionService sessionService,
+                                      MemoryStore memoryStore) {
         this.store = store.getPersistitStore();
         this.treeService = treeService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
+        this.memoryStore = memoryStore;
     }
     
     /* Service */
@@ -111,7 +116,13 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public long countEntries(Session session, Index index) throws PersistitInterruptedException {
         if (index.isTableIndex()) {
-            return store.getTableStatus(((TableIndex)index).getTable()).getRowCount();
+            final TableName name = ((TableIndex)index).getTable().getName();
+            MemoryTableFactory factory = memoryStore.getFactory(name);
+            if (factory != null) {
+                return factory.rowCount();
+            } else {
+                return store.getTableStatus(((TableIndex)index).getTable()).getRowCount();    
+            }
         }
         final Exchange ex = store.getExchange(session, index);
         try {
@@ -173,7 +184,20 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        final Map<Index,IndexStatistics> updates;
+        
+        updates = updatePersistitTableIndexStatistics (session, indexes);
+        
+        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
+            @Override
+            public void run() {
+                cache.putAll(updates);
+            }
+        });
+    }
+    
+    private Map<Index,IndexStatistics> updatePersistitTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
+        Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
             try {
                 IndexStatistics indexStatistics = 
@@ -196,12 +220,15 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 throw e;
             }
         }
-        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
-            @Override
-            public void run() {
-                cache.putAll(updates);
-            }
-        });
+        return updates;
+    }
+    
+    private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
+        Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        for (Index index : indexes) {
+            
+        }
+        return updates;
     }
 
     @Override

@@ -35,14 +35,21 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.statistics.IndexStatistics;
 
 public interface MemoryTableFactory {
+    // Used by MemoryStore to hold this factory
     public TableName getName();
     public Table getTableDefinition();
+    
+    // Used by (Memory)StoreAdapter to get cursors 
     public GroupCursor getGroupCursor(Session session);
     public Cursor getIndexCursor (Index index, Session session, 
             IndexKeyRange keyRange,
             API.Ordering ordering,
             IndexScanSelector scanSelector);
+    
+    // Used by IndexStatistics to compute index statistics
     public long rowCount();
+    public IndexStatistics computeIndexStatistics(Session session, Index index);
 }
