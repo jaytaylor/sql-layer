@@ -109,12 +109,12 @@ public class Sorter
     {
         if (exchange != null) {
             try {
-                TempVolumeState tempVolumeState = adapter.session().get(TEMP_VOLUME_STATE);
+                TempVolumeState tempVolumeState = adapter.getSession().get(TEMP_VOLUME_STATE);
                 int sortsInProgress = tempVolumeState.endSort();
                 if (sortsInProgress == 0) {
                     // Returns disk space used by the volume
                     tempVolumeState.volume().close();
-                    adapter.session().remove(TEMP_VOLUME_STATE);
+                    adapter.getSession().remove(TEMP_VOLUME_STATE);
                 }
             } catch (PersistitException e) {
                 adapter.handlePersistitException(e);
@@ -186,7 +186,7 @@ public class Sorter
 
     private static Exchange exchange(PersistitAdapter adapter, String treeName) throws PersistitException
     {
-        Session session = adapter.session();
+        Session session = adapter.getSession();
         Persistit persistit = adapter.persistit().getDb();
         TempVolumeState tempVolumeState = session.get(TEMP_VOLUME_STATE);
         if (tempVolumeState == null) {

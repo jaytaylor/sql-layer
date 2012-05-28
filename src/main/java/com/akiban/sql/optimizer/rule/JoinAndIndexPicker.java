@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.*;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 
@@ -102,6 +103,7 @@ public class JoinAndIndexPicker extends BaseRule
             Sort ordering = null;
             AggregateSource grouping = null;
             Project projectDistinct = null;
+            Limit limit = null;
             input = input.getOutput();
             if (input instanceof Select) {
                 ConditionList conds = ((Select)input).getConditions();
@@ -112,6 +114,9 @@ public class JoinAndIndexPicker extends BaseRule
             input = input.getOutput();
             if (input instanceof Sort) {
                 ordering = (Sort)input;
+                input = input.getOutput();
+                if (input instanceof Project)
+                    input = input.getOutput();
             }
             else if (input instanceof AggregateSource) {
                 grouping = (AggregateSource)input;
@@ -135,18 +140,30 @@ public class JoinAndIndexPicker extends BaseRule
                             }
                         }
                     }
+                    if (ordering != null) // No limit if sort lost.
+                        input = input.getOutput();
                 }
+                if (input instanceof Project)
+                    input = input.getOutput();
             }
             else if (input instanceof Project) {
                 Project project = (Project)input;
                 input = project.getOutput();
-                if (input instanceof Distinct)
+                if (input instanceof Distinct) {
                     projectDistinct = project;
-                else if (input instanceof Sort)
+                    input = input.getOutput();
+                }
+                else if (input instanceof Sort) {
                     ordering = (Sort)input;
+                    input = input.getOutput();
+                    if (input instanceof Distinct)
+                        input = input.getOutput(); // Not projectDistinct (already marked as explicitly sorted).
+                }
             }
+            if (input instanceof Limit)
+                limit = (Limit)input;
             return new QueryIndexGoal(query, costEstimator, whereConditions, 
-                                      grouping, ordering, projectDistinct);
+                                      grouping, ordering, projectDistinct, limit);
         }
 
         // Only a single group of tables. Don't need to run general
@@ -156,7 +173,7 @@ public class JoinAndIndexPicker extends BaseRule
             GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
             List<JoinOperator> empty = Collections.emptyList(); // No more joins / bound tables.
             groupGoal.updateRequiredColumns(empty, empty);
-            PlanNode scan = groupGoal.pickBestScan();
+            BaseScan scan = groupGoal.pickBestScan();
             groupGoal.install(scan, null);
         }
 
@@ -191,8 +208,8 @@ public class JoinAndIndexPicker extends BaseRule
                 // In this block because we were not a JoinNode, query has no joins itself
                 List<JoinOperator> queryJoins = Collections.emptyList();
                 List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true);
-                PlanNode scan = groupGoal.pickBestScan();
-                CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
+                BaseScan scan = groupGoal.pickBestScan();
+                CostEstimate costEstimate = scan.getCostEstimate();
                 return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources);
             }
             if (joinable instanceof JoinNode) {
@@ -243,11 +260,11 @@ public class JoinAndIndexPicker extends BaseRule
     static class GroupPlan extends Plan {
         GroupIndexGoal groupGoal;
         long outerTables;
-        PlanNode scan;
+        BaseScan scan;
         List<ConditionList> conditionSources;
 
         public GroupPlan(GroupIndexGoal groupGoal,
-                         long outerTables, PlanNode scan, 
+                         long outerTables, BaseScan scan, 
                          CostEstimate costEstimate,
                          List<ConditionList> conditionSources) {
             super(costEstimate);
@@ -304,8 +321,8 @@ public class JoinAndIndexPicker extends BaseRule
                 }
             }
             List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, joins.isEmpty());
-            PlanNode scan = groupGoal.pickBestScan();
-            CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
+            BaseScan scan = groupGoal.pickBestScan();
+            CostEstimate costEstimate = scan.getCostEstimate();
             GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources);
             bestPlans.add(groupPlan);
             return groupPlan;

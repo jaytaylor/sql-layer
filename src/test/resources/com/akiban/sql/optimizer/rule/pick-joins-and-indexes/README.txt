@@ -65,3 +65,13 @@ outer-index: LEFT using an index
 outer-no-index-extra-conditions: LEFT with extra conditions cannot use index
 
 cross-product: Conditions but no joins
+
+competing-indexes-no-limit: WHERE beats ORDER BY
+
+competing-indexes-with-limit: ORDER BY beats WHERE
+
+group-scan-no-limit: group scan and flatten
+
+group-scan-large-limit: with limit larger than expected
+
+group-scan-small-limit: with much smaller limit
