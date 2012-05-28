@@ -463,6 +463,10 @@
                                             <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
                                             <fileset dir="${basedir}/src/izpack" />
                                         </copy>
+                                        <tempfile property="procrun.zip" destDir="${izpack.staging.dir}" prefix="procrun" suffix=".zip" />
+                                        <get src="http://mirrors.ibiblio.org/apache/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${procrun.zip}" />
+                                        <mkdir dir="${izpack.staging.dir}/procrun" />
+                                        <unzip src="${procrun.zip}" dest="${izpack.staging.dir}/procrun" />
                                     </tasks>
                                 </configuration>
                             </execution>

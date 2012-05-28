@@ -35,13 +35,14 @@
         <pack name="Server" required="yes">
             <description>Akiban Server</description>
             <fileset dir="." targetdir="$INSTALL_PATH">
+              <include name="LICENSE.txt" />
               <include name="bin/*" />
               <include name="config/*" />
               <include name="data" />
               <include name="doc/**/*" />
               <include name="lib/*" />
               <include name="log" />
-              <include name="LICENSE.txt" />
+              <include name="procrun/**/*" />
             </fileset>
             <parsable targetfile="$INSTALL_PATH/config/log4j.properties" type="javaprop" />
             <parsable targetfile="$INSTALL_PATH/config/server.properties" type="javaprop" />
