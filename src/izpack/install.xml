@@ -19,6 +19,13 @@
             <name>windowsServiceChecked</name>
             <value>true</value>
         </condition>
+        <condition type="and" id="windowsServiceStart">
+            <condition type="ref" refid="windowsService" />
+            <condition type="variable">
+                <name>windowsServiceStartChecked</name>
+                <value>true</value>
+            </condition>
+        </condition>
     </conditions>
     <guiprefs width="640" height="480" resizable="no">
     </guiprefs>
@@ -59,10 +66,21 @@
             <parsable targetfile="$INSTALL_PATH/config/log4j.properties" type="javaprop" />
             <parsable targetfile="$INSTALL_PATH/config/server.properties" type="javaprop" />
             <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="postinstall" condition="windowsService">
-                <args><arg value="install" /></args>
+                <args>
+                    <arg value="install" />
+                    <arg value="-m" />
+                    <arg value="${windowsServiceMode}" />
+                </args>
+            </executable>
+            <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="postinstall" condition="windowsServiceStart">
+                <args>
+                    <arg value="start" />
+                </args>
             </executable>
             <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="uninstall" condition="windowsService">
-                <args><arg value="uninstall" /></args>
+                <args>
+                    <arg value="uninstall" />
+                </args>
             </executable>
         </pack>
     </packs>
