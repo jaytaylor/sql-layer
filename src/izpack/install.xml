@@ -14,6 +14,12 @@
         <variable name="logdir" value="${INSTALL_PATH}/log" />
         <variable name="tempdir" value="${INSTALL_PATH}/tmp" />
     </dynamicvariables>
+    <conditions>
+        <condition type="variable" id="windowsService">
+            <name>windowsServiceChecked</name>
+            <value>true</value>
+        </condition>
+    </conditions>
     <guiprefs width="640" height="480" resizable="no">
     </guiprefs>
     <locale>
@@ -52,10 +58,10 @@
             </fileset>
             <parsable targetfile="$INSTALL_PATH/config/log4j.properties" type="javaprop" />
             <parsable targetfile="$INSTALL_PATH/config/server.properties" type="javaprop" />
-            <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="postinstall" condition="windows.service">
+            <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="postinstall" condition="windowsService">
                 <args><arg value="install" /></args>
             </executable>
-            <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="uninstall" condition="windows.service">
+            <executable targetfile="$INSTALL_PATH/bin/akserver.cmd" os="windows" keep="true" stage="uninstall" condition="windowsService">
                 <args><arg value="uninstall" /></args>
             </executable>
         </pack>

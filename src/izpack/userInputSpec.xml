@@ -4,7 +4,7 @@
         <createForPack name="Server" />
         <field type="title" txt="Startup Options" bold="true" size="1" />
         <field type="divider" align="top"/>
-        <field type="check" align="left" variable="windows.service">
+        <field type="check" align="left" variable="windowsServiceChecked">
             <description align="left" txt="Windows Service" />
             <spec txt=" Run as Windows Service" true="true" false="false" set="true" />
         </field>
