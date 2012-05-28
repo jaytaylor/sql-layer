@@ -24,11 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.rule.costmodel;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.ais.model.Table;
-
-public interface TableRowCounts
+public abstract class BaseScan extends BasePlanNode
 {
-    public long getTableRowCount(Table table);
+    // Estimated cost of using this scan.
+    private CostEstimate costEstimate;
+
+    public CostEstimate getCostEstimate() {
+        return costEstimate;
+    }
+    public void setCostEstimate(CostEstimate costEstimate) {
+        this.costEstimate = costEstimate;
+    }
+
 }

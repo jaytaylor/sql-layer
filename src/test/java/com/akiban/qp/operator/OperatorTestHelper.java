@@ -207,7 +207,7 @@ public final class OperatorTestHelper {
 
         public TestAdapter()
         {
-            super(null);
+            super(null, null, null);
         }
     }
 }
