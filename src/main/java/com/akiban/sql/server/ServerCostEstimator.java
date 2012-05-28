@@ -26,7 +26,7 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;

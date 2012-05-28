@@ -27,7 +27,6 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.NoTransactionInProgressException;
@@ -38,7 +37,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.parser.SQLParser;
 
 import java.util.*;

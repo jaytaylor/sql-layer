@@ -32,15 +32,11 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.TimeOperator;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.expression.std.Expressions;
-import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
@@ -108,7 +104,7 @@ public class FlattenCT extends CostModelBase
                 group,
                 parentPKIndexType,
                 parentRowType,
-                LookupOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT);
         TimeOperator timeSetup = new TimeOperator(setup);
         Operator plan =
             flatten_HKeyOrdered(

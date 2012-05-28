@@ -512,7 +512,7 @@ public class FlattenLeftJoinIT extends OperatorITBase
                     group,
                     parentPidIndexType,
                     parentRowType,
-                    LookupOption.DISCARD_INPUT),
+                    InputPreservationOption.DISCARD_INPUT),
                 parentRowType,
                 childRowType,
                 LEFT_JOIN,

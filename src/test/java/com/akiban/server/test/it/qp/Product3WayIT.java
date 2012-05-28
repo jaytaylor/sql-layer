@@ -39,8 +39,8 @@ import java.util.Arrays;
 import java.util.Set;
 
 import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
-import static com.akiban.qp.operator.API.LookupOption.DISCARD_INPUT;
-import static com.akiban.qp.operator.API.LookupOption.KEEP_INPUT;
+import static com.akiban.qp.operator.API.InputPreservationOption.DISCARD_INPUT;
+import static com.akiban.qp.operator.API.InputPreservationOption.KEEP_INPUT;
 import static com.akiban.qp.operator.API.*;
 import static org.junit.Assert.assertTrue;
 
