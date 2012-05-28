@@ -463,9 +463,9 @@
                                             <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
                                             <fileset dir="${basedir}/src/izpack" />
                                         </copy>
-                                        <get src="http://mirrors.ibiblio.org/apache/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="procrun.zip" usetimestamp="true" />
+                                        <get src="http://mirrors.ibiblio.org/apache/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${izpack.staging.dir}/procrun.zip" usetimestamp="true" />
                                         <mkdir dir="${izpack.staging.dir}/procrun" />
-                                        <unzip src="procrun.zip" dest="${izpack.staging.dir}/procrun" />
+                                        <unzip src="${izpack.staging.dir}/procrun.zip" dest="${izpack.staging.dir}/procrun" />
                                     </tasks>
                                 </configuration>
                             </execution>
