@@ -30,9 +30,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 

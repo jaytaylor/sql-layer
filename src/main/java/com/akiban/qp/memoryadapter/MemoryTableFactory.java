@@ -39,17 +39,17 @@ import com.akiban.server.store.statistics.IndexStatistics;
 
 public interface MemoryTableFactory {
     // Used by MemoryStore to hold this factory
-    public TableName getName();
-    public Table getTableDefinition();
+    public abstract TableName getName();
+    public abstract Table getTableDefinition();
     
     // Used by (Memory)StoreAdapter to get cursors 
-    public GroupCursor getGroupCursor(Session session);
-    public Cursor getIndexCursor (Index index, Session session, 
+    public abstract GroupCursor getGroupCursor(Session session);
+    public abstract Cursor getIndexCursor (Index index, Session session, 
             IndexKeyRange keyRange,
             API.Ordering ordering,
             IndexScanSelector scanSelector);
     
     // Used by IndexStatistics to compute index statistics
-    public long rowCount();
-    public IndexStatistics computeIndexStatistics(Session session, Index index);
+    public abstract long rowCount();
+    public abstract IndexStatistics computeIndexStatistics(Session session, Index index);
 }

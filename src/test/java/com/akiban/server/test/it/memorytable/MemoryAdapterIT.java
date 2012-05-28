@@ -28,7 +28,6 @@ package com.akiban.server.test.it.memorytable;
 
 import static org.junit.Assert.*;
 
-import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Set;
 
@@ -48,6 +47,7 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.sql.pg.PostgresServerConnection;
 import com.akiban.sql.pg.PostgresServerITBase;
 
@@ -136,6 +136,12 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         public long rowCount() {
             // TODO Auto-generated method stub
             return 0;
+        }
+        @Override
+        public IndexStatistics computeIndexStatistics(Session session,
+                Index index) {
+            // TODO Auto-generated method stub
+            return null;
         }
         private TableName name;
     }
