@@ -5,6 +5,9 @@
         <appversion>${izpack.appversion}</appversion>
         <appsubpath>Akiban</appsubpath>
         <url>http://www.akiban.org/</url>
+        <authors>
+            <author name="Akiban Technologies" email="support@akiban.com" />
+        </authors>
         <javaversion>1.6</javaversion>
         <requiresjdk>yes</requiresjdk>
         <run-privileged condition="izpack.windowsinstall" />
@@ -88,4 +91,5 @@
         </pack>
     </packs>
     <native type="izpack" name="ShellLink.dll" />
+    <native type="izpack" name="ShellLink_x64.dll" />
 </installation>
