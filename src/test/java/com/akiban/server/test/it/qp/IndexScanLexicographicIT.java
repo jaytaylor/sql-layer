@@ -220,7 +220,6 @@ public class IndexScanLexicographicIT extends OperatorITBase
             bound = new IndexBound(row(idxRowType, a, b, c), new SetColumnSelector(0, 1, 2));
         }
         IndexKeyRange indexKeyRange = IndexKeyRange.startingAt(idxRowType, bound, inclusive);
-        indexKeyRange.lexicographic(true);
         return indexKeyRange;
     }
 
@@ -238,7 +237,6 @@ public class IndexScanLexicographicIT extends OperatorITBase
             bound = new IndexBound(row(idxRowType, a, b, c), new SetColumnSelector(0, 1, 2));
         }
         IndexKeyRange indexKeyRange = IndexKeyRange.endingAt(idxRowType, bound, inclusive);
-        indexKeyRange.lexicographic(true);
         return indexKeyRange;
     }
 
@@ -267,8 +265,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
         } else {
             hi = new IndexBound(row(idxRowType, aHi, bHi, cHi), new SetColumnSelector(0, 1, 2));
         }
-        IndexKeyRange indexKeyRange = IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
-        indexKeyRange.lexicographic(true);
+        IndexKeyRange indexKeyRange = IndexKeyRange.startingAtAndEndingAt(idxRowType, lo, loInclusive, hi, hiInclusive);
         return indexKeyRange;
     }
 
