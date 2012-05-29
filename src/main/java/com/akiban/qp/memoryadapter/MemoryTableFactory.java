@@ -51,5 +51,8 @@ public interface MemoryTableFactory {
     
     // Used by IndexStatistics to compute index statistics
     public abstract long rowCount();
+    
+    // This should return null for all indexes
+    // TODO: describe index implementation on memory tables. 
     public abstract IndexStatistics computeIndexStatistics(Session session, Index index);
 }

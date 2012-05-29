@@ -186,7 +186,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                                       Collection<? extends Index> indexes) {
         final Map<Index,IndexStatistics> updates;
         
-        updates = updatePersistitTableIndexStatistics (session, indexes);
+        Index first = indexes.iterator().next();
+        if (memoryStore.getFactory(first.rootMostTable().getName()) != null) {
+            updates = updateMemoryTableIndexStatistics (session, indexes);
+        } else {
+            updates = updatePersistitTableIndexStatistics (session, indexes);
+        }
         
         DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
             @Override
@@ -225,8 +230,15 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     
     private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
         Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        IndexStatistics indexStatistics;
         for (Index index : indexes) {
-            
+            // memory store, when it calculates index statistics, and supports group indexes
+            // will work on the root table. 
+            indexStatistics = memoryStore.getFactory(index.rootMostTable().getName()).computeIndexStatistics(session, index);
+
+            if (indexStatistics != null) {
+                updates.put(index, indexStatistics);
+            }
         }
         return updates;
     }
