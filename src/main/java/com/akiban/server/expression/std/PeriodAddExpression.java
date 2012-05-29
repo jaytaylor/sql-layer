@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
 import com.akiban.server.service.functions.Scalar;
@@ -87,9 +88,11 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
             
             long offsetMonths = right().getLong();
             
+            
             // Calculate the new period with left-padded years
-            long totalMonths = originalYear * 12 + originalMonth + offsetMonths;
-            valueHolder().putString(createPeriod(totalMonths / 12, totalMonths % 12));
+            // Subtract 1 from total month count, converting months from 1-12 -> 0-11
+            long totalMonths = (originalYear * 12 + originalMonth - 1) + offsetMonths;
+            valueHolder().putString(createPeriod(totalMonths / 12, (totalMonths % 12) + 1));
             return valueHolder();
         }
         
@@ -101,7 +104,10 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
         // Check format of period through length
         long periodLen = periodAsStr.length();
         if (periodLen != 4 && periodLen != 6) {
-            // TODO - Throw an exception
+            throw new InvalidParameterValueException(
+                    String.format(
+                    "Invalid format for period %s (must be YYMM or YYYYMM)", 
+                    periodAsStr));
         }
 
         // Check format of period for non-numerical characters
@@ -109,7 +115,9 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
         try {
             periodAsLong = Long.parseLong(periodAsStr);
         } catch (Exception e) {
-            // TODO - Throw a more informative exception
+            throw new InvalidParameterValueException(
+                    String.format("Period %s contains non-numerical characters.", 
+                    periodAsStr));
         }
 
         long CURRENT_MILLENIUM = 2000;
@@ -119,7 +127,9 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
 
         // Make sure that only valid months are entered
         if (parsedMonth < 1 || parsedMonth > 12) {
-            // TODO: Throw an exception
+            throw new InvalidParameterValueException(
+                    String.format("Month %d of period %s out of range.", 
+                    parsedMonth, periodAsStr));
         }
    
         HashMap<String, Long> results = new HashMap<String, Long>();
@@ -132,8 +142,8 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
     // Create a YYYYMM format from a year and month argument
     private static String createPeriod(Long year, Long month) {
         // TODO - check that neither is longer than expected lengths
-        return String.format("%04d", Long.toString(year))
-                + String.format("%02d", Long.toString(month));
+        return String.format("%04d", year)
+                + String.format("%02d", month);
     }
     
     // End helper functions ***************************************************

@@ -115,5 +115,4 @@ public class PeriodDiffExpression extends AbstractBinaryExpression {
     {
         return new InnerEvaluation(childrenEvaluations());
     }
-
 }
