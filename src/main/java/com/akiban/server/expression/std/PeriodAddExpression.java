@@ -57,12 +57,11 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
             if (argc != 2)
                 throw new WrongExpressionArityException(2, argc);
             
-            // Period as VARCHAR for easier handling of leading zeroes
-            argumentTypes.setType(0, AkType.VARCHAR);
-            argumentTypes.setType(1, AkType.LONG);
+            for (int i = 0; i < argc; i++)
+                argumentTypes.setType(i, AkType.LONG);
             
-            // Return YYYYMM, 6 characters
-            return ExpressionTypes.varchar(6);
+            // Return YYYYMM
+            return ExpressionTypes.LONG;
         }
     }
     
@@ -81,18 +80,17 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
             if (left().isNull() || right().isNull())
                 return NullValueSource.only();
             
-            // Parse the input strings for a dictionary with "year" and "month" as keys
-            HashMap<String, Long> parsedLeftMap = parsePeriod(left().getString());
+            // Parse the input for a dictionary with "year" and "month" as keys
+            HashMap<String, Long> parsedLeftMap = parsePeriod(left().getLong());
             long originalYear = parsedLeftMap.get("year");
             long originalMonth = parsedLeftMap.get("month");
             
             long offsetMonths = right().getLong();
             
-            
-            // Calculate the new period with left-padded years
-            // Subtract 1 from total month count, converting months from 1-12 -> 0-11
             long totalMonths = (originalYear * 12 + originalMonth - 1) + offsetMonths;
-            valueHolder().putString(createPeriod(totalMonths / 12, (totalMonths % 12) + 1));
+            long result = createPeriod(totalMonths / 12, (totalMonths % 12) + 1);
+                    
+            valueHolder().putLong(result);
             return valueHolder();
         }
         
@@ -100,37 +98,13 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
     
     // Begin helper functions *************************************************
     // Periods have the format of either YYMM or YYYYMM
-    protected static HashMap<String, Long> parsePeriod(String periodAsStr) {
-        // Check format of period through length
-        long periodLen = periodAsStr.length();
-        if (periodLen != 4 && periodLen != 6) {
-            throw new InvalidParameterValueException(
-                    String.format(
-                    "Invalid format for period %s (must be YYMM or YYYYMM)", 
-                    periodAsStr));
-        }
-
-        // Check format of period for non-numerical characters
-        long periodAsLong = -1;
-        try {
-            periodAsLong = Long.parseLong(periodAsStr);
-        } catch (Exception e) {
-            throw new InvalidParameterValueException(
-                    String.format("Period %s contains non-numerical characters.", 
-                    periodAsStr));
-        }
-
+    protected static HashMap<String, Long> parsePeriod(long period) {
+        long periodLen = String.valueOf(period).trim().length();
+        
+        // The two least significant digits are _always_ the month
         long CURRENT_MILLENIUM = 2000;
-        long parsedYear = (periodLen == 4)
-                ? CURRENT_MILLENIUM + (periodAsLong / 100) : (periodAsLong / 100);
-        long parsedMonth = periodAsLong % 100;
-
-        // Make sure that only valid months are entered
-        if (parsedMonth < 1 || parsedMonth > 12) {
-            throw new InvalidParameterValueException(
-                    String.format("Month %d of period %s out of range.", 
-                    parsedMonth, periodAsStr));
-        }
+        long parsedMonth = period % 100;
+        long parsedYear = (periodLen <= 4) ? (period / 100) + CURRENT_MILLENIUM : period / 100;
    
         HashMap<String, Long> results = new HashMap<String, Long>();
         results.put("year", parsedYear);
@@ -140,16 +114,16 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
     }
 
     // Create a YYYYMM format from a year and month argument
-    private static String createPeriod(Long year, Long month) {
-        return String.format("%04d", year)
-                + String.format("%02d", month);
+    private static Long createPeriod(Long year, Long month) {
+        return Long.valueOf(String.format("%d", year)
+                + String.format("%02d", month));
     }
     
     // End helper functions ***************************************************
     
     protected PeriodAddExpression(Expression leftOperand, Expression rightOperand)
     {
-        super(AkType.VARCHAR, leftOperand, rightOperand);
+        super(AkType.LONG, leftOperand, rightOperand);
     }
     
     @Override

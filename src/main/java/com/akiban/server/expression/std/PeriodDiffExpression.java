@@ -42,7 +42,6 @@ public class PeriodDiffExpression extends AbstractBinaryExpression {
     
     private static class InternalComposer extends BinaryComposer
     {
-        
         @Override
         protected Expression compose(Expression first, Expression second)
         {
@@ -57,7 +56,7 @@ public class PeriodDiffExpression extends AbstractBinaryExpression {
                 throw new WrongExpressionArityException(2, argc);
             
             for (int i = 0; i < argc; i++)
-                argumentTypes.setType(i, AkType.VARCHAR);
+                argumentTypes.setType(i, AkType.LONG);
             
             // Return a number of months
             return ExpressionTypes.LONG;
@@ -79,9 +78,8 @@ public class PeriodDiffExpression extends AbstractBinaryExpression {
                 return NullValueSource.only();
             
             // Return a dictionary of parsed strings with "year" and "month"
-            // Error checking is also performed here
-            HashMap<String, Long> parsedLeftMap = PeriodAddExpression.parsePeriod(left().getString());
-            HashMap<String, Long> parsedRightMap = PeriodAddExpression.parsePeriod(right().getString());
+            HashMap<String, Long> parsedLeftMap = PeriodAddExpression.parsePeriod(left().getLong());
+            HashMap<String, Long> parsedRightMap = PeriodAddExpression.parsePeriod(right().getLong());
             long yearLeftArg = parsedLeftMap.get("year"), monthLeftArg = parsedLeftMap.get("month");
             long yearRightArg = parsedRightMap.get("year"), monthRightArg = parsedRightMap.get("month");
                         
