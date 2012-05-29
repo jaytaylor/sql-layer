@@ -141,7 +141,6 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
 
     // Create a YYYYMM format from a year and month argument
     private static String createPeriod(Long year, Long month) {
-        // TODO - check that neither is longer than expected lengths
         return String.format("%04d", year)
                 + String.format("%02d", month);
     }
