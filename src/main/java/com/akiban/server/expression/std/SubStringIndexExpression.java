@@ -55,14 +55,12 @@ public class SubStringIndexExpression extends AbstractTernaryExpression {
             if (argumentTypes.size() != 3) 
                 throw new WrongExpressionArityException(3, argumentTypes.size());
             
-            int length = 0;
-            for (int n = 0; n < argumentTypes.size()-1; n++)
-            {
-                argumentTypes.setType(n, AkType.VARCHAR);
-                length += argumentTypes.get(n).getPrecision();
-            }
+            argumentTypes.setType(0, AkType.VARCHAR);
+            argumentTypes.setType(1, AkType.VARCHAR);
             argumentTypes.setType(2, AkType.INT);
-            length += argumentTypes.get(2).getPrecision();
+            int length = argumentTypes.get(0).getPrecision() +
+                    argumentTypes.get(1).getPrecision() + 
+                    argumentTypes.get(2).getPrecision();
             
             return ExpressionTypes.varchar(length);
         }
