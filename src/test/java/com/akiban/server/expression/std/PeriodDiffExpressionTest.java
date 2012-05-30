@@ -79,6 +79,17 @@ public class PeriodDiffExpressionTest extends ComposedExpressionTestBase {
         test(-632, 521, 5553);
     }
     
+    @Test
+    public void testNegative()
+    {
+        test(-2009 * 12 * 2, -200901, 200901);
+        test(0, -123456, -123456);
+        test(10, -200912, -201010);
+        test(-10, -201010, -200912);
+        test(15, -206, -309);
+        test(1, -206, -207);
+    }
+    
     private static void test(long expected, long left, long right)
     {
         Expression testExpr = new PeriodDiffExpression(ExprUtil.lit(left), ExprUtil.lit(right));

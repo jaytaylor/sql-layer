@@ -98,6 +98,18 @@ public class PeriodAddExpressionTest extends ComposedExpressionTestBase {
         test(200012, 200000, 12);
     }
 
+    @Test
+    public void testNegativePeriod()
+    {
+        test(-200012, -200006, -6);
+        test(-200012, -6, -6);
+        test(-200012, -200101, 1);
+        test(-200012, -101, 1);
+        test(-200412, -502, 2);
+        test(-199812, -12, 24);
+        test(100006, -100000, 24006);
+    }
+    
     private void test(long expected, long period, long offset)
     {
         Expression testExpr = new PeriodAddExpression(ExprUtil.lit(period), ExprUtil.lit(offset));

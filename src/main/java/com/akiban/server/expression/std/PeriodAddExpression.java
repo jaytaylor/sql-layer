@@ -81,14 +81,17 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
                 return NullValueSource.only();
             
             long period = left().getLong();
-            // Compute actual year based on length of input
+            long periodSign = Long.signum(period);
 
+            // COMPATIBILITY: MySQL currently has undefined behavior for negative numbers
+            // Our behavior follows our B.C. year numbering (-199402 + 1 = -199401)
+            // Java's mod returns negative numbers: -1994 % 100 = -94
             long originalMonth = period % 100;
             long originalYear = parseYearFromPeriod(period);
             long offsetMonths = right().getLong();
             
-            long totalMonths = (originalYear * 12 + originalMonth - 1) + offsetMonths;
-            long result = createPeriod(totalMonths / 12, (totalMonths % 12) + 1);
+            long totalMonths = (originalYear * 12 + originalMonth - (1 * periodSign)) + offsetMonths;
+            long result = createPeriod(totalMonths / 12,  (totalMonths % 12) + 1 * periodSign);
                     
             valueHolder().putLong(result);
             return valueHolder();
@@ -96,19 +99,21 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
         
     }
 
+    // Helper functions
     // Takes a period and adds the current millenium to it if the period is in YYMM or YMM format
     protected static Long parseYearFromPeriod(Long period)
     {
         final long CURRENT_MILLENIUM = 2000;
         long rawYear = period / 100;
-        if (period <= 9999)
-            rawYear += CURRENT_MILLENIUM;       
+        if (Math.abs(period) <= 9999)
+            rawYear += Long.signum(period) * CURRENT_MILLENIUM;  
         return rawYear;
     }
+    
     // Create a YYYYMM format from a year and month argument
     private static Long createPeriod(Long year, Long month) {
         return Long.valueOf(String.format("%d", year)
-                + String.format("%02d", month));
+                + String.format("%02d", Math.abs(month)));
     }
     
     // End helper functions ***************************************************

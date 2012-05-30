@@ -86,6 +86,21 @@
 ---
 - Statement: SELECT PERIOD_ADD(0954321, 00003) FROM all_types
 - output: [[954412]]
+--- # Negative period
+- Statement: SELECT PERIOD_ADD(-200006, -6) FROM all_types
+- output: [[-200012]]
+---
+- Statement: SELECT PERIOD_ADD(-6, -6) FROM all_types
+- output: [[-200012]]
+---
+- Statement: SELECT PERIOD_ADD(-200101, 1) FROM all_types
+- output: [[-200012]]
+---
+- Statement: SELECT PERIOD_ADD(-100000, 24006) FROM all_types
+- output: [[100006]]
+---
+- Statement: SELECT PERIOD_ADD(-101, 1) FROM all_types
+- output: [[-200012]]
 --- # Params
 - Statement: SELECT PERIOD_ADD(?, 12) FROM all_types
 - params: [[199309]]

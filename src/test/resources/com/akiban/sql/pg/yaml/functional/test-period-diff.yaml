@@ -50,6 +50,18 @@
 ---
 - Statement: SELECT PERIOD_DIFF(521, 5553) FROM all_types
 - output: [[-632]]
+--- # Test negative periods
+- Statement: SELECT PERIOD_DIFF(-123456, -123456) FROM all_types
+- output: [[0]]
+---
+- Statement: SELECT PERIOD_DIFF(-200912, -201010) FROM all_types
+- output: [[10]]
+---
+- Statement: SELECT PERIOD_DIFF(-206, -309) FROM all_types
+- output: [[15]]
+---
+- Statement: SELECT PERIOD_DIFF(-200901, 200901) FROM all_types
+- output: [[-48216]]
 --- # Params
 - Statement: SELECT PERIOD_DIFF(?, 199409) FROM all_types
 - params: [[199309]]
