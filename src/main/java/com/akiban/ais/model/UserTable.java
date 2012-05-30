@@ -118,16 +118,6 @@ public class UserTable extends Table
         }
     }
 
-    public void setSize(int size)
-    {
-        this.size = size;
-    }
-
-    public int getSize()
-    {
-        return size;
-    }
-
     public void addCandidateParentJoin(Join parentJoin)
     {
         candidateParentJoins.add(parentJoin);
@@ -328,19 +318,9 @@ public class UserTable extends Table
         return ancestors;
     }
 
-    public Boolean isLookupTable()
-    {
-        return migrationUsage == MigrationUsage.AKIBAN_LOOKUP_TABLE;
-    }
-
     public Boolean isRoot()
     {
         return getGroup() == null || getParentJoin() == null;
-    }
-
-    public void setLookupTable(Boolean isLookup)
-    {
-        setMigrationUsage(isLookup ? MigrationUsage.AKIBAN_LOOKUP_TABLE : MigrationUsage.AKIBAN_STANDARD);
     }
 
     public MigrationUsage getMigrationUsage()
@@ -523,7 +503,6 @@ public class UserTable extends Table
     private final List<Join> candidateChildJoins = new ArrayList<Join>();
     private final Object lazyEvaluationLock = new Object();
 
-    private int size;
     private PrimaryKey primaryKey;
     private HKey hKey;
     private boolean containsOwnHKey;
