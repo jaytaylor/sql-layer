@@ -47,6 +47,7 @@ public final class XInt extends TClass {
     }
 
     public static final XInt TYPE_CLASS = new XInt();
+    
     static final TFactory FACTORY = new TFactory() {
         @Override
         public TInstance create(List<TAttributeValue> arguments, boolean strict) {
