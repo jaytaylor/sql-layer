@@ -56,7 +56,7 @@ class SortCursorUnidirectional extends SortCursor
     {
         super.open();
         evaluateBoundaries(context);
-        initializeOpen();
+        initializeForOpen();
     }
 
     @Override
@@ -96,7 +96,7 @@ class SortCursorUnidirectional extends SortCursor
             : keyRange.resetHi(new IndexBound(row, columnSelector));
         initializeCursor(keyRange, ordering);
         reevaluateBoundaries(context);
-        initializeOpen();
+        initializeForOpen();
     }
 
     // SortCursorUnidirectional interface
@@ -368,7 +368,7 @@ class SortCursorUnidirectional extends SortCursor
         }
     }
 
-    private void initializeOpen()
+    private void initializeForOpen()
     {
         exchange.clear();
         // boundColumns > 0 means that startKey has some values other than BEFORE or AFTER. start == null

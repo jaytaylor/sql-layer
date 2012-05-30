@@ -109,7 +109,8 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
 
     private boolean startUnboundedScan() throws PersistitException
     {
-        boolean more;Key.Direction direction;
+        boolean more;
+        Key.Direction direction;
         if (ascending) {
             cursor.exchange.append(Key.BEFORE);
             direction = Key.GT;
@@ -124,7 +125,8 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
 
     private boolean startBoundedScan() throws PersistitException
     {
-        boolean more;// About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
+        boolean more;
+        // About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
         Key.Direction direction;
         if (ascending) {
             if (loSource.isNull()) {
