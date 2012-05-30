@@ -859,7 +859,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         ex.clear().append(PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
         if(newAIS.getSchema(schema) != null) {
             buffer.clear();
-            new ProtobufWriter(buffer, schema).save(newAIS);
+            new ProtobufWriter(buffer, new ProtobufWriter.SchemaSelector(schema)).save(newAIS);
             buffer.flip();
 
             ex.getValue().clear().putByteArray(buffer.array(), buffer.position(), buffer.limit());

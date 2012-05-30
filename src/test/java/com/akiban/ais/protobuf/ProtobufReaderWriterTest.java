@@ -255,7 +255,7 @@ public class ProtobufReaderWriterTest {
         GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
         for(int i = 0; i < COUNT; ++i) {
             bbs[i] = createByteBuffer();
-            new ProtobufWriter(bbs[i], SCHEMA+i).save(inAIS);
+            new ProtobufWriter(bbs[i], new ProtobufWriter.SchemaSelector(SCHEMA+i)).save(inAIS);
         }
 
         AkibanInformationSchema outAIS = new AkibanInformationSchema();
@@ -323,7 +323,12 @@ public class ProtobufReaderWriterTest {
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS, String restrictSchema) {
         GrowableByteBuffer bb = createByteBuffer();
 
-        ProtobufWriter writer = new ProtobufWriter(bb, restrictSchema);
+        final ProtobufWriter writer;
+        if(restrictSchema == null) {
+            writer = new ProtobufWriter(bb);
+        } else {
+            writer = new ProtobufWriter(bb, new ProtobufWriter.SchemaSelector(restrictSchema));
+        }
         writer.save(inAIS);
 
         bb.flip();
