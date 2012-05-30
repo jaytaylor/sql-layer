@@ -60,6 +60,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -174,6 +175,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         this.sessionService = sessionService;
         this.treeService = treeService;
         this.store = store;
+    }
+
+    @Override
+    public TableName createPersistedInformationSchemaTable(UserTable newTable, int version) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public TableName createEphemeralInformationSchemaTable(UserTable newTable, MemoryTableFactory factory) {
+        throw new UnsupportedOperationException();
     }
 
     @Override

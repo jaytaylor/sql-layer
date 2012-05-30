@@ -69,7 +69,7 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName createEphemoralInformationSchemaTable(UserTable newTable, MemoryTableFactory factory);
+    TableName createEphemeralInformationSchemaTable(UserTable newTable, MemoryTableFactory factory);
 
     /**
      * Create a new table in the SchemaManager. Successful completion of this
