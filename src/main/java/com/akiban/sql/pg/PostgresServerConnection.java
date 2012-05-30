@@ -39,8 +39,11 @@ import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.SQLParserFeature;
 import com.akiban.sql.parser.StatementNode;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.operator.memoryadapter.MemoryAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
@@ -645,12 +648,19 @@ public class PostgresServerConnection extends ServerSessionBase
             compiler = PostgresJsonCompiler.create(this); 
         else
             compiler = PostgresOperatorCompiler.create(this);
-        adapter = new PersistitAdapter(compiler.getSchema(),
+        
+        adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
+                new PersistitAdapter(compiler.getSchema(),
                                        reqs.store().getPersistitStore(),
                                        reqs.treeService(),
                                        session,
-                                       reqs.config());
-        
+                                       reqs.config()));
+        /*
+        adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
+                new MemoryAdapter(compiler.getSchema(),
+                                session,
+                                reqs.config()));
+        */
         // Statement cache depends on some connection settings.
         statementCache = server.getStatementCache(Arrays.asList(format,
                                                                 Boolean.valueOf(getProperty("cbo"))),
@@ -666,6 +676,15 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresCallStatementGenerator(this),
             new PostgresExplainStatementGenerator(this)
         };
+    }
+
+    @Override
+    public StoreAdapter getStore(final TableName name) {
+        if (reqs.getMemoryStore().getFactory(name) != null ) {
+            return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
+        }
+        
+        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
     protected void sessionChanged() {

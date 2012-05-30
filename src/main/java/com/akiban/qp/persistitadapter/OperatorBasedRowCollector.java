@@ -261,22 +261,27 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
-    protected static ColumnSelector indexSelectorFromTableSelector(final Index index, final ColumnSelector tableSelector) {
+    protected static ColumnSelector indexSelectorFromTableSelector(Index index, final ColumnSelector tableSelector)
+    {
+        assert index.isTableIndex() : index;
         final IndexRowComposition rowComp = index.indexRowComposition();
-        return new ColumnSelector() {
-            @Override
-            public boolean includesColumn(int columnPosition) {
-                int tablePos = rowComp.getFieldPosition(columnPosition);
-                return tableSelector.includesColumn(tablePos);
-            }
-        };
+        return
+            new ColumnSelector()
+            {
+                @Override
+                public boolean includesColumn(int columnPosition)
+                {
+                    int tablePos = rowComp.getFieldPosition(columnPosition);
+                    return tableSelector.includesColumn(tablePos);
+                }
+            };
     }
 
     private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)
     {
         // Plan and query
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
-        boolean useIndex = predicateIndex != null && !predicateIndex.isHKeyEquivalent();
+        boolean useIndex = predicateIndex != null;
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
         Operator plan;
         if (useIndex) {
@@ -287,7 +292,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     groupTable,
                     predicateType.indexRowType(predicateIndex),
                     predicateType,
-                    LookupOption.DISCARD_INPUT,
+                    InputPreservationOption.DISCARD_INPUT,
                     limit);
         } else {
             assert !descending;
@@ -304,7 +309,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (queryRootType != predicateType) {
             List<UserTableRowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
-                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, LookupOption.KEEP_INPUT);
+                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, InputPreservationOption.KEEP_INPUT);
             }
         }
         // Get rid of everything above query root table.

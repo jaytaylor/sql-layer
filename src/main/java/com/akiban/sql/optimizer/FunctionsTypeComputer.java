@@ -69,7 +69,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return specialFunctionNode((SpecialFunctionNode)node);
         case NodeTypes.CURRENT_DATETIME_OPERATOR_NODE:
             return currentDatetimeOperatorNode((CurrentDatetimeOperatorNode)node);
-        case NodeTypes.DB2_LENGTH_OPERATOR_NODE:
+        case NodeTypes.OCTET_LENGTH_OPERATOR_NODE:
         case NodeTypes.EXTRACT_OPERATOR_NODE:
         case NodeTypes.CHAR_LENGTH_OPERATOR_NODE:
         case NodeTypes.SIMPLE_STRING_OPERATOR_NODE:
@@ -513,8 +513,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             return ExpressionTypes.BOOL;
-        case TypeId.FormatIds.CHAR_TYPE_ID:
-            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
         case TypeId.FormatIds.DATE_TYPE_ID:
             return ExpressionTypes.DATE;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
@@ -559,8 +557,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
                 return ExpressionTypes.DATETIME;
             else
                 return ExpressionTypes.TIMESTAMP;
+        case TypeId.FormatIds.BIT_TYPE_ID:
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+        case TypeId.FormatIds.CHAR_TYPE_ID:
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             return ExpressionTypes.varchar(sqlType.getMaximumWidth());
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
@@ -619,7 +619,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TEXT:
             return new DataTypeDescriptor(TypeId.LONGVARCHAR_ID, isNullable);
         case VARBINARY:
-            return new DataTypeDescriptor(TypeId.LONGVARBIT_ID, isNullable);
+            return new DataTypeDescriptor(TypeId.VARBIT_ID, isNullable);
         case NULL:
             return null;
         case DATETIME:

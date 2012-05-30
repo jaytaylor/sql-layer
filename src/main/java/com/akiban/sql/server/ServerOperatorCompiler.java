@@ -26,7 +26,6 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.sql.StandardException;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.rule.BaseRule;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -46,7 +45,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
-        if (Boolean.parseBoolean(server.getProperty("cbo")))
+        if (Boolean.parseBoolean(server.getProperty("cbo", "true")))
             initCostEstimator(server.costEstimator(this));
         else
             initCostEstimator(null);

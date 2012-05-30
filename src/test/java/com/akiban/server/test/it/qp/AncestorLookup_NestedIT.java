@@ -131,7 +131,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testALNAncestorTypesEmpty()
     {
-        ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.<RowType>emptyList(), 0);
+        ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.<UserTableRowType>emptyList(), 0);
     }
 
     @Test(expected = IllegalArgumentException.class)

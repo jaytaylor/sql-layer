@@ -296,7 +296,7 @@ public class Scanrows implements HapiProcessor {
             }
 
             outputter.output(new DefaultProcessedRequest(request, ais),
-                             range.index().isHKeyEquivalent(),
+                             false, // used to be range.index().isHKeyEquivalent(),
                              rows,
                              outputStream
             );

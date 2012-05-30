@@ -1,13 +1,13 @@
-SelectQuery@19b808a
-  ResultSet@140fee[order_date, name]
-    MapJoin@16b321b()
-      Flatten@2a077792(parent INNER child)
-        GroupScan@7dca5bdd(Group(parent -> test._akiban_parent))
-          TableSource@22bbe161(parent - TableGroup@3f96c498(parent))
-          TableSource@57803780(child - TableGroupJoin@70554aaf(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
-      Project@34114882[orders.order_date, child.name]
-        Select@5aaf6982[]
-          Flatten@503b27cc(orders)
-            BranchLookup@6f9a60c6(customers -> customers)
-              SingleIndexScan@47a068(Index(test.customers.name[IndexColumn(name)]), NONE, =parent.name, rows = 10, cost = 598.894)
-              TableSource@7e5d76c(orders - TableGroupJoin@5e740bfc(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+SelectQuery@1dca8c4a
+  ResultSet@5cc05d8d[order_date, name]
+    MapJoin@1c513060()
+      Flatten@29f684ea(customers INNER orders)
+        GroupScan@163efd26(Group(customers -> test._akiban_customers), rows = 1000, cost = 59715.0)
+          TableSource@2fa1b2ca(customers - TableGroup@3693e4d1(customers))
+          TableSource@58973716(orders - TableGroupJoin@15dd533(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+      Project@593e038d[orders.order_date, child.name]
+        Select@765b4bc0[]
+          Flatten@7790342b(child)
+            BranchLookup@375807f8(parent -> parent)
+              SingleIndexScan@7473472a(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 426.731)
+              TableSource@20e10434(child - TableGroupJoin@3c455220(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))

@@ -134,15 +134,13 @@ public abstract class GIUpdateITBase extends ITBase {
         if (groupIndex == null)
             throw new RuntimeException("group index undefined: " + indexName);
         long result = 0;
-        int giValueIndex = 0;
         for(UserTable table = groupIndex.leafMostTable();
             table != groupIndex.rootMostTable().parentTable();
             table = table.parentTable())
         {
             if (containingTables.remove(table)) {
-                result |= ONE << giValueIndex;
+                result |= 1 << table.getDepth();
             }
-            ++giValueIndex;
         }
         if (!containingTables.isEmpty())
             throw new RuntimeException("tables specified not in the branch: " + containingTables);
@@ -167,19 +165,6 @@ public abstract class GIUpdateITBase extends ITBase {
         this.joinType = joinType;
     }
 
-    private static int one() {
-//        // The JIT should recognize that 0.999... == 1 and optimize this loop, but it seems to spin for a while.
-//        // I should probably use a StringBuilder instead of creating a new String each time, that might fix this?
-//        String nines = "0.9";
-//        while(true) {
-//            BigDecimal asBigDecimal = new BigDecimal(nines);
-//            if (asBigDecimal.equals(BigDecimal.ONE))
-//                return asBigDecimal.intValue();
-//            nines += '9';
-//        }
-        return 1;
-    }
-
     private final Index.JoinType joinType;
     private final String groupIndexName = "test_gi";
 
@@ -193,7 +178,6 @@ public abstract class GIUpdateITBase extends ITBase {
     // consts
 
     private static final String SCHEMA = "coia";
-    private final int ONE = one(); // prevents javac from inlining the 1 literal
 
     // nested class
 

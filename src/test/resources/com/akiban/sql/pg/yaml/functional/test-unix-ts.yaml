@@ -1,0 +1,18 @@
+## Test the unix_timestamp function
+---
+- Include: all-types-schema.yaml
+--- # invalid date/time value
+- Statement: SELECT UNIX_TIMESTAMP('1920-21-01 00:00:00');
+- output: [[0]]
+--- # only tests for output type, since unix_timestamp() (w/o any argument) will return the current timestamp.
+- Statement: SELECT UNIX_TIMESTAMP();
+- output_types: [BIGINT]
+---
+- Statement: SELECT unix_timestamp(null);
+- output: [[null]]
+---
+- Statement: INSERT INTO all_types(varchar_field) VALUES ('1920-01-01 00:00:00');
+---
+- Statement: SELECT unix_timestamp(varchar_field) from all_types;
+- output: [[0]]
+...

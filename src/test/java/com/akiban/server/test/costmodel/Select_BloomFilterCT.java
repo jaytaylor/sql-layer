@@ -44,7 +44,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.expression.std.Expressions;
 import org.junit.Test;
 
-import javax.swing.*;
 import java.util.Arrays;
 import java.util.Collections;
 

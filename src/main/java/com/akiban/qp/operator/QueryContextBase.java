@@ -36,7 +36,6 @@ import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;

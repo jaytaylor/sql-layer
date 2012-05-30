@@ -66,7 +66,7 @@ import static java.lang.Math.min;
  <li><b>RowType outputRowType:</b> Type at the root of the branch to be
  retrieved.
 
- <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
  discarded (flag = DISCARD_INPUT).
 
@@ -191,15 +191,15 @@ public class BranchLookup_Default extends Operator
                                 GroupTable groupTable,
                                 RowType inputRowType,
                                 UserTableRowType outputRowType,
-                                API.LookupOption flag,
+                                API.InputPreservationOption flag,
                                 Limit limit)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("limit", limit);
         ArgumentValidation.isTrue("outputRowType != inputRowType", outputRowType != inputRowType);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT",
-                                  inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
+                                  inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
@@ -216,14 +216,13 @@ public class BranchLookup_Default extends Operator
                                   inputTable.getGroup(),
                                   "outputTable.getGroup()",
                                   outputTable.getGroup());
-        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
+        this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
         this.limit = limit;
-        UserTable commonAncestor = commonAncestor(inputTable, outputTable);
-        this.commonSegments = commonAncestor.getDepth() + 1;
+        this.commonAncestor = commonAncestor(inputTable, outputTable);
         switch (outputTable.getDepth() - commonAncestor.getDepth()) {
             case 0:
                 branchRootOrdinal = -1;
@@ -286,11 +285,11 @@ public class BranchLookup_Default extends Operator
     private final Operator inputOperator;
     private final GroupTable groupTable;
     private final RowType inputRowType;
-    private final RowType outputRowType;
+    private final UserTableRowType outputRowType;
     private final boolean keepInput;
     // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
     private final boolean inputPrecedesBranch;
-    private final int commonSegments;
+    private final UserTable commonAncestor;
     private final int branchRootOrdinal;
     private final Limit limit;
 
@@ -400,7 +399,7 @@ public class BranchLookup_Default extends Operator
             super(context);
             this.inputCursor = input;
             this.lookupCursor = adapter().newGroupCursor(groupTable);
-            this.lookupRowHKey = adapter().newHKey(outputRowType);
+            this.lookupRowHKey = adapter().newHKey(outputRowType.hKey());
         }
 
         // For use by this class
@@ -431,7 +430,7 @@ public class BranchLookup_Default extends Operator
             if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
                     lookupRow.release();
-                    computeLookupRowHKey(currentInputRow.hKey());
+                    computeLookupRowHKey(currentInputRow);
                     lookupCursor.rebind(lookupRowHKey, true);
                     lookupCursor.open();
                 }
@@ -441,10 +440,10 @@ public class BranchLookup_Default extends Operator
             }
         }
 
-        private void computeLookupRowHKey(HKey inputRowHKey)
+        private void computeLookupRowHKey(Row row)
         {
-            inputRowHKey.copyTo(lookupRowHKey);
-            lookupRowHKey.useSegments(commonSegments);
+            HKey ancestorHKey = row.ancestorHKey(commonAncestor);
+            ancestorHKey.copyTo(lookupRowHKey);
             if (branchRootOrdinal != -1) {
                 lookupRowHKey.extendWithOrdinal(branchRootOrdinal);
             }

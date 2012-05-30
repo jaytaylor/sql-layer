@@ -73,7 +73,7 @@ import java.util.*;
 
  <li><b>Collection<UserTableRowType> ancestorTypes:</b> Ancestor types to be located.
 
- <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
  discarded (flag = DISCARD_INPUT).
 
@@ -125,7 +125,7 @@ class AncestorLookup_Default extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), rowType, ancestorTypes);
+        return String.format("%s(%s -> %s)", getClass().getSimpleName(), rowType, ancestors);
     }
 
     // Operator interface
@@ -162,45 +162,40 @@ class AncestorLookup_Default extends Operator
                                   GroupTable groupTable,
                                   RowType rowType,
                                   Collection<UserTableRowType> ancestorTypes,
-                                  API.LookupOption flag)
+                                  API.InputPreservationOption flag)
     {
         validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
-        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
+        this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         // Sort ancestor types by depth
-        this.ancestorTypes = new ArrayList<RowType>(ancestorTypes);
-        if (this.ancestorTypes.size() > 1) {
-            Collections.sort(this.ancestorTypes,
-                             new Comparator<RowType>()
+        this.ancestors = new ArrayList<UserTable>(ancestorTypes.size());
+        for (UserTableRowType ancestorType : ancestorTypes) {
+            this.ancestors.add(ancestorType.userTable());
+        }
+        if (this.ancestors.size() > 1) {
+            Collections.sort(this.ancestors,
+                             new Comparator<UserTable>()
                              {
                                  @Override
-                                 public int compare(RowType x, RowType y)
+                                 public int compare(UserTable x, UserTable y)
                                  {
-                                     UserTable xTable = x.userTable();
-                                     UserTable yTable = y.userTable();
-                                     return xTable.getDepth() - yTable.getDepth();
+                                     return x.getDepth() - y.getDepth();
                                  }
                              });
-        }
-        this.ancestorTypeDepth = new int[ancestorTypes.size()];
-        int a = 0;
-        for (RowType ancestorType : this.ancestorTypes) {
-            UserTable userTable = ancestorType.userTable();
-            this.ancestorTypeDepth[a++] = userTable.getDepth() + 1;
         }
     }
     
     // For use by this class
 
-    private void validateArguments(RowType rowType, Collection<UserTableRowType> ancestorTypes, API.LookupOption flag)
+    private void validateArguments(RowType rowType, Collection<UserTableRowType> ancestorTypes, API.InputPreservationOption flag)
     {
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
         if (rowType instanceof IndexRowType) {
             // Keeping index rows not supported
-            ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
-                                      flag == API.LookupOption.DISCARD_INPUT);
+            ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
+                                      flag == API.InputPreservationOption.DISCARD_INPUT);
             RowType tableRowType = ((IndexRowType) rowType).tableType();
             // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
             // is from an index. I.e., this operator can be used for an index lookup.
@@ -222,8 +217,8 @@ class AncestorLookup_Default extends Operator
                                           ancestorType.userTable().getGroup() == rowType.userTable().getGroup());
             }
         } else if (rowType instanceof HKeyRowType) {
-            ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
-                                      flag == API.LookupOption.DISCARD_INPUT);
+            ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
+                                      flag == API.InputPreservationOption.DISCARD_INPUT);
             for (UserTableRowType ancestorType : ancestorTypes) {
                 HKeyRowType hKeyRowType = (HKeyRowType) rowType;
                 UserTableRowType tableRowType = ancestorType.schema().userTableRowType(hKeyRowType.hKey().userTable());
@@ -248,8 +243,7 @@ class AncestorLookup_Default extends Operator
     private final Operator inputOperator;
     private final GroupTable groupTable;
     private final RowType rowType;
-    private final List<RowType> ancestorTypes;
-    private final int[] ancestorTypeDepth;
+    private final List<UserTable> ancestors;
     private final boolean keepInput;
 
     // Inner classes
@@ -327,6 +321,17 @@ class AncestorLookup_Default extends Operator
             return input.isDestroyed();
         }
 
+        // Execution interface
+
+        Execution(QueryContext context, Cursor input)
+        {
+            super(context);
+            this.input = input;
+            // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
+            this.pending = new PendingRows(ancestors.size() + 1);
+            this.ancestorCursor = adapter().newGroupCursor(groupTable);
+        }
+
         // For use by this class
 
         private void advance()
@@ -348,32 +353,13 @@ class AncestorLookup_Default extends Operator
         private void findAncestors(Row inputRow)
         {
             assert pending.isEmpty();
-            HKey hKey = inputRow.hKey();
-            int nSegments = hKey.segments();
-            for (int i = 0; i < ancestorTypeDepth.length; i++) {
-                int depth = ancestorTypeDepth[i];
-                hKey.useSegments(depth);
-                readAncestorRow(hKey);
+            for (int i = 0; i < ancestors.size(); i++) {
+                readAncestorRow(inputRow.ancestorHKey(ancestors.get(i)));
                 if (ancestorRow.isHolding()) {
                     pending.add(ancestorRow.get());
                 }
             }
-            // Restore the hkey to its original state
-            hKey.useSegments(nSegments);
         }
-
-        // Execution interface
-
-        Execution(QueryContext context, Cursor input)
-        {
-            super(context);
-            this.input = input;
-            // Why + 1: Because the input row (whose ancestors get discovered) also goes into pending.
-            this.pending = new PendingRows(ancestorTypeDepth.length + 1);
-            this.ancestorCursor = adapter().newGroupCursor(groupTable);
-        }
-
-        // For use by this class
 
         private void readAncestorRow(HKey hKey)
         {

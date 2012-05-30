@@ -27,6 +27,9 @@
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.rowdata.RowData;
@@ -44,7 +47,6 @@ import com.akiban.server.test.it.ITBase;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.*;
 
 import static junit.framework.Assert.*;
@@ -599,5 +601,25 @@ public final class CBasicIT extends ITBase {
                                                           ScanLimit.NONE);
 
         expectRows(request, createNewRow(tid, 1L, -5L), createNewRow(tid, 2L, -1L));
+    }
+
+    /**
+     * bug1002359: Grouped tables, different schemas, same table name, same column name
+     */
+    @Test
+    public void groupedTablesWithSameNameAndColumnNames() {
+        createTable("s1", "t1", "id int not null primary key");
+        createTable("s2", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s1.t1(id)");
+        createTable("s3", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s2.t1(id)");
+        AkibanInformationSchema ais = ddl().getAIS(session());
+        Group group = ais.getGroup("t1");
+        assertNotNull("Found group", group);
+        List<TableName> tablesInGroup = new ArrayList<TableName>();
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getGroup() == group) {
+                tablesInGroup.add(table.getName());
+            }
+        }
+        assertEquals("Tables in group", "[s1.t1, s2.t1, s3.t1]", tablesInGroup.toString());
     }
 }

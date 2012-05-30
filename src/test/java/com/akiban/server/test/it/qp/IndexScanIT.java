@@ -29,7 +29,6 @@ package com.akiban.server.test.it.qp;
 import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
@@ -38,7 +37,6 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -52,9 +50,9 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static com.akiban.qp.operator.API.*;
+import static com.akiban.qp.operator.API.cursor;
+import static com.akiban.qp.operator.API.indexScan_Default;
 import static junit.framework.Assert.assertEquals;
-import static org.junit.Assert.assertSame;
 
 public class IndexScanIT extends OperatorITBase
 {

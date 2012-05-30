@@ -24,11 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.rule.costmodel;
+package com.akiban.server.error;
 
 import com.akiban.ais.model.Table;
 
-public interface TableRowCounts
-{
-    public long getTableRowCount(Table table);
+public class TableTreeNameIsNullException  extends InvalidOperationException {
+    public TableTreeNameIsNullException(Table table) {
+        super(ErrorCode.TABLE_TREE_NAME_IS_NULL,
+              table.getName().getSchemaName(),
+              table.getName().getTableName());
+    }
 }

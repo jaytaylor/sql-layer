@@ -29,48 +29,43 @@ package com.akiban.ais.model;
 /**
  * IndexToHKey is an interface useful in constructing HKey values from an index row.
  * There are two types of entries, ordinal values and index fields. An ordinal identifies
- * a user table. Non-ordinal entries are the positions within the index row and the
- * table where the HKey values can be found.
+ * a user table. An index field selects a field within the index row.
  */
-public class IndexToHKey {
-    public IndexToHKey(int[] ordinals,
-                       int[] indexRowPositions,
-                       int[] fieldPositions) {
-        if(ordinals.length != indexRowPositions.length || ordinals.length != fieldPositions.length) {
+public class IndexToHKey
+{
+    public IndexToHKey(int[] ordinals, int[] indexRowPositions)
+    {
+        if (ordinals.length != indexRowPositions.length) {
             throw new IllegalArgumentException("All arrays must be of equal length: " +
                                                ordinals.length + ", " +
-                                               indexRowPositions.length + ", " +
-                                               fieldPositions.length);
+                                               indexRowPositions.length);
         }
         this.ordinals = ordinals;
         this.indexRowPositions = indexRowPositions;
-        this.fieldPositions = fieldPositions;
     }
 
-    public boolean isOrdinal(int index) {
+    public boolean isOrdinal(int index)
+    {
         return ordinals[index] >= 0;
     }
 
-    public int getOrdinal(int index) {
+    public int getOrdinal(int index)
+    {
         return ordinals[index];
     }
 
-    public int getIndexRowPosition(int index) {
+    public int getIndexRowPosition(int index)
+    {
         return indexRowPositions[index];
     }
 
-    public int getFieldPosition(int index) {
-        return fieldPositions[index];
-    }
-
-    public int getLength() {
+    public int getLength()
+    {
         return ordinals.length;
     }
 
-    /** If set, value >= 0, the ith field of the hkey is this ordinal **/
+    // If set, value >= 0, the ith field of the hkey is this ordinal
     private final int[] ordinals;
-    /** If set, value >= 0, the ith field of the hkey is at this position in the index row **/
+    // If set, value >= 0, the ith field of the hkey is at this position in the index row
     private final int[] indexRowPositions;
-    /** If set, value >= 0, the ith field of the hkey is at this field in the data row **/
-    private final int[] fieldPositions;
 }

@@ -220,13 +220,16 @@ public class ProtobufWriter {
         AISProtobuf.Index.Builder indexBuilder = AISProtobuf.Index.newBuilder();
         indexBuilder.
                 setIndexName(indexName.getName()).
-                setTreeName(index.getTreeName()).
                 setIndexId(index.getIndexId()).
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
                 setJoinType(convertJoinType(index.getJoinType()));
                 // Not yet in AIS: description
+
+        if(index.getTreeName() != null) {
+            indexBuilder.setTreeName(index.getTreeName());
+        }
 
         for(IndexColumn indexColumn : index.getKeyColumns()) {
             writeIndexColumn(indexBuilder, indexColumn, withTableName);
