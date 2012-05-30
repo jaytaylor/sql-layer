@@ -117,7 +117,6 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                 currentRow.hold(row);
             }
         }
-        System.out.println(row);
         return wroteToPayload;
     }
 

@@ -37,6 +37,8 @@ import com.persistit.exception.PersistitException;
 import java.util.ArrayList;
 import java.util.List;
 
+import static java.lang.Math.max;
+
 class SortCursorMixedOrder extends SortCursor
 {
     // Cursor interface
@@ -94,33 +96,29 @@ class SortCursorMixedOrder extends SortCursor
     public void initializeScanStates() throws PersistitException
     {
         int f = 0;
-        if (boundColumns > 0) {
-            BoundExpressions lo = keyRange.lo().boundExpressions(context);
-            BoundExpressions hi = keyRange.hi().boundExpressions(context);
-            // Set lo and hi bounds for each key segment
-            while (f < boundColumns()) {
-                ValueSource loSource = lo.eval(f);
-                ValueSource hiSource = hi.eval(f);
-                MixedOrderScanStateBounded scanState = new MixedOrderScanStateBounded
-                    (this,
-                     f,
-                     f >= orderingColumns() || ordering.ascending(f),
-                     f == boundColumns() - 1);
-                scanState.setRange(loSource, hiSource);
-                scanStates.add(scanState);
-                f++;
-            }
+        BoundExpressions lo = keyRange.lo().boundExpressions(context);
+        BoundExpressions hi = keyRange.hi().boundExpressions(context);
+        while (f < boundColumns) {
+            ValueSource loSource = lo.eval(f);
+            ValueSource hiSource = hi.eval(f);
+            MixedOrderScanStateSingleSegment scanState = new
+                MixedOrderScanStateSingleSegment(this, f, f >= orderingColumns() || ordering.ascending(f));
+            scanState.setRange(loSource, hiSource);
+            scanStates.add(scanState);
+            f++;
         }
         while (f < orderingColumns()) {
-            MixedOrderScanStateUnbounded scanState = new MixedOrderScanStateUnbounded(this, f);
+            MixedOrderScanStateSingleSegment scanState =
+                new MixedOrderScanStateSingleSegment(this, f);
             scanStates.add(scanState);
             f++;
         }
         if (f < keyColumns()) {
-            MixedOrderScanStateRestOfKey scanState = new MixedOrderScanStateRestOfKey(this, orderingColumns());
+            MixedOrderScanStateRemainingSegments scanState =
+                new MixedOrderScanStateRemainingSegments(this, orderingColumns());
             scanStates.add(scanState);
         }
-        if (boundColumns() > 0) {
+        if (boundColumns > 0) {
             /*
                 * An index restriction is described by an IndexKeyRange which contains
                 * two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
@@ -229,9 +227,9 @@ class SortCursorMixedOrder extends SortCursor
         }
     }
 
-    private MixedOrderScanStateBounded scanState(int field)
+    private MixedOrderScanStateSingleSegment scanState(int field)
     {
-        return (MixedOrderScanStateBounded) scanStates.get(field);
+        return (MixedOrderScanStateSingleSegment) scanStates.get(field);
     }
 
     // Object state

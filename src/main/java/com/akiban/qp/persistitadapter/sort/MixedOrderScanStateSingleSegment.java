@@ -40,45 +40,12 @@ import com.persistit.exception.PersistitException;
 
 import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
 
-class MixedOrderScanStateBounded extends MixedOrderScanState
+class MixedOrderScanStateSingleSegment extends MixedOrderScanState
 {
     @Override
     public boolean startScan() throws PersistitException
     {
-        // About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
-        Key.Direction direction;
-        if (ascending) {
-            if (loSource.isNull()) {
-                cursor.exchange.append(null);
-                direction = Key.GT;
-            } else {
-                keyTarget.expectingType(loSource.getConversionType());
-                Converters.convert(loSource, keyTarget);
-                direction = loInclusive ? Key.GTEQ : Key.GT;
-            }
-            if (!hiSource.isNull()) {
-                setupEndComparison(hiInclusive ? Comparison.LE : Comparison.LT, hiSource);
-            }
-            // else: endComparison stays null, which causes pastEnd() to always return false.
-        } else {
-            if (hiSource.isNull()) {
-                if (loSource.isNull()) {
-                    cursor.exchange.append(null);
-                } else {
-                    cursor.exchange.append(Key.AFTER);
-                }
-                direction = Key.LT;
-            } else {
-                keyTarget.expectingType(hiSource.getConversionType());
-                Converters.convert(hiSource, keyTarget);
-                direction = hiInclusive ? Key.LTEQ : Key.LT;
-            }
-            if (!loSource.isNull()) {
-                setupEndComparison(loInclusive ? Comparison.GE : Comparison.GT, loSource);
-            }
-        }
-        SORT_TRAVERSE.hit();
-        return cursor.exchange.traverse(direction, false) && !pastEnd();
+        return loSource == null && hiSource == null ? startUnboundedScan() : startBoundedScan();
     }
 
     @Override
@@ -114,17 +81,19 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
         }
     }
 
-    public MixedOrderScanStateBounded(SortCursorMixedOrder cursor,
-                                      int field,
-                                      boolean ascending,
-                                      boolean lastBoundedColumn)
+    public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor, int field, boolean ascending)
         throws PersistitException
     {
         super(cursor, field, ascending);
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
         this.keySource = new PersistitKeyValueSource();
-        this.lastBoundedColumn = lastBoundedColumn;
+    }
+
+    public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor, int field)
+        throws PersistitException
+    {
+        this(cursor, field, cursor.ordering().ascending(field));
     }
 
     private void setupEndComparison(Comparison comparison, ValueSource bound)
@@ -136,6 +105,60 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
                                     comparison,
                                     Expressions.valueSource(bound));
         }
+    }
+
+    private boolean startUnboundedScan() throws PersistitException
+    {
+        boolean more;Key.Direction direction;
+        if (ascending) {
+            cursor.exchange.append(Key.BEFORE);
+            direction = Key.GT;
+        } else {
+            cursor.exchange.append(Key.AFTER);
+            direction = Key.LT;
+        }
+        SORT_TRAVERSE.hit();
+        more = cursor.exchange.traverse(direction, false);
+        return more;
+    }
+
+    private boolean startBoundedScan() throws PersistitException
+    {
+        boolean more;// About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
+        Key.Direction direction;
+        if (ascending) {
+            if (loSource.isNull()) {
+                cursor.exchange.append(null);
+                direction = Key.GT;
+            } else {
+                keyTarget.expectingType(loSource.getConversionType());
+                Converters.convert(loSource, keyTarget);
+                direction = loInclusive ? Key.GTEQ : Key.GT;
+            }
+            if (!hiSource.isNull()) {
+                setupEndComparison(hiInclusive ? Comparison.LE : Comparison.LT, hiSource);
+            }
+            // else: endComparison stays null, which causes pastEnd() to always return false.
+        } else {
+            if (hiSource.isNull()) {
+                if (loSource.isNull()) {
+                    cursor.exchange.append(null);
+                } else {
+                    cursor.exchange.append(Key.AFTER);
+                }
+                direction = Key.LT;
+            } else {
+                keyTarget.expectingType(hiSource.getConversionType());
+                Converters.convert(hiSource, keyTarget);
+                direction = hiInclusive ? Key.LTEQ : Key.LT;
+            }
+            if (!loSource.isNull()) {
+                setupEndComparison(loInclusive ? Comparison.GE : Comparison.GT, loSource);
+            }
+        }
+        SORT_TRAVERSE.hit();
+        more = cursor.exchange.traverse(direction, false) && !pastEnd();
+        return more;
     }
 
     private boolean pastEnd()
@@ -161,7 +184,6 @@ class MixedOrderScanStateBounded extends MixedOrderScanState
 
     private final PersistitKeyValueTarget keyTarget;
     private final PersistitKeyValueSource keySource;
-    private final boolean lastBoundedColumn;
     private ValueSource loSource;
     private ValueSource hiSource;
     private boolean loInclusive;
