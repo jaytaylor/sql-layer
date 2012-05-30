@@ -26,6 +26,7 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
@@ -410,6 +411,21 @@ public class UserTable extends Table
         }
         return hKeyDependentTables;
     }
+
+    public boolean isMemoryTable()
+    {
+        return tableFactory != null;
+    }
+
+    public MemoryTableFactory getMemoryTableFactory()
+    {
+        return tableFactory;
+    }
+
+    public void setMemoryTableFactory(MemoryTableFactory tableFactory)
+    {
+        this.tableFactory = tableFactory;
+    }
     
     private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
     {
@@ -511,6 +527,7 @@ public class UserTable extends Table
     private Integer depth = null;
     private volatile List<UserTable> hKeyDependentTables;
     private volatile List<UserTable> ancestors;
+    private MemoryTableFactory tableFactory;
 
     // consts
 
