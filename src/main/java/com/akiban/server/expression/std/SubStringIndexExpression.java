@@ -33,7 +33,9 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SubStringIndexExpression extends AbstractTernaryExpression {
     
@@ -91,67 +93,66 @@ public class SubStringIndexExpression extends AbstractTernaryExpression {
                 return NullValueSource.only();
             
             String string = first.getString();
-            char[] pattern = second.getString().toCharArray();
+            String pattern = second.getString();
             int count = (int) third.getInt();
             boolean signed = count < 0;
             String substring;
 
-            int indexOf = indexOf(string.toCharArray(), pattern, count, signed);
-            substring = signed ? string.substring(indexOf, string.length()) :
-                    string.substring(0, indexOf);
+            if (signed) 
+            {
+                StringBuilder string_build = new StringBuilder(string);
+                string = string_build.reverse().toString();
+                StringBuilder pattern_build = new StringBuilder(pattern);
+                pattern = pattern_build.reverse().toString();
+                count = Math.abs(count); 
+            }
+            int indexOf = indexOf(string.toCharArray(), pattern.toCharArray(), count);
+            substring = string.substring(0, indexOf);
+            
+            StringBuilder builder = new StringBuilder(substring);
+            if (signed) substring = builder.reverse().toString();
             valueHolder().putRaw(AkType.VARCHAR, substring);
             return valueHolder();
         }
         
-        private static int indexOf(char[] haystack, char[] needle, int orig_count, boolean signed) 
+        private static int indexOf(char[] haystack, char[] needle, int orig_count) 
         {
             int needle_len = needle.length;
             int haystack_len = haystack.length;
             int count = orig_count;
-            int start = signed ? haystack_len - 1 : needle_len - 1;
-            
+ 
             if (needle_len == 0 || count == 0) return 0;
-            int charTable[] = makeCharTable(needle);
+            
+            Map<Character,Integer> charMap = makeCharTable(needle);
             int offsetTable[] = makeOffsetTable(needle);
-            for (int i = start, j; i < haystack_len && i >= 0;)
+            for (int i = needle_len - 1, j; i < haystack_len;)
             {
-                for (j = needle_len - 1; needle[j] == haystack[i]; --i, --j)
+                for (j = needle_len - 1; needle[j] == haystack[i]; --i,--j)
                 {
                     if (j == 0) 
                     {
                         if (count == 1) return i;
-                        if (count == -1) return i + needle_len;
-                        if (signed) count++;
-                        else count--;
+                        count--;
                         break;
                     }
                 }
-                int max = Math.max(offsetTable[needle_len-1-j], charTable[haystack[i]]);
-                if (signed) i -= max;
-                else i += max;
+                int max = (charMap.containsKey(haystack[i])) ? 
+                        Math.max(offsetTable[needle_len-1-j], charMap.get(haystack[i])) :
+                        Math.max(offsetTable[needle_len-1-j], needle_len);
+                i += max;
             }
-            if (count != orig_count) 
-                if (signed) return 0; 
-                else return haystack_len;
-            return 0;
+            return haystack_len;
         }
         
-        private static int[] makeCharTable(char[] needle)
+        private static Map<Character,Integer> makeCharTable(char[] needle)
         {
-            final int ALPHABET_SIZE = 256;
-            int[] table = new int[ALPHABET_SIZE];
             int needle_len = needle.length;
-            int table_len = table.length;
-            
-            for (int i = 0; i < table_len; ++i)
+            Map<Character,Integer> map = new HashMap<Character, Integer>(needle_len);
+            for (int i = 0; i < needle_len - 1; ++i)
             {
-                table[i] = needle_len;
+                map.put(needle[i], needle_len - 1 - i);
             }
-            for (int i = 0; i < needle_len - 1; ++i) 
-            {
-                table[needle[i]] = needle_len - 1 - i;
-            }
-            return table;
+            return map;
         }
         
         private static int[] makeOffsetTable(char[] needle) 

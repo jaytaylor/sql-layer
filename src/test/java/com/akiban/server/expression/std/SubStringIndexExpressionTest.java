@@ -146,6 +146,16 @@ public class SubStringIndexExpressionTest extends ComposedExpressionTestBase
     }
     
     @Test
+    public void testReturnEarly()
+    {
+        Expression num = new LiteralExpression(AkType.INT, -2);
+        Expression top = new SubStringIndexExpression(getExp("xbz123babcabcabbabcabcab"), getExp("babcabcab"), num);
+        ValueSource source = top.evaluation().eval();
+        
+        Assert.assertEquals("babcabcab", source.getString());
+    }
+    
+    @Test
     public void testEmpty()
     {
         Expression num = new LiteralExpression(AkType.INT, 0);
