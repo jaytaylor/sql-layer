@@ -28,12 +28,9 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
-import java.util.HashMap;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -74,19 +71,6 @@ public class PeriodAddExpressionTest extends ComposedExpressionTestBase {
         assertEquals(204903, addYYMM.evaluation().eval().getLong());
     }
     
-    // Test the parsePeriod function used in both PERIOD_ADD and PERIOD_DIFF
-    @Test
-    public void testParsePeriod() 
-    {
-        HashMap<String, Long> dicYYMM = PeriodAddExpression.parsePeriod(610);
-        assertEquals(2006, (long) dicYYMM.get("year"));
-        assertEquals(10, (long) dicYYMM.get("month"));
-        
-        HashMap<String, Long> dicLongYear = PeriodAddExpression.parsePeriod(98005);
-        assertEquals(980, (long) dicLongYear.get("year"));
-        assertEquals(5, (long) dicLongYear.get("month"));
-    }
-    
     @Test
     public void testVaryingLengths()
     {
@@ -113,11 +97,13 @@ public class PeriodAddExpressionTest extends ComposedExpressionTestBase {
         test(200012, 100, 0);
         test(200012, 200000, 12);
     }
+
     private void test(long expected, long period, long offset)
     {
         Expression testExpr = new PeriodAddExpression(ExprUtil.lit(period), ExprUtil.lit(offset));
         assertEquals(expected, testExpr.evaluation().eval().getLong());
     }
+    
     @Override
     protected CompositionTestInfo getTestInfo() 
     {

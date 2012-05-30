@@ -78,10 +78,9 @@ public class PeriodDiffExpression extends AbstractBinaryExpression {
                 return NullValueSource.only();
             
             // Return a dictionary of parsed strings with "year" and "month"
-            HashMap<String, Long> parsedLeftMap = PeriodAddExpression.parsePeriod(left().getLong());
-            HashMap<String, Long> parsedRightMap = PeriodAddExpression.parsePeriod(right().getLong());
-            long yearLeftArg = parsedLeftMap.get("year"), monthLeftArg = parsedLeftMap.get("month");
-            long yearRightArg = parsedRightMap.get("year"), monthRightArg = parsedRightMap.get("month");
+            long periodLeft = left().getLong(), periodRight = right().getLong();
+            long yearLeftArg = PeriodAddExpression.parseYearFromPeriod(periodLeft), monthLeftArg = periodLeft % 100;
+            long yearRightArg = PeriodAddExpression.parseYearFromPeriod(periodRight), monthRightArg = periodRight % 100;
                         
             // Compute the difference in months
             long result = (yearLeftArg * 12 + monthLeftArg) - (yearRightArg * 12 + monthRightArg);

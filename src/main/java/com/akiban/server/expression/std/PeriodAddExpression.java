@@ -80,11 +80,11 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
             if (left().isNull() || right().isNull())
                 return NullValueSource.only();
             
-            // Parse the input for a dictionary with "year" and "month" as keys
-            HashMap<String, Long> parsedLeftMap = parsePeriod(left().getLong());
-            long originalYear = parsedLeftMap.get("year");
-            long originalMonth = parsedLeftMap.get("month");
-            
+            long period = left().getLong();
+            // Compute actual year based on length of input
+
+            long originalMonth = period % 100;
+            long originalYear = parseYearFromPeriod(period);
             long offsetMonths = right().getLong();
             
             long totalMonths = (originalYear * 12 + originalMonth - 1) + offsetMonths;
@@ -95,24 +95,16 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
         }
         
     }
-    
-    // Begin helper functions *************************************************
-    // Periods have the format of either YYMM or YYYYMM
-    protected static HashMap<String, Long> parsePeriod(long period) {
-        long periodLen = String.valueOf(period).trim().length();
-        
-        // The two least significant digits are _always_ the month
-        long CURRENT_MILLENIUM = 2000;
-        long parsedMonth = period % 100;
-        long parsedYear = (periodLen <= 4) ? (period / 100) + CURRENT_MILLENIUM : period / 100;
-   
-        HashMap<String, Long> results = new HashMap<String, Long>();
-        results.put("year", parsedYear);
-        results.put("month", parsedMonth);
 
-        return results;
+    // Takes a period and adds the current millenium to it if the period is in YYMM or YMM format
+    protected static Long parseYearFromPeriod(Long period)
+    {
+        final long CURRENT_MILLENIUM = 2000;
+        long rawYear = period / 100;
+        if (period <= 9999)
+            rawYear += CURRENT_MILLENIUM;       
+        return rawYear;
     }
-
     // Create a YYYYMM format from a year and month argument
     private static Long createPeriod(Long year, Long month) {
         return Long.valueOf(String.format("%d", year)
