@@ -34,9 +34,43 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
+    /**
+     * <p>
+     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * schema. This table will be be populated and accessed through the normal
+     * {@link Store} methods.
+     * </p>
+     * <p>
+     * As this table contains rows that will go to disk, a caller specified
+     * version will also be stored to facilitate upgrades. If this table
+     * already exists (i.e. created on a previous start-up), the version must
+     * match or an exception will be thrown. Upgrade and/or conversion must be
+     * handled by the caller.
+     * </p>
+     *
+     * @param newTable New table to create.
+     * @param version Version of the table being created.
+     *
+     * @return Name of the table that was created.
+     */
+    TableName createPersistedInformationSchemaTable(UserTable newTable, int version);
+
+    /**
+     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * schema. This table will be be populated on demand and accessed through
+     * the given {@link MemoryTableFactory}.
+     *
+     * @param newTable New table to create.
+     * @param factory Factory to service this table.
+     *
+     * @return Name of the table that was created.
+     */
+    TableName createEphemoralInformationSchemaTable(UserTable newTable, MemoryTableFactory factory);
+
     /**
      * Create a new table in the SchemaManager. Successful completion of this
      * method results in a new timestamp and schema generation, see
