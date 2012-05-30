@@ -31,11 +31,15 @@ import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types.AkType;
 import static com.akiban.server.types.AkType.*;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
+import com.akiban.util.ByteSource;
+import com.akiban.util.WrappingByteSource;
 import com.google.common.collect.Iterables;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -321,6 +325,16 @@ public class ValueSources
         map.put(TIMESTAMP, m11);
     }
     
+    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric)
+    {
+        return equals(v1, v2, textAsNumeric, Converters.DEFAULT_CS);
+    }
+    
+    public static long compare (ValueSource v1, ValueSource v2)
+    {
+        return compare(v1, v2, Converters.DEFAULT_CS);
+    }
+    
     /**
      * Compare two instances of ValueSource.
      * Equality is defined as:
@@ -388,12 +402,12 @@ public class ValueSources
      * @param v2
      * @return 
      */
-    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric)
+    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric, Charset charSet)
     {
         if (v1.isNull() || v2.isNull()) return false;
         try
         {
-            boolean ret = compare(v1, v2) == 0;
+            boolean ret = compare(v1, v2, charSet) == 0;
             
             if (!ret && textAsNumeric && isText(v1.getConversionType())
                                       && isText(v2.getConversionType()))
@@ -413,13 +427,21 @@ public class ValueSources
         }
     }
     
-    public static long compare (ValueSource left, ValueSource right)
+    public static long compare (ValueSource left, ValueSource right, Charset charSet)
     {
         AkType l = left.getConversionType();
         AkType r = right.getConversionType();    
         
-        if (l == r || isText(l) && isText(r))
+        boolean isLeft = true; 
+        if (l == r || (isLeft = isText(l)) && isText(r))
             return compareSameType(left, right);
+        else if (isLeft && r == AkType.VARBINARY) 
+            return new WrappingByteSource(Extractors.getStringExtractor().getObject(left).getBytes(charSet))
+                    .compareTo(right.getVarBinary());
+        
+        else if (l == AkType.VARBINARY && isText(r))
+            return left.getVarBinary().compareTo(
+                    new WrappingByteSource(Extractors.getStringExtractor().getObject(right).getBytes(charSet)));
         else
         {
             Map<AkType, Comparator<ValueSource>> v;

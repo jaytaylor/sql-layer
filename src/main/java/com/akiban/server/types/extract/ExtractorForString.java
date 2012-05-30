@@ -28,6 +28,10 @@ package com.akiban.server.types.extract;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
+import java.io.UnsupportedEncodingException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 final class ExtractorForString extends ObjectExtractor<String> {
     @Override
@@ -52,7 +56,7 @@ final class ExtractorForString extends ObjectExtractor<String> {
         case DATE:      return longExtractor(AkType.DATE).asString(source.getDate());
         case DATETIME:  return longExtractor(AkType.DATETIME).asString(source.getDateTime());
         case DECIMAL:   return String.valueOf(source.getDecimal());
-        case VARBINARY: return String.valueOf(source.getVarBinary());
+        case VARBINARY: return new String(source.getVarBinary().byteArray(), Converters.DEFAULT_CS);
         case INTERVAL_MILLIS:  return longExtractor(AkType.INTERVAL_MILLIS).asString(source.getInterval_Millis());
         case INTERVAL_MONTH:   return longExtractor(AkType.INTERVAL_MONTH).asString(source.getInterval_Month());
         default:

@@ -26,6 +26,7 @@
 
 package com.akiban.server.types.conversion;
 
+import java.nio.charset.Charset;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
@@ -112,7 +113,10 @@ public final class Converters {
         builder.alias(LONG, INT);
         builder.alias(LONG, U_INT);
         
+        builder.legalConversions(VARBINARY,
+                VARCHAR);
         builder.legalConversions(VARCHAR,
+                VARCHAR,
                 BOOL,
                 DOUBLE,
                 FLOAT,
@@ -287,6 +291,8 @@ public final class Converters {
     private Converters() {}
     
     // class state
+    public static final Charset DEFAULT_CS = Charset.forName("latin1");
+    
     /**
      * A mapping of AkTypes to converters. This map must never be modified once it's created -- the instance's
      * thread safety comes solely from the happens-before relationship of the class instantiation.
