@@ -38,5 +38,5 @@ public interface TOverload {
     public void evaluate(
             List<TInstance> inputInstances, List<PValueSource> inputs,
             TInstance outputInstance, PValueTarget output);
-    public TConstantValue evaluateConstant(List<TInstance> inputInstances, List<PValueSource> inputs);
+    public TConstantValue evaluateConstant(List<TConstantValue> inputs);
 }

@@ -24,25 +24,35 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.playground;
 
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.TCombineMode;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
 
-public final class TConstantValue {
+import java.util.List;
 
-    public TInstance instance() {
-        return instance();
+public final class XInt extends TClass {
+    @Override
+    protected TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1) {
+        assert instance0 == INSTANCE;
+        assert instance1 == INSTANCE;
+        return INSTANCE;
     }
 
-    public PValueSource value() {
-        return value;
+    private XInt() {
+        super(XBund.ID, "xint", new String[0], 1, 1, 4);
     }
 
-    public TConstantValue(TInstance tInstance, PValueSource value) {
-        this.tInstance = tInstance;
-        this.value = value;
-    }
-
-    private final TInstance tInstance;
-    private final PValueSource value;
+    public static final XInt TYPE_CLASS = new XInt();
+    static final TFactory FACTORY = new TFactory() {
+        @Override
+        public TInstance create(List<TAttributeValue> arguments, boolean strict) {
+            assert arguments.isEmpty() : arguments;
+            return INSTANCE;
+        }
+    };
+    static final TInstance INSTANCE = new TInstance(TYPE_CLASS);
 }

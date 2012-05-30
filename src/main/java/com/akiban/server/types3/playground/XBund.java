@@ -24,25 +24,31 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.playground;
 
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
 
-public final class TConstantValue {
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
-    public TInstance instance() {
-        return instance();
+public enum XBund implements TBundle {
+    INSTANCE;
+
+    @Override
+    public TBundleID id() {
+        return ID;
     }
 
-    public PValueSource value() {
-        return value;
+    @Override
+    public Map<TClass, TFactory> typeClasses() {
+        Map<TClass, TFactory> result = new HashMap<TClass, TFactory>();
+        result.put(XInt.TYPE_CLASS, XInt.FACTORY);
+        return result;
     }
 
-    public TConstantValue(TInstance tInstance, PValueSource value) {
-        this.tInstance = tInstance;
-        this.value = value;
-    }
-
-    private final TInstance tInstance;
-    private final PValueSource value;
+    static final TBundleID ID = new TBundleID("xbund", UUID.randomUUID());
 }
