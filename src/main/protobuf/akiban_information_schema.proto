@@ -100,8 +100,10 @@ message Table {
     repeated Index   indexes      = 6;  // list of indexes on the table
     optional Join    parentTable  = 7;  // Join to parent table
     optional string  description  = 8;  // Table comment holder
-    optional bool    protected    = 9;  // Table can not be altered or joined
+    optional bool    protected    = 9;  // Table can not be altered or grouped to
                                         // by user actions. For AIS tables.
+    optional int32   version     = 10;  // Version this table was created with.
+                                        // For AIS tables.
 }
 
 message Schema {

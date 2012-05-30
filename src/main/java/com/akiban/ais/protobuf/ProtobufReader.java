@@ -214,6 +214,9 @@ public class ProtobufReader {
                     pbTable.hasTableId() ? pbTable.getTableId() : generatedId++
             );
             userTable.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
+            if(pbTable.hasVersion()) {
+                userTable.setVersion(pbTable.getVersion());
+            }
             loadColumns(userTable, pbTable.getColumnsList());
             loadTableIndexes(userTable, pbTable.getIndexesList());
         }
@@ -400,7 +403,8 @@ public class ProtobufReader {
                 AISProtobuf.Table.INDEXES_FIELD_NUMBER,
                 AISProtobuf.Table.PARENTTABLE_FIELD_NUMBER,
                 AISProtobuf.Table.DESCRIPTION_FIELD_NUMBER,
-                AISProtobuf.Table.PROTECTED_FIELD_NUMBER
+                AISProtobuf.Table.PROTECTED_FIELD_NUMBER,
+                AISProtobuf.Table.VERSION_FIELD_NUMBER
         );
     }
 

@@ -50,6 +50,7 @@ import static com.akiban.ais.AISComparator.compareAndAssert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class ProtobufReaderWriterTest {
@@ -297,6 +298,22 @@ public class ProtobufReaderWriterTest {
         assertEquals("child table treename", GROUP_TREENAME, outChild.getTreeName());
         assertEquals("parent pk treename", PARENT_PK_TREENAME, inParent.getIndex("PRIMARY").getTreeName());
         assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getTreeName());
+    }
+
+    @Test
+    public void tableVersionNumber() {
+        final String TABLE = "t1";
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(TABLE).colLong("pid", false).pk("pid");
+
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertSame("Table without version", null, outAIS.getUserTable(SCHEMA, TABLE).getVersion());
+
+        final Integer VERSION = 5;
+        inAIS.getUserTable(SCHEMA, TABLE).setVersion(VERSION);
+        outAIS = writeAndRead(inAIS);
+        assertEquals("Table with version", VERSION, outAIS.getUserTable(SCHEMA, TABLE).getVersion());
     }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {

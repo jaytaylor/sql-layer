@@ -162,6 +162,10 @@ public class ProtobufWriter {
                 setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
                 // Not yet in AIS: ordinal, description, protected
 
+        if(table.hasVersion()) {
+            tableBuilder.setVersion(table.getVersion());
+        }
+
         for(Column column : table.getColumnsIncludingInternal()) {
             writeColumn(tableBuilder, column);
         }

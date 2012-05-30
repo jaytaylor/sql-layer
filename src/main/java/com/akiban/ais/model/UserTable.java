@@ -426,6 +426,20 @@ public class UserTable extends Table
     {
         this.tableFactory = tableFactory;
     }
+
+    public boolean hasVersion()
+    {
+        return version != null;
+    }
+
+    public Integer getVersion()
+    {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
+    }
     
     private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
     {
@@ -528,6 +542,7 @@ public class UserTable extends Table
     private volatile List<UserTable> hKeyDependentTables;
     private volatile List<UserTable> ancestors;
     private MemoryTableFactory tableFactory;
+    private Integer version;
 
     // consts
 
