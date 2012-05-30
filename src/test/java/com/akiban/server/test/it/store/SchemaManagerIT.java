@@ -29,6 +29,7 @@ package com.akiban.server.test.it.store;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -46,8 +47,18 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.GroupCursor;
+import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
@@ -86,6 +97,16 @@ public final class SchemaManagerIT extends ITBase {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
                 createTable(schema, tableName, ddl);
+                return null;
+            }
+        });
+    }
+
+    private void createISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
+        transactionally(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                schemaManager.createEphemeralInformationSchemaTable(session(), table, factory);
                 return null;
             }
         });
@@ -581,6 +602,49 @@ public final class SchemaManagerIT extends ITBase {
         createIndex(SCHEMA, T2_NAME, "id_2", "id");
     }
 
+    @Test
+    public void createEphemeralBasic() throws Exception {
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        MemoryTableFactory factory = new MemoryTableFactoryMock();
+        createISTable(makeSimpleISTable(tableName.getTableName()), factory);
+
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists", testTable);
+            assertEquals("Is memoryTable", true, testTable.isMemoryTable());
+            assertSame("Exact factory preserved", factory, testTable.getMemoryTableFactory());
+        }
+
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists after DDL", testTable);
+            assertEquals("Is memoryTable after more DDL", true, testTable.isMemoryTable());
+            assertSame("Exact factory preserved after more DDL", factory, testTable.getMemoryTableFactory());
+        }
+
+        {
+            safeRestart();
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNull("Table did not survive restart", testTable);
+        }
+    }
+
+    @Test(expected=DuplicateTableNameException.class)
+    public void noDuplicateEphemeral() throws Exception {
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        MemoryTableFactory factory = new MemoryTableFactoryMock();
+        createISTable(makeSimpleISTable(tableName.getTableName()), factory);
+        // Dup
+        createISTable(makeSimpleISTable(tableName.getTableName()), factory);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noNullEphemeralFactory() throws Exception {
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        createISTable(makeSimpleISTable(tableName.getTableName()), null);
+    }
+
 
     /*
      * Next three tests are confirming that the MetaModel and Protobuf
@@ -699,6 +763,40 @@ public final class SchemaManagerIT extends ITBase {
             else {
                 Assert.fail("Unknown statement type: " + statement);
             }
+        }
+    }
+
+    private static UserTable makeSimpleISTable(String tableName) {
+        final String schema = TableName.AKIBAN_INFORMATION_SCHEMA;
+        NewAISBuilder builder = AISBBasedBuilder.create(schema);
+        builder.userTable(tableName).colLong("id", false).pk("id");
+        return builder.ais().getUserTable(schema, tableName);
+    }
+
+    private static class MemoryTableFactoryMock implements MemoryTableFactory {
+        @Override
+        public TableName getName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Table getTableDefinition() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public GroupCursor getGroupCursor(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector scanSelector) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long rowCount() {
+            throw new UnsupportedOperationException();
         }
     }
 }
