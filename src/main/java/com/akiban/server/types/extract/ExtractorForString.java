@@ -29,9 +29,8 @@ package com.akiban.server.types.extract;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.util.ByteSource;
 import java.io.UnsupportedEncodingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 final class ExtractorForString extends ObjectExtractor<String> {
     @Override
@@ -56,7 +55,19 @@ final class ExtractorForString extends ObjectExtractor<String> {
         case DATE:      return longExtractor(AkType.DATE).asString(source.getDate());
         case DATETIME:  return longExtractor(AkType.DATETIME).asString(source.getDateTime());
         case DECIMAL:   return String.valueOf(source.getDecimal());
-        case VARBINARY: return new String(source.getVarBinary().byteArray(), Converters.DEFAULT_CS);
+        case VARBINARY:
+            try
+            {
+                ByteSource byteSource = source.getVarBinary();
+                return new String(byteSource.byteArray(), 
+                        byteSource.byteArrayOffset(), 
+                        byteSource.byteArrayLength(), 
+                        Converters.DEFAULT_CS);
+            } 
+            catch (UnsupportedEncodingException ex)
+            {
+                throw new UnsupportedOperationException(ex);
+            }
         case INTERVAL_MILLIS:  return longExtractor(AkType.INTERVAL_MILLIS).asString(source.getInterval_Millis());
         case INTERVAL_MONTH:   return longExtractor(AkType.INTERVAL_MONTH).asString(source.getInterval_Month());
         default:

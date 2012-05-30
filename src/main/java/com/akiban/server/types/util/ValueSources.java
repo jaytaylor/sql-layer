@@ -35,11 +35,10 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
-import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 import com.google.common.collect.Iterables;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.util.Comparator;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -402,7 +401,7 @@ public class ValueSources
      * @param v2
      * @return 
      */
-    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric, Charset charSet)
+    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric, String charSet)
     {
         if (v1.isNull() || v2.isNull()) return false;
         try
@@ -427,7 +426,7 @@ public class ValueSources
         }
     }
     
-    public static long compare (ValueSource left, ValueSource right, Charset charSet)
+    public static long compare (ValueSource left, ValueSource right, String charSet)
     {
         AkType l = left.getConversionType();
         AkType r = right.getConversionType();    
@@ -436,12 +435,25 @@ public class ValueSources
         if (l == r || (isLeft = isText(l)) && isText(r))
             return compareSameType(left, right);
         else if (isLeft && r == AkType.VARBINARY) 
-            return new WrappingByteSource(Extractors.getStringExtractor().getObject(left).getBytes(charSet))
-                    .compareTo(right.getVarBinary());
+            try
+            {
+                return new WrappingByteSource(Extractors.getStringExtractor().getObject(left).getBytes(charSet))
+                        .compareTo(right.getVarBinary());
+            } 
+            catch (UnsupportedEncodingException ex)
+            {
+                throw new UnsupportedOperationException(ex);
+            }
         
         else if (l == AkType.VARBINARY && isText(r))
-            return left.getVarBinary().compareTo(
-                    new WrappingByteSource(Extractors.getStringExtractor().getObject(right).getBytes(charSet)));
+            try
+            {
+                return left.getVarBinary().compareTo(
+                        new WrappingByteSource(Extractors.getStringExtractor().getObject(right).getBytes(charSet)));
+            } catch (UnsupportedEncodingException ex)
+            {
+                throw new UnsupportedOperationException(ex);
+            }
         else
         {
             Map<AkType, Comparator<ValueSource>> v;

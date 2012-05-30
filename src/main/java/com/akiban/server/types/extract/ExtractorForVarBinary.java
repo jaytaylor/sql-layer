@@ -26,16 +26,12 @@
 
 package com.akiban.server.types.extract;
 
-import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 import java.io.UnsupportedEncodingException;
-import java.nio.charset.Charset;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 final class ExtractorForVarBinary extends ObjectExtractor<ByteSource> {
     
@@ -52,7 +48,14 @@ final class ExtractorForVarBinary extends ObjectExtractor<ByteSource> {
 
     @Override
     public ByteSource getObject(String string){
+        try
+        {
             return new WrappingByteSource(string.getBytes(Converters.DEFAULT_CS));
+        } 
+        catch (UnsupportedEncodingException ex)
+        {
+            throw new UnsupportedOperationException(ex);
+        }
     }
 
     ExtractorForVarBinary() {
