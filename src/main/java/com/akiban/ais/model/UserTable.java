@@ -412,7 +412,7 @@ public class UserTable extends Table
         return hKeyDependentTables;
     }
 
-    public boolean isMemoryTable()
+    public boolean hasMemoryTableFactory()
     {
         return tableFactory != null;
     }

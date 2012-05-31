@@ -179,7 +179,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public TableName createPersistedInformationSchemaTable(Session session, UserTable newTable, int version) {
+    public TableName registerStoredInformationSchemaTable(Session session, UserTable newTable, int version) {
         final TableName newName = newTable.getName();
         checkAISSchema(newName, true);
         UserTable curTable = getAis().getUserTable(newName);
@@ -195,7 +195,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public TableName createEphemeralInformationSchemaTable(Session session, UserTable newTable, MemoryTableFactory factory) {
+    public TableName registerMemoryInformationSchemaTable(Session session, UserTable newTable, MemoryTableFactory factory) {
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
@@ -875,7 +875,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 @Override
                 public boolean isSelected(UserTable table) {
                     return !legacyISTables.contains(table.getName()) &&
-                           !table.isMemoryTable();
+                           !table.hasMemoryTableFactory();
                 }
             };
         } else {
@@ -1080,7 +1080,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         for(UserTable table : curAIS.getSchema(TableName.AKIBAN_INFORMATION_SCHEMA).getUserTables().values()) {
             UserTable newTable = newAIS.getUserTable(table.getName());
             if(newTable != null) {
-                if(table.isMemoryTable()) {
+                if(table.hasMemoryTableFactory()) {
                     newTable.setMemoryTableFactory(table.getMemoryTableFactory());
                 }
                 if(table.hasVersion()) {

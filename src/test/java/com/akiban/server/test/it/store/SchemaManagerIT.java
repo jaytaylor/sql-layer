@@ -102,21 +102,21 @@ public final class SchemaManagerIT extends ITBase {
         });
     }
 
-    private void createISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
+    private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
         transactionally(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                schemaManager.createEphemeralInformationSchemaTable(session(), table, factory);
+                schemaManager.registerMemoryInformationSchemaTable(session(), table, factory);
                 return null;
             }
         });
     }
 
-    private void createISTable(final UserTable table, final int version) throws Exception {
+    private void registerISTable(final UserTable table, final int version) throws Exception {
         transactionally(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                schemaManager.createPersistedInformationSchemaTable(session(), table, version);
+                schemaManager.registerStoredInformationSchemaTable(session(), table, version);
                 return null;
             }
         });
@@ -613,15 +613,15 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     @Test
-    public void createEphemeralBasic() throws Exception {
+    public void registerMemoryTableBasic() throws Exception {
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
         MemoryTableFactory factory = new MemoryTableFactoryMock();
-        createISTable(makeSimpleISTable(tableName.getTableName()), factory);
+        registerISTable(makeSimpleISTable(tableName.getTableName()), factory);
 
         {
             UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
             assertNotNull("New table exists", testTable);
-            assertEquals("Is memoryTable", true, testTable.isMemoryTable());
+            assertEquals("Is memoryTable", true, testTable.hasMemoryTableFactory());
             assertSame("Exact factory preserved", factory, testTable.getMemoryTableFactory());
         }
 
@@ -629,7 +629,7 @@ public final class SchemaManagerIT extends ITBase {
         {
             UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
             assertNotNull("New table exists after DDL", testTable);
-            assertEquals("Is memoryTable after more DDL", true, testTable.isMemoryTable());
+            assertEquals("Is memoryTable after more DDL", true, testTable.hasMemoryTableFactory());
             assertSame("Exact factory preserved after more DDL", factory, testTable.getMemoryTableFactory());
         }
 
@@ -641,26 +641,25 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     @Test(expected=DuplicateTableNameException.class)
-    public void noDuplicateEphemeral() throws Exception {
+    public void noDuplicateMemoryTables() throws Exception {
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
         MemoryTableFactory factory = new MemoryTableFactoryMock();
-        createISTable(makeSimpleISTable(tableName.getTableName()), factory);
-        // Dup
-        createISTable(makeSimpleISTable(tableName.getTableName()), factory);
+        registerISTable(makeSimpleISTable(tableName.getTableName()), factory);
+        registerISTable(makeSimpleISTable(tableName.getTableName()), factory);
     }
 
     @Test(expected=IllegalArgumentException.class)
-    public void noNullEphemeralFactory() throws Exception {
+    public void noNullMemoryTableFactory() throws Exception {
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
-        createISTable(makeSimpleISTable(tableName.getTableName()), null);
+        registerISTable(makeSimpleISTable(tableName.getTableName()), null);
     }
 
     @Test
-    public void createPersistedBasic() throws Exception {
+    public void registerStoredTableBasic() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
 
-        createISTable(makeSimpleISTable(tableName.getTableName()), VERSION);
+        registerISTable(makeSimpleISTable(tableName.getTableName()), VERSION);
         {
             UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
             assertNotNull("New table exists", testTable);
@@ -683,21 +682,21 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     @Test
-    public void canRecreatePersistedWithSameVersion() throws Exception {
+    public void canRegisterStoredTableWithSameVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName.getTableName());
-        createISTable(sourceTable, VERSION);
-        createISTable(sourceTable, VERSION);
+        registerISTable(sourceTable, VERSION);
+        registerISTable(sourceTable, VERSION);
     }
 
     @Test(expected=IllegalArgumentException.class)
-    public void cannotRecreatedPersistedWithDifferentVersion() throws Exception {
+    public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName.getTableName());
-        createISTable(sourceTable, VERSION);
-        createISTable(sourceTable, VERSION+1);
+        registerISTable(sourceTable, VERSION);
+        registerISTable(sourceTable, VERSION + 1);
     }
 
 
