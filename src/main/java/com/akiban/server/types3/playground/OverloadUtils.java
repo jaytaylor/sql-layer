@@ -26,57 +26,53 @@
 
 package com.akiban.server.types3.playground;
 
-
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TConstantValue;
-import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.util.BitSets;
 
 import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
 
-public enum XAddInt implements TOverload {
-    INSTANCE;
+public final class OverloadUtils {
 
-    @Override
-    public String overloadName() {
-        return "xadd";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return new TOverloadResult(XInt.TYPE_CLASS);
-    }
-
-    @Override
-    public List<TInputSet> inputSets() {
-        return Collections.singletonList(new TInputSet(XInt.TYPE_CLASS, BitSets.of(0, 1), false));
-    }
-
-    @Override
-    public void evaluate(List<TInstance> inputInstances, LazyList<PValueSource> inputs, TInstance outputInstance,
-                         PValueTarget output)
+    public static boolean nullsContaminate(PValueTarget output, LazyList<PValueSource> inputs,
+                                           BitSet contaminatingNulls)
     {
-        if (OverloadUtils.nullsContaminate(output, inputs))
-            return;
-        int result = inputs.get(0).getInt32() + inputs.get(1).getInt32();
-        output.putInt32(result);
+        for (int i = contaminatingNulls.nextSetBit(0); i >= 0; i = contaminatingNulls.nextSetBit(i+1)) {
+            if (checkNull(output, inputs, i))
+                return true;
+        }
+        return false;
     }
 
-    @Override
-    public TConstantValue evaluateConstant(LazyList<TConstantValue> inputs) {
-        if(OverloadUtils.nullsContaminate(inputs))
-            return null;
-        PValue constValue = new PValue(PUnderlying.INT_32);
-        constValue.putInt32(inputs.get(0).value().getInt32() + inputs.get(1).value().getInt32());
-        return new TConstantValue(XInt.INSTANCE, constValue);
+    public static boolean nullsContaminate(PValueTarget output, LazyList<PValueSource> inputs) {
+        return nullsContaminate(output, inputs, 0, inputs.size());
     }
+
+    public static boolean nullsContaminate(PValueTarget output, LazyList<PValueSource> inputs, int start, int end) {
+        for (int i = start; i < end; ++i) {
+            if (checkNull(output, inputs, i))
+                return true;
+        }
+        return false;
+    }
+
+    public static boolean nullsContaminate(LazyList<TConstantValue> inputs) {
+        for (int i = 0, end = inputs.size(); i < end; ++i) {
+            if (inputs.get(i) == null)
+                return true;
+        }
+        return false;
+    }
+
+    private static boolean checkNull(PValueTarget output, LazyList<PValueSource> inputs, int i) {
+        PValueSource source = inputs.get(i);
+        if (source.isNull()) {
+            output.putNull();
+            return true;
+        }
+        return false;
+    }
+
+    private OverloadUtils() {}
 }
