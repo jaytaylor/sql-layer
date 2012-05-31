@@ -167,6 +167,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private SerializationType serializationType = SerializationType.NONE;
+    private final Set<TableName> legacyISTables = new HashSet<TableName>();
 
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
@@ -179,10 +180,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     @Override
     public TableName createPersistedInformationSchemaTable(Session session, UserTable newTable, int version) {
-        // Check if exists
-        // return if not
-        // otherwise create
-        throw new UnsupportedOperationException();
+        final TableName newName = newTable.getName();
+        checkAISSchema(newName, true);
+        UserTable curTable = getAis().getUserTable(newName);
+        if(curTable != null) {
+            Integer oldVersion = curTable.getVersion();
+            if(Integer.valueOf(version).equals(oldVersion)) {
+                return newName;
+            } else {
+                throw new IllegalArgumentException("version mismatch");
+            }
+        }
+        return createTableCommon(session, newTable, true, version, null);
     }
 
     @Override
@@ -190,12 +199,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
-        return createTableCommon(session, newTable, true, factory);
+        return createTableCommon(session, newTable, true, null, factory);
     }
 
     @Override
     public TableName createTableDefinition(Session session, UserTable newTable) {
-        return createTableCommon(session, newTable, false, null);
+        return createTableCommon(session, newTable, false, null, null);
     }
 
     @Override
@@ -612,6 +621,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
         this.serializationType = SerializationType.NONE;
+        this.legacyISTables.clear();
     }
 
     @Override
@@ -716,6 +726,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private void loadAISFromStorage() throws PersistitException {
         final AkibanInformationSchema newAIS = createPrimordialAIS();
         setGroupTableIds(newAIS);
+        for(UserTable table : newAIS.getUserTables().values()) {
+            legacyISTables.add(table.getName());
+        }
 
         final Session session = sessionService.createSession();
         final Transaction transaction = treeService.getTransaction(session);
@@ -854,12 +867,25 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         ex.store();
     }
 
-    private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, String schema)
+    private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String schema)
             throws PersistitException {
+        final ProtobufWriter.TableSelector selector;
+        if(TableName.AKIBAN_INFORMATION_SCHEMA.equals(schema)) {
+            selector = new ProtobufWriter.SchemaSelector(schema) {
+                @Override
+                public boolean isSelected(UserTable table) {
+                    return !legacyISTables.contains(table.getName()) &&
+                           !table.isMemoryTable();
+                }
+            };
+        } else {
+            selector = new ProtobufWriter.SchemaSelector(schema);
+        }
+
         ex.clear().append(PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
         if(newAIS.getSchema(schema) != null) {
             buffer.clear();
-            new ProtobufWriter(buffer, new ProtobufWriter.SchemaSelector(schema)).save(newAIS);
+            new ProtobufWriter(buffer, selector).save(newAIS);
             buffer.flip();
 
             ex.getValue().clear().putByteArray(buffer.array(), buffer.position(), buffer.limit());
@@ -888,9 +914,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         Exchange schemaEx = null;
         try {
             for(String schema : schemaNames) {
-                if(schema.equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
-                    continue; // TODO: FIXME for persisted AIS tables
-                }
                 TreeLink schemaTreeLink =  treeService.treeLink(schema, SCHEMA_TREE_NAME);
                 schemaEx = treeService.getExchange(session, schemaTreeLink);
                 saveAISToStorage(schemaEx, newAIS, schema);
@@ -1000,33 +1023,46 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         return maxId;
     }
 
-    private void checkTableName(TableName tableName, boolean shouldExist, boolean isInternal) {
-        final boolean aisSchema = TableName.AKIBAN_INFORMATION_SCHEMA.equals(tableName.getSchemaName());
-        if(isInternal && !aisSchema) {
-            throw new IllegalArgumentException("Table required to be in "+TableName.AKIBAN_INFORMATION_SCHEMA+" schema");
-        }
-        if(!isInternal && aisSchema) {
-            throw new ProtectedTableDDLException(tableName);
-        }
-        if(shouldExist && getAis().getTable(tableName) == null) {
-            throw new NoSuchTableException(tableName);
-        }
-        if(!shouldExist && getAis().getTable(tableName) != null) {
-            throw new DuplicateTableNameException(tableName);
-        }
-    }
-
-    private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal, MemoryTableFactory factory) {
+    private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,
+                                        Integer version, MemoryTableFactory factory) {
         final TableName newName = newTable.getName();
         checkTableName(newName, false, isInternal);
         AISMerge merge = new AISMerge(getAis(), newTable);
-        preserveMemoryTableFactories(merge.getAIS(), getAis());
+        preserveExtraInfo(merge.getAIS(), getAis());
         merge.merge();
         if(factory != null) {
             merge.getAIS().getUserTable(newName).setMemoryTableFactory(factory);
         }
+        if(version != null) {
+            merge.getAIS().getUserTable(newName).setVersion(version);
+        }
         commitAISChange(session, merge.getAIS(), Collections.singleton(newName.getSchemaName()));
         return getAis().getUserTable(newName).getName();
+    }
+
+    private static void checkAISSchema(TableName tableName, boolean shouldBeAIS) {
+        final boolean isAIS = TableName.AKIBAN_INFORMATION_SCHEMA.equals(tableName.getSchemaName());
+        if(shouldBeAIS && !isAIS) {
+            throw new IllegalArgumentException("Table required to be in "+TableName.AKIBAN_INFORMATION_SCHEMA+" schema");
+        }
+        if(!shouldBeAIS && isAIS) {
+            throw new ProtectedTableDDLException(tableName);
+        }
+    }
+
+    private void checkExists(TableName tableName, boolean shouldExist) {
+        final boolean tableExists = getAis().getTable(tableName) != null;
+        if(shouldExist && !tableExists) {
+            throw new NoSuchTableException(tableName);
+        }
+        if(!shouldExist && tableExists) {
+            throw new DuplicateTableNameException(tableName);
+        }
+    }
+
+    private void checkTableName(TableName tableName, boolean shouldExist, boolean aisAllowed) {
+        checkAISSchema(tableName, aisAllowed);
+        checkExists(tableName, shouldExist);
     }
 
     private static AkibanInformationSchema copyAIS(AkibanInformationSchema curAIS) {
@@ -1036,16 +1072,19 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     private static AkibanInformationSchema copyAIS(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS, Writer writer) {
         writer.save(curAIS);
-        preserveMemoryTableFactories(newAIS, curAIS);
+        preserveExtraInfo(newAIS, curAIS);
         return newAIS;
     }
 
-    private static void preserveMemoryTableFactories(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS) {
+    private static void preserveExtraInfo(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS) {
         for(UserTable table : curAIS.getSchema(TableName.AKIBAN_INFORMATION_SCHEMA).getUserTables().values()) {
-            if(table.isMemoryTable()) {
-                UserTable newTable = newAIS.getUserTable(table.getName());
-                if(newTable != null) {
+            UserTable newTable = newAIS.getUserTable(table.getName());
+            if(newTable != null) {
+                if(table.isMemoryTable()) {
                     newTable.setMemoryTableFactory(table.getMemoryTableFactory());
+                }
+                if(table.hasVersion()) {
+                    newTable.setVersion(table.getVersion());
                 }
             }
         }

@@ -112,6 +112,16 @@ public final class SchemaManagerIT extends ITBase {
         });
     }
 
+    private void createISTable(final UserTable table, final int version) throws Exception {
+        transactionally(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                schemaManager.createPersistedInformationSchemaTable(session(), table, version);
+                return null;
+            }
+        });
+    }
+
     private void deleteTableDef(final String schema, final String table) throws Exception {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
@@ -643,6 +653,51 @@ public final class SchemaManagerIT extends ITBase {
     public void noNullEphemeralFactory() throws Exception {
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
         createISTable(makeSimpleISTable(tableName.getTableName()), null);
+    }
+
+    @Test
+    public void createPersistedBasic() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+
+        createISTable(makeSimpleISTable(tableName.getTableName()), VERSION);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists", testTable);
+            assertEquals("Exact version is preserved", VERSION, testTable.getVersion());
+        }
+
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists after DDL", testTable);
+            assertEquals("Exact version preserved after more DDL", VERSION, testTable.getVersion());
+        }
+
+        {
+            safeRestart();
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("Table survived restart", testTable);
+            assertEquals("Exact version preserved after more DDL", VERSION, testTable.getVersion());
+        }
+    }
+
+    @Test
+    public void canRecreatePersistedWithSameVersion() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName.getTableName());
+        createISTable(sourceTable, VERSION);
+        createISTable(sourceTable, VERSION);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void cannotRecreatedPersistedWithDifferentVersion() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName.getTableName());
+        createISTable(sourceTable, VERSION);
+        createISTable(sourceTable, VERSION+1);
     }
 
 

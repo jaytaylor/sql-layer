@@ -108,7 +108,7 @@ public class ProtobufWriter {
         if(selector instanceof SchemaSelector) {
             Schema schema = ais.getSchema(((SchemaSelector) selector).getSchemaName());
             if(schema != null) {
-                writeSchema(aisBuilder, schema, ALL_TABLES_SELECTOR);
+                writeSchema(aisBuilder, schema, selector);
             }
         } else {
             for(Schema schema : ais.getSchemas().values()) {
