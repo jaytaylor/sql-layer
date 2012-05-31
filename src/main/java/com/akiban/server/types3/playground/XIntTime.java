@@ -26,41 +26,54 @@
 
 package com.akiban.server.types3.playground;
 
-import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.row.Row;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
-import java.util.Arrays;
-
-public final class XMain {
-    public static void main(String[] args) throws InterruptedException {
-        XPreparedExpression literal3 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(3));
-        XPreparedExpression literal5 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(5));
-
-        XValidatedOverload validatedAdd = new XValidatedOverload(XAddInt.INSTANCE);
-        XPreparedExpression preparedExpression = new XPreparedFunction(
-                validatedAdd,
-                XInt.INSTANCE,
-                Arrays.asList(literal3, literal5));
-        preparedExpression = new XPreparedFunction(
-                validatedAdd,
-                XInt.INSTANCE,
-                Arrays.asList(preparedExpression, new XIntTime())
-        );
-        new SimpleQueryContext(null); // force the class loader, so we don't pay for it within the loop
-        for (int i = 0; i < 10; ++i) {
-            XEvaluatableExpression eval = preparedExpression.build();
-            eval.with(new SimpleQueryContext(null));
-            eval.evaluate();
-            System.out.println(eval.resultValue());
-            Thread.sleep(5);
-        }
+public final class XIntTime implements XPreparedExpression {
+    @Override
+    public TInstance resultType() {
+        return XInt.INSTANCE;
     }
 
-    private static PValueSource pvalue32(int value) {
-        PValue pvalue = new PValue(PUnderlying.INT_32);
-        pvalue.putInt32(value);
-        return pvalue;
+    @Override
+    public XEvaluatableExpression build() {
+        return new Evaluation(prepareTime);
+    }
+
+    private final long prepareTime = System.currentTimeMillis();
+
+    private static class Evaluation implements XEvaluatableExpression {
+        @Override
+        public PValueSource resultValue() {
+            return value;
+        }
+
+        @Override
+        public void evaluate() {
+            long now = context.getCurrentDate().getTime();
+            int delta = (int)(now - prepareTime);
+            value.putInt32(delta);
+        }
+
+        @Override
+        public void with(Row row) {
+        }
+
+        @Override
+        public void with(QueryContext context) {
+            this.context = context;
+        }
+
+        private Evaluation(long prepareTime) {
+            this.prepareTime = prepareTime;
+        }
+
+        private QueryContext context;
+        private final PValue value = new PValue(PUnderlying.INT_32);
+        private final long prepareTime;
     }
 }
