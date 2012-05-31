@@ -46,7 +46,8 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
     @Override
     public boolean startScan() throws PersistitException
     {
-        return bounded() ? startBoundedScan() : startUnboundedScan();
+        Key.Direction direction = bounded() ? startBoundedScan() : startUnboundedScan();
+        return cursor.exchange.traverse(direction, false) && !pastEnd();
     }
 
     @Override
@@ -56,12 +57,12 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
     }
 
     @Override
-    public boolean jump(ValueSource fieldValue)
+    public boolean jump(ValueSource fieldValue) throws PersistitException
     {
-        boolean inRange;
+        boolean more;
         if (singleValue) {
             // We already know that lo = hi.
-            inRange =
+            more =
                 Expressions.compare(Expressions.valueSource(fieldValue),
                                     Comparison.EQ,
                                     Expressions.valueSource(loSource)).evaluation().eval().getBool();
@@ -72,18 +73,19 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
             long compareHi =
                 new RankExpression(Expressions.valueSource(fieldValue),
                                    Expressions.valueSource(hiSource)).evaluation().eval().getInt();
-            inRange =
+            more =
                 (loInclusive ? compareLo >= 0 : compareLo > 0) &&
                 (hiInclusive ? compareHi <= 0 : compareHi < 0);
 
         } else {
-            inRange = true;
+            more = true;
         }
-        if (inRange) {
+        if (more) {
             keyTarget.expectingType(fieldValue.getConversionType());
             Converters.convert(fieldValue, keyTarget);
+            more = cursor.exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, false) && !pastEnd();
         }
-        return inRange;
+        return more;
     }
 
     public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor,
@@ -144,9 +146,8 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
         }
     }
 
-    private boolean startUnboundedScan() throws PersistitException
+    private Key.Direction startUnboundedScan() throws PersistitException
     {
-        boolean more;
         Key.Direction direction;
         if (ascending) {
             cursor.exchange.append(Key.BEFORE);
@@ -156,13 +157,11 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
             direction = Key.LT;
         }
         SORT_TRAVERSE.hit();
-        more = cursor.exchange.traverse(direction, false);
-        return more;
+        return direction;
     }
 
-    private boolean startBoundedScan() throws PersistitException
+    private Key.Direction startBoundedScan() throws PersistitException
     {
-        boolean more;
         // About null handling: See comment in SortCursorUnidirectional.evaluateBoundaries.
         Key.Direction direction;
         if (ascending) {
@@ -196,8 +195,7 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
             }
         }
         SORT_TRAVERSE.hit();
-        more = cursor.exchange.traverse(direction, false) && !pastEnd();
-        return more;
+        return direction;
     }
 
     private boolean pastEnd()

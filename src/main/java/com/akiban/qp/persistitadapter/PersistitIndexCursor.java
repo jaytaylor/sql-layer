@@ -74,6 +74,10 @@ class PersistitIndexCursor implements Cursor
     @Override
     public void jump(Row row, ColumnSelector columnSelector)
     {
+        if (exchange == null) {
+            exchange = adapter.takeExchange(indexRowType.index());
+            idle = false;
+        }
         sortCursor.jump(row, columnSelector);
     }
 

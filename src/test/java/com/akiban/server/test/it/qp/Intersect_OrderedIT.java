@@ -249,6 +249,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         }
     }
 
+    @Test
     public void testJoinTypeAndOrderingConsistency()
     {
         intersect_Ordered(groupScan_Default(coi),
@@ -393,6 +394,71 @@ public class Intersect_OrderedIT extends OperatorITBase
                               ascending(true, true),
                               JoinType.INNER_JOIN,
                               EnumSet.of(IntersectOption.OUTPUT_LEFT));
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testOptions()
+    {
+        // No output option
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.SEQUENTIAL_SCAN));
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        // Two output options
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT,
+                                         IntersectOption.SEQUENTIAL_SCAN,
+                                         IntersectOption.SKIP_SCAN));
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        // No scan option
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
+            // OK for now, see comment in Intersect_Ordered constructor. fail();
+        } catch (IllegalArgumentException e) {
+        }
+        // Two scan options
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT,
+                                         IntersectOption.SEQUENTIAL_SCAN,
+                                         IntersectOption.SKIP_SCAN));
             fail();
         } catch (IllegalArgumentException e) {
         }

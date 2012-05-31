@@ -27,7 +27,6 @@
 package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
@@ -87,7 +86,9 @@ class SortCursorMixedOrder extends SortCursor
     public void jump(Row row, ColumnSelector columnSelector)
     {
         assert keyRange != null; // keyRange is null when used from a Sorter
+        exchange.clear();
         int field = 0;
+        more = true;
         try {
             while (more && field < scanStates.size()) {
                 MixedOrderScanState scanState = scanStates.get(field);
@@ -103,6 +104,8 @@ class SortCursorMixedOrder extends SortCursor
                     more = scanState.startScan();
                 }
             }
+            justOpened = true;
+
         } catch (PersistitException e) {
             close();
             adapter.handlePersistitException(e);
