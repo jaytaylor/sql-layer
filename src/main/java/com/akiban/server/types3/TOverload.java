@@ -32,11 +32,11 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import java.util.List;
 
 public interface TOverload {
-    public String name();
+    public String overloadName();
     public TOverloadResult resultType();
     public List<TInputSet> inputSets();
     public void evaluate(
-            List<TInstance> inputInstances, List<PValueSource> inputs,
+            List<TInstance> inputInstances, LazyList<PValueSource> inputs,
             TInstance outputInstance, PValueTarget output);
-    public TConstantValue evaluateConstant(List<TConstantValue> inputs);
+    public TConstantValue evaluateConstant(LazyList<TConstantValue> inputs);
 }

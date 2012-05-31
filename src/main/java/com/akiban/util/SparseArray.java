@@ -26,9 +26,35 @@
 
 package com.akiban.util;
 
+import java.util.Arrays;
 import java.util.BitSet;
+import java.util.List;
 
 public class SparseArray<T> {
+
+    /**
+     * Returns the greatest index for which {@link #isDefined(int)} would return <tt>true</tt>
+     * @return the logical "size" of this sparse array
+     */
+    public int lastDefinedIndex() {
+        return definedElements.length();
+    }
+
+    /**
+     * Returns whether this array could be expressed as a compact array. That is, whether all indexes
+     * less than {@link #lastDefinedIndex()} would return <tt>true</tt> for {@link #isDefined(int)}. If this method
+     * returns <tt>true</tt>, it is safe to call {@link #toList()}
+     * @return
+     */
+    public boolean isCompactable() {
+        return definedElements.length() == definedElements.cardinality();
+    }
+
+    @SuppressWarnings("unchecked") // T[] is just erased to Object[] anyway, which is what we have
+    public List<T> toList() {
+        T[] arrayCopy = Arrays.copyOf((T[])internalArray, internalArray.length);
+        return Arrays.asList(arrayCopy);
+    }
 
     /**
      * Gets the element at the specified index. If that element had not been previously defined, its initial

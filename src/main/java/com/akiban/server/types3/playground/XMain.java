@@ -26,41 +26,49 @@
 
 package com.akiban.server.types3.playground;
 
-import com.akiban.server.types3.TAttributeValue;
-import com.akiban.server.types3.TCombineMode;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 
-import java.util.List;
+import java.util.Arrays;
 
-public final class XInt extends TClass {
+public final class XMain {
+    public static void main(String[] args) {
+        XEvaluatableExpression literal3 = new XIntLiteralValue(3);
+        XEvaluatableExpression literal5 = new XIntLiteralValue(5);
 
-    @Override
-    public PUnderlying underlyingType() {
-        return PUnderlying.INT_32;
+        XValidatedOverload validatedAdd = new XValidatedOverload(XAddInt.INSTANCE);
+        XEvaluatableExpression addExpr = new XEvaluatableFunction(
+                validatedAdd,
+                XInt.INSTANCE,
+                Arrays.asList(literal3, literal5));
+        addExpr.evaluate();
+        System.out.println(addExpr.resultValue());
     }
 
-    @Override
-    protected TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1) {
-        assert instance0 == INSTANCE;
-        assert instance1 == INSTANCE;
-        return INSTANCE;
-    }
-
-    private XInt() {
-        super(XBund.ID, "xint", new String[0], 1, 1, 4);
-    }
-
-    public static final XInt TYPE_CLASS = new XInt();
-
-    static final TFactory FACTORY = new TFactory() {
+    private static class XIntLiteralValue implements XEvaluatableExpression {
         @Override
-        public TInstance create(List<TAttributeValue> arguments, boolean strict) {
-            assert arguments.isEmpty() : arguments;
-            return INSTANCE;
+        public TInstance resultType() {
+            return XInt.INSTANCE;
         }
-    };
-    static final TInstance INSTANCE = new TInstance(TYPE_CLASS);
+
+        @Override
+        public PValueSource resultValue() {
+            return value;
+        }
+
+        @Override
+        public void evaluate() {
+            // nothing to do
+        }
+
+        XIntLiteralValue(int value) {
+            PValue pvalue = new PValue(PUnderlying.INT_32);
+            pvalue.putInt32(value);
+            this.value = pvalue;
+        }
+
+        private PValueSource value;
+    }
 }

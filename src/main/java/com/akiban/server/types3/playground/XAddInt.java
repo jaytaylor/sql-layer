@@ -26,7 +26,8 @@
 
 package com.akiban.server.types3.playground;
 
-import com.akiban.server.types.ValueSource;
+
+import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TConstantValue;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
@@ -41,9 +42,11 @@ import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
-public final class XAddInt implements TOverload {
+public enum XAddInt implements TOverload {
+    INSTANCE;
+
     @Override
-    public String name() {
+    public String overloadName() {
         return "xadd";
     }
 
@@ -61,22 +64,30 @@ public final class XAddInt implements TOverload {
     }
 
     @Override
-    public void evaluate(List<TInstance> inputInstances, List<PValueSource> inputs, TInstance outputInstance,
+    public void evaluate(List<TInstance> inputInstances, LazyList<PValueSource> inputs, TInstance outputInstance,
                          PValueTarget output)
     {
         PValueSource input0 = inputs.get(0);
-        PValueSource input1 = inputs.get(1);
-        if (input0.isNull() || input1.isNull())
+        if (input0.isNull()) {
             output.putNull();
+            return;
+        }
+        PValueSource input1 = inputs.get(1);
+        if (input1.isNull()) {
+            output.putNull();
+            return;
+        }
         int result = input0.getInt32() + input1.getInt32();
         output.putInt32(result);
     }
 
     @Override
-    public TConstantValue evaluateConstant(List<TConstantValue> inputs) {
+    public TConstantValue evaluateConstant(LazyList<TConstantValue> inputs) {
         TConstantValue input0 = inputs.get(0);
+        if (input0 == null)
+            return null;
         TConstantValue input1 = inputs.get(1);
-        if (input0 == null || input1 == null)
+        if (input1 == null)
             return null;
         PValue constValue = new PValue(PUnderlying.INT_32);
         constValue.putInt32(input0.value().getInt32() + input1.value().getInt32());

@@ -172,6 +172,11 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     @Override
+    public boolean hasAnyValue() {
+        return state != State.UNSET;
+    }
+
+    @Override
     public boolean hasRawValue() {
         return state == State.VAL_ONLY || state == State.VAL_AND_CACHE;
     }

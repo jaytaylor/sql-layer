@@ -30,6 +30,8 @@ public interface PValueSource {
 
     PUnderlying getUnderlyingType();
 
+    boolean hasAnyValue();
+
     boolean hasRawValue();
 
     boolean hasCacheValue();

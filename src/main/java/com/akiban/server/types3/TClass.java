@@ -26,11 +26,14 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.regex.Pattern;
 
 public abstract class TClass {
+
+    public abstract PUnderlying underlyingType();
 
     public TInstance combine(TCombineMode mode, TInstance instance0, TInstance instance1) {
         if (instance0.typeClass() != this || instance1.typeClass() != this)
