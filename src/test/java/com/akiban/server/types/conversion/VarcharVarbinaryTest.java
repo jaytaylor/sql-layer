@@ -42,7 +42,7 @@ public class VarcharVarbinaryTest
     @Test
     public void varbinToVarcharRoundtrip()
     {
-        for (byte val = -10; val <= -8; ++val)
+        for (byte val = Byte.MIN_VALUE; val <= Byte.MAX_VALUE; ++val)
             try
             {
                 ValueSource start = new ValueHolder(AkType.VARBINARY,
