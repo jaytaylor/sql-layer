@@ -66,3 +66,4 @@ select-19i: aggregation and IN
 
 select-19x: aggregation from MAX
 
+select-20: subquery with cross-group join

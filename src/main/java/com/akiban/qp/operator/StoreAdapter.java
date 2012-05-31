@@ -33,6 +33,8 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.session.Session;
 import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
@@ -69,14 +71,32 @@ public abstract class StoreAdapter
 
     public abstract long rowCount(RowType tableType);
 
-    // For use by subclasses
+    public final Session getSession() {
+        return session;
+    }
 
-    protected StoreAdapter(Schema schema)
+    public enum AdapterType {
+        PERSISTIT_ADAPTER,
+        MEMORY_ADAPTER;
+    }
+    
+    protected final ConfigurationService getConfig() {
+        return config;
+    }
+
+    protected StoreAdapter(Schema schema,
+            Session session,
+            ConfigurationService config)
     {
         this.schema = schema;
+        this.session = session;
+        this.config = config;
     }
 
     // Object state
 
     protected final Schema schema;
+    private final Session session;
+    private final ConfigurationService config;
+
 }

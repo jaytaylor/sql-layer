@@ -40,10 +40,17 @@ import com.akiban.server.types.extract.ObjectExtractor;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
 
+/**
+ * 
+ * This implement the CHAR_LENGTH function, which returns the number of
+ * characters in the argument
+ */
 public class LengthExpression  extends AbstractUnaryExpression
 {
-    @Scalar ("getDB2Length")
-    public static final ExpressionComposer COMPOSER = new UnaryComposer ()
+    @Scalar ("charLength")
+    public static final ExpressionComposer COMPOSER = new InternalComposer();
+    
+    protected static class InternalComposer extends UnaryComposer
     {
         @Override
         protected Expression compose(Expression argument) 
@@ -58,7 +65,7 @@ public class LengthExpression  extends AbstractUnaryExpression
                 throw new WrongExpressionArityException(1, argumentTypes.size());
             return ExpressionTypes.LONG;
         }
-    };
+    }
         
     private static final class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
@@ -89,7 +96,7 @@ public class LengthExpression  extends AbstractUnaryExpression
     @Override
     protected String name() 
     {
-        return "Length";
+        return "CHAR_LENGTH";
     }
 
     @Override
