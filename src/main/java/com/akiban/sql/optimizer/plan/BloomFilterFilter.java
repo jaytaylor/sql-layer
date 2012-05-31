@@ -26,21 +26,29 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import java.util.List;
+
 /** Application of a Bloom filter. */
 public class BloomFilterFilter extends BasePlanWithInput
 {
     private BloomFilter bloomFilter;
+    private List<ExpressionNode> lookupExpressions;
     private PlanNode check;
 
-    public BloomFilterFilter(BloomFilter bloomFilter, PlanNode input, PlanNode check) {
+    public BloomFilterFilter(BloomFilter bloomFilter, List<ExpressionNode> lookupExpressions, 
+                             PlanNode input, PlanNode check) {
         super(input);
         this.bloomFilter = bloomFilter;
+        this.lookupExpressions = lookupExpressions;
         this.check = check;
         check.setOutput(this);
     }
 
     public BloomFilter getBloomFilter() {
         return bloomFilter;
+    }
+    public List<ExpressionNode> getLookupExpressions() {
+        return lookupExpressions;
     }
 
     public PlanNode getCheck() {
@@ -63,8 +71,19 @@ public class BloomFilterFilter extends BasePlanWithInput
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            check.accept(v);
-            getInput().accept(v);
+            if (check.accept(v) && getInput().accept(v)) {
+                if (v instanceof ExpressionRewriteVisitor) {
+                    for (int i = 0; i < lookupExpressions.size(); i++) {
+                        lookupExpressions.set(i, lookupExpressions.get(i).accept((ExpressionRewriteVisitor)v));
+                    }
+                }
+                else if (v instanceof ExpressionVisitor) {
+                    for (ExpressionNode expr : lookupExpressions) {
+                        if (!expr.accept((ExpressionVisitor)v))
+                            break;
+                    }
+                }
+            }
         }
         return v.visitLeave(this);
     }
