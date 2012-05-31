@@ -203,9 +203,7 @@ public class InConditionReverser extends BaseRule
     }
 
     public static void didNotReverseSemiJoin(JoinNode join) {
-        assert ((join.getJoinType() == JoinType.SEMI) ||
-                (join.getJoinType() == JoinType.SEMI_INNER_ALREADY_DISTINCT) ||
-                (join.getJoinType() == JoinType.SEMI_INNER_IF_DISTINCT));
+        assert join.getJoinType().isSemi() : join.getJoinType();
         cleanUpSemiJoin(join, join.getRight());
         join.setJoinType(JoinType.SEMI);
     }

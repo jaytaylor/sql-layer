@@ -45,7 +45,24 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         // turned into a regular join.
         SEMI_INNER_ALREADY_DISTINCT,
         SEMI_INNER_IF_DISTINCT,
-        INNER_NEED_DISTINCT
+        INNER_NEED_DISTINCT;
+
+        public final boolean isInner() {
+            return ((this == INNER) ||
+                    (this == INNER_NEED_DISTINCT));
+        }
+
+        public final boolean isOuter() {
+            return ((this == LEFT) ||
+                    (this == RIGHT) ||
+                    (this == FULL_OUTER));
+        }
+
+        public final boolean isSemi() {
+            return ((this == SEMI) ||
+                    (this == SEMI_INNER_ALREADY_DISTINCT) ||
+                    (this == SEMI_INNER_IF_DISTINCT));
+        }
     }
     public static enum Implementation {
         GROUP,

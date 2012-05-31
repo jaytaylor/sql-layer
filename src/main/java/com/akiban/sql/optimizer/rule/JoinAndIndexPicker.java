@@ -239,6 +239,10 @@ public class JoinAndIndexPicker extends BaseRule
         public void addDistinct() {
             throw new UnsupportedOperationException();
         }
+
+        public boolean semiJoinEquivalent() {
+            return false;
+        }
     }
 
     static abstract class PlanClass {
@@ -527,6 +531,20 @@ public class JoinAndIndexPicker extends BaseRule
         public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
             return bestPlan;
         }
+
+        public void consider(JoinPlan joinPlan) {
+            if (bestPlan == null) {
+                logger.debug("Selecting {}, {}", joinPlan, joinPlan.costEstimate);
+                bestPlan = joinPlan;
+            }
+            else if (bestPlan.compareTo(joinPlan) > 0) {
+                logger.debug("Preferring {}, {}", joinPlan, joinPlan.costEstimate);
+                bestPlan = joinPlan;
+            }
+            else {
+                logger.debug("Rejecting {}, {}", joinPlan, joinPlan.costEstimate);
+            }
+        }
     }
 
     static class JoinEnumerator extends DPhyp<PlanClass> {
@@ -592,16 +610,13 @@ public class JoinAndIndexPicker extends BaseRule
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                                              joinType, JoinNode.Implementation.NESTED_LOOPS,
                                              joins, costEstimate);
-            if (planClass.bestPlan == null) {
-                logger.debug("Selecting {}, {}", joinPlan, costEstimate);
-                planClass.bestPlan = joinPlan;
-            }
-            else if (planClass.bestPlan.compareTo(joinPlan) > 0) {
-                logger.debug("Preferring {}, {}", joinPlan, costEstimate);
-                planClass.bestPlan = joinPlan;
-            }
-            else {
-                logger.debug("Rejecting {}, {}", joinPlan, costEstimate);
+            planClass.consider(joinPlan);
+            if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
+                Plan loadPlan = right.bestPlan(outsideJoins);
+                JoinPlan hashPlan = buildBloomFilterSemiJoin(leftPlan, rightPlan, 
+                                                             loadPlan, joins);
+                if (hashPlan != null)
+                    planClass.consider(hashPlan);
             }
             return planClass;
         }
@@ -634,6 +649,11 @@ public class JoinAndIndexPicker extends BaseRule
                 }
             }
             return boundTables;
+        }
+
+        public JoinPlan buildBloomFilterSemiJoin(Plan inputPlan, Plan checkPlan, Plan loadPlan, 
+                                                 Collection<JoinOperator> joins) {
+            return null;
         }
     }
     
