@@ -1022,8 +1022,13 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return false;
     }
 
-    public void install(BaseScan scan, List<ConditionList> conditionSources) {
-        tables.setScan(scan);
+    public TableGroupJoinTree install(BaseScan scan,
+                                      List<ConditionList> conditionSources,
+                                      boolean copy) {
+        TableGroupJoinTree result = tables;
+        // Need to have more than one copy of this tree in the final result.
+        if (copy) result = new TableGroupJoinTree(result.getRoot());
+        result.setScan(scan);
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             if (indexScan instanceof MultiIndexIntersectScan) {
@@ -1033,6 +1038,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             installConditions(indexScan, conditionSources);
             queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
         }
+        return result;
     }
 
     /** Change WHERE as a consequence of <code>index</code> being

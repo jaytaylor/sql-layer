@@ -174,18 +174,18 @@ public class JoinAndIndexPicker extends BaseRule
             List<JoinOperator> empty = Collections.emptyList(); // No more joins / bound tables.
             groupGoal.updateRequiredColumns(empty, empty);
             BaseScan scan = groupGoal.pickBestScan();
-            groupGoal.install(scan, null);
+            groupGoal.install(scan, null, false);
         }
 
         // General joins: run enumerator.
         protected void pickJoinsAndIndexes(JoinNode joins) {
             Plan rootPlan = new JoinEnumerator(this).run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
-            installPlan(rootPlan);
+            installPlan(rootPlan, false);
         }
 
         // Put the chosen plan in place.
-        public void installPlan(Plan rootPlan) {
-            joinable.getOutput().replaceInput(joinable, rootPlan.install());
+        public void installPlan(Plan rootPlan, boolean copy) {
+            joinable.getOutput().replaceInput(joinable, rootPlan.install(copy));
         }
 
         // Get the handler for the given subquery so that it can be done in context.
@@ -234,7 +234,7 @@ public class JoinAndIndexPicker extends BaseRule
             return costEstimate.compareTo(other.costEstimate);
         }
 
-        public abstract Joinable install();
+        public abstract Joinable install(boolean copy);
 
         public void addDistinct() {
             throw new UnsupportedOperationException();
@@ -284,9 +284,8 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install() {
-            groupGoal.install(scan, conditionSources);
-            return groupGoal.getTables();
+        public Joinable install(boolean copy) {
+            return groupGoal.install(scan, conditionSources, copy);
         }
 
         public boolean orderedForDistinct(Distinct distinct) {
@@ -361,8 +360,8 @@ public class JoinAndIndexPicker extends BaseRule
 
 
         @Override
-        public Joinable install() {
-            picker.installPlan(rootPlan);
+        public Joinable install(boolean copy) {
+            picker.installPlan(rootPlan, copy);
             return subquery;
         }        
 
@@ -432,7 +431,7 @@ public class JoinAndIndexPicker extends BaseRule
 
 
         @Override
-        public Joinable install() {
+        public Joinable install(boolean copy) {
             return values;
         }
 
@@ -494,12 +493,12 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install() {
+        public Joinable install(boolean copy) {
             if (needDistinct)
                 left.addDistinct();
-            Joinable leftJoinable = left.install();
-            Joinable rightJoinable = right.install();
-            ConditionList joinConditions = mergeJoinConditions(joins);
+            Joinable leftJoinable = left.install(copy);
+            Joinable rightJoinable = right.install(copy);
+            ConditionList joinConditions = mergeJoinConditions(joins, false);
             JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
@@ -508,7 +507,8 @@ public class JoinAndIndexPicker extends BaseRule
             return join;
         }
 
-        protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins) {
+        protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins,
+                                                    boolean alwaysCopy) {
             ConditionList joinConditions = null;
             boolean newJoinConditions = false;
             for (JoinOperator joinOp : joins) {
@@ -516,6 +516,10 @@ public class JoinAndIndexPicker extends BaseRule
                     !joinOp.getJoinConditions().isEmpty()) {
                     if (joinConditions == null) {
                         joinConditions = joinOp.getJoinConditions();
+                        if (alwaysCopy) {
+                            joinConditions = new ConditionList(joinConditions);
+                            newJoinConditions = true;
+                        }
                     }
                     else { 
                         if (!newJoinConditions) {
@@ -541,13 +545,13 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install() {
+        public Joinable install(boolean copy) {
             if (needDistinct)
                 left.addDistinct();
-            Joinable loaderJoinable = loader.install();
-            Joinable inputJoinable = left.install();
-            Joinable checkJoinable = right.install();
-            ConditionList joinConditions = mergeJoinConditions(joins);
+            ConditionList joinConditions = mergeJoinConditions(joins, true);
+            Joinable loaderJoinable = loader.install(true);
+            Joinable inputJoinable = left.install(copy);
+            Joinable checkJoinable = right.install(copy);
             JoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
