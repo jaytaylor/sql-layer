@@ -38,6 +38,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
+import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
 import java.io.UnsupportedEncodingException;
 import java.security.InvalidKeyException;
@@ -93,7 +94,7 @@ public class EncryptExpression extends AbstractBinaryExpression
     
     private static final class Encryption
     {   
-        public static byte[] decrypt_encrypt (ValueSource text, ValueSource key, 
+        public static byte[] aes_decrypt_encrypt (ValueSource text, ValueSource key, 
                                             int length, int mode) throws
                     NoSuchAlgorithmException, NoSuchPaddingException, 
                     IllegalBlockSizeException, BadPaddingException, 
@@ -108,7 +109,10 @@ public class EncryptExpression extends AbstractBinaryExpression
             {
                 case Cipher.ENCRYPT_MODE:
                 case Cipher.DECRYPT_MODE:
-                    return cipher.doFinal(text.getVarBinary().byteArray());
+                    ByteSource byteSource = text.getVarBinary();
+                    return cipher.doFinal(byteSource.byteArray(), 
+                                          byteSource.byteArrayOffset(),
+                                          byteSource.byteArrayLength());
                 default:
                     throw new IllegalArgumentException("Unexpected MODE: " + mode);
             }
@@ -117,7 +121,7 @@ public class EncryptExpression extends AbstractBinaryExpression
         
         /**
          * adjust the key into a byte array of [length] bytes.
-         * If key.length() is >= key length, then it wraps around
+         * If key.length() is >=  length, then it wraps around
          *
          * @param key
          * @return the key in byte array
@@ -139,7 +143,7 @@ public class EncryptExpression extends AbstractBinaryExpression
     
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
-        private final int MODE;
+        private final int mode;
         
         // KEY LENTH in BYTES
         private final int DEFAULT_KEY_LENGTH = 16; // someone might want to change this 
@@ -147,7 +151,7 @@ public class EncryptExpression extends AbstractBinaryExpression
         InnerEvaluation(List<? extends ExpressionEvaluation> args, int mode)
         {
             super(args);
-            MODE = mode;
+            this.mode = mode;
         }
         
         @Override
@@ -162,9 +166,9 @@ public class EncryptExpression extends AbstractBinaryExpression
             try
             {
                 valueHolder().putVarBinary(new WrappingByteSource(
-                                                    Encryption.decrypt_encrypt(text, key,
+                                                    Encryption.aes_decrypt_encrypt(text, key,
                                                                     DEFAULT_KEY_LENGTH, 
-                                                                    MODE)));
+                                                                    mode)));
                 return valueHolder();
             }
             catch (Exception e)
@@ -177,11 +181,11 @@ public class EncryptExpression extends AbstractBinaryExpression
         }
     }
     
-    private final int MODE;
+    private final int mode;
     EncryptExpression(Expression text, Expression key, int mode)
     {
         super(AkType.VARBINARY, text, key);
-        MODE = mode;
+        this.mode = mode;
     }
     
        
@@ -194,12 +198,12 @@ public class EncryptExpression extends AbstractBinaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append(MODE == Cipher.DECRYPT_MODE ? "DECRYPT" : "ENCRYPT");
+        sb.append(mode == Cipher.DECRYPT_MODE ? "DECRYPT" : "ENCRYPT");
     }
 
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(childrenEvaluations(), MODE);
+        return new InnerEvaluation(childrenEvaluations(), mode);
     }
 }
