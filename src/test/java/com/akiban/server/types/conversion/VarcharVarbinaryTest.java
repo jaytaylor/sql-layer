@@ -54,7 +54,7 @@ public class VarcharVarbinaryTest
                 assertTrue("Length should be 1 ", byteArray.length == 1 && end.byteArrayLength() == 1);
                 assertEquals(val, byteArray[0]);
             }
-            catch (Exception e) // so 
+            catch (Exception e) // catch all exceptions so this test's result won't affect the other's
             {
                 e.printStackTrace(); 
             }
