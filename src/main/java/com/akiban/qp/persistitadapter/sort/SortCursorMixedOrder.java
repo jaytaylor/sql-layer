@@ -94,18 +94,16 @@ class SortCursorMixedOrder extends SortCursor
                 MixedOrderScanState scanState = scanStates.get(field);
                 if (columnSelector.includesColumn(field)) {
                     ValueSource fieldValue = row.eval(field);
-                    if (scanState.jump(fieldValue)) {
-                        field++;
-                    } else {
+                    if (!scanState.jump(fieldValue)) {
                         // Row that we're jumping to is incompatible with the constraints of this scan
                         more = false;
                     }
                 } else {
                     more = scanState.startScan();
                 }
+                field++;
             }
             justOpened = true;
-
         } catch (PersistitException e) {
             close();
             adapter.handlePersistitException(e);
@@ -125,9 +123,9 @@ class SortCursorMixedOrder extends SortCursor
     public void initializeScanStates() throws PersistitException
     {
         int f = 0;
-        BoundExpressions lo = keyRange.lo().boundExpressions(context);
-        BoundExpressions hi = keyRange.hi().boundExpressions(context);
         while (f < boundColumns) {
+            BoundExpressions lo = keyRange.lo().boundExpressions(context);
+            BoundExpressions hi = keyRange.hi().boundExpressions(context);
             ValueSource loSource = lo.eval(f);
             ValueSource hiSource = hi.eval(f);
             /*
