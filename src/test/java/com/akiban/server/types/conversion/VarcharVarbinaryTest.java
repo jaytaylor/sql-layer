@@ -27,36 +27,77 @@
 
 package com.akiban.server.types.conversion;
 
+import com.akiban.junit.NamedParameterizedRunner;
+import com.akiban.junit.NamedParameterizedRunner.TestParameters;
+import com.akiban.junit.Parameterization;
+import com.akiban.junit.ParameterizationBuilder;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ByteSource;
 import com.akiban.util.WrappingByteSource;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.Set;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
+import org.junit.runner.RunWith;
 
+@RunWith(NamedParameterizedRunner.class)
 public class VarcharVarbinaryTest 
 {
+    private byte inputBytes[];
+    public VarcharVarbinaryTest (byte input[])
+    {
+        assert input.length == 1 : "expecting byte[1]";
+        inputBytes = input;
+    }
+    
+    @TestParameters
+    public static Collection<Parameterization> params()
+    {
+        ParameterizationBuilder p = new ParameterizationBuilder();
+        
+        // Pick at least 15 distinct random bytes to test
+        // Testing all bytes in the range [Byte.MIN_VALUE, Byte.MAX_VALUE] takes too long
+        Set<Byte> inputBytes = new HashSet<Byte>();
+        byte inputs[] = new byte[15];
+        Random rand = new Random();
+        do
+        {
+            rand.nextBytes(inputs);
+            for (byte b : inputs)
+                inputBytes.add(b);
+        }
+        while (inputBytes.size() < 15);
+        
+        for (byte b : inputs)
+            param(p, b);
+        
+        return p.asList();
+    }
+    
+    private static void param(ParameterizationBuilder p, byte b)
+    {
+        p.add("byte[]{" + b + "}", new byte[]{b});
+    }
+    
     @Test
     public void varbinToVarcharRoundtrip()
     {
-        for (byte val = Byte.MIN_VALUE; val <= Byte.MAX_VALUE; ++val)
-            try
-            {
-                ValueSource start = new ValueHolder(AkType.VARBINARY,
-                                                    new WrappingByteSource(new byte[]{val}));
-                String varchar = Extractors.getStringExtractor().getObject(start);
-
-                ByteSource end = Extractors.getByteSourceExtractor().getObject(varchar);
-                byte byteArray[] = end.byteArray();
-                assertTrue("Length should be 1 ", byteArray.length == 1 && end.byteArrayLength() == 1);
-                assertEquals(val, byteArray[0]);
-            }
-            catch (Exception e) // catch all exceptions so this test's result won't affect the other's
-            {
-                e.printStackTrace(); 
-            }
+        // varbinary --> varchar --> varbinary
+        ByteSource varbinaryOut = 
+                Extractors.getByteSourceExtractor().getObject(
+                    Extractors.getStringExtractor().getObject(
+                        new ValueHolder(AkType.VARBINARY, new WrappingByteSource(inputBytes))));
+        
+        byte outputBytes[] = varbinaryOut.byteArray();
+        
+        assertEquals("outputBytes.length", 1, outputBytes.length);
+        assertEquals("varbinaryOut.byteArrayLength()", 1, varbinaryOut.byteArrayLength());
+        assertEquals("inputBytes[0], outputBytes[0]", inputBytes[0], outputBytes[0]);
     }
+
 }
