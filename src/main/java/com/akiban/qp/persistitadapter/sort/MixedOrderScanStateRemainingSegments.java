@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
@@ -60,6 +61,12 @@ class MixedOrderScanStateRemainingSegments extends MixedOrderScanState
             cursor.exchange.getKey().append(Key.BEFORE);
         }
         return more;
+    }
+
+    @Override
+    public boolean jump(ValueSource fieldValue) throws PersistitException
+    {
+        return startScan();
     }
 
     public MixedOrderScanStateRemainingSegments(SortCursorMixedOrder sortCursor, int field) throws PersistitException

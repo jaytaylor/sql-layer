@@ -32,6 +32,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.RankExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
@@ -45,7 +46,7 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
     @Override
     public boolean startScan() throws PersistitException
     {
-        return loSource == null && hiSource == null ? startUnboundedScan() : startBoundedScan();
+        return bounded() ? startBoundedScan() : startUnboundedScan();
     }
 
     @Override
@@ -54,46 +55,82 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
         return super.advance() && !pastEnd();
     }
 
-    public void setRange(ValueSource lo, ValueSource hi)
+    @Override
+    public boolean jump(ValueSource fieldValue)
     {
-        boolean loNull = lo.isNull();
-        boolean hiNull = hi.isNull();
-        assert !(loNull && hiNull);
-        boolean bothNonNull = !loNull && !hiNull;
-        loSource = lo;
-        hiSource = hi;
-        fieldType = loNull ? hiSource.getConversionType() : loSource.getConversionType();
-        loEQHi =
-            bothNonNull
-            ? Expressions.compare(Expressions.valueSource(loSource),
-                                  Comparison.EQ,
-                                  Expressions.valueSource(hiSource))
-            : null;
-        endComparison = null;
-    }
+        boolean inRange;
+        if (singleValue) {
+            // We already know that lo = hi.
+            inRange =
+                Expressions.compare(Expressions.valueSource(fieldValue),
+                                    Comparison.EQ,
+                                    Expressions.valueSource(loSource)).evaluation().eval().getBool();
+        } else if (bounded()) {
+            long compareLo =
+                new RankExpression(Expressions.valueSource(fieldValue),
+                                   Expressions.valueSource(loSource)).evaluation().eval().getInt();
+            long compareHi =
+                new RankExpression(Expressions.valueSource(fieldValue),
+                                   Expressions.valueSource(hiSource)).evaluation().eval().getInt();
+            inRange =
+                (loInclusive ? compareLo >= 0 : compareLo > 0) &&
+                (hiInclusive ? compareHi <= 0 : compareHi < 0);
 
-    public void setRangeLimits(boolean loInclusive, boolean hiInclusive, boolean inequalityOK)
-    {
-        this.loInclusive = loInclusive;
-        this.hiInclusive = hiInclusive;
-        if (!inequalityOK && loEQHi != null && !loEQHi.evaluation().eval().getBool()) {
-            throw new IllegalArgumentException();
+        } else {
+            inRange = true;
         }
+        if (inRange) {
+            keyTarget.expectingType(fieldValue.getConversionType());
+            Converters.convert(fieldValue, keyTarget);
+        }
+        return inRange;
     }
 
-    public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor, int field, boolean ascending)
+    public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor,
+                                            int field,
+                                            ValueSource lo,
+                                            boolean loInclusive,
+                                            ValueSource hi,
+                                            boolean hiInclusive,
+                                            boolean singleValue,
+                                            boolean ascending)
         throws PersistitException
     {
         super(cursor, field, ascending);
+        assert lo != null;
+        assert hi != null;
         this.keyTarget = new PersistitKeyValueTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
         this.keySource = new PersistitKeyValueSource();
+        boolean loNull = lo.isNull();
+        boolean hiNull = hi.isNull();
+        assert !(loNull && hiNull);
+        this.loSource = lo;
+        this.hiSource = hi;
+        this.fieldType = loNull ? hiSource.getConversionType() : loSource.getConversionType();
+        this.endComparison = null;
+        this.loInclusive = loInclusive;
+        this.hiInclusive = hiInclusive;
+        this.singleValue = singleValue;
+        if (singleValue) {
+            assert !loNull;
+            assert !hiNull;
+            Expression loEQHi = Expressions.compare(Expressions.valueSource(loSource),
+                                                    Comparison.EQ,
+                                                    Expressions.valueSource(hiSource));
+            if (!loEQHi.evaluation().eval().getBool()) {
+                throw new IllegalArgumentException();
+            }
+        }
     }
 
     public MixedOrderScanStateSingleSegment(SortCursorMixedOrder cursor, int field)
         throws PersistitException
     {
-        this(cursor, field, cursor.ordering().ascending(field));
+        super(cursor, field, cursor.ordering().ascending(field));
+        this.keyTarget = new PersistitKeyValueTarget();
+        this.keyTarget.attach(cursor.exchange.getKey());
+        this.keySource = new PersistitKeyValueSource();
     }
 
     private void setupEndComparison(Comparison comparison, ValueSource bound)
@@ -184,6 +221,11 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
         return pastEnd;
     }
 
+    private boolean bounded()
+    {
+        return loSource != null && hiSource != null;
+    }
+
     private final PersistitKeyValueTarget keyTarget;
     private final PersistitKeyValueSource keySource;
     private ValueSource loSource;
@@ -191,6 +233,10 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
     private boolean loInclusive;
     private boolean hiInclusive;
     private Expression endComparison;
-    private Expression loEQHi;
     private AkType fieldType;
+    // singleValue is true if this scan state represents a key segment constrained to be a single value,
+    // singleValue is false otherwise. This can only happen in the last bound of an index scan. E.g.
+    // if we have an index on (a, b), and the index scan is (a = 1, 0 < b < 10), then singleValue is
+    // true for a, false for b.
+    private boolean singleValue = false;
 }

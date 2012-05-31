@@ -35,13 +35,11 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.EnumSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static com.akiban.qp.operator.API.IntersectOption;
 import static com.akiban.qp.operator.API.JoinType;
@@ -63,7 +61,7 @@ import static java.lang.Math.min;
  * <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
  * <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
  * <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
- * <li><b>boolean[] ascending:</b> The length of this arrays specifies the number of fields to be compared in the merge,
+ * <li><b>boolean[] ascending:</b> The length of this array specifies the number of fields to be compared in the merge,
  * (<= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field is ascending, false
  * if it is descending.
  * <li><b>JoinType joinType:</b>
@@ -192,7 +190,7 @@ class Intersect_Ordered extends Operator
         this.right = right;
         this.leftRowType = leftRowType;
         this.rightRowType = rightRowType;
-        this.ascending = ascending;
+        this.ascending = Arrays.copyOf(ascending, ascending.length);
         // outerjoins
         this.keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN;
         this.keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN;

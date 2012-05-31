@@ -87,6 +87,26 @@ class SortCursorMixedOrder extends SortCursor
     public void jump(Row row, ColumnSelector columnSelector)
     {
         assert keyRange != null; // keyRange is null when used from a Sorter
+        int field = 0;
+        try {
+            while (more && field < scanStates.size()) {
+                MixedOrderScanState scanState = scanStates.get(field);
+                if (columnSelector.includesColumn(field)) {
+                    ValueSource fieldValue = row.eval(field);
+                    if (scanState.jump(fieldValue)) {
+                        field++;
+                    } else {
+                        // Row that we're jumping to is incompatible with the constraints of this scan
+                        more = false;
+                    }
+                } else {
+                    more = scanState.startScan();
+                }
+            }
+        } catch (PersistitException e) {
+            close();
+            adapter.handlePersistitException(e);
+        }
     }
 
     // SortCursorMixedOrder interface
@@ -107,24 +127,6 @@ class SortCursorMixedOrder extends SortCursor
         while (f < boundColumns) {
             ValueSource loSource = lo.eval(f);
             ValueSource hiSource = hi.eval(f);
-            MixedOrderScanStateSingleSegment scanState = new
-                MixedOrderScanStateSingleSegment(this, f, f >= orderingColumns() || ordering.ascending(f));
-            scanState.setRange(loSource, hiSource);
-            scanStates.add(scanState);
-            f++;
-        }
-        while (f < orderingColumns()) {
-            MixedOrderScanStateSingleSegment scanState =
-                new MixedOrderScanStateSingleSegment(this, f);
-            scanStates.add(scanState);
-            f++;
-        }
-        if (f < keyColumns()) {
-            MixedOrderScanStateRemainingSegments scanState =
-                new MixedOrderScanStateRemainingSegments(this, orderingColumns());
-            scanStates.add(scanState);
-        }
-        if (boundColumns > 0) {
             /*
              * An index restriction is described by an IndexKeyRange which contains
              * two IndexBounds. The IndexBound wraps an index row. The fields of the row that are being restricted are
@@ -149,10 +151,40 @@ class SortCursorMixedOrder extends SortCursor
              *   f = boundColumns - 1
              * The last argument to setRangeLimits determines which condition is checked.
              */
-            for (f = 0; f < boundColumns() - 1; f++) {
-                scanState(f).setRangeLimits(true, true, false);
+            boolean loInclusive;
+            boolean hiInclusive;
+            boolean singleValue;
+            if (f < boundColumns - 1) {
+                loInclusive = true;
+                hiInclusive = true;
+                singleValue = true;
+            } else {
+                loInclusive = keyRange.loInclusive();
+                hiInclusive = keyRange.hiInclusive();
+                singleValue = false;
             }
-            scanState(boundColumns() - 1).setRangeLimits(keyRange().loInclusive(), keyRange().hiInclusive(), true);
+            MixedOrderScanStateSingleSegment scanState =
+                new MixedOrderScanStateSingleSegment(this,
+                                                     f,
+                                                     loSource,
+                                                     loInclusive,
+                                                     hiSource,
+                                                     hiInclusive,
+                                                     singleValue,
+                                                     f >= orderingColumns() || ordering.ascending(f));
+            scanStates.add(scanState);
+            f++;
+        }
+        while (f < orderingColumns()) {
+            MixedOrderScanStateSingleSegment scanState =
+                new MixedOrderScanStateSingleSegment(this, f);
+            scanStates.add(scanState);
+            f++;
+        }
+        if (f < keyColumns()) {
+            MixedOrderScanStateRemainingSegments scanState =
+                new MixedOrderScanStateRemainingSegments(this, orderingColumns());
+            scanStates.add(scanState);
         }
     }
 
