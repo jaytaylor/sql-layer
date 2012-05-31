@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.playground;
 
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
