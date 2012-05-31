@@ -86,7 +86,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 null,
                 customerRowType,
-                LookupOption.KEEP_INPUT);
+                InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -96,7 +96,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 customerRowType,
                 null,
-                LookupOption.KEEP_INPUT);
+                InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -106,7 +106,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 customerRowType,
                 customerRowType,
-                LookupOption.KEEP_INPUT);
+                InputPreservationOption.KEEP_INPUT);
     }
 
     @Test
@@ -116,7 +116,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 customerNameIndexRowType,
                 customerRowType,
-                LookupOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -126,7 +126,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 customerNameIndexRowType,
                 customerRowType,
-                LookupOption.KEEP_INPUT);
+                InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -136,7 +136,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 addressRowType,
                 itemRowType,
-                LookupOption.KEEP_INPUT);
+                InputPreservationOption.KEEP_INPUT);
     }
 
     @Test
@@ -146,7 +146,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 addressRowType,
                 orderRowType,
-                LookupOption.KEEP_INPUT);
+                InputPreservationOption.KEEP_INPUT);
     }
 
     // customer index -> customer + descendents
@@ -348,7 +348,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 orderOrItem.rowType(),
                 addressRowType,
-                LookupOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT);
         Cursor cursor = cursor(plan, queryContext);
         RowBase[] expected = new RowBase[]{
             row(addressRowType, 1001L, 1L, "111 1111 st"),
@@ -368,7 +368,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 customerRowType,
                 addressRowType,
-                LookupOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -397,7 +397,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 customerNameIndexRowType,
                 customerRowType,
-                LookupOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT);
     }
 
     private Operator addressAddressToCustomerPlan(String address)
@@ -408,7 +408,7 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                 coi,
                 addressAddressIndexRowType,
                 customerRowType,
-                LookupOption.DISCARD_INPUT);
+                InputPreservationOption.DISCARD_INPUT);
     }
 
     private Operator addressToCustomerPlan(String address)
@@ -420,11 +420,11 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                         coi,
                         addressAddressIndexRowType,
                         addressRowType,
-                        LookupOption.DISCARD_INPUT),
+                        InputPreservationOption.DISCARD_INPUT),
                     coi,
                     addressRowType,
                     customerRowType,
-                    LookupOption.DISCARD_INPUT);
+                    InputPreservationOption.DISCARD_INPUT);
     }
 
     private Operator addressToOrderPlan(String address, boolean keepInput)
@@ -436,11 +436,11 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                     coi,
                     addressAddressIndexRowType,
                     Arrays.asList(addressRowType),
-                    LookupOption.DISCARD_INPUT),
+                    InputPreservationOption.DISCARD_INPUT),
                 coi,
                 addressRowType,
                 orderRowType,
-                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
+                keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT);
     }
 
     private Operator orderToAddressPlan(String salesman, boolean keepInput)
@@ -452,11 +452,11 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                     coi,
                     orderSalesmanIndexRowType,
                     Arrays.asList(orderRowType),
-                    LookupOption.DISCARD_INPUT),
+                    InputPreservationOption.DISCARD_INPUT),
                 coi,
                 orderRowType,
                 addressRowType,
-                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
+                keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT);
     }
 
     private Operator itemToAddressPlan(long iid, boolean keepInput)
@@ -468,11 +468,11 @@ public class BranchLookup_DefaultIT extends OperatorITBase
                     coi,
                     itemIidIndexRowType,
                     Arrays.asList(itemRowType),
-                    LookupOption.DISCARD_INPUT),
+                    InputPreservationOption.DISCARD_INPUT),
                 coi,
                 itemRowType,
                 addressRowType,
-                keepInput ? LookupOption.KEEP_INPUT : LookupOption.DISCARD_INPUT);
+                keepInput ? InputPreservationOption.KEEP_INPUT : InputPreservationOption.DISCARD_INPUT);
     }
 
     private IndexKeyRange customerNameEQ(String name)

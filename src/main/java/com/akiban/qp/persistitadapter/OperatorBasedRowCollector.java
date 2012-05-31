@@ -292,7 +292,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     groupTable,
                     predicateType.indexRowType(predicateIndex),
                     predicateType,
-                    LookupOption.DISCARD_INPUT,
+                    InputPreservationOption.DISCARD_INPUT,
                     limit);
         } else {
             assert !descending;
@@ -309,7 +309,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (queryRootType != predicateType) {
             List<UserTableRowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
-                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, LookupOption.KEEP_INPUT);
+                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, InputPreservationOption.KEEP_INPUT);
             }
         }
         // Get rid of everything above query root table.

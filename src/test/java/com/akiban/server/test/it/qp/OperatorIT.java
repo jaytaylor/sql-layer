@@ -29,7 +29,6 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
@@ -159,7 +158,7 @@ public class OperatorIT extends OperatorITBase
     public void testIndexLookup()
     {
         Operator indexScan = indexScan_Default(indexType(order, "salesman"));
-        Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT);
+        Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
                                            row(itemRowType, 122L, 12L),
@@ -179,12 +178,12 @@ public class OperatorIT extends OperatorITBase
     public void testIndexLookupWithOneAncestor()
     {
         Operator indexScan = indexScan_Default(indexType(order, "salesman"));
-        Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT);
+        Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT);
         Operator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  orderRowType,
                                                                  Arrays.asList(customerRowType),
-                                                                 LookupOption.KEEP_INPUT);
+                                                                 InputPreservationOption.KEEP_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
@@ -212,12 +211,12 @@ public class OperatorIT extends OperatorITBase
                                                        coi,
                                                        itemOidIndexRowType,
                                                        itemRowType,
-                                                       LookupOption.DISCARD_INPUT);
+                                                       InputPreservationOption.DISCARD_INPUT);
         Operator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  itemRowType,
                                                                  Arrays.asList(customerRowType, orderRowType),
-                                                                 LookupOption.KEEP_INPUT);
+                                                                 InputPreservationOption.KEEP_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -270,7 +269,7 @@ public class OperatorIT extends OperatorITBase
                                                        coi,
                                                        orderSalesmanIndexRowType,
                                                        orderRowType,
-                                                       LookupOption.DISCARD_INPUT);
+                                                       InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
                                            row(itemRowType, 212L, 21L)};
@@ -290,7 +289,7 @@ public class OperatorIT extends OperatorITBase
                                                                  coi,
                                                                  orderSalesmanIndexRowType,
                                                                  Arrays.asList(customerRowType),
-                                                                 LookupOption.DISCARD_INPUT);
+                                                                 InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor(ancestorLookup, queryContext));
     }

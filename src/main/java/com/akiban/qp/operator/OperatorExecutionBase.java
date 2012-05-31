@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.error.QueryCanceledException;
@@ -106,9 +107,12 @@ public abstract class OperatorExecutionBase implements RowOrientedCursorBase<Row
         }
     }
 
-    protected StoreAdapter adapter()
-    {
+    protected StoreAdapter adapter() {
         return context.getStore();
+    }
+    
+    protected StoreAdapter adapter (TableName name) {
+        return context.getStore(name);
     }
 
     protected QueryContext context;

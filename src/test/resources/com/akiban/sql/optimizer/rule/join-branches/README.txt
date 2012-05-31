@@ -36,6 +36,9 @@ right-right: RIGHT join down.
 side-branch: Index on one branch and all results from another branch,
              including an ancestor of the index.
 
+side-branch-only: Only need other branch, no ancestors. 
+                  Group index ensures parent exists.
+
 side-branch-sorted: Side branch with sorting.
 
 single-table: Single ancestor of index.

@@ -151,11 +151,11 @@ public class Product_NestedLoopsIT extends OperatorITBase
                             coi,
                             customerNameIndexRowType,
                             Collections.singleton(customerRowType),
-                            LookupOption.DISCARD_INPUT),
+                            InputPreservationOption.DISCARD_INPUT),
                         coi,
                         customerRowType,
                         orderRowType,
-                        LookupOption.KEEP_INPUT),
+                        InputPreservationOption.KEEP_INPUT),
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
@@ -163,7 +163,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 KEEP_PARENT);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -194,13 +194,13 @@ public class Product_NestedLoopsIT extends OperatorITBase
                     coi,
                     orderSalesmanIndexRowType,
                     Arrays.asList(orderRowType, customerRowType),
-                    LookupOption.DISCARD_INPUT),
+                    InputPreservationOption.DISCARD_INPUT),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -240,7 +240,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                     customerRowType,
                     customerRowType,
                     addressRowType,
-                    LookupOption.KEEP_INPUT,
+                    InputPreservationOption.KEEP_INPUT,
                     0),
                 customerRowType,
                 addressRowType,
@@ -286,11 +286,11 @@ public class Product_NestedLoopsIT extends OperatorITBase
                             coi,
                             customerNameIndexRowType,
                             Collections.singleton(customerRowType),
-                            LookupOption.DISCARD_INPUT),
+                            InputPreservationOption.DISCARD_INPUT),
                         coi,
                         customerRowType,
                         orderRowType,
-                        LookupOption.KEEP_INPUT),
+                        InputPreservationOption.KEEP_INPUT),
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
@@ -298,7 +298,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 KEEP_PARENT);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
