@@ -59,22 +59,9 @@ public class VarcharVarbinaryTest
     public static Collection<Parameterization> params()
     {
         ParameterizationBuilder p = new ParameterizationBuilder();
-        
-        // Pick at least 15 distinct random bytes to test
-        // Testing all bytes in the range [Byte.MIN_VALUE, Byte.MAX_VALUE] takes too long
-        Set<Byte> inputBytes = new HashSet<Byte>();
-        byte inputs[] = new byte[15];
-        Random rand = new Random();
-        do
-        {
-            rand.nextBytes(inputs);
-            for (byte b : inputs)
-                inputBytes.add(b);
-        }
-        while (inputBytes.size() < 15);
-        
-        for (byte b : inputs)
-            param(p, b);
+     
+        for (int val = Byte.MIN_VALUE; val <= Byte.MAX_VALUE; ++val)
+            param(p, (byte)val);
         
         return p.asList();
     }
