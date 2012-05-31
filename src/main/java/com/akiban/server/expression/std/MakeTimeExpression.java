@@ -93,8 +93,9 @@ public class MakeTimeExpression extends AbstractTernaryExpression
             if (minutes >= 60 || minutes < 0) return NullValueSource.only();
             if (seconds >= 60 || seconds < 0) return NullValueSource.only();
             
-            long time = (hours < 0) ? -1 : 1;
-            time = time * (seconds + (minutes * 100) + (Math.abs(hours) * 10000));
+            long time = hours < 0 ? -1 : 1;
+            hours *= time;
+            time *= seconds + minutes * 100 + hours * 10000;
             valueHolder().putTime(time);
             return valueHolder();
         }
