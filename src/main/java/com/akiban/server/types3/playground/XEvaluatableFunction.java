@@ -83,5 +83,10 @@ public final class XEvaluatableFunction implements XEvaluatableExpression {
             }
             return value;
         }
+
+        @Override
+        public int size() {
+            return inputValues.length;
+        }
     };
 }

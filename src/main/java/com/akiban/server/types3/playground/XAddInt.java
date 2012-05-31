@@ -67,17 +67,9 @@ public enum XAddInt implements TOverload {
     public void evaluate(List<TInstance> inputInstances, LazyList<PValueSource> inputs, TInstance outputInstance,
                          PValueTarget output)
     {
-        PValueSource input0 = inputs.get(0);
-        if (input0.isNull()) {
-            output.putNull();
+        if (OverloadUtils.nullsContaminate(output, inputs))
             return;
-        }
-        PValueSource input1 = inputs.get(1);
-        if (input1.isNull()) {
-            output.putNull();
-            return;
-        }
-        int result = input0.getInt32() + input1.getInt32();
+        int result = inputs.get(0).getInt32() + inputs.get(1).getInt32();
         output.putInt32(result);
     }
 
