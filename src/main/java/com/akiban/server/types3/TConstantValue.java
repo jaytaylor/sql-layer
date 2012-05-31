@@ -32,7 +32,7 @@ import com.akiban.util.ArgumentValidation;
 public final class TConstantValue {
 
     public TInstance instance() {
-        return instance();
+        return tInstance;
     }
 
     public PValueSource value() {
