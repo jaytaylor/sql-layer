@@ -616,7 +616,7 @@ public final class SchemaManagerIT extends ITBase {
     public void registerMemoryTableBasic() throws Exception {
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
         MemoryTableFactory factory = new MemoryTableFactoryMock();
-        registerISTable(makeSimpleISTable(tableName.getTableName()), factory);
+        registerISTable(makeSimpleISTable(tableName), factory);
 
         {
             UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
@@ -643,15 +643,22 @@ public final class SchemaManagerIT extends ITBase {
     @Test(expected=DuplicateTableNameException.class)
     public void noDuplicateMemoryTables() throws Exception {
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName);
         MemoryTableFactory factory = new MemoryTableFactoryMock();
-        registerISTable(makeSimpleISTable(tableName.getTableName()), factory);
-        registerISTable(makeSimpleISTable(tableName.getTableName()), factory);
+        registerISTable(sourceTable, factory);
+        registerISTable(sourceTable, factory);
     }
 
     @Test(expected=IllegalArgumentException.class)
     public void noNullMemoryTableFactory() throws Exception {
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
-        registerISTable(makeSimpleISTable(tableName.getTableName()), null);
+        registerISTable(makeSimpleISTable(tableName), null);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noMemoryTableOutsideAISSchema() throws Exception {
+        final TableName tableName = new TableName("foo", "test_table");
+        registerISTable(makeSimpleISTable(tableName), null);
     }
 
     @Test
@@ -659,7 +666,7 @@ public final class SchemaManagerIT extends ITBase {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
 
-        registerISTable(makeSimpleISTable(tableName.getTableName()), VERSION);
+        registerISTable(makeSimpleISTable(tableName), VERSION);
         {
             UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
             assertNotNull("New table exists", testTable);
@@ -685,7 +692,7 @@ public final class SchemaManagerIT extends ITBase {
     public void canRegisterStoredTableWithSameVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
-        final UserTable sourceTable = makeSimpleISTable(tableName.getTableName());
+        final UserTable sourceTable = makeSimpleISTable(tableName);
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION);
     }
@@ -694,9 +701,16 @@ public final class SchemaManagerIT extends ITBase {
     public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
-        final UserTable sourceTable = makeSimpleISTable(tableName.getTableName());
+        final UserTable sourceTable = makeSimpleISTable(tableName);
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION + 1);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noStoredTableOutsideAISSchema() throws Exception {
+        final int VERSION = 5;
+        final TableName tableName = new TableName("foo", "test_table");
+        registerISTable(makeSimpleISTable(tableName), VERSION);
     }
 
 
@@ -820,11 +834,10 @@ public final class SchemaManagerIT extends ITBase {
         }
     }
 
-    private static UserTable makeSimpleISTable(String tableName) {
-        final String schema = TableName.AKIBAN_INFORMATION_SCHEMA;
-        NewAISBuilder builder = AISBBasedBuilder.create(schema);
-        builder.userTable(tableName).colLong("id", false).pk("id");
-        return builder.ais().getUserTable(schema, tableName);
+    private static UserTable makeSimpleISTable(TableName name) {
+        NewAISBuilder builder = AISBBasedBuilder.create(name.getSchemaName());
+        builder.userTable(name.getTableName()).colLong("id", false).pk("id");
+        return builder.ais().getUserTable(name);
     }
 
     private static class MemoryTableFactoryMock implements MemoryTableFactory {
