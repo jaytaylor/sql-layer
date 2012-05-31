@@ -296,6 +296,11 @@ public class JoinAndIndexPicker extends BaseRule
             return groupGoal.orderedForDistinct((Project)distinct.getInput(),
                                                 (IndexScan)scan);
         }
+
+        @Override
+        public boolean semiJoinEquivalent() {
+            return groupGoal.semiJoinEquivalent(scan);
+        }
     }
 
     static class GroupPlanClass extends PlanClass {
@@ -494,6 +499,16 @@ public class JoinAndIndexPicker extends BaseRule
                 left.addDistinct();
             Joinable leftJoinable = left.install();
             Joinable rightJoinable = right.install();
+            ConditionList joinConditions = mergeJoinConditions(joins);
+            JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
+            join.setJoinConditions(joinConditions);
+            join.setImplementation(joinImplementation);
+            if (joinType == JoinType.SEMI)
+                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
+            return join;
+        }
+
+        protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins) {
             ConditionList joinConditions = null;
             boolean newJoinConditions = false;
             for (JoinOperator joinOp : joins) {
@@ -511,11 +526,33 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 }
             }
-            JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
+            return joinConditions;
+        }
+    }
+
+    static class HashJoinPlan extends JoinPlan {
+        Plan loader;
+        
+        public HashJoinPlan(Plan loader, Plan input, Plan check,
+                            JoinType joinType, JoinNode.Implementation joinImplementation,
+                            Collection<JoinOperator> joins, CostEstimate costEstimate) {
+            super(input, check, joinType, joinImplementation, joins, costEstimate);
+            this.loader = loader;
+        }
+
+        @Override
+        public Joinable install() {
+            if (needDistinct)
+                left.addDistinct();
+            Joinable loaderJoinable = loader.install();
+            Joinable inputJoinable = left.install();
+            Joinable checkJoinable = right.install();
+            ConditionList joinConditions = mergeJoinConditions(joins);
+            JoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
-                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
+                InConditionReverser.cleanUpSemiJoin(join, checkJoinable);
             return join;
         }
     }
@@ -612,9 +649,8 @@ public class JoinAndIndexPicker extends BaseRule
                                              joins, costEstimate);
             planClass.consider(joinPlan);
             if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
-                Plan loadPlan = right.bestPlan(outsideJoins);
-                JoinPlan hashPlan = buildBloomFilterSemiJoin(leftPlan, rightPlan, 
-                                                             loadPlan, joins);
+                Plan loaderPlan = right.bestPlan(outsideJoins);
+                JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, leftPlan, rightPlan, joins);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
             }
@@ -651,9 +687,12 @@ public class JoinAndIndexPicker extends BaseRule
             return boundTables;
         }
 
-        public JoinPlan buildBloomFilterSemiJoin(Plan inputPlan, Plan checkPlan, Plan loadPlan, 
-                                                 Collection<JoinOperator> joins) {
-            return null;
+        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan,Plan inputPlan, Plan checkPlan, Collection<JoinOperator> joins) {
+            // TODO: For testing, no cost to actual checks.
+            CostEstimate costEstimate = checkPlan.costEstimate.sequence(inputPlan.costEstimate);
+            return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
+                                    JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
+                                    joins, costEstimate);
         }
     }
     

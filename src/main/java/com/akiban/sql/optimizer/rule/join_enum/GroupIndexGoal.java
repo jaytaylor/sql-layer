@@ -37,6 +37,7 @@ import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
@@ -976,7 +977,52 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return result;
     }
 
-    public void install(PlanNode scan, List<ConditionList> conditionSources) {
+    // Recognize the case of a join that is only used for predication.
+    // TODO: This is only covers the simplest case, namely an index that is unique
+    // none of whose columns are actually used.
+    public boolean semiJoinEquivalent(BaseScan scan) {
+        if (scan instanceof SingleIndexScan) {
+            SingleIndexScan indexScan = (SingleIndexScan)scan;
+            if (indexScan.isCovering() && isUnique(indexScan) && 
+                requiredColumns.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Does this scan return at most one row?
+    protected boolean isUnique(SingleIndexScan indexScan) {
+        List<ExpressionNode> equalityComparands = indexScan.getEqualityComparands();
+        if (equalityComparands == null)
+            return false;
+        int nequals = equalityComparands.size();
+        Index index = indexScan.getIndex();
+        if (index.isUnique() && (nequals >= index.getKeyColumns().size()))
+            return true;
+        if (index.isGroupIndex())
+            return false;
+        Set<Column> equalityColumns = new HashSet<Column>(nequals);
+        for (int i = 0; i < nequals; i++) {
+            ExpressionNode equalityExpr = indexScan.getColumns().get(i);
+            if (equalityExpr instanceof ColumnExpression) {
+                equalityColumns.add(((ColumnExpression)equalityExpr).getColumn());
+            }
+        }
+        TableIndex tableIndex = (TableIndex)index;
+        find_index:             // Find a unique index all of whose columns are equaled.
+        for (TableIndex otherIndex : tableIndex.getTable().getIndexes()) {
+            if (!otherIndex.isUnique()) continue;
+            for (IndexColumn otherColumn : otherIndex.getKeyColumns()) {
+                if (!equalityColumns.contains(otherColumn.getColumn()))
+                    continue find_index;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public void install(BaseScan scan, List<ConditionList> conditionSources) {
         tables.setScan(scan);
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;

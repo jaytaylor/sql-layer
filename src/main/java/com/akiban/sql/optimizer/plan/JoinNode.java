@@ -67,6 +67,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     public static enum Implementation {
         GROUP,
         NESTED_LOOPS,
+        BLOOM_FILTER, 
         MERGE                   // TODO: Not implemented. Probably needs thought.
     }
     private Joinable left, right;
@@ -187,8 +188,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (left.accept(v) && 
-                right.accept(v) &&
+            if (acceptPlans(v) &&
                 (joinConditions != null)) {
                 if (v instanceof ExpressionRewriteVisitor) {
                     joinConditions.accept((ExpressionRewriteVisitor)v);
@@ -201,6 +201,10 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         return v.visitLeave(this);
     }
     
+    protected boolean acceptPlans(PlanVisitor v) {
+        return (left.accept(v) && right.accept(v));
+    }
+
     @Override
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
