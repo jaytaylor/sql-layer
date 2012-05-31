@@ -24,19 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.playground;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.TInstance;
 
-import java.util.List;
-
-public interface TOverload {
-    public String overloadName();
-    public TOverloadResult resultType();
-    public List<TInputSet> inputSets();
-    public void evaluate(
-            List<? extends TInstance> inputInstances, LazyList<? extends PValueSource> inputs,
-            TInstance outputInstance, PValueTarget output);
-    public TConstantValue evaluateConstant(LazyList<? extends TConstantValue> inputs);
+public interface XPreparedExpression {
+    TInstance resultType();
+    XEvaluatableExpression build();
 }

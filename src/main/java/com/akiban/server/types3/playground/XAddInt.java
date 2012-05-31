@@ -39,7 +39,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.BitSets;
 
-import java.util.BitSet;
 import java.util.Collections;
 import java.util.List;
 
@@ -62,7 +61,9 @@ public enum XAddInt implements TOverload {
     }
 
     @Override
-    public void evaluate(List<TInstance> inputInstances, LazyList<PValueSource> inputs, TInstance outputInstance,
+    public void evaluate(List<? extends TInstance> inputInstances,
+                         LazyList<? extends PValueSource> inputs,
+                         TInstance outputInstance,
                          PValueTarget output)
     {
         if (OverloadUtils.nullsContaminate(output, inputs))
@@ -72,7 +73,7 @@ public enum XAddInt implements TOverload {
     }
 
     @Override
-    public TConstantValue evaluateConstant(LazyList<TConstantValue> inputs) {
+    public TConstantValue evaluateConstant(LazyList<? extends TConstantValue> inputs) {
         if(OverloadUtils.nullsContaminate(inputs))
             return null;
         PValue constValue = new PValue(PUnderlying.INT_32);

@@ -35,7 +35,7 @@ import java.util.BitSet;
 
 public final class OverloadUtils {
 
-    public static boolean nullsContaminate(PValueTarget output, LazyList<PValueSource> inputs,
+    public static boolean nullsContaminate(PValueTarget output, LazyList<? extends PValueSource> inputs,
                                            BitSet contaminatingNulls)
     {
         for (int i = contaminatingNulls.nextSetBit(0); i >= 0; i = contaminatingNulls.nextSetBit(i+1)) {
@@ -45,11 +45,13 @@ public final class OverloadUtils {
         return false;
     }
 
-    public static boolean nullsContaminate(PValueTarget output, LazyList<PValueSource> inputs) {
+    public static boolean nullsContaminate(PValueTarget output, LazyList<? extends PValueSource> inputs) {
         return nullsContaminate(output, inputs, 0, inputs.size());
     }
 
-    public static boolean nullsContaminate(PValueTarget output, LazyList<PValueSource> inputs, int start, int end) {
+    public static boolean nullsContaminate(PValueTarget output, LazyList<? extends PValueSource> inputs,
+                                           int start, int end)
+    {
         for (int i = start; i < end; ++i) {
             if (checkNull(output, inputs, i))
                 return true;
@@ -57,7 +59,7 @@ public final class OverloadUtils {
         return false;
     }
 
-    public static boolean nullsContaminate(LazyList<TConstantValue> inputs) {
+    public static boolean nullsContaminate(LazyList<? extends TConstantValue> inputs) {
         for (int i = 0, end = inputs.size(); i < end; ++i) {
             if (inputs.get(i) == null)
                 return true;
@@ -65,7 +67,7 @@ public final class OverloadUtils {
         return false;
     }
 
-    private static boolean checkNull(PValueTarget output, LazyList<PValueSource> inputs, int i) {
+    private static boolean checkNull(PValueTarget output, LazyList<? extends PValueSource> inputs, int i) {
         PValueSource source = inputs.get(i);
         if (source.isNull()) {
             output.putNull();

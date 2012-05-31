@@ -24,19 +24,54 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.playground;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.row.Row;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 
-import java.util.List;
+public final class XPreparedLiteral implements XPreparedExpression {
+    @Override
+    public TInstance resultType() {
+        return tInstance;
+    }
 
-public interface TOverload {
-    public String overloadName();
-    public TOverloadResult resultType();
-    public List<TInputSet> inputSets();
-    public void evaluate(
-            List<? extends TInstance> inputInstances, LazyList<? extends PValueSource> inputs,
-            TInstance outputInstance, PValueTarget output);
-    public TConstantValue evaluateConstant(LazyList<? extends TConstantValue> inputs);
+    @Override
+    public XEvaluatableExpression build() {
+        return new Evaluation(value);
+    }
+
+    public XPreparedLiteral(TInstance tInstance, PValueSource value) {
+        this.tInstance = tInstance;
+        this.value = value;
+    }
+
+    private final TInstance tInstance;
+    private final PValueSource value;
+
+    private static class Evaluation implements XEvaluatableExpression {
+        @Override
+        public PValueSource resultValue() {
+            return value;
+        }
+
+        @Override
+        public void evaluate() {
+        }
+
+        @Override
+        public void with(Row row) {
+        }
+
+        @Override
+        public void with(QueryContext context) {
+        }
+
+        private Evaluation(PValueSource value) {
+            this.value = value;
+        }
+
+        private final PValueSource value;
+    }
 }

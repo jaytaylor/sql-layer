@@ -26,13 +26,17 @@
 
 package com.akiban.server.types3.playground;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 public interface XEvaluatableExpression {
-    TInstance resultType();
 
     PValueSource resultValue();
 
     void evaluate();
+
+    void with(Row row);
+    void with(QueryContext context);
 }

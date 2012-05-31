@@ -35,40 +35,23 @@ import java.util.Arrays;
 
 public final class XMain {
     public static void main(String[] args) {
-        XEvaluatableExpression literal3 = new XIntLiteralValue(3);
-        XEvaluatableExpression literal5 = new XIntLiteralValue(5);
+        XPreparedExpression literal3 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(3));
+        XPreparedExpression literal5 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(5));
 
         XValidatedOverload validatedAdd = new XValidatedOverload(XAddInt.INSTANCE);
-        XEvaluatableExpression addExpr = new XEvaluatableFunction(
+        XPreparedExpression addExpr = new XPreparedFunction(
                 validatedAdd,
                 XInt.INSTANCE,
                 Arrays.asList(literal3, literal5));
-        addExpr.evaluate();
-        System.out.println(addExpr.resultValue());
+
+        XEvaluatableExpression eval = addExpr.build();
+        eval.evaluate();
+        System.out.println(eval.resultValue());
     }
 
-    private static class XIntLiteralValue implements XEvaluatableExpression {
-        @Override
-        public TInstance resultType() {
-            return XInt.INSTANCE;
-        }
-
-        @Override
-        public PValueSource resultValue() {
-            return value;
-        }
-
-        @Override
-        public void evaluate() {
-            // nothing to do
-        }
-
-        XIntLiteralValue(int value) {
-            PValue pvalue = new PValue(PUnderlying.INT_32);
-            pvalue.putInt32(value);
-            this.value = pvalue;
-        }
-
-        private PValueSource value;
+    private static PValueSource pvalue32(int value) {
+        PValue pvalue = new PValue(PUnderlying.INT_32);
+        pvalue.putInt32(value);
+        return pvalue;
     }
 }
