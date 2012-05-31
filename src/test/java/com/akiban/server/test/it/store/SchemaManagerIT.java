@@ -60,6 +60,7 @@ import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
@@ -697,7 +698,7 @@ public final class SchemaManagerIT extends ITBase {
         registerISTable(sourceTable, VERSION);
     }
 
-    @Test(expected=IllegalArgumentException.class)
+    @Test(expected=ISTableVersionMismatchException.class)
     public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
         final Integer VERSION = 5;
         final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");

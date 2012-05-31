@@ -65,6 +65,7 @@ import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
 import com.akiban.server.error.NoSuchColumnException;
@@ -188,7 +189,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             if(Integer.valueOf(version).equals(oldVersion)) {
                 return newName;
             } else {
-                throw new IllegalArgumentException("version mismatch");
+                throw new ISTableVersionMismatchException(oldVersion, version);
             }
         }
         return createTableCommon(session, newTable, true, version, null);
