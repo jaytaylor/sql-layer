@@ -34,6 +34,8 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import com.akiban.server.expression.std.Comparison;
+
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 
@@ -243,6 +245,10 @@ public class JoinAndIndexPicker extends BaseRule
         public boolean semiJoinEquivalent() {
             return false;
         }
+
+        public boolean containsColumn(ColumnExpression column) {
+            return false;
+        }
     }
 
     static abstract class PlanClass {
@@ -299,6 +305,13 @@ public class JoinAndIndexPicker extends BaseRule
         @Override
         public boolean semiJoinEquivalent() {
             return groupGoal.semiJoinEquivalent(scan);
+        }
+
+        @Override
+        public boolean containsColumn(ColumnExpression column) {
+            ColumnSource table = column.getTable();
+            if (!(table instanceof TableSource)) return false;
+            return (groupGoal.getTables().getRoot().findTable((TableSource)table) != null);
         }
     }
 
@@ -498,7 +511,7 @@ public class JoinAndIndexPicker extends BaseRule
                 left.addDistinct();
             Joinable leftJoinable = left.install(copy);
             Joinable rightJoinable = right.install(copy);
-            ConditionList joinConditions = mergeJoinConditions(joins, false);
+            ConditionList joinConditions = mergeJoinConditions(joins);
             JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
@@ -507,8 +520,7 @@ public class JoinAndIndexPicker extends BaseRule
             return join;
         }
 
-        protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins,
-                                                    boolean alwaysCopy) {
+        protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins) {
             ConditionList joinConditions = null;
             boolean newJoinConditions = false;
             for (JoinOperator joinOp : joins) {
@@ -516,10 +528,6 @@ public class JoinAndIndexPicker extends BaseRule
                     !joinOp.getJoinConditions().isEmpty()) {
                     if (joinConditions == null) {
                         joinConditions = joinOp.getJoinConditions();
-                        if (alwaysCopy) {
-                            joinConditions = new ConditionList(joinConditions);
-                            newJoinConditions = true;
-                        }
                     }
                     else { 
                         if (!newJoinConditions) {
@@ -536,23 +544,27 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class HashJoinPlan extends JoinPlan {
         Plan loader;
+        List<ExpressionNode> hashColumns, matchColumns;
         
         public HashJoinPlan(Plan loader, Plan input, Plan check,
                             JoinType joinType, JoinNode.Implementation joinImplementation,
-                            Collection<JoinOperator> joins, CostEstimate costEstimate) {
+                            Collection<JoinOperator> joins, CostEstimate costEstimate,
+                            List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns) {
             super(input, check, joinType, joinImplementation, joins, costEstimate);
             this.loader = loader;
+            this.hashColumns = hashColumns;
+            this.matchColumns = matchColumns;
         }
 
         @Override
         public Joinable install(boolean copy) {
             if (needDistinct)
                 left.addDistinct();
-            ConditionList joinConditions = mergeJoinConditions(joins, true);
             Joinable loaderJoinable = loader.install(true);
             Joinable inputJoinable = left.install(copy);
             Joinable checkJoinable = right.install(copy);
-            JoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType);
+            ConditionList joinConditions = mergeJoinConditions(joins);
+            HashJoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType, hashColumns, matchColumns);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
@@ -691,12 +703,44 @@ public class JoinAndIndexPicker extends BaseRule
             return boundTables;
         }
 
-        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan,Plan inputPlan, Plan checkPlan, Collection<JoinOperator> joins) {
+        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, Plan inputPlan, Plan checkPlan, Collection<JoinOperator> joins) {
+            List<ExpressionNode> hashColumns = new ArrayList<ExpressionNode>();
+            List<ExpressionNode> matchColumns = new ArrayList<ExpressionNode>();
+            for (JoinOperator join : joins) {
+                if (join.getJoinConditions() != null) {
+                    for (ConditionExpression cond : join.getJoinConditions()) {
+                        if (!(cond instanceof ComparisonCondition)) return null;
+                        ComparisonCondition ccond = (ComparisonCondition)cond;
+                        if (ccond.getOperation() != Comparison.EQ) return null;
+                        ExpressionNode left = ccond.getLeft();
+                        ExpressionNode right = ccond.getRight();
+                        // TODO: Could allow somewhat more
+                        // complicated, provided still just use one
+                        // side's tables.
+                        if (!((left instanceof ColumnExpression) &&
+                              (right instanceof ColumnExpression)))
+                            return null;
+                        if (inputPlan.containsColumn((ColumnExpression)left) && 
+                            checkPlan.containsColumn((ColumnExpression)right)) {
+                            matchColumns.add(left);
+                            hashColumns.add(right);
+                        }
+                        else if (inputPlan.containsColumn((ColumnExpression)right) && 
+                                 checkPlan.containsColumn((ColumnExpression)left)) {
+                            matchColumns.add(right);
+                            hashColumns.add(left);
+                        }
+                        else {
+                            return null;
+                        }
+                    }
+                }
+            }
             // TODO: For testing, no cost to actual checks.
             CostEstimate costEstimate = checkPlan.costEstimate.sequence(inputPlan.costEstimate);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
-                                    joins, costEstimate);
+                                    joins, costEstimate, hashColumns, matchColumns);
         }
     }
     

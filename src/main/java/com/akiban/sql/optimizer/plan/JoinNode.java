@@ -190,12 +190,7 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         if (v.visitEnter(this)) {
             if (acceptPlans(v) &&
                 (joinConditions != null)) {
-                if (v instanceof ExpressionRewriteVisitor) {
-                    joinConditions.accept((ExpressionRewriteVisitor)v);
-                }
-                else if (v instanceof ExpressionVisitor) {
-                    joinConditions.accept((ExpressionVisitor)v);
-                }
+                acceptConditions(v);
             }
         }
         return v.visitLeave(this);
@@ -205,10 +200,25 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
         return (left.accept(v) && right.accept(v));
     }
 
+    protected void acceptConditions(PlanVisitor v) {
+        if (v instanceof ExpressionRewriteVisitor) {
+            joinConditions.accept((ExpressionRewriteVisitor)v);
+        }
+        else if (v instanceof ExpressionVisitor) {
+            joinConditions.accept((ExpressionVisitor)v);
+        }
+    }
+
     @Override
     public String summaryString() {
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
+        summarizeJoins(str);
+        str.append(")");
+        return str.toString();
+    }
+
+    protected void summarizeJoins(StringBuilder str) {
         str.append(joinType);
         if (implementation != null) {
             str.append("/");
@@ -220,8 +230,6 @@ public class JoinNode extends BaseJoinable implements PlanWithInput
             str.append(" - ");
             str.append(groupJoin);
         }
-        str.append(")");
-        return str.toString();
     }
 
     @Override
