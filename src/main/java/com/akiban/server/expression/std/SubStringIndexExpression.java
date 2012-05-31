@@ -94,35 +94,31 @@ public class SubStringIndexExpression extends AbstractTernaryExpression {
             String pattern = second.getString();
             int count = (int) third.getInt();
             boolean signed = count < 0;
-            String substring;
 
-            if (signed) 
-            {
-                StringBuilder string_build = new StringBuilder(string);
-                string = string_build.reverse().toString();
-                StringBuilder pattern_build = new StringBuilder(pattern);
-                pattern = pattern_build.reverse().toString();
-                count = Math.abs(count); 
-            }
             int indexOf = indexOf(string.toCharArray(), pattern.toCharArray(), count);
-            substring = string.substring(0, indexOf);
+            String substring = signed ? string.substring(indexOf, string.length()) : string.substring(0, indexOf);
             
-            StringBuilder builder = new StringBuilder(substring);
-            if (signed) substring = builder.reverse().toString();
             valueHolder().putRaw(AkType.VARCHAR, substring);
             return valueHolder();
         }
         
-        private static int indexOf(char[] haystack, char[] needle, int orig_count) 
+        private static int indexOf(char[] haystack, char[] needle, int count) 
         {
-            int needle_len = needle.length;
-            int haystack_len = haystack.length;
-            int count = orig_count;
+            boolean signed = count < 0;
  
-            if (needle_len == 0 || count == 0) return 0;
+            if (needle.length == 0 || count == 0) return 0;
             
-            Map<Character,Integer> charMap = makeCharTable(needle);
-            int offsetTable[] = makeOffsetTable(needle);
+            Map<Character,Integer> charMap = makeCharTable(needle, signed);
+            int offsetTable[] = signed ? negOffsetTable(needle) : makeOffsetTable(needle);
+            return signed ? negIndexOf(haystack, needle, count, charMap, offsetTable) :
+                    posIndexOf(haystack, needle, count, charMap, offsetTable);
+        }
+        
+        private static int posIndexOf(char[] haystack, char[] needle, int count, 
+                Map<Character,Integer> charMap, int[] offsetTable)
+        {
+            int haystack_len = haystack.length;
+            int needle_len = needle.length;
             for (int i = needle_len - 1, j; i < haystack_len;)
             {
                 for (j = needle_len - 1; needle[j] == haystack[i]; --i,--j)
@@ -142,14 +138,49 @@ public class SubStringIndexExpression extends AbstractTernaryExpression {
             return haystack_len;
         }
         
-        private static Map<Character,Integer> makeCharTable(char[] needle)
+        private static int negIndexOf(char[] haystack, char[] needle, int count, 
+                Map<Character,Integer> charMap, int[] offsetTable)
+        {
+            int haystack_len = haystack.length;
+            int needle_len = needle.length;
+            for (int i = haystack_len-needle_len, j; i < haystack_len && i >= 0;)
+            {
+                for (j = 0; needle[j] == haystack[i]; ++i, ++j)
+                {
+                    if (j == needle_len-1)
+                    {
+                        if (count == -1) return i + 1;
+                        count++;
+                        break;
+                    }
+                }
+                int max = charMap.containsKey(haystack[i]) && charMap.get(haystack[i]) > 0 ?
+                        charMap.get(haystack[i]) : Math.max(offsetTable[j], needle_len);
+
+                i -= max;
+            }
+            return 0;
+        }
+        
+        private static Map<Character,Integer> makeCharTable(char[] needle, boolean signed)
         {
             int needle_len = needle.length;
             Map<Character,Integer> map = new HashMap<Character, Integer>(needle_len);
-            for (int i = 0; i < needle_len - 1; ++i)
+            if (signed)
             {
-                map.put(needle[i], needle_len - 1 - i);
+                for (int i = needle_len - 1; i >= 0; i--)
+                {
+                    map.put(needle[i], i);
+                }
             }
+            else
+            {
+                for (int i = 0; i < needle_len - 1; ++i)
+                {
+                    map.put(needle[i], needle_len - 1 - i);
+                
+                }
+            }       
             return map;
         }
         
@@ -172,6 +203,35 @@ public class SubStringIndexExpression extends AbstractTernaryExpression {
             return table;
         }
         
+        private static int[] negOffsetTable(char[] needle)
+        {
+            int needle_len = needle.length;
+            int [] table = new int[needle_len];
+            int lastSuffixPosition = -1;
+            
+            for (int i = 0; i < needle_len; ++i)
+            {
+                if (isSuffix(needle, i-1)) lastSuffixPosition = i - 1;
+                table[i] = lastSuffixPosition + i + needle_len - 1;
+            }
+            for (int i = needle_len - 1; i > 0; --i)
+            {
+                int plen = prefixLength(needle, i);
+                table[plen] = needle_len - 1 - i + plen;
+            }
+            return table;
+        }
+        
+        private static boolean isSuffix(char[] needle, int p)
+        {
+            int needle_len = needle.length;
+            for (int i = p, j = needle_len - 1; i >= 0; --i, --j)
+            {
+                if (needle[i] != needle[j]) return false;
+            }
+            return true;            
+        }
+        
         private static boolean isPrefix(char[] needle, int p)
         {
             int needle_len = needle.length;
@@ -188,6 +248,18 @@ public class SubStringIndexExpression extends AbstractTernaryExpression {
             int len = 0;
             for (int i = p, j = needle_len - 1;
                     i >= 0 && needle[i] == needle[j]; --i, --j)
+            {
+                len += 1;
+            }
+            return len;
+        }
+        
+        private static int prefixLength (char[] needle, int p)
+        {
+            int needle_len = needle.length;
+            int len = 0;
+            for (int i = p, j = 0; i < needle_len && 
+                    needle[i] == needle[j]; ++i, ++j)
             {
                 len += 1;
             }
