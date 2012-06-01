@@ -1,7 +1,30 @@
 ## Test the ROUND function
 ---
-- Include: all-types.schema.yaml
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types(double_field) values (0.4999999);
 ---
 - Statement: SELECT ROUND(123.456, 2);
 - output: [[123.46]]
+---
+- Statement: select round(double_field) from all_types;
+- output: [[0.0]]
+---
+- Statement: select round(-4.99999);
+- output: [[-5]]
+---
+- Statement: SELECT ROUND(-0.49999);
+- output: [[0]]
+---
+- Statement: SELECT ROUND(-0.4999999, 1);
+- output: [[-0.5]]
+---
+- Statement: SELECT ROUND(1, 1);
+- output: [[1]]
+---
+- Statement: SELECT ROUND(0, -21);
+- output: [[0]]
+---
+- Statement: SELECT ROUND(0, 0);
+- output: [[0]]
 ...

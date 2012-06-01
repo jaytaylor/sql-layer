@@ -90,6 +90,7 @@ public class OperatorAssembler extends BaseRule
     private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
     private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
 
+    public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
     @Override
     protected Logger getLogger() {
@@ -485,11 +486,11 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(ancestorLookup.getInput());
             GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
             RowType inputRowType = stream.rowType; // The index row type.
-            API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
+            API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
             if (!(inputRowType instanceof IndexRowType)) {
                 // Getting from branch lookup.
                 inputRowType = tableRowType(ancestorLookup.getDescendant());
-                flag = API.LookupOption.KEEP_INPUT;
+                flag = API.InputPreservationOption.KEEP_INPUT;
             }
             List<UserTableRowType> ancestorTypes =
                 new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
@@ -512,11 +513,11 @@ public class OperatorAssembler extends BaseRule
             if (branchLookup.getInput() != null) {
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
-                API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
+                API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
                 if (!(inputRowType instanceof IndexRowType)) {
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
-                    flag = API.LookupOption.KEEP_INPUT;
+                    flag = API.InputPreservationOption.KEEP_INPUT;
                 }
                 stream.operator = API.branchLookup_Default(stream.operator, 
                                                            groupTable, 
@@ -526,7 +527,7 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 stream = new RowStream();
-                API.LookupOption flag = API.LookupOption.KEEP_INPUT;
+                API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
                 stream.operator = API.branchLookup_Nested(groupTable, 
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getAncestor()),
@@ -689,8 +690,6 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        static final int INSERTION_SORT_MAX_LIMIT = 100;
-
         protected RowStream assembleSort(Sort sort) {
             return assembleSort(sort, 
                                 sort.getOutput(), API.SortOption.PRESERVE_DUPLICATES);
@@ -761,9 +760,7 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleNullIfEmpty(RowStream stream) {
             Expression[] nulls = new Expression[stream.rowType.nFields()];
             Arrays.fill(nulls, LiteralExpression.forNull());
-            stream.operator = API.ifEmpty_Default(stream.operator,
-                                                  stream.rowType,
-                                                  Arrays.asList(nulls));
+            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.KEEP_INPUT);
             return stream;
         }
 
@@ -817,25 +814,23 @@ public class OperatorAssembler extends BaseRule
             pushBoundRow(fieldOffsets);
             PlanNode subquery = sexpr.getSubquery().getQuery();
             ExpressionNode expression = null;
-            boolean distinct = false;
+            boolean fieldExpression = false;
             if ((sexpr instanceof AnyCondition) ||
                 (sexpr instanceof SubqueryValueExpression)) {
                 if (subquery instanceof ResultSet)
                     subquery = ((ResultSet)subquery).getInput();
-                if (subquery instanceof Distinct) {
-                    distinct = true;
-                }
-                else {
-                    if (!(subquery instanceof Project))
-                        throw new AkibanInternalException("subquery does not have Project");
+                if (subquery instanceof Project) {
                     Project project = (Project)subquery;
                     subquery = project.getInput();
                     expression = project.getFields().get(0);
                 }
+                else {
+                    fieldExpression = true;
+                }
             }
             RowStream stream = assembleQuery(subquery);
             Expression innerExpression = null;
-            if (distinct)
+            if (fieldExpression)
                 innerExpression = Expressions.field(stream.rowType, 0);
             else if (expression != null)
                 innerExpression = assembleExpression(expression, stream.fieldOffsets);

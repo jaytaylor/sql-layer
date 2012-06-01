@@ -28,7 +28,7 @@ package com.akiban.sql.optimizer.plan;
 
 import java.util.List;
 
-public class GroupScan extends BasePlanNode implements TableLoader
+public class GroupScan extends BaseScan implements TableLoader
 {
     private TableGroup group;
     private List<TableSource> tables;
@@ -72,7 +72,15 @@ public class GroupScan extends BasePlanNode implements TableLoader
 
     @Override
     public String summaryString() {
-        return super.summaryString() + "(" + group.getGroup() + ")";
+        StringBuilder str = new StringBuilder(super.summaryString());
+        str.append('(');
+        str.append(group.getGroup());
+        if (getCostEstimate() != null) {
+            str.append(", ");
+            str.append(getCostEstimate());
+        }
+        str.append(")");
+        return str.toString();
     }
 
 }

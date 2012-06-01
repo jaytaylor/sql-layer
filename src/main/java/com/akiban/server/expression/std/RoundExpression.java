@@ -115,6 +115,7 @@ public class RoundExpression extends AbstractCompositeExpression
             
             AkType type = left.getConversionType();
             double factor = Math.pow(10, scale);
+            
             try
             {
                 switch(type)
@@ -142,20 +143,21 @@ public class RoundExpression extends AbstractCompositeExpression
                     case DECIMAL:
                         BigDecimal num = left.getDecimal();
                         int precision = num.precision() - num.scale() + scale;
-                        if (scale >= 0)
-                            valueHolder().putDecimal(
-                                    num.round(new MathContext(precision, RoundingMode.HALF_UP)));
+                        if (precision <= 0)
+                            valueHolder().putDecimal(BigDecimal.ZERO);
                         else
                         {
-                            if (precision <= 0)
-                                valueHolder().putDecimal(BigDecimal.ZERO);
-                            else
+                            if (scale >= 0) // regular rouding (digits the right of the decimal point)
+                                valueHolder().putDecimal(
+                                        num.round(new MathContext(precision, RoundingMode.HALF_UP)));
+                            else // round  digits to the left of the decimimal point
                             {
                                 BigDecimal decFactor = BigDecimal.valueOf(factor);
-                                valueHolder().putDecimal(
-                                        num.multiply(decFactor, 
-                                                    new MathContext(precision,RoundingMode.HALF_UP))
+                                valueHolder().putDecimal(num
+                                        .multiply(decFactor, 
+                                                  new MathContext(precision,RoundingMode.HALF_UP))
                                         .divide(decFactor, 0, RoundingMode.FLOOR));
+
                             }
                         }
                         break;
@@ -171,10 +173,10 @@ public class RoundExpression extends AbstractCompositeExpression
                             else
                             {
                                 BigDecimal decFactor = BigDecimal.valueOf(factor);
-                                valueHolder().putUBigInt(
-                                        decVal.multiply(decFactor, 
+                                valueHolder().putUBigInt(decVal
+                                              .multiply(decFactor, 
                                                         new MathContext(pre, RoundingMode.HALF_UP))
-                                            .divide(decFactor, 0, RoundingMode.FLOOR).toBigInteger());
+                                              .divide(decFactor, 0, RoundingMode.FLOOR).toBigInteger());
                             }
                         }
                         break;

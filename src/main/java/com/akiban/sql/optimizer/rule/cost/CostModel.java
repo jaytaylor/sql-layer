@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.rule.costmodel;
+package com.akiban.sql.optimizer.rule.cost;
 
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
@@ -36,7 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.akiban.sql.optimizer.rule.costmodel.CostModelMeasurements.*;
+import static com.akiban.sql.optimizer.rule.cost.CostModelMeasurements.*;
 import static java.lang.Math.round;
 
 public class CostModel
@@ -66,6 +66,13 @@ public class CostModel
                 - treeScan(treeStatistics.rowWidth(), 0);
         }
         return cost;
+    }
+
+    public double partialGroupScan(UserTableRowType rowType, long rowCount)
+    {
+        TreeStatistics treeStatistics = statisticsMap.get(rowType.typeId());
+        return treeScan(treeStatistics.rowWidth(), rowCount) 
+             - treeScan(treeStatistics.rowWidth(), 0);
     }
 
     public double ancestorLookup(List<UserTableRowType> ancestorTableTypes)
@@ -192,7 +199,8 @@ public class CostModel
     {
         this.schema = schema;
         this.tableRowCounts = tableRowCounts;
-        for (UserTableRowType tableRowType : schema.userTableTypes()) {
+        for (RowType rowType : schema.allTableTypes()) {
+            UserTableRowType tableRowType = (UserTableRowType)rowType;
             TreeStatistics tableStatistics = TreeStatistics.forTable(tableRowType, tableRowCounts);
             statisticsMap.put(tableRowType.typeId(), tableStatistics);
             for (IndexRowType indexRowType : tableRowType.indexRowTypes()) {

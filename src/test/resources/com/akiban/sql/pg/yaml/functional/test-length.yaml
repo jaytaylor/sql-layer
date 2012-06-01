@@ -1,4 +1,5 @@
 # Test the LENGTH function
+# This should relate to the BYTE-LENGTH.
 ---
 - Include: all-types-schema.yaml
 ---

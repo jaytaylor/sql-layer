@@ -210,9 +210,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
-                ifEmpty_Default(project,
-                                projectRowType,
-                                Arrays.asList(boundField(customerRowType, 0, 0), literal(null))),
+                ifEmpty_Default(project, projectRowType, Arrays.asList(boundField(customerRowType, 0, 0), literal(null)), InputPreservationOption.KEEP_INPUT),
                 0);
         RowBase[] expected = new RowBase[]{
             row(projectRowType, 1L, 100L),

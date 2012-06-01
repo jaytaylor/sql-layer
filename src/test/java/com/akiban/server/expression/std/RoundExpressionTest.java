@@ -26,6 +26,8 @@
 
 package com.akiban.server.expression.std;
 
+import java.math.BigInteger;
+import java.math.BigDecimal;
 import com.akiban.junit.NamedParameterizedRunner;
 import org.junit.runner.RunWith;
 import com.akiban.server.types.util.ValueHolder;
@@ -36,14 +38,12 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import org.junit.Test;
 
 import static com.akiban.server.expression.std.ExprUtil.*;
-import java.math.BigInteger;
 import static org.junit.Assert.*;
 
 @RunWith(NamedParameterizedRunner.class)
@@ -73,6 +73,7 @@ public class RoundExpressionTest extends ComposedExpressionTestBase
         param(p, Arrays.asList(lit(16.1234), lit(-1)), lit(20.0));
         param(p, Arrays.asList(lit(5L), lit(3L)), lit(5L));
         param(p, Arrays.asList(lit(10L), lit(-5L)), lit(0L));
+        param(p, Arrays.asList(lit(0.49999d), lit(0L)), lit(0.0));
         
         // test with objects (BigDecimal/String/BigInteger)
         param(p, 
