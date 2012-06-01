@@ -35,7 +35,6 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.persistit.exception.PersistitException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -429,7 +428,6 @@ class Intersect_Ordered extends Operator
                                ascending.length);
             leftInput.jump(leftSkipRow, leftSkipRowColumnSelector);
             leftRow.hold(leftInput.next());
-            // System.out.println(String.format("left skip: FROM %s TO %s", rightRow.get(), leftRow.get()));
         }
 
         void nextRightRowSkip()
@@ -441,7 +439,6 @@ class Intersect_Ordered extends Operator
                                ascending.length);
             rightInput.jump(rightSkipRow, rightSkipRowColumnSelector);
             rightRow.hold(rightInput.next());
-            // System.out.println(String.format("right skip: FROM %s TO %s", leftRow.get(), rightRow.get()));
         }
 
         SkipScan(QueryContext context)

@@ -145,6 +145,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testInputNull()
     {
+        // First input null
         try {
             intersect_Ordered(null,
                               groupScan_Default(coi),
@@ -157,6 +158,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               EnumSet.of(IntersectOption.OUTPUT_LEFT));
         } catch (IllegalArgumentException e) {
         }
+        // Second input null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               null,
@@ -175,6 +177,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testInputTypeNull()
     {
+        // First input type null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -188,6 +191,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // Second input type null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -206,6 +210,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testJoinType()
     {
+        // join type null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -218,6 +223,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               EnumSet.of(IntersectOption.OUTPUT_LEFT));
         } catch (IllegalArgumentException e) {
         }
+        // full join not allowed
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -235,6 +241,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testOutputOptionNull()
     {
+        // output option null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -252,6 +259,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testJoinTypeAndOrderingConsistency()
     {
+        // These are OK
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
@@ -279,6 +287,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           ascending(true),
                           JoinType.LEFT_JOIN,
                           EnumSet.of(IntersectOption.OUTPUT_LEFT));
+        // left join and output right are incompatible
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -292,6 +301,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // right join and output left are incompatible
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -305,6 +315,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // OK
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
@@ -319,6 +330,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testOrderingColumns()
     {
+        // left ordering columns can't be negative
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -332,6 +344,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // left ordering columns > columns in index
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -345,6 +358,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // right ordering columns can't be negative.
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -358,6 +372,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // right ordering columns > columns in index
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -371,6 +386,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // comparison fields negative
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -384,6 +400,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // ascending array too big
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),

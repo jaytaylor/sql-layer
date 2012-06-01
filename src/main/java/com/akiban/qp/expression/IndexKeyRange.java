@@ -29,6 +29,7 @@ package com.akiban.qp.expression;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 
 public class IndexKeyRange
 {
@@ -86,7 +87,7 @@ public class IndexKeyRange
      */
     public static IndexKeyRange unbounded(IndexRowType indexRowType)
     {
-        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType), ZERO_COLUMNS_SELECTOR);
+        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType), ConstantColumnSelector.ALL_OFF);
         return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false);
     }
 
@@ -265,18 +266,6 @@ public class IndexKeyRange
         assert boundColumns > 0;
         return boundColumns;
     }
-
-    // Class state
-
-    private final static ColumnSelector ZERO_COLUMNS_SELECTOR =
-        new ColumnSelector()
-        {
-            @Override
-            public boolean includesColumn(int columnPosition)
-            {
-                return false;
-            }
-        };
 
     // Object state
 
