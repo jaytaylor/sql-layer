@@ -111,6 +111,17 @@ public class NestedLoopMapper extends BaseRule
             case NESTED_LOOPS:
                 map = new MapJoin(join.getJoinType(), outer, inner);
                 break;
+            case BLOOM_FILTER:
+                {
+                    HashJoinNode hjoin = (HashJoinNode)join;
+                    BloomFilter bf = (BloomFilter)hjoin.getHashTable();
+                    map = new BloomFilterFilter(bf, hjoin.getMatchColumns(),
+                                                outer, inner);
+                    PlanNode loader = hjoin.getLoader();
+                    loader = new Project(loader, hjoin.getHashColumns());
+                    map = new UsingBloomFilter(bf, loader, map);
+                }
+                break;
             default:
                 assert false : join;
                 map = join;

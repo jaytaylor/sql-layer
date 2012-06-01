@@ -32,12 +32,15 @@ import java.util.List;
 public class HashJoinNode extends JoinNode
 {
     private Joinable loader;
+    private BaseHashTable hashTable;
     private List<ExpressionNode> hashColumns, matchColumns;
 
-    public HashJoinNode(Joinable loader, Joinable input, Joinable check, JoinType joinType, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns) {
+    public HashJoinNode(Joinable loader, Joinable input, Joinable check, JoinType joinType, 
+                        BaseHashTable hashTable, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns) {
         super(input, check, joinType);
         this.loader = loader;
         loader.setOutput(this);
+        this.hashTable = hashTable;
         this.hashColumns = hashColumns;
         this.matchColumns = matchColumns;
     }
@@ -52,6 +55,9 @@ public class HashJoinNode extends JoinNode
         return getRight();
     }
 
+    public BaseHashTable getHashTable() {
+        return hashTable;
+    }
     public List<ExpressionNode> getHashColumns() {
         return hashColumns;
     }

@@ -544,14 +544,16 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class HashJoinPlan extends JoinPlan {
         Plan loader;
+        BaseHashTable hashTable;
         List<ExpressionNode> hashColumns, matchColumns;
         
         public HashJoinPlan(Plan loader, Plan input, Plan check,
                             JoinType joinType, JoinNode.Implementation joinImplementation,
                             Collection<JoinOperator> joins, CostEstimate costEstimate,
-                            List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns) {
+                            BaseHashTable hashTable, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns) {
             super(input, check, joinType, joinImplementation, joins, costEstimate);
             this.loader = loader;
+            this.hashTable = hashTable;
             this.hashColumns = hashColumns;
             this.matchColumns = matchColumns;
         }
@@ -564,7 +566,7 @@ public class JoinAndIndexPicker extends BaseRule
             Joinable inputJoinable = left.install(copy);
             Joinable checkJoinable = right.install(copy);
             ConditionList joinConditions = mergeJoinConditions(joins);
-            HashJoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType, hashColumns, matchColumns);
+            HashJoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType, hashTable, hashColumns, matchColumns);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
@@ -736,11 +738,12 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 }
             }
+            BloomFilter bloomFilter = new BloomFilter(loaderPlan.costEstimate.getRowCount(), 1);
             // TODO: For testing, no cost to actual checks.
             CostEstimate costEstimate = checkPlan.costEstimate.sequence(inputPlan.costEstimate);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
-                                    joins, costEstimate, hashColumns, matchColumns);
+                                    joins, costEstimate, bloomFilter, hashColumns, matchColumns);
         }
     }
     

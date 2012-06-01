@@ -71,7 +71,7 @@ public class BloomFilterFilter extends BasePlanWithInput
     @Override
     public boolean accept(PlanVisitor v) {
         if (v.visitEnter(this)) {
-            if (check.accept(v) && getInput().accept(v)) {
+            if (getInput().accept(v) && check.accept(v)) {
                 if (v instanceof ExpressionRewriteVisitor) {
                     for (int i = 0; i < lookupExpressions.size(); i++) {
                         lookupExpressions.set(i, lookupExpressions.get(i).accept((ExpressionRewriteVisitor)v));
@@ -93,6 +93,8 @@ public class BloomFilterFilter extends BasePlanWithInput
         StringBuilder str = new StringBuilder(super.summaryString());
         str.append("(");
         str.append(bloomFilter);
+        str.append(", ");
+        str.append(lookupExpressions);
         str.append(")");
         return str.toString();
     }
