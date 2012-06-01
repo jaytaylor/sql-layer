@@ -80,6 +80,15 @@ public class AggregateSource extends BasePlanWithInput implements ColumnSource
         return aggregates;
     }
 
+    /** Add a new grouping field and return its position. */
+    public int addGroupBy(ExpressionNode expr) {
+        assert !projectSplitOff;
+        int position = nGroupBy++;
+        assert (position == groupBy.size());
+        groupBy.add(expr);
+        return position;
+    }
+
     /** Add a new aggregate and return its position. */
     public int addAggregate(AggregateFunctionExpression aggregate) {
         int position = groupBy.size() + aggregates.size();
