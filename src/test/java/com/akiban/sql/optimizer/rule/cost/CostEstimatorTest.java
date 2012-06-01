@@ -24,21 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.rule;
+package com.akiban.sql.optimizer.rule.cost;
 
-import com.akiban.ais.model.*;
 import com.akiban.sql.optimizer.OptimizerTestBase;
-
-import static com.akiban.sql.optimizer.rule.CostEstimator.*;
-
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
+import com.akiban.sql.optimizer.rule.RulesTestHelper;
+import static com.akiban.sql.optimizer.rule.cost.CostEstimator.*;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.types.AkType;
 

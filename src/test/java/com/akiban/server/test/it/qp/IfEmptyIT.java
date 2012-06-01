@@ -27,48 +27,26 @@
 package com.akiban.server.test.it.qp;
 
 
-import com.akiban.qp.expression.ExpressionRow;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.expression.RowBasedUnboundExpressions;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.BindableRow;
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.ProjectedRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.BoundFieldExpression;
-import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.expression.std.LiteralExpression;
-import com.akiban.server.types.AkType;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import static com.akiban.qp.operator.API.ancestorLookup_Default;
-import static com.akiban.qp.operator.API.ancestorLookup_Nested;
 import static com.akiban.qp.operator.API.cursor;
-import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.ifEmpty_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.qp.operator.API.map_NestedLoops;
-import static com.akiban.qp.operator.API.ordering;
-import static com.akiban.qp.operator.API.project_Default;
-import static com.akiban.qp.operator.API.select_HKeyOrdered;
-import static com.akiban.qp.operator.API.valuesScan_Default;
-import static com.akiban.server.expression.std.Expressions.boundField;
-import static com.akiban.server.expression.std.Expressions.compare;
 import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.server.expression.std.Expressions.literal;
 
@@ -92,25 +70,31 @@ public class IfEmptyIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testInputNull()
     {
-        ifEmpty_Default(null, customerRowType, Collections.<Expression>emptyList());
+        ifEmpty_Default(null, customerRowType, Collections.<Expression>emptyList(), API.InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testRowTypeNull()
     {
-        ifEmpty_Default(groupScan_Default(coi), null, Collections.<Expression>emptyList());
+        ifEmpty_Default(groupScan_Default(coi), null, Collections.<Expression>emptyList(), API.InputPreservationOption.KEEP_INPUT);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void testExprsNull()
     {
-        ifEmpty_Default(groupScan_Default(coi), customerRowType, null);
+        ifEmpty_Default(groupScan_Default(coi), customerRowType, null, API.InputPreservationOption.KEEP_INPUT);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInputPreservationNull()
+    {
+        ifEmpty_Default(groupScan_Default(coi), customerRowType, Collections.<Expression>emptyList(), null);
     }
 
     // Test operator execution
 
     @Test
-    public void testNonEmpty()
+    public void testNonEmptyKeepInput()
     {
         Operator plan =
             ifEmpty_Default(
@@ -119,9 +103,9 @@ public class IfEmptyIT extends OperatorITBase
                     coi,
                     orderCidIndexRowType,
                     Collections.singleton(orderRowType),
-                    API.LookupOption.DISCARD_INPUT),
-                orderRowType,
-                Arrays.asList(literal(999), literal(999), literal("herman")));
+                    API.InputPreservationOption.DISCARD_INPUT),
+                orderRowType, Arrays.asList(literal(999), literal(999), literal("herman")),
+                API.InputPreservationOption.KEEP_INPUT);
         RowBase[] expected = new RowBase[]{
             row(orderRowType, 200L, 2L, "david"),
             row(orderRowType, 201L, 2L, "david"),
@@ -130,26 +114,7 @@ public class IfEmptyIT extends OperatorITBase
     }
 
     @Test
-    public void testEmpty()
-    {
-        Operator plan =
-            ifEmpty_Default(
-                ancestorLookup_Default(
-                    indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
-                    coi,
-                    orderCidIndexRowType,
-                    Collections.singleton(orderRowType),
-                    API.LookupOption.DISCARD_INPUT),
-                orderRowType,
-                Arrays.asList(literal(999), literal(999), literal("herman")));
-        RowBase[] expected = new RowBase[]{
-            row(orderRowType, 999L, 999L, "herman"),
-        };
-        compareRows(expected, cursor(plan, queryContext));
-    }
-
-    @Test
-    public void testCursorNonEmpty()
+    public void testNonEmptyDiscardInput()
     {
         Operator plan =
             ifEmpty_Default(
@@ -158,9 +123,66 @@ public class IfEmptyIT extends OperatorITBase
                     coi,
                     orderCidIndexRowType,
                     Collections.singleton(orderRowType),
-                    API.LookupOption.DISCARD_INPUT),
+                    API.InputPreservationOption.DISCARD_INPUT),
+                orderRowType, Arrays.asList(literal(999), literal(999), literal("herman")),
+                API.InputPreservationOption.DISCARD_INPUT);
+        RowBase[] expected = new RowBase[]{
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testEmptyKeepInput()
+    {
+        Operator plan =
+            ifEmpty_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
+                    coi,
+                    orderCidIndexRowType,
+                    Collections.singleton(orderRowType),
+                API.InputPreservationOption.DISCARD_INPUT),
+                orderRowType, Arrays.asList(literal(999), literal(999), literal("herman")),
+                API.InputPreservationOption.KEEP_INPUT);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 999L, 999L, "herman"),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testEmptyDiscardInput()
+    {
+        Operator plan =
+            ifEmpty_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
+                    coi,
+                    orderCidIndexRowType,
+                    Collections.singleton(orderRowType),
+                API.InputPreservationOption.DISCARD_INPUT),
+                orderRowType, Arrays.asList(literal(999), literal(999), literal("herman")),
+                API.InputPreservationOption.DISCARD_INPUT);
+        RowBase[] expected = new RowBase[]{
+            row(orderRowType, 999L, 999L, "herman"),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testCursorNonEmptyDefaultKeepInput()
+    {
+        Operator plan =
+            ifEmpty_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderCidIndexRowType, cidKeyRange(2), asc()),
+                    coi,
+                    orderCidIndexRowType,
+                    Collections.singleton(orderRowType),
+                API.InputPreservationOption.DISCARD_INPUT),
                 orderRowType,
-                Arrays.asList(literal(999), literal(999), literal("herman")));
+                Arrays.asList(literal(999), literal(999), literal("herman")),
+                API.InputPreservationOption.KEEP_INPUT);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override
@@ -176,7 +198,33 @@ public class IfEmptyIT extends OperatorITBase
     }
 
     @Test
-    public void testCursorEmpty()
+    public void testCursorNonEmptyDefaultDiscardInput()
+    {
+        Operator plan =
+            ifEmpty_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderCidIndexRowType, cidKeyRange(2), asc()),
+                    coi,
+                    orderCidIndexRowType,
+                    Collections.singleton(orderRowType),
+                API.InputPreservationOption.DISCARD_INPUT),
+                orderRowType,
+                Arrays.asList(literal(999), literal(999), literal("herman")),
+                API.InputPreservationOption.DISCARD_INPUT);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
+    @Test
+    public void testCursorEmptyKeepInput()
     {
         Operator plan =
             ifEmpty_Default(
@@ -185,9 +233,37 @@ public class IfEmptyIT extends OperatorITBase
                     coi,
                     orderCidIndexRowType,
                     Collections.singleton(orderRowType),
-                    API.LookupOption.DISCARD_INPUT),
+                    API.InputPreservationOption.DISCARD_INPUT),
                 orderRowType,
-                Arrays.asList(literal(999), literal(999), literal("herman")));
+                Arrays.asList(literal(999), literal(999), literal("herman")),
+                API.InputPreservationOption.KEEP_INPUT);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(orderRowType, 999L, 999L, "herman"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
+    @Test
+    public void testCursorEmptyDiscardInput()
+    {
+        Operator plan =
+            ifEmpty_Default(
+                ancestorLookup_Default(
+                    indexScan_Default(orderCidIndexRowType, cidKeyRange(0), asc()),
+                    coi,
+                    orderCidIndexRowType,
+                    Collections.singleton(orderRowType),
+                    API.InputPreservationOption.DISCARD_INPUT),
+                orderRowType,
+                Arrays.asList(literal(999), literal(999), literal("herman")),
+                API.InputPreservationOption.DISCARD_INPUT);
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
             @Override

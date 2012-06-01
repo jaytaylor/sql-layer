@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.operator.memoryadapter.MemoryStore;
 import com.akiban.sql.server.ServerServiceRequirements;
 
 import com.akiban.server.error.ServiceStartupException;
@@ -57,8 +58,11 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
                                  Store store,
                                  TreeService treeService,
                                  FunctionsRegistry functionsRegistry,
-                                 IndexStatisticsService indexStatisticsService) {
-        reqs = new ServerServiceRequirements(dxlService, instrumentation, sessionService, store, treeService, functionsRegistry, config, indexStatisticsService);
+                                 IndexStatisticsService indexStatisticsService,
+                                 MemoryStore memoryStore) {
+        reqs = new ServerServiceRequirements(dxlService, instrumentation, 
+                sessionService, store, treeService, functionsRegistry, 
+                config, indexStatisticsService, memoryStore);
     }
 
     /*** Service<PostgresService> ***/

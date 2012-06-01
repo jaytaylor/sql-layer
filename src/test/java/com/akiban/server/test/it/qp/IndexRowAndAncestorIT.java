@@ -458,7 +458,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 group,
                 hIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
-                API.LookupOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[] {
             row(cRowType, 4L, 49999L),
             row(oRowType, 4L, 409999L),
@@ -487,7 +487,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 group,
                 ihLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
-                API.LookupOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[] {
             row(cRowType, 3L, 39999L),
             row(oRowType, 3L, 309999L),
@@ -518,7 +518,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 group,
                 ihRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
-                API.LookupOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[] {
             // 7 is first because its index key is (null, 70009999)
             row(hRowType, 7L, 70009999L),
@@ -548,7 +548,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 group,
                 ohLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
-                API.LookupOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[] {
             row(cRowType, 2L, 29999L),
             row(oRowType, 2L, 209999L),
@@ -579,7 +579,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 group,
                 ohRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
-                API.LookupOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[] {
             // 7, 6 first due to nulls in the index key
             row(hRowType, 7L, 70009999L),
@@ -609,7 +609,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 group,
                 chLeftIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
-                API.LookupOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[] {
             row(cRowType, 1L, 19999L),
             row(cRowType, 2L, 29999L),
@@ -638,7 +638,7 @@ public class IndexRowAndAncestorIT extends OperatorITBase
                 group,
                 chRightIndexRowType,
                 Arrays.asList(cRowType, oRowType, iRowType, hRowType),
-                API.LookupOption.DISCARD_INPUT);
+                API.InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[] {
             // 7, 6, 5 first due to nulls in the index key
             row(hRowType, 7L, 70009999L),

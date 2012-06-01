@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
@@ -76,7 +77,7 @@ public abstract class SchemaRulesContext extends RulesContext
     public FunctionsRegistry getFunctionsRegistry() {
         return functionsRegistry;
     }
-      
+
     public CostEstimator getCostEstimator() {
         return costEstimator;
     }

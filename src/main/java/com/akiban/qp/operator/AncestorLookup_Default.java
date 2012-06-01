@@ -73,7 +73,7 @@ import java.util.*;
 
  <li><b>Collection<UserTableRowType> ancestorTypes:</b> Ancestor types to be located.
 
- <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
  discarded (flag = DISCARD_INPUT).
 
@@ -162,13 +162,13 @@ class AncestorLookup_Default extends Operator
                                   GroupTable groupTable,
                                   RowType rowType,
                                   Collection<UserTableRowType> ancestorTypes,
-                                  API.LookupOption flag)
+                                  API.InputPreservationOption flag)
     {
         validateArguments(rowType, ancestorTypes, flag);
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.rowType = rowType;
-        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
+        this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         // Sort ancestor types by depth
         this.ancestors = new ArrayList<UserTable>(ancestorTypes.size());
         for (UserTableRowType ancestorType : ancestorTypes) {
@@ -189,13 +189,13 @@ class AncestorLookup_Default extends Operator
     
     // For use by this class
 
-    private void validateArguments(RowType rowType, Collection<UserTableRowType> ancestorTypes, API.LookupOption flag)
+    private void validateArguments(RowType rowType, Collection<UserTableRowType> ancestorTypes, API.InputPreservationOption flag)
     {
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
         if (rowType instanceof IndexRowType) {
             // Keeping index rows not supported
-            ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
-                                      flag == API.LookupOption.DISCARD_INPUT);
+            ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
+                                      flag == API.InputPreservationOption.DISCARD_INPUT);
             RowType tableRowType = ((IndexRowType) rowType).tableType();
             // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
             // is from an index. I.e., this operator can be used for an index lookup.
@@ -217,8 +217,8 @@ class AncestorLookup_Default extends Operator
                                           ancestorType.userTable().getGroup() == rowType.userTable().getGroup());
             }
         } else if (rowType instanceof HKeyRowType) {
-            ArgumentValidation.isTrue("flag == API.LookupOption.DISCARD_INPUT",
-                                      flag == API.LookupOption.DISCARD_INPUT);
+            ArgumentValidation.isTrue("flag == API.InputPreservationOption.DISCARD_INPUT",
+                                      flag == API.InputPreservationOption.DISCARD_INPUT);
             for (UserTableRowType ancestorType : ancestorTypes) {
                 HKeyRowType hKeyRowType = (HKeyRowType) rowType;
                 UserTableRowType tableRowType = ancestorType.schema().userTableRowType(hKeyRowType.hKey().userTable());
