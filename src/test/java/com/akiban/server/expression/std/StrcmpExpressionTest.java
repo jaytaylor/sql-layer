@@ -32,7 +32,8 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import org.junit.*;
 import static org.junit.Assert.*;
-
+import static org.hamcrest.CoreMatchers.*;
+        
 /**
  *
  * @author louisli
@@ -59,7 +60,7 @@ public class StrcmpExpressionTest extends ComposedExpressionTestBase
         assertEquals(0, compareEqualsTwo.evaluation().eval().getInt());
 
         Expression compareNotEqual = new StrcmpExpression(ExprUtil.lit(sentenceCapitalized), ExprUtil.lit(sentenceLowercase));
-        assertFalse(0 == compareNotEqual.evaluation().eval().getInt());
+        assertThat(compareNotEqual.evaluation().eval().getInt(), not(0L));
     }
     
     @Test
