@@ -16,12 +16,13 @@
 ---
 - Statement: INSERT INTO all_types (float_field, bigint_field) VALUES (90, 90)
 ---
-- Statement: SELECT MAKETIME(float_field, 2, 2) from all_types
-- output: [['90:02:02']]
----
-- Statement: SELECT MAKETIME(bigint_field, 2, 2) from all_types
-- output: [['90:02:02']]
----
+# BUG 1007163
+#- Statement: SELECT MAKETIME(float_field, 2, 2) from all_types
+#- output: [['90:02:02']]
+#---
+#- Statement: SELECT MAKETIME(bigint_field, 2, 2) from all_types
+#- output: [['90:02:02']]
+#---
 - Statement: SELECT MAKETIME(2, float_field, 2) from all_types
 - output: [[null]]
 ---
