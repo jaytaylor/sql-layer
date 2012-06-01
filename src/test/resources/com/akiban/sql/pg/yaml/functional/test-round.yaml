@@ -1,0 +1,7 @@
+## Test the ROUND function
+---
+- Include: all-types.schema.yaml
+---
+- Statement: SELECT ROUND(123.456, 2);
+- output: [[123.46]]
+...
