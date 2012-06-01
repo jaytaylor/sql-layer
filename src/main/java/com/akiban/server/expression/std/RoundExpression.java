@@ -132,13 +132,15 @@ public class RoundExpression extends AbstractCompositeExpression
                     case VARCHAR:   type = AkType.DOUBLE; // fall thru
                     case DOUBLE:
                     case U_DOUBLE:
-                        valueHolder().putRaw(type,
-                                Math.round(factor * Extractors.getDoubleExtractor().getDouble(left)) / factor);
-                        break;
                     case FLOAT:
                     case U_FLOAT:
-                        valueHolder().putRaw(type,
-                                (float)(Math.round(factor * Extractors.getDoubleExtractor().getDouble(left)) / factor));
+                        double rounded = Math.round(factor * Extractors.getDoubleExtractor().getDouble(left)) / factor;
+                        switch (type)
+                        {
+                            case FLOAT:
+                            case U_FLOAT : valueHolder().putRaw(type, (float)rounded); break;
+                            default:       valueHolder().putRaw(type, rounded);
+                        }
                         break;
                     case DECIMAL:
                         BigDecimal num = left.getDecimal();

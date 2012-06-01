@@ -76,21 +76,24 @@ public class RoundExpressionTest extends ComposedExpressionTestBase
         param(p, Arrays.asList(lit(0.49999d), lit(0L)), lit(0.0));
         
         // test with objects (BigDecimal/String/BigInteger)
+        
+        // test with BigDecimal
         param(p, 
-                Arrays.asList(new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(5.123000).setScale(6)),
+                Arrays.asList(new LiteralExpression(AkType.DECIMAL, new BigDecimal("5.123000")),
                               lit(4L)), 
-                new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(5.1230).setScale(4)));
+                new LiteralExpression(AkType.DECIMAL, new BigDecimal("5.1230")));
         
         param(p,
-                Arrays.asList(new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(12345.123).setScale(3)),
+                Arrays.asList(new LiteralExpression(AkType.DECIMAL, new BigDecimal("12345.123")),
                               lit(-2L)),
-                new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(12300).setScale(0)));
+                new LiteralExpression(AkType.DECIMAL, new BigDecimal("12300")));
         
         param(p,
-                Arrays.asList(new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(123.0).setScale(1)),
+                Arrays.asList(new LiteralExpression(AkType.DECIMAL, new BigDecimal("123.0")),
                               lit(-10L)),
                 new LiteralExpression(AkType.DECIMAL, BigDecimal.ZERO));
         
+        // test with BigInteger
         param(p,
               Arrays.asList(new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(16)),
                             lit(-1L)),
@@ -101,6 +104,7 @@ public class RoundExpressionTest extends ComposedExpressionTestBase
                             lit(4L)),
               new LiteralExpression(AkType.U_BIGINT, BigInteger.valueOf(12)));
         
+        // tests with string
         param(p, Arrays.asList(lit("123.456")), lit(123.0d));
         param(p, Arrays.asList(lit("456.780"), lit(-2L)), lit(500.0d));
         param(p, Arrays.asList(lit("12"), lit(-5L)), lit(0.0d));
