@@ -37,13 +37,13 @@
 - output: [[200412]]
 --- # Literals, repeated as YYMM arguments
 - Statement: SELECT PERIOD_ADD(9001, 2) FROM all_types
-- output: [[209003]]
+- output: [[199003]]
 ---
 - Statement: SELECT PERIOD_ADD(9001, 24) FROM all_types
-- output: [[209201]]
+- output: [[199201]]
 ---
 - Statement: SELECT PERIOD_ADD(9006, 7) FROM all_types
-- output: [[209101]]
+- output: [[199101]]
 ---
 - Statement: SELECT PERIOD_ADD(0506, -3) FROM all_types
 - output: [[200503]]

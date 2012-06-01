@@ -80,15 +80,8 @@ public class PeriodDiffExpression extends AbstractBinaryExpression {
             // COMPATIBILITY: MySQL currently has undefined behavior for negative numbers
             // Our behavior follows our B.C. year numbering (-199402 + 1 = -199401)
             long periodLeft = left().getLong(), periodRight = right().getLong();
-            long yearLeftArg = PeriodAddExpression.parseYearFromPeriod(periodLeft), 
-                    monthLeftArg = periodLeft % 100,
-                    leftSign = Long.signum(periodLeft);
-            long yearRightArg = PeriodAddExpression.parseYearFromPeriod(periodRight), 
-                    monthRightArg = periodRight % 100,
-                    rightSign = Long.signum(periodRight);
                         
-            // Compute the difference in months; off-by-one since months are 1-12 and not 0-11
-            long result = (yearLeftArg * 12 + monthLeftArg - 1 * leftSign) - (yearRightArg * 12 + monthRightArg - 1 * rightSign);
+            long result = PeriodAddExpression.fromPeriod(periodLeft) - PeriodAddExpression.fromPeriod(periodRight);
             valueHolder().putLong(result);
             return valueHolder();
         }

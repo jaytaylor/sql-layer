@@ -81,18 +81,21 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
                 return NullValueSource.only();
             
             long period = left().getLong();
-            long periodSign = Long.signum(period);
-
+            long offsetMonths = right().getLong();
+            
             // COMPATIBILITY: MySQL currently has undefined behavior for negative numbers
             // Our behavior follows our B.C. year numbering (-199402 + 1 = -199401)
             // Java's mod returns negative numbers: -1994 % 100 = -94
-            long originalMonth = period % 100;
-            long originalYear = parseYearFromPeriod(period);
-            long offsetMonths = right().getLong();
+            long periodInMonths = fromPeriod(period);
+            long totalMonths = periodInMonths + offsetMonths;
             
-            long totalMonths = (originalYear * 12 + originalMonth - (1 * periodSign)) + offsetMonths;
-            long result = createPeriod(totalMonths / 12,  (totalMonths % 12) + 1 * periodSign);
-                    
+            // Handle the case where the period changes sign (e.g. -YYMM to YYMM)
+            // as a result of adding. Since 0000 months is not really a date,
+            // this leads to an off by one error
+            if (Long.signum(periodInMonths) * Long.signum(totalMonths) == -1)
+                totalMonths -= Long.signum(totalMonths) * 2;
+            
+            long result = toPeriod(totalMonths);
             valueHolder().putLong(result);
             return valueHolder();
         }
@@ -100,18 +103,27 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
     }
 
     // Helper functions
-    // Takes a period and adds the current millenium to it if the period is in YYMM or YMM format
-    protected static Long parseYearFromPeriod(Long period)
+    // Takes a period and returns the number of months from year 0
+    protected static Long fromPeriod(Long period)
     {
-        final long CURRENT_MILLENIUM = 2000;
+        long periodSign = Long.signum(period);
+        
+        long rawMonth = period % 100;
         long rawYear = period / 100;
-        if (Math.abs(period) <= 9999)
-            rawYear += Long.signum(period) * CURRENT_MILLENIUM;  
-        return rawYear;
+
+        long absValYear = Math.abs(rawYear);
+        if (absValYear < 70)
+            rawYear += periodSign * 2000;
+        else if (absValYear < 100)
+            rawYear += periodSign * 1900; 
+        
+        return (rawYear * 12 + rawMonth - (1 * periodSign));
     }
     
-    // Create a YYYYMM format from a year and month argument
-    private static Long createPeriod(Long year, Long month) {
+    // Create a YYYYMM format from a number of months
+    protected static Long toPeriod(Long monthCount) {
+        long year = monthCount / 12;
+        long month = (monthCount % 12) + 1 * Long.signum(monthCount);
         return Long.valueOf(String.format("%d", year)
                 + String.format("%02d", Math.abs(month)));
     }

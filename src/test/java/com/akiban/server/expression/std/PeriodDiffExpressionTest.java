@@ -53,10 +53,10 @@ public class PeriodDiffExpressionTest extends ComposedExpressionTestBase {
     @Test
     public void testYYMM_YYMM()
     {
-        test(120, 1006, 0006);
-        test(-120, 0006, 1006);
-        test(1199, 9912, 1);
-        test(-1199, 0001, 9912);
+        test(120, 1006, 6);
+        test(-120, 6, 1006);
+        test(-1, 9912, 1); // 199912 - 200001
+        test(1, 1, 9912); // 200001 - 199912
         test(0, 2206, 2206);
     }
     
@@ -64,7 +64,7 @@ public class PeriodDiffExpressionTest extends ComposedExpressionTestBase {
     public void testYYYYMM_YYMM()
     {
         test(120, 201006, 6);
-        test(-120, 0006, 201006);
+        test(-120, 6, 201006);
         test(5, 5007, 5002);
         
         test(-1500 * 12, 50005, 5);

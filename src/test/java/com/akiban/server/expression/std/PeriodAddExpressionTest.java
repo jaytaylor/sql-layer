@@ -107,7 +107,8 @@ public class PeriodAddExpressionTest extends ComposedExpressionTestBase {
         test(-200012, -101, 1);
         test(-200412, -502, 2);
         test(-199812, -12, 24);
-        test(100006, -100000, 24006);
+        test(-100006, 99912, -24006);
+        test(100006, -99912, 24006);
     }
     
     private void test(long expected, long period, long offset)
