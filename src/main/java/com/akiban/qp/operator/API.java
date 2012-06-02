@@ -510,6 +510,34 @@ public class API
                                      outputHKeyTableRowType);
     }
 
+    // Using_BloomFilter
+
+    public static Operator using_BloomFilter(Operator filterInput,
+                                             RowType filterRowType,
+                                             long estimatedRowCount,
+                                             int filterBindingPosition,
+                                             Operator streamInput)
+    {
+        return new Using_BloomFilter(filterInput,
+                                     filterRowType,
+                                     estimatedRowCount,
+                                     filterBindingPosition,
+                                     streamInput);
+    }
+
+    // Select_BloomFilter
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends Expression> filterFields,
+                                              int bindingPosition)
+    {
+        return new Select_BloomFilter(input,
+                                      onPositive,
+                                      filterFields,
+                                      bindingPosition);
+    }
+
     // Insert
 
     public static UpdatePlannable insert_Default(Operator inputOperator)
