@@ -29,6 +29,7 @@ package com.akiban.server.test.it.store;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -46,9 +47,20 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.GroupCursor;
+import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
@@ -86,6 +98,26 @@ public final class SchemaManagerIT extends ITBase {
         transactionally(new Callable<Void>() {
             public Void call() throws Exception {
                 createTable(schema, tableName, ddl);
+                return null;
+            }
+        });
+    }
+
+    private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
+        transactionally(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                schemaManager.registerMemoryInformationSchemaTable(session(), table, factory);
+                return null;
+            }
+        });
+    }
+
+    private void registerISTable(final UserTable table, final int version) throws Exception {
+        transactionally(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                schemaManager.registerStoredInformationSchemaTable(session(), table, version);
                 return null;
             }
         });
@@ -581,6 +613,107 @@ public final class SchemaManagerIT extends ITBase {
         createIndex(SCHEMA, T2_NAME, "id_2", "id");
     }
 
+    @Test
+    public void registerMemoryTableBasic() throws Exception {
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        MemoryTableFactory factory = new MemoryTableFactoryMock();
+        registerISTable(makeSimpleISTable(tableName), factory);
+
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists", testTable);
+            assertEquals("Is memoryTable", true, testTable.hasMemoryTableFactory());
+            assertSame("Exact factory preserved", factory, testTable.getMemoryTableFactory());
+        }
+
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists after DDL", testTable);
+            assertEquals("Is memoryTable after more DDL", true, testTable.hasMemoryTableFactory());
+            assertSame("Exact factory preserved after more DDL", factory, testTable.getMemoryTableFactory());
+        }
+
+        {
+            safeRestart();
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNull("Table did not survive restart", testTable);
+        }
+    }
+
+    @Test(expected=DuplicateTableNameException.class)
+    public void noDuplicateMemoryTables() throws Exception {
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName);
+        MemoryTableFactory factory = new MemoryTableFactoryMock();
+        registerISTable(sourceTable, factory);
+        registerISTable(sourceTable, factory);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noNullMemoryTableFactory() throws Exception {
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        registerISTable(makeSimpleISTable(tableName), null);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noMemoryTableOutsideAISSchema() throws Exception {
+        final TableName tableName = new TableName("foo", "test_table");
+        registerISTable(makeSimpleISTable(tableName), null);
+    }
+
+    @Test
+    public void registerStoredTableBasic() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+
+        registerISTable(makeSimpleISTable(tableName), VERSION);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists", testTable);
+            assertEquals("Exact version is preserved", VERSION, testTable.getVersion());
+        }
+
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists after DDL", testTable);
+            assertEquals("Exact version preserved after more DDL", VERSION, testTable.getVersion());
+        }
+
+        {
+            safeRestart();
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("Table survived restart", testTable);
+            assertEquals("Exact version preserved after more DDL", VERSION, testTable.getVersion());
+        }
+    }
+
+    @Test
+    public void canRegisterStoredTableWithSameVersion() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName);
+        registerISTable(sourceTable, VERSION);
+        registerISTable(sourceTable, VERSION);
+    }
+
+    @Test(expected=ISTableVersionMismatchException.class)
+    public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName);
+        registerISTable(sourceTable, VERSION);
+        registerISTable(sourceTable, VERSION + 1);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noStoredTableOutsideAISSchema() throws Exception {
+        final int VERSION = 5;
+        final TableName tableName = new TableName("foo", "test_table");
+        registerISTable(makeSimpleISTable(tableName), VERSION);
+    }
+
 
     /*
      * Next three tests are confirming that the MetaModel and Protobuf
@@ -699,6 +832,39 @@ public final class SchemaManagerIT extends ITBase {
             else {
                 Assert.fail("Unknown statement type: " + statement);
             }
+        }
+    }
+
+    private static UserTable makeSimpleISTable(TableName name) {
+        NewAISBuilder builder = AISBBasedBuilder.create(name.getSchemaName());
+        builder.userTable(name.getTableName()).colLong("id", false).pk("id");
+        return builder.ais().getUserTable(name);
+    }
+
+    private static class MemoryTableFactoryMock implements MemoryTableFactory {
+        @Override
+        public TableName getName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Table getTableDefinition() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public GroupCursor getGroupCursor(Session session) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector scanSelector) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long rowCount() {
+            throw new UnsupportedOperationException();
         }
     }
 }

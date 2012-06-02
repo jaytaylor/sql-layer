@@ -795,7 +795,11 @@ public class ApiTestBase {
     }
 
     protected final UserTable getUserTable(String schema, String name) {
-        return ddl().getUserTable(session(), tableName(schema, name));
+        return getUserTable(tableName(schema, name));
+    }
+
+    protected final UserTable getUserTable(TableName name) {
+        return ddl().getUserTable(session(), name);
     }
 
     protected final UserTable getUserTable(int tableId) {
