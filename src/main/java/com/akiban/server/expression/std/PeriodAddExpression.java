@@ -104,7 +104,7 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
 
     // Helper functions
     // Takes a period and returns the number of months from year 0
-    protected static Long fromPeriod(Long period)
+    protected static long fromPeriod(long period)
     {
         long periodSign = Long.signum(period);
         
@@ -121,7 +121,7 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
     }
     
     // Create a YYYYMM format from a number of months
-    protected static Long toPeriod(Long monthCount) {
+    protected static long toPeriod(long monthCount) {
         long year = monthCount / 12;
         long month = (monthCount % 12) + 1 * Long.signum(monthCount);
         return Long.valueOf(String.format("%d", year)
