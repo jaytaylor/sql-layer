@@ -43,11 +43,11 @@ public final class XMain {
                 validatedAdd,
                 XInt.INSTANCE,
                 Arrays.asList(literal3, literal5));
-        preparedExpression = new XPreparedFunction(
-                validatedAdd,
-                XInt.INSTANCE,
-                Arrays.asList(preparedExpression, new XIntTime())
-        );
+//        preparedExpression = new XPreparedFunction(
+//                validatedAdd,
+//                XInt.INSTANCE,
+//                Arrays.asList(preparedExpression, new XIntTime())
+//        );
         new SimpleQueryContext(null); // force the class loader, so we don't pay for it within the loop
         for (int i = 0; i < 10; ++i) {
             XEvaluatableExpression eval = preparedExpression.build();

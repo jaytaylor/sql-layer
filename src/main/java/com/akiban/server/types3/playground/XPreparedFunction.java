@@ -124,6 +124,7 @@ public final class XPreparedFunction implements XPreparedExpression {
             @Override
             public PValueSource get(int i) {
                 PValueSource value = inputValues[i];
+                // TODO clear cache at some point
                 if (value == null) {
                     XEvaluatableExpression inputExpr = inputs.get(i);
                     inputExpr.evaluate();

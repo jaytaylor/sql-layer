@@ -77,12 +77,12 @@ public class TOverloadResult {
     }
 
     public TOverloadResult(TCombineMode combineMode, int pickingInputSet) {
-        this(Category.FIXED, null, combineMode, pickingInputSet, null);
+        this(Category.PICKING, null, combineMode, pickingInputSet, null);
         ArgumentValidation.notNull("combine mode", combineMode);
     }
 
-    public TOverloadResult(Function<List<TInstance>,TInstance> rule) {
-        this(Category.FIXED, null, null, -1, rule);
+    public TOverloadResult(Function<List<TConstantValue>,TInstance> rule, TInstance me) {
+        this(Category.CUSTOM, null, null, -1, rule);
         ArgumentValidation.notNull("custom combine rule", rule);
     }
 

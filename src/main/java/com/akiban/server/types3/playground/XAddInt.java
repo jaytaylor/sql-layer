@@ -60,19 +60,22 @@ public enum XAddInt implements TOverload {
         return Collections.singletonList(new TInputSet(XInt.TYPE_CLASS, BitSets.of(0, 1), false));
     }
 
+    void somewhereInPreparePhase(PrepareContext c) {
+        c.putObject(likeCompilation);
+    }
+
     @Override
-    public void evaluate(List<? extends TInstance> inputInstances,
-                         LazyList<? extends PValueSource> inputs,
-                         TInstance outputInstance,
+    public void evaluate(EvaluationContext c
+                        LazyList<? extends PValueSource> inputs,
                          PValueTarget output)
     {
-        if (OverloadUtils.nullsContaminate(output, inputs))
-            return;
+        LikePrepare = (CompiledLike) c.getObject(0);
+        TInstance a0Instance = c.inputInstance(0);
         int result = inputs.get(0).getInt32() + inputs.get(1).getInt32();
         output.putInt32(result);
     }
 
-    @Override
+    @Override// TODO write a default version in the base class
     public TConstantValue evaluateConstant(LazyList<? extends TConstantValue> inputs) {
         if(OverloadUtils.nullsContaminate(inputs))
             return null;
