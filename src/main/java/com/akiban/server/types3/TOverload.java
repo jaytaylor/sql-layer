@@ -32,9 +32,10 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import java.util.List;
 
 public interface TOverload {
-    public String overloadName();
-    public TOverloadResult resultType();
-    public List<TInputSet> inputSets();
-    public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
-    public TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
+    String overloadName();
+    TOverloadResult resultType();
+    List<TInputSet> inputSets();
+    TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
+    void finishPreptimePhase(TPreptimeContext context);
+    void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
 }

@@ -37,11 +37,20 @@ public abstract class TOverloadBase implements TOverload {
     }
 
     @Override
+    public void finishPreptimePhase(TPreptimeContext context) {
+    }
+
+    @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, final LazyList<? extends TPreptimeValue> inputs) {
         for (int i = 0; i < inputs.size(); ++i) {
             if (nonConstantContaminates(i))
                 return null;
         }
+
+        // at this point, assume there's a constant value and we can evaluate it
+
+        finishPreptimePhase(context);
+
         TExecutionContext execContext = context.createExecutionContext();
         LazyList<PValueSource> inputValues = new LazyList<PValueSource>() {
             @Override

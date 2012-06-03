@@ -21,11 +21,11 @@ import java.util.List;
 
 public final class TExecutionContext {
     public TInstance inputTInstanceAt(int index) {
-        throw new UnsupportedOperationException();
+        return inputTypes.get(index);
     }
     
     public TInstance outputTInstance() {
-        throw new UnsupportedOperationException();
+        return outputType;
     }
     
     public Object preptimeObjectAt(int index) {

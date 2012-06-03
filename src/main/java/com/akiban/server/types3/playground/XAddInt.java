@@ -60,10 +60,6 @@ public class XAddInt extends TOverloadBase {
         return Collections.singletonList(new TInputSet(XInt.TYPE_CLASS, BitSets.of(0, 1), false));
     }
 
-//    void somewhereInPreparePhase(PrepareContext c) {
-//        c.putObject(likeCompilation);
-//    }
-
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         int result = inputs.get(0).getInt32() + inputs.get(1).getInt32();
