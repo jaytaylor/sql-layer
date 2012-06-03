@@ -184,15 +184,16 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        final Map<Index,IndexStatistics> updates;
-        
-        Index first = indexes.iterator().next();
-        if (memoryStore.getFactory(first.rootMostTable().getName()) != null) {
-            updates = updateMemoryTableIndexStatistics (session, indexes);
-        } else {
-            updates = updatePersistitTableIndexStatistics (session, indexes);
-        }
-        
+        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics> (indexes.size());
+
+        if (indexes.size() > 0) {
+            Index first = indexes.iterator().next();
+            if (memoryStore.getFactory(first.rootMostTable().getName()) != null) {
+                updates.putAll(updateMemoryTableIndexStatistics (session, indexes));
+            } else {
+                updates.putAll(updatePersistitTableIndexStatistics (session, indexes));
+            }
+        }        
         DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
             @Override
             public void run() {
