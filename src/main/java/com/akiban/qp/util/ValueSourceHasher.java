@@ -34,6 +34,8 @@ public class ValueSourceHasher
     public static int hash(ValueSource valueSource)
     {
         // TODO: Add hash() to ValueSource?
+        if (valueSource.isNull()) 
+            return 0;
         long hash;
         switch (valueSource.getConversionType()) {
             case DATE:
