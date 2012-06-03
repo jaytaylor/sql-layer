@@ -26,17 +26,11 @@
 
 package com.akiban.server.types3.playground;
 
-
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.util.BitSets;
-
-import java.util.Collections;
-import java.util.List;
 
 public class XAddInt extends TOverloadBase {
 
@@ -51,12 +45,13 @@ public class XAddInt extends TOverloadBase {
     }
 
     @Override
-    public List<TInputSet> inputSets() {
-        return Collections.singletonList(new TInputSet(XInt.TYPE_CLASS, BitSets.of(0, 1), false));
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(XInt.TYPE_CLASS, 0, 1);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
         int result = inputs.get(0).getInt32() + inputs.get(1).getInt32();
         output.putInt32(result);
     }
