@@ -122,6 +122,30 @@ public class TimeOperator extends Operator
             elapsedNsec += stop - start;
         }
 
+        @Override
+        public void destroy()
+        {
+            input.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return input.isIdle();
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return input.isActive();
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
+        }
+
         // Execution interface
 
         Execution(QueryContext context)
