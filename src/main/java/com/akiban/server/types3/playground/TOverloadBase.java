@@ -43,8 +43,12 @@ public abstract class TOverloadBase implements TOverload {
     @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, final LazyList<? extends TPreptimeValue> inputs) {
         for (int i = 0; i < inputs.size(); ++i) {
-            if (nonConstantContaminates(i))
-                return null;
+            if (nonConstantContaminates(i)) {
+                TPreptimeValue preptimeValue = inputs.get(i);
+                if (preptimeValue == null || preptimeValue.value() == null) {
+                    return null;
+                }
+            }
         }
 
         // at this point, assume there's a constant value and we can evaluate it

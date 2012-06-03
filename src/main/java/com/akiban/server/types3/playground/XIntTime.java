@@ -29,6 +29,7 @@ package com.akiban.server.types3.playground;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -42,6 +43,11 @@ public final class XIntTime implements XPreparedExpression {
     @Override
     public XEvaluatableExpression build() {
         return new Evaluation(prepareTime);
+    }
+
+    @Override
+    public TPreptimeValue evaluateConstant() {
+        return null;
     }
 
     private final long prepareTime = System.currentTimeMillis();

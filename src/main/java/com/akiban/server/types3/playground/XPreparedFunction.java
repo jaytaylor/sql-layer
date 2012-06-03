@@ -32,6 +32,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
@@ -44,6 +45,21 @@ public final class XPreparedFunction implements XPreparedExpression {
     @Override
     public TInstance resultType() {
         return resultType;
+    }
+
+    @Override
+    public TPreptimeValue evaluateConstant() {
+        return overload.overload().evaluateConstant(preptimeContext, new LazyList<TPreptimeValue>() {
+            @Override
+            public TPreptimeValue get(int i) {
+                return inputs.get(i).evaluateConstant();
+            }
+
+            @Override
+            public int size() {
+                return inputs.size();
+            }
+        });
     }
 
     @Override

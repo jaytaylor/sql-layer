@@ -27,8 +27,10 @@
 package com.akiban.server.types3.playground;
 
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 
 public interface XPreparedExpression {
+    TPreptimeValue evaluateConstant();
     TInstance resultType();
     XEvaluatableExpression build();
 }

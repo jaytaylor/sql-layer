@@ -29,6 +29,7 @@ package com.akiban.server.types3.playground;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 public final class XPreparedLiteral implements XPreparedExpression {
@@ -40,6 +41,11 @@ public final class XPreparedLiteral implements XPreparedExpression {
     @Override
     public XEvaluatableExpression build() {
         return new Evaluation(value);
+    }
+
+    @Override
+    public TPreptimeValue evaluateConstant() {
+        return new TPreptimeValue(tInstance, value);
     }
 
     public XPreparedLiteral(TInstance tInstance, PValueSource value) {
