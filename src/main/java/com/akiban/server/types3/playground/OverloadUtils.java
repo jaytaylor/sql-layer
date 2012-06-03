@@ -27,7 +27,7 @@
 package com.akiban.server.types3.playground;
 
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TConstantValue;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
@@ -59,7 +59,7 @@ public final class OverloadUtils {
         return false;
     }
 
-    public static boolean nullsContaminate(LazyList<? extends TConstantValue> inputs) {
+    public static boolean nullsContaminate(LazyList<? extends TPreptimeValue> inputs) {
         for (int i = 0, end = inputs.size(); i < end; ++i) {
             if (inputs.get(i) == null)
                 return true;

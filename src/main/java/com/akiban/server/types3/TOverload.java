@@ -38,5 +38,5 @@ public interface TOverload {
     public void evaluate(
             List<? extends TInstance> inputInstances, LazyList<? extends PValueSource> inputs,
             TInstance outputInstance, PValueTarget output);
-    public TConstantValue evaluateConstant(LazyList<? extends TConstantValue> inputs);
+    public TPreptimeValue evaluateConstant(LazyList<? extends TPreptimeValue> inputs);
 }

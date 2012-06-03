@@ -28,7 +28,7 @@ package com.akiban.server.types3.playground;
 
 
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TConstantValue;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
@@ -76,11 +76,11 @@ public enum XAddInt implements TOverload {
     }
 
     @Override// TODO write a default version in the base class
-    public TConstantValue evaluateConstant(LazyList<? extends TConstantValue> inputs) {
+    public TPreptimeValue evaluateConstant(LazyList<? extends TPreptimeValue> inputs) {
         if(OverloadUtils.nullsContaminate(inputs))
             return null;
         PValue constValue = new PValue(PUnderlying.INT_32);
         constValue.putInt32(inputs.get(0).value().getInt32() + inputs.get(1).value().getInt32());
-        return new TConstantValue(XInt.INSTANCE, constValue);
+        return new TPreptimeValue(XInt.INSTANCE, constValue);
     }
 }

@@ -29,7 +29,7 @@ package com.akiban.server.types3;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 
-public final class TConstantValue {
+public final class TPreptimeValue {
 
     public TInstance instance() {
         return tInstance;
@@ -39,11 +39,11 @@ public final class TConstantValue {
         return value;
     }
 
-    public TConstantValue(TInstance tInstance) {
+    public TPreptimeValue(TInstance tInstance) {
         this(tInstance, null);
     }
 
-    public TConstantValue(TInstance tInstance, PValueSource value) {
+    public TPreptimeValue(TInstance tInstance, PValueSource value) {
         ArgumentValidation.notNull("type instance", tInstance);
         this.tInstance = tInstance;
         this.value = value;

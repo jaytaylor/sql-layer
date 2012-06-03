@@ -81,7 +81,7 @@ public class TOverloadResult {
         ArgumentValidation.notNull("combine mode", combineMode);
     }
 
-    public TOverloadResult(Function<List<TConstantValue>,TInstance> rule, TInstance me) {
+    public TOverloadResult(Function<List<TPreptimeValue>,TInstance> rule, TInstance me) {
         this(Category.CUSTOM, null, null, -1, rule);
         ArgumentValidation.notNull("custom combine rule", rule);
     }
