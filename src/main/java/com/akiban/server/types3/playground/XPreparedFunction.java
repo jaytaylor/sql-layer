@@ -71,7 +71,6 @@ public final class XPreparedFunction implements XPreparedExpression {
                 overload,
                 resultType,
                 children,
-                inputTypes,
                 preptimeContext.createExecutionContext());
     }
 
@@ -86,14 +85,12 @@ public final class XPreparedFunction implements XPreparedExpression {
             XPreparedExpression input = inputs.get(i);
             localInputTypes[i] = input.resultType();
         }
-        this.inputTypes = Arrays.asList(localInputTypes);
         this.inputs = inputs;
-        this.preptimeContext = new TPreptimeContext(inputTypes, resultType);
+        this.preptimeContext = new TPreptimeContext(Arrays.asList(localInputTypes), resultType);
     }
 
     private final XValidatedOverload overload;
     private final TInstance resultType;
-    private final List<TInstance> inputTypes;
     private final List<? extends XPreparedExpression> inputs;
     private final TPreptimeContext preptimeContext;
 
@@ -128,14 +125,11 @@ public final class XPreparedFunction implements XPreparedExpression {
         public XEvaluatableFunction(XValidatedOverload overload,
                                     TInstance resultType,
                                     List<? extends XEvaluatableExpression> inputs,
-                                    List<? extends TInstance> inputTypes,
                                     TExecutionContext context)
         {
             this.overload = overload;
             this.inputs = inputs;
-            this.inputTypes = inputTypes;
             this.inputValues = new PValueSource[inputs.size()];
-            this.resultType = resultType;
             this.context = context;
             resultValue = new PValue(resultType.typeClass().underlyingType());
         }
@@ -144,8 +138,6 @@ public final class XPreparedFunction implements XPreparedExpression {
         private final PValueSource[] inputValues;
         private final List<? extends XEvaluatableExpression> inputs;
         private final PValue resultValue;
-        private final TInstance resultType;
-        private final List<? extends TInstance> inputTypes;
         private final TExecutionContext context;
 
         private final LazyList<PValueSource> evaluations = new LazyList<PValueSource>() {
