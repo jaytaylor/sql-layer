@@ -29,6 +29,8 @@ package com.akiban.server.types3.pvalue;
 public interface PValueTarget {
     PUnderlying getUnderlyingType();
 
+    void putValueSource(PValueSource source);
+
     void putNull();
 
     void putBool(boolean value);

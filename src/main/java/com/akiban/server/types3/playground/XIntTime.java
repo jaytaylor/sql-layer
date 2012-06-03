@@ -27,59 +27,17 @@
 package com.akiban.server.types3.playground;
 
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-public final class XIntTime implements XPreparedExpression {
+public final class XIntTime extends XQueryContextExpression {
     @Override
     public TInstance resultType() {
         return XInt.INSTANCE;
     }
 
     @Override
-    public XEvaluatableExpression build() {
-        return new Evaluation(prepareTime);
-    }
-
-    @Override
-    public TPreptimeValue evaluateConstant() {
-        return null;
-    }
-
-    private final long prepareTime = System.currentTimeMillis();
-
-    private static class Evaluation implements XEvaluatableExpression {
-        @Override
-        public PValueSource resultValue() {
-            return value;
-        }
-
-        @Override
-        public void evaluate() {
-            long now = context.getCurrentDate().getTime();
-            int delta = (int)(now - prepareTime);
-            value.putInt32(delta);
-        }
-
-        @Override
-        public void with(Row row) {
-        }
-
-        @Override
-        public void with(QueryContext context) {
-            this.context = context;
-        }
-
-        private Evaluation(long prepareTime) {
-            this.prepareTime = prepareTime;
-        }
-
-        private QueryContext context;
-        private final PValue value = new PValue(PUnderlying.INT_32);
-        private final long prepareTime;
+    protected void evaluate(QueryContext context, PValueTarget target) {
+        target.putInt32((int)context.getCurrentDate().getTime());
     }
 }
