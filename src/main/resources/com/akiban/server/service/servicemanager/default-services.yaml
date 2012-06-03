@@ -16,4 +16,4 @@
     com.akiban.server.service.instrumentation.InstrumentationService : com.akiban.server.service.instrumentation.InstrumentationServiceImpl
     com.akiban.server.service.functions.FunctionsRegistry : com.akiban.server.service.functions.FunctionsRegistryImpl
     com.akiban.server.store.statistics.IndexStatisticsService : com.akiban.server.store.statistics.IndexStatisticsServiceImpl
-    com.akiban.qp.operator.memoryadapter.MemoryStore : com.akiban.qp.operator.memoryadapter.MemoryStoreImpl
+    com.akiban.qp.memoryadapter.MemoryStore : com.akiban.qp.memoryadapter.MemoryStoreImpl

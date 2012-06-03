@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.qp.memoryadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
@@ -35,14 +35,24 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.statistics.IndexStatistics;
 
 public interface MemoryTableFactory {
-    public TableName getName();
-    public Table getTableDefinition();
-    public GroupCursor getGroupCursor(Session session);
-    public Cursor getIndexCursor (Index index, Session session, 
+    // Used by MemoryStore to hold this factory
+    public abstract TableName getName();
+    public abstract Table getTableDefinition();
+    
+    // Used by (Memory)StoreAdapter to get cursors 
+    public abstract GroupCursor getGroupCursor(Session session);
+    public abstract Cursor getIndexCursor (Index index, Session session, 
             IndexKeyRange keyRange,
             API.Ordering ordering,
             IndexScanSelector scanSelector);
-    public long rowCount();
+    
+    // Used by IndexStatistics to compute index statistics
+    public abstract long rowCount();
+    
+    // This should return null for all indexes
+    // TODO: describe index implementation on memory tables. 
+    public abstract IndexStatistics computeIndexStatistics(Session session, Index index);
 }

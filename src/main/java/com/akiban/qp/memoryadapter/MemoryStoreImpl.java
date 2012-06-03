@@ -24,15 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.qp.memoryadapter;
 
 import java.util.HashMap;
 import java.util.Map;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 
@@ -53,7 +51,7 @@ public class MemoryStoreImpl implements MemoryStore, Service<MemoryStore> {
     @Override
     public void registerTable(TableName name, MemoryTableFactory factory) {
         map.put(name, factory);
-        schema.createTableDefinition((Session)null, (UserTable) factory.getTableDefinition());
+        //schema.createTableDefinition((Session)null, (UserTable) factory.getTableDefinition());
     }
 
     @Override

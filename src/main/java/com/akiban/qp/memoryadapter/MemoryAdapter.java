@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.qp.memoryadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -61,7 +61,8 @@ public class MemoryAdapter extends StoreAdapter {
     }
 
     @Override
-    public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata) {
+    public <HKEY extends HKey> HKEY newHKey(
+            com.akiban.ais.model.HKey hKeyMetadata) {
         throw new UnsupportedOperationException();
     }
 
@@ -71,12 +72,6 @@ public class MemoryAdapter extends StoreAdapter {
             IndexScanSelector scanSelector) {
         TableName name = new TableName(index.getIndexName().getSchemaName(), index.getIndexName().getTableName());
         return memoryStore.getFactory(name).getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
-    }
-
-
-    @Override
-    public long getQueryTimeoutSec() {
-        return getConfig().queryTimeoutSec();
     }
 
     @Override

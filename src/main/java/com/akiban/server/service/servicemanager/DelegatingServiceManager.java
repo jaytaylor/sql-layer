@@ -26,7 +26,7 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.server.AkServer;
+import com.akiban.qp.memoryadapter.MemoryStore;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.ServiceManager;
@@ -76,6 +76,10 @@ public abstract class DelegatingServiceManager implements ServiceManager {
         return delegate().getStore();
     }
 
+    @Override
+    public MemoryStore getMemoryStore() {
+        return delegate().getMemoryStore();
+    }
     @Override
     public TreeService getTreeService() {
         return delegate().getTreeService();

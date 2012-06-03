@@ -26,8 +26,7 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.qp.operator.memoryadapter.MemoryStore;
-import com.akiban.server.AkServerInterface;
+import com.akiban.qp.memoryadapter.MemoryStore;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;

@@ -26,7 +26,7 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.operator.memoryadapter.MemoryStore;
+import com.akiban.qp.memoryadapter.MemoryStore;
 import com.akiban.sql.server.ServerServiceRequirements;
 
 import com.akiban.server.error.ServiceStartupException;
