@@ -35,8 +35,6 @@ public interface TOverload {
     public String overloadName();
     public TOverloadResult resultType();
     public List<TInputSet> inputSets();
-    public void evaluate(
-            List<? extends TInstance> inputInstances, LazyList<? extends PValueSource> inputs,
-            TInstance outputInstance, PValueTarget output);
-    public TPreptimeValue evaluateConstant(LazyList<? extends TPreptimeValue> inputs);
+    public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
+    public TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
 }

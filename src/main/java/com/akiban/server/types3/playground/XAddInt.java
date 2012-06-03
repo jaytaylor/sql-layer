@@ -28,6 +28,7 @@ package com.akiban.server.types3.playground;
 
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
@@ -42,8 +43,7 @@ import com.akiban.util.BitSets;
 import java.util.Collections;
 import java.util.List;
 
-public enum XAddInt implements TOverload {
-    INSTANCE;
+public class XAddInt extends TOverloadBase {
 
     @Override
     public String overloadName() {
@@ -60,27 +60,13 @@ public enum XAddInt implements TOverload {
         return Collections.singletonList(new TInputSet(XInt.TYPE_CLASS, BitSets.of(0, 1), false));
     }
 
-    void somewhereInPreparePhase(PrepareContext c) {
-        c.putObject(likeCompilation);
-    }
+//    void somewhereInPreparePhase(PrepareContext c) {
+//        c.putObject(likeCompilation);
+//    }
 
     @Override
-    public void evaluate(EvaluationContext c
-                        LazyList<? extends PValueSource> inputs,
-                         PValueTarget output)
-    {
-        LikePrepare = (CompiledLike) c.getObject(0);
-        TInstance a0Instance = c.inputInstance(0);
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         int result = inputs.get(0).getInt32() + inputs.get(1).getInt32();
         output.putInt32(result);
-    }
-
-    @Override// TODO write a default version in the base class
-    public TPreptimeValue evaluateConstant(LazyList<? extends TPreptimeValue> inputs) {
-        if(OverloadUtils.nullsContaminate(inputs))
-            return null;
-        PValue constValue = new PValue(PUnderlying.INT_32);
-        constValue.putInt32(inputs.get(0).value().getInt32() + inputs.get(1).value().getInt32());
-        return new TPreptimeValue(XInt.INSTANCE, constValue);
     }
 }
