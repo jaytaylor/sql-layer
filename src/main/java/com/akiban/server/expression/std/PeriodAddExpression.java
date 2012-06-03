@@ -124,8 +124,7 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
     protected static long toPeriod(long monthCount) {
         long year = monthCount / 12;
         long month = (monthCount % 12) + 1 * Long.signum(monthCount);
-        return Long.valueOf(String.format("%d", year)
-                + String.format("%02d", Math.abs(month)));
+        return (year * 100) + month;
     }
     
     // End helper functions ***************************************************
