@@ -29,7 +29,9 @@ package com.akiban.server.types3.playground;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
@@ -49,7 +51,12 @@ public final class XPreparedFunction implements XPreparedExpression {
         List<XEvaluatableExpression> children = new ArrayList<XEvaluatableExpression>(inputs.size());
         for (XPreparedExpression input : inputs)
             children.add(input.build());
-        return new XEvaluatableFunction(overload, resultType, children, inputTypes);
+        return new XEvaluatableFunction(
+                overload,
+                resultType,
+                children,
+                inputTypes,
+                preptimeContext.createExecutionContext());
     }
 
     public XPreparedFunction(XValidatedOverload overload,
@@ -65,12 +72,14 @@ public final class XPreparedFunction implements XPreparedExpression {
         }
         this.inputTypes = Arrays.asList(localInputTypes);
         this.inputs = inputs;
+        this.preptimeContext = new TPreptimeContext(inputTypes, resultType);
     }
 
     private final XValidatedOverload overload;
     private final TInstance resultType;
     private final List<TInstance> inputTypes;
     private final List<? extends XPreparedExpression> inputs;
+    private final TPreptimeContext preptimeContext;
 
     private static final class XEvaluatableFunction implements XEvaluatableExpression {
 
@@ -97,19 +106,21 @@ public final class XPreparedFunction implements XPreparedExpression {
 
         @Override
         public void evaluate() {
-            overload.overload().evaluate(inputTypes, evaluations, resultType, resultValue);
+            overload.overload().evaluate(context, evaluations, resultValue);
         }
 
         public XEvaluatableFunction(XValidatedOverload overload,
                                     TInstance resultType,
                                     List<? extends XEvaluatableExpression> inputs,
-                                    List<? extends TInstance> inputTypes)
+                                    List<? extends TInstance> inputTypes,
+                                    TExecutionContext context)
         {
             this.overload = overload;
             this.inputs = inputs;
             this.inputTypes = inputTypes;
             this.inputValues = new PValueSource[inputs.size()];
             this.resultType = resultType;
+            this.context = context;
             resultValue = new PValue(resultType.typeClass().underlyingType());
         }
 
@@ -119,6 +130,7 @@ public final class XPreparedFunction implements XPreparedExpression {
         private final PValue resultValue;
         private final TInstance resultType;
         private final List<? extends TInstance> inputTypes;
+        private final TExecutionContext context;
 
         private final LazyList<PValueSource> evaluations = new LazyList<PValueSource>() {
             @Override

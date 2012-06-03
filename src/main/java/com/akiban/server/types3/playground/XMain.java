@@ -38,7 +38,7 @@ public final class XMain {
         XPreparedExpression literal3 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(3));
         XPreparedExpression literal5 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(5));
 
-        XValidatedOverload validatedAdd = new XValidatedOverload(XAddInt.INSTANCE);
+        XValidatedOverload validatedAdd = new XValidatedOverload(new XAddInt());
         XPreparedExpression preparedExpression = new XPreparedFunction(
                 validatedAdd,
                 XInt.INSTANCE,
