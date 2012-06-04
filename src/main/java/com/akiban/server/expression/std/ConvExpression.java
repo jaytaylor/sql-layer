@@ -36,13 +36,16 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.StandardException;
+import java.math.BigInteger;
 import java.util.List;
 
 public class ConvExpression extends AbstractTernaryExpression
 {
+    private static final int MAX_BASE = 36;
+    private static final int MIN_BASE = 2;
+    
     @Scalar("conv")
     public static final ExpressionComposer COMPOSER = new InternalComposer();
     
@@ -90,6 +93,7 @@ public class ConvExpression extends AbstractTernaryExpression
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
         private static final ValueSource ZERO = new ValueHolder(AkType.VARCHAR, "0");
+        private static final BigInteger N64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);
         
         InnerEvaluation(List<? extends ExpressionEvaluation> evals)
         {
@@ -107,18 +111,16 @@ public class ConvExpression extends AbstractTernaryExpression
             int toBase;
             
             if (num.isNull() || from.isNull() || to.isNull()
-                    || !isInRange(fromBase = (int)from.getLong(), 2, 36)
-                    || !isInRange(toBase = (int)to.getLong(), 2, 36))
+                    || !isInRange(fromBase = (int)from.getLong(), MIN_BASE, MAX_BASE)
+                    || !isInRange(toBase = (int)to.getLong(), -MAX_BASE, MAX_BASE)) // toBase can be negative
                 return NullValueSource.only();
-
+            
             try
             {
-                valueHolder().putString(
-                        Long.toString(
-                            Long.parseLong(
-                                    truncate(Extractors.getStringExtractor().getObject(num)), 
-                                    fromBase), 
-                            toBase));
+                valueHolder().putString(doConvert(
+                        truncate(num.getString()), 
+                        fromBase, 
+                        toBase));
                 return valueHolder();
             }
             catch (NumberFormatException e) // invalid digits input result in ZERO string (as per MySQL)
@@ -127,9 +129,9 @@ public class ConvExpression extends AbstractTernaryExpression
             }
         }
         
-        private static boolean isInRange(int num, int start, int end)
+        private static boolean isInRange(int num, int min, int max)
         {
-            return num <= end && num >= start;
+            return num <= max && num >= min;
         }
         
         /**
@@ -149,6 +151,40 @@ public class ConvExpression extends AbstractTernaryExpression
                  else
                     b.append(ch);
             return b.toString();
+        }
+        
+    
+        /**
+         * 
+         * @param st: numeric string
+         * @return a BigInteger representing the value in st.
+         * 
+         * If st contains a negative (signed) value, the sign bit would not be 
+         * considered a sign bit anymore.
+         * That is, -1 would be the same as FFFFFFFFFFFFFFFF
+         */
+        private static String doConvert (String st, int fromBase, int toBase)
+        {
+            
+            boolean signed = toBase < 0;
+            if (signed)
+                toBase = -toBase;
+            
+            BigInteger num = new BigInteger (st, fromBase);
+            
+            // if the number is signed and the toBase value is unsigned
+            // interpret the number as unsigned
+            if (!signed && num.compareTo(BigInteger.ZERO) < 0)
+            {
+
+                num = num.abs();
+                num = num.and(N64);
+
+                for (int i = 0; i < 64; ++i)
+                    num = num.flipBit(i);
+            }
+            
+            return num.toString(toBase);
         }
     }
     
