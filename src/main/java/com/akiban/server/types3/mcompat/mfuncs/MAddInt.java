@@ -30,6 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MBigInt;
+import com.akiban.server.types3.mcompat.mtypes.MInt;
 import com.akiban.server.types3.mcompat.mtypes.MMediumInt;
 import com.akiban.server.types3.mcompat.mtypes.MSmallInt;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -40,7 +41,7 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 public final class MAddInt extends TOverloadBase {
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MSmallInt.INSTANCE, 0, 1);
+        builder.covers(MInt.INSTANCE, 0, 1);
     }
 
     @Override
