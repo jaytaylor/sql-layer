@@ -30,6 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MInt;
 import com.akiban.server.types3.mcompat.mtypes.MMediumInt;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -56,6 +57,6 @@ public final class MAddMediumInt extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(MDecimal.INSTANCE);
+        return new TOverloadResult(MInt.INSTANCE);
     }
 }
