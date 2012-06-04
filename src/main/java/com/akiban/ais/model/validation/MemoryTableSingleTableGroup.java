@@ -27,30 +27,28 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.GroupHasMultipleRootsException;
+import com.akiban.ais.model.Join;
+import com.akiban.server.error.GroupMultipleMemoryTables;
 
-class GroupTableSingleRoot implements AISValidation {
+/**
+ * Validate the current assumption of groups with a memory table contain only one 
+ * table, that is, there is no muti-table groups with the memory tables. 
+ * (The MemoryTablesNotMixed validation ensures Memory tables are not mixed with other 
+ *  types of tables). 
+ *  TODO: It would be nice to remove this limitation of the current system. 
+ * @author tjoneslo
+ *
+ */
+public class MemoryTableSingleTableGroup implements AISValidation {
 
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
-        for (Group group : ais.getGroups().values()) {
-            validateGroup (ais, group, output);
-        }
-    }
-    
-    private void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
-        UserTable root = null;
-        for (UserTable userTable : ais.getUserTables().values()) {
-            if (userTable.getGroup() == group && userTable.getParentJoin() == null) {
-                if (root == null) {
-                    root = userTable;
-                } else {
-                    output.reportFailure(new AISValidationFailure (
-                            new GroupHasMultipleRootsException (group.getName(), root.getName(),userTable.getName())));
-                }
+        for (Join join : ais.getJoins().values()) {
+            if (join.getChild().hasMemoryTableFactory()) {
+                output.reportFailure(new AISValidationFailure (
+                        new GroupMultipleMemoryTables(join.getParent().getName(), join.getChild().getName())));
             }
         }
     }
+
 }
