@@ -37,8 +37,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.memoryadapter.MemoryAdapter;
-import com.akiban.qp.memoryadapter.MemoryStore;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
@@ -52,7 +50,7 @@ import com.akiban.sql.pg.PostgresServerConnection;
 import com.akiban.sql.pg.PostgresServerITBase;
 
 public class MemoryAdapterIT extends PostgresServerITBase {
-
+/*
     @Test
     public void getAdapterTest() {
         MemoryStore store = serviceManager().getMemoryStore();
@@ -102,7 +100,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         assertNotNull (adapter);
         assertTrue (adapter instanceof PersistitAdapter);
     }
-    
+*/    
     private class TestFactory implements MemoryTableFactory {
         public TestFactory (TableName name) {
             this.name = name;

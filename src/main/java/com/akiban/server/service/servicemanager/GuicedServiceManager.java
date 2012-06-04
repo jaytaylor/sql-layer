@@ -26,7 +26,6 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.qp.memoryadapter.MemoryStore;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
@@ -95,11 +94,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
         return getServiceByClass(Store.class);
     }
 
-    @Override
-    public MemoryStore getMemoryStore() {
-        return getServiceByClass (MemoryStore.class);
-    }
-    
     @Override
     public TreeService getTreeService() {
         return getServiceByClass(TreeService.class);

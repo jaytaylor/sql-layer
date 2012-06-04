@@ -55,7 +55,7 @@ public interface ServiceManager {
 
     Store getStore();
 
-    MemoryStore getMemoryStore(); 
+    //MemoryStore getMemoryStore(); 
     
     TreeService getTreeService();
 
