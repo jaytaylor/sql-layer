@@ -990,6 +990,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
         }
+        else {
+            if (sortAllowed)
+                queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
+        }
     }
 
     /** Change WHERE as a consequence of <code>index</code> being
