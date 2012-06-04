@@ -24,21 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.mcompat.mtypes.MMediumInt;
+import com.akiban.server.types3.mcompat.mtypes.MSmallInt;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TQueryContextExpression;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public final class XIntTime extends TQueryContextExpression {
+public final class MAddSmallnt extends TOverloadBase {
     @Override
-    public TInstance resultType() {
-        return XInt.INSTANCE;
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(MSmallInt.INSTANCE, 0, 1);
     }
 
     @Override
-    protected void evaluate(QueryContext context, PValueTarget target) {
-        target.putInt32((int)context.getCurrentDate().getTime());
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        short a0 = inputs.get(0).getInt16();
+        short a1 = inputs.get(0).getInt16();
+        output.putInt32(a0 + a1);
+    }
+
+    @Override
+    public String overloadName() {
+        return "+";
+    }
+
+    @Override
+    public TOverloadResult resultType() {
+        return new TOverloadResult(MMediumInt.INSTANCE);
     }
 }

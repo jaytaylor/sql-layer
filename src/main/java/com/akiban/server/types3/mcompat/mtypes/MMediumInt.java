@@ -24,21 +24,29 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TQueryContextExpression;
+import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-public final class XIntTime extends TQueryContextExpression {
+public final class MMediumInt extends TClass {
+
+    public static MMediumInt INSTANCE = new MMediumInt();
+
     @Override
-    public TInstance resultType() {
-        return XInt.INSTANCE;
+    public PUnderlying underlyingType() {
+        return PUnderlying.INT_32;
     }
 
     @Override
-    protected void evaluate(QueryContext context, PValueTarget target) {
-        target.putInt32((int)context.getCurrentDate().getTime());
+    protected TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    public MMediumInt() {
+        super(MBundle.INSTANCE.id(), "mediumint", new String[]{"M"}, 1, 1, 3);
     }
 }

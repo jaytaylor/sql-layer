@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverload;
@@ -32,7 +32,7 @@ import com.akiban.util.SparseArray;
 
 import java.util.List;
 
-public final class XValidatedOverload {
+public final class TValidatedOverload {
 
     public TInputSet varargInputSet() {
         return varargs;
@@ -46,7 +46,7 @@ public final class XValidatedOverload {
         return inputSetsByPos.get(index);
     }
 
-    public XValidatedOverload(TOverload overload) {
+    public TValidatedOverload(TOverload overload) {
         TInputSet localVarargInputs = null;
         SparseArray<TInputSet> inputSetsArray = new SparseArray<TInputSet>();
         for (TInputSet inputSet : overload.inputSets()) {

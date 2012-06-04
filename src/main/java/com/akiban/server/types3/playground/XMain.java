@@ -31,21 +31,26 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedFunction;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.Arrays;
 
 public final class XMain {
     public static void main(String[] args) throws InterruptedException {
-        XPreparedExpression literal3 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(3));
-        XPreparedExpression literal5 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(5));
+        TPreparedExpression literal3 = new TPreparedLiteral(XInt.INSTANCE, pvalue32(3));
+        TPreparedExpression literal5 = new TPreparedLiteral(XInt.INSTANCE, pvalue32(5));
 
-        XValidatedOverload validatedAdd = new XValidatedOverload(new XAddInt());
+        TValidatedOverload validatedAdd = new TValidatedOverload(new XAddInt());
 
-        XPreparedExpression preparedExpression = new XPreparedFunction(
+        TPreparedExpression preparedExpression = new TPreparedFunction(
                 validatedAdd,
                 XInt.INSTANCE,
                 Arrays.asList(literal3, literal5));
-        preparedExpression = new XPreparedFunction(
+        preparedExpression = new TPreparedFunction(
                 validatedAdd,
                 XInt.INSTANCE,
                 Arrays.asList(preparedExpression, new XIntTime())
@@ -60,7 +65,7 @@ public final class XMain {
             new SimpleQueryContext(null); // force the class loader, so we don't pay for it within the loop
             System.out.println("non-constant:");
             for (int i = 0; i < 10; ++i) {
-                XEvaluatableExpression eval = preparedExpression.build();
+                TEvaluatableExpression eval = preparedExpression.build();
                 eval.with(new SimpleQueryContext(null));
                 eval.evaluate();
                 System.out.println(eval.resultValue());

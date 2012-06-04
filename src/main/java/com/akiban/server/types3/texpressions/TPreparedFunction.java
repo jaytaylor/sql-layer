@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
@@ -40,7 +40,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-public final class XPreparedFunction implements XPreparedExpression {
+public final class TPreparedFunction implements TPreparedExpression {
 
     @Override
     public TInstance resultType() {
@@ -63,43 +63,43 @@ public final class XPreparedFunction implements XPreparedExpression {
     }
 
     @Override
-    public XEvaluatableExpression build() {
-        List<XEvaluatableExpression> children = new ArrayList<XEvaluatableExpression>(inputs.size());
-        for (XPreparedExpression input : inputs)
+    public TEvaluatableExpression build() {
+        List<TEvaluatableExpression> children = new ArrayList<TEvaluatableExpression>(inputs.size());
+        for (TPreparedExpression input : inputs)
             children.add(input.build());
-        return new XEvaluatableFunction(
+        return new TEvaluatableFunction(
                 overload,
                 resultType,
                 children,
                 preptimeContext.createExecutionContext());
     }
 
-    public XPreparedFunction(XValidatedOverload overload,
+    public TPreparedFunction(TValidatedOverload overload,
                              TInstance resultType,
-                             List<? extends XPreparedExpression> inputs)
+                             List<? extends TPreparedExpression> inputs)
     {
         this.overload = overload;
         this.resultType = resultType;
         TInstance[] localInputTypes = new TInstance[inputs.size()];
         for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
-            XPreparedExpression input = inputs.get(i);
+            TPreparedExpression input = inputs.get(i);
             localInputTypes[i] = input.resultType();
         }
         this.inputs = inputs;
         this.preptimeContext = new TPreptimeContext(Arrays.asList(localInputTypes), resultType);
     }
 
-    private final XValidatedOverload overload;
+    private final TValidatedOverload overload;
     private final TInstance resultType;
-    private final List<? extends XPreparedExpression> inputs;
+    private final List<? extends TPreparedExpression> inputs;
     private final TPreptimeContext preptimeContext;
 
-    private static final class XEvaluatableFunction implements XEvaluatableExpression {
+    private static final class TEvaluatableFunction implements TEvaluatableExpression {
 
         @Override
         public void with(Row row) {
             for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
-                XEvaluatableExpression input = inputs.get(i);
+                TEvaluatableExpression input = inputs.get(i);
                 input.with(row);
             }
         }
@@ -107,7 +107,7 @@ public final class XPreparedFunction implements XPreparedExpression {
         @Override
         public void with(QueryContext context) {
             for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
-                XEvaluatableExpression input = inputs.get(i);
+                TEvaluatableExpression input = inputs.get(i);
                 input.with(context);
             }
         }
@@ -122,9 +122,9 @@ public final class XPreparedFunction implements XPreparedExpression {
             overload.overload().evaluate(context, evaluations, resultValue);
         }
 
-        public XEvaluatableFunction(XValidatedOverload overload,
+        public TEvaluatableFunction(TValidatedOverload overload,
                                     TInstance resultType,
-                                    List<? extends XEvaluatableExpression> inputs,
+                                    List<? extends TEvaluatableExpression> inputs,
                                     TExecutionContext context)
         {
             this.overload = overload;
@@ -134,9 +134,9 @@ public final class XPreparedFunction implements XPreparedExpression {
             resultValue = new PValue(resultType.typeClass().underlyingType());
         }
 
-        private final XValidatedOverload overload;
+        private final TValidatedOverload overload;
         private final PValueSource[] inputValues;
-        private final List<? extends XEvaluatableExpression> inputs;
+        private final List<? extends TEvaluatableExpression> inputs;
         private final PValue resultValue;
         private final TExecutionContext context;
 
@@ -146,7 +146,7 @@ public final class XPreparedFunction implements XPreparedExpression {
                 PValueSource value = inputValues[i];
                 // TODO clear cache at some point
                 if (value == null) {
-                    XEvaluatableExpression inputExpr = inputs.get(i);
+                    TEvaluatableExpression inputExpr = inputs.get(i);
                     inputExpr.evaluate();
                     value = inputExpr.resultValue();
                     inputValues[i] = value;

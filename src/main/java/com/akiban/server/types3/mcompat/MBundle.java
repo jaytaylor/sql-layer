@@ -24,18 +24,25 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.mcompat;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
 
-public interface XEvaluatableExpression {
+import java.util.Map;
 
-    PValueSource resultValue();
+public enum  MBundle implements TBundle {
+    INSTANCE;
 
-    void evaluate();
+    @Override
+    public TBundleID id() {
+        throw new UnsupportedOperationException(); // TODO
+    }
 
-    void with(Row row);
-    void with(QueryContext context);
+    @Override
+    public Map<TClass, TFactory> typeClasses() {
+        throw new UnsupportedOperationException(); // TODO
+    }
 }

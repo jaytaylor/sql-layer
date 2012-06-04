@@ -24,21 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TQueryContextExpression;
+import com.akiban.qp.row.Row;
+import com.akiban.server.types3.pvalue.PValueSource;
 
-public final class XIntTime extends TQueryContextExpression {
-    @Override
-    public TInstance resultType() {
-        return XInt.INSTANCE;
-    }
+public interface TEvaluatableExpression {
 
-    @Override
-    protected void evaluate(QueryContext context, PValueTarget target) {
-        target.putInt32((int)context.getCurrentDate().getTime());
-    }
+    PValueSource resultValue();
+
+    void evaluate();
+
+    void with(Row row);
+    void with(QueryContext context);
 }
