@@ -849,7 +849,7 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public Table getTableDefinition() {
+        public UserTable getTableDefinition() {
             throw new UnsupportedOperationException();
         }
 

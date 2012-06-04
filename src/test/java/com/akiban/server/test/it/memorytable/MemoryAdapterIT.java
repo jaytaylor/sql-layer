@@ -28,14 +28,15 @@ package com.akiban.server.test.it.memorytable;
 
 import static org.junit.Assert.*;
 
-import java.sql.Statement;
-import java.util.Set;
+import java.util.concurrent.Callable;
 
+import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.operator.Cursor;
@@ -45,32 +46,42 @@ import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.API.Ordering;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.sql.pg.PostgresServerConnection;
 import com.akiban.sql.pg.PostgresServerITBase;
 
 public class MemoryAdapterIT extends PostgresServerITBase {
-/*
-    @Test
-    public void getAdapterTest() {
-        MemoryStore store = serviceManager().getMemoryStore();
-        
-        assertNotNull (store);
-        
+    private SchemaManager schemaManager;
+
+    private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
+        transactionally(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                schemaManager.registerMemoryInformationSchemaTable(session(), table, factory);
+                return null;
+            }
+        });
     }
-    
-    @Test
-    public void insertFactoryTest() {
-        MemoryStore store = serviceManager().getMemoryStore();
-        
-        TableName name = new TableName ("test", "test");
-        store.registerTable(name, new TestFactory(name));
-        
-        MemoryTableFactory factory = store.getFactory(name);
-        assertNotNull(factory);
-        assertEquals (factory.getName(), name);
+
+    @Before
+    public void setUp() throws Exception {
+        schemaManager = serviceManager().getSchemaManager();
     }
-    
+
+    @Test
+    public void insertFactoryTest() throws Exception {
+  
+        TableName name = new TableName (TableName.AKIBAN_INFORMATION_SCHEMA, "test");
+        MemoryTableFactory factory = new TestFactory (name);
+
+        registerISTable(factory.getTableDefinition(), factory);
+ 
+        UserTable table = schemaManager.getAis(session()).getUserTable(name);
+        assertNotNull (table);
+        assertTrue (table.hasMemoryTableFactory());
+    }
+/*    
     @Test
     public void testGetAdapter() throws Exception {
 
@@ -99,11 +110,11 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         adapter = postgresConn.getStore(newName);
         assertNotNull (adapter);
         assertTrue (adapter instanceof PersistitAdapter);
-    }
+    
 */    
     private class TestFactory implements MemoryTableFactory {
         public TestFactory (TableName name) {
-            this.name = name;
+            table = AISBBasedBuilder.create().userTable(name.getSchemaName(),name.getTableName()).colLong("c1").pk("c1").ais().getUserTable(name);
         }
         @Override
         public GroupCursor getGroupCursor(Session session) {
@@ -121,13 +132,12 @@ public class MemoryAdapterIT extends PostgresServerITBase {
 
         @Override
         public TableName getName() {
-            return name;
+            return table.getName();
         }
 
         @Override
-        public Table getTableDefinition() {
-            // TODO Auto-generated method stub
-            return null;
+        public UserTable getTableDefinition() {
+            return table;
         }
 
         @Override
@@ -141,6 +151,6 @@ public class MemoryAdapterIT extends PostgresServerITBase {
             // TODO Auto-generated method stub
             return null;
         }
-        private TableName name;
+        private UserTable table;
     }
 }
