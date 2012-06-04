@@ -316,6 +316,15 @@ public class ProtobufReaderWriterTest {
         assertEquals("Table with version", VERSION, outAIS.getUserTable(SCHEMA, TABLE).getVersion());
     }
 
+    @Test
+    public void sameRootTableNameTwoSchemas() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA+"1", "t").colLong("id", false).pk("id");
+        builder.userTable(SCHEMA+"2", "t").colLong("id", false).pk("id");
+        AkibanInformationSchema inAIS = builder.ais();
+        writeAndRead(inAIS);
+    }
+
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }
