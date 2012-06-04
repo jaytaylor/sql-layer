@@ -49,13 +49,18 @@ public final class XInt extends TClass {
         return INSTANCE;
     }
 
+    @Override
+    public TFactory factory() {
+        return FACTORY;
+    }
+
     private XInt() {
         super(XBund.ID, "xint", new String[0], 1, 1, 4);
     }
 
     public static final XInt TYPE_CLASS = new XInt();
 
-    static final TFactory FACTORY = new TFactory() {
+    private static final TFactory FACTORY = new TFactory() {
         @Override
         public TInstance create(List<TAttributeValue> arguments, boolean strict) {
             assert arguments.isEmpty() : arguments;

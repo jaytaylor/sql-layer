@@ -24,38 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MMediumInt;
-import com.akiban.server.types3.mcompat.mtypes.MSmallInt;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
-
-public final class MAddSmallnt extends TOverloadBase {
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MSmallInt.INSTANCE, 0, 1);
+public final class TypeDeclarationException extends RuntimeException {
+    public TypeDeclarationException(String message) {
+        super(message);
     }
 
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int a0 = inputs.get(0).getInt16();
-        int a1 = inputs.get(0).getInt16();
-        output.putInt32(a0 + a1);
-    }
-
-    @Override
-    public String overloadName() {
-        return "+";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return new TOverloadResult(MMediumInt.INSTANCE);
+    public TypeDeclarationException(String message, Throwable cause) {
+        super(message, cause);
     }
 }
