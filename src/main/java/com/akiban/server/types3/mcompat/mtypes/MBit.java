@@ -39,7 +39,7 @@ public class MBit extends TClass {
             
     @Override
     public PUnderlying underlyingType() {
-        return PUnderlying.INT_8;
+        return PUnderlying.INT_64;
     }
 
     @Override
@@ -53,7 +53,7 @@ public class MBit extends TClass {
     }
     
     public MBit() {
-        super(MBundle.INSTANCE.id(), "bit", new String[]{"M"}, 1, 1, 1);
+        super(MBundle.INSTANCE.id(), "bit", new String[]{"M"}, 1, 1, 8);
     }
     
     private static final TFactory FACTORY = new MNumericFactory(INSTANCE);
