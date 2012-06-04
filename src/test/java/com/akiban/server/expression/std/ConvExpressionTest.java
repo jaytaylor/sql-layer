@@ -64,7 +64,7 @@ public class ConvExpressionTest extends ComposedExpressionTestBase
         ParameterizationBuilder p = new ParameterizationBuilder();
         
         String dec = "255";
-        String hex = "ff";
+        String hex = "FF";
         String bin = "11111111";
         
         param(p, hex, 16L, 10L, dec);
@@ -76,7 +76,7 @@ public class ConvExpressionTest extends ComposedExpressionTestBase
         
         // test convert to same base
         String val;
-        param(p, val = "a", 16L, 16L, val);
+        param(p, val = "A", 16L, 16L, val);
         param(p, val = "123231231", 15L, 15L, val);
         param(p, "1234", 2L, 2L, "0");
         
@@ -86,6 +86,8 @@ public class ConvExpressionTest extends ComposedExpressionTestBase
         param(p, "10", 2L, 1L, null);
         param(p, "0", 1L, 0L, null);
         
+        // test signed
+        param(p, "-1", 10L, 16L, "FFFFFFFFFFFFFFFF");
         return p.asList();
     }
     
@@ -106,6 +108,7 @@ public class ConvExpressionTest extends ComposedExpressionTestBase
     @Test
     public void test()
     {
+        alreadyExc = true;
         Expression top = new ConvExpression(Arrays.asList(getExp(num),
                                                           getExp(from),
                                                           getExp(to)));

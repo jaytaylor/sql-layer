@@ -112,7 +112,7 @@ public class ConvExpression extends AbstractTernaryExpression
             
             if (num.isNull() || from.isNull() || to.isNull()
                     || !isInRange(fromBase = (int)from.getLong(), MIN_BASE, MAX_BASE)
-                    || !isInRange(toBase = (int)to.getLong(), -MAX_BASE, MAX_BASE)) // toBase can be negative
+                    || !isInRange(Math.abs(toBase = (int)to.getLong()), MIN_BASE, MAX_BASE)) // toBase can be negative
                 return NullValueSource.only();
             
             try
@@ -152,16 +152,15 @@ public class ConvExpression extends AbstractTernaryExpression
                     b.append(ch);
             return b.toString();
         }
-        
     
         /**
          * 
          * @param st: numeric string
-         * @return a BigInteger representing the value in st.
+         * @return a string representing the value in st in toBase.
          * 
-         * If st contains a negative (signed) value, the sign bit would not be 
-         * considered a sign bit anymore.
-         * That is, -1 would be the same as FFFFFFFFFFFFFFFF
+         * if toBase is unsigned, the value contained in st would
+         * be interpreted as an unsigned value
+         * (Thus, -1 would be the same as FFFFFFFFFFFFFFFF)
          */
         private static String doConvert (String st, int fromBase, int toBase)
         {
@@ -180,11 +179,13 @@ public class ConvExpression extends AbstractTernaryExpression
                 num = num.abs();
                 num = num.and(N64);
 
+                // flip all bits from [0, 63]
                 for (int i = 0; i < 64; ++i)
                     num = num.flipBit(i);
+                num = num.add(BigInteger.ONE);
             }
             
-            return num.toString(toBase);
+            return num.toString(toBase).toUpperCase();
         }
     }
     

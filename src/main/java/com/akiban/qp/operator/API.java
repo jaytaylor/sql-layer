@@ -147,7 +147,7 @@ public class API
                                                 GroupTable groupTable,
                                                 RowType inputRowType,
                                                 UserTableRowType outputRowType,
-                                                LookupOption flag)
+                                                InputPreservationOption flag)
     {
         return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, NO_LIMIT);
     }
@@ -156,7 +156,7 @@ public class API
                                                 GroupTable groupTable,
                                                 RowType inputRowType,
                                                 UserTableRowType outputRowType,
-                                                LookupOption flag,
+                                                InputPreservationOption flag,
                                                 Limit limit)
     {
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
@@ -166,7 +166,7 @@ public class API
     public static Operator branchLookup_Nested(GroupTable groupTable,
                                                RowType inputRowType,
                                                UserTableRowType outputRowType,
-                                               LookupOption flag,
+                                               InputPreservationOption flag,
                                                int inputBindingPosition)
     {
         return new BranchLookup_Nested(groupTable,
@@ -181,7 +181,7 @@ public class API
                                                RowType inputRowType,
                                                UserTableRowType ancestorRowType,
                                                UserTableRowType outputRowType,
-                                               LookupOption flag,
+                                               InputPreservationOption flag,
                                                int inputBindingPosition)
     {
         return new BranchLookup_Nested(groupTable,
@@ -214,7 +214,7 @@ public class API
                                                   GroupTable groupTable,
                                                   RowType rowType,
                                                   Collection<UserTableRowType> ancestorTypes,
-                                                  LookupOption flag)
+                                                  InputPreservationOption flag)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
     }
@@ -439,9 +439,11 @@ public class API
 
     // IfEmpty
 
-    public static Operator ifEmpty_Default(Operator input, RowType rowType, List<? extends Expression> expressions)
+    public static Operator ifEmpty_Default(Operator input, RowType rowType,
+                                           List<? extends Expression> expressions,
+                                           InputPreservationOption inputPreservation)
     {
-        return new IfEmpty_Default(input, rowType, expressions);
+        return new IfEmpty_Default(input, rowType, expressions, inputPreservation);
     }
 
     // Union
@@ -508,6 +510,34 @@ public class API
                                      outputHKeyTableRowType);
     }
 
+    // Using_BloomFilter
+
+    public static Operator using_BloomFilter(Operator filterInput,
+                                             RowType filterRowType,
+                                             long estimatedRowCount,
+                                             int filterBindingPosition,
+                                             Operator streamInput)
+    {
+        return new Using_BloomFilter(filterInput,
+                                     filterRowType,
+                                     estimatedRowCount,
+                                     filterBindingPosition,
+                                     streamInput);
+    }
+
+    // Select_BloomFilter
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends Expression> filterFields,
+                                              int bindingPosition)
+    {
+        return new Select_BloomFilter(input,
+                                      onPositive,
+                                      filterFields,
+                                      bindingPosition);
+    }
+
     // Insert
 
     public static UpdatePlannable insert_Default(Operator inputOperator)
@@ -558,7 +588,8 @@ public class API
 
     // Lookup flags
 
-    public static enum LookupOption {
+    public static enum InputPreservationOption
+    {
         KEEP_INPUT,
         DISCARD_INPUT
     }

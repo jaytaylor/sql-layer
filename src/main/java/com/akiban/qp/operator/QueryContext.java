@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
@@ -33,6 +34,7 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.BloomFilter;
 
 import java.util.Date;
 
@@ -106,9 +108,25 @@ public interface QueryContext
     public void setHKey(int index, HKey hKey);
 
     /**
+     * Gets the bloom filter bound to the given index.
+     * @param index the index to look up
+     * @return the bloom filter at that index
+     * @throws BindingNotSetException if the given index wasn't set
+     */
+    public BloomFilter getBloomFilter(int index);
+
+    /**
+     * Bind a bloom filter to the given index.
+     * @param index the index to set
+     * @param filter the bloom filter to assign
+     */
+    public void setBloomFilter(int index, BloomFilter filter);
+
+    /**
      * Get the store associated with this query.
      */
     public StoreAdapter getStore();
+    public StoreAdapter getStore(final TableName table);
 
     /**
      * Get the session associated with this context.
