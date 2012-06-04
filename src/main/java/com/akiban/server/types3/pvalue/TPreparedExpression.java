@@ -24,13 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 
-public interface XPreparedExpression {
+public interface TPreparedExpression {
     TPreptimeValue evaluateConstant();
     TInstance resultType();
-    XEvaluatableExpression build();
+    TEvaluatableExpression build();
 }

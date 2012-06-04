@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
@@ -21,9 +21,6 @@ import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 
 import java.util.List;
 

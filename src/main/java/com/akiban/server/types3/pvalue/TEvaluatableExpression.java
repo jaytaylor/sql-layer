@@ -24,13 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.pvalue;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.pvalue.PValueSource;
 
-public interface XEvaluatableExpression {
+public interface TEvaluatableExpression {
 
     PValueSource resultValue();
 

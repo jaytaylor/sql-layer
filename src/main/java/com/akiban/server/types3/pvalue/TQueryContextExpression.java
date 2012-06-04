@@ -13,13 +13,12 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.pvalue;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueTarget;
 
-public abstract class XQueryContextExpression implements XPreparedExpression {
+public abstract class TQueryContextExpression implements TPreparedExpression {
     
     protected abstract void evaluate(QueryContext context, PValueTarget target);
     
@@ -29,7 +28,7 @@ public abstract class XQueryContextExpression implements XPreparedExpression {
     }
 
     @Override
-    public XEvaluatableExpression build() {
+    public TEvaluatableExpression build() {
         return new Evaluation();
     }
     
@@ -37,7 +36,7 @@ public abstract class XQueryContextExpression implements XPreparedExpression {
 
         @Override
         protected void evaluate(QueryContext context, PValueTarget target) {
-            XQueryContextExpression.this.evaluate(context, target);
+            TQueryContextExpression.this.evaluate(context, target);
         }
 
         @Override

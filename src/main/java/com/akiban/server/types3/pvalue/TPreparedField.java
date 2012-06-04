@@ -13,16 +13,13 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.pvalue;
 
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 
-public final class XPreparedField implements XPreparedExpression {
+public final class TPreparedField implements TPreparedExpression {
     @Override
     public TPreptimeValue evaluateConstant() {
         return null;
@@ -34,11 +31,11 @@ public final class XPreparedField implements XPreparedExpression {
     }
 
     @Override
-    public XEvaluatableExpression build() {
+    public TEvaluatableExpression build() {
         return new Evaluation(typeInstance.typeClass().underlyingType(), fieldIndex);
     }
 
-    public XPreparedField(TInstance typeInstance, int fieldIndex) {
+    public TPreparedField(TInstance typeInstance, int fieldIndex) {
         this.typeInstance = typeInstance;
         this.fieldIndex = fieldIndex;
     }

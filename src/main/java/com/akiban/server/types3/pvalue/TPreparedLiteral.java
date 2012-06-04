@@ -24,22 +24,21 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.pvalue;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueSource;
 
-public final class XPreparedLiteral implements XPreparedExpression {
+public final class TPreparedLiteral implements TPreparedExpression {
     @Override
     public TInstance resultType() {
         return tInstance;
     }
 
     @Override
-    public XEvaluatableExpression build() {
+    public TEvaluatableExpression build() {
         return new Evaluation(value);
     }
 
@@ -48,7 +47,7 @@ public final class XPreparedLiteral implements XPreparedExpression {
         return new TPreptimeValue(tInstance, value);
     }
 
-    public XPreparedLiteral(TInstance tInstance, PValueSource value) {
+    public TPreparedLiteral(TInstance tInstance, PValueSource value) {
         this.tInstance = tInstance;
         this.value = value;
     }
@@ -56,7 +55,7 @@ public final class XPreparedLiteral implements XPreparedExpression {
     private final TInstance tInstance;
     private final PValueSource value;
 
-    private static class Evaluation implements XEvaluatableExpression {
+    private static class Evaluation implements TEvaluatableExpression {
         @Override
         public PValueSource resultValue() {
             return value;
