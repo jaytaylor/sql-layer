@@ -28,11 +28,8 @@ package com.akiban.server.types3.playground;
 
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.util.SparseArray;
 
-import java.util.ArrayList;
-import java.util.BitSet;
 import java.util.List;
 
 public final class XValidatedOverload {

@@ -42,9 +42,13 @@ public class TOverloadResult {
         return fixedType;
     }
 
-    public Function<List<TInstance>,TInstance> customRule() {
+    public Function<List<TPreptimeValue>,TInstance> customRule() {
         check(Category.CUSTOM);
         return customRule;
+    }
+    
+    public TInstance customRuleCastSource() {
+        return castSource;
     }
 
     public TCombineMode combineMode() {
@@ -72,17 +76,17 @@ public class TOverloadResult {
     // state
 
     public TOverloadResult(TClass fixedType) {
-        this(Category.FIXED, fixedType, null, -1, null);
+        this(Category.FIXED, fixedType, null, -1, null, null);
         ArgumentValidation.notNull("fixed type", fixedType);
     }
 
     public TOverloadResult(TCombineMode combineMode, int pickingInputSet) {
-        this(Category.FIXED, null, combineMode, pickingInputSet, null);
+        this(Category.PICKING, null, combineMode, pickingInputSet, null, null);
         ArgumentValidation.notNull("combine mode", combineMode);
     }
 
-    public TOverloadResult(Function<List<TInstance>,TInstance> rule) {
-        this(Category.FIXED, null, null, -1, rule);
+    public TOverloadResult(Function<List<TPreptimeValue>,TInstance> rule, TInstance castSource) {
+        this(Category.CUSTOM, null, null, -1, rule, castSource);
         ArgumentValidation.notNull("custom combine rule", rule);
     }
 
@@ -90,20 +94,23 @@ public class TOverloadResult {
                             TClass fixedType,
                             TCombineMode combineMode,
                             int pickingInputSet,
-                            Function<List<TInstance>,TInstance> customRule)
+                            Function<List<TPreptimeValue>,TInstance> customRule,
+                            TInstance castSource)
     {
         this.category = category;
         this.fixedType = fixedType;
         this.combineMode = combineMode;
         this.pickingInputSet = pickingInputSet;
         this.customRule = customRule;
+        this.castSource = castSource;
     }
 
     private final Category category;
     private final TClass fixedType;
     private final TCombineMode combineMode;
     private final int pickingInputSet;
-    private final Function<List<TInstance>,TInstance> customRule;
+    private final Function<List<TPreptimeValue>,TInstance> customRule;
+    private final TInstance castSource;
 
     public enum Category {
         CUSTOM, FIXED, PICKING

@@ -24,31 +24,20 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.playground;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.ArgumentValidation;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-public final class TConstantValue {
-
-    public TInstance instance() {
-        return tInstance;
+public final class XIntTime extends XQueryContextExpression {
+    @Override
+    public TInstance resultType() {
+        return XInt.INSTANCE;
     }
 
-    public PValueSource value() {
-        return value;
+    @Override
+    protected void evaluate(QueryContext context, PValueTarget target) {
+        target.putInt32((int)context.getCurrentDate().getTime());
     }
-
-    public TConstantValue(TInstance tInstance) {
-        this(tInstance, null);
-    }
-
-    public TConstantValue(TInstance tInstance, PValueSource value) {
-        ArgumentValidation.notNull("type instance", tInstance);
-        this.tInstance = tInstance;
-        this.value = value;
-    }
-
-    private final TInstance tInstance;
-    private final PValueSource value;
 }

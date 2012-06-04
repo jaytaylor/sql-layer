@@ -24,18 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.util;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import java.util.BitSet;
 
-import java.util.List;
+public final class BitSets {
 
-public interface TOverload {
-    String overloadName();
-    TOverloadResult resultType();
-    List<TInputSet> inputSets();
-    TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
-    void finishPreptimePhase(TPreptimeContext context);
-    void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
+    public static BitSet of(int... values) {
+        BitSet bs = new BitSet(values.length);
+        for (int v : values)
+            bs.set(v);
+        return bs;
+    }
+
+    private BitSets() {}
 }

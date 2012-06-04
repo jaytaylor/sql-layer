@@ -50,5 +50,6 @@ public enum XBund implements TBundle {
         return result;
     }
 
-    static final TBundleID ID = new TBundleID("xbund", UUID.randomUUID());
+    private static final String UUID_STR = "82d72a46-465e-4b07-991b-83f28088784b";
+    static final TBundleID ID = new TBundleID("xbund", UUID.fromString(UUID_STR));
 }

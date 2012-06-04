@@ -27,15 +27,28 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.util.ArgumentValidation;
 
-import java.util.List;
+public final class TPreptimeValue {
 
-public interface TOverload {
-    String overloadName();
-    TOverloadResult resultType();
-    List<TInputSet> inputSets();
-    TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
-    void finishPreptimePhase(TPreptimeContext context);
-    void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
+    public TInstance instance() {
+        return tInstance;
+    }
+
+    public PValueSource value() {
+        return value;
+    }
+
+    public TPreptimeValue(TInstance tInstance) {
+        this(tInstance, null);
+    }
+
+    public TPreptimeValue(TInstance tInstance, PValueSource value) {
+        ArgumentValidation.notNull("type instance", tInstance);
+        this.tInstance = tInstance;
+        this.value = value;
+    }
+
+    private final TInstance tInstance;
+    private final PValueSource value;
 }

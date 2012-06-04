@@ -26,7 +26,8 @@
 
 package com.akiban.server.types3.playground;
 
-import com.akiban.server.types3.TInstance;
+import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -34,41 +35,43 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import java.util.Arrays;
 
 public final class XMain {
-    public static void main(String[] args) {
-        XEvaluatableExpression literal3 = new XIntLiteralValue(3);
-        XEvaluatableExpression literal5 = new XIntLiteralValue(5);
+    public static void main(String[] args) throws InterruptedException {
+        XPreparedExpression literal3 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(3));
+        XPreparedExpression literal5 = new XPreparedLiteral(XInt.INSTANCE, pvalue32(5));
 
-        XValidatedOverload validatedAdd = new XValidatedOverload(XAddInt.INSTANCE);
-        XEvaluatableExpression addExpr = new XEvaluatableFunction(
+        XValidatedOverload validatedAdd = new XValidatedOverload(new XAddInt());
+
+        XPreparedExpression preparedExpression = new XPreparedFunction(
                 validatedAdd,
                 XInt.INSTANCE,
                 Arrays.asList(literal3, literal5));
-        addExpr.evaluate();
-        System.out.println(addExpr.resultValue());
+        preparedExpression = new XPreparedFunction(
+                validatedAdd,
+                XInt.INSTANCE,
+                Arrays.asList(preparedExpression, new XIntTime())
+        );
+
+        TPreptimeValue preptimeValue = preparedExpression.evaluateConstant();
+        if (preptimeValue != null && preptimeValue.value() != null) {
+            System.out.println("constant");
+            System.out.println(preptimeValue.value());
+        }
+        else {
+            new SimpleQueryContext(null); // force the class loader, so we don't pay for it within the loop
+            System.out.println("non-constant:");
+            for (int i = 0; i < 10; ++i) {
+                XEvaluatableExpression eval = preparedExpression.build();
+                eval.with(new SimpleQueryContext(null));
+                eval.evaluate();
+                System.out.println(eval.resultValue());
+                Thread.sleep(5);
+            }
+        }
     }
 
-    private static class XIntLiteralValue implements XEvaluatableExpression {
-        @Override
-        public TInstance resultType() {
-            return XInt.INSTANCE;
-        }
-
-        @Override
-        public PValueSource resultValue() {
-            return value;
-        }
-
-        @Override
-        public void evaluate() {
-            // nothing to do
-        }
-
-        XIntLiteralValue(int value) {
-            PValue pvalue = new PValue(PUnderlying.INT_32);
-            pvalue.putInt32(value);
-            this.value = pvalue;
-        }
-
-        private PValueSource value;
+    private static PValueSource pvalue32(int value) {
+        PValue pvalue = new PValue(PUnderlying.INT_32);
+        pvalue.putInt32(value);
+        return pvalue;
     }
 }

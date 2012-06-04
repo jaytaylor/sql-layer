@@ -26,24 +26,13 @@
 
 package com.akiban.server.types3.playground;
 
-
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TConstantValue;
-import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-import java.util.BitSet;
-import java.util.Collections;
-import java.util.List;
-
-public enum XAddInt implements TOverload {
-    INSTANCE;
+public class XAddInt extends TOverloadBase {
 
     @Override
     public String overloadName() {
@@ -56,41 +45,14 @@ public enum XAddInt implements TOverload {
     }
 
     @Override
-    public List<TInputSet> inputSets() {
-        BitSet covering = new BitSet();
-        covering.set(0);
-        covering.set(1);
-        return Collections.singletonList(new TInputSet(XInt.TYPE_CLASS, covering, false));
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(XInt.TYPE_CLASS, 0, 1);
     }
 
     @Override
-    public void evaluate(List<TInstance> inputInstances, LazyList<PValueSource> inputs, TInstance outputInstance,
-                         PValueTarget output)
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        PValueSource input0 = inputs.get(0);
-        if (input0.isNull()) {
-            output.putNull();
-            return;
-        }
-        PValueSource input1 = inputs.get(1);
-        if (input1.isNull()) {
-            output.putNull();
-            return;
-        }
-        int result = input0.getInt32() + input1.getInt32();
+        int result = inputs.get(0).getInt32() + inputs.get(1).getInt32();
         output.putInt32(result);
-    }
-
-    @Override
-    public TConstantValue evaluateConstant(LazyList<TConstantValue> inputs) {
-        TConstantValue input0 = inputs.get(0);
-        if (input0 == null)
-            return null;
-        TConstantValue input1 = inputs.get(1);
-        if (input1 == null)
-            return null;
-        PValue constValue = new PValue(PUnderlying.INT_32);
-        constValue.putInt32(input0.value().getInt32() + input1.value().getInt32());
-        return new TConstantValue(XInt.INSTANCE, constValue);
     }
 }

@@ -31,6 +31,15 @@ public final class PValue implements PValueSource, PValueTarget {
     // PValueTarget interface
 
     @Override
+    public void putValueSource(PValueSource source) {
+        PValue sourceRaw = (PValue) source; // assumes only one PValueSource implementation
+        if (sourceRaw.underlying != this.underlying)
+            throw new IllegalArgumentException("mismatched types: " + sourceRaw.underlying + " != " + underlying);
+        setRawValues(sourceRaw.state, sourceRaw.iVal, sourceRaw.bVal, sourceRaw.oCache);
+        setCacher(sourceRaw.cacher);
+    }
+
+    @Override
     public final void putNull() {
         setRawValues(State.NULL, -1, null, null);
     }

@@ -73,6 +73,14 @@ public class SparseArray<T> {
         }
         return internalGet(index);
     }
+    
+    public T getIfDefined(int index) {
+        if (index < 0)
+            throw new IndexOutOfBoundsException(Integer.toString(index));
+        if (!definedElements.get(index))
+            throw new IllegalArgumentException("undefined value at index " + index);
+        return internalGet(index);
+    }
 
     /**
      * Sets the element at the specified index. This also marks that index as defined. This method returns the old
@@ -147,7 +155,7 @@ public class SparseArray<T> {
     }
 
     public SparseArray(int initialCapacity) {
-        internalArray = new Object[initialCapacity];
+        internalArray = new Object[initialCapacity+1];
         definedElements = new BitSet(initialCapacity);
     }
     
