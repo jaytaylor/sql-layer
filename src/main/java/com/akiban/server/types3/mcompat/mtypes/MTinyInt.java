@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCombineMode;
+import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -46,8 +47,14 @@ public class MTinyInt extends TClass {
         throw new UnsupportedOperationException("Not supported yet."); //TODO
     }
     
-    public MTinyInt() {
-        super(MBundle.INSTANCE.id(), "tinyint", new String[]{"1"}, 1, 1, 1);
+    @Override
+    public TFactory factory() {
+        return FACTORY;
     }
-
+    
+    public MTinyInt() {
+        super(MBundle.INSTANCE.id(), "tinyint", new String[]{"M"}, 1, 1, 1);
+    }
+    
+    private static final TFactory FACTORY = new MNumericFactory(INSTANCE);
 }
