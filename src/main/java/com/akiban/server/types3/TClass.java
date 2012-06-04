@@ -34,6 +34,7 @@ import java.util.regex.Pattern;
 public abstract class TClass {
 
     public abstract PUnderlying underlyingType();
+    public abstract TFactory factory();
 
     public TInstance combine(TCombineMode mode, TInstance instance0, TInstance instance1) {
         if (instance0.typeClass() != this || instance1.typeClass() != this)

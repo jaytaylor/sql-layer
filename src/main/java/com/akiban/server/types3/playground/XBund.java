@@ -46,7 +46,7 @@ public enum XBund implements TBundle {
     @Override
     public Map<TClass, TFactory> typeClasses() {
         Map<TClass, TFactory> result = new HashMap<TClass, TFactory>();
-        result.put(XInt.TYPE_CLASS, XInt.FACTORY);
+        result.put(XInt.TYPE_CLASS, XInt.TYPE_CLASS.factory());
         return result;
     }
 

@@ -24,38 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MMediumInt;
-import com.akiban.server.types3.mcompat.mtypes.MSmallInt;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TypeDeclarationException;
 
-public final class MAddSmallnt extends TOverloadBase {
+import java.util.List;
+
+class MNumericFactory implements TFactory {
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MSmallInt.INSTANCE, 0, 1);
+    public TInstance create(List<TAttributeValue> arguments, boolean strict) {
+        int m;
+        switch (arguments.size()) {
+        case 0:
+            m = DEFAULT_M;
+            break;
+        case 1:
+            m = arguments.get(0).intValue();
+            break;
+        default:
+            throw new TypeDeclarationException("too many arguments provided");
+        }
+        return new TInstance(tClass, m);
     }
 
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int a0 = inputs.get(0).getInt16();
-        int a1 = inputs.get(0).getInt16();
-        output.putInt32(a0 + a1);
+    MNumericFactory(TClass tClass) {
+        this.tClass = tClass;
     }
 
-    @Override
-    public String overloadName() {
-        return "+";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return new TOverloadResult(MMediumInt.INSTANCE);
-    }
+    private final TClass tClass;
+    private static final int DEFAULT_M = 10;
 }

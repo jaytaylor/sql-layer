@@ -47,7 +47,7 @@ public class MTinyInt extends TClass {
     }
     
     public MTinyInt() {
-        super(MBundle.INSTANCE.id(), "tinyint", new String[]{"M"}, 1, 1, 1);
+        super(MBundle.INSTANCE.id(), "tinyint", new String[]{"1"}, 1, 1, 1);
     }
 
 }

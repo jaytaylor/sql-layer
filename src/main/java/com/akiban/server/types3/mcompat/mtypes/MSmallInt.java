@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCombineMode;
+import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -47,7 +48,14 @@ public final class MSmallInt extends TClass {
         throw new UnsupportedOperationException(); // TODO
     }
 
+    @Override
+    public TFactory factory() {
+        return FACTORY;
+    }
+
     public MSmallInt() {
         super(MBundle.INSTANCE.id(), "smallint", new String[]{"M"}, 1, 1, 2);
     }
+
+    private static final TFactory FACTORY = new MNumericFactory(INSTANCE);
 }
