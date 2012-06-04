@@ -24,59 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 
-public final class TPreparedLiteral implements TPreparedExpression {
-    @Override
-    public TInstance resultType() {
-        return tInstance;
-    }
+public interface TEvaluatableExpression {
 
-    @Override
-    public TEvaluatableExpression build() {
-        return new Evaluation(value);
-    }
+    PValueSource resultValue();
 
-    @Override
-    public TPreptimeValue evaluateConstant() {
-        return new TPreptimeValue(tInstance, value);
-    }
+    void evaluate();
 
-    public TPreparedLiteral(TInstance tInstance, PValueSource value) {
-        this.tInstance = tInstance;
-        this.value = value;
-    }
-
-    private final TInstance tInstance;
-    private final PValueSource value;
-
-    private static class Evaluation implements TEvaluatableExpression {
-        @Override
-        public PValueSource resultValue() {
-            return value;
-        }
-
-        @Override
-        public void evaluate() {
-        }
-
-        @Override
-        public void with(Row row) {
-        }
-
-        @Override
-        public void with(QueryContext context) {
-        }
-
-        private Evaluation(PValueSource value) {
-            this.value = value;
-        }
-
-        private final PValueSource value;
-    }
+    void with(Row row);
+    void with(QueryContext context);
 }

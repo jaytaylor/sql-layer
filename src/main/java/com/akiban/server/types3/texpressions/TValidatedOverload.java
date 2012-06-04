@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverload;

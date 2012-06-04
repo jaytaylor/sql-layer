@@ -31,8 +31,8 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.TInputSetBuilder;
-import com.akiban.server.types3.pvalue.TOverloadBase;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class XAddInt extends TOverloadBase {
 

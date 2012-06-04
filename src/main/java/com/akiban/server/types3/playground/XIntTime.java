@@ -29,7 +29,7 @@ package com.akiban.server.types3.playground;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.TQueryContextExpression;
+import com.akiban.server.types3.texpressions.TQueryContextExpression;
 
 public final class XIntTime extends TQueryContextExpression {
     @Override

@@ -31,11 +31,11 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.TEvaluatableExpression;
-import com.akiban.server.types3.pvalue.TPreparedExpression;
-import com.akiban.server.types3.pvalue.TPreparedFunction;
-import com.akiban.server.types3.pvalue.TPreparedLiteral;
-import com.akiban.server.types3.pvalue.TValidatedOverload;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedFunction;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.Arrays;
 

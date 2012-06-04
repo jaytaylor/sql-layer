@@ -24,18 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.server.types3.texpressions;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 
-public interface TEvaluatableExpression {
-
-    PValueSource resultValue();
-
-    void evaluate();
-
-    void with(Row row);
-    void with(QueryContext context);
+public interface TPreparedExpression {
+    TPreptimeValue evaluateConstant();
+    TInstance resultType();
+    TEvaluatableExpression build();
 }

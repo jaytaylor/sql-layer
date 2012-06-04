@@ -13,7 +13,7 @@
  * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
