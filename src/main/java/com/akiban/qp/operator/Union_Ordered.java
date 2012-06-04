@@ -36,20 +36,18 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
 
-import static com.akiban.qp.operator.API.IntersectOutputOption;
-import static com.akiban.qp.operator.API.JoinType;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
 /**
  <h1>Overview</h1>
 
- Intersect_Ordered finds rows from one of two input streams whose projection onto a set of common fields matches
- a row in the other stream. Each input stream must be ordered by at least these common fields.
- For each matching pair of rows, output from the selected input stream is emitted as output.
+ Union_Ordered combines rows from two input streams. The input streams must be based on the same index, (a restriction
+ that we expect to drop in the future). Duplicate rows are suppressed.
 
  <h1>Arguments</h1>
 
@@ -62,30 +60,21 @@ import static java.lang.Math.min;
 <li><b>boolean[] ascending:</b> The length of this arrays specifies the number of fields to be compared in the merge,
  (<= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field is ascending, false
  if it is descending.
-<li><b>JoinType joinType:</b>
-   <ul>
-     <li>INNER_JOIN: An ordinary intersection is computed.
-     <li>LEFT_JOIN: Keep an unmatched row from the left input stream, filling out the row with nulls
-     <li>RIGHT_JOIN: Keep an unmatched row from the right input stream, filling out the row with nulls
-     <li>FULL_JOIN: Not supported
-   </ul>
- (Nothing else is supported currently).
-<li><b>IntersectOutputOption intersectOutput:</b> OUTPUT_LEFT or OUTPUT_RIGHT, depending on which streams rows
- should be emitted as output.
 
  <h1>Behavior</h1>
 
- The two streams are merged, looking for pairs of rows, one from each input stream, which match in the common
- fields. When such a match is found, a row from the stream selected by <tt>intersectOutput</tt> is emitted.
+ The two streams are merged, yielding an output stream ordered compatibly with the input streams.
 
  <h1>Output</h1>
 
- Rows that match at least one row in the other input stream.
+ All input rows.
 
  <h1>Assumptions</h1>
 
  Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt>
  and <tt>rightOrderingFields</tt>.
+
+ For now: leftRowType == inputRowType and leftOrderingFields == rightOrderingFields.
 
  <h1>Performance</h1>
 
@@ -97,7 +86,7 @@ import static java.lang.Math.min;
 
  */
 
-class Intersect_Ordered extends Operator
+class Union_Ordered extends Operator
 {
     // Object interface
 
@@ -140,41 +129,31 @@ class Intersect_Ordered extends Operator
 
     // Project_Default interface
 
-    public Intersect_Ordered(Operator left,
-                             Operator right,
-                             IndexRowType leftRowType,
-                             IndexRowType rightRowType,
-                             int leftOrderingFields,
-                             int rightOrderingFields,
-                             boolean[] ascending,
-                             JoinType joinType,
-                             IntersectOutputOption intersectOutput)
+    public Union_Ordered(Operator left,
+                         Operator right,
+                         IndexRowType leftRowType,
+                         IndexRowType rightRowType,
+                         int leftOrderingFields,
+                         int rightOrderingFields,
+                         boolean[] ascending)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
         ArgumentValidation.notNull("leftRowType", leftRowType);
         ArgumentValidation.notNull("rightRowType", rightRowType);
-        ArgumentValidation.notNull("joinType", joinType);
         ArgumentValidation.isGTE("leftOrderingFields", leftOrderingFields, 0);
         ArgumentValidation.isLTE("leftOrderingFields", leftOrderingFields, leftRowType.nFields());
         ArgumentValidation.isGTE("rightOrderingFields", rightOrderingFields, 0);
         ArgumentValidation.isLTE("rightOrderingFields", rightOrderingFields, rightRowType.nFields());
         ArgumentValidation.isGTE("ascending.length()", ascending.length, 0);
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
-        ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
-        ArgumentValidation.notNull("intersectOutput", intersectOutput);
-        ArgumentValidation.isTrue("joinType consistent with intersectOutput",
-                                  joinType == JoinType.INNER_JOIN ||
-                                  joinType == JoinType.LEFT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_LEFT ||
-                                  joinType == JoinType.RIGHT_JOIN && intersectOutput == IntersectOutputOption.OUTPUT_RIGHT);
+        // The following assumptions will be relaxed when this operator is generalized to support inputs from different
+        // indexes.
+        ArgumentValidation.isEQ("leftRowType", leftRowType, "rightRowType", rightRowType);
+        ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
         this.left = left;
         this.right = right;
-        this.ascending = ascending;
-        // outerjoins
-        this.keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN;
-        this.keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN;
-        // output
-        this.outputLeft = intersectOutput == IntersectOutputOption.OUTPUT_LEFT;
+        this.ascending = Arrays.copyOf(ascending, ascending.length);
         // Setup for row comparisons
         this.leftSkip = leftRowType.nFields() - leftOrderingFields;
         this.rightSkip = rightRowType.nFields() - rightOrderingFields;
@@ -183,9 +162,9 @@ class Intersect_Ordered extends Operator
 
     // Class state
 
-    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered open");
-    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Intersect_Ordered next");
-    private static final Logger LOG = LoggerFactory.getLogger(Intersect_Ordered.class);
+    private static final InOutTap TAP_OPEN = OPERATOR_TAP.createSubsidiaryTap("operator: Union_Ordered open");
+    private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Union_Ordered next");
+    private static final Logger LOG = LoggerFactory.getLogger(Union_Ordered.class);
 
     // Object state
 
@@ -193,9 +172,6 @@ class Intersect_Ordered extends Operator
     private final Operator right;
     private final int leftSkip;
     private final int rightSkip;
-    private final boolean keepUnmatchedLeft;
-    private final boolean keepUnmatchedRight;
-    private final boolean outputLeft;
     private final boolean[] ascending;
     private final int fieldsToCompare;
 
@@ -215,7 +191,10 @@ class Intersect_Ordered extends Operator
                 rightInput.open();
                 nextLeftRow();
                 nextRightRow();
-                closed = leftRow.isEmpty() && rightRow.isEmpty();
+                closed = false;
+                if (leftRow.isEmpty() && rightRow.isEmpty()) {
+                    close();
+                }
             } finally {
                 TAP_OPEN.out();
             }
@@ -228,41 +207,27 @@ class Intersect_Ordered extends Operator
             try {
                 CursorLifecycle.checkIdleOrActive(this);
                 Row next = null;
-                while (!closed && next == null) {
+                if (isActive()) {
                     assert !(leftRow.isEmpty() && rightRow.isEmpty());
                     long c = compareRows();
                     if (c < 0) {
-                        if (keepUnmatchedLeft) {
-                            assert outputLeft;
-                            next = leftRow.get();
-                        }
+                        next = leftRow.get();
                         nextLeftRow();
                     } else if (c > 0) {
-                        if (keepUnmatchedRight) {
-                            assert !outputLeft;
-                            next = rightRow.get();
-                        }
+                        next = rightRow.get();
                         nextRightRow();
                     } else {
-                        // left and right rows match
-                        if (outputLeft) {
-                            next = leftRow.get();
-                            nextLeftRow();
-                        } else {
-                            next = rightRow.get();
-                            nextRightRow();
-                        }
+                        // left and right rows match. Doesn't matter which one is output.
+                        next = leftRow.get();
+                        nextLeftRow();
+                        nextRightRow();
                     }
-                    boolean leftEmpty = leftRow.isEmpty();
-                    boolean rightEmpty = rightRow.isEmpty();
-                    if (leftEmpty && rightEmpty ||
-                        leftEmpty && !keepUnmatchedRight ||
-                        rightEmpty && !keepUnmatchedLeft) {
+                    if (leftRow.isEmpty() && rightRow.isEmpty()) {
                         close();
                     }
-                }
-                if (LOG.isDebugEnabled()) {
-                    LOG.debug("Intersect_Ordered: yield {}", next);
+                    if (LOG.isDebugEnabled()) {
+                        LOG.debug("Union_Ordered: yield {}", next);
+                    }
                 }
                 return next;
             } finally {
@@ -326,7 +291,7 @@ class Intersect_Ordered extends Operator
             Row row = leftInput.next();
             leftRow.hold(row);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Intersect_Ordered: left {}", row);
+                LOG.debug("Union_Ordered: left {}", row);
             }
         }
         
@@ -335,7 +300,7 @@ class Intersect_Ordered extends Operator
             Row row = rightInput.next();
             rightRow.hold(row);
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Intersect_Ordered: right {}", row);
+                LOG.debug("Union_Ordered: right {}", row);
             }
         }
         
@@ -352,7 +317,7 @@ class Intersect_Ordered extends Operator
                 c = leftRow.get().compareTo(rightRow.get(), leftSkip, rightSkip, fieldsToCompare);
                 if (c != 0) {
                     int fieldThatDiffers = (int) abs(c) - 1;
-                    if (fieldThatDiffers < ascending.length && !ascending[fieldThatDiffers]) {
+                    if (!ascending[fieldThatDiffers]) {
                         c = -c;
                     }
                 }

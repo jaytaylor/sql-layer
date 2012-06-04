@@ -69,6 +69,8 @@ public interface CostModelMeasurements
     final double DISTINCT_PER_ROW = 6;
     // From IntersectCT
     final double INTERSECT_PER_ROW = 0.25;
+    // Also based on IntersectIT, since Union_Ordered works very similarly to Intersect_Ordered.
+    final double UNION_PER_ROW = 0.25;
     // From HKeyUnionCT
     final double HKEY_UNION_PER_ROW = 2;
 }
