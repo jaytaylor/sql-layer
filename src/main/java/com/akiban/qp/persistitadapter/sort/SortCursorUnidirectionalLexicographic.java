@@ -30,7 +30,9 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.persistit.Key;
 
 // For a lexicographic (mysqlish) index scan
 
@@ -58,26 +60,39 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 
     protected void evaluateBoundaries(QueryContext context)
     {
-        if (endBoundColumns == 0 || start == null) {
+        BoundExpressions startExpressions = null;
+        if (startBoundColumns == 0 || start == null) {
             startKey.append(startBoundary);
         } else {
-            BoundExpressions startExpressions = start.boundExpressions(context);
+            startExpressions = start.boundExpressions(context);
             startKey.clear();
             startKeyTarget.attach(startKey);
-            for (int f = 0; f < endBoundColumns; f++) {
-                startKeyTarget.expectingType(types[f]);
-                Converters.convert(startExpressions.eval(f), startKeyTarget);
+            for (int f = 0; f < startBoundColumns; f++) {
+                if (start.columnSelector().includesColumn(f)) {
+                    startKeyTarget.expectingType(types[f]);
+                    Converters.convert(startExpressions.eval(f), startKeyTarget);
+                }
             }
         }
+        BoundExpressions endExpressions;
         if (endBoundColumns == 0 || end == null) {
             endKey = null;
         } else {
-            BoundExpressions endExpressions = end.boundExpressions(context);
+            endExpressions = end.boundExpressions(context);
             endKey.clear();
             endKeyTarget.attach(endKey);
             for (int f = 0; f < endBoundColumns; f++) {
-                endKeyTarget.expectingType(types[f]);
-                Converters.convert(endExpressions.eval(f), endKeyTarget);
+                if (end.columnSelector().includesColumn(f)) {
+                    ValueSource valueSource = endExpressions.eval(f);
+                    if (valueSource.isNull() && startExpressions != null && !startExpressions.eval(f).isNull()) {
+                        endKey.append(Key.AFTER);
+                    } else {
+                        endKeyTarget.expectingType(types[f]);
+                        Converters.convert(valueSource, endKeyTarget);
+                    }
+                } else {
+                    endKey.append(Key.AFTER);
+                }
             }
         }
     }

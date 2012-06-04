@@ -75,6 +75,11 @@ public class IndexKeyRange
         return hiInclusive;
     }
 
+    public boolean unbounded()
+    {
+        return lo == null && hi == null;
+    }
+
     public int boundColumns()
     {
         return boundColumns;
@@ -88,7 +93,7 @@ public class IndexKeyRange
     public static IndexKeyRange unbounded(IndexRowType indexRowType)
     {
         IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType), ConstantColumnSelector.ALL_OFF);
-        return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false);
+        return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false, false);
     }
 
     /**
@@ -114,11 +119,12 @@ public class IndexKeyRange
         if (lo == null || hi == null) {
             throw new IllegalArgumentException("IndexBound arguments must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive);
+        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, false);
     }
 
     /**
      * Describes all keys in the index starting at or after lo, depending on loInclusive.
+     * This is used only in lexicographic scans.
      *
      * @param indexRowType The row type of index keys.
      * @param lo           Lower bound of the range.
@@ -132,11 +138,11 @@ public class IndexKeyRange
         if (lo == null) {
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, null, false);
+        return new IndexKeyRange(indexRowType, lo, loInclusive, null, false, true);
     }
 
     /**
-     * Describes all keys in the index starting at or after lo, depending on loInclusive.
+     * Describes all keys in the index ending at or before hi, depending on hiInclusive.
      *
      * @param indexRowType The row type of index keys.
      * @param hi           Upper bound of the range.
@@ -150,18 +156,32 @@ public class IndexKeyRange
         if (hi == null) {
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
-        return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive);
+        return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive, true);
     }
 
-    // An Akiban index scan normally allows a range for only the last specified part of the bound. E.g.,
-    // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
-    // 10-20 and 800-888. MySQL support requires a different approach in which we start at the lower bound and
-    // scan everything in the index up to the upper bound. So (1, 10, 800) - (1, 20, 888) is legal, and could return
-    // a row that is lexicographically between these bounds, but outside some range, e.g. (1, 11, 900). This will
-    // also be useful in supporting queries such as select * from t where (x, y) > (5, 7).
-    public void lexicographic(boolean lexicographic)
+    /**
+     * Describes all keys in the index starting at or after lo, depending on loInclusive; and
+     * ending at or before hi, depending on hiInclusive.
+     * This is used only in lexicographic scans.
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
+     * @param hi           Upper bound of the range.
+     * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
+     * @return IndexKeyRange covering the keys ending at or before lo.
+     */
+    public static IndexKeyRange startingAtAndEndingAt(
+        IndexRowType indexRowType,
+        IndexBound lo,
+        boolean loInclusive,
+        IndexBound hi,
+        boolean hiInclusive)
     {
-        this.lexicographic = lexicographic;
+        if (hi == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, true);
     }
 
     public boolean lexicographic()
@@ -191,19 +211,21 @@ public class IndexKeyRange
                           IndexBound lo,
                           boolean loInclusive,
                           IndexBound hi,
-                          boolean hiInclusive)
+                          boolean hiInclusive,
+                          boolean lexicographic)
     {
         this.boundColumns =
             lo == null
             ? boundColumns(indexRowType, hi) :
             hi == null
             ? boundColumns(indexRowType, lo)
-            : boundColumns(indexRowType, lo, hi);
+            : boundColumns(indexRowType, lo, hi, lexicographic);
         this.indexRowType = indexRowType;
         this.lo = lo;
         this.loInclusive = loInclusive;
         this.hi = hi;
         this.hiInclusive = hiInclusive;
+        this.lexicographic = lexicographic;
     }
 
     private IndexKeyRange(IndexKeyRange indexKeyRange)
@@ -217,19 +239,22 @@ public class IndexKeyRange
         this.lexicographic = indexKeyRange.lexicographic;
     }
 
-    private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi)
+    private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi, boolean lexicographic)
     {
         ColumnSelector loSelector = lo.columnSelector();
         ColumnSelector hiSelector = hi.columnSelector();
         boolean selected = true;
         int boundColumns = 0;
         for (int i = 0; i < indexRowType.nFields(); i++) {
-            if (loSelector.includesColumn(i) != hiSelector.includesColumn(i)) {
+            if (!lexicographic && loSelector.includesColumn(i) != hiSelector.includesColumn(i)) {
                 throw new IllegalArgumentException(
                     String.format("IndexBound arguments specify different fields of index %s", indexRowType));
             }
             if (selected) {
-                if (loSelector.includesColumn(i)) {
+                // loSelector.includesColumn(i) will equal hiSelector.includesColumn(i) for non-lexicographic
+                // ranges. For lexicographic, we want boundColumns to indicate the maximum value, relying on
+                // SortCursorUnidirectionalLexicographic to take care of the shorter one.
+                if (loSelector.includesColumn(i) || hiSelector.includesColumn(i)) {
                     boundColumns++;
                 } else {
                     selected = false;
@@ -275,5 +300,11 @@ public class IndexKeyRange
     private boolean loInclusive;
     private IndexBound hi;
     private boolean hiInclusive;
-    private boolean lexicographic = false;
+    // An Akiban index scan normally allows a range for only the last specified part of the bound. E.g.,
+    // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
+    // 10-20 and 800-888. MySQL support requires a different approach in which we start at the lower bound and
+    // scan everything in the index up to the upper bound. So (1, 10, 800) - (1, 20, 888) is legal, and could return
+    // a row that is lexicographically between these bounds, but outside some range, e.g. (1, 11, 900). This will
+    // also be useful in supporting queries such as select * from t where (x, y) > (5, 7).
+    private final boolean lexicographic;
 }

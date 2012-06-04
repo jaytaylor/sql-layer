@@ -266,6 +266,7 @@ public final class AllowedConversionsTest {
             case U_DOUBLE:
             case U_FLOAT:
             case U_INT:
+            case VARBINARY:
                 stringValue = "1234";
                 break;
             default:
