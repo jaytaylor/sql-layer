@@ -157,7 +157,6 @@ class Union_Ordered extends Operator
         // Setup for row comparisons
         this.leftSkip = leftRowType.nFields() - leftOrderingFields;
         this.rightSkip = rightRowType.nFields() - rightOrderingFields;
-        this.fieldsToCompare = min(leftOrderingFields, rightOrderingFields);
     }
 
     // Class state
@@ -173,7 +172,6 @@ class Union_Ordered extends Operator
     private final int leftSkip;
     private final int rightSkip;
     private final boolean[] ascending;
-    private final int fieldsToCompare;
 
     // Inner classes
 
@@ -314,7 +312,7 @@ class Union_Ordered extends Operator
             } else if (rightRow.isEmpty()) {
                 c = -1;
             } else {
-                c = leftRow.get().compareTo(rightRow.get(), leftSkip, rightSkip, fieldsToCompare);
+                c = leftRow.get().compareTo(rightRow.get(), leftSkip, rightSkip, ascending.length);
                 if (c != 0) {
                     int fieldThatDiffers = (int) abs(c) - 1;
                     if (!ascending[fieldThatDiffers]) {
