@@ -57,7 +57,7 @@ public class ConvExpression extends AbstractTernaryExpression
         //
         // But this current value of FACTOR is the largest possible expansion
         // of a string converted from base x to base y, where x,y ∈ [2, 36]
-        private static final double FACTOR = Math.log(36) / Math.log(2);
+        private static final double FACTOR = Math.log(MAX_BASE) / Math.log(MIN_BASE);
         
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
