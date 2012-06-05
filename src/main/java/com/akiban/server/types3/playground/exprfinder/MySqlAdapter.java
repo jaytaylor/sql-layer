@@ -98,6 +98,11 @@ public final class MySqlAdapter implements DbAdapter {
         }
     }
 
+    @Override
+    public String lastQuery() {
+        return lastQuery;
+    }
+
     private Map<String, String> getTableDefinitions(String table) throws SQLException {
         return query("describe " + table, new SqlLambda<Map<String, String>>() {
             @Override
@@ -124,6 +129,7 @@ public final class MySqlAdapter implements DbAdapter {
     }
 
     private <T> T query(String query, SqlLambda<T> function) throws SQLException {
+        lastQuery = query;
         Statement s = conn.createStatement();
         try {
             boolean hasResultSet = s.execute(query);
@@ -144,6 +150,7 @@ public final class MySqlAdapter implements DbAdapter {
     }
 
     private Connection conn;
+    private String lastQuery;
     private final String schema;
     private final String sourceTable;
     private final String destTable;
