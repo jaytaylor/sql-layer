@@ -46,6 +46,8 @@ two-groups-indexed: two groups with condition on one
 
 two-groups-not-covering: join condition makes outer index not covering
 
+two-groups-aggregated: ordered index drives aggregate
+
 no-stats: no statistics
 
 no-stats-group: no statistics and group joins
