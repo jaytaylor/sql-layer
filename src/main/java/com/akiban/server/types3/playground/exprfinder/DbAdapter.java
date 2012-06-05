@@ -37,6 +37,8 @@ public interface DbAdapter {
     void close();
     
     void init() throws SQLException;
+    
+    String lastQuery();
 
     void createTable(List<Declaration> declarations) throws SQLException;
 

@@ -57,4 +57,9 @@ public final class DummyAdapter implements DbAdapter {
     @Override
     public void close() {
     }
+
+    @Override
+    public String lastQuery() {
+        return null;
+    }
 }

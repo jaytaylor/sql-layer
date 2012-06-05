@@ -36,21 +36,28 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public final class ExprFinder {
-    public static void main(String[] args) throws IOException, SQLException {
+    public static void main(String[] args) throws IOException {
         Prompt prompt = new Prompt();
         DbAdapter db = dbAdapter(prompt);
         try {
             for (String line : prompt.setPrompt("$ ")) {
-                ParseResult parse = parse(line);
-                List<Declaration> declarations = parse.declarations();
+                if (line.trim().length() == 0)
+                    continue;
+                try {
+                    ParseResult parse = parse(line);
+                    List<Declaration> declarations = parse.declarations();
 
-                db.init();
-                db.createTable(declarations);
-                String query = parse.createQuery();
-                String resultDefinition = db.getResultDefinition(query);
+                    db.init();
+                    db.createTable(declarations);
+                    String query = parse.createQuery();
+                    String resultDefinition = db.getResultDefinition(query);
 
-                Map<String,String> inputDefinitions = db.getDefinitions();
-                output(parse, inputDefinitions, resultDefinition);
+                    Map<String,String> inputDefinitions = db.getDefinitions();
+                    output(parse, inputDefinitions, resultDefinition);
+                } catch (SQLException s) {
+                    System.err.println("SQL error: " + s);
+                    System.err.println("Last query: " + db.lastQuery());
+                }
             }
         }
         finally {
