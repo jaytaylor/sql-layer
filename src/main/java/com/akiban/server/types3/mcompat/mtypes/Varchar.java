@@ -47,13 +47,8 @@ public class Varchar extends TClass
                 new Attribute[]{StringAttribute.LENGTH},
                 1,    // totally made up~!
                 1,    // ditto
-                256); // TODO: what should the size be???
-    }
-    
-    @Override
-    public PUnderlying underlyingType()
-    {
-        return PUnderlying.BYTES;
+                256, // TODO: what should the size be???
+                PUnderlying.BYTES);
     }
 
     @Override
@@ -68,5 +63,4 @@ public class Varchar extends TClass
         // TODO:
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
 }
