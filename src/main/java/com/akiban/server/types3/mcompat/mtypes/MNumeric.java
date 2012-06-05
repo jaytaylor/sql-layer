@@ -1,5 +1,6 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TFactory;
@@ -10,7 +11,10 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 public class MNumeric extends TClass {
 
     private MNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
-        super(MBundle.INSTANCE.id(), name, new String[]{"M"}, 1, 1, serializationSize, pUnderlying);
+        super(MBundle.INSTANCE.id(), name, 
+                new Attribute[]{IntAttribute.WIDTH}, 
+                1, 1, serializationSize, 
+                pUnderlying);
     }
 
     @Override

@@ -50,7 +50,7 @@ public abstract class TClass {
     }
 
     public String attributeName(int index) {
-        return attributes[index];
+        return attributes[index].name();
     }
 
     public TName name() {
@@ -98,33 +98,47 @@ public abstract class TClass {
 
     protected abstract TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1);
 
-    protected TClass(TBundleID bundle, String name, String[] attributes, int internalRepVersion, int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
-        this(new TName(bundle, name), attributes,  internalRepVersion, serializationVersion, serializationSize, pUnderlying);
-    }
+     protected TClass(TName name,
+            Attribute[] attributes, 
+            int internalRepVersion, int serializationVersion, int serializationSize, 
+            PUnderlying pUnderlying)
+     {
+         
+         ArgumentValidation.notNull("name", name); 
+         this.name = name;
+         this.internalRepVersion = internalRepVersion;
+         this.serializationVersion = serializationVersion;
+         this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
+         this.attributes = attributes;
+         this.pUnderlying = pUnderlying;
+         for (int i = 0; i < attributes.length; ++i)
+         {
+             String attrValue = attributes[i].name();
+             if (!ALL_ALPHAS.matcher(attrValue).matches())
+                 throw new IllegalNameException("attribute[" + i + "] for " + name + " has invalid name: " + attrValue);
+         }
+     }
+     
+    
 
-    protected TClass(TName name, String[] attributes, int internalRepVersion, int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
-        ArgumentValidation.notNull("name", name);
-        this.name = name;
-        this.internalRepVersion = internalRepVersion;
-        this.serializationVersion = serializationVersion;
-        this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
-        this.attributes = new String[attributes.length];
-        this.pUnderlying = pUnderlying;
-        for (int i = 0; i < attributes.length; ++i) {
-            String attrValue = attributes[i];
-            if (!ALL_ALPHAS.matcher(attrValue).matches())
-                throw new IllegalNameException("attribute[" + i + "] for " + name + " has invalid name: " + attrValue);
-            this.attributes[i] = attrValue;
-        }
-    }
-
+     protected TClass(TBundleID bundle,
+             String name,
+            Attribute[] attributes,
+            int internalRepVersion, int serializationVersion, int serializationSize,
+            PUnderlying pUnderlying)
+     {
+        this(new TName(bundle, name),
+                attributes,
+                internalRepVersion, serializationVersion, serializationSize,
+                pUnderlying);
+    
+     }
+     
     private final TName name;
-    private final String[] attributes;
+    private final Attribute[] attributes;
     private final int internalRepVersion;
     private final int serializationVersion;
     private final int serializationSize;
     private final PUnderlying pUnderlying;
-
     private static final Pattern ALL_ALPHAS = Pattern.compile("[a-z][A-Z]+");
-
 }
