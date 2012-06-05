@@ -55,7 +55,7 @@ public final class XInt extends TClass {
     }
 
     private XInt() {
-        super(XBund.ID, "xint", new String[0], 1, 1, 4);
+        super(XBund.ID, "xint", new String[0], 1, 1, 4, PUnderlying.INT_32);
     }
 
     public static final XInt TYPE_CLASS = new XInt();

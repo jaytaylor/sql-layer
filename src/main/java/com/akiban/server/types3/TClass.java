@@ -33,13 +33,16 @@ import java.util.regex.Pattern;
 
 public abstract class TClass {
 
-    public abstract PUnderlying underlyingType();
     public abstract TFactory factory();
 
     public TInstance combine(TCombineMode mode, TInstance instance0, TInstance instance1) {
         if (instance0.typeClass() != this || instance1.typeClass() != this)
             throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);
         return doCombine(mode, instance0, instance1);
+    }
+
+    public PUnderlying underlyingType() {
+        return pUnderlying;
     }
 
     public int nAttributes() {
@@ -95,17 +98,18 @@ public abstract class TClass {
 
     protected abstract TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1);
 
-    protected TClass(TBundleID bundle, String name, String[] attributes, int internalRepVersion, int serializationVersion, int serializationSize) {
-        this(new TName(bundle, name), attributes,  internalRepVersion, serializationVersion, serializationSize);
+    protected TClass(TBundleID bundle, String name, String[] attributes, int internalRepVersion, int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
+        this(new TName(bundle, name), attributes,  internalRepVersion, serializationVersion, serializationSize, pUnderlying);
     }
 
-    protected TClass(TName name, String[] attributes, int internalRepVersion, int serializationVersion, int serializationSize) {
+    protected TClass(TName name, String[] attributes, int internalRepVersion, int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
         ArgumentValidation.notNull("name", name);
         this.name = name;
         this.internalRepVersion = internalRepVersion;
         this.serializationVersion = serializationVersion;
         this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
         this.attributes = new String[attributes.length];
+        this.pUnderlying = pUnderlying;
         for (int i = 0; i < attributes.length; ++i) {
             String attrValue = attributes[i];
             if (!ALL_ALPHAS.matcher(attrValue).matches())
@@ -119,6 +123,7 @@ public abstract class TClass {
     private final int internalRepVersion;
     private final int serializationVersion;
     private final int serializationSize;
+    private final PUnderlying pUnderlying;
 
     private static final Pattern ALL_ALPHAS = Pattern.compile("[a-z][A-Z]+");
 
