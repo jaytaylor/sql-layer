@@ -29,8 +29,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MMediumInt;
-import com.akiban.server.types3.mcompat.mtypes.MTinyInt;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -39,7 +38,7 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 public final class MAddTinyInt extends TOverloadBase {
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MTinyInt.INSTANCE, 0, 1);
+        builder.covers(MNumeric.TINYINT, 0, 1);
     }
 
     @Override
@@ -56,6 +55,6 @@ public final class MAddTinyInt extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(MMediumInt.INSTANCE);
+        return new TOverloadResult(MNumeric.MEDIUMINT);
     }
 }
