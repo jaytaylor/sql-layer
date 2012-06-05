@@ -53,7 +53,7 @@ public class MTinyIntUnsigned extends TClass {
     }
     
     public MTinyIntUnsigned() {
-        super(MBundle.INSTANCE.id(), "tinyintunsigned", new String[]{"M"}, 1, 1, 2);
+        super(MBundle.INSTANCE.id(), "tinyintunsigned", new String[]{"M"}, 1, 1, 4);
     }
     
     private static final TFactory FACTORY = new MNumericFactory(INSTANCE);

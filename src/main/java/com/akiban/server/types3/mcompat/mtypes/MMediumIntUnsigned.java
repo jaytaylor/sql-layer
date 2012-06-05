@@ -57,7 +57,7 @@ public final class MMediumIntUnsigned extends TClass {
     }
 
     public MMediumIntUnsigned() {
-        super(MBundle.INSTANCE.id(), "mediumint", new String[]{"M"}, 1, 1, 5);
+        super(MBundle.INSTANCE.id(), "mediumint", new String[]{"M"}, 1, 1, 8);
     }
 
     private static final TFactory FACTORY = new MNumericFactory(INSTANCE);

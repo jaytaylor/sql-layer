@@ -54,7 +54,7 @@ public final class MSmallIntUnsigned extends TClass {
     }
 
     public MSmallIntUnsigned() {
-        super(MBundle.INSTANCE.id(), "smallintunsigned", new String[]{"M"}, 1, 1, 3);
+        super(MBundle.INSTANCE.id(), "smallintunsigned", new String[]{"M"}, 1, 1, 4);
     }
 
     private static final TFactory FACTORY = new MNumericFactory(INSTANCE);
