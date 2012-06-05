@@ -123,8 +123,8 @@ public class ConvExpression extends AbstractTernaryExpression
                         toBase));
                 return valueHolder();
             }
-            catch (NumberFormatException e) // invalid digits input result in ZERO string (as per MySQL)
-            {
+            catch (NumberFormatException e) // invalid digits input will
+            {                               // result in ZERO string (as per MySQL)
                 return ZERO;
             }
         }
