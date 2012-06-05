@@ -44,7 +44,7 @@ public class Varchar extends TClass
     {
         super(MBundle.INSTANCE.id(),
                 "vachar",
-                new Attribute[]{StringAttribute.LENGTH},
+                StringAttribute.values(),
                 1,    // totally made up~!
                 1,    // ditto
                 256, // TODO: what should the size be???
