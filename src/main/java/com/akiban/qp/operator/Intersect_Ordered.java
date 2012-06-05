@@ -379,7 +379,7 @@ class Intersect_Ordered extends Operator
                 c = leftRow.get().compareTo(rightRow.get(), leftFixedFields, rightFixedFields, ascending.length);
                 if (c != 0) {
                     int fieldThatDiffers = (int) abs(c) - 1;
-                    if (!ascending[fieldThatDiffers]) {
+                    if (fieldThatDiffers < ascending.length && !ascending[fieldThatDiffers]) {
                         c = -c;
                     }
                 }
