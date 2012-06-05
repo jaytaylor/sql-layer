@@ -241,7 +241,7 @@ public class OperatorAssembler extends BaseRule
         // Assemble an ordinary stream node.
         protected RowStream assembleStream(PlanNode node) {
             if (node instanceof IndexScan)
-                return assembleIndexScan((IndexScan) node);
+                return assembleIndexScan((IndexScan) node, false);
             else if (node instanceof GroupScan)
                 return assembleGroupScan((GroupScan) node);
             else if (node instanceof Select)
@@ -280,9 +280,9 @@ public class OperatorAssembler extends BaseRule
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
         
-        protected RowStream assembleIndexScan(IndexScan index) {
+        protected RowStream assembleIndexScan(IndexScan index, boolean forIntersection) {
             if (index instanceof SingleIndexScan)
-                return assembleSingleIndexScan((SingleIndexScan) index);
+                return assembleSingleIndexScan((SingleIndexScan) index, forIntersection);
             else if (index instanceof MultiIndexIntersectScan)
                 return assembleIndexIntersection((MultiIndexIntersectScan) index);
             else
@@ -291,8 +291,8 @@ public class OperatorAssembler extends BaseRule
 
         private RowStream assembleIndexIntersection(MultiIndexIntersectScan index) {
             RowStream stream = new RowStream();
-            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan());
-            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan());
+            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan(), true);
+            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan(), true);
             Operator intersect;
             intersect = API.intersect_Ordered(
                     outputScan.operator,
@@ -311,7 +311,7 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan) {
+        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan, boolean forIntersection) {
             RowStream stream = new RowStream();
             Index index = indexScan.getIndex();
             IndexRowType indexRowType = schema.indexRowType(index);
@@ -345,6 +345,11 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 ColumnRanges range = indexScan.getConditionRange();
+                // Non-single ranges are ordered by the ranges themselves.
+                // Single can be keep in order by the following column if we're willing
+                // to do the more expensive union. Need that for intersection or if index
+                // ended up ordering.
+                boolean unionOrdered = (range.isAllSingle() && (forIntersection || (indexScan.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE)));
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
@@ -353,6 +358,9 @@ public class OperatorAssembler extends BaseRule
                     if (stream.operator == null) {
                         stream.operator = scan;
                         stream.rowType = indexRowType;
+                    }
+                    else if (unionOrdered) {
+                        throw new UnsupportedSQLException("Need union ordered operator.", null);
                     }
                     else {
                         stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
