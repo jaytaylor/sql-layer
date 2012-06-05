@@ -39,10 +39,5 @@ public enum StringAttribute implements Attribute
     
     CHARSET_ID,
     
-    //TODO: This was suggested to be part of some (query) context
-    // But I'm not sure yet.
-    LOCALE,
-    
-    
     COLLATION
 }

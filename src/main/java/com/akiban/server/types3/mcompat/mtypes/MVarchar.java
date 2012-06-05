@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TFactory;
@@ -34,20 +33,20 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
-public class Varchar extends TClass
+public class MVarchar extends TClass
 {
-    public static final Varchar INSTANCE = new Varchar();
+    public static final MVarchar INSTANCE = new MVarchar();
     
     static final TFactory FACTORY = new StringFactory(INSTANCE);
     
-    public Varchar ()
+    public MVarchar ()
     {
         super(MBundle.INSTANCE.id(),
                 "vachar",
                 StringAttribute.values(),
-                1,    // totally made up~!
-                1,    // ditto
-                256, // TODO: what should the size be???
+                1,
+                1,
+                -1,
                 PUnderlying.BYTES);
     }
 
