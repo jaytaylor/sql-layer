@@ -193,6 +193,14 @@ public class AggregateSplitter extends BaseRule
                         otherOtherBy.setAscending(!otherOtherBy.isAscending());
                     }
                 }
+                if ((index instanceof SingleIndexScan) &&
+                    (index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE)) {
+                    SingleIndexScan sindex = (SingleIndexScan)index;
+                    if (sindex.getConditionRange() != null) {
+                        // Need to make sure index gets the right kind of merge.
+                        sindex.setOrderEffectiveness(IndexScan.OrderEffectiveness.FOR_MIN_MAX);
+                    }
+                }
                 return true;
             }
         }

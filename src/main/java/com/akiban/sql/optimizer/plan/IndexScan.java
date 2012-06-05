@@ -34,7 +34,7 @@ import java.util.*;
 public abstract class IndexScan extends BaseScan implements IndexIntersectionNode<ConditionExpression,IndexScan>
 {
     public static enum OrderEffectiveness {
-        NONE, PARTIAL_GROUPED, GROUPED, SORTED
+        NONE, PARTIAL_GROUPED, GROUPED, SORTED, FOR_MIN_MAX
     }
 
     private TableSource rootMostTable, rootMostInnerTable, leafMostInnerTable, leafMostTable;
