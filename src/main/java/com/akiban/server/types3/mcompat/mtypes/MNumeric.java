@@ -38,7 +38,7 @@ public class MNumeric extends TClass {
 
     private MNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
         super(MBundle.INSTANCE.id(), name, 
-                new Attribute[]{IntAttribute.WIDTH}, 
+                IntAttribute.values(),
                 1, 1, serializationSize, 
                 pUnderlying);
     }
