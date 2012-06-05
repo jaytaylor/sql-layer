@@ -37,12 +37,10 @@ import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.std.FieldExpression;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.Arrays;
-import java.util.Collections;
+import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
@@ -82,9 +80,9 @@ public class Intersect_OrderedIT extends OperatorITBase
         db = new NewRow[]{
             // 0x: Both index scans empty
             // 1x: Left empty
-            createNewRow(parent, 1000L, -1L, 12L),
-            createNewRow(parent, 1001L, -1L, 12L),
-            createNewRow(parent, 1002L, -1L, 12L),
+            createNewRow(parent, 1000L, -1L, 11L),
+            createNewRow(parent, 1001L, -1L, 11L),
+            createNewRow(parent, 1002L, -1L, 11L),
             // 2x: Right empty
             createNewRow(parent, 2000L, 22L, -1L),
             createNewRow(parent, 2001L, 22L, -1L),
@@ -147,6 +145,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testInputNull()
     {
+        // First input null
         try {
             intersect_Ordered(null,
                               groupScan_Default(coi),
@@ -156,9 +155,10 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
         } catch (IllegalArgumentException e) {
         }
+        // Second input null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               null,
@@ -168,7 +168,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -177,6 +177,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testInputTypeNull()
     {
+        // First input type null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -186,10 +187,11 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // Second input type null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -199,7 +201,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -208,6 +210,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testJoinType()
     {
+        // join type null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -217,9 +220,10 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               null,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
         } catch (IllegalArgumentException e) {
         }
+        // full join not allowed
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -229,7 +233,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.FULL_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
         } catch (IllegalArgumentException e) {
         }
     }
@@ -237,6 +241,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void testOutputOptionNull()
     {
+        // output option null
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -251,8 +256,10 @@ public class Intersect_OrderedIT extends OperatorITBase
         }
     }
 
+    @Test
     public void testJoinTypeAndOrderingConsistency()
     {
+        // These are OK
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
@@ -261,7 +268,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           1,
                           ascending(true),
                           JoinType.INNER_JOIN,
-                          IntersectOutputOption.OUTPUT_LEFT);
+                          EnumSet.of(IntersectOption.OUTPUT_LEFT));
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
@@ -270,7 +277,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                           1,
                           ascending(true),
                           JoinType.INNER_JOIN,
-                          IntersectOutputOption.OUTPUT_RIGHT);
+                          EnumSet.of(IntersectOption.OUTPUT_RIGHT));
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
@@ -279,7 +286,8 @@ public class Intersect_OrderedIT extends OperatorITBase
                           1,
                           ascending(true),
                           JoinType.LEFT_JOIN,
-                          IntersectOutputOption.OUTPUT_LEFT);
+                          EnumSet.of(IntersectOption.OUTPUT_LEFT));
+        // left join and output right are incompatible
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -289,10 +297,11 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.LEFT_JOIN,
-                              IntersectOutputOption.OUTPUT_RIGHT);
+                              EnumSet.of(IntersectOption.OUTPUT_RIGHT));
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // right join and output left are incompatible
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -302,10 +311,11 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.RIGHT_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // OK
         intersect_Ordered(groupScan_Default(coi),
                           groupScan_Default(coi),
                           parentXIndexRowType,
@@ -314,12 +324,13 @@ public class Intersect_OrderedIT extends OperatorITBase
                           1,
                           ascending(true),
                           JoinType.RIGHT_JOIN,
-                          IntersectOutputOption.OUTPUT_RIGHT);
+                          EnumSet.of(IntersectOption.OUTPUT_RIGHT));
     }
 
     @Test
     public void testOrderingColumns()
     {
+        // left ordering columns can't be negative
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -329,10 +340,11 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // left ordering columns > columns in index
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -342,10 +354,11 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // right ordering columns can't be negative.
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -355,10 +368,11 @@ public class Intersect_OrderedIT extends OperatorITBase
                               -1,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // right ordering columns > columns in index
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -368,10 +382,11 @@ public class Intersect_OrderedIT extends OperatorITBase
                               3,
                               ascending(true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // comparison fields negative
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -381,10 +396,11 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               -1,
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              IntersectOption.OUTPUT_LEFT);
             fail();
         } catch (IllegalArgumentException e) {
         }
+        // ascending array too big
         try {
             intersect_Ordered(groupScan_Default(coi),
                               groupScan_Default(coi),
@@ -394,7 +410,72 @@ public class Intersect_OrderedIT extends OperatorITBase
                               1,
                               ascending(true, true),
                               JoinType.INNER_JOIN,
-                              IntersectOutputOption.OUTPUT_LEFT);
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+    }
+
+    @Test
+    public void testOptions()
+    {
+        // No output option
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.SEQUENTIAL_SCAN));
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        // Two output options
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT,
+                                         IntersectOption.SEQUENTIAL_SCAN,
+                                         IntersectOption.SKIP_SCAN));
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        // No scan option
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
+            // OK for now, see comment in Intersect_Ordered constructor. fail();
+        } catch (IllegalArgumentException e) {
+        }
+        // Two scan options
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              parentYIndexRowType,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT,
+                                         IntersectOption.SEQUENTIAL_SCAN,
+                                         IntersectOption.SKIP_SCAN));
             fail();
         } catch (IllegalArgumentException e) {
         }
@@ -405,127 +486,112 @@ public class Intersect_OrderedIT extends OperatorITBase
     @Test
     public void test0x()
     {
-        Operator plan = intersectPxPy(0, true);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(0, false);
-        expected = new RowBase[]{
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxPy(0, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(0, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxPy(0, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(0, false, true), queryContext));
     }
-
+    
     @Test
     public void test1x()
     {
-        Operator plan = intersectPxPy(12, true);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(12, false);
-        expected = new RowBase[]{
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxPy(11, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(11, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxPy(11, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(11, false, true), queryContext));
     }
 
     @Test
     public void test2x()
     {
-        Operator plan = intersectPxPy(22, true);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(22, false);
-        expected = new RowBase[]{
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxPy(22, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(22, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxPy(22, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(22, false, true), queryContext));
     }
 
     @Test
     public void test3x()
     {
-        Operator plan = intersectPxPy(31, true);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(32, true);
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(31, false);
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(32, true);
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(32, false);
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxPy(31, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(31, true, true), queryContext));
+        compareRows(expected, cursor(intersectPxPy(32, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(32, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxPy(31, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(31, false, true), queryContext));
+        compareRows(expected, cursor(intersectPxPy(32, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(32, false, true), queryContext));
     }
 
     @Test
     public void test4x()
     {
-        Operator plan = intersectPxPy(44, true);
         RowBase[] expected = new RowBase[]{
             row(parentXIndexRowType, 44L, 4001L),
             row(parentXIndexRowType, 44L, 4002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(44, false);
-        expected = new RowBase[]{
-            row(parentXIndexRowType, 44L, 4002L),
-            row(parentXIndexRowType, 44L, 4001L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxPy(44, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(44, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxPy(44, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(44, false, true), queryContext));
     }
 
     @Test
     public void test5x()
     {
-        Operator plan = intersectPxPy(55, true);
         RowBase[] expected = new RowBase[]{
             row(parentXIndexRowType, 55L, 5001L),
             row(parentXIndexRowType, 55L, 5002L),
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(55, false);
-        expected = new RowBase[]{
-            row(parentXIndexRowType, 55L, 5002L),
-            row(parentXIndexRowType, 55L, 5001L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxPy(55, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(55, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxPy(55, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(55, false, true), queryContext));
     }
 
     @Test
     public void test6x()
     {
-        Operator plan = intersectPxPy(66, true);
         RowBase[] expected = new RowBase[]{
             row(parentXIndexRowType, 66L, 6002L),
             row(parentXIndexRowType, 66L, 6003L),
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxPy(66, false);
-        expected = new RowBase[]{
-            row(parentXIndexRowType, 66L, 6003L),
-            row(parentXIndexRowType, 66L, 6002L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxPy(66, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(66, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxPy(66, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxPy(66, false, true), queryContext));
     }
 
     @Test
     public void test7x()
     {
-        Operator plan = intersectPxCz(70, JoinType.INNER_JOIN, true);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxCz(70, JoinType.INNER_JOIN, false);
-        expected = new RowBase[]{
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxCz(70, JoinType.INNER_JOIN, false, true), queryContext));
     }
 
     @Test
     public void test8x()
     {
-        Operator plan = intersectPxCz(88, JoinType.INNER_JOIN, true);
         RowBase[] expected = new RowBase[]{
             row(childRowType, 88L, 8000L, 800000L),
             row(childRowType, 88L, 8001L, 800100L),
@@ -534,45 +600,36 @@ public class Intersect_OrderedIT extends OperatorITBase
             row(childRowType, 88L, 8002L, 800201L),
             row(childRowType, 88L, 8002L, 800202L),
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxCz(88, JoinType.INNER_JOIN, false);
-        expected = new RowBase[]{
-            row(childRowType, 88L, 8002L, 800202L),
-            row(childRowType, 88L, 8002L, 800201L),
-            row(childRowType, 88L, 8002L, 800200L),
-            row(childRowType, 88L, 8001L, 800101L),
-            row(childRowType, 88L, 8001L, 800100L),
-            row(childRowType, 88L, 8000L, 800000L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxCz(88, JoinType.INNER_JOIN, false, true), queryContext));
     }
 
     @Test
     public void test9x()
     {
-        Operator plan = intersectPxCz(99, JoinType.INNER_JOIN, true);
         RowBase[] expected = new RowBase[]{
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxCz(99, JoinType.INNER_JOIN, false);
-        expected = new RowBase[]{
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxCz(99, JoinType.INNER_JOIN, false, true), queryContext));
     }
 
     @Test
     public void test12x()
     {
-        Operator plan = intersectPxCz(12, JoinType.RIGHT_JOIN, true);
         RowBase[] expected = new RowBase[]{
             row(childRowType, 12L, null, 1200000L),
         };
-        compareRows(expected, cursor(plan, queryContext));
-        plan = intersectPxCz(12, JoinType.RIGHT_JOIN, false);
-        expected = new RowBase[]{
-            row(childRowType, 12L, null, 1200000L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, true, false), queryContext));
+        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, true, true), queryContext));
+        reverse(expected);
+        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, false, false), queryContext));
+        compareRows(expected, cursor(intersectPxCz(12, JoinType.RIGHT_JOIN, false, true), queryContext));
     }
 
     @Test
@@ -588,7 +645,7 @@ public class Intersect_OrderedIT extends OperatorITBase
                 1,
                 0,
                 JoinType.INNER_JOIN,
-                IntersectOutputOption.OUTPUT_LEFT);
+                IntersectOption.OUTPUT_LEFT);
         RowBase[] expected = new RowBase[]{
             row(parentPidIndexRowType, 1000L),
             row(parentPidIndexRowType, 1001L),
@@ -624,7 +681,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         compareRows(expected, cursor(plan, queryContext));
     }
 
-    private Operator intersectPxPy(int key, boolean ascending)
+    private Operator intersectPxPy(int key, boolean ascending, boolean skipScan)
     {
         Operator plan =
             intersect_Ordered(
@@ -642,11 +699,12 @@ public class Intersect_OrderedIT extends OperatorITBase
                 1,
                 ascending(ascending),
                 JoinType.INNER_JOIN,
-                IntersectOutputOption.OUTPUT_LEFT);
+                EnumSet.of(IntersectOption.OUTPUT_LEFT, 
+                           skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN));
         return plan;
     }
 
-    private Operator intersectPxCz(int key, JoinType joinType, boolean ascending)
+    private Operator intersectPxCz(int key, JoinType joinType, boolean ascending, boolean skipScan)
     {
         Operator plan =
             intersect_Ordered(
@@ -665,7 +723,8 @@ public class Intersect_OrderedIT extends OperatorITBase
                     2,
                     ascending(ascending),
                     joinType,
-                    IntersectOutputOption.OUTPUT_RIGHT);
+                    EnumSet.of(IntersectOption.OUTPUT_RIGHT,
+                               skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN));
         return plan;
     }
 
@@ -702,5 +761,15 @@ public class Intersect_OrderedIT extends OperatorITBase
     private boolean[] ascending(boolean ... ascending)
     {
         return ascending;
+    }
+
+    private void reverse(RowBase[] rows)
+    {
+        int n = rows.length;
+        for (int i = 0; i < n / 2; i++) {
+            RowBase r = rows[i];
+            rows[i] = rows[n - 1 - i];
+            rows[n - 1 - i] = r;
+        }
     }
 }
