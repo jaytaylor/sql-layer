@@ -30,12 +30,11 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
 
-// For a semi-bounded (mysqlish) index scan
+// For a lexicographic (mysqlish) index scan
 
 class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 {
@@ -62,28 +61,27 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
     protected void evaluateBoundaries(QueryContext context)
     {
         BoundExpressions startExpressions = null;
-        if (start == null) {
-            startKey = null;
+        if (startBoundColumns == 0 || start == null) {
+            startKey.append(startBoundary);
         } else {
             startExpressions = start.boundExpressions(context);
             startKey.clear();
             startKeyTarget.attach(startKey);
-            for (int f = 0; f < boundColumns; f++) {
+            for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
                     startKeyTarget.expectingType(types[f]);
-                    ValueSource valueSource = startExpressions.eval(f);
-                    Converters.convert(valueSource, startKeyTarget);
+                    Converters.convert(startExpressions.eval(f), startKeyTarget);
                 }
             }
         }
         BoundExpressions endExpressions;
-        if (end == null) {
+        if (endBoundColumns == 0 || end == null) {
             endKey = null;
         } else {
             endExpressions = end.boundExpressions(context);
             endKey.clear();
             endKeyTarget.attach(endKey);
-            for (int f = 0; f < boundColumns; f++) {
+            for (int f = 0; f < endBoundColumns; f++) {
                 if (end.columnSelector().includesColumn(f)) {
                     ValueSource valueSource = endExpressions.eval(f);
                     if (valueSource.isNull() && startExpressions != null && !startExpressions.eval(f).isNull()) {

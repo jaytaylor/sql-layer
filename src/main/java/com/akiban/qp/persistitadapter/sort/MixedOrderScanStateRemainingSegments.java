@@ -26,30 +26,53 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
 import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
 
-class  MixedOrderScanStateUnbounded extends MixedOrderScanState
+class MixedOrderScanStateRemainingSegments extends MixedOrderScanState
 {
     @Override
     public boolean startScan() throws PersistitException
     {
-        Key.Direction direction;
-        if (ascending) {
-            cursor.exchange.append(Key.BEFORE);
-            direction = Key.GT;
+        if (subtreeRootKey == null) {
+            subtreeRootKey = new Key(cursor.exchange.getKey());
         } else {
-            cursor.exchange.append(Key.AFTER);
-            direction = Key.LT;
+            cursor.exchange.getKey().copyTo(subtreeRootKey);
         }
         SORT_TRAVERSE.hit();
-        return cursor.exchange.traverse(direction, false);
+        return cursor.exchange.traverse(Key.GT, true);
     }
 
-    public MixedOrderScanStateUnbounded(SortCursorMixedOrder cursor, int field) throws PersistitException
+    @Override
+    public boolean advance() throws PersistitException
     {
-        super(cursor, field, cursor.ordering().ascending(field));
+        SORT_TRAVERSE.hit();
+        boolean more = ascending ? cursor.exchange.next(true) : cursor.exchange.previous(true);
+        if (more) {
+            more = cursor.exchange.getKey().firstUniqueByteIndex(subtreeRootKey) >= subtreeRootKey.getEncodedSize();
+        }
+        if (!more) {
+            // Restore exchange key to where it was before exploring this subtree. But also attach one
+            // more key segment since SortCursorMixedOrder is going to cut one.
+            subtreeRootKey.copyTo(cursor.exchange.getKey());
+            cursor.exchange.getKey().append(Key.BEFORE);
+        }
+        return more;
     }
+
+    @Override
+    public boolean jump(ValueSource fieldValue) throws PersistitException
+    {
+        return startScan();
+    }
+
+    public MixedOrderScanStateRemainingSegments(SortCursorMixedOrder sortCursor, int field) throws PersistitException
+    {
+        super(sortCursor, field, true);
+    }
+
+    private Key subtreeRootKey;
 }

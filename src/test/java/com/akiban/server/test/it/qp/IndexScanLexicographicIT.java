@@ -68,10 +68,10 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /*
- * A *semi-bounded* scan is one in which a start or end value is specified and we go to one end of the index or the
+ * A *lexicographic* scan is one in which a start or end value is specified and we go to one end of the index or the
  * other. It differs from a one-side-bounded scan in that there are no equality matches. E.g., if we have an index
- * on (x, y), then the one-side-bounded scan >(10, 5) finds all records such that x = 10 and y > 5. A semi-bounded
- * scan finds all records following (10, 5), and could include rows with x > 10. MySQL does semi-bounded scans.
+ * on (x, y), then the one-side-bounded scan >(10, 5) finds all records such that x = 10 and y > 5. A lexicographic
+ * scan finds all records following (10, 5), and could include rows with x > 10. MySQL does lexicographic scans.
  */
 
 public class IndexScanLexicographicIT extends OperatorITBase
