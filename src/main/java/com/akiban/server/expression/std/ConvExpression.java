@@ -174,16 +174,7 @@ public class ConvExpression extends AbstractTernaryExpression
             // if the number is signed and the toBase value is unsigned
             // interpret the number as unsigned
             if (!signed && num.compareTo(BigInteger.ZERO) < 0)
-            {
-
-                num = num.abs();
-                num = num.and(N64);
-
-                // flip all bits from [0, 63]
-                for (int i = 0; i < 64; ++i)
-                    num = num.flipBit(i);
-                num = num.add(BigInteger.ONE);
-            }
+                num = num.abs().xor(N64).add(BigInteger.ONE);
             
             return num.toString(toBase).toUpperCase();
         }
