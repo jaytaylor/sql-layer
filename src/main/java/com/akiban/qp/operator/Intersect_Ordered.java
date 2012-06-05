@@ -113,8 +113,7 @@ class Intersect_Ordered extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return
-            skipScan ? new SkipScan(context) : new SequentialScan(context);
+        return new Execution(context);
     }
 
     @Override
@@ -220,7 +219,7 @@ class Intersect_Ordered extends Operator
 
     // Inner classes
 
-    private abstract class Execution extends OperatorExecutionBase implements Cursor
+    private class Execution extends OperatorExecutionBase implements Cursor
     {
         // Cursor interface
 
@@ -256,7 +255,11 @@ class Intersect_Ordered extends Operator
                             next = leftRow.get();
                             nextLeftRow();
                         } else {
-                            nextLeftRowSkip();
+                            if (skipScan) {
+                                nextLeftRowSkip(rightRow.get(), rightFixedFields);
+                            } else {
+                                nextLeftRow();
+                            }
                         }
                     } else if (c > 0) {
                         if (keepUnmatchedRight) {
@@ -264,7 +267,11 @@ class Intersect_Ordered extends Operator
                             next = rightRow.get();
                             nextRightRow();
                         } else {
-                            nextRightRowSkip();
+                            if (skipScan) {
+                                nextRightRowSkip(leftRow.get(), leftFixedFields);
+                            } else {
+                                nextRightRow();
+                            }
                         }
                     } else {
                         // left and right rows match
@@ -291,6 +298,23 @@ class Intersect_Ordered extends Operator
             } finally {
                 TAP_NEXT.out();
             }
+        }
+
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector)
+        {
+            // This operator emits rows from left or right. The row used to specify the jump should be of the matching
+            // row type.
+            int suffixRowFixedFields;
+            if (outputLeft) {
+                assert row.rowType() == leftRowType : row.rowType();
+                suffixRowFixedFields = leftFixedFields;
+            } else {
+                assert row.rowType() == rightRowType : row.rowType();
+                suffixRowFixedFields = rightFixedFields;
+            }
+            nextLeftRowSkip(row, suffixRowFixedFields);
+            nextRightRowSkip(row, suffixRowFixedFields);
         }
 
         @Override
@@ -340,9 +364,31 @@ class Intersect_Ordered extends Operator
             super(context);
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
+            final int leftSkipRowColumns = leftFixedFields + ascending.length;
+            leftSkipRowColumnSelector =
+                new ColumnSelector()
+                {
+                    @Override
+                    public boolean includesColumn(int columnPosition)
+                    {
+                        return columnPosition < leftSkipRowColumns;
+                    }
+                };
+            final int rightSkipRowColumns = rightFixedFields + ascending.length;
+            rightSkipRowColumnSelector =
+                new ColumnSelector()
+                {
+                    @Override
+                    public boolean includesColumn(int columnPosition)
+                    {
+                        return columnPosition < rightSkipRowColumns;
+                    }
+                };
         }
 
-        final void nextLeftRow()
+        // For use by this class
+
+        private void nextLeftRow()
         {
             Row row = leftInput.next();
             leftRow.hold(row);
@@ -351,7 +397,7 @@ class Intersect_Ordered extends Operator
             }
         }
 
-        final void nextRightRow()
+        private void nextRightRow()
         {
             Row row = rightInput.next();
             rightRow.hold(row);
@@ -360,11 +406,27 @@ class Intersect_Ordered extends Operator
             }
         }
 
-        abstract void nextLeftRowSkip();
+        private void nextLeftRowSkip(Row suffixRow, int suffixRowFixedFields)
+        {
+            addSuffixToSkipRow(leftSkipRow(),
+                               leftFixedFields,
+                               suffixRow,
+                               suffixRowFixedFields,
+                               ascending.length);
+            leftInput.jump(leftSkipRow, leftSkipRowColumnSelector);
+            leftRow.hold(leftInput.next());
+        }
 
-        abstract void nextRightRowSkip();
-
-        // For use by this class
+        private void nextRightRowSkip(Row suffixRow, int suffixRowFixedFields)
+        {
+            addSuffixToSkipRow(rightSkipRow(),
+                               rightFixedFields,
+                               suffixRow,
+                               suffixRowFixedFields,
+                               ascending.length);
+            rightInput.jump(rightSkipRow, rightSkipRowColumnSelector);
+            rightRow.hold(rightInput.next());
+        }
 
         private long compareRows()
         {
@@ -385,85 +447,6 @@ class Intersect_Ordered extends Operator
                 }
             }
             return c;
-        }
-
-        // Object state
-
-        // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
-        // ShareHolders, so they are needed here.
-
-        private boolean closed = true;
-        protected final Cursor leftInput;
-        protected final Cursor rightInput;
-        protected final ShareHolder<Row> leftRow = new ShareHolder<Row>();
-        protected final ShareHolder<Row> rightRow = new ShareHolder<Row>();
-    }
-
-    private class SequentialScan extends Execution
-    {
-        void nextLeftRowSkip()
-        {
-            nextLeftRow();
-        }
-
-        void nextRightRowSkip()
-        {
-            nextRightRow();
-        }
-
-        SequentialScan(QueryContext context)
-        {
-            super(context);
-        }
-    }
-
-    private class SkipScan extends Execution
-    {
-        void nextLeftRowSkip()
-        {
-            addSuffixToSkipRow(leftSkipRow(),
-                               leftFixedFields,
-                               rightRow.get(),
-                               rightFixedFields,
-                               ascending.length);
-            leftInput.jump(leftSkipRow, leftSkipRowColumnSelector);
-            leftRow.hold(leftInput.next());
-        }
-
-        void nextRightRowSkip()
-        {
-            addSuffixToSkipRow(rightSkipRow(),
-                               rightFixedFields,
-                               leftRow.get(),
-                               leftFixedFields,
-                               ascending.length);
-            rightInput.jump(rightSkipRow, rightSkipRowColumnSelector);
-            rightRow.hold(rightInput.next());
-        }
-
-        SkipScan(QueryContext context)
-        {
-            super(context);
-            final int leftSkipRowColumns = leftFixedFields + ascending.length; 
-            leftSkipRowColumnSelector =
-                new ColumnSelector()
-                {
-                    @Override
-                    public boolean includesColumn(int columnPosition)
-                    {
-                        return columnPosition < leftSkipRowColumns; 
-                    }
-                };
-            final int rightSkipRowColumns = rightFixedFields + ascending.length; 
-            rightSkipRowColumnSelector =
-                new ColumnSelector()
-                {
-                    @Override
-                    public boolean includesColumn(int columnPosition)
-                    {
-                        return columnPosition < rightSkipRowColumns; 
-                    }
-                };
         }
 
         private void addSuffixToSkipRow(ValuesHolderRow skipRow, int skipRowFixedFields,
@@ -506,6 +489,16 @@ class Intersect_Ordered extends Operator
             return rightSkipRow;
         }
 
+        // Object state
+
+        // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
+        // ShareHolders, so they are needed here.
+
+        private boolean closed = true;
+        private final Cursor leftInput;
+        private final Cursor rightInput;
+        private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
+        private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
         private final ColumnSelector leftSkipRowColumnSelector;
         private final ColumnSelector rightSkipRowColumnSelector;
         private ValuesHolderRow leftSkipRow;
