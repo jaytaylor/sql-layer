@@ -173,9 +173,7 @@ public class AggregateSplitter extends BaseRule
         if (!(input instanceof IndexScan))
             return false;
         IndexScan index = (IndexScan)input;
-        int nequals = 0;
-        if (index.getEqualityComparands() != null)
-            nequals = index.getEqualityComparands().size();
+        int nequals = index.getNEquality();
         List<Sort.OrderByExpression> ordering = index.getOrdering();
         // Get number of leading columns available for ordering. This
         // includes those tested for equality, which only have that
@@ -188,7 +186,7 @@ public class AggregateSplitter extends BaseRule
                 if ((i == nequals) &&
                     (orderBy.isAscending() != aggr1.getFunction().equals("MIN"))) {
                     // Fetching the MAX of an ascending index (or MIN
-                    // or descending): reverse the scan to get it
+                    // of descending): reverse the scan to get it
                     // first.  (Order doesn't matter on the
                     // equalities, MIN and MAX are the same.)
                     for (Sort.OrderByExpression otherOtherBy : ordering) {
