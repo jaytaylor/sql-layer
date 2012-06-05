@@ -37,6 +37,7 @@ import com.akiban.sql.optimizer.rule.ASTStatementLoader;
 import com.akiban.sql.optimizer.rule.BaseRule;
 import com.akiban.sql.optimizer.rule.RulesContext;
 import com.akiban.sql.optimizer.rule.RulesTestContext;
+import com.akiban.sql.optimizer.rule.RulesTestHelper;
 
 import com.akiban.sql.parser.DMLStatementNode;
 import com.akiban.sql.parser.StatementNode;
@@ -68,26 +69,29 @@ public class DPhypEnumerateTest extends OptimizerTestBase
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "enum-dphyp");
 
-    protected File schemaFile;
+    protected File schemaFile, rulesFile;
 
     @TestParameters
     public static Collection<Parameterization> statements() throws Exception {
         Collection<Object[]> result = new ArrayList<Object[]>();
         File schemaFile = new File(RESOURCE_DIR, "schema.ddl");
+        File rulesFile = new File(RESOURCE_DIR, "rules.yml");
         for (Object[] args : sqlAndExpected(RESOURCE_DIR)) {
-            Object[] nargs = new Object[args.length+1];
+            Object[] nargs = new Object[args.length+2];
             nargs[0] = args[0];
             nargs[1] = schemaFile;
-            System.arraycopy(args, 1, nargs, 2, args.length-1);
+            nargs[2] = rulesFile;
+            System.arraycopy(args, 1, nargs, 3, args.length-1);
             result.add(nargs);
         }
         return NamedParamsTestBase.namedCases(result);
     }
 
-    public DPhypEnumerateTest(String caseName, File schemaFile, 
+    public DPhypEnumerateTest(String caseName, File schemaFile, File rulesFile,
                               String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
+        this.rulesFile = rulesFile;
     }
 
     protected RulesContext rules;
@@ -96,7 +100,7 @@ public class DPhypEnumerateTest extends OptimizerTestBase
     public void loadDDL() throws Exception {
         AkibanInformationSchema ais = loadSchema(schemaFile);
         rules = RulesTestContext.create(ais, null, false,
-                                        Collections.<BaseRule>singletonList(new ASTStatementLoader()),
+                                        RulesTestHelper.loadRules(rulesFile),
                                         new Properties());
     }
 
