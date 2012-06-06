@@ -27,7 +27,6 @@
 package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
@@ -38,7 +37,6 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class AkIfElse extends TOverloadBase
 {
-   
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
@@ -48,8 +46,6 @@ public class AkIfElse extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        // TODO incoroprate the CheckUtils in here
-
         output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
     }
 
