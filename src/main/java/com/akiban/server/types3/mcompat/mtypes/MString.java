@@ -33,27 +33,27 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
-public class MVarchar extends TClass
+public class MString extends TClass
 {
-    public static final MVarchar INSTANCE = new MVarchar();
+    public static final MString VARCHAR = new MString("varchar", -1);
     
-    static final TFactory FACTORY = new StringFactory(INSTANCE);
+    // TODO: define CHAR, and VARBINARY
     
-    public MVarchar ()
-    {
+    private MString(String name, int serialisationSize)
+    {       
         super(MBundle.INSTANCE.id(),
-                "vachar",
+                name,
                 StringAttribute.values(),
                 1,
                 1,
-                -1,
+                serialisationSize,
                 PUnderlying.BYTES);
     }
 
     @Override
     public TFactory factory()
     {
-        return FACTORY;
+        return new StringFactory(this);
     }
 
     @Override
