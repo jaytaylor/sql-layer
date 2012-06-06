@@ -498,8 +498,23 @@ public class API
                                      intersectOptions);
     }
     
+    // Union
+
+    public static Operator union_Ordered(Operator leftInput, Operator rightInput,
+                                          IndexRowType leftRowType, IndexRowType rightRowType,
+                                          int leftOrderingFields,
+                                          int rightOrderingFields,
+                                          boolean[] ascending)
+    {
+        return new Union_Ordered(leftInput, rightInput,
+                                 leftRowType, rightRowType,
+                                 leftOrderingFields,
+                                 rightOrderingFields,
+                                 ascending);
+    }
+
     // HKeyUnion
-    
+
     public static Operator hKeyUnion_Ordered(Operator leftInput, Operator rightInput,
                                              RowType leftRowType, RowType rightRowType,
                                              int leftOrderingFields, int rightOrderingFields,
