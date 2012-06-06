@@ -24,20 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.asql.atypes;
 
-import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TypeDeclarationException;
 
-public enum StringAttribute implements Attribute
-{
-    /**
-     * Number of characters
-     * (Not byte length)
-     */
-    LENGTH,
-    
-    
-    CHARSET_ID,
-    
-    COLLATION
+import java.util.List;
+
+class ANumericFactory implements TFactory {
+    @Override
+    public TInstance create(List<TAttributeValue> arguments, boolean strict) {
+        int m;
+        switch (arguments.size()) {
+        case 0:
+            m = DEFAULT_M;
+            break;
+        case 1:
+            m = arguments.get(0).intValue();
+            break;
+        default:
+            throw new TypeDeclarationException("too many arguments provided");
+        }
+        return new TInstance(tClass, m);
+    }
+
+    ANumericFactory(TClass tClass) {
+        this.tClass = tClass;
+    }
+
+    private final TClass tClass;
+    private static final int DEFAULT_M = 10;
 }

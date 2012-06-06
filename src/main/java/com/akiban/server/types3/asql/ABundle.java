@@ -24,14 +24,25 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.asql;
 
-import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
 
-enum IntAttribute implements Attribute
-{
-    /**
-     * The display width [M] of an integer
-     */
-    WIDTH
+import java.util.Map;
+
+public enum  ABundle implements TBundle {
+    INSTANCE;
+
+    @Override
+    public TBundleID id() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public Map<TClass, TFactory> typeClasses() {
+        throw new UnsupportedOperationException(); // TODO
+    }
 }

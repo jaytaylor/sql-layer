@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.types3.common.StringAttribute;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TFactory;
