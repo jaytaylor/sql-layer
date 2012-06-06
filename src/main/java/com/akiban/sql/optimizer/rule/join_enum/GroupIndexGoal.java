@@ -976,8 +976,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return result;
     }
 
-    public void install(PlanNode scan, List<ConditionList> conditionSources) {
+    public void install(PlanNode scan, 
+                        List<ConditionList> conditionSources, boolean sortAllowed) {
         tables.setScan(scan);
+        this.sortAllowed = sortAllowed;
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             if (indexScan instanceof MultiIndexIntersectScan) {
@@ -985,7 +987,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 installOrdering(indexScan, multiScan.getOrdering(), multiScan.getPeggedCount(), multiScan.getComparisonFields());
             }
             installConditions(indexScan, conditionSources);
-            queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
+            if (sortAllowed)
+                queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
+        }
+        else {
+            if (sortAllowed)
+                queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
         }
     }
 

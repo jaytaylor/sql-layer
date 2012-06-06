@@ -73,4 +73,8 @@ public interface CostModelMeasurements
     final double UNION_PER_ROW = 0.25;
     // From HKeyUnionCT
     final double HKEY_UNION_PER_ROW = 2;
+    // From Select_BloomFilterCT.
+    final double BLOOM_FILTER_LOAD_PER_ROW = 0.24;
+    final double BLOOM_FILTER_SCAN_PER_ROW = 0.39;
+    final double BLOOM_FILTER_SCAN_SELECTIVITY_COEFFICIENT = 7.41;
 }

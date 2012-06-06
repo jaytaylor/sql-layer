@@ -28,7 +28,6 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
-import com.akiban.qp.operator.API.IntersectOutputOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
@@ -266,6 +265,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleLimit((Limit) node);
             else if (node instanceof NullIfEmpty)
                 return assembleNullIfEmpty((NullIfEmpty) node);
+            else if (node instanceof OnlyIfEmpty)
+                return assembleOnlyIfEmpty((OnlyIfEmpty) node);
             else if (node instanceof Project)
                 return assembleProject((Project) node);
             else if (node instanceof ExpressionsSource)
@@ -301,7 +302,7 @@ public class OperatorAssembler extends BaseRule
                     index.getSelectorOrderingFields(),
                     index.getComparisonFieldDirections(),
                     JoinType.INNER_JOIN,
-                    IntersectOutputOption.OUTPUT_LEFT
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT)
             );
             stream.operator = intersect;
             stream.rowType = outputScan.rowType;
@@ -761,6 +762,19 @@ public class OperatorAssembler extends BaseRule
             Expression[] nulls = new Expression[stream.rowType.nFields()];
             Arrays.fill(nulls, LiteralExpression.forNull());
             stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.KEEP_INPUT);
+            return stream;
+        }
+
+        protected RowStream assembleOnlyIfEmpty(OnlyIfEmpty onlyIfEmpty) {
+            RowStream stream = assembleStream(onlyIfEmpty.getInput());
+            stream.operator = API.limit_Default(stream.operator, 0, false, 1, false);
+            // Nulls here have no semantic meaning, but they're easier than trying to
+            // figure out an interesting non-null value for each
+            // AkType in the row. All that really matters is that the
+            // row is there.
+            Expression[] nulls = new Expression[stream.rowType.nFields()];
+            Arrays.fill(nulls, LiteralExpression.forNull());
+            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.DISCARD_INPUT);
             return stream;
         }
 

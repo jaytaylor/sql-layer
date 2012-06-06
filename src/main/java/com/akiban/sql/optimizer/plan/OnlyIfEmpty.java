@@ -24,32 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.sql.optimizer.plan;
 
-import com.persistit.Key;
-import com.persistit.exception.PersistitException;
-
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
-
-class  MixedOrderScanStateUnbounded extends MixedOrderScanState
+/** The inside-tip of an anti join. */
+public class OnlyIfEmpty extends BasePlanWithInput
 {
-    @Override
-    public boolean startScan() throws PersistitException
-    {
-        Key.Direction direction;
-        if (ascending) {
-            cursor.exchange.append(Key.BEFORE);
-            direction = Key.GT;
-        } else {
-            cursor.exchange.append(Key.AFTER);
-            direction = Key.LT;
-        }
-        SORT_TRAVERSE.hit();
-        return cursor.exchange.traverse(direction, false);
+    public OnlyIfEmpty(PlanNode input) {
+        super(input);
     }
 
-    public MixedOrderScanStateUnbounded(SortCursorMixedOrder cursor, int field) throws PersistitException
-    {
-        super(cursor, field, cursor.ordering().ascending(field));
-    }
 }
