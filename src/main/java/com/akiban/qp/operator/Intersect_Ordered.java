@@ -194,8 +194,8 @@ class Intersect_Ordered extends Operator
         this.keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN;
         this.keepUnmatchedRight = joinType == JoinType.RIGHT_JOIN;
         // Setup for row comparisons
-        leftFixedFields = leftRowType.nFields() - leftOrderingFields;
-        rightFixedFields = rightRowType.nFields() - rightOrderingFields;
+        this.leftFixedFields = leftRowType.nFields() - leftOrderingFields;
+        this.rightFixedFields = rightRowType.nFields() - rightOrderingFields;
     }
 
     // Class state
