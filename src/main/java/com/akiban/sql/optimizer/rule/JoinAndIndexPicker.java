@@ -251,6 +251,10 @@ public class JoinAndIndexPicker extends BaseRule
         public boolean containsColumn(ColumnExpression column) {
             return false;
         }
+
+        public double joinSelectivity() {
+            return 1.0;
+        }
     }
 
     static abstract class PlanClass {
@@ -317,6 +321,14 @@ public class JoinAndIndexPicker extends BaseRule
             ColumnSource table = column.getTable();
             if (!(table instanceof TableSource)) return false;
             return (groupGoal.getTables().getRoot().findTable((TableSource)table) != null);
+        }
+
+        @Override
+        public double joinSelectivity() {
+            if (scan instanceof IndexScan)
+                return groupGoal.estimateSelectivity((IndexScan)scan);
+            else
+                return super.joinSelectivity();
         }
     }
 
@@ -711,9 +723,16 @@ public class JoinAndIndexPicker extends BaseRule
             return boundTables;
         }
 
+        double BLOOM_FILTER_MAX_SELECTIVITY = 0.05;
+
         public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, Plan inputPlan, Plan checkPlan, Collection<JoinOperator> joins) {
-            if (!Boolean.parseBoolean(picker.rulesContext.getProperty("bloomFilterSemiJoin", "true")))
-                return null;
+            double maxSelectivity;
+            String prop = picker.rulesContext.getProperty("bloomFilterMaxSelectivity");
+            if (prop != null)
+                maxSelectivity = Double.valueOf(prop);
+            else
+                maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY;
+            if (maxSelectivity <= 0.0) return null; // Feature turned off.
             List<ExpressionNode> hashColumns = new ArrayList<ExpressionNode>();
             List<ExpressionNode> matchColumns = new ArrayList<ExpressionNode>();
             for (JoinOperator join : joins) {
@@ -746,9 +765,12 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 }
             }
+            double selectivity = checkPlan.joinSelectivity();
+            if (selectivity > maxSelectivity)
+                return null;
             BloomFilter bloomFilter = new BloomFilter(loaderPlan.costEstimate.getRowCount(), 1);
-            // TODO: For testing, no cost to actual checks.
-            CostEstimate costEstimate = checkPlan.costEstimate.sequence(inputPlan.costEstimate);
+            CostEstimate costEstimate = picker.costEstimator
+                .costBloomFilter(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, selectivity);
             return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
                                     JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
                                     joins, costEstimate, bloomFilter, hashColumns, matchColumns);

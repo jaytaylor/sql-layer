@@ -952,8 +952,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return estimator.getCostEstimate();
     }
 
+    public double estimateSelectivity(IndexScan index) {
+        return queryGoal.getCostEstimator().conditionsSelectivity(selectivityConditions(index.getConditions(), index.getTables()));
+    }
+
     // Conditions that might have a recognizable selectivity.
-    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Set<TableSource> requiredTables) {
+    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
         Map<ColumnExpression,Collection<ComparisonCondition>> result = new
             HashMap<ColumnExpression,Collection<ComparisonCondition>>();
         for (ConditionExpression condition : conditions) {
