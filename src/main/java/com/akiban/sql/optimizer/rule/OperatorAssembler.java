@@ -397,8 +397,9 @@ public class OperatorAssembler extends BaseRule
 
         /** If there are this many or more scans feeding into a tree
          * of intersection / union, then skip scan is enabled for it.
+         * (3 scans means 2 intersections or intersection with a two-value union.)
          */
-        public static final int SKIP_SCAN_MIN_COUNT_DEFAULT = 2;
+        public static final int SKIP_SCAN_MIN_COUNT_DEFAULT = 3;
 
         protected boolean useSkipScan(IndexScan index) {
             if (!(index instanceof MultiIndexIntersectScan))
