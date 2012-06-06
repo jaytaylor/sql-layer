@@ -359,7 +359,17 @@ public class OperatorAssembler extends BaseRule
                         stream.rowType = indexRowType;
                     }
                     else if (unionOrdered) {
-                        throw new UnsupportedSQLException("Need union ordered operator.", null);
+                        int nequals = indexScan.getNEquality();
+                        List<OrderByExpression> ordering = indexScan.getOrdering();
+                        int nordering = ordering.size() - nequals;
+                        boolean[] ascending = new boolean[nordering];
+                        for (int i = 0; i < nordering; i++) {
+                            ascending[i] = ordering.get(nequals + i).isAscending();
+                        }
+                        stream.operator = API.union_Ordered(stream.operator, scan,
+                                                            (IndexRowType)stream.rowType, indexRowType,
+                                                            nordering, nordering, 
+                                                            ascending);
                     }
                     else {
                         stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
