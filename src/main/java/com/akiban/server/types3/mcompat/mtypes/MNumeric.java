@@ -26,9 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.MBundle;
@@ -49,7 +47,7 @@ public class MNumeric extends TClass {
     }
 
     @Override
-    protected TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1) {
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
         // Determine precision of TInstance
         /*switch (mode) {
             case COMBINE:

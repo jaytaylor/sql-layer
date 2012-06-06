@@ -51,10 +51,6 @@ public class TOverloadResult {
         return castSource;
     }
 
-    public TCombineMode combineMode() {
-        return combineMode;
-    }
-
     // object interface
 
     @Override
@@ -62,7 +58,7 @@ public class TOverloadResult {
         switch (category) {
         case CUSTOM:    return "custom rule";
         case FIXED:     return fixedType.toString();
-        case PICKING:   return "combine(input set " + pickingInputSet + " with " + combineMode + ")";
+        case PICKING:   return "pick from input set " + pickingInputSet;
         default: throw new AssertionError(category);
         }
     }
@@ -76,30 +72,27 @@ public class TOverloadResult {
     // state
 
     public TOverloadResult(TClass fixedType) {
-        this(Category.FIXED, fixedType, null, -1, null, null);
+        this(Category.FIXED, fixedType, -1, null, null);
         ArgumentValidation.notNull("fixed type", fixedType);
     }
 
-    public TOverloadResult(TCombineMode combineMode, int pickingInputSet) {
-        this(Category.PICKING, null, combineMode, pickingInputSet, null, null);
-        ArgumentValidation.notNull("combine mode", combineMode);
+    public TOverloadResult(int pickingInputSet) {
+        this(Category.PICKING, null, pickingInputSet, null, null);
     }
 
     public TOverloadResult(Function<List<TPreptimeValue>,TInstance> rule, TInstance castSource) {
-        this(Category.CUSTOM, null, null, -1, rule, castSource);
+        this(Category.CUSTOM, null, -1, rule, castSource);
         ArgumentValidation.notNull("custom combine rule", rule);
     }
 
     private TOverloadResult(Category category,
                             TClass fixedType,
-                            TCombineMode combineMode,
                             int pickingInputSet,
                             Function<List<TPreptimeValue>,TInstance> customRule,
                             TInstance castSource)
     {
         this.category = category;
         this.fixedType = fixedType;
-        this.combineMode = combineMode;
         this.pickingInputSet = pickingInputSet;
         this.customRule = customRule;
         this.castSource = castSource;
@@ -107,7 +100,6 @@ public class TOverloadResult {
 
     private final Category category;
     private final TClass fixedType;
-    private final TCombineMode combineMode;
     private final int pickingInputSet;
     private final Function<List<TPreptimeValue>,TInstance> customRule;
     private final TInstance castSource;
