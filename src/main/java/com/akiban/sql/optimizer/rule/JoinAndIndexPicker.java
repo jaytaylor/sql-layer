@@ -60,8 +60,8 @@ public class JoinAndIndexPicker extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<Picker> pickers = 
-          new JoinsFinder(((SchemaRulesContext)planContext.getRulesContext())
-                          .getCostEstimator()).find(query);
+            new JoinsFinder((SchemaRulesContext)planContext.getRulesContext())
+            .find(query);
         for (Picker picker : pickers) {
             picker.apply();
         }
@@ -69,16 +69,18 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class Picker {
         Map<SubquerySource,Picker> subpickers;
+        SchemaRulesContext rulesContext;
         CostEstimator costEstimator;
         Joinable joinable;
         BaseQuery query;
         QueryIndexGoal queryGoal;
 
         public Picker(Joinable joinable, BaseQuery query,
-                      CostEstimator costEstimator, 
+                      SchemaRulesContext rulesContext,
                       Map<SubquerySource,Picker> subpickers) {
             this.subpickers = subpickers;
-            this.costEstimator = costEstimator;
+            this.rulesContext = rulesContext;
+            this.costEstimator = rulesContext.getCostEstimator();
             this.joinable = joinable;
             this.query = query;
         }
@@ -710,6 +712,8 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, Plan inputPlan, Plan checkPlan, Collection<JoinOperator> joins) {
+            if (!Boolean.parseBoolean(picker.rulesContext.getProperty("bloomFilterSemiJoin", "true")))
+                return null;
             List<ExpressionNode> hashColumns = new ArrayList<ExpressionNode>();
             List<ExpressionNode> matchColumns = new ArrayList<ExpressionNode>();
             for (JoinOperator join : joins) {
@@ -764,10 +768,10 @@ public class JoinAndIndexPicker extends BaseRule
         Map<SubquerySource,Picker> subpickers;
         BaseQuery rootQuery;
         Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
-        CostEstimator costEstimator;
+        SchemaRulesContext rulesContext;
 
-        public JoinsFinder(CostEstimator costEstimator) {
-            this.costEstimator = costEstimator;
+        public JoinsFinder(SchemaRulesContext rulesContext) {
+            this.rulesContext = rulesContext;
         }
 
         public List<Picker> find(BaseQuery query) {
@@ -823,7 +827,7 @@ public class JoinAndIndexPicker extends BaseRule
                         // Already have another set of joins to same root join.
                         return true;
                 }
-                Picker picker = new Picker(j, query, costEstimator, subpickers);
+                Picker picker = new Picker(j, query, rulesContext, subpickers);
                 result.add(picker);
                 if (subquerySource != null)
                     subpickers.put(subquerySource, picker);
