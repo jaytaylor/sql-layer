@@ -36,9 +36,9 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 public class AkNumeric extends TClass {
 
     private AkNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
-        super(ABundle.INSTANCE.id(), name, 
+        super(ABundle.INSTANCE.id(), name,
                 IntAttribute.values(),
-                1, 1, serializationSize, 
+                1, 1, serializationSize,
                 pUnderlying);
     }
 
@@ -56,4 +56,6 @@ public class AkNumeric extends TClass {
     public static final TClass SMALLINT = new AkNumeric("smallint", 2, PUnderlying.INT_16);
     public static final TClass INT = new AkNumeric("int", 4, PUnderlying.INT_32);
     public static final TClass BIGINT = new AkNumeric("bigint", 8, PUnderlying.INT_64);
+
+    public static final TClass DOUBLE = new AkNumeric("double precision", 8, PUnderlying.DOUBLE);
 }
