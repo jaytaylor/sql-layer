@@ -37,7 +37,13 @@ import java.math.BigDecimal;
 public class MBigDecimal extends TClass {
 
     public MBigDecimal() {
-        super(MBundle.INSTANCE.id(), "decimal", new String[]{"M", "D"}, 1, 1, 8, PUnderlying.INT_64);
+        super(MBundle.INSTANCE.id(), 
+                "decimal", 
+                IntAttribute.values(), 
+                1, 
+                1, 
+                8, 
+                PUnderlying.INT_64);
     }
 
     @Override
