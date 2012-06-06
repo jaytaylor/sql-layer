@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.asql.atypes;
+package com.akiban.server.types3.aksql.atypes;
 
 import com.akiban.server.types3.TAttributeValue;
 import com.akiban.server.types3.TClass;
