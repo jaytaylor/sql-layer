@@ -24,37 +24,36 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.asql.atypes;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.asql.ABundle;
+import com.akiban.server.types3.common.IntAttribute;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-public final class MAddSmallnt extends TOverloadBase {
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.SMALLINT, 0, 1);
+public class ANumeric extends TClass {
+
+    private ANumeric(String name, int serializationSize, PUnderlying pUnderlying) {
+        super(ABundle.INSTANCE.id(), name, 
+                IntAttribute.values(),
+                1, 1, serializationSize, 
+                pUnderlying);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int a0 = inputs.get(0).getInt16();
-        int a1 = inputs.get(0).getInt16();
-        output.putInt32(a0 + a1);
+    public TFactory factory() {
+        return new ANumericFactory(this);
     }
-
+     
     @Override
-    public String overloadName() {
-        return "+";
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    @Override
-    public TOverloadResult resultType() {
-        return new TOverloadResult(MNumeric.MEDIUMINT);
-    }
+    
+    // numeric types
+    public static final TClass SMALLINT = new ANumeric("smallint", 2, PUnderlying.INT_16);
+    public static final TClass INT = new ANumeric("int", 4, PUnderlying.INT_32);
+    public static final TClass BIGINT = new ANumeric("bigint", 8, PUnderlying.INT_64);
 }

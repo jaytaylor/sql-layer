@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.common;
 
 import com.akiban.server.types3.Attribute;
 

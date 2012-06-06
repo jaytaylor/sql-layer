@@ -24,37 +24,25 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.asql;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
 
-public final class MAddMediumInt extends TOverloadBase {
+import java.util.Map;
+
+public enum  ABundle implements TBundle {
+    INSTANCE;
+
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.MEDIUMINT, 0, 1);
+    public TBundleID id() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int a0 = inputs.get(0).getInt32();
-        int a1 = inputs.get(0).getInt32();
-        output.putInt32(a0 + a1);
-    }
-
-    @Override
-    public String overloadName() {
-        return "+";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return new TOverloadResult(MNumeric.INT);
+    public Map<TClass, TFactory> typeClasses() {
+        throw new UnsupportedOperationException(); // TODO
     }
 }

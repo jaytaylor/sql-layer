@@ -23,30 +23,38 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.mcompat.mfuncs;
 
+package com.akiban.server.types3.asql.atypes;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TArithmetic;
-import java.math.BigDecimal;
+import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TypeDeclarationException;
 
-public class MSubtractBigDecimal extends TArithmetic {   
+import java.util.List;
 
-    private MSubtractBigDecimal() {
-        super("-", MNumeric.DECIMAL, MNumeric.DECIMAL);
-    }
-    
+class ANumericFactory implements TFactory {
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        // TODO: Make this faster
-        BigDecimal dec0 = (BigDecimal) inputs.get(0).getObject();
-        BigDecimal dec1 = (BigDecimal) inputs.get(1).getObject();
-        BigDecimal result = dec0.subtract(dec1);
-        
-        output.putObject(result);
+    public TInstance create(List<TAttributeValue> arguments, boolean strict) {
+        int m;
+        switch (arguments.size()) {
+        case 0:
+            m = DEFAULT_M;
+            break;
+        case 1:
+            m = arguments.get(0).intValue();
+            break;
+        default:
+            throw new TypeDeclarationException("too many arguments provided");
+        }
+        return new TInstance(tClass, m);
     }
+
+    ANumericFactory(TClass tClass) {
+        this.tClass = tClass;
+    }
+
+    private final TClass tClass;
+    private static final int DEFAULT_M = 10;
 }
