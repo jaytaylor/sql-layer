@@ -351,11 +351,18 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 ColumnRanges range = indexScan.getConditionRange();
-                // Non-single ranges are ordered by the ranges themselves.
-                // Single can be keep in order by the following column if we're willing
-                // to do the more expensive union. Need that for intersection or if index
-                // ended up ordering.
-                boolean unionOrdered = (range.isAllSingle() && (forIntersection || (indexScan.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE)));
+                // Non-single-point ranges are ordered by the ranges
+                // themselves as part of merging segments, so that index
+                // column is an ordering column.
+                // Single-point ranges have only one value for the range column,
+                // so they can order by the following columns if we're
+                // willing to do the more expensive ordered union.
+                // Determine whether anything is taking advantage of this:
+                // * Index is being intersected.
+                // * Index is effective for query ordering.
+                // ** See also special case in AggregateSplitter.directIndexMinMax().
+                boolean unionOrdered = (range.isAllSingle() && 
+                     (forIntersection || (indexScan.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE)));
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
