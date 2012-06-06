@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.atypes;
+package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
