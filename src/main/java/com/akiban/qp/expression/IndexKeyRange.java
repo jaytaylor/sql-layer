@@ -26,8 +26,10 @@
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 
 public class IndexKeyRange
 {
@@ -35,12 +37,12 @@ public class IndexKeyRange
     {
         StringBuilder buffer = new StringBuilder();
         buffer.append('(');
-        if (lo != null) {
+        if (lo != null && boundColumns > 0) {
             buffer.append(loInclusive() ? ">=" : ">");
             buffer.append(lo.toString());
         }
         buffer.append(',');
-        if (hi != null) {
+        if (hi != null && boundColumns > 0) {
             buffer.append(hiInclusive() ? "<=" : "<");
             buffer.append(hi.toString());
         }
@@ -90,7 +92,8 @@ public class IndexKeyRange
      */
     public static IndexKeyRange unbounded(IndexRowType indexRowType)
     {
-        return new IndexKeyRange(indexRowType);
+        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType), ConstantColumnSelector.ALL_OFF);
+        return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false, false);
     }
 
     /**
@@ -139,10 +142,7 @@ public class IndexKeyRange
     }
 
     /**
-     * Describes all keys in the index starting at or after lo, depending on loInclusive;
-     * and ending at or before hi, depending on hiInclusive. Different from IndexKeyRange.bounded
-     * because lo and hi may restrict different number of columns. This is used only in lexicographic
-     * scans.
+     * Describes all keys in the index ending at or before hi, depending on hiInclusive.
      *
      * @param indexRowType The row type of index keys.
      * @param hi           Upper bound of the range.
@@ -160,7 +160,8 @@ public class IndexKeyRange
     }
 
     /**
-     * Describes all keys in the index ending at or before hi, depending on hiInclusive.
+     * Describes all keys in the index starting at or after lo, depending on loInclusive; and
+     * ending at or before hi, depending on hiInclusive.
      * This is used only in lexicographic scans.
      *
      * @param indexRowType The row type of index keys.
@@ -188,15 +189,22 @@ public class IndexKeyRange
         return lexicographic;
     }
 
-    private IndexKeyRange(IndexRowType indexRowType)
+    public IndexKeyRange resetLo(IndexBound newLo)
     {
-        this.boundColumns = 0;
-        this.indexRowType = indexRowType;
-        this.lo = null;
-        this.loInclusive = false;
-        this.hi = null;
-        this.hiInclusive = false;
-        this.lexicographic = false;
+        IndexKeyRange restart = new IndexKeyRange(this);
+        restart.boundColumns = boundColumns(indexRowType, newLo);
+        restart.lo = newLo;
+        restart.loInclusive = true;
+        return restart;
+    }
+
+    public IndexKeyRange resetHi(IndexBound newHi)
+    {
+        IndexKeyRange restart = new IndexKeyRange(this);
+        restart.boundColumns = boundColumns(indexRowType, newHi);
+        restart.hi = newHi;
+        restart.hiInclusive = true;
+        return restart;
     }
 
     private IndexKeyRange(IndexRowType indexRowType,
@@ -218,6 +226,17 @@ public class IndexKeyRange
         this.hi = hi;
         this.hiInclusive = hiInclusive;
         this.lexicographic = lexicographic;
+    }
+
+    private IndexKeyRange(IndexKeyRange indexKeyRange)
+    {
+        this.indexRowType = indexKeyRange.indexRowType;
+        this.boundColumns = indexKeyRange.boundColumns;
+        this.lo = indexKeyRange.lo;
+        this.loInclusive = indexKeyRange.loInclusive;
+        this.hi = indexKeyRange.hi;
+        this.hiInclusive = indexKeyRange.hiInclusive;
+        this.lexicographic = indexKeyRange.lexicographic;
     }
 
     private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi, boolean lexicographic)
@@ -247,7 +266,6 @@ public class IndexKeyRange
                 }
             }
         }
-        assert boundColumns > 0;
         return boundColumns;
     }
 
@@ -277,11 +295,11 @@ public class IndexKeyRange
     // Object state
 
     private final IndexRowType indexRowType;
-    private final int boundColumns;
-    private final IndexBound lo;
-    private final boolean loInclusive;
-    private final IndexBound hi;
-    private final boolean hiInclusive;
+    private int boundColumns;
+    private IndexBound lo;
+    private boolean loInclusive;
+    private IndexBound hi;
+    private boolean hiInclusive;
     // An Akiban index scan normally allows a range for only the last specified part of the bound. E.g.,
     // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
     // 10-20 and 800-888. MySQL support requires a different approach in which we start at the lower bound and

@@ -176,7 +176,7 @@ public class JoinAndIndexPicker extends BaseRule
             List<JoinOperator> empty = Collections.emptyList(); // No more joins / bound tables.
             groupGoal.updateRequiredColumns(empty, empty);
             BaseScan scan = groupGoal.pickBestScan();
-            groupGoal.install(scan, null, false);
+            groupGoal.install(scan, null, true, false);
         }
 
         // General joins: run enumerator.
@@ -212,7 +212,7 @@ public class JoinAndIndexPicker extends BaseRule
                 List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true);
                 BaseScan scan = groupGoal.pickBestScan();
                 CostEstimate costEstimate = scan.getCostEstimate();
-                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources);
+                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources, true);
             }
             if (joinable instanceof JoinNode) {
                 return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins, subqueryOutsideJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
@@ -272,16 +272,19 @@ public class JoinAndIndexPicker extends BaseRule
         long outerTables;
         BaseScan scan;
         List<ConditionList> conditionSources;
+        boolean sortAllowed;
 
         public GroupPlan(GroupIndexGoal groupGoal,
                          long outerTables, BaseScan scan, 
                          CostEstimate costEstimate,
-                         List<ConditionList> conditionSources) {
+                         List<ConditionList> conditionSources,
+                         boolean sortAllowed) {
             super(costEstimate);
             this.groupGoal = groupGoal;
             this.outerTables = outerTables;
             this.scan = scan;
             this.conditionSources = conditionSources;
+            this.sortAllowed = sortAllowed;
         }
 
         @Override
@@ -291,7 +294,7 @@ public class JoinAndIndexPicker extends BaseRule
 
         @Override
         public Joinable install(boolean copy) {
-            return groupGoal.install(scan, conditionSources, copy);
+            return groupGoal.install(scan, conditionSources, sortAllowed, copy);
         }
 
         public boolean orderedForDistinct(Distinct distinct) {
@@ -341,10 +344,11 @@ public class JoinAndIndexPicker extends BaseRule
                     return groupPlan;
                 }
             }
-            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, joins.isEmpty());
+            boolean sortAllowed = joins.isEmpty();
+            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, sortAllowed);
             BaseScan scan = groupGoal.pickBestScan();
             CostEstimate costEstimate = scan.getCostEstimate();
-            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources);
+            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources, sortAllowed);
             bestPlans.add(groupPlan);
             return groupPlan;
         }

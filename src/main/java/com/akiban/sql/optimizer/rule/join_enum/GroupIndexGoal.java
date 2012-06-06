@@ -1024,11 +1024,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
     public TableGroupJoinTree install(BaseScan scan,
                                       List<ConditionList> conditionSources,
-                                      boolean copy) {
+                                      boolean sortAllowed, boolean copy) {
         TableGroupJoinTree result = tables;
         // Need to have more than one copy of this tree in the final result.
         if (copy) result = new TableGroupJoinTree(result.getRoot());
         result.setScan(scan);
+        this.sortAllowed = sortAllowed;
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
             if (indexScan instanceof MultiIndexIntersectScan) {
@@ -1036,7 +1037,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
                 installOrdering(indexScan, multiScan.getOrdering(), multiScan.getPeggedCount(), multiScan.getComparisonFields());
             }
             installConditions(indexScan, conditionSources);
-            queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
+            if (sortAllowed)
+                queryGoal.installOrderEffectiveness(indexScan.getOrderEffectiveness());
+        }
+        else {
+            if (sortAllowed)
+                queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
         }
         return result;
     }
