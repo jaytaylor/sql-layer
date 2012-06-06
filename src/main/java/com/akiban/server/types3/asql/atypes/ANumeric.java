@@ -27,7 +27,6 @@
 package com.akiban.server.types3.asql.atypes;
 
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.asql.ABundle;
@@ -47,14 +46,9 @@ public class ANumeric extends TClass {
     public TFactory factory() {
         return new ANumericFactory(this);
     }
-
+     
     @Override
-    protected TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1) {
-        // Determine precision of TInstance
-        /*switch (mode) {
-            case COMBINE:
-            case CHOOSE:
-        }*/
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
@@ -65,5 +59,5 @@ public class ANumeric extends TClass {
     public static final TClass INT = new ANumeric("int", 4, PUnderlying.INT_32);
     public static final TClass INT_UNSIGNED = new ANumeric("intunsigned", 8, PUnderlying.INT_64);
     public static final TClass BIGINT = new ANumeric("bigint", 8, PUnderlying.INT_64);
-    public static final TClass BIGINT_UNSIGNED = new ANumeric("bigintunsigned", 8, PUnderlying.INT_64);   
+    public static final TClass BIGINT_UNSIGNED = new ANumeric("bigintunsigned", 8, PUnderlying.INT_64);
 }

@@ -26,8 +26,8 @@
 
 package com.akiban.server.types3.playground;
 
+import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TAttributeValue;
-import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
@@ -43,7 +43,7 @@ public final class XInt extends TClass {
     }
 
     @Override
-    protected TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1) {
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
         assert instance0 == INSTANCE;
         assert instance1 == INSTANCE;
         return INSTANCE;
@@ -55,7 +55,7 @@ public final class XInt extends TClass {
     }
 
     private XInt() {
-        super(XBund.ID, "xint", new String[0], 1, 1, 4, PUnderlying.INT_32);
+        super(XBund.ID, "xint", new Attribute[]{}, 1, 1, 4, PUnderlying.INT_32);
     }
 
     public static final XInt TYPE_CLASS = new XInt();

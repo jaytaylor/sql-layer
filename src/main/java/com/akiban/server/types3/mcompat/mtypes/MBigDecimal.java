@@ -26,25 +26,21 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.common.IntAttribute;
+import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import java.math.BigDecimal;
 
 public class MBigDecimal extends TClass {
 
+    public enum Attrs implements Attribute {
+        M, D
+    }
+
     public MBigDecimal() {
-        super(MBundle.INSTANCE.id(), 
-                "decimal", 
-                IntAttribute.values(), 
-                1, 
-                1, 
-                8, 
-                PUnderlying.INT_64);
+        super(MBundle.INSTANCE.id(), "decimal", Attrs.values(), 1, 1, 8, PUnderlying.INT_64);
     }
 
     @Override
@@ -53,7 +49,7 @@ public class MBigDecimal extends TClass {
     }
 
     @Override
-    protected TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1) {
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
         // Determine precision of TInstance
         /*switch (mode) {
             case COMBINE:
