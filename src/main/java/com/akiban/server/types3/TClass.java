@@ -35,10 +35,10 @@ public abstract class TClass {
 
     public abstract TFactory factory();
 
-    public TInstance combine(TCombineMode mode, TInstance instance0, TInstance instance1) {
+    public TInstance pickInstance(TInstance instance0, TInstance instance1) {
         if (instance0.typeClass() != this || instance1.typeClass() != this)
             throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);
-        return doCombine(mode, instance0, instance1);
+        return doPickInstance(instance0, instance1);
     }
 
     public PUnderlying underlyingType() {
@@ -96,7 +96,7 @@ public abstract class TClass {
 
     // for use by subclasses
 
-    protected abstract TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1);
+    protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);
 
      protected TClass(TName name,
             Attribute[] attributes, 

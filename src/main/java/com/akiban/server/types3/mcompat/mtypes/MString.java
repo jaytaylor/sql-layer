@@ -27,7 +27,6 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TCombineMode;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.MBundle;
@@ -57,7 +56,7 @@ public class MString extends TClass
     }
 
     @Override
-    protected TInstance doCombine(TCombineMode mode, TInstance instance0, TInstance instance1)
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1)
     {
         // TODO:
         throw new UnsupportedOperationException("Not supported yet.");
