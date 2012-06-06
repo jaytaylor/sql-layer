@@ -905,7 +905,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return requiredAfter.isEmpty();
     }
 
-    protected CostEstimate estimateCost(IndexScan index) {
+    public CostEstimate estimateCost(IndexScan index) {
+        return estimateCost(index, queryGoal.getLimit());
+    }
+
+    public CostEstimate estimateCost(IndexScan index, long limit) {
         PlanCostEstimator estimator = 
             new PlanCostEstimator(queryGoal.getCostEstimator());
         Set<TableSource> requiredTables = index.getRequiredTables();
@@ -930,7 +934,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             estimator.sort(queryGoal.sortFields());
         }
 
-        estimator.setLimit(queryGoal.getLimit());
+        estimator.setLimit(limit);
 
         return estimator.getCostEstimate();
     }

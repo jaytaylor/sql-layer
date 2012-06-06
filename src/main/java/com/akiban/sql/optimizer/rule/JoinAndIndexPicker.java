@@ -255,6 +255,9 @@ public class JoinAndIndexPicker extends BaseRule
         public double joinSelectivity() {
             return 1.0;
         }
+
+        public void redoCostWithLimit(long limit) {
+        }
     }
 
     static abstract class PlanClass {
@@ -329,6 +332,13 @@ public class JoinAndIndexPicker extends BaseRule
                 return groupGoal.estimateSelectivity((IndexScan)scan);
             else
                 return super.joinSelectivity();
+        }
+
+        @Override
+        public void redoCostWithLimit(long limit) {
+            if (scan instanceof IndexScan) {
+                costEstimate = groupGoal.estimateCost((IndexScan)scan, limit);
+            }
         }
     }
 
@@ -558,6 +568,11 @@ public class JoinAndIndexPicker extends BaseRule
             }
             return joinConditions;
         }
+
+        public void redoCostWithLimit(long limit) {
+            left.redoCostWithLimit(limit);
+            costEstimate = left.costEstimate.nest(right.costEstimate);
+        }
     }
 
     static class HashJoinPlan extends JoinPlan {
@@ -683,13 +698,13 @@ public class JoinAndIndexPicker extends BaseRule
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                                              joinType, JoinNode.Implementation.NESTED_LOOPS,
                                              joins, costEstimate);
-            planClass.consider(joinPlan);
             if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
                 Plan loaderPlan = right.bestPlan(outsideJoins);
-                JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, leftPlan, rightPlan, joins);
+                JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan);
                 if (hashPlan != null)
                     planClass.consider(hashPlan);
             }
+            planClass.consider(joinPlan);
             return planClass;
         }
 
@@ -725,7 +740,7 @@ public class JoinAndIndexPicker extends BaseRule
 
         double BLOOM_FILTER_MAX_SELECTIVITY = 0.05;
 
-        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, Plan inputPlan, Plan checkPlan, Collection<JoinOperator> joins) {
+        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, JoinPlan joinPlan) {
             double maxSelectivity;
             String prop = picker.rulesContext.getProperty("bloomFilterMaxSelectivity");
             if (prop != null)
@@ -733,6 +748,9 @@ public class JoinAndIndexPicker extends BaseRule
             else
                 maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY;
             if (maxSelectivity <= 0.0) return null; // Feature turned off.
+            Plan inputPlan = joinPlan.left;
+            Plan checkPlan = joinPlan.right;
+            Collection<JoinOperator> joins = joinPlan.joins;
             List<ExpressionNode> hashColumns = new ArrayList<ExpressionNode>();
             List<ExpressionNode> matchColumns = new ArrayList<ExpressionNode>();
             for (JoinOperator join : joins) {
@@ -768,6 +786,17 @@ public class JoinAndIndexPicker extends BaseRule
             double selectivity = checkPlan.joinSelectivity();
             if (selectivity > maxSelectivity)
                 return null;
+            long limit = picker.queryGoal.getLimit();
+            if (joinPlan.costEstimate.getRowCount() == limit) {
+                // If there was a limit, it was applied too liberally
+                // for the very non-selective join.
+                // TODO: This should have always been the cost of the
+                // join plan, but that would be too disruptive, so
+                // only do it when need to make the comparison with
+                // the Bloom filter accurate.
+                limit = Math.round(limit / selectivity);
+                joinPlan.redoCostWithLimit(limit);
+            }
             BloomFilter bloomFilter = new BloomFilter(loaderPlan.costEstimate.getRowCount(), 1);
             CostEstimate costEstimate = picker.costEstimator
                 .costBloomFilter(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, selectivity);
