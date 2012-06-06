@@ -182,6 +182,7 @@ public class AggregateSplitter extends BaseRule
         AggregateFunctionExpression aggr1 = source.getAggregates().get(0);
         for (int i = 0; i < ncols; i++) {
             Sort.OrderByExpression orderBy = ordering.get(i);
+            if (orderBy.getExpression() == null) continue;
             if (orderBy.getExpression().equals(aggr1.getOperand())) {
                 if ((i == nequals) &&
                     (orderBy.isAscending() != aggr1.getFunction().equals("MIN"))) {
