@@ -39,39 +39,21 @@ public class AArithmetic {
     private AArithmetic() {}
     
     // Add functions
-    TArithmetic ADD_TINYINT = new TArithmetic("+", ANumeric.TINYINT, ANumeric.MEDIUMINT) {
+     TArithmetic ADD_SMALLINT = new TArithmetic("+", ANumeric.SMALLINT, ANumeric.SMALLINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int a0 = inputs.get(0).getInt8();
-            int a1 = inputs.get(0).getInt8();
-            output.putInt32(a0 + a1);
-        }
-    };
-    
-     TArithmetic ADD_SMALLINT = new TArithmetic("+", ANumeric.SMALLINT, ANumeric.MEDIUMINT) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int a0 = inputs.get(0).getInt16();
-            int a1 = inputs.get(0).getInt16();
+            short a0 = inputs.get(0).getInt16();
+            short a1 = inputs.get(0).getInt16();
             output.putInt32(a0 + a1);
         }
     };
      
-     TArithmetic ADD_MEDIUMINT = new TArithmetic("+", ANumeric.MEDIUMINT, ANumeric.INT) {
+    TArithmetic ADD_INT = new TArithmetic("+", ANumeric.INT, ANumeric.INT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt32();
             int a1 = inputs.get(1).getInt32();       
             output.putInt32(a0 + a1);
-        }
-    };
-     
-    TArithmetic ADD_INT = new TArithmetic("+", ANumeric.INT, ANumeric.BIGINT) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long a0 = inputs.get(0).getInt32();
-            long a1 = inputs.get(1).getInt32();       
-            output.putInt64(a0 + a1);
         }
     };
     
@@ -83,52 +65,23 @@ public class AArithmetic {
             output.putInt64(a0 + a1);
         }
     };
-     
-    TArithmetic ADD_DECIMAL = new TArithmetic("+", ANumeric.DECIMAL, ANumeric.DECIMAL) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            // TODO: Make this faster
-            BigDecimal dec0 = (BigDecimal) inputs.get(0).getObject();
-            BigDecimal dec1 = (BigDecimal) inputs.get(1).getObject();
-            BigDecimal result = dec0.add(dec1);
-            output.putObject(result);
-        }
-    };
     
     // Subtract functions
-    TArithmetic SUBTRACT_TINYINT = new TArithmetic("-", ANumeric.TINYINT, ANumeric.MEDIUMINT) {
+     TArithmetic SUBTRACT_SMALLINT = new TArithmetic("-", ANumeric.SMALLINT, ANumeric.SMALLINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int a0 = inputs.get(0).getInt8();
-            int a1 = inputs.get(0).getInt8();
-            output.putInt32(a0 - a1);
-        }
-    };
-    
-     TArithmetic SUBTRACT_SMALLINT = new TArithmetic("-", ANumeric.SMALLINT, ANumeric.MEDIUMINT) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int a0 = inputs.get(0).getInt16();
-            int a1 = inputs.get(0).getInt16();
+            short a0 = inputs.get(0).getInt16();
+            short a1 = inputs.get(0).getInt16();
             output.putInt32(a0 - a1);
         }
     };
      
-     TArithmetic SUBTRACT_MEDIUMINT = new TArithmetic("-", ANumeric.MEDIUMINT, ANumeric.INT) {
+    TArithmetic SUBTRACT_INT = new TArithmetic("-", ANumeric.INT, ANumeric.INT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt32();
             int a1 = inputs.get(1).getInt32();       
             output.putInt32(a0 - a1);
-        }
-    };
-     
-    TArithmetic SUBTRACT_INT = new TArithmetic("-", ANumeric.INT, ANumeric.BIGINT) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long a0 = inputs.get(0).getInt32();
-            long a1 = inputs.get(1).getInt32();       
-            output.putInt64(a0 - a1);
         }
     };
     
@@ -140,77 +93,58 @@ public class AArithmetic {
             output.putInt64(a0 - a1);
         }
     };
-     
-    TArithmetic SUBTRACT_DECIMAL = new TArithmetic("-", ANumeric.DECIMAL, ANumeric.DECIMAL) {
-        @Override
+    
+    // Divide functions
+    TArithmetic DIVIDE_SMALLINT = new TArithmetic("/", ANumeric.SMALLINT, ANumeric.SMALLINT) {
+        @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            // TODO: Make this faster
-            BigDecimal dec0 = (BigDecimal) inputs.get(0).getObject();
-            BigDecimal dec1 = (BigDecimal) inputs.get(1).getObject();
-            BigDecimal result = dec0.subtract(dec1);
-            output.putObject(result);
+            short a0 = inputs.get(0).getInt16();
+            short a1 = inputs.get(1).getInt16();
+            output.putInt32(a0/a1);
+            
         }
     };
     
-    // Divide functions
-    TArithmetic DIVIDE_DECIMAL = new TArithmetic("/", ANumeric.DECIMAL, ANumeric.DECIMAL) {
+    TArithmetic DIVIDE_INT = new TArithmetic("/", ANumeric.INT, ANumeric.INT) {
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            // TODO: Make this faster
-            BigDecimal dec0 = (BigDecimal) inputs.get(0).getObject();
-            BigDecimal dec1 = (BigDecimal) inputs.get(1).getObject();
-            BigDecimal result = dec0.divide(dec1);
-            output.putObject(result);
+            int a0 = inputs.get(0).getInt32();
+            int a1 = inputs.get(1).getInt32();
+            output.putInt32(a0/a1);
+            
+        }
+    };
+    
+    TArithmetic DIVIDE_BIGINT = new TArithmetic("/", ANumeric.BIGINT, ANumeric.BIGINT) {
+        @Override 
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            long a0 = inputs.get(0).getInt64();
+            long a1 = inputs.get(1).getInt64();
+            output.putInt64(a0/a1);
+            
         }
     };
     
     // Multiply functions
-    TArithmetic MULTIPLY_TINYINT = new TArithmetic("*", ANumeric.TINYINT, ANumeric.INT) {
+    TArithmetic MULTIPLY_SMALLINT = new TArithmetic("*", ANumeric.SMALLINT, ANumeric.SMALLINT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int a0 = inputs.get(0).getInt8();
-            int a1 = inputs.get(1).getInt8();
+            short a0 = inputs.get(0).getInt16();
+            short a1 = inputs.get(1).getInt16();
             output.putInt32(a0 * a1);
         }
     };
-    
-    TArithmetic MULTIPLY_SMALLINT = new TArithmetic("*", ANumeric.SMALLINT, ANumeric.INT) {
+
+    TArithmetic MULTIPLY_INT = new TArithmetic("*", ANumeric.INT, ANumeric.INT) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int a0 = inputs.get(0).getInt16();
-            int a1 = inputs.get(1).getInt16();
+            int a0 = inputs.get(0).getInt32();
+            int a1 = inputs.get(1).getInt32();
             output.putInt32(a0 * a1);
-        }
-    };
-    
-    TArithmetic MULTIPLY_MEDIUMINT = new TArithmetic("*", ANumeric.MEDIUMINT, ANumeric.BIGINT) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long a0 = inputs.get(0).getInt32();
-            long a1 = inputs.get(1).getInt32();
-            output.putInt64(a0 * a1);
-        }
-    };
-    
-    TArithmetic MULTIPLY_INT = new TArithmetic("*", ANumeric.INT, ANumeric.BIGINT) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long a0 = inputs.get(0).getInt32();
-            long a1 = inputs.get(1).getInt32();
-            output.putInt64(a0 * a1);
         }
     };
     
     TArithmetic MULTIPLY_BIGINT = new TArithmetic("*", ANumeric.BIGINT, ANumeric.BIGINT) {
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long a0 = inputs.get(0).getInt64();
-            long a1 = inputs.get(1).getInt64();
-            output.putInt64(a0 * a1);
-        }
-    };
-    
-    TArithmetic MULTIPLY_DECIMAL = new TArithmetic("*", ANumeric.DECIMAL, ANumeric.DECIMAL) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();

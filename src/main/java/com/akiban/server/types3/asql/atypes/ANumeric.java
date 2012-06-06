@@ -60,16 +60,10 @@ public class ANumeric extends TClass {
     
     // numeric types
     public static final TClass BIT = new ANumeric("bit", 8, PUnderlying.INT_64);
-    public static final TClass TINYINT = new ANumeric("tinyint", 1, PUnderlying.INT_8);
-    public static final TClass TINYINT_UNSIGNED = new ANumeric("tinyintunsigned", 4, PUnderlying.INT_16);
     public static final TClass SMALLINT = new ANumeric("smallint", 2, PUnderlying.INT_16);
     public static final TClass SMALLINT_UNSIGNED = new ANumeric("smallintunsigned", 4, PUnderlying.INT_32);
-    public static final TClass MEDIUMINT = new ANumeric("mediumint", 3, PUnderlying.INT_32);
-    public static final TClass MEDIUMINT_UNSIGNED = new ANumeric("mediumintunsigned", 8, PUnderlying.INT_64);
     public static final TClass INT = new ANumeric("int", 4, PUnderlying.INT_32);
     public static final TClass INT_UNSIGNED = new ANumeric("intunsigned", 8, PUnderlying.INT_64);
     public static final TClass BIGINT = new ANumeric("bigint", 8, PUnderlying.INT_64);
-    public static final TClass BIGINT_UNSIGNED = new ANumeric("bigintunsigned", 8, PUnderlying.INT_64);
-    
-    public static final TClass DECIMAL = new ABigDecimal();
+    public static final TClass BIGINT_UNSIGNED = new ANumeric("bigintunsigned", 8, PUnderlying.INT_64);   
 }
