@@ -82,7 +82,6 @@ public interface RowOrientedCursorBase<T extends BoundExpressions> extends Curso
     /**
      * Advances to the first row, r, such that r.compareTo(row) >= 0. (Call next to get the row.)
      *
-     *
      * @param row
      * @param columnSelector
      * @return

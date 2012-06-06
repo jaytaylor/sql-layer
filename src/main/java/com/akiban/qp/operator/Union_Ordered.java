@@ -27,8 +27,11 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -93,8 +96,8 @@ class Union_Ordered extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(skip %d from left, skip %d from right, compare %d)",
-                             getClass().getSimpleName(), leftSkip, rightSkip, ascending.length);
+        return String.format("%s(skip %d, compare %d)",
+                             getClass().getSimpleName(), fixedFields, ascending.length);
     }
 
     // Operator interface
@@ -153,10 +156,10 @@ class Union_Ordered extends Operator
         ArgumentValidation.isEQ("leftOrderingFields", leftOrderingFields, "rightOrderingFields", rightOrderingFields);
         this.left = left;
         this.right = right;
+        this.rowType = leftRowType;
         this.ascending = Arrays.copyOf(ascending, ascending.length);
         // Setup for row comparisons
-        this.leftSkip = leftRowType.nFields() - leftOrderingFields;
-        this.rightSkip = rightRowType.nFields() - rightOrderingFields;
+        this.fixedFields = rowType.nFields() - leftOrderingFields;
     }
 
     // Class state
@@ -169,8 +172,8 @@ class Union_Ordered extends Operator
 
     private final Operator left;
     private final Operator right;
-    private final int leftSkip;
-    private final int rightSkip;
+    private IndexRowType rowType;
+    private final int fixedFields;
     private final boolean[] ascending;
 
     // Inner classes
@@ -234,6 +237,13 @@ class Union_Ordered extends Operator
         }
 
         @Override
+        public void jump(Row row, ColumnSelector columnSelector)
+        {
+            nextLeftRowSkip(row, fixedFields);
+            nextRightRowSkip(row, fixedFields);
+        }
+
+        @Override
         public void close()
         {
             CursorLifecycle.checkIdleOrActive(this);
@@ -280,6 +290,16 @@ class Union_Ordered extends Operator
             super(context);
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
+            final int skipRowColumns = fixedFields + ascending.length;
+            skipRowColumnSelector =
+                new ColumnSelector()
+                {
+                    @Override
+                    public boolean includesColumn(int columnPosition)
+                    {
+                        return columnPosition < skipRowColumns;
+                    }
+                };
         }
         
         // For use by this class
@@ -312,7 +332,7 @@ class Union_Ordered extends Operator
             } else if (rightRow.isEmpty()) {
                 c = -1;
             } else {
-                c = leftRow.get().compareTo(rightRow.get(), leftSkip, rightSkip, ascending.length);
+                c = leftRow.get().compareTo(rightRow.get(), fixedFields, fixedFields, ascending.length);
                 if (c != 0) {
                     int fieldThatDiffers = (int) abs(c) - 1;
                     if (!ascending[fieldThatDiffers]) {
@@ -322,7 +342,71 @@ class Union_Ordered extends Operator
             }
             return c;
         }
-        
+
+        private void nextLeftRowSkip(Row suffixRow, int suffixRowFixedFields)
+        {
+            addSuffixToSkipRow(leftSkipRow(),
+                               fixedFields,
+                               suffixRow,
+                               suffixRowFixedFields,
+                               ascending.length);
+            leftInput.jump(leftSkipRow, skipRowColumnSelector);
+            leftRow.hold(leftInput.next());
+        }
+
+        private void nextRightRowSkip(Row suffixRow, int suffixRowFixedFields)
+        {
+            addSuffixToSkipRow(rightSkipRow(),
+                               fixedFields,
+                               suffixRow,
+                               suffixRowFixedFields,
+                               ascending.length);
+            rightInput.jump(rightSkipRow, skipRowColumnSelector);
+            rightRow.hold(rightInput.next());
+        }
+
+        private void addSuffixToSkipRow(ValuesHolderRow skipRow,
+                                        int skipRowFixedFields,
+                                        Row suffixRow,
+                                        int suffixRowFixedFields,
+                                        int orderingFields)
+        {
+            if (suffixRow == null) {
+                for (int f = 0; f < orderingFields; f++) {
+                    skipRow.holderAt(skipRowFixedFields + f).putNull();
+                }
+            } else {
+                for (int f = 0; f < orderingFields; f++) {
+                    skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
+                }
+            }
+        }
+
+        private ValuesHolderRow leftSkipRow()
+        {
+            if (leftSkipRow == null) {
+                assert leftRow.isHolding();
+                leftSkipRow = new ValuesHolderRow(rowType);
+                for (int f = 0; f < fixedFields; f++) {
+                    leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
+                }
+            }
+            return leftSkipRow;
+        }
+
+        private ValuesHolderRow rightSkipRow()
+        {
+            if (rightSkipRow == null) {
+                assert rightRow.isHolding();
+                rightSkipRow = new ValuesHolderRow(rowType);
+                for (int f = 0; f < fixedFields; f++) {
+                    ValueHolder field = rightSkipRow.holderAt(f);
+                    field.copyFrom(rightRow.get().eval(f));
+                }
+            }
+            return rightSkipRow;
+        }
+
         // Object state
         
         // Rows from each input stream are bound to the QueryContext. However, QueryContext doesn't use
@@ -333,5 +417,8 @@ class Union_Ordered extends Operator
         private final Cursor rightInput;
         private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
         private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
+        private ValuesHolderRow leftSkipRow;
+        private ValuesHolderRow rightSkipRow;
+        private ColumnSelector skipRowColumnSelector;
     }
 }
