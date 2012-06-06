@@ -26,35 +26,34 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.TAttributeValue;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TypeDeclarationException;
+import com.akiban.server.types3.aksql.ABundle;
+import com.akiban.server.types3.common.IntAttribute;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-import java.util.List;
+public class AkNumeric extends TClass {
 
-class ANumericFactory implements TFactory {
+    private AkNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
+        super(ABundle.INSTANCE.id(), name, 
+                IntAttribute.values(),
+                1, 1, serializationSize, 
+                pUnderlying);
+    }
+
     @Override
-    public TInstance create(List<TAttributeValue> arguments, boolean strict) {
-        int m;
-        switch (arguments.size()) {
-        case 0:
-            m = DEFAULT_M;
-            break;
-        case 1:
-            m = arguments.get(0).intValue();
-            break;
-        default:
-            throw new TypeDeclarationException("too many arguments provided");
-        }
-        return new TInstance(tClass, m);
+    public TFactory factory() {
+        return new AkNumericFactory(this);
     }
-
-    ANumericFactory(TClass tClass) {
-        this.tClass = tClass;
+     
+    @Override
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+        throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    private final TClass tClass;
-    private static final int DEFAULT_M = 10;
+    
+    // numeric types
+    public static final TClass SMALLINT = new AkNumeric("smallint", 2, PUnderlying.INT_16);
+    public static final TClass INT = new AkNumeric("int", 4, PUnderlying.INT_32);
+    public static final TClass BIGINT = new AkNumeric("bigint", 8, PUnderlying.INT_64);
 }
