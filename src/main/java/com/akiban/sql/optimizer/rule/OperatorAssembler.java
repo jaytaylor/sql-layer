@@ -240,7 +240,7 @@ public class OperatorAssembler extends BaseRule
         // Assemble an ordinary stream node.
         protected RowStream assembleStream(PlanNode node) {
             if (node instanceof IndexScan)
-                return assembleIndexScan((IndexScan) node, false);
+                return assembleIndexScan((IndexScan) node);
             else if (node instanceof GroupScan)
                 return assembleGroupScan((GroupScan) node);
             else if (node instanceof Select)
@@ -279,21 +279,28 @@ public class OperatorAssembler extends BaseRule
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
         
-        protected RowStream assembleIndexScan(IndexScan index, boolean forIntersection) {
+        protected RowStream assembleIndexScan(IndexScan index) {
+            // TODO: For now, can't use skip scan intersection with
+            // union or nested intersection.
+            return assembleIndexScan(index, false, new boolean[1]);
+        }
+
+        protected RowStream assembleIndexScan(IndexScan index, boolean forIntersection, boolean[] usedUnionIntersection) {
             if (index instanceof SingleIndexScan)
-                return assembleSingleIndexScan((SingleIndexScan) index, forIntersection);
+                return assembleSingleIndexScan((SingleIndexScan) index, forIntersection, usedUnionIntersection);
             else if (index instanceof MultiIndexIntersectScan)
-                return assembleIndexIntersection((MultiIndexIntersectScan) index);
+                return assembleIndexIntersection((MultiIndexIntersectScan) index, usedUnionIntersection);
             else
                 throw new UnsupportedSQLException("Plan node " + index, null);
         }
 
-        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index) {
+        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index, boolean[] usedUnionIntersection) {
             RowStream stream = new RowStream();
-            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan(), true);
-            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan(), true);
-            Operator intersect;
-            intersect = API.intersect_Ordered(
+            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan(), true, usedUnionIntersection);
+            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan(), true, usedUnionIntersection);
+            boolean skipScan = !usedUnionIntersection[0];
+            usedUnionIntersection[0] = true;
+            stream.operator = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
                     (IndexRowType) outputScan.rowType,
@@ -302,15 +309,15 @@ public class OperatorAssembler extends BaseRule
                     index.getSelectorOrderingFields(),
                     index.getComparisonFieldDirections(),
                     JoinType.INNER_JOIN,
-                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT)
-            );
-            stream.operator = intersect;
+                    (skipScan) ? 
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT, API.IntersectOption.SKIP_SCAN) :
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT, API.IntersectOption.SEQUENTIAL_SCAN));
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
             return stream;
         }
 
-        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan, boolean forIntersection) {
+        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan, boolean forIntersection, boolean[] usedUnion) {
             RowStream stream = new RowStream();
             Index index = indexScan.getIndex();
             IndexRowType indexRowType = schema.indexRowType(index);
@@ -376,6 +383,8 @@ public class OperatorAssembler extends BaseRule
                         stream.rowType = stream.operator.rowType();
                     }
                 }
+                if (usedUnion != null)
+                    usedUnion[0] = true;
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
