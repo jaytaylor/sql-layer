@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.TAttributeValue;
 import com.akiban.server.types3.TClass;
@@ -58,7 +58,7 @@ public class StringFactory implements TFactory
     
     private final TClass tclass;
     
-    StringFactory(TClass tClass)
+    public StringFactory(TClass tClass)
     {
         tclass = tClass;
     }

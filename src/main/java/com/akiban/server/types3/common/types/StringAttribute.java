@@ -24,43 +24,20 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.Attribute;
 
-public class MString extends TClass
+public enum StringAttribute implements Attribute
 {
-    public static final MString VARCHAR = new MString("varchar", -1);
+    /**
+     * Number of characters
+     * (Not byte length)
+     */
+    LENGTH,
     
-    // TODO: define CHAR, and VARBINARY
     
-    private MString(String name, int serialisationSize)
-    {       
-        super(MBundle.INSTANCE.id(),
-                name,
-                StringAttribute.values(),
-                1,
-                1,
-                serialisationSize,
-                PUnderlying.BYTES);
-    }
-
-    @Override
-    public TFactory factory()
-    {
-        return new StringFactory(this);
-    }
-
-    @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1)
-    {
-        // TODO:
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+    CHARSET_ID,
+    
+    COLLATION
 }

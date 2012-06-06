@@ -30,7 +30,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.ABundle;
-import com.akiban.server.types3.common.IntAttribute;
+import com.akiban.server.types3.common.types.IntAttribute;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
 public class AkNumeric extends TClass {

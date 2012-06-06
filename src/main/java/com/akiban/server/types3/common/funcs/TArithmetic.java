@@ -24,43 +24,43 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.common.types.StringFactory;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.math.BigDecimal;
 
-public class MString extends TClass
-{
-    public static final MString VARCHAR = new MString("varchar", -1);
+import java.util.List;
+
+public abstract class TArithmetic extends TOverloadBase {
+ 
+    protected TArithmetic(String overloadName, TClass inputType, TClass resultType) {
+       this.overloadName = overloadName;
+       this.inputType = inputType;
+       this.resultType = resultType;
+    }
     
-    // TODO: define CHAR, and VARBINARY
-    
-    private MString(String name, int serialisationSize)
-    {       
-        super(MBundle.INSTANCE.id(),
-                name,
-                StringAttribute.values(),
-                1,
-                1,
-                serialisationSize,
-                PUnderlying.BYTES);
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(inputType, 0, 1);
     }
 
     @Override
-    public TFactory factory()
-    {
-        return new StringFactory(this);
+    public String overloadName() {
+        return overloadName;
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1)
-    {
-        // TODO:
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+    public TOverloadResult resultType() {
+        return new TOverloadResult(resultType);
+    } 
+    
+    private final String overloadName;
+    private final TClass inputType;
+    private final TClass resultType;
 }
