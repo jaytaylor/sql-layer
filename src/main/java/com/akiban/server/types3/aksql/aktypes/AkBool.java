@@ -27,33 +27,20 @@
 package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.ABundle;
-import com.akiban.server.types3.common.types.IntAttribute;
+import com.akiban.server.types3.common.types.Boolean;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
-public class AkNumeric extends TClass {
-
-    private AkNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
-        super(ABundle.INSTANCE.id(), name, 
-                IntAttribute.values(),
-                1, 1, serializationSize, 
-                pUnderlying);
-    }
-
-    @Override
-    public TFactory factory() {
-        return new AkNumericFactory(this);
-    }
-     
-    @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+/**
+ * 
+ * Implement AkServer's bool type which is a Java's primitive boolean
+ */
+public class AkBool extends Boolean
+{
+    public static final TClass INSTANCE = new AkBool();
     
-    // numeric types
-    public static final TClass SMALLINT = new AkNumeric("smallint", 2, PUnderlying.INT_16);
-    public static final TClass INT = new AkNumeric("int", 4, PUnderlying.INT_32);
-    public static final TClass BIGINT = new AkNumeric("bigint", 8, PUnderlying.INT_64);
+    AkBool()
+    {
+        super(ABundle.INSTANCE.id(), PUnderlying.BOOL);
+    }
 }

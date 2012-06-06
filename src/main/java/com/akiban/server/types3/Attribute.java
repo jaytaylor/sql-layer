@@ -28,6 +28,8 @@ package com.akiban.server.types3;
 
 public interface Attribute
 {
+    public static final Attribute NONE[] = new Attribute[0];
+    
     String name();
     int ordinal();
 }

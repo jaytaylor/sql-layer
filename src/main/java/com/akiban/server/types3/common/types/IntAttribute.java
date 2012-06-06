@@ -24,43 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.math.BigDecimal;
+import com.akiban.server.types3.Attribute;
 
-import java.util.List;
-
-public abstract class TArithmetic extends TOverloadBase {
- 
-    protected TArithmetic(String overloadName, TClass inputType, TClass resultType) {
-       this.overloadName = overloadName;
-       this.inputType = inputType;
-       this.resultType = resultType;
-    }
-    
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(inputType, 0, 1);
-    }
-
-    @Override
-    public String overloadName() {
-        return overloadName;
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return new TOverloadResult(resultType);
-    } 
-    
-    private final String overloadName;
-    private final TClass inputType;
-    private final TClass resultType;
+public enum IntAttribute implements Attribute
+{
+    /**
+     * The display width [M] of an integer
+     */
+    WIDTH
 }

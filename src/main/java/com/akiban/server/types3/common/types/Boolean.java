@@ -24,20 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-public enum StringAttribute implements Attribute
+public class Boolean extends TClass
 {
-    /**
-     * Number of characters
-     * (Not byte length)
-     */
-    LENGTH,
+    public Boolean(TBundleID bundleId, PUnderlying type)
+    {
+        super(bundleId,
+                "boolean",
+                Attribute.NONE, // boolean doesn't have any attribute
+                1,
+                1,
+                1,
+                type);
+    }
     
-    
-    CHARSET_ID,
-    
-    COLLATION
+    @Override
+    public TFactory factory()
+    {
+        return new NoAttrFactory(this);
+    }
+
+    @Override
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

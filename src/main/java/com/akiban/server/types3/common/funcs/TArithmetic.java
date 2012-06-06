@@ -24,36 +24,43 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.ABundle;
-import com.akiban.server.types3.common.types.IntAttribute;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.math.BigDecimal;
 
-public class AkNumeric extends TClass {
+import java.util.List;
 
-    private AkNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
-        super(ABundle.INSTANCE.id(), name, 
-                IntAttribute.values(),
-                1, 1, serializationSize, 
-                pUnderlying);
-    }
-
-    @Override
-    public TFactory factory() {
-        return new AkNumericFactory(this);
-    }
-     
-    @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        throw new UnsupportedOperationException("Not supported yet.");
+public abstract class TArithmetic extends TOverloadBase {
+ 
+    protected TArithmetic(String overloadName, TClass inputType, TClass resultType) {
+       this.overloadName = overloadName;
+       this.inputType = inputType;
+       this.resultType = resultType;
     }
     
-    // numeric types
-    public static final TClass SMALLINT = new AkNumeric("smallint", 2, PUnderlying.INT_16);
-    public static final TClass INT = new AkNumeric("int", 4, PUnderlying.INT_32);
-    public static final TClass BIGINT = new AkNumeric("bigint", 8, PUnderlying.INT_64);
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(inputType, 0, 1);
+    }
+
+    @Override
+    public String overloadName() {
+        return overloadName;
+    }
+
+    @Override
+    public TOverloadResult resultType() {
+        return new TOverloadResult(resultType);
+    } 
+    
+    private final String overloadName;
+    private final TClass inputType;
+    private final TClass resultType;
 }

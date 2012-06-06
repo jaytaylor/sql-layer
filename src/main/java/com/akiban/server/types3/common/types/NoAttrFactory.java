@@ -24,14 +24,29 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TypeDeclarationException;
+import java.util.List;
 
-public enum IntAttribute implements Attribute
+public class NoAttrFactory implements TFactory
 {
-    /**
-     * The display width [M] of an integer
-     */
-    WIDTH
+    private final TClass instance;
+    
+    public NoAttrFactory(TClass ins)
+    {
+        instance = ins;
+    }
+    
+    @Override
+    public TInstance create(List<TAttributeValue> arguments, boolean strict)
+    {
+        if (!arguments.isEmpty())
+            throw new TypeDeclarationException("Too many arguments");
+        return new TInstance(instance);
+    }
 }

@@ -31,7 +31,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.common.TArithmetic;
+import com.akiban.server.types3.common.funcs.TArithmetic;
 
 public class AkArithmetic {
 

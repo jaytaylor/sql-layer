@@ -24,36 +24,20 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.ABundle;
-import com.akiban.server.types3.common.types.IntAttribute;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.Attribute;
 
-public class AkNumeric extends TClass {
-
-    private AkNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
-        super(ABundle.INSTANCE.id(), name, 
-                IntAttribute.values(),
-                1, 1, serializationSize, 
-                pUnderlying);
-    }
-
-    @Override
-    public TFactory factory() {
-        return new AkNumericFactory(this);
-    }
-     
-    @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+public enum StringAttribute implements Attribute
+{
+    /**
+     * Number of characters
+     * (Not byte length)
+     */
+    LENGTH,
     
-    // numeric types
-    public static final TClass SMALLINT = new AkNumeric("smallint", 2, PUnderlying.INT_16);
-    public static final TClass INT = new AkNumeric("int", 4, PUnderlying.INT_32);
-    public static final TClass BIGINT = new AkNumeric("bigint", 8, PUnderlying.INT_64);
+    
+    CHARSET_ID,
+    
+    COLLATION
 }
