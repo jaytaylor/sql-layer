@@ -70,6 +70,12 @@ public final class Matchers
         {
             return str.isEmpty();
         }
+
+        @Override
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.isEmpty();
+        }
     }
     
     static abstract class AbstractMatcher implements Matcher
@@ -134,11 +140,13 @@ public final class Matchers
     static class Contain extends AbstractMatcher
     {
         private final String pattern;
+        private final char escape;
         private List<Token> tokens;
         
         public Contain (String pt, char escape, boolean ignoreCase)
         {
             pattern = pt;
+            this.escape = escape;
             
             // start at 0, since 0 would've been skipped anyways
             tokens = computePos(escape, pt, 1, ignoreCase);
@@ -154,6 +162,12 @@ public final class Matchers
                     return false;
             
             return true;
+        }
+
+        @Override
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.equals(this.pattern) && escape == this.escape;
         }
     }
     
@@ -255,6 +269,12 @@ public final class Matchers
                 else 
                     return false;
             }
+        }
+
+        @Override
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.equals(this.pattern) && escape == this.escape;
         }
     }
     

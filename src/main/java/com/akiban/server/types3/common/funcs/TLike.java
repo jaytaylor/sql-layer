@@ -28,6 +28,8 @@ package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
+import com.akiban.server.expression.std.Matcher;
+import com.akiban.server.expression.std.Matchers;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
@@ -68,14 +70,14 @@ public class TLike extends TOverloadBase
         ILIKE  // case insensitive
     }
     
+    
+    // caching positions
+    private static final int MATCHER_INDEX = 0;
+    
     private final int coverage[];
     private final TClass stringType;
     private final LikeType likeType;
     
-    // compiled pattern
-    private Matcher matcher = null;
-    private String oldPattern = null;
-    private char oldEscape = '\0';
     TLike (int c[], TClass sType, LikeType lType)
     {
         coverage = c;
@@ -103,18 +105,16 @@ public class TLike extends TOverloadBase
             esca = escapeString.charAt(0);
         }
      
-        // This is the current way of 'caching' the pattern
-        // We should have a better way
+        // gret the cached matcher
+        Matcher matcher = (Matcher) context.exectimeObjectAt(MATCHER_INDEX);
+        
         if (matcher == null
             //  || check whether right is a literal, if not, just compile a new pattern
-                || (!right.equals(oldPattern) && esca != oldEscape)
+                || !matcher.sameState(right, esca)
            )
-        {
-            oldPattern = right;
-            oldEscape = esca;
-            matcher = Matchers.getMatcher(oldPattern, esca, likeType == LikeType.ILIKE);
-        }
-        
+            context.putExectimeObject(MATCHER_INDEX, 
+                    matcher = Matchers.getMatcher(right, esca, likeType == LikeType.LIKE));
+
         try
         {
             output.putBool(matcher.match(left));
