@@ -36,11 +36,11 @@ public class AkNumeric {
     private AkNumeric() {}
     
     // numeric types
-    public static final TClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16);
-    public static final TClass INT = create("int", 1, 1, 4, PUnderlying.INT_32);
-    public static final TClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64);
+    public static final NoAttrTClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16);
+    public static final NoAttrTClass INT = create("int", 1, 1, 4, PUnderlying.INT_32);
+    public static final NoAttrTClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64);
 
-    public static final TClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE);
+    public static final NoAttrTClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE);
 
     // basically a curried function, with AkBunder.INSTANCE.id() partially applied
     private static NoAttrTClass create(String name,
