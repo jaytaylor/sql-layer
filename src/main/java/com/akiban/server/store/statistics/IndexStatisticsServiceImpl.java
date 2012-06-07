@@ -116,7 +116,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 .colLong("index_id", false)
                 .colLong("column_count", false)
                 .colLong("item_number", false)
-                .colString("key_string", 2048, true)
+                .colString("key_string", 2048, true, "latin1")
                 .colVarBinary("key_bytes", 4096, true)
                 .colBigInt("eq_count", true)
                 .colBigInt("lt_count", true)
