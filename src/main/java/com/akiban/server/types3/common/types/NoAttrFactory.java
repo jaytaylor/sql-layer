@@ -35,11 +35,11 @@ import java.util.List;
 
 public class NoAttrFactory implements TFactory
 {
-    private final TClass instance;
+    private final TInstance instance;
     
-    public NoAttrFactory(TClass ins)
+    public NoAttrFactory(TInstance tInstance)
     {
-        instance = ins;
+        instance = tInstance;
     }
     
     @Override
@@ -47,6 +47,6 @@ public class NoAttrFactory implements TFactory
     {
         if (!arguments.isEmpty())
             throw new TypeDeclarationException("Too many arguments");
-        return new TInstance(instance);
+        return instance;
     }
 }

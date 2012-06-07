@@ -24,37 +24,43 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TypeDeclarationException;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-import java.util.List;
+import java.util.concurrent.atomic.AtomicReference;
 
-class AkNumericFactory implements TFactory {
-    @Override
-    public TInstance create(List<TAttributeValue> arguments, boolean strict) {
-        int m;
-        switch (arguments.size()) {
-        case 0:
-            m = DEFAULT_M;
-            break;
-        case 1:
-            m = arguments.get(0).intValue();
-            break;
-        default:
-            throw new TypeDeclarationException("too many arguments provided");
+public class NoAttrTClass extends TClass {
+
+    public TInstance tInstance() {
+        TInstance result = tInstance.get();
+        if (result == null) {
+            tInstance.compareAndSet(null, new TInstance(this));
+            // Either we installed the new TInstance, or someone else beat us to it. Either way, use what's there.
+            result = tInstance.get();
         }
-        return new TInstance(tClass, m);
+        return result;
     }
 
-    AkNumericFactory(TClass tClass) {
-        this.tClass = tClass;
+    @Override
+    public TFactory factory() {
+        return new NoAttrFactory(tInstance());
     }
 
-    private final TClass tClass;
-    private static final int DEFAULT_M = 10;
+    @Override
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+        return instance0; // doesn't matter which it is
+    }
+
+    public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
+                           int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
+        super(bundle, name, Attribute.NONE, internalRepVersion, serializationVersion, serializationSize, pUnderlying);
+    }
+
+    private final AtomicReference<TInstance> tInstance = new AtomicReference<TInstance>();
 }

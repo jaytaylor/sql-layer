@@ -31,31 +31,27 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.ABundle;
 import com.akiban.server.types3.common.types.IntAttribute;
+import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
-public class AkNumeric extends TClass {
+public class AkNumeric {
 
-    private AkNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
-        super(ABundle.INSTANCE.id(), name,
-                IntAttribute.values(),
-                1, 1, serializationSize,
-                pUnderlying);
-    }
-
-    @Override
-    public TFactory factory() {
-        return new AkNumericFactory(this);
-    }
-     
-    @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        throw new UnsupportedOperationException("Not supported yet.");
-    }
+    private AkNumeric() {}
     
     // numeric types
-    public static final TClass SMALLINT = new AkNumeric("smallint", 2, PUnderlying.INT_16);
-    public static final TClass INT = new AkNumeric("int", 4, PUnderlying.INT_32);
-    public static final TClass BIGINT = new AkNumeric("bigint", 8, PUnderlying.INT_64);
+    public static final TClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16);
+    public static final TClass INT = create("int", 1, 1, 4, PUnderlying.INT_32);
+    public static final TClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64);
 
-    public static final TClass DOUBLE = new AkNumeric("double precision", 8, PUnderlying.DOUBLE);
+    public static final TClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE);
+
+    // basically a curried function, with AkBunder.INSTANCE.id() partially applied
+    private static NoAttrTClass create(String name,
+                                       int internalVersion,
+                                       int serialVersion,
+                                       int size,
+                                       PUnderlying underlying)
+    {
+        return new NoAttrTClass(ABundle.INSTANCE.id(), name, internalVersion, serialVersion, size, underlying);
+    }
 }
