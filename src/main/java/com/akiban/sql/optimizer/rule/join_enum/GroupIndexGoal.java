@@ -341,11 +341,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         List<OrderByExpression> indexOrdering = index.getOrdering();
         if (indexOrdering == null) return result;
         BitSet reverse = new BitSet(indexOrdering.size());
-        List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-        int nequals = 0;
+        int nequals = index.getNEquality();
         List<ExpressionNode> equalityColumns = null;
-        if (equalityComparands != null) {
-            nequals = equalityComparands.size();
+        if (nequals > 0) {
             equalityColumns = index.getColumns().subList(0, nequals);
         }
         try_sorted:
@@ -462,8 +460,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
     public boolean orderedForDistinct(Project projectDistinct, IndexScan index) {
         List<OrderByExpression> indexOrdering = index.getOrdering();
         if (indexOrdering == null) return false;
-        List<ExpressionNode> equalityComparands = index.getEqualityComparands();
-        int nequals = (equalityComparands == null) ? 0 : equalityComparands.size();
+        int nequals = index.getNEquality();
         return orderedForDistinct(projectDistinct, indexOrdering, nequals);
     }
 
