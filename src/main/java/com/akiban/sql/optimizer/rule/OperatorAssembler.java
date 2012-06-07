@@ -280,20 +280,25 @@ public class OperatorAssembler extends BaseRule
         }
         
         protected RowStream assembleIndexScan(IndexScan index) {
+            return assembleIndexScan(index, false, useSkipScan(index));
+        }
+
+        protected RowStream assembleIndexScan(IndexScan index, boolean forIntersection, boolean useSkipScan) {
             if (index instanceof SingleIndexScan)
-                return assembleSingleIndexScan((SingleIndexScan) index);
+                return assembleSingleIndexScan((SingleIndexScan) index, forIntersection);
             else if (index instanceof MultiIndexIntersectScan)
-                return assembleIndexIntersection((MultiIndexIntersectScan) index);
+                return assembleIndexIntersection((MultiIndexIntersectScan) index, useSkipScan);
             else
                 throw new UnsupportedSQLException("Plan node " + index, null);
         }
 
-        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index) {
+        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index, boolean useSkipScan) {
             RowStream stream = new RowStream();
-            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan());
-            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan());
-            Operator intersect;
-            intersect = API.intersect_Ordered(
+            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan(), 
+                                                     true, useSkipScan);
+            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan(), 
+                                                       true, useSkipScan);
+            stream.operator = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
                     (IndexRowType) outputScan.rowType,
@@ -302,15 +307,17 @@ public class OperatorAssembler extends BaseRule
                     index.getSelectorOrderingFields(),
                     index.getComparisonFieldDirections(),
                     JoinType.INNER_JOIN,
-                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT)
-            );
-            stream.operator = intersect;
+                    (useSkipScan) ? 
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
+                               API.IntersectOption.SKIP_SCAN) :
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
+                               API.IntersectOption.SEQUENTIAL_SCAN));
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
             return stream;
         }
 
-        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan) {
+        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan, boolean forIntersection) {
             RowStream stream = new RowStream();
             Index index = indexScan.getIndex();
             IndexRowType indexRowType = schema.indexRowType(index);
@@ -344,6 +351,18 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 ColumnRanges range = indexScan.getConditionRange();
+                // Non-single-point ranges are ordered by the ranges
+                // themselves as part of merging segments, so that index
+                // column is an ordering column.
+                // Single-point ranges have only one value for the range column,
+                // so they can order by the following columns if we're
+                // willing to do the more expensive ordered union.
+                // Determine whether anything is taking advantage of this:
+                // * Index is being intersected.
+                // * Index is effective for query ordering.
+                // ** See also special case in AggregateSplitter.directIndexMinMax().
+                boolean unionOrdered = (range.isAllSingle() && 
+                     (forIntersection || (indexScan.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE)));
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
@@ -353,6 +372,19 @@ public class OperatorAssembler extends BaseRule
                         stream.operator = scan;
                         stream.rowType = indexRowType;
                     }
+                    else if (unionOrdered) {
+                        int nequals = indexScan.getNEquality();
+                        List<OrderByExpression> ordering = indexScan.getOrdering();
+                        int nordering = ordering.size() - nequals;
+                        boolean[] ascending = new boolean[nordering];
+                        for (int i = 0; i < nordering; i++) {
+                            ascending[i] = ordering.get(nequals + i).isAscending();
+                        }
+                        stream.operator = API.union_Ordered(stream.operator, scan,
+                                                            (IndexRowType)stream.rowType, indexRowType,
+                                                            nordering, nordering, 
+                                                            ascending);
+                    }
                     else {
                         stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
                         stream.rowType = stream.operator.rowType();
@@ -361,6 +393,42 @@ public class OperatorAssembler extends BaseRule
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
+        }
+
+        /** If there are this many or more scans feeding into a tree
+         * of intersection / union, then skip scan is enabled for it.
+         * (3 scans means 2 intersections or intersection with a two-value union.)
+         */
+        public static final int SKIP_SCAN_MIN_COUNT_DEFAULT = 3;
+
+        protected boolean useSkipScan(IndexScan index) {
+            if (!(index instanceof MultiIndexIntersectScan))
+                return false;
+            int count = countScans(index);
+            int minCount;
+            String prop = rulesContext.getProperty("skipScanMinCount");
+            if (prop != null)
+                minCount = Integer.valueOf(prop);
+            else
+                minCount = SKIP_SCAN_MIN_COUNT_DEFAULT;
+            return (count >= minCount);
+        }
+
+        private int countScans(IndexScan index) {
+            if (index instanceof SingleIndexScan) {
+                SingleIndexScan sindex = (SingleIndexScan)index;
+                if (sindex.getConditionRange() == null)
+                    return 1;
+                else
+                    return sindex.getConditionRange().getSegments().size();
+            }
+            else if (index instanceof MultiIndexIntersectScan) {
+                MultiIndexIntersectScan mindex = (MultiIndexIntersectScan)index;
+                return countScans(mindex.getOutputIndexScan()) +
+                       countScans(mindex.getSelectorIndexScan());
+            }
+            else
+                return 0;
         }
 
         protected RowStream assembleGroupScan(GroupScan groupScan) {
