@@ -26,28 +26,17 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.TAttributeValues;
+import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TypeDeclarationException;
-
-import java.util.List;
 
 class MNumericFactory implements TFactory {
     @Override
-    public TInstance create(List<TAttributeValue> arguments, boolean strict) {
-        int m;
-        switch (arguments.size()) {
-        case 0:
-            m = DEFAULT_M;
-            break;
-        case 1:
-            m = arguments.get(0).intValue();
-            break;
-        default:
-            throw new TypeDeclarationException("too many arguments provided");
-        }
+    public TInstance create(TAttributesDeclaration arguments) {
+        TAttributeValues vals = arguments.get(1, 1);
+        int m = vals.intAt(0, DEFAULT_M);
         return new TInstance(tClass, m);
     }
 

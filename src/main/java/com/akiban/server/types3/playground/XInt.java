@@ -27,13 +27,11 @@
 package com.akiban.server.types3.playground;
 
 import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
-
-import java.util.List;
 
 public final class XInt extends TClass {
 
@@ -62,8 +60,8 @@ public final class XInt extends TClass {
 
     private static final TFactory FACTORY = new TFactory() {
         @Override
-        public TInstance create(List<TAttributeValue> arguments, boolean strict) {
-            assert arguments.isEmpty() : arguments;
+        public TInstance create(TAttributesDeclaration arguments) {
+            arguments.get(0, 0);
             return INSTANCE;
         }
     };

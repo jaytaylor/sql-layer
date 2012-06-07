@@ -29,5 +29,5 @@ package com.akiban.server.types3;
 import java.util.List;
 
 public interface TFactory {
-    public TInstance create(List<TAttributeValue> arguments, boolean strict);
+    public TInstance create(TAttributesDeclaration arguments);
 }
