@@ -1,4 +1,14 @@
-bloom-filter: Use a Bloom filter to help with non-selective semi-join
+bloom-filter-1: Use a Bloom filter to help with selective semi-join
+
+bloom-filter-1l: LIMIT adjusted when costing
+
+bloom-filter-1n: Extra columns means not semi-join
+
+bloom-filter-1o: Outer join
+
+bloom-filter-1x: Written with EXISTS
+
+bloom-filter-2: Do not use when not selective
 
 choose-condition-1: narrow and wide
 
