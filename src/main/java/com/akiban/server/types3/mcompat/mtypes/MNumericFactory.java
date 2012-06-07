@@ -35,7 +35,7 @@ import com.akiban.server.types3.TInstance;
 class MNumericFactory implements TFactory {
     @Override
     public TInstance create(TAttributesDeclaration arguments) {
-        TAttributeValues vals = arguments.get(1, 1);
+        TAttributeValues vals = arguments.validate(1, 1);
         int m = vals.intAt(0, DEFAULT_M);
         return new TInstance(tClass, m);
     }

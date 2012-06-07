@@ -61,7 +61,7 @@ public final class XInt extends TClass {
     private static final TFactory FACTORY = new TFactory() {
         @Override
         public TInstance create(TAttributesDeclaration arguments) {
-            arguments.get(0, 0);
+            arguments.validate(0, 0);
             return INSTANCE;
         }
     };

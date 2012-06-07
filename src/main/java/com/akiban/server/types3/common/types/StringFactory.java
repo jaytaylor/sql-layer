@@ -72,7 +72,7 @@ public class StringFactory implements TFactory
     @Override
     public TInstance create(TAttributesDeclaration arguments)
     {
-        TAttributeValues values = arguments.get(3, 3);
+        TAttributeValues values = arguments.validate(3, 3);
         int length = values.intAt(0, DEFAULT_LENGTH);
         String charsetName = values.stringAt(1, DEFAULT_CHARSET.name());
         int charsetId = Enums.ordinalOf(Charset.class, charsetName);
