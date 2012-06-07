@@ -255,7 +255,7 @@ class Intersect_Ordered extends Operator
                             nextLeftRow();
                         } else {
                             if (skipScan) {
-                                nextLeftRowSkip(rightRow.get(), rightFixedFields, rightSkipRowColumnSelector);
+                                nextLeftRowSkip(rightRow.get(), rightFixedFields, leftSkipRowColumnSelector);
                             } else {
                                 nextLeftRow();
                             }
@@ -267,7 +267,7 @@ class Intersect_Ordered extends Operator
                             nextRightRow();
                         } else {
                             if (skipScan) {
-                                nextRightRowSkip(leftRow.get(), leftFixedFields, leftSkipRowColumnSelector);
+                                nextRightRowSkip(leftRow.get(), leftFixedFields, rightSkipRowColumnSelector);
                             } else {
                                 nextRightRow();
                             }
