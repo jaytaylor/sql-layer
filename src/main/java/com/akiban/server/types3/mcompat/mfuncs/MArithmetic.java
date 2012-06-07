@@ -159,8 +159,12 @@ public class MArithmetic {
             // TODO: Make this faster
             BigDecimal dec0 = (BigDecimal) inputs.get(0).getObject();
             BigDecimal dec1 = (BigDecimal) inputs.get(1).getObject();
-            BigDecimal result = dec0.divide(dec1);
-            output.putObject(result);
+            
+            if (dec1.intValue() == 0) output.putNull();
+            else {
+                BigDecimal result = dec0.divide(dec1);
+                output.putObject(result);
+            }
         }
     };
     
