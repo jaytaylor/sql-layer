@@ -26,12 +26,12 @@
 
 package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.TAttributeValue;
+import com.akiban.server.types3.TAttributeValues;
+import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TypeDeclarationException;
-import java.util.List;
+import com.akiban.util.Enums;
 
 public class StringFactory implements TFactory
 {
@@ -50,7 +50,7 @@ public class StringFactory implements TFactory
     // default number of characters in a string      
     private static final int DEFAULT_LENGTH = 255;
     
-    private static final int DEFAULT_CHARSET_ID = Charset.UTF8.ordinal();
+    private static final Charset DEFAULT_CHARSET = Charset.UTF8;
     
     private static final int DEFAULT_COLLATION_ID = 0; // TODO:
     
@@ -65,31 +65,17 @@ public class StringFactory implements TFactory
      
     /**
      * 
-     * @param arguments: containing the attributes of a String. Should be in the following order:
-     *          [<LENGTH>[,<CHARSET_ID>[,<COLLATION>]]]
-     * @param strict ?? What's this flag for?
-     * @return a type instance with the given attribute
+     *
+     * @param declaration@return a type instance with the given attribute
      */
     @Override
-    public TInstance create(List<TAttributeValue> arguments, boolean strict)
+    public TInstance create(TAttributesDeclaration declaration)
     {
-        int length = DEFAULT_LENGTH;
-        int charsetId = DEFAULT_CHARSET_ID;        
-        int collation = DEFAULT_COLLATION_ID;
-       
-        switch (arguments.size())
-        {
-            case 3: // everything available
-                collation = arguments.get(3).intValue(); // fall thru
-            case 2: // avaialble up to charset
-                charsetId = arguments.get(1).intValue(); // fall thru
-            case 1: // avaialble up to length 
-                length = arguments.get(0).intValue(); // fall thru
-            case 0: // nothing available
-                break;
-            default:
-                throw new TypeDeclarationException("too many arguments");
-        }
+        TAttributeValues values = declaration.validate(3, 3);
+        int length = values.intAt(StringAttribute.LENGTH, DEFAULT_LENGTH);
+        String charsetName = values.stringAt(StringAttribute.CHARSET, DEFAULT_CHARSET.name());
+        int charsetId = Enums.ordinalOf(Charset.class, charsetName);
+        int collation = values.intAt(StringAttribute.COLLATION, DEFAULT_COLLATION_ID); // TODO need something similar
         return new TInstance(tclass, length, charsetId, collation);
     }
 

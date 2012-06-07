@@ -26,12 +26,9 @@
 
 package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.TAttributeValue;
-import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TypeDeclarationException;
-import java.util.List;
 
 public class NoAttrFactory implements TFactory
 {
@@ -43,10 +40,9 @@ public class NoAttrFactory implements TFactory
     }
     
     @Override
-    public TInstance create(List<TAttributeValue> arguments, boolean strict)
+    public TInstance create(TAttributesDeclaration declaration)
     {
-        if (!arguments.isEmpty())
-            throw new TypeDeclarationException("Too many arguments");
+        declaration.validate(0, 0);
         return instance;
     }
 }

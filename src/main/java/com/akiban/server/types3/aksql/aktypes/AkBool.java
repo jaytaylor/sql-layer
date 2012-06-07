@@ -26,21 +26,16 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.common.types.TBoolean;
+import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
 /**
  * 
  * Implement AkServer's bool type which is a Java's primitive boolean
  */
-public class AkBool extends TBoolean
+public class AkBool
 {
-    public static final TClass INSTANCE = new AkBool();
-    
-    AkBool()
-    {
-        super(AkBundle.INSTANCE.id(), PUnderlying.BOOL);
-    }
+    public static final NoAttrTClass INSTANCE = new NoAttrTClass(
+            AkBundle.INSTANCE.id(), "boolean", 1, 1, 1, PUnderlying.BOOL);
 }
