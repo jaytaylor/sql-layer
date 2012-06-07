@@ -27,9 +27,6 @@
 package com.akiban.server.types3;
 
 import com.akiban.util.ArgumentValidation;
-import com.google.common.base.Function;
-
-import java.util.List;
 
 public class TOverloadResult {
 
@@ -42,7 +39,7 @@ public class TOverloadResult {
         return fixedType;
     }
 
-    public Function<List<TPreptimeValue>,TInstance> customRule() {
+    public TCustomOverloadResult customRule() {
         check(Category.CUSTOM);
         return customRule;
     }
@@ -80,7 +77,11 @@ public class TOverloadResult {
         this(Category.PICKING, null, pickingInputSet, null, null);
     }
 
-    public TOverloadResult(Function<List<TPreptimeValue>,TInstance> rule, TInstance castSource) {
+    public TOverloadResult(TCustomOverloadResult rule) {
+        this(rule, null);
+    }
+
+    public TOverloadResult(TCustomOverloadResult rule, TInstance castSource) {
         this(Category.CUSTOM, null, -1, rule, castSource);
         ArgumentValidation.notNull("custom combine rule", rule);
     }
@@ -88,7 +89,7 @@ public class TOverloadResult {
     private TOverloadResult(Category category,
                             TClass fixedType,
                             int pickingInputSet,
-                            Function<List<TPreptimeValue>,TInstance> customRule,
+                            TCustomOverloadResult customRule,
                             TInstance castSource)
     {
         this.category = category;
@@ -101,7 +102,7 @@ public class TOverloadResult {
     private final Category category;
     private final TClass fixedType;
     private final int pickingInputSet;
-    private final Function<List<TPreptimeValue>,TInstance> customRule;
+    private final TCustomOverloadResult customRule;
     private final TInstance castSource;
 
     public enum Category {
