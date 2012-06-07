@@ -30,7 +30,6 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
@@ -65,11 +64,15 @@ public abstract class TOverloadBase implements TOverload {
     @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, final LazyList<? extends TPreptimeValue> inputs) {
         for (int i = 0; i < inputs.size(); ++i) {
-            if (nonConstantContaminates(i)) {
+            if (constnessMatters(i)) {
                 TPreptimeValue preptimeValue = inputs.get(i);
-                if (preptimeValue == null || preptimeValue.value() == null) {
+                PValueSource prepSource = (preptimeValue == null) ? null : preptimeValue.value();
+                Constantness constness = constness(i, prepSource);
+                if (constness == Constantness.NOT_CONST)
                     return null;
-                }
+                if (constness == Constantness.CONST)
+                    break;
+                assert constness == Constantness.UNKNOWN : constness;
             }
         }
 
@@ -103,11 +106,32 @@ public abstract class TOverloadBase implements TOverload {
                                        LazyList<? extends PValueSource> inputs,
                                        PValueTarget output);
 
-    protected boolean nonConstantContaminates(int inputIndex) {
+    protected boolean constnessMatters(int inputIndex) {
         return true;
+    }
+
+    /**
+     * <p>Determines this expression's constness given information about its input's prepare-time value. If the
+     * prepare-time value is known (ie, is a constant), preptimeValue will contain that value. Otherwise, preptimeValue
+     * will be <tt>null</tt>. Note that the reference itself will be null, <em>not</em> a reference to a PValueSource
+     * whose {@link PValueSource#isNull()} returns <tt>true</tt>. A non-null PValueSource which <tt>isNull</tt> means 
+     * a prepare-time constant value of <tt>NULL</tt>.</p>
+     * 
+     * <p>The default is to return {@linkplain Constantness#NOT_CONST} as soon as a non-const value is seen, and
+     * {@linkplain Constantness#UNKNOWN} until then.</p>
+     * @param inputIndex the index of the input whose prepare-time value is being considered
+     * @param preptimeValue the prepare-time value, or <tt>null</tt> if not a prepare-time constant
+     * @return what is known about this expression's constness due to this input
+     */
+    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
+        return preptimeValue == null ? Constantness.NOT_CONST : Constantness.UNKNOWN;
     }
 
     protected boolean nullContaminates(int inputIndex) {
         return true;
+    }
+    
+    protected enum Constantness {
+        CONST, NOT_CONST, UNKNOWN
     }
 }
