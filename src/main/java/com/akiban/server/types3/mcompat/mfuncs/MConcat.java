@@ -59,6 +59,7 @@ public class MConcat extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(0);
+        assert false : "need to implement this!";
+        return TOverloadResult.custom(null); // todo
     }
 }

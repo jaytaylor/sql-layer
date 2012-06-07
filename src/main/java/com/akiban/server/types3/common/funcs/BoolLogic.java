@@ -120,7 +120,7 @@ public class BoolLogic extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        return new TOverloadResult(AkBool.INSTANCE);
+        return TOverloadResult.fixed(AkBool.INSTANCE.tInstance());
     }
     
 }

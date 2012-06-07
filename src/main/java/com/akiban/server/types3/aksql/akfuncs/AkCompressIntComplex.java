@@ -87,7 +87,7 @@ public final class AkCompressIntComplex extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(new TCustomOverloadResult() {
+        return TOverloadResult.custom(new TCustomOverloadResult() {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> input, TPreptimeContext context) {
                 TPreptimeValue preptimeValue = input.get(0);

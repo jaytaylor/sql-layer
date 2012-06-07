@@ -58,6 +58,6 @@ public class AkIfElse extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        return new TOverloadResult(1);
+        return TOverloadResult.picking();
     }
 }

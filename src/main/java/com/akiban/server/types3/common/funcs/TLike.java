@@ -136,9 +136,7 @@ public class TLike extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        // TODO: for now, there is only one kind of boolean
-        // this may change later
-        return new TOverloadResult(AkBool.INSTANCE);
+        return TOverloadResult.fixed(AkBool.INSTANCE.tInstance());
     }
     
 }
