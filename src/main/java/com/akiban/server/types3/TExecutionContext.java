@@ -15,11 +15,13 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.util.SparseArray;
 
 import java.util.List;
 
 public final class TExecutionContext {
+
     public TInstance inputTInstanceAt(int index) {
         return inputTypes.get(index);
     }

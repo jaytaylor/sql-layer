@@ -28,9 +28,11 @@ package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -80,9 +82,9 @@ public final class AkCompressIntComplex extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(new Function<List<TPreptimeValue>, TInstance>() {
+        return new TOverloadResult(new TCustomOverloadResult() {
             @Override
-            public TInstance apply(List<TPreptimeValue> input) {
+            public TInstance resultInstance(List<TPreptimeValue> input, TPreptimeContext context) {
                 TPreptimeValue preptimeValue = input.get(0);
 
                 // if the preptimevalue is non-const, assume BIGINT
