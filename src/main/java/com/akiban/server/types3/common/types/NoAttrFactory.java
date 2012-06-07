@@ -40,9 +40,9 @@ public class NoAttrFactory implements TFactory
     }
     
     @Override
-    public TInstance create(TAttributesDeclaration arguments)
+    public TInstance create(TAttributesDeclaration declaration)
     {
-        arguments.validate(0, 0);
+        declaration.validate(0, 0);
         return instance;
     }
 }

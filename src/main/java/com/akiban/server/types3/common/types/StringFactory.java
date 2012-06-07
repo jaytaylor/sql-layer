@@ -65,14 +65,13 @@ public class StringFactory implements TFactory
      
     /**
      * 
-     * @param arguments: containing the attributes of a String. Should be in the following order:
-     *          [<LENGTH>[,<CHARSET_ID>[,<COLLATION>]]]
-     * @return a type instance with the given attribute
+     *
+     * @param declaration@return a type instance with the given attribute
      */
     @Override
-    public TInstance create(TAttributesDeclaration arguments)
+    public TInstance create(TAttributesDeclaration declaration)
     {
-        TAttributeValues values = arguments.validate(3, 3);
+        TAttributeValues values = declaration.validate(3, 3);
         int length = values.intAt(StringAttribute.LENGTH, DEFAULT_LENGTH);
         String charsetName = values.stringAt(StringAttribute.CHARSET, DEFAULT_CHARSET.name());
         int charsetId = Enums.ordinalOf(Charset.class, charsetName);
