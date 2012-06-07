@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.aksql.akfuncs;
 
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
@@ -56,13 +57,13 @@ public final class AkCompressIntComplex extends TOverloadBase {
         case INT_16:
             assert tClass == AkNumeric.SMALLINT : tClass;
             short asShort = (short) asLong;
-            assert ((long)asShort) == asLong : asShort + " != " + asLong;
+            checkOverflow(context, asLong, asShort);
             output.putInt16(asShort);
             break;
         case INT_32:
             assert tClass == AkNumeric.INT : tClass;
             int asInt = (int) asLong;
-            assert ((long)asInt) == asLong : asInt + " != " + asLong;
+            checkOverflow(context, asLong, asInt);
             output.putInt32(asInt);
             break;
         case INT_64:
@@ -72,6 +73,11 @@ public final class AkCompressIntComplex extends TOverloadBase {
         default:
             throw new AssertionError(tClass.name());
         }
+    }
+
+    private void checkOverflow(TExecutionContext context, long expected, long actual) {
+        if (actual != expected)
+            context.warnClient(new OverflowException());
     }
 
     @Override
