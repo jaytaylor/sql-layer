@@ -60,16 +60,15 @@ public class PersistitStoreSchemaManagerIT extends ITBase {
     }
 
     @Test
-    public void existingMetaModelReadAndSavedAsIs() throws Exception {
+    public void existingMetaModelReadAndUpgraded() throws Exception {
         pssm.setSerializationType(SerializationType.META_MODEL);
         createTable(SCHEMA, T1_NAME, T1_DDL);
-        pssm.setSerializationType(PersistitStoreSchemaManager.DEFAULT_SERIALIZATION);
 
         safeRestart();
 
-        assertEquals("Saw MetaModel on load", SerializationType.META_MODEL, pssm.getSerializationType());
+        assertEquals("Protobuf after load", SerializationType.PROTOBUF, pssm.getSerializationType());
         createTable(SCHEMA, T2_NAME, T2_DDL);
-        assertEquals("Still MetaModel after save", "[META_MODEL]", pssm.getAllSerializationTypes(session()).toString());
+        assertEquals("Still Protobuf after save", "[PROTOBUF]", pssm.getAllSerializationTypes(session()).toString());
     }
 
     @Test
