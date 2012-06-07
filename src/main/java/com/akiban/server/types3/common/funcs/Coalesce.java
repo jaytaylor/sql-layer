@@ -43,7 +43,7 @@ public class Coalesce extends TOverloadBase {
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.vararg(returnType);
+        builder.pickingVararg(returnType);
     }
 
     @Override

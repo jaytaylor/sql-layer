@@ -40,7 +40,7 @@ public class AkIfElse extends TOverloadBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(AkBool.INSTANCE, 0).covers(null, 1, 2);
+        builder.covers(AkBool.INSTANCE, 0).pickingCovers(null, 1, 2);
     }
 
     @Override
