@@ -86,6 +86,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NodeTypes.TIMESTAMP_ADD_FN_NODE:
         case NodeTypes.TIMESTAMP_DIFF_FN_NODE:
             return ternaryOperatorFunction((TernaryOperatorNode)node);
+        case NodeTypes.LEFT_FN_NODE:
+        case NodeTypes.RIGHT_FN_NODE:
         case NodeTypes.TRIM_OPERATOR_NODE:
         case NodeTypes.BINARY_DIVIDE_OPERATOR_NODE:
         case NodeTypes.BINARY_MINUS_OPERATOR_NODE:
