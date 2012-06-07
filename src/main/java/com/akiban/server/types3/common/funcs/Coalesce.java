@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
