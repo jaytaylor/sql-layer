@@ -24,19 +24,19 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.aksql.aktypes;
 
+import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.MBundle;
 
-public class MString extends TString
+public class AkString extends TString
 {
-    public static final MString VARCHAR = new MString("varchar", -1);
+    public static final AkString VARCHAR = new AkString("varchar", -1);
     
     // TODO: define CHAR, and VARBINARY
     
-    private MString(String name, int serialisationSize)
-    {       
-        super(MBundle.INSTANCE, name, serialisationSize);
+    private AkString (String name, int serialisationSize)
+    {
+        super(AkBundle.INSTANCE, name, serialisationSize);
     }
 }

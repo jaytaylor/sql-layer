@@ -24,19 +24,9 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.MBundle;
-
-public class MString extends TString
+public interface Matcher
 {
-    public static final MString VARCHAR = new MString("varchar", -1);
-    
-    // TODO: define CHAR, and VARBINARY
-    
-    private MString(String name, int serialisationSize)
-    {       
-        super(MBundle.INSTANCE, name, serialisationSize);
-    }
+    boolean match(String str);
 }
