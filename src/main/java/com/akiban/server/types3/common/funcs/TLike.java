@@ -65,7 +65,7 @@ public class TLike extends TOverloadBase
     {
         BLIKE, // case sensitive
         LIKE,  // ditto
-        ILIKE // case insensitive
+        ILIKE  // case insensitive
     }
     
     private final int coverage[];
