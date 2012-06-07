@@ -39,7 +39,7 @@ public class AkDegrees extends TOverloadBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.vararg(AkNumeric.DOUBLE, 0);
+        builder.covers(AkNumeric.DOUBLE, 0);
     }
 
     @Override
@@ -54,6 +54,6 @@ public class AkDegrees extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(0);
+        return new TOverloadResult(AkNumeric.DOUBLE);
     }
 }
