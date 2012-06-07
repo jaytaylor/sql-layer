@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -36,6 +35,7 @@ public class AkNumeric {
     private AkNumeric() {}
     
     // numeric types
+    public static final NoAttrTClass TINYINT = create("tinyint", 1, 1, 1, PUnderlying.INT_8);
     public static final NoAttrTClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16);
     public static final NoAttrTClass INT = create("int", 1, 1, 4, PUnderlying.INT_32);
     public static final NoAttrTClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64);
