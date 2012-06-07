@@ -24,37 +24,25 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.types;
+package com.akiban.server.types3.aksql;
 
-import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.TBundle;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PUnderlying;
 
-public class TBoolean extends TClass
-{
-    public TBoolean(TBundleID bundleId, PUnderlying type)
-    {
-        super(bundleId,
-                "boolean",
-                Attribute.NONE, // boolean doesn't have any attribute
-                1,
-                1,
-                1,
-                type);
-    }
-    
+import java.util.Map;
+
+public enum AkBundle implements TBundle {
+    INSTANCE;
+
     @Override
-    public TFactory factory()
-    {
-        return new NoAttrFactory(this);
+    public TBundleID id() {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
-    protected TInstance doPickInstance(TInstance instance0, TInstance instance1)
-    {
-        throw new UnsupportedOperationException("Not supported yet.");
+    public Map<TClass, TFactory> typeClasses() {
+        throw new UnsupportedOperationException(); // TODO
     }
 }
