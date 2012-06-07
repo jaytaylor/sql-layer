@@ -738,7 +738,7 @@ public class JoinAndIndexPicker extends BaseRule
             return boundTables;
         }
 
-        double BLOOM_FILTER_MAX_SELECTIVITY = 0.05;
+        double BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT = 0.05;
 
         public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, JoinPlan joinPlan) {
             Plan inputPlan = joinPlan.left;
@@ -751,7 +751,7 @@ public class JoinAndIndexPicker extends BaseRule
             if (prop != null)
                 maxSelectivity = Double.valueOf(prop);
             else
-                maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY;
+                maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT;
             if (maxSelectivity <= 0.0) return null; // Feature turned off.
             List<ExpressionNode> hashColumns = new ArrayList<ExpressionNode>();
             List<ExpressionNode> matchColumns = new ArrayList<ExpressionNode>();
