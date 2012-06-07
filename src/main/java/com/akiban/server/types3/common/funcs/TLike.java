@@ -103,6 +103,8 @@ public class TLike extends TOverloadBase
             esca = escapeString.charAt(0);
         }
      
+        // This is the current way of 'caching' the pattern
+        // We should have a better way
         if (matcher == null
             //  || check whether right is a literal, if not, just compile a new pattern
                 || (!right.equals(oldPattern) && esca != oldEscape)
