@@ -24,20 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.aksql.AkBundle;
+import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-public enum StringAttribute implements Attribute
+/**
+ * 
+ * Implement AkServer's bool type which is a Java's primitive boolean
+ */
+public class AkBool
 {
-    /**
-     * Number of characters
-     * (Not byte length)
-     */
-    LENGTH,
-    
-    
-    CHARSET_ID,
-    
-    COLLATION
+    public static final NoAttrTClass INSTANCE = new NoAttrTClass(
+            AkBundle.INSTANCE.id(), "boolean", 1, 1, 1, PUnderlying.BOOL);
 }

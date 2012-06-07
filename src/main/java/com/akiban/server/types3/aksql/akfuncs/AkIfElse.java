@@ -24,14 +24,40 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public enum IntAttribute implements Attribute
+public class AkIfElse extends TOverloadBase
 {
-    /**
-     * The display width [M] of an integer
-     */
-    WIDTH
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(AkBool.INSTANCE, 0).covers(null, 1, 2);
+    }
+
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+        output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
+    }
+
+    @Override
+    public String overloadName()
+    {
+        return "IF";
+    }
+
+    @Override
+    public TOverloadResult resultType()
+    {
+        return new TOverloadResult(1);
+    }
 }

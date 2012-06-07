@@ -24,25 +24,43 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-import java.util.Map;
+import java.util.concurrent.atomic.AtomicReference;
 
-public enum  ABundle implements TBundle {
-    INSTANCE;
+public class NoAttrTClass extends TClass {
 
-    @Override
-    public TBundleID id() {
-        throw new UnsupportedOperationException(); // TODO
+    public TInstance tInstance() {
+        TInstance result = tInstance.get();
+        if (result == null) {
+            tInstance.compareAndSet(null, new TInstance(this));
+            // Either we installed the new TInstance, or someone else beat us to it. Either way, use what's there.
+            result = tInstance.get();
+        }
+        return result;
     }
 
     @Override
-    public Map<TClass, TFactory> typeClasses() {
-        throw new UnsupportedOperationException(); // TODO
+    public TFactory factory() {
+        return new NoAttrFactory(tInstance());
     }
+
+    @Override
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
+        return instance0; // doesn't matter which it is
+    }
+
+    public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
+                           int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
+        super(bundle, name, Attribute.NONE, internalRepVersion, serializationVersion, serializationSize, pUnderlying);
+    }
+
+    private final AtomicReference<TInstance> tInstance = new AtomicReference<TInstance>();
 }

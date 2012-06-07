@@ -31,7 +31,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.common.TArithmetic;
+import com.akiban.server.types3.common.funcs.TArithmetic;
 
 public class AkArithmetic {
 
@@ -64,6 +64,16 @@ public class AkArithmetic {
             output.putInt64(a0 + a1);
         }
     };
+
+    TArithmetic ADD_DOUBLE = new TArithmetic("+", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            double a0 = inputs.get(0).getDouble();
+            double a1 = inputs.get(1).getDouble();
+            output.putDouble(a0 + a1);
+        }
+    };
     
     // Subtract functions
      TArithmetic SUBTRACT_SMALLINT = new TArithmetic("-", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
@@ -90,6 +100,16 @@ public class AkArithmetic {
             long a0 = inputs.get(0).getInt64();
             long a1 = inputs.get(1).getInt64();
             output.putInt64(a0 - a1);
+        }
+    };
+
+    TArithmetic SUBTRACT_DOUBLE = new TArithmetic("-", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            double a0 = inputs.get(0).getDouble();
+            double a1 = inputs.get(1).getDouble();
+            output.putDouble(a0 - a1);
         }
     };
     
@@ -123,6 +143,16 @@ public class AkArithmetic {
             
         }
     };
+
+    TArithmetic DIVIDE_DOUBLE = new TArithmetic("/", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            double a0 = inputs.get(0).getDouble();
+            double a1 = inputs.get(1).getDouble();
+            output.putDouble(a0 / a1);
+        }
+    };
     
     // Multiply functions
     TArithmetic MULTIPLY_SMALLINT = new TArithmetic("*", AkNumeric.SMALLINT, AkNumeric.SMALLINT) {
@@ -149,6 +179,16 @@ public class AkArithmetic {
             long a0 = inputs.get(0).getInt64();
             long a1 = inputs.get(1).getInt64();
             output.putInt64(a0 * a1);
+        }
+    };
+
+    TArithmetic MULTIPLY_DOUBLE = new TArithmetic("*", AkNumeric.DOUBLE, AkNumeric.DOUBLE) {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs,
+                                  PValueTarget output) {
+            double a0 = inputs.get(0).getDouble();
+            double a1 = inputs.get(1).getDouble();
+            output.putDouble(a0 * a1);
         }
     };
 }

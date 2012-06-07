@@ -24,37 +24,25 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.TAttributeValue;
-import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TypeDeclarationException;
 
-import java.util.List;
-
-class AkNumericFactory implements TFactory {
+public class NoAttrFactory implements TFactory
+{
+    private final TInstance instance;
+    
+    public NoAttrFactory(TInstance tInstance)
+    {
+        instance = tInstance;
+    }
+    
     @Override
-    public TInstance create(List<TAttributeValue> arguments, boolean strict) {
-        int m;
-        switch (arguments.size()) {
-        case 0:
-            m = DEFAULT_M;
-            break;
-        case 1:
-            m = arguments.get(0).intValue();
-            break;
-        default:
-            throw new TypeDeclarationException("too many arguments provided");
-        }
-        return new TInstance(tClass, m);
+    public TInstance create(TAttributesDeclaration declaration)
+    {
+        declaration.validate(0, 0);
+        return instance;
     }
-
-    AkNumericFactory(TClass tClass) {
-        this.tClass = tClass;
-    }
-
-    private final TClass tClass;
-    private static final int DEFAULT_M = 10;
 }
