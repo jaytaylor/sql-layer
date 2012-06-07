@@ -29,4 +29,5 @@ package com.akiban.server.expression.std;
 public interface Matcher
 {
     boolean match(String str);
+    boolean sameState(String pattern, char escape);
 }

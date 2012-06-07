@@ -24,19 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.TLike;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
-public class MString extends TString
+public class MLike
 {
-    public static final MString VARCHAR = new MString("varchar", -1);
-    
-    // TODO: define CHAR, and VARBINARY
-    
-    private MString(String name, int serialisationSize)
-    {       
-        super(MBundle.INSTANCE, name, serialisationSize);
-    }
+    public static final TOverload[] LIKE_OVERLOADS = TLike.create(MString.VARCHAR);
 }
