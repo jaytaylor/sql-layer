@@ -58,8 +58,6 @@ import java.io.IOException;
 
 public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
 {
-    public final static TableName INDEX_STATISTICS_NAME = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_statistics");
-    public final static TableName INDEX_STATISTICS_ENTRY_NAME = new TableName(INDEX_STATISTICS_NAME.getSchemaName(), "index_statistics_entry");
     private final static int INDEX_STATISTICS_TABLE_VERSION = 1;
 
     private static final Logger log = LoggerFactory.getLogger(IndexStatisticsServiceImpl.class);

@@ -26,6 +26,7 @@
 
 package com.akiban.server.store.statistics;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.server.service.session.Session;
 import com.akiban.ais.model.Index;
 import com.persistit.exception.PersistitException;
@@ -38,6 +39,9 @@ import java.io.IOException;
 
 public interface IndexStatisticsService
 {
+    public final static TableName INDEX_STATISTICS_NAME = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_statistics");
+    public final static TableName INDEX_STATISTICS_ENTRY_NAME = new TableName(INDEX_STATISTICS_NAME.getSchemaName(), "index_statistics_entry");
+
     /** Get current count of number of entries in the given index. */
     public long countEntries(Session session, Index index) throws PersistitInterruptedException;
     
