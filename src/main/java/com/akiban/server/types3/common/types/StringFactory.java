@@ -73,10 +73,10 @@ public class StringFactory implements TFactory
     public TInstance create(TAttributesDeclaration arguments)
     {
         TAttributeValues values = arguments.validate(3, 3);
-        int length = values.intAt(0, DEFAULT_LENGTH);
-        String charsetName = values.stringAt(1, DEFAULT_CHARSET.name());
+        int length = values.intAt(StringAttribute.LENGTH, DEFAULT_LENGTH);
+        String charsetName = values.stringAt(StringAttribute.CHARSET, DEFAULT_CHARSET.name());
         int charsetId = Enums.ordinalOf(Charset.class, charsetName);
-        int collation = values.intAt(2, DEFAULT_COLLATION_ID); // TODO need something similar
+        int collation = values.intAt(StringAttribute.COLLATION, DEFAULT_COLLATION_ID); // TODO need something similar
         return new TInstance(tclass, length, charsetId, collation);
     }
 

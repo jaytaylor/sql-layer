@@ -35,9 +35,9 @@ public enum StringAttribute implements Attribute
      * (Not byte length)
      */
     LENGTH,
-    
-    
-    CHARSET_ID,
+
+
+    CHARSET,
     
     COLLATION
 }
