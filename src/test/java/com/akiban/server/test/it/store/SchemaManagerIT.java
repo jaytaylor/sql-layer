@@ -64,11 +64,9 @@ import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
-import com.google.inject.ProvisionException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -77,20 +75,18 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.config.Property;
 
-import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
-
 public final class SchemaManagerIT extends ITBase {
-    private final static String SCHEMA = "my_schema";
-    private final static String VOL2_PREFIX = "foo_schema";
-    private final static String VOL3_PREFIX = "bar_schema";
+    final static String SCHEMA = "my_schema";
+    final static String VOL2_PREFIX = "foo_schema";
+    final static String VOL3_PREFIX = "bar_schema";
 
-    private final static String T1_NAME = "t1";
-    private final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
-    private final static String T2_NAME = "t2";
-    private final static String T2_DDL = "id int NOT NULL, PRIMARY KEY(id)";
-    private final static String T3_CHILD_T1_NAME = "t3";
-    private final static String T3_CHILD_T1_DDL = "id int NOT NULL, t1id int, PRIMARY KEY(id), "+
-                                                  "grouping foreign key(t1id) references t1(id)";
+    final static String T1_NAME = "t1";
+    final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
+    final static String T2_NAME = "t2";
+    final static String T2_DDL = "id int NOT NULL, PRIMARY KEY(id)";
+    final static String T3_CHILD_T1_NAME = "t3";
+    final static String T3_CHILD_T1_DDL = "id int NOT NULL, t1id int, PRIMARY KEY(id), "+
+                                          "grouping foreign key(t1id) references t1(id)";
 
     private SchemaManager schemaManager;
 
@@ -727,64 +723,6 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA1, T1_NAME);
         assertTablesInSchema(SCHEMA2, T1_NAME);
     }
-
-    /*
-     * Next three tests are confirming that the MetaModel and Protobuf
-     * serialization switch behaves as is claimed.
-     *
-     * TODO: These will need to change when the upgrade code goes in
-     */
-
-    private PersistitStoreSchemaManager castToPSSM() {
-        if(schemaManager instanceof PersistitStoreSchemaManager) {
-            return (PersistitStoreSchemaManager)schemaManager;
-        }
-        throw new IllegalStateException("Expected PersistitStoreSchemaManager!");
-    }
-
-    @Test
-    public void existingMetaModelReadAndSavedAsIs() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-        pssm.setSerializationType(SerializationType.META_MODEL);
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-        pssm.setSerializationType(PersistitStoreSchemaManager.DEFAULT_SERIALIZATION);
-
-        safeRestart();
-        pssm = castToPSSM();
-
-        assertEquals("Saw MetaModel on load", SerializationType.META_MODEL, pssm.getSerializationType());
-        createTable(SCHEMA, T2_NAME, T2_DDL);
-        assertEquals("Still MetaModel after save", "[META_MODEL]", pssm.getAllSerializationTypes(session()).toString());
-    }
-
-    @Test
-    public void newDataSetReadAndSavedAsProtobuf() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-        assertEquals("No type on new volume", SerializationType.NONE, pssm.getSerializationType());
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-        assertEquals("Saved as PROTOBUF", SerializationType.PROTOBUF, pssm.getSerializationType());
-
-        safeRestart();
-        pssm = castToPSSM();
-
-        assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
-    }
-
-    // Provision = error during startup of PSSM
-    @Test(expected=ProvisionException.class)
-    public void mixedMetaModelAndProtobufIsIllegal() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-
-        // Create a bad volume on purpose to make sure we detect on load
-        pssm.setSerializationType(SerializationType.META_MODEL);
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-
-        pssm.setSerializationType(SerializationType.PROTOBUF);
-        createTable(SCHEMA, T2_NAME, T2_DDL);
-
-        safeRestart();
-    }
-
 
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
