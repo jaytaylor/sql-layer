@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.aksql.akfuncs;
 
+import com.akiban.qp.operator.QueryContext.NotificationLevel;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
@@ -34,6 +35,8 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -51,7 +54,10 @@ public final class AkCompressIntSimple extends TOverloadBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        output.putInt64(inputs.get(0).getInt64());
+        PValueSource source = (PValueSource) context.objectAt(CONST_PREPTIME_INDEX);
+        if (source == null)
+            source = inputs.get(0);
+        output.putInt64(source.getInt64());
     }
 
     @Override
@@ -73,6 +79,11 @@ public final class AkCompressIntSimple extends TOverloadBase {
 
                 // const value. Find the smallest match
                 long value = preptimeValue.value().getInt64();
+
+                PValue constValue = new PValue(PUnderlying.INT_64);
+                constValue.putInt64(value);
+                context.set(CONST_PREPTIME_INDEX, constValue);
+
                 if (Short.MIN_VALUE <= value && value <= Short.MAX_VALUE)
                     return AkNumeric.SMALLINT.tInstance();
                 if (Integer.MIN_VALUE <= value && value <= Integer.MAX_VALUE)
@@ -83,4 +94,6 @@ public final class AkCompressIntSimple extends TOverloadBase {
         AkNumeric.BIGINT.tInstance()
         );
     }
+
+    private static final int CONST_PREPTIME_INDEX = 0;
 }
