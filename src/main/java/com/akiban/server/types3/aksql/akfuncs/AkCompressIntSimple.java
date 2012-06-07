@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.qp.operator.QueryContext.NotificationLevel;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
@@ -41,9 +40,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import com.google.common.base.Function;
 
-import javax.annotation.Nullable;
 import java.util.List;
 
 public final class AkCompressIntSimple extends TOverloadBase {
