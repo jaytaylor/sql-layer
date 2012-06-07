@@ -23,25 +23,22 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.Quote;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import com.akiban.util.AkibanAppender;
 
-public class Concat extends TOverloadBase {
+public class MConcat extends TOverloadBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.vararg(Ak.Varchar, 0);
+        builder.vararg(MString.VARCHAR, 0);
     }
 
     @Override
