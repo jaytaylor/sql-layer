@@ -104,6 +104,10 @@ public class Select_BloomFilterIT extends OperatorITBase
             createNewRow(f, 6L, 61L, 601L),
             createNewRow(f, 6L, 62L, 602L),
             createNewRow(f, 6L, 63L, 699L),
+            // Test 7: Null columns in d
+            createNewRow(d, 7L, null, null),
+            // Test 8: Null columns in f
+            createNewRow(f, 8L, null, null),
         };
         use(db);
     }

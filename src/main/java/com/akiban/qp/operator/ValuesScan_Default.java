@@ -134,6 +134,7 @@ public class ValuesScan_Default extends Operator
                 if (iter != null && iter.hasNext()) {
                     return iter.next().bind(context);
                 } else {
+                    close();
                     return null;
                 }
             } finally {
