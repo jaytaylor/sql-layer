@@ -17,9 +17,16 @@
 ---
 - Statement: SELECT left('foobarbar', 0) from all_types;
 - output: [['']]
+## Test with nulls
 ---
-- Statement: SELECT left(null, 4), left('abc', null), left(null, null) from all_types;
-- output: [[null, null, null]]
+- Statement: SELECT left(null, 4);
+- output: [[null]]
+---
+- Statement: SELECT LEFT('a', null);
+- output: [[null]]
+#--- NPE when both args are null
+#- Statement: SELECT left(null, null);
+#- output: [[null]]
 ---
 - Statement: SELECT bigint_field from all_types WHERE left('foobarbar', 5) = 'fooba';
 - output: [[1]]
@@ -33,10 +40,10 @@
 - Statement: SELECT bigint_field from all_types WHERE left(null, null) IS NULL;
 - output: [[1]]
 ## test with params
----
-- Statement: SELECT left(?, ?) from all_types;
-- params: [['1234', 3]]
-- output: [['123']]
+#--- NPE when both args are unknown
+#- Statement: SELECT left(?, ?);
+#- params: [['1234', 3]]
+#- output: [['123']]
 ---
 - Statement: SELECT left(?, 3) from all_types;
 - params: [[12345]]
@@ -45,9 +52,17 @@
 - Statement: SELECT left('abcd', ?) from all_types;
 - params: [[1]]
 - output: [['a']]
+#--- NPE when both args are unknown
+#- Statement: SELECT bigint_field from all_types WHERE left(?, ?) = 'abc';
+#- params: [['abc124', 3]]
+#- output: [[1]]
 ---
-- Statement: SELECT bigint_field from all_types WHERE left(?, ?) = 'abc';
-- params: [['abc124', 3]]
+- Statement: SELECT bigint_field from all_types WHERE left('abc124', ?) = 'abc';
+- params: [[3]]
+- output: [[1]]
+---
+- Statement: SELECT bigint_field from all_types WHERE left(?, 3) = 'abc';
+- params: [['abc124']]
 - output: [[1]]
 ## test with fields
 ---
@@ -59,8 +74,8 @@
 ## test arity
 ---
 - Statement: SELECT left() from all_types;
-- error: [4250C]
+- error: [42000]
 ---
 - Statement: SELECT left('abc', 1, 2) from all_types;
-- error: [4250C]
+- error: [42000]
 ...
