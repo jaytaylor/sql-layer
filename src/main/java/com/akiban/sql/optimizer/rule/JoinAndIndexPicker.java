@@ -741,6 +741,11 @@ public class JoinAndIndexPicker extends BaseRule
         double BLOOM_FILTER_MAX_SELECTIVITY = 0.05;
 
         public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, JoinPlan joinPlan) {
+            Plan inputPlan = joinPlan.left;
+            Plan checkPlan = joinPlan.right;
+            Collection<JoinOperator> joins = joinPlan.joins;
+            if (checkPlan.costEstimate.getRowCount() > 1)
+                return null;    // Join not selective.
             double maxSelectivity;
             String prop = picker.rulesContext.getProperty("bloomFilterMaxSelectivity");
             if (prop != null)
@@ -748,9 +753,6 @@ public class JoinAndIndexPicker extends BaseRule
             else
                 maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY;
             if (maxSelectivity <= 0.0) return null; // Feature turned off.
-            Plan inputPlan = joinPlan.left;
-            Plan checkPlan = joinPlan.right;
-            Collection<JoinOperator> joins = joinPlan.joins;
             List<ExpressionNode> hashColumns = new ArrayList<ExpressionNode>();
             List<ExpressionNode> matchColumns = new ArrayList<ExpressionNode>();
             for (JoinOperator join : joins) {

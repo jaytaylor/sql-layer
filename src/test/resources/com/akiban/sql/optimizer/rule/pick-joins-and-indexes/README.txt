@@ -1,3 +1,5 @@
+bloom-filter: Use a Bloom filter to help with non-selective semi-join
+
 choose-condition-1: narrow and wide
 
 choose-condition-2: wide and narrow

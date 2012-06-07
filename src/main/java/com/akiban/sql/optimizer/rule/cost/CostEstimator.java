@@ -871,7 +871,7 @@ public abstract class CostEstimator implements TableRowCounts
                                         CostEstimate inputCost,
                                         CostEstimate checkCost,
                                         double checkSelectivity) {
-        long checkCount = Math.round(inputCost.getRowCount() * checkSelectivity);
+        long checkCount = Math.max(Math.round(inputCost.getRowCount() * checkSelectivity),1);
         // Scan to load plus scan input plus check matching fraction
         // plus filter setup and use.
         return new CostEstimate(checkCount,
