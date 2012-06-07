@@ -54,8 +54,6 @@ public interface ServiceManager {
 
     Store getStore();
 
-    //MemoryStore getMemoryStore(); 
-    
     TreeService getTreeService();
 
     MemcacheService getMemcacheService();
