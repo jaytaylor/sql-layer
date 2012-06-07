@@ -27,7 +27,7 @@
 package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.aksql.ABundle;
+import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.TBoolean;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
@@ -41,6 +41,6 @@ public class AkBool extends TBoolean
     
     AkBool()
     {
-        super(ABundle.INSTANCE.id(), PUnderlying.BOOL);
+        super(AkBundle.INSTANCE.id(), PUnderlying.BOOL);
     }
 }

@@ -33,7 +33,7 @@ import com.akiban.server.types3.TFactory;
 
 import java.util.Map;
 
-public enum  ABundle implements TBundle {
+public enum AkBundle implements TBundle {
     INSTANCE;
 
     @Override
