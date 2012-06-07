@@ -30,6 +30,22 @@ import com.akiban.util.ArgumentValidation;
 
 public class TOverloadResult {
 
+    public static TOverloadResult fixed(TInstance tInstance) {
+        return new TOverloadResult(tInstance.typeClass()); // TODO should be the instance, not the class
+    }
+
+    public static TOverloadResult picking() {
+        return new TOverloadResult(-1); // TODO shouldn't need the index
+    }
+
+    public static TOverloadResult custom(TInstance castSource, TCustomOverloadResult rule) {
+        return new TOverloadResult(rule, castSource);
+    }
+
+    public static TOverloadResult custom(TCustomOverloadResult rule) {
+        return new TOverloadResult(rule);
+    }
+
     public Category category() {
         return category;
     }
@@ -55,7 +71,7 @@ public class TOverloadResult {
         switch (category) {
         case CUSTOM:    return "custom rule";
         case FIXED:     return fixedType.toString();
-        case PICKING:   return "pick from input set " + pickingInputSet;
+        case PICKING:   return "picking";
         default: throw new AssertionError(category);
         }
     }
@@ -68,19 +84,23 @@ public class TOverloadResult {
 
     // state
 
+    @Deprecated
     public TOverloadResult(TClass fixedType) {
         this(Category.FIXED, fixedType, -1, null, null);
         ArgumentValidation.notNull("fixed type", fixedType);
     }
 
+    @Deprecated
     public TOverloadResult(int pickingInputSet) {
         this(Category.PICKING, null, pickingInputSet, null, null);
     }
 
+    @Deprecated
     public TOverloadResult(TCustomOverloadResult rule) {
         this(rule, null);
     }
 
+    @Deprecated
     public TOverloadResult(TCustomOverloadResult rule, TInstance castSource) {
         this(Category.CUSTOM, null, -1, rule, castSource);
         ArgumentValidation.notNull("custom combine rule", rule);
@@ -94,14 +114,12 @@ public class TOverloadResult {
     {
         this.category = category;
         this.fixedType = fixedType;
-        this.pickingInputSet = pickingInputSet;
         this.customRule = customRule;
         this.castSource = castSource;
     }
 
     private final Category category;
     private final TClass fixedType;
-    private final int pickingInputSet;
     private final TCustomOverloadResult customRule;
     private final TInstance castSource;
 

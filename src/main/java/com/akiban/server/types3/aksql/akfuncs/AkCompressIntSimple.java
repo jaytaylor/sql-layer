@@ -64,32 +64,31 @@ public final class AkCompressIntSimple extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(new TCustomOverloadResult() {
+        return TOverloadResult.custom(
+                AkNumeric.BIGINT.tInstance(),
+                new TCustomOverloadResult() {
+                    @Override
+                    public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                        TPreptimeValue preptimeValue = inputs.get(0);
 
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                TPreptimeValue preptimeValue = inputs.get(0);
+                        // if the preptimevalue is non-const, assume BIGINT
+                        if (preptimeValue == null || preptimeValue.value() == null)
+                            return AkNumeric.BIGINT.tInstance();
 
-                // if the preptimevalue is non-const, assume BIGINT
-                if (preptimeValue == null || preptimeValue.value() == null)
-                    return AkNumeric.BIGINT.tInstance();
+                        // const value. Find the smallest match
+                        long value = preptimeValue.value().getInt64();
 
-                // const value. Find the smallest match
-                long value = preptimeValue.value().getInt64();
+                        PValue constValue = new PValue(PUnderlying.INT_64);
+                        constValue.putInt64(value);
+                        context.set(CONST_PREPTIME_INDEX, constValue);
 
-                PValue constValue = new PValue(PUnderlying.INT_64);
-                constValue.putInt64(value);
-                context.set(CONST_PREPTIME_INDEX, constValue);
-
-                if (Short.MIN_VALUE <= value && value <= Short.MAX_VALUE)
-                    return AkNumeric.SMALLINT.tInstance();
-                if (Integer.MIN_VALUE <= value && value <= Integer.MAX_VALUE)
-                    return AkNumeric.INT.tInstance();
-                return AkNumeric.BIGINT.tInstance();
-            }
-        },
-        AkNumeric.BIGINT.tInstance()
-        );
+                        if (Short.MIN_VALUE <= value && value <= Short.MAX_VALUE)
+                            return AkNumeric.SMALLINT.tInstance();
+                        if (Integer.MIN_VALUE <= value && value <= Integer.MAX_VALUE)
+                            return AkNumeric.INT.tInstance();
+                        return AkNumeric.BIGINT.tInstance();
+                    }
+                });
     }
 
     private static final int CONST_PREPTIME_INDEX = 0;

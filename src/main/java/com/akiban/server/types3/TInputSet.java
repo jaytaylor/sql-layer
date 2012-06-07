@@ -26,11 +26,13 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.server.types3.TClass;
-
 import java.util.BitSet;
 
 public final class TInputSet {
+
+    public boolean isPicking() {
+        return isPicking;
+    }
 
     public TClass targetType() {
         return targetType;
@@ -48,13 +50,15 @@ public final class TInputSet {
         return coversRemaining;
     }
 
-    public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining) {
+    public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining, boolean isPicking) {
         this.targetType = targetType;
         this.covering = covering.get(0, covering.length());
         this.coversRemaining = coversRemaining;
+        this.isPicking = isPicking;
     }
 
     private final TClass targetType;
     private final BitSet covering;
     private final boolean coversRemaining;
+    private final boolean isPicking;
 }

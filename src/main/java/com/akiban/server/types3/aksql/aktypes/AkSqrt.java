@@ -60,6 +60,6 @@ public class AkSqrt extends TOverloadBase{
     @Override
     public TOverloadResult resultType()
     {
-        return new TOverloadResult(AkNumeric.DOUBLE);
+        return TOverloadResult.fixed(AkNumeric.DOUBLE.tInstance());
     }
 }

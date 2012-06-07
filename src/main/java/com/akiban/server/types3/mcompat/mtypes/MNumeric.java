@@ -56,19 +56,23 @@ public class MNumeric extends TClass {
         }*/
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public TInstance instance(int m) {
+        return factory().create(null); //TODO need to turn M into an arg
+    }
     
     // numeric types
-    public static final TClass BIT = new MNumeric("bit", 8, PUnderlying.INT_64);
-    public static final TClass TINYINT = new MNumeric("tinyint", 1, PUnderlying.INT_8);
-    public static final TClass TINYINT_UNSIGNED = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16);
-    public static final TClass SMALLINT = new MNumeric("smallint", 2, PUnderlying.INT_16);
-    public static final TClass SMALLINT_UNSIGNED = new MNumeric("smallintunsigned", 4, PUnderlying.INT_32);
-    public static final TClass MEDIUMINT = new MNumeric("mediumint", 3, PUnderlying.INT_32);
-    public static final TClass MEDIUMINT_UNSIGNED = new MNumeric("mediumintunsigned", 8, PUnderlying.INT_64);
-    public static final TClass INT = new MNumeric("int", 4, PUnderlying.INT_32);
-    public static final TClass INT_UNSIGNED = new MNumeric("intunsigned", 8, PUnderlying.INT_64);
-    public static final TClass BIGINT = new MNumeric("bigint", 8, PUnderlying.INT_64);
-    public static final TClass BIGINT_UNSIGNED = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64);
+    public static final MNumeric BIT = new MNumeric("bit", 8, PUnderlying.INT_64);
+    public static final MNumeric TINYINT = new MNumeric("tinyint", 1, PUnderlying.INT_8);
+    public static final MNumeric TINYINT_UNSIGNED = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16);
+    public static final MNumeric SMALLINT = new MNumeric("smallint", 2, PUnderlying.INT_16);
+    public static final MNumeric SMALLINT_UNSIGNED = new MNumeric("smallintunsigned", 4, PUnderlying.INT_32);
+    public static final MNumeric MEDIUMINT = new MNumeric("mediumint", 3, PUnderlying.INT_32);
+    public static final MNumeric MEDIUMINT_UNSIGNED = new MNumeric("mediumintunsigned", 8, PUnderlying.INT_64);
+    public static final MNumeric INT = new MNumeric("int", 4, PUnderlying.INT_32);
+    public static final MNumeric INT_UNSIGNED = new MNumeric("intunsigned", 8, PUnderlying.INT_64);
+    public static final MNumeric BIGINT = new MNumeric("bigint", 8, PUnderlying.INT_64);
+    public static final MNumeric BIGINT_UNSIGNED = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64);
     
     public static final TClass DECIMAL = new MBigDecimal();
 }

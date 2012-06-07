@@ -36,12 +36,22 @@ import java.util.List;
 public final class TInputSetBuilder {
     
     public TInputSetBuilder covers(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, false));
+        return this;
+    }
+
+    public TInputSetBuilder pickingCovers(TClass targetType, int... covering) {
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, true));
         return this;
     }
     
     public TInputSetBuilder vararg(TClass targetType, int... covering) {
-        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true));
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, false));
+        return this;
+    }
+
+    public TInputSetBuilder pickingVararg(TClass targetType, int... covering) {
+        inputSets.add(new TInputSet(targetType, BitSets.of(covering), true, true));
         return this;
     }
 
