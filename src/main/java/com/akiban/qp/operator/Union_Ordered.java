@@ -31,7 +31,6 @@ import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -239,8 +238,11 @@ class Union_Ordered extends Operator
         @Override
         public void jump(Row row, ColumnSelector columnSelector)
         {
-            nextLeftRowSkip(row, fixedFields);
-            nextRightRowSkip(row, fixedFields);
+            nextLeftRowSkip(row, fixedFields, columnSelector);
+            nextRightRowSkip(row, fixedFields, columnSelector);
+            if (leftRow.isEmpty() && rightRow.isEmpty()) {
+                close();
+            }
         }
 
         @Override
@@ -290,16 +292,6 @@ class Union_Ordered extends Operator
             super(context);
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
-            final int skipRowColumns = fixedFields + ascending.length;
-            skipRowColumnSelector =
-                new ColumnSelector()
-                {
-                    @Override
-                    public boolean includesColumn(int columnPosition)
-                    {
-                        return columnPosition < skipRowColumns;
-                    }
-                };
         }
         
         // For use by this class
@@ -343,26 +335,30 @@ class Union_Ordered extends Operator
             return c;
         }
 
-        private void nextLeftRowSkip(Row suffixRow, int suffixRowFixedFields)
+        private void nextLeftRowSkip(Row suffixRow, int suffixRowFixedFields, ColumnSelector suffixRowColumnSelector)
         {
-            addSuffixToSkipRow(leftSkipRow(),
-                               fixedFields,
-                               suffixRow,
-                               suffixRowFixedFields,
-                               ascending.length);
-            leftInput.jump(leftSkipRow, skipRowColumnSelector);
-            leftRow.hold(leftInput.next());
+            if (leftRow.isHolding()) {
+                addSuffixToSkipRow(leftSkipRow(),
+                                   fixedFields,
+                                   suffixRow,
+                                   suffixRowFixedFields,
+                                   ascending.length);
+                leftInput.jump(leftSkipRow, suffixRowColumnSelector);
+                leftRow.hold(leftInput.next());
+            }
         }
 
-        private void nextRightRowSkip(Row suffixRow, int suffixRowFixedFields)
+        private void nextRightRowSkip(Row suffixRow, int suffixRowFixedFields, ColumnSelector suffixRowColumnSelector)
         {
-            addSuffixToSkipRow(rightSkipRow(),
-                               fixedFields,
-                               suffixRow,
-                               suffixRowFixedFields,
-                               ascending.length);
-            rightInput.jump(rightSkipRow, skipRowColumnSelector);
-            rightRow.hold(rightInput.next());
+            if (rightRow.isHolding()) {
+                addSuffixToSkipRow(rightSkipRow(),
+                                   fixedFields,
+                                   suffixRow,
+                                   suffixRowFixedFields,
+                                   ascending.length);
+                rightInput.jump(rightSkipRow, suffixRowColumnSelector);
+                rightRow.hold(rightInput.next());
+            }
         }
 
         private void addSuffixToSkipRow(ValuesHolderRow skipRow,
@@ -387,8 +383,13 @@ class Union_Ordered extends Operator
             if (leftSkipRow == null) {
                 assert leftRow.isHolding();
                 leftSkipRow = new ValuesHolderRow(rowType);
-                for (int f = 0; f < fixedFields; f++) {
+                int f = 0;
+                while (f < fixedFields) {
                     leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
+                    f++;
+                }
+                while (f < rowType.nFields()) {
+                    leftSkipRow.holderAt(f++).putNull();
                 }
             }
             return leftSkipRow;
@@ -399,9 +400,13 @@ class Union_Ordered extends Operator
             if (rightSkipRow == null) {
                 assert rightRow.isHolding();
                 rightSkipRow = new ValuesHolderRow(rowType);
-                for (int f = 0; f < fixedFields; f++) {
-                    ValueHolder field = rightSkipRow.holderAt(f);
-                    field.copyFrom(rightRow.get().eval(f));
+                int f = 0;
+                while (f < fixedFields) {
+                    rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
+                    f++;
+                }
+                while (f < rowType.nFields()) {
+                    rightSkipRow.holderAt(f++).putNull();
                 }
             }
             return rightSkipRow;
@@ -419,6 +424,5 @@ class Union_Ordered extends Operator
         private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
-        private ColumnSelector skipRowColumnSelector;
     }
 }

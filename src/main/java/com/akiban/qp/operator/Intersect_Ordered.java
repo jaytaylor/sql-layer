@@ -31,7 +31,6 @@ import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -256,7 +255,7 @@ class Intersect_Ordered extends Operator
                             nextLeftRow();
                         } else {
                             if (skipScan) {
-                                nextLeftRowSkip(rightRow.get(), rightFixedFields);
+                                nextLeftRowSkip(rightRow.get(), rightFixedFields, rightSkipRowColumnSelector);
                             } else {
                                 nextLeftRow();
                             }
@@ -268,7 +267,7 @@ class Intersect_Ordered extends Operator
                             nextRightRow();
                         } else {
                             if (skipScan) {
-                                nextRightRowSkip(leftRow.get(), leftFixedFields);
+                                nextRightRowSkip(leftRow.get(), leftFixedFields, leftSkipRowColumnSelector);
                             } else {
                                 nextRightRow();
                             }
@@ -313,8 +312,11 @@ class Intersect_Ordered extends Operator
                 assert row.rowType() == rightRowType : row.rowType();
                 suffixRowFixedFields = rightFixedFields;
             }
-            nextLeftRowSkip(row, suffixRowFixedFields);
-            nextRightRowSkip(row, suffixRowFixedFields);
+            nextLeftRowSkip(row, suffixRowFixedFields, columnSelector);
+            nextRightRowSkip(row, suffixRowFixedFields, columnSelector);
+            if (leftRow.isEmpty() || rightRow.isEmpty()) {
+                close();
+            }
         }
 
         @Override
@@ -406,26 +408,30 @@ class Intersect_Ordered extends Operator
             }
         }
 
-        private void nextLeftRowSkip(Row suffixRow, int suffixRowFixedFields)
+        private void nextLeftRowSkip(Row suffixRow, int suffixRowFixedFields, ColumnSelector suffixRowColumnSelector)
         {
-            addSuffixToSkipRow(leftSkipRow(),
-                               leftFixedFields,
-                               suffixRow,
-                               suffixRowFixedFields,
-                               ascending.length);
-            leftInput.jump(leftSkipRow, leftSkipRowColumnSelector);
-            leftRow.hold(leftInput.next());
+            if (leftRow.isHolding()) {
+                addSuffixToSkipRow(leftSkipRow(),
+                                   leftFixedFields,
+                                   suffixRow,
+                                   suffixRowFixedFields,
+                                   ascending.length);
+                leftInput.jump(leftSkipRow, suffixRowColumnSelector);
+                leftRow.hold(leftInput.next());
+            }
         }
 
-        private void nextRightRowSkip(Row suffixRow, int suffixRowFixedFields)
+        private void nextRightRowSkip(Row suffixRow, int suffixRowFixedFields, ColumnSelector suffixRowColumnSelector)
         {
-            addSuffixToSkipRow(rightSkipRow(),
-                               rightFixedFields,
-                               suffixRow,
-                               suffixRowFixedFields,
-                               ascending.length);
-            rightInput.jump(rightSkipRow, rightSkipRowColumnSelector);
-            rightRow.hold(rightInput.next());
+            if (rightRow.isHolding()) {
+                addSuffixToSkipRow(rightSkipRow(),
+                                   rightFixedFields,
+                                   suffixRow,
+                                   suffixRowFixedFields,
+                                   ascending.length);
+                rightInput.jump(rightSkipRow, suffixRowColumnSelector);
+                rightRow.hold(rightInput.next());
+            }
         }
 
         private long compareRows()
@@ -469,8 +475,13 @@ class Intersect_Ordered extends Operator
             if (leftSkipRow == null) {
                 assert leftRow.isHolding();
                 leftSkipRow = new ValuesHolderRow(leftRowType);
-                for (int f = 0; f < leftFixedFields; f++) {
+                int f = 0;
+                while (f < leftFixedFields) {
                     leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
+                    f++;
+                }
+                while (f < leftRowType.nFields()) {
+                    leftSkipRow.holderAt(f++).putNull();
                 }
             }
             return leftSkipRow;
@@ -481,9 +492,13 @@ class Intersect_Ordered extends Operator
             if (rightSkipRow == null) {
                 assert rightRow.isHolding();
                 rightSkipRow = new ValuesHolderRow(rightRowType);
-                for (int f = 0; f < rightFixedFields; f++) {
-                    ValueHolder field = rightSkipRow.holderAt(f);
-                    field.copyFrom(rightRow.get().eval(f));
+                int f = 0;
+                while (f < rightFixedFields) {
+                    rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
+                    f++;
+                }
+                while (f < rightRowType.nFields()) {
+                    rightSkipRow.holderAt(f++).putNull();
                 }
             }
             return rightSkipRow;

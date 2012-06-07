@@ -32,13 +32,15 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -46,10 +48,12 @@ import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
+import static java.lang.Math.abs;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
 
-public class NWaySkipScanIT extends OperatorITBase
+public class SkipScanPerformanceIT extends OperatorITBase
 {
     @Before
     public void before()
@@ -73,18 +77,6 @@ public class NWaySkipScanIT extends OperatorITBase
         group = groupTable(t);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
-        db = new NewRow[] {
-            createNewRow(t, 1000L, 71L, 81L, 91L),
-            createNewRow(t, 1001L, 71L, 81L, 92L),
-            createNewRow(t, 1002L, 71L, 82L, 91L),
-            createNewRow(t, 1003L, 71L, 82L, 92L),
-            createNewRow(t, 1004L, 72L, 81L, 91L),
-            createNewRow(t, 1005L, 72L, 81L, 92L),
-            createNewRow(t, 1006L, 72L, 82L, 91L),
-            createNewRow(t, 1007L, 72L, 82L, 92L),
-            createNewRow(t, 1008L, 73L, null, null),
-        };
-        use(db);
     }
 
     private static final IntersectOption LEFT = IntersectOption.OUTPUT_LEFT;
@@ -100,169 +92,186 @@ public class NWaySkipScanIT extends OperatorITBase
     private IndexRowType tZIndexRowType;
     private GroupTable group;
 
+    // Tests are in pairs, with different values of N. This proves that SEQUENTIAL_SCAN costs increase linearly with N,
+    // but SKIP_SCAN costs are constant (due to the way the test data is constructed).
+
     @Test
-    public void testTwoIntersects()
+    public void testIntersect100()
     {
-        for (int x = 71; x <= 72; x++) {
-            for (int y = 81; y <= 82; y++) {
-                for (int z = 91; z <= 92; z++) {
-                    testTwoIntersects(x, intersectXYintersectZ(x, y, LEFT, z, LEFT, true));
-                    testTwoIntersects(x, intersectXYintersectZ(x, y, LEFT, z, LEFT, false));
-                    testTwoIntersects(z, intersectXYintersectZ(x, y, LEFT, z, RIGHT, true));
-                    testTwoIntersects(z, intersectXYintersectZ(x, y, LEFT, z, RIGHT, false));
-                    testTwoIntersects(y, intersectXYintersectZ(x, y, RIGHT, z, LEFT, true));
-                    testTwoIntersects(y, intersectXYintersectZ(x, y, RIGHT, z, LEFT, false));
-                    testTwoIntersects(z, intersectXYintersectZ(x, y, RIGHT, z, RIGHT, true));
-                    testTwoIntersects(z, intersectXYintersectZ(x, y, RIGHT, z, RIGHT, false));
-                }
+        final int N = 100;
+        final int X = 888;
+        final int Y = 999;
+        // Create a set of N rows. Each set is structured as follows:
+        //     id[0]      888    999      null
+        //     id[1]      888    null     null
+        //     ...
+        //     id[N-1]    888    999      null
+        assertTrue(N > 1);
+        db = new NewRow[N];
+        for (int id = 0; id < N; id++) {
+            Integer y = id == 0 || id == N - 1 ? Y : null;
+            db[id] = createNewRow(t, id, X, y, null);
+        }
+        use(db);
+        // N rows from left index scan, 2 from right, 1 to realize scan is done.
+        testIntersect(X, Y, false, N + 3);
+        // 6 with skip scan: 1st, 2nd and last record on left, 1st and last record on right, 1 to realize scan is done.
+        testIntersect(X, Y, true, 6);
+    }
+
+    @Test
+    public void testIntersect1000()
+    {
+        final int N = 1000;
+        final int X = 888;
+        final int Y = 999;
+        // Create a set of N rows. Each set is structured as follows:
+        //     id[0]      888    999      null
+        //     id[1]      888    null     null
+        //     ...
+        //     id[N-1]    888    999      null
+        assertTrue(N > 1);
+        db = new NewRow[N];
+        for (int id = 0; id < N; id++) {
+            Integer y = id == 0 || id == N - 1 ? Y : null;
+            db[id] = createNewRow(t, id, X, y, null);
+        }
+        use(db);
+        // N rows from left index scan, 2 from right, 1 to realize scan is done.
+        testIntersect(X, Y, false, N + 3);
+        // 6 with skip scan: 1st, 2nd and last record on left, 1st and last record on right, 1 to realize scan is done.
+        testIntersect(X, Y, true, 6);
+    }
+
+    @Test
+    public void testTwoIntersects60()
+    {
+        final int N = 60;
+        final int X = 777;
+        final int Y = 888;
+        final int Z = 999;
+        // Create a set of N rows, N divisible by 3.
+        // - Scan of x retrieves rows [0, 2N/3)
+        // - Scan of y retrieves rows [N/3, N)
+        // - Scan of z retrieves rows N/3-1, N/3, N/3+1
+        assertTrue((N % 3) == 0);
+        assertTrue(N / 3 >= 2);
+        db = new NewRow[N];
+        for (int id = 0; id < N; id++) {
+            Integer x = id < 2 * N / 3 ? X : null;
+            Integer y = id >= N / 3 ? Y : null;
+            Integer z = abs(id - N/3) <= 1 ? Z : null;
+            NewRow row = createNewRow(t, id, x, y, z);
+            db[id] = row;
+        }
+        use(db);
+        // x scan: N/3 + 3
+        // y scan: 3
+        // z scan: 3
+        // Realize two intersects are done: 2
+        testTwoIntersects(X, Y, Z, false, N / 3 + 11);
+        // x scan: 1st row, 3 rows starting at N/3
+        // y scan: 3 rows starting at N/3
+        // z scan: 3 rows
+        // Realize two intersects are done: 2
+        testTwoIntersects(X, Y, Z, true, 12);
+    }
+
+    @Test
+    public void testTwoIntersects600()
+    {
+        final int N = 600;
+        final int X = 777;
+        final int Y = 888;
+        final int Z = 999;
+        // Create a set of N rows, N divisible by 3.
+        // - Scan of x retrieves rows [0, 2N/3)
+        // - Scan of y retrieves rows [N/3, N)
+        // - Scan of z retrieves rows N/3-1, N/3, N/3+1
+        assertTrue((N % 3) == 0);
+        assertTrue(N / 3 >= 2);
+        db = new NewRow[N];
+        for (int id = 0; id < N; id++) {
+            Integer x = id < 2 * N / 3 ? X : null;
+            Integer y = id >= N / 3 ? Y : null;
+            Integer z = abs(id - N/3) <= 1 ? Z : null;
+            NewRow row = createNewRow(t, id, x, y, z);
+            db[id] = row;
+        }
+        use(db);
+        // x scan: N/3 + 3
+        // y scan: 3
+        // z scan: 3
+        // Realize two intersects are done: 2
+        testTwoIntersects(X, Y, Z, false, N / 3 + 11);
+        // x scan: 1st row, 3 rows starting at N/3
+        // y scan: 3 rows starting at N/3
+        // z scan: 3 rows
+        // Realize two intersects are done: 2
+        testTwoIntersects(X, Y, Z, true, 12);
+    }
+
+    private void testIntersect(int x, int y, boolean skipScan, int expectedIndexRows)
+    {
+        Operator plan = intersectXY(x, y, skipScan);
+        Tap.reset("operator.*");
+        Tap.setEnabled("operator.*", true);
+        Cursor cursor = cursor(plan, queryContext);
+        cursor.open();
+        while (cursor.next() != null);
+        TapReport[] reports = Tap.getReport("operator.*");
+        for (TapReport report : reports) {
+            if (report.getName().equals("operator: IndexScan_Default next")) {
+                assertEquals(expectedIndexRows, report.getInCount());
             }
         }
     }
 
-    @Test
-    public void testTwoUnions()
+    private void testTwoIntersects(int x, int y, int z, boolean skipScan, int expectedIndexRows)
     {
-        Operator plan = unionXXunionX(71, 72, 73);
-        RowBase[] expected = new RowBase[] {
-            row(tXIndexRowType, 71L, 1000L),
-            row(tXIndexRowType, 71L, 1001L),
-            row(tXIndexRowType, 71L, 1002L),
-            row(tXIndexRowType, 71L, 1003L),
-            row(tXIndexRowType, 72L, 1004L),
-            row(tXIndexRowType, 72L, 1005L),
-            row(tXIndexRowType, 72L, 1006L),
-            row(tXIndexRowType, 72L, 1007L),
-            row(tXIndexRowType, 73L, 1008L),
-        };
-        compareRows(expected, cursor(plan, queryContext));
-    }
-
-    @Test
-    public void testIntersectThenUnion()
-    {
-        RowBase[] expected = new RowBase[] {
-            row(tXIndexRowType, 71L, 1000L),
-            row(tXIndexRowType, 71L, 1001L),
-            row(tXIndexRowType, 72L, 1004L),
-            row(tXIndexRowType, 72L, 1005L),
-            row(tXIndexRowType, 72L, 1006L),
-            row(tXIndexRowType, 72L, 1007L),
-        };
-        compareRows(expected, cursor(intersectXYunionX(71, 81, 72, false), queryContext));
-        compareRows(expected, cursor(intersectXYunionX(71, 81, 72, true), queryContext));
-    }
-
-    @Test
-    public void testIntersectWithEmptyInputThenUnion()
-    {
-        RowBase[] expected = new RowBase[] {
-            row(tXIndexRowType, 72L, 1004L),
-            row(tXIndexRowType, 72L, 1005L),
-            row(tXIndexRowType, 72L, 1006L),
-            row(tXIndexRowType, 72L, 1007L),
-        };
-        // Left input to intersection is empty
-        {
-            compareRows(expected, cursor(intersectXYunionX(99, 81, 72, false), queryContext));
-            compareRows(expected, cursor(intersectXYunionX(99, 81, 72, true), queryContext));
-        }
-        // Right input to intersection is empty
-        {
-            compareRows(expected, cursor(intersectXYunionX(71, 99, 72, false), queryContext));
-            compareRows(expected, cursor(intersectXYunionX(71, 99, 72, true), queryContext));
-        }
-        // Both inputs to intersection are empty
-        {
-            compareRows(expected, cursor(intersectXYunionX(99, 99, 72, false), queryContext));
-            compareRows(expected, cursor(intersectXYunionX(99, 99, 72, true), queryContext));
-        }
-    }
-
-    @Test
-    public void testUnionThenIntersect()
-    {
-        {
-            RowBase[] expected = {
-                row(tXIndexRowType, 71, 1000L),
-                row(tXIndexRowType, 71, 1001L),
-                row(tXIndexRowType, 72, 1004L),
-                row(tXIndexRowType, 72, 1005L),
-            };
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, LEFT, true), queryContext));
-        }
-        {
-            RowBase[] expected = {
-                row(tXIndexRowType, 81, 1000L),
-                row(tXIndexRowType, 81, 1001L),
-                row(tXIndexRowType, 81, 1004L),
-                row(tXIndexRowType, 81, 1005L),
-            };
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, RIGHT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 81, RIGHT, true), queryContext));
-        }
-        {
-            RowBase[] expected = {
-                row(tXIndexRowType, 71, 1002L),
-                row(tXIndexRowType, 71, 1003L),
-                row(tXIndexRowType, 72, 1006L),
-                row(tXIndexRowType, 72, 1007L),
-            };
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, LEFT, true), queryContext));
-        }
-        {
-            RowBase[] expected = {
-                row(tXIndexRowType, 82, 1002L),
-                row(tXIndexRowType, 82, 1003L),
-                row(tXIndexRowType, 82, 1006L),
-                row(tXIndexRowType, 82, 1007L),
-            };
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, RIGHT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 72, 82, RIGHT, true), queryContext));
-        }
-    }
-
-    @Test
-    public void testUnionWithEmptyInputThenIntersect()
-    {
-        // Left input to union is empty
-        {
-            RowBase[] expected = {
-                row(tXIndexRowType, 72, 1004L),
-                row(tXIndexRowType, 72, 1005L),
-            };
-            compareRows(expected, cursor(unionXXintersectY(99, 72, 81, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(99, 72, 81, LEFT, true), queryContext));
-        }
-        // Right input to union is empty
-        {
-            RowBase[] expected = {
-                row(tXIndexRowType, 71, 1000L),
-                row(tXIndexRowType, 71, 1001L),
-            };
-            compareRows(expected, cursor(unionXXintersectY(71, 99, 81, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(71, 99, 81, LEFT, true), queryContext));
-        }
-        // Both inputs to union are empty
-        {
-            RowBase[] expected = {
-            };
-            compareRows(expected, cursor(unionXXintersectY(99, 99, 81, LEFT, false), queryContext));
-            compareRows(expected, cursor(unionXXintersectY(99, 99, 81, LEFT, true), queryContext));
-        }
-    }
-
-    private void testTwoIntersects(long key, Operator plan)
-    {
+        Operator plan = intersectXYintersectZ(x, y, z, skipScan);
+        Tap.reset("operator.*");
+        Tap.setEnabled("operator.*", true);
         Cursor cursor = cursor(plan, queryContext);
         cursor.open();
-        RowBase row = cursor.next();
-        assertEquals(key, row.eval(0).getInt());
-        assertNull(cursor.next());
+        Row row;
+        while ((row = cursor.next()) != null);
+        TapReport[] reports = Tap.getReport("operator.*");
+        for (TapReport report : reports) {
+            if (report.getName().equals("operator: IndexScan_Default next")) {
+                assertEquals(expectedIndexRows, report.getInCount());
+            }
+        }
     }
 
-    private Operator intersectXYintersectZ(int x, int y, IntersectOption xyOutput, int z, IntersectOption xyzOutput, boolean skip)
+    private Operator intersectXY(int x, int y, boolean skipScan)
+    {
+        Ordering xOrdering = new Ordering();
+        xOrdering.append(field(tXIndexRowType, 1), true);
+        Ordering yOrdering = new Ordering();
+        yOrdering.append(field(tYIndexRowType, 1), true);
+        return
+            intersect_Ordered(
+                indexScan_Default(
+                    tXIndexRowType,
+                    xEq(x),
+                    xOrdering),
+                indexScan_Default(
+                    tYIndexRowType,
+                    yEq(y),
+                    yOrdering),
+                tXIndexRowType,
+                tYIndexRowType,
+                1,
+                1,
+                ascending(true),
+                JoinType.INNER_JOIN,
+                EnumSet.of(
+                    skipScan ? IntersectOption.SKIP_SCAN : IntersectOption.SEQUENTIAL_SCAN,
+                    IntersectOption.OUTPUT_LEFT));
+    }
+
+    private Operator intersectXYintersectZ(int x, int y, int z, boolean skip)
     {
         Ordering xOrdering = new Ordering();
         xOrdering.append(field(tXIndexRowType, 1), true);
@@ -287,18 +296,18 @@ public class NWaySkipScanIT extends OperatorITBase
                 1,
                 ascending(true),
                 JoinType.INNER_JOIN,
-                EnumSet.of(scanType, xyOutput)),
+                EnumSet.of(scanType, LEFT)),
             indexScan_Default(
                 tZIndexRowType,
                 zEq(z),
                 zOrdering),
-            xyOutput == LEFT ? tXIndexRowType : tYIndexRowType,
+            tXIndexRowType,
             tZIndexRowType,
             1,
             1,
             ascending(true),
             JoinType.INNER_JOIN,
-            EnumSet.of(scanType, xyzOutput));
+            EnumSet.of(scanType, LEFT));
     }
 
     private Operator unionXXunionX(int x1, int x2, int x3)
