@@ -877,7 +877,8 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(checkCount,
                                 loaderCost.getCost() +
                                 inputCost.getCost() +
-                                checkCost.getCost() * checkCount +
+                                // Model includes cost of one random access for check.
+                             /* checkCost.getCost() * checkCount + */
                                 model.selectWithFilter((int)inputCost.getRowCount(),
                                                        (int)loaderCost.getRowCount(),
                                                        checkSelectivity));
