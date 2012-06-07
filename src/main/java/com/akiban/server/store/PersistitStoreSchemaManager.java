@@ -57,6 +57,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
@@ -193,7 +194,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 throw new ISTableVersionMismatchException(oldVersion, version);
             }
         }
-        return createTableCommon(session, newTable, true, version, null);
+
+        Transaction txn = treeService.getTransaction(session);
+        try {
+            txn.begin();
+            TableName name = createTableCommon(session, newTable, true, version, null);
+            txn.commit();
+            return name;
+        } catch (PersistitException e) {
+            throw new PersistitAdapterException(e);
+        } finally {
+            txn.end();
+        }
     }
 
     @Override
@@ -996,7 +1008,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         serializationType = newSerializationType;
     }
 
-    private void clearAndSaveAllAIS(Session session, AkibanInformationSchema newAIS) throws PersistitException {
+    public void clearAndSaveAllAIS(Session session, AkibanInformationSchema newAIS) throws PersistitException {
         // Remove all existing trees
         treeService.visitStorage(session, new TreeVisitor() {
             @Override
@@ -1012,11 +1024,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     private void performUpgrade(AkibanInformationSchema newAIS) throws PersistitException {
         switch(serializationType) {
-            case PROTOBUF:      // Nothing to upgrade
-                return;
-
             case NONE:          // No current data
-                createUpgradedPrimordialTables(newAIS);
+            case PROTOBUF:      // Nothing to upgrade
                 return;
 
             case META_MODEL:    // Old data needing upgrade
@@ -1150,7 +1159,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     private static void preserveExtraInfo(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS) {
-        for(UserTable table : curAIS.getSchema(TableName.AKIBAN_INFORMATION_SCHEMA).getUserTables().values()) {
+        Schema schema = curAIS.getSchema(TableName.AKIBAN_INFORMATION_SCHEMA);
+        if(schema == null) {
+            return;
+        }
+        for(UserTable table : schema.getUserTables().values()) {
             UserTable newTable = newAIS.getUserTable(table.getName());
             if(newTable != null) {
                 if(table.hasMemoryTableFactory()) {

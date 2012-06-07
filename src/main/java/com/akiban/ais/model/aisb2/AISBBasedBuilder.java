@@ -197,12 +197,12 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewUserTableBuilder colBinary(String name, int length) {
-            return colBinary(name, length, NULLABLE_DEFAULT);
+        public NewUserTableBuilder colVarBinary(String name, int length) {
+            return colVarBinary(name, length, NULLABLE_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colBinary(String name, int length, boolean nullable) {
+        public NewUserTableBuilder colVarBinary(String name, int length, boolean nullable) {
             aisb.column(schema, userTable, name, uTableColumnPos++, "VARBINARY", (long)length, null, nullable, false, null, null);
             return this;
         }

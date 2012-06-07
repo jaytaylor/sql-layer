@@ -27,6 +27,8 @@
 package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.*;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
@@ -56,6 +58,10 @@ import java.io.IOException;
 
 public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
 {
+    public final static TableName INDEX_STATISTICS_NAME = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_statistics");
+    public final static TableName INDEX_STATISTICS_ENTRY_NAME = new TableName(INDEX_STATISTICS_NAME.getSchemaName(), "index_statistics_entry");
+    private final static int INDEX_STATISTICS_TABLE_VERSION = 1;
+
     private static final Logger log = LoggerFactory.getLogger(IndexStatisticsServiceImpl.class);
 
     private final PersistitStore store;
@@ -93,6 +99,44 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         store.setIndexStatistics(this);
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = new PersistitStoreIndexStatistics(store, treeService, this);
+        registerStatsTables();
+    }
+
+    private static AkibanInformationSchema createStatsTables() {
+        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_NAME.getSchemaName());
+        builder.userTable(INDEX_STATISTICS_NAME.getTableName())
+                .colLong("table_id", false)
+                .colLong("index_id", false)
+                .colTimestamp("analysis_timestamp", true)
+                .colBigInt("row_count", true)
+                .colBigInt("sampled_count", true)
+                .pk("table_id", "index_id");
+        builder.userTable(INDEX_STATISTICS_ENTRY_NAME.getTableName())
+                .colLong("table_id", false)
+                .colLong("index_id", false)
+                .colLong("column_count", false)
+                .colLong("item_number", false)
+                .colString("key_string", 2048, true)
+                .colVarBinary("key_bytes", 4096, true)
+                .colBigInt("eq_count", true)
+                .colBigInt("lt_count", true)
+                .colBigInt("distinct_count", true)
+                .pk("table_id", "index_id", "column_count", "item_number")
+                .joinTo(INDEX_STATISTICS_NAME.getSchemaName(), INDEX_STATISTICS_NAME.getTableName(), "fk_0")
+                    .on("table_id", "table_id")
+                    .and("index_id", "index_id");
+        return builder.ais(true);
+    }
+
+    private void registerStatsTables() {
+        AkibanInformationSchema ais = createStatsTables();
+        Session session = sessionService.createSession();
+        try {
+            schemaManager.registerStoredInformationSchemaTable(session, ais.getUserTable(INDEX_STATISTICS_NAME), INDEX_STATISTICS_TABLE_VERSION);
+            schemaManager.registerStoredInformationSchemaTable(session, ais.getUserTable(INDEX_STATISTICS_ENTRY_NAME), INDEX_STATISTICS_TABLE_VERSION);
+        } finally {
+            session.close();
+        }
     }
 
     @Override

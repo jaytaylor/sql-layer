@@ -26,12 +26,15 @@
 
 package com.akiban.server.test.it.store;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.test.it.ITBase;
 import com.google.inject.ProvisionException;
 import org.junit.Before;
 import org.junit.Test;
+
+import java.util.concurrent.Callable;
 
 import static com.akiban.server.test.it.store.SchemaManagerIT.*;
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
@@ -61,6 +64,14 @@ public class PersistitStoreSchemaManagerIT extends ITBase {
 
     @Test
     public void existingMetaModelReadAndUpgraded() throws Exception {
+        transactionally(new Callable<Void>() {
+            @Override
+            public Void call() throws Exception {
+                pssm.clearAndSaveAllAIS(session(), new AkibanInformationSchema());
+                return null;
+            }
+        });
+
         pssm.setSerializationType(SerializationType.META_MODEL);
         createTable(SCHEMA, T1_NAME, T1_DDL);
 
@@ -73,7 +84,6 @@ public class PersistitStoreSchemaManagerIT extends ITBase {
 
     @Test
     public void newDataSetReadAndSavedAsProtobuf() throws Exception {
-        assertEquals("No type on new volume", SerializationType.NONE, pssm.getSerializationType());
         createTable(SCHEMA, T1_NAME, T1_DDL);
         assertEquals("Saved as PROTOBUF", SerializationType.PROTOBUF, pssm.getSerializationType());
 
