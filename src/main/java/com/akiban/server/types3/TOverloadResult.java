@@ -80,6 +80,10 @@ public class TOverloadResult {
         this(Category.PICKING, null, pickingInputSet, null, null);
     }
 
+    public TOverloadResult(Function<List<TPreptimeValue>,TInstance> rule) {
+        this(rule, null);
+    }
+
     public TOverloadResult(Function<List<TPreptimeValue>,TInstance> rule, TInstance castSource) {
         this(Category.CUSTOM, null, -1, rule, castSource);
         ArgumentValidation.notNull("custom combine rule", rule);
