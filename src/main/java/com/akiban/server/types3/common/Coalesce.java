@@ -66,7 +66,14 @@ public class Coalesce extends TOverloadBase {
     public TOverloadResult resultType() {
         return new TOverloadResult(returnType);
     }
-    
+
+    @Override
+    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
+        if (preptimeValue == null)
+            return Constantness.NOT_CONST;
+        return preptimeValue.isNull() ? Constantness.UNKNOWN : Constantness.CONST;
+    }
+
     private final TClass returnType;
 
 }
