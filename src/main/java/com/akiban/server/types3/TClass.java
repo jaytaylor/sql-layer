@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.util.ArgumentValidation;
 
@@ -41,7 +42,9 @@ public abstract class TClass {
      */
     public TInstance instance()
     {
-        throw new UnsupportedOperationException("called with wrong argument count");
+        
+        throw new AkibanInternalException(
+                name() + " takes  " + nAttributes() + "attribute(s)");
     }
     
     public TInstance instance(int arg0)
