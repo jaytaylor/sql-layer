@@ -41,7 +41,6 @@ import com.akiban.server.store.IndexKeyVisitor;
 import com.akiban.server.test.it.ITBase;
 import com.persistit.Transaction;
 import junit.framework.Assert;
-import org.antlr.misc.Barrier;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
