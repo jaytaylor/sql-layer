@@ -43,7 +43,7 @@ public class XAddInt extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(XInt.TYPE_CLASS);
+        return TOverloadResult.fixed(XInt.INSTANCE);
     }
 
     @Override

@@ -29,35 +29,31 @@ package com.akiban.server.types3.aksql.akfuncs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class AkIfElse extends TOverloadBase
-{
+public class AkPow extends TOverloadBase {
+
     @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(AkBool.INSTANCE, 0).pickingCovers(null, 1, 2);
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(AkNumeric.DOUBLE, 0, 1);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        output.putDouble(Math.pow(inputs.get(0).getDouble(), inputs.get(1).getDouble()));
     }
 
     @Override
-    public String overloadName()
-    {
-        return "IF";
+    public String overloadName() {
+        return "POW";
     }
 
     @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.picking();
+    public TOverloadResult resultType() {
+        return new TOverloadResult(AkNumeric.DOUBLE);
     }
 }

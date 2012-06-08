@@ -24,40 +24,19 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.aksql.AkBundle;
+import com.akiban.server.types3.common.types.TString;
 
-public class AkIfElse extends TOverloadBase
+public class AkString extends TString
 {
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
+    public static final AkString VARCHAR = new AkString("varchar", -1);
+    
+    // TODO: define CHAR, and VARBINARY
+    
+    private AkString (String name, int serialisationSize)
     {
-        builder.covers(AkBool.INSTANCE, 0).pickingCovers(null, 1, 2);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
-    }
-
-    @Override
-    public String overloadName()
-    {
-        return "IF";
-    }
-
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.picking();
+        super(AkBundle.INSTANCE, name, serialisationSize);
     }
 }

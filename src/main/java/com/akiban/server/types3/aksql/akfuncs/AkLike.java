@@ -26,38 +26,11 @@
 
 package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.aksql.aktypes.AkString;
+import com.akiban.server.types3.common.funcs.TLike;
 
-public class AkIfElse extends TOverloadBase
+public class AkLike
 {
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(AkBool.INSTANCE, 0).pickingCovers(null, 1, 2);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
-    }
-
-    @Override
-    public String overloadName()
-    {
-        return "IF";
-    }
-
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.picking();
-    }
+    public static final TOverload[] LIKE_OVERLOADS = TLike.create(AkString.VARCHAR);
 }

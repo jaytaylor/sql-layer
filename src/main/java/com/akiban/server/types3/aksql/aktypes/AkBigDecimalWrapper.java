@@ -24,40 +24,45 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.common.BigDecimalWrapper;
+import java.math.BigDecimal;
 
-public class AkIfElse extends TOverloadBase
-{
+public class AkBigDecimalWrapper implements BigDecimalWrapper {
+    
     @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(AkBool.INSTANCE, 0).pickingCovers(null, 1, 2);
+    public void reset() {
+        value = BigDecimal.ZERO;
+    }
+            
+    @Override
+    public BigDecimalWrapper add(BigDecimalWrapper other) {
+        AkBigDecimalWrapper o = (AkBigDecimalWrapper) other;
+        value = value.add(o.value);
+        return this;
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
+    public BigDecimalWrapper subtract(BigDecimalWrapper other) {
+        AkBigDecimalWrapper o = (AkBigDecimalWrapper) other;
+        value = value.subtract(o.value);
+        return this;
     }
 
     @Override
-    public String overloadName()
-    {
-        return "IF";
+    public BigDecimalWrapper multiply(BigDecimalWrapper other) {
+        AkBigDecimalWrapper o = (AkBigDecimalWrapper) other;
+        value = value.multiply(o.value);
+        return this;
     }
 
     @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.picking();
+    public BigDecimalWrapper divide(BigDecimalWrapper other) {
+        AkBigDecimalWrapper o = (AkBigDecimalWrapper) other;
+        value = value.divide(o.value);
+        return this;
     }
+    
+    private BigDecimal value;
 }

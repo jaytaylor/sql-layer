@@ -24,40 +24,37 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.TBundle;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-public class AkIfElse extends TOverloadBase
+public abstract class TString extends TClass
 {
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
+    protected TString (TBundle bundle, String name, int serialisationSize)
     {
-        builder.covers(AkBool.INSTANCE, 0).pickingCovers(null, 1, 2);
+        super(bundle.id(),
+                name,
+                StringAttribute.values(),
+                1,
+                1,
+                serialisationSize,
+                PUnderlying.BYTES);
+    }
+    
+    @Override
+    public TFactory factory()
+    {
+        return new StringFactory(this);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    protected TInstance doPickInstance(TInstance instance0, TInstance instance1)
     {
-        output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
+        throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    @Override
-    public String overloadName()
-    {
-        return "IF";
-    }
-
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.picking();
-    }
+    
 }

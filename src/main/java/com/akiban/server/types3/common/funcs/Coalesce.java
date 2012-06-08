@@ -24,40 +24,56 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class AkIfElse extends TOverloadBase
-{
+public class Coalesce extends TOverloadBase {
+
+    public Coalesce(TClass returnType) {
+        this.returnType = returnType;
+    }
+    
     @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(AkBool.INSTANCE, 0).pickingCovers(null, 1, 2);
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.pickingVararg(returnType);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        output.putValueSource(inputs.get(inputs.get(0).getBoolean() ? 1 : 2));
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        for (int i = 0; i < inputs.size(); ++i) {
+            if (!inputs.get(i).isNull()) {
+                output.putObject(inputs.get(i).getObject());
+                return;
+            }
+        }
+        output.putNull();
     }
 
     @Override
-    public String overloadName()
-    {
-        return "IF";
+    public String overloadName() {
+        return "COALESCE";
     }
 
     @Override
-    public TOverloadResult resultType()
-    {
+    public TOverloadResult resultType() {
         return TOverloadResult.picking();
     }
+
+    @Override
+    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
+        if (preptimeValue == null)
+            return Constantness.NOT_CONST;
+        return preptimeValue.isNull() ? Constantness.UNKNOWN : Constantness.CONST;
+    }
+
+    private final TClass returnType;
+
 }

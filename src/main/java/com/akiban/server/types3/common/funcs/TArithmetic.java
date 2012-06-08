@@ -27,19 +27,12 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValue;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.math.BigDecimal;
-
-import java.util.List;
 
 public abstract class TArithmetic extends TOverloadBase {
  
-    protected TArithmetic(String overloadName, TClass inputType, TClass resultType) {
+    protected TArithmetic(String overloadName, TClass inputType, TInstance resultType) {
        this.overloadName = overloadName;
        this.inputType = inputType;
        this.resultType = resultType;
@@ -57,10 +50,10 @@ public abstract class TArithmetic extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return new TOverloadResult(resultType);
+        return TOverloadResult.fixed(resultType);
     } 
     
     private final String overloadName;
     private final TClass inputType;
-    private final TClass resultType;
+    private final TInstance resultType;
 }
