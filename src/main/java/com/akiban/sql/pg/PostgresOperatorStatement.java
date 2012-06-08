@@ -32,6 +32,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.*;
 
@@ -47,6 +49,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     private Operator resultOperator;
     private RowType resultRowType;
 
+    private static final Logger logger = LoggerFactory.getLogger(PostgresOperatorStatement.class);
     private static final InOutTap EXECUTE_TAP = Tap.createTimer("PostgresOperatorStatement: execute shared");
     private static final InOutTap ACQUIRE_LOCK_TAP = Tap.createTimer("PostgresOperatorStatement: acquire shared lock");
 
@@ -71,6 +74,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
         Session session = server.getSession();
         int nrows = 0;
         Cursor cursor = null;
+        IOException exceptionDuringExecution = null;
         try {
             lock(session, UNSPECIFIED_DML_READ);
             cursor = API.cursor(resultOperator, context);
@@ -85,13 +89,31 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
                     break;
             }
         }
-        finally {
-            if (cursor != null) {
-                cursor.destroy();
-            }
-            unlock(session, UNSPECIFIED_DML_READ);
+        catch (IOException e) {
+            exceptionDuringExecution = e;
         }
-        {        
+        finally {
+            RuntimeException exceptionDuringCleanup = null;
+            try {
+                if (cursor != null) {
+                    cursor.destroy();
+                }
+            }
+            catch (RuntimeException e) {
+                exceptionDuringCleanup = e;
+                logger.error("Caught exception while cleaning up cursor for {0}", resultOperator.describePlan());
+                logger.error("Exception stack", e);
+            }
+            finally {
+                unlock(session, UNSPECIFIED_DML_READ);
+            }
+            if (exceptionDuringExecution != null) {
+                throw exceptionDuringExecution;
+            } else if (exceptionDuringCleanup != null) {
+                throw exceptionDuringCleanup;
+            }
+        }
+        {
             PostgresMessenger messenger = server.getMessenger();
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
             messenger.writeString("SELECT " + nrows);

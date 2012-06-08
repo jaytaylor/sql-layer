@@ -164,6 +164,7 @@ class Select_BloomFilter extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 filter = context.getBloomFilter(bindingPosition);
                 context.setBloomFilter(bindingPosition, null);
                 inputCursor.open();
@@ -178,6 +179,7 @@ class Select_BloomFilter extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 Row row;
                 do {
                     row = inputCursor.next();
@@ -196,6 +198,7 @@ class Select_BloomFilter extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             if (!idle) {
                 inputCursor.close();
                 idle = true;
@@ -205,30 +208,31 @@ class Select_BloomFilter extends Operator
         @Override
         public void destroy()
         {
-            if (filter != null) {
+            if (!destroyed) {
                 close();
                 inputCursor.destroy();
                 onPositiveCursor.destroy();
                 filter = null;
+                destroyed = true;
             }
         }
 
         @Override
         public boolean isIdle()
         {
-            return filter != null && idle;
+            return !destroyed && idle;
         }
 
         @Override
         public boolean isActive()
         {
-            return filter != null && !idle;
+            return !destroyed && !idle;
         }
 
         @Override
         public boolean isDestroyed()
         {
-            return filter == null;
+            return destroyed;
         }
 
         // Execution interface
@@ -279,8 +283,9 @@ class Select_BloomFilter extends Operator
 
         private final Cursor inputCursor;
         private final Cursor onPositiveCursor;
-        private BloomFilter filter; // null indicates destroyed
+        private BloomFilter filter;
         private final List<ExpressionEvaluation> fieldEvals = new ArrayList<ExpressionEvaluation>();
         private boolean idle = true;
+        private boolean destroyed = false;
     }
 }
