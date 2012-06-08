@@ -41,7 +41,7 @@ public class MTrigs
     // but in mysql, there could be multiple instances of the same TClass
     // (each differing from each other by the width)
     // So we'd define a fixed/default width that this function returns
-    private static final TInstance DEFAULT = new TInstance(MNumeric.DOUBLE, 9);
+    private static final TInstance DEFAULT = MNumeric.DOUBLE.instance(9);
     
-    private static final TOverload TRIGS[] = TTrigs.create(DEFAULT);
+    public static final TOverload TRIGS[] = TTrigs.create(DEFAULT);
 }
