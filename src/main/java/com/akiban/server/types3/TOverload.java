@@ -34,7 +34,6 @@ import java.util.List;
 public interface TOverload {
     String overloadName();
     TOverloadResult resultType();
-    boolean resultAlwaysNullable();
     List<TInputSet> inputSets();
     TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
     void finishPreptimePhase(TPreptimeContext context);
