@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.util.ArgumentValidation;
 
@@ -35,6 +36,45 @@ public abstract class TClass {
 
     public abstract TFactory factory();
 
+    /**
+     * Method to create an instance of this tclass
+     * Should be overriden as needed
+     */
+    public TInstance instance()
+    {
+        if (nAttributes() != 0)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this);
+    }
+    
+    public TInstance instance(int arg0)
+    {
+        if (nAttributes() != 1)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this, arg0);
+    }
+    
+    public TInstance instance(int arg0, int arg1)
+    {
+        if (nAttributes() != 2)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this, arg0, arg1);
+    }
+    
+    public TInstance instance(int arg0, int arg1, int arg2)
+    {
+        if (nAttributes() != 3)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this, arg0, arg1, arg2);
+    }
+    
+    public TInstance instance(int arg0, int arg1, int arg2, int arg3)
+    {
+        if (nAttributes() != 4)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this, arg0, arg1, arg2, arg3);
+    }
+    
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {
         if (instance0.typeClass() != this || instance1.typeClass() != this)
             throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);

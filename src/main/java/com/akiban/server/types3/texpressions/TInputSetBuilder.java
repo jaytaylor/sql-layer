@@ -34,7 +34,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class TInputSetBuilder {
-    
+
     public TInputSetBuilder covers(TClass targetType, int... covering) {
         inputSets.add(new TInputSet(targetType, BitSets.of(covering), false, false));
         return this;
