@@ -58,8 +58,8 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
     protected Statement executeStatement;
     protected PreparedStatement checkStatement;
     protected final String CHECK_SQL = "SELECT header.table_id, header.index_id, COUNT(detail.column_count) AS ndetail FROM "+
-            IndexStatisticsService.INDEX_STATISTICS_NAME.getDescription() + " header LEFT JOIN " +
-            IndexStatisticsService.INDEX_STATISTICS_ENTRY_NAME.getDescription() + " detail USING (table_id, index_id) GROUP BY header.table_id, header.index_id";
+            IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME.getDescription() + " header LEFT JOIN " +
+            IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME.getDescription() + " detail USING (table_id, index_id) GROUP BY header.table_id, header.index_id";
 
     @Before
     public void prepareStatements() throws Exception {

@@ -39,8 +39,8 @@ import java.io.IOException;
 
 public interface IndexStatisticsService
 {
-    public final static TableName INDEX_STATISTICS_NAME = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_statistics");
-    public final static TableName INDEX_STATISTICS_ENTRY_NAME = new TableName(INDEX_STATISTICS_NAME.getSchemaName(), "index_statistics_entry");
+    public final static TableName INDEX_STATISTICS_TABLE_NAME = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_statistics");
+    public final static TableName INDEX_STATISTICS_ENTRY_TABLE_NAME = new TableName(INDEX_STATISTICS_TABLE_NAME.getSchemaName(), "index_statistics_entry");
 
     /** Get current count of number of entries in the given index. */
     public long countEntries(Session session, Index index) throws PersistitInterruptedException;

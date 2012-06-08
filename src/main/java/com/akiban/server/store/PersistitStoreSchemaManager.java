@@ -646,13 +646,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         stop();
     }
 
-    private static void injectPrimordialTables(AkibanInformationSchema ais, String schema, String namePrefix) {
+    private static void injectPrimordialTables(AkibanInformationSchema ais, String SCHEMA, String namePrefix) {
         /*
          * Big, ugly, and lots of hard coding. This is because any change in
          * table definition or derived data (tree name, ids, etc) affects the
-         * compatibility of existing volumes. If we stopped creating this at
-         * every start-up and only did it once (on fresh volume), this could
-         * much shortened -- but that is only a possible TO-DO item.
+         * compatibility of existing volumes. Currently a middle point for
+         * upgrades, as on fresh volumes the IndexStatisticsService takes care
+         * of registering its own tables.
          */
         final String TREE_SCHEMA = "akiban_information_schema";
         final String TREE_STATS = "zindex_statistics";
@@ -663,76 +663,78 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         final int ENTRY_ID = 1000000010;
         final String PRIMARY = "PRIMARY";
         final String FK_NAME = "__akiban_fk_0";
+        final String GROUP = STATS;
         final String GROUP_TABLE = "_akiban_" + STATS;
-        final String JOIN = String.format("%s/%s/%s/%s", schema, STATS, schema, ENTRY);
+        final String JOIN = String.format("%s/%s/%s/%s", SCHEMA, STATS, SCHEMA, ENTRY);
         final String STATS_TREE = "akiban_information_schema$$_akiban_zindex_statistics";
         final String TREE_NAME_FORMAT = "%s$$%s$$%s$$%s$$%d";
         final String STATS_PK_TREE = String.format(TREE_NAME_FORMAT, TREE_STATS, TREE_SCHEMA, TREE_STATS, PRIMARY, 9);
         final String ENTRY_PK_TREE = String.format(TREE_NAME_FORMAT, TREE_STATS, TREE_SCHEMA, TREE_ENTRY, PRIMARY, 11);
         final String ENTRY_FK_TREE = String.format(TREE_NAME_FORMAT, TREE_STATS, TREE_SCHEMA, TREE_ENTRY, FK_NAME, 10);
+        final int TABLE_VERSION = 1;
 
         AISBuilder builder = new AISBuilder(ais);
 
         int col = 0;
-        builder.userTable(schema, STATS);
-        builder.column(schema, STATS,           "table_id", col++,       "int", null, null, false, false, null, null);
-        builder.column(schema, STATS,           "index_id", col++,       "int", null, null, false, false, null, null);
-        builder.column(schema, STATS, "analysis_timestamp", col++, "timestamp", null, null,  true, false, null, null);
-        builder.column(schema, STATS,          "row_count", col++,    "bigint", null, null,  true, false, null, null);
-        builder.column(schema, STATS,      "sampled_count", col,      "bigint", null, null,  true, false, null, null);
+        builder.userTable(SCHEMA, STATS);
+        builder.column(SCHEMA, STATS,           "table_id", col++,       "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, STATS,           "index_id", col++,       "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, STATS, "analysis_timestamp", col++, "timestamp", null, null,  true, false, null, null);
+        builder.column(SCHEMA, STATS,          "row_count", col++,    "bigint", null, null,  true, false, null, null);
+        builder.column(SCHEMA, STATS,      "sampled_count", col++,    "bigint", null, null,  true, false, null, null);
         col = 0;
-        builder.index(schema, STATS, PRIMARY, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(schema, STATS, PRIMARY, "table_id", col++, true, null);
-        builder.indexColumn(schema, STATS, PRIMARY, "index_id", col, true, null);
+        builder.index(SCHEMA, STATS, PRIMARY, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, STATS, PRIMARY, "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, STATS, PRIMARY, "index_id", col++, true, null);
 
         col = 0;
-        builder.userTable(schema, ENTRY);
-        builder.column(schema, ENTRY,       "table_id", col++,       "int",  null, null, false, false, null, null);
-        builder.column(schema, ENTRY,       "index_id", col++,       "int",  null, null, false, false, null, null);
-        builder.column(schema, ENTRY,   "column_count", col++,       "int",  null, null, false, false, null, null);
-        builder.column(schema, ENTRY,    "item_number", col++,       "int",  null, null, false, false, null, null);
-        builder.column(schema, ENTRY,     "key_string", col++,   "varchar", 2048L, null,  true, false, null, null);
-        builder.column(schema, ENTRY,      "key_bytes", col++, "varbinary", 4096L, null,  true, false, null, null);
-        builder.column(schema, ENTRY,       "eq_count", col++,    "bigint",  null, null,  true, false, null, null);
-        builder.column(schema, ENTRY,       "lt_count", col++,    "bigint",  null, null,  true, false, null, null);
-        builder.column(schema, ENTRY, "distinct_count", col,      "bigint",  null, null,  true, false, null, null);
+        builder.userTable(SCHEMA, ENTRY);
+        builder.column(SCHEMA, ENTRY,       "table_id", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "index_id", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,   "column_count", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,    "item_number", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,     "key_string", col++,   "varchar", 2048L, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,      "key_bytes", col++, "varbinary", 4096L, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "eq_count", col++,    "bigint",  null, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "lt_count", col++,    "bigint",  null, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY, "distinct_count", col++,    "bigint",  null, null,  true, false, null, null);
         col = 0;
-        builder.index(schema, ENTRY, PRIMARY, true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(schema, ENTRY, PRIMARY,     "table_id", col++, true, null);
-        builder.indexColumn(schema, ENTRY, PRIMARY,     "index_id", col++, true, null);
-        builder.indexColumn(schema, ENTRY, PRIMARY, "column_count", col++, true, null);
-        builder.indexColumn(schema, ENTRY, PRIMARY,  "item_number", col, true, null);
+        builder.index(SCHEMA, ENTRY, PRIMARY, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,     "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,     "index_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY, "column_count", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,  "item_number", col++, true, null);
         col = 0;
-        builder.index(schema, ENTRY, FK_NAME, false, "FOREIGN KEY");
-        builder.indexColumn(schema, ENTRY, FK_NAME, "table_id", col++, true, null);
-        builder.indexColumn(schema, ENTRY, FK_NAME, "index_id", col,   true, null);
+        builder.index(SCHEMA, ENTRY, FK_NAME, false, "FOREIGN KEY");
+        builder.indexColumn(SCHEMA, ENTRY, FK_NAME, "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, FK_NAME, "index_id", col++, true, null);
 
-        builder.joinTables(JOIN, schema, STATS, schema, ENTRY);
-        builder.joinColumns(JOIN, schema, STATS, "table_id", schema, ENTRY, "table_id");
-        builder.joinColumns(JOIN, schema, STATS, "index_id", schema, ENTRY, "index_id");
+        builder.joinTables(JOIN, SCHEMA, STATS, SCHEMA, ENTRY);
+        builder.joinColumns(JOIN, SCHEMA, STATS, "table_id", SCHEMA, ENTRY, "table_id");
+        builder.joinColumns(JOIN, SCHEMA, STATS, "index_id", SCHEMA, ENTRY, "index_id");
 
-        builder.createGroup(STATS, schema, GROUP_TABLE);
-        builder.addJoinToGroup(STATS, JOIN, 0);
+        builder.createGroup(GROUP, SCHEMA, GROUP_TABLE);
+        builder.addJoinToGroup(GROUP, JOIN, 0);
 
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
-        UserTable statsTable = ais.getUserTable(schema, STATS);
+        UserTable statsTable = ais.getUserTable(SCHEMA, STATS);
         statsTable.getGroup().getGroupTable().setTreeName(STATS_TREE);
         statsTable.setTableId(STATS_ID);
         statsTable.setTreeName(STATS_TREE);
         statsTable.getIndex(PRIMARY).setTreeName(STATS_PK_TREE);
-        statsTable.setVersion(1);
+        statsTable.setVersion(TABLE_VERSION);
 
-        UserTable entryTable = ais.getUserTable(schema, ENTRY);
+        UserTable entryTable = ais.getUserTable(SCHEMA, ENTRY);
         entryTable.setTableId(ENTRY_ID);
         entryTable.setTreeName(STATS_TREE);
         entryTable.getIndex(PRIMARY).setTreeName(ENTRY_PK_TREE);
         entryTable.getIndex(FK_NAME).setTreeName(ENTRY_FK_TREE);
-        entryTable.setVersion(1);
+        entryTable.setVersion(TABLE_VERSION);
 
         // Legacy behavior for group table ID
-        GroupTable statsGroupTable = ais.getGroupTable(schema, GROUP_TABLE);
+        GroupTable statsGroupTable = ais.getGroupTable(SCHEMA, GROUP_TABLE);
         UserTable rootTable = statsGroupTable.getRoot();
         assert rootTable == statsTable : "Unexpected root: " + rootTable;
         statsGroupTable.setTableId(TreeService.MAX_TABLES_PER_VOLUME - rootTable.getTableId());
@@ -765,40 +767,34 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private AkibanInformationSchema loadAISFromStorage() throws PersistitException {
         final AkibanInformationSchema newAIS = new AkibanInformationSchema();
 
-        final Session session = sessionService.createSession();
-        final Transaction transaction = treeService.getTransaction(session);
-        transaction.begin();
-        try {
-            treeService.visitStorage(session, new TreeVisitor() {
-                @Override
-                public void visit(Exchange ex) throws PersistitException{
-                    SerializationType typeForVolume = detectSerializationType(ex);
-                    switch(typeForVolume) {
-                        case NONE:
-                            // Empty tree, nothing to do
-                        break;
-                        case META_MODEL:
-                            checkAndSetSerialization(typeForVolume);
-                            loadMetaModel(ex, newAIS);
-                        break;
-                        case PROTOBUF:
-                            checkAndSetSerialization(typeForVolume);
-                            loadProtobuf(ex, newAIS);
-                        break;
-                        case UNKNOWN:
-                            throw new IllegalStateException("Unknown AIS serialization: " + ex);
-                        default:
-                            throw new IllegalStateException("Unhandled serialization type: " + typeForVolume);
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+            @Override
+            public void run(Session session) throws PersistitException {
+                treeService.visitStorage(session, new TreeVisitor() {
+                    @Override
+                    public void visit(Exchange ex) throws PersistitException{
+                        SerializationType typeForVolume = detectSerializationType(ex);
+                        switch(typeForVolume) {
+                            case NONE:
+                                // Empty tree, nothing to do
+                            break;
+                            case META_MODEL:
+                                checkAndSetSerialization(typeForVolume);
+                                loadMetaModel(ex, newAIS);
+                            break;
+                            case PROTOBUF:
+                                checkAndSetSerialization(typeForVolume);
+                                loadProtobuf(ex, newAIS);
+                            break;
+                            case UNKNOWN:
+                                throw new IllegalStateException("Unknown AIS serialization: " + ex);
+                            default:
+                                throw new IllegalStateException("Unhandled serialization type: " + typeForVolume);
+                        }
                     }
-                }
-            }, SCHEMA_TREE_NAME);
-
-            transaction.commit();
-        } finally {
-            transaction.end();
-            session.close();
-        }
-
+                }, SCHEMA_TREE_NAME);
+            }
+        });
         return newAIS;
     }
 

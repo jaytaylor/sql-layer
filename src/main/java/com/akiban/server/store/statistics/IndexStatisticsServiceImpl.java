@@ -101,15 +101,15 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     }
 
     private static AkibanInformationSchema createStatsTables() {
-        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_NAME.getSchemaName());
-        builder.userTable(INDEX_STATISTICS_NAME.getTableName())
+        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName());
+        builder.userTable(INDEX_STATISTICS_TABLE_NAME.getTableName())
                 .colLong("table_id", false)
                 .colLong("index_id", false)
                 .colTimestamp("analysis_timestamp", true)
                 .colBigInt("row_count", true)
                 .colBigInt("sampled_count", true)
                 .pk("table_id", "index_id");
-        builder.userTable(INDEX_STATISTICS_ENTRY_NAME.getTableName())
+        builder.userTable(INDEX_STATISTICS_ENTRY_TABLE_NAME.getTableName())
                 .colLong("table_id", false)
                 .colLong("index_id", false)
                 .colLong("column_count", false)
@@ -120,7 +120,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 .colBigInt("lt_count", true)
                 .colBigInt("distinct_count", true)
                 .pk("table_id", "index_id", "column_count", "item_number")
-                .joinTo(INDEX_STATISTICS_NAME.getSchemaName(), INDEX_STATISTICS_NAME.getTableName(), "fk_0")
+                .joinTo(INDEX_STATISTICS_TABLE_NAME.getSchemaName(), INDEX_STATISTICS_TABLE_NAME.getTableName(), "fk_0")
                     .on("table_id", "table_id")
                     .and("index_id", "index_id");
         return builder.ais(true);
@@ -130,8 +130,9 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         AkibanInformationSchema ais = createStatsTables();
         Session session = sessionService.createSession();
         try {
-            schemaManager.registerStoredInformationSchemaTable(session, ais.getUserTable(INDEX_STATISTICS_NAME), INDEX_STATISTICS_TABLE_VERSION);
-            schemaManager.registerStoredInformationSchemaTable(session, ais.getUserTable(INDEX_STATISTICS_ENTRY_NAME), INDEX_STATISTICS_TABLE_VERSION);
+            schemaManager.registerStoredInformationSchemaTable(session, ais.getUserTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
+            schemaManager.registerStoredInformationSchemaTable(session, ais.getUserTable(
+                    INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
         } finally {
             session.close();
         }

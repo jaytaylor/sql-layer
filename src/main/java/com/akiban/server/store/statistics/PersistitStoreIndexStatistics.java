@@ -52,7 +52,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.*;
 
-import static com.akiban.server.store.statistics.IndexStatisticsService.*;
+import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
+import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME;
 
 /** Manage index statistics for / stored in Persistit
  */
@@ -78,9 +79,9 @@ public class PersistitStoreIndexStatistics
             throws PersistitException {
         IndexDef indexDef = index.indexDef();
         RowDef indexStatisticsRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_NAME);
+            .getRowDef(INDEX_STATISTICS_TABLE_NAME);
         RowDef indexStatisticsEntryRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_ENTRY_NAME);
+            .getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
 
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         exchange.clear()
@@ -196,9 +197,9 @@ public class PersistitStoreIndexStatistics
             throws PersistitException {
         IndexDef indexDef = index.indexDef();
         RowDef indexStatisticsRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_NAME);
+            .getRowDef(INDEX_STATISTICS_TABLE_NAME);
         RowDef indexStatisticsEntryRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_ENTRY_NAME);
+            .getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         Transaction transaction = exchange.getTransaction();
         int retries = MAX_TRANSACTION_RETRY_COUNT;
@@ -278,7 +279,7 @@ public class PersistitStoreIndexStatistics
             throws PersistitException {
         IndexDef indexDef = index.indexDef();
         RowDef indexStatisticsRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_NAME);
+            .getRowDef(INDEX_STATISTICS_TABLE_NAME);
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         Transaction transaction = exchange.getTransaction();
         int retries = MAX_TRANSACTION_RETRY_COUNT;
