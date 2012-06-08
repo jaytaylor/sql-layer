@@ -23,31 +23,17 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package com.akiban.server.types3.aksql.akfuncs;
 
-package com.akiban.server.types3.aksql.aktypes;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.common.funcs.TTrigs;
 
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.pvalue.PUnderlying;
-
-public class AkNumeric {
-
-    private AkNumeric() {}
-    
-    // numeric types
-    public static final NoAttrTClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16);
-    public static final NoAttrTClass INT = create("int", 1, 1, 4, PUnderlying.INT_32);
-    public static final NoAttrTClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64);
-
-    public static final NoAttrTClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE);
-
-    // basically a curried function, with AkBunder.INSTANCE.id() partially applied
-    private static NoAttrTClass create(String name,
-                                       int internalVersion,
-                                       int serialVersion,
-                                       int size,
-                                       PUnderlying underlying)
-    {
-        return new NoAttrTClass(AkBundle.INSTANCE.id(), name, internalVersion, serialVersion, size, underlying);
-    }
+public class AkTrig
+{
+    private static final TOverload TRIGS[] = TTrigs.create(AkNumeric.DOUBLE.instance());
 }
