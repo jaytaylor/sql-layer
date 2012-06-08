@@ -100,23 +100,11 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
-        transactionally(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                schemaManager.registerMemoryInformationSchemaTable(session(), table, factory);
-                return null;
-            }
-        });
+        schemaManager.registerMemoryInformationSchemaTable(session(), table, factory);
     }
 
     private void registerISTable(final UserTable table, final int version) throws Exception {
-        transactionally(new Callable<Void>() {
-            @Override
-            public Void call() throws Exception {
-                schemaManager.registerStoredInformationSchemaTable(session(), table, version);
-                return null;
-            }
-        });
+        schemaManager.registerStoredInformationSchemaTable(session(), table, version);
     }
 
     private void deleteTableDef(final String schema, final String table) throws Exception {

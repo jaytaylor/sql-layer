@@ -26,7 +26,7 @@
 
 package com.akiban.server.test.it.store;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.store.PSSMTestShim;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.test.it.ITBase;
@@ -67,7 +67,7 @@ public class PersistitStoreSchemaManagerIT extends ITBase {
         transactionally(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                pssm.clearAndSaveAllAIS(session(), new AkibanInformationSchema());
+                PSSMTestShim.clearAISFromDisk(session(), pssm);
                 return null;
             }
         });
