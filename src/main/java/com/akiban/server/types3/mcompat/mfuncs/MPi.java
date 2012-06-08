@@ -37,7 +37,6 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class MPi extends TOverloadBase{
-    static final double PI = 3.141592653589793116;
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
@@ -47,7 +46,7 @@ public class MPi extends TOverloadBase{
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        output.putDouble(PI);
+        output.putDouble(Math.PI);
     }
 
     @Override
