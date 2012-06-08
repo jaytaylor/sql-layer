@@ -31,7 +31,6 @@ import com.akiban.qp.operator.OperatorTestHelper;
 import com.akiban.qp.operator.RowsBuilder;
 import com.akiban.qp.operator.TestOperator;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.Schema;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.*;
 
@@ -39,7 +38,6 @@ import com.akiban.server.types.AkType;
 
 import org.junit.Test;
 
-import java.util.Arrays;
 import java.util.Deque;
 
 public class Distinct_PartialTest {

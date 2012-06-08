@@ -33,8 +33,6 @@ import java.util.Locale;
 import org.junit.Assert;
 import org.junit.Test;
 
-import com.akiban.sql.test.GenericCreator.Relationship;
-
 public class SQLStatementGeneratorTest {
 
     @Test

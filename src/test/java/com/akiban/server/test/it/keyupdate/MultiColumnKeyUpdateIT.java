@@ -36,7 +36,6 @@ import java.util.List;
 
 import static com.akiban.server.test.it.keyupdate.Schema.*;
 import static junit.framework.Assert.*;
-import static junit.framework.Assert.assertEquals;
 
 // Like KeyUpdateIT, but with multi-column keys
 

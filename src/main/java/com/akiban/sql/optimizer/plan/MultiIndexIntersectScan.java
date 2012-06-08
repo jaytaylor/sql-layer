@@ -31,8 +31,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.util.Strings;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
 
 public final class MultiIndexIntersectScan extends IndexScan {

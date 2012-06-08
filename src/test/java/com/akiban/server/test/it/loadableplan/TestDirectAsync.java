@@ -32,7 +32,6 @@ import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.BindingNotSetException;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.QueryCanceledException;
 
 import java.sql.Types;

@@ -30,7 +30,6 @@ import com.akiban.sql.parser.*;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
 
 import com.akiban.server.service.functions.FunctionsRegistry;
 

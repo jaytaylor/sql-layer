@@ -44,7 +44,6 @@ import com.akiban.server.expression.TypesList;
 import com.akiban.sql.StandardException;
 import java.math.BigInteger;
 import java.util.List;
-import org.slf4j.LoggerFactory;
 
 public class BinaryBitExpression extends AbstractBinaryExpression
 {

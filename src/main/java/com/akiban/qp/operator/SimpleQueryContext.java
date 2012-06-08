@@ -27,7 +27,6 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.TableName;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.session.Session;
 

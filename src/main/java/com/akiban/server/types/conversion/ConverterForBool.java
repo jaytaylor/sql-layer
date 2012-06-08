@@ -32,8 +32,6 @@ import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.extract.BooleanExtractor;
 import com.akiban.server.types.extract.Extractors;
 
-import java.math.BigInteger;
-
 public final class ConverterForBool extends AbstractConverter {
     public static final ConverterForBool INSTANCE = new ConverterForBool();
 

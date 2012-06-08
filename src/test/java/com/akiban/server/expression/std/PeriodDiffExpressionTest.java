@@ -29,11 +29,8 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
-import org.junit.AfterClass;
-import org.junit.BeforeClass;
 import org.junit.Test;
 import static org.junit.Assert.*;
-
 
 public class PeriodDiffExpressionTest extends ComposedExpressionTestBase {
     
