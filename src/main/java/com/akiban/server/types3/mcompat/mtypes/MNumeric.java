@@ -29,7 +29,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.types.IntAttribute;
+import com.akiban.server.types3.common.types.NumericAttribute;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
@@ -37,7 +37,7 @@ public class MNumeric extends TClass {
 
     private MNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
         super(MBundle.INSTANCE.id(), name, 
-                IntAttribute.values(),
+                NumericAttribute.values(),
                 1, 1, serializationSize, 
                 pUnderlying);
     }
@@ -57,6 +57,7 @@ public class MNumeric extends TClass {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
+    @Override
     public TInstance instance(int m) {
         return factory().create(null); //TODO need to turn M into an arg
     }
@@ -74,5 +75,6 @@ public class MNumeric extends TClass {
     public static final MNumeric BIGINT = new MNumeric("bigint", 8, PUnderlying.INT_64);
     public static final MNumeric BIGINT_UNSIGNED = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64);
     
+    public static final MNumeric DOUBLE = new MNumeric("double", 8, PUnderlying.DOUBLE);
     public static final TClass DECIMAL = new MBigDecimal();
 }

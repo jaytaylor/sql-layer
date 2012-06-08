@@ -31,13 +31,13 @@ import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.common.types.IntAttribute;
+import com.akiban.server.types3.common.types.NumericAttribute;
 
 class MNumericFactory implements TFactory {
     @Override
     public TInstance create(TAttributesDeclaration declaration) {
         TAttributeValues vals = declaration.validate(1, 1);
-        int m = vals.intAt(IntAttribute.WIDTH, DEFAULT_M);
+        int m = vals.intAt(NumericAttribute.WIDTH, DEFAULT_M);
         return new TInstance(tClass, m);
     }
 

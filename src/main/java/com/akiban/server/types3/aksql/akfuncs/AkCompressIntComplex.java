@@ -94,15 +94,15 @@ public final class AkCompressIntComplex extends TOverloadBase {
 
                 // if the preptimevalue is non-const, assume BIGINT
                 if (preptimeValue == null || preptimeValue.value() == null)
-                    return AkNumeric.BIGINT.tInstance();
+                    return AkNumeric.BIGINT.instance();
 
                 // const value. Find the smallest match
                 long value = preptimeValue.value().getInt64();
                 if (Short.MIN_VALUE <= value && value <= Short.MAX_VALUE)
-                    return AkNumeric.SMALLINT.tInstance();
+                    return AkNumeric.SMALLINT.instance();
                 if (Integer.MIN_VALUE <= value && value <= Integer.MAX_VALUE)
-                    return AkNumeric.INT.tInstance();
-                return AkNumeric.BIGINT.tInstance();
+                    return AkNumeric.INT.instance();
+                return AkNumeric.BIGINT.instance();
             }
         });
     }

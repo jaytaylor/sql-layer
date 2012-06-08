@@ -37,7 +37,8 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class NoAttrTClass extends TClass {
 
-    public TInstance tInstance() {
+    @Override
+    public TInstance instance() {
         TInstance result = tInstance.get();
         if (result == null) {
             tInstance.compareAndSet(null, new TInstance(this));
@@ -49,7 +50,7 @@ public class NoAttrTClass extends TClass {
 
     @Override
     public TFactory factory() {
-        return new NoAttrFactory(tInstance());
+        return new NoAttrFactory(instance());
     }
 
     @Override
