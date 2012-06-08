@@ -26,6 +26,7 @@
 package com.akiban.server.types3.aksql.akfuncs;
 
 
+import com.akiban.server.error.DivisionByZeroException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
@@ -119,6 +120,8 @@ public class AkArithmetic {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             short a0 = inputs.get(0).getInt16();
             short a1 = inputs.get(1).getInt16();
+            
+            if (a1 == 0) throw new DivisionByZeroException();
             output.putInt32(a0/a1);
             
         }
@@ -129,6 +132,8 @@ public class AkArithmetic {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt32();
             int a1 = inputs.get(1).getInt32();
+            
+            if (a1 == 0) throw new DivisionByZeroException();
             output.putInt32(a0/a1);
             
         }
@@ -139,6 +144,8 @@ public class AkArithmetic {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();
             long a1 = inputs.get(1).getInt64();
+            
+            if (a1 == 0) throw new DivisionByZeroException();
             output.putInt64(a0/a1);
             
         }
@@ -150,6 +157,8 @@ public class AkArithmetic {
                                   PValueTarget output) {
             double a0 = inputs.get(0).getDouble();
             double a1 = inputs.get(1).getDouble();
+            
+            if (a1 == 0.0) throw new DivisionByZeroException();
             output.putDouble(a0 / a1);
         }
     };
