@@ -60,6 +60,6 @@ public class AkTan extends TOverloadBase{
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(MDouble.INSTANCE.instance());
+        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
     }
 }

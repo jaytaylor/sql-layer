@@ -59,6 +59,6 @@ public class AkSin extends TOverloadBase{
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(new TInstance(AkNumeric.DOUBLE));
+        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
     }
 }

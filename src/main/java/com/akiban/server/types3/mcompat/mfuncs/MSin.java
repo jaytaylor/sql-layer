@@ -28,8 +28,8 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.types3.aksql.akfuncs.*;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -60,6 +60,6 @@ public class MSin extends TOverloadBase{
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(new TInstance(MNumeric.DECIMAL));
+        return TOverloadResult.fixed(MDouble.INSTANCE.instance());
     }
 }
