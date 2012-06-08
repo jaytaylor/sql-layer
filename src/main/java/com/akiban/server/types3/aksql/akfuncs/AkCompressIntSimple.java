@@ -29,7 +29,7 @@ package com.akiban.server.types3.aksql.akfuncs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.instance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -65,15 +65,15 @@ public final class AkCompressIntSimple extends TOverloadBase {
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.custom(
-                AkNumeric.BIGINT.tInstance(),
+                AkNumeric.BIGINT.instance(),
                 new TCustomOverloadResult() {
                     @Override
-                    public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                    public instance resulinstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                         TPreptimeValue preptimeValue = inputs.get(0);
 
                         // if the preptimevalue is non-const, assume BIGINT
                         if (preptimeValue == null || preptimeValue.value() == null)
-                            return AkNumeric.BIGINT.tInstance();
+                            return AkNumeric.BIGINT.instance();
 
                         // const value. Find the smallest match
                         long value = preptimeValue.value().getInt64();
@@ -83,10 +83,10 @@ public final class AkCompressIntSimple extends TOverloadBase {
                         context.set(CONST_PREPTIME_INDEX, constValue);
 
                         if (Short.MIN_VALUE <= value && value <= Short.MAX_VALUE)
-                            return AkNumeric.SMALLINT.tInstance();
+                            return AkNumeric.SMALLINT.instance();
                         if (Integer.MIN_VALUE <= value && value <= Integer.MAX_VALUE)
-                            return AkNumeric.INT.tInstance();
-                        return AkNumeric.BIGINT.tInstance();
+                            return AkNumeric.INT.instance();
+                        return AkNumeric.BIGINT.instance();
                     }
                 });
     }

@@ -24,21 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.common.types;
 
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.common.funcs.TTrigs;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.Attribute;
 
-public class MTrigs
+public enum DoubleAttribute implements Attribute
 {
-    // This is a 'strange' case
-    //
-    // in aksql, the return type would always be AkNumeric.DOUBLE.instance()
-    //
-    // but in mysql, there could be multiple instances of the same TClass
-    // (each differing from each other by the width)
-    // So we'd define a fixed/default width that this function returns
-    
-    public static final TOverload TRIGS[] = TTrigs.create(MDouble.INSTANCE.instance());
+    PRECISION, SCALE
 }

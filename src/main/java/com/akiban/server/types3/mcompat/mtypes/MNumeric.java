@@ -75,6 +75,5 @@ public class MNumeric extends TClass {
     public static final MNumeric BIGINT = new MNumeric("bigint", 8, PUnderlying.INT_64);
     public static final MNumeric BIGINT_UNSIGNED = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64);
     
-    public static final MNumeric DOUBLE = new MNumeric("double", 8, PUnderlying.DOUBLE);
     public static final TClass DECIMAL = new MBigDecimal();
 }
