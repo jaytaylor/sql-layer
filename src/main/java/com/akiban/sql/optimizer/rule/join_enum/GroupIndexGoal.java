@@ -37,6 +37,7 @@ import com.akiban.sql.optimizer.plan.TableGroupJoinTree.TableGroupJoinNode;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Index.JoinType;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
@@ -901,7 +902,11 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return requiredAfter.isEmpty();
     }
 
-    protected CostEstimate estimateCost(IndexScan index) {
+    public CostEstimate estimateCost(IndexScan index) {
+        return estimateCost(index, queryGoal.getLimit());
+    }
+
+    public CostEstimate estimateCost(IndexScan index, long limit) {
         PlanCostEstimator estimator = 
             new PlanCostEstimator(queryGoal.getCostEstimator());
         Set<TableSource> requiredTables = index.getRequiredTables();
@@ -926,7 +931,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             estimator.sort(queryGoal.sortFields());
         }
 
-        estimator.setLimit(queryGoal.getLimit());
+        estimator.setLimit(limit);
 
         return estimator.getCostEstimate();
     }
@@ -948,8 +953,12 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return estimator.getCostEstimate();
     }
 
+    public double estimateSelectivity(IndexScan index) {
+        return queryGoal.getCostEstimator().conditionsSelectivity(selectivityConditions(index.getConditions(), index.getTables()));
+    }
+
     // Conditions that might have a recognizable selectivity.
-    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Set<TableSource> requiredTables) {
+    protected Map<ColumnExpression,Collection<ComparisonCondition>> selectivityConditions(Collection<ConditionExpression> conditions, Collection<TableSource> requiredTables) {
         Map<ColumnExpression,Collection<ComparisonCondition>> result = new
             HashMap<ColumnExpression,Collection<ComparisonCondition>>();
         for (ConditionExpression condition : conditions) {
@@ -973,9 +982,58 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         return result;
     }
 
-    public void install(PlanNode scan, 
-                        List<ConditionList> conditionSources, boolean sortAllowed) {
-        tables.setScan(scan);
+    // Recognize the case of a join that is only used for predication.
+    // TODO: This is only covers the simplest case, namely an index that is unique
+    // none of whose columns are actually used.
+    public boolean semiJoinEquivalent(BaseScan scan) {
+        if (scan instanceof SingleIndexScan) {
+            SingleIndexScan indexScan = (SingleIndexScan)scan;
+            if (indexScan.isCovering() && isUnique(indexScan) && 
+                requiredColumns.isEmpty()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Does this scan return at most one row?
+    protected boolean isUnique(SingleIndexScan indexScan) {
+        List<ExpressionNode> equalityComparands = indexScan.getEqualityComparands();
+        if (equalityComparands == null)
+            return false;
+        int nequals = equalityComparands.size();
+        Index index = indexScan.getIndex();
+        if (index.isUnique() && (nequals >= index.getKeyColumns().size()))
+            return true;
+        if (index.isGroupIndex())
+            return false;
+        Set<Column> equalityColumns = new HashSet<Column>(nequals);
+        for (int i = 0; i < nequals; i++) {
+            ExpressionNode equalityExpr = indexScan.getColumns().get(i);
+            if (equalityExpr instanceof ColumnExpression) {
+                equalityColumns.add(((ColumnExpression)equalityExpr).getColumn());
+            }
+        }
+        TableIndex tableIndex = (TableIndex)index;
+        find_index:             // Find a unique index all of whose columns are equaled.
+        for (TableIndex otherIndex : tableIndex.getTable().getIndexes()) {
+            if (!otherIndex.isUnique()) continue;
+            for (IndexColumn otherColumn : otherIndex.getKeyColumns()) {
+                if (!equalityColumns.contains(otherColumn.getColumn()))
+                    continue find_index;
+            }
+            return true;
+        }
+        return false;
+    }
+
+    public TableGroupJoinTree install(BaseScan scan,
+                                      List<ConditionList> conditionSources,
+                                      boolean sortAllowed, boolean copy) {
+        TableGroupJoinTree result = tables;
+        // Need to have more than one copy of this tree in the final result.
+        if (copy) result = new TableGroupJoinTree(result.getRoot());
+        result.setScan(scan);
         this.sortAllowed = sortAllowed;
         if (scan instanceof IndexScan) {
             IndexScan indexScan = (IndexScan)scan;
@@ -991,6 +1049,7 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             if (sortAllowed)
                 queryGoal.installOrderEffectiveness(IndexScan.OrderEffectiveness.NONE);
         }
+        return result;
     }
 
     /** Change WHERE as a consequence of <code>index</code> being
