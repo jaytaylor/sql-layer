@@ -100,6 +100,11 @@ public abstract class TOverloadBase implements TOverload {
         return new TPreptimeValue(execContext.outputTInstance(), outputValue);
     }
 
+    @Override
+    public boolean resultAlwaysNullable() {
+        return false;
+    }
+
     protected abstract void buildInputSets(TInputSetBuilder builder);
 
     protected abstract void doEvaluate(TExecutionContext context,

@@ -61,6 +61,16 @@ public final class TInstance {
         this(tclass, 4, attr0, attr1, attr2, attr3);
     }
 
+    public boolean isNullable() {
+        if (isNullable == null)
+            throw new IllegalStateException("nullability has not been set");
+        return isNullable;
+    }
+
+    public void setNullable(boolean nullable) {
+        isNullable = nullable;
+    }
+
     // object interface
 
     // TODO
@@ -76,5 +86,7 @@ public final class TInstance {
 
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
+    private Boolean isNullable;
+
     private static final int EMPTY = -1;
 }
