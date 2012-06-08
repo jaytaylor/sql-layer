@@ -202,7 +202,7 @@ public class AkArithmetic {
     };
     
     // Mod functions
-    TArithmetic MOD_DOUBLE = new TArithmetic("%", AkNumeric.DOUBLE, AkNumeric.DOUBLE)
+    TArithmetic MOD_DOUBLE = new TArithmetic("%", AkNumeric.DOUBLE, AkNumeric.DOUBLE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -211,7 +211,7 @@ public class AkArithmetic {
         }
     };
 
-    TArithmetic MOD_SMALLINT = new TArithmetic("%", AkNumeric.SMALLINT, AkNumeric.SMALLINT)
+    TArithmetic MOD_SMALLINT = new TArithmetic("%", AkNumeric.SMALLINT, AkNumeric.SMALLINT.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -220,7 +220,7 @@ public class AkArithmetic {
         }
     };
     
-    TArithmetic MOD_INT = new TArithmetic("%", AkNumeric.INT, AkNumeric.INT)
+    TArithmetic MOD_INT = new TArithmetic("%", AkNumeric.INT, AkNumeric.INT.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -229,7 +229,7 @@ public class AkArithmetic {
         }
     };
     
-    TArithmetic MOD_BIGINT = new TArithmetic("%", AkNumeric.BIGINT, AkNumeric.BIGINT)
+    TArithmetic MOD_BIGINT = new TArithmetic("%", AkNumeric.BIGINT, AkNumeric.BIGINT.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)

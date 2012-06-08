@@ -49,9 +49,11 @@ public class TTrigs extends TOverloadBase
         return ret;
     }
     
+    private static final int TWO_ARG[] = new int[]{0, 1};
+    private static final int ONE_ARG[] = new int[]{0};
     static enum TrigType
     {
-        SIN(new int[] {0})
+        SIN()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -59,7 +61,7 @@ public class TTrigs extends TOverloadBase
                 return Math.sin(inputs.get(0).getDouble());
             }
         }, 
-        COS(SIN.covering)
+        COS()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -67,7 +69,7 @@ public class TTrigs extends TOverloadBase
                 return Math.cos(inputs.get(0).getDouble());
             }
         },  
-        TAN(SIN.covering)
+        TAN()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -78,7 +80,7 @@ public class TTrigs extends TOverloadBase
                 return Math.tan(inputs.get(0).getDouble());
             }
         }, 
-        COT(SIN.covering)
+        COT()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -90,7 +92,7 @@ public class TTrigs extends TOverloadBase
                 return Math.cos(var) / sin;
             }
         }, 
-        ASIN(SIN.covering)
+        ASIN()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -98,7 +100,7 @@ public class TTrigs extends TOverloadBase
                 return Math.asin(inputs.get(0).getDouble());
             }
         }, 
-        ACOS(SIN.covering)
+        ACOS()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -106,7 +108,7 @@ public class TTrigs extends TOverloadBase
                 return Math.acos(inputs.get(0).getDouble());
             }
         }, 
-        ACOT(SIN.covering)
+        ACOT()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -117,7 +119,7 @@ public class TTrigs extends TOverloadBase
                 return Math.atan(1 / var);
             }
         }, 
-        ATAN(new int[] {0, 1})
+        ATAN(TWO_ARG)
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -125,7 +127,7 @@ public class TTrigs extends TOverloadBase
                 return Math.atan2(inputs.get(0).getDouble(),inputs.get(1).getDouble());
             }
         },
-        ATAN2(ATAN.covering)
+        ATAN2(TWO_ARG)
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -133,7 +135,7 @@ public class TTrigs extends TOverloadBase
                 return Math.atan2(inputs.get(0).getDouble(),inputs.get(1).getDouble());
             }
         }, 
-        COSH(SIN.covering)
+        COSH()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -141,7 +143,7 @@ public class TTrigs extends TOverloadBase
                 return Math.cosh(inputs.get(0).getDouble());
             }
         },
-        SINH(SIN.covering)  
+        SINH()  
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -149,7 +151,7 @@ public class TTrigs extends TOverloadBase
                 return Math.sinh(inputs.get(0).getDouble());
             }
         },
-        TANH(SIN.covering)
+        TANH()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -157,7 +159,7 @@ public class TTrigs extends TOverloadBase
                 return Math.tanh(inputs.get(0).getDouble());
             }
         },
-        COTH(SIN.covering)
+        COTH()
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -173,6 +175,11 @@ public class TTrigs extends TOverloadBase
         private TrigType(int c[])
         {
             covering = c;
+        }
+        
+        private TrigType()
+        {
+            covering = ONE_ARG;
         }
         public final int covering[];
     }

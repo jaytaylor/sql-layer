@@ -23,10 +23,6 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
 package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.TOverload;
@@ -35,5 +31,5 @@ import com.akiban.server.types3.common.funcs.TTrigs;
 
 public class AkTrig
 {
-    private static final TOverload TRIGS[] = TTrigs.create(AkNumeric.DOUBLE.instance());
+    public static final TOverload TRIGS[] = TTrigs.create(AkNumeric.DOUBLE.instance());
 }
