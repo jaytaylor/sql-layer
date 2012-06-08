@@ -42,28 +42,37 @@ public abstract class TClass {
      */
     public TInstance instance()
     {
-        throw new AkibanInternalException("called with wrong argument count");
+        if (nAttributes() != 0)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this);
     }
     
     public TInstance instance(int arg0)
     {
-        throw new AkibanInternalException("called with wrong argument count");
+        if (nAttributes() != 1)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this, arg0);
     }
-    
     
     public TInstance instance(int arg0, int arg1)
     {
-        throw new AkibanInternalException("called with wrong argument count");
+        if (nAttributes() != 2)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this, arg0, arg1);
     }
     
     public TInstance instance(int arg0, int arg1, int arg2)
     {
-        throw new AkibanInternalException("called with wrong argument count");
+        if (nAttributes() != 3)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this, arg0, arg1, arg2);
     }
     
     public TInstance instance(int arg0, int arg1, int arg2, int arg3)
     {
-        throw new AkibanInternalException("called with wrong argument count");
+        if (nAttributes() != 4)
+            throw new AkibanInternalException("called with wrong argument count");
+        return new TInstance(this, arg0, arg1, arg2, arg3);
     }
     
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {
