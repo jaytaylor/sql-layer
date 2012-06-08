@@ -25,6 +25,7 @@
  */
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.TAttributeValues;
 import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
@@ -63,7 +64,6 @@ public class MDouble extends TClass
                     values.intAt(DoubleAttribute.PRECISION, DEFAULT_DOUBLE_PRECISION),
                     values.intAt(DoubleAttribute.SCALE, DEFAULT_DOUBLE_SCALE));
         }
-        
     }
     
     MDouble()
