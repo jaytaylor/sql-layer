@@ -200,4 +200,41 @@ public class AkArithmetic {
             output.putDouble(a0 * a1);
         }
     };
+    
+    // Mod functions
+    TArithmetic MOD_DOUBLE = new TArithmetic("%", AkNumeric.DOUBLE, AkNumeric.DOUBLE)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putDouble(inputs.get(0).getDouble() % inputs.get(1).getDouble());
+        }
+    };
+
+    TArithmetic MOD_SMALLINT = new TArithmetic("%", AkNumeric.SMALLINT, AkNumeric.SMALLINT)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putDouble(inputs.get(0).getInt16() % inputs.get(1).getInt16());
+        }
+    };
+    
+    TArithmetic MOD_INT = new TArithmetic("%", AkNumeric.INT, AkNumeric.INT)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putInt32(inputs.get(0).getInt32() % inputs.get(0).getInt32());
+        }
+    };
+    
+    TArithmetic MOD_BIGINT = new TArithmetic("%", AkNumeric.BIGINT, AkNumeric.BIGINT)
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            output.putInt64(inputs.get(0).getInt64() % inputs.get(1).getInt64());
+        }
+    };
 }

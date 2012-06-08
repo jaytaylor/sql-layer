@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
