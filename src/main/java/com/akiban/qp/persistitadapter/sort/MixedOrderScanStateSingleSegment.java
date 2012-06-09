@@ -84,6 +84,15 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
             keyTarget.expectingType(fieldValue.getConversionType());
             Converters.convert(fieldValue, keyTarget);
             more = cursor.exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, false) && !pastEnd();
+            if (!more) {
+                // Go back to a key prefix known to exist.
+                cursor.exchange.getKey().cut();
+                // Go to the beginning or end of the range of keys, depending on direction.
+                // Want to do a deep traverse here, not shallow as previously.
+                cursor.exchange.append(ascending ? Key.BEFORE : Key.AFTER);
+                boolean resume = cursor.exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, true);
+                assert resume : cursor.exchange;
+            }
         }
         return more;
     }
