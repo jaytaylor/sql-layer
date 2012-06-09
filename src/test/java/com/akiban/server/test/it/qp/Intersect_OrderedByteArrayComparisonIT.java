@@ -258,8 +258,8 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
     {
         plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, true, false);
         expected = new RowBase[]{
-            row(leftIndexRowType, 3L, 0L, 500L, "x", 902L, 1017L),
-            row(leftIndexRowType, 3L, 0L, 500L, "x", 902L, 1018L),
+            row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
+            row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
         {
@@ -272,8 +272,8 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
         testCursorLifecycle(plan, testCase);
         plan = intersectPlan(3, IntersectOption.OUTPUT_LEFT, true, true);
         expected = new RowBase[]{
-            row(leftIndexRowType, 3L, 0L, 500L, "x", 902L, 1017L),
-            row(leftIndexRowType, 3L, 0L, 500L, "x", 902L, 1018L),
+            row(leftIndexRowType, 3L, 500L, "x", 902L, 1017L),
+            row(leftIndexRowType, 3L, 500L, "x", 902L, 1018L),
         };
         testCase = new CursorLifecycleTestCase()
         {
