@@ -235,7 +235,7 @@ public class MArithmetic {
                         .add((BigDecimalWrapper)inputs.get(0).getObject())
                         .divide((BigDecimalWrapper)inputs.get(1).getObject(),
                                  context.outputTInstance().attribute(  // get the scale/precisions computed
-                                        MBigDecimal.Attrs.PRECISION.ordinal()))); // during expr generation time
+                                        MBigDecimal.Attrs.SCALE.ordinal()))); // during expr generation time
         }
     };
     
