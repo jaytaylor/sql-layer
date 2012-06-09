@@ -32,6 +32,8 @@ import java.sql.Statement;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
+import com.akiban.qp.memoryadapter.MemoryGroupCursor;
+import com.akiban.qp.rowtype.RowType;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -114,7 +116,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
             table = AISBBasedBuilder.create().userTable(name.getSchemaName(),name.getTableName()).colLong("c1").pk("c1").ais().getUserTable(name);
         }
         @Override
-        public GroupCursor getGroupCursor(Session session) {
+        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
             // TODO Auto-generated method stub
             return null;
         }

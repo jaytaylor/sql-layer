@@ -34,8 +34,9 @@ import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
+import com.akiban.qp.rowtype.RowType;
 
-public abstract class MemoryGroupCursor implements GroupCursor {
+public class MemoryGroupCursor implements GroupCursor {
 
     @Override
     public void rebind(HKey hKey, boolean deep) {
@@ -45,7 +46,7 @@ public abstract class MemoryGroupCursor implements GroupCursor {
     @Override
     public void open() {
         CursorLifecycle.checkIdle(this);
-        memoryOpen();
+        scan = factory.getTableScan(getRowType());
         idle = false;
     }
 
@@ -96,21 +97,17 @@ public abstract class MemoryGroupCursor implements GroupCursor {
     }
 
     // Abstraction extensions
-    
+
     /**
      * create the TableScan implementation specific to your code 
      */
-    public abstract TableScan memoryOpen(); 
+    //public abstract TableScan memoryOpen();
     
-    public abstract class TableScan implements Iterator<Row> {
-        public abstract boolean hasNext();
-
-        /*
-         * row.holderAt(i).put<type>(<value>);
-         * return row;
-         */
-        public abstract Row next();
-        
+    public static abstract class TableScan implements Iterator<Row> {
+        @Override
+        public final void remove() {
+            throw new UnsupportedOperationException();
+        }
     }
     
     /**
@@ -123,19 +120,25 @@ public abstract class MemoryGroupCursor implements GroupCursor {
      * @return
      */
     protected ValuesHolderRow newRow() {
-        return new ValuesHolderRow (adapter.schema().userTableRowType(table.getRoot()));
+        return new ValuesHolderRow (getRowType());
     }
     
     // Package use
-    
-    public MemoryGroupCursor (MemoryAdapter adapter, GroupTable groupTable) {
+
+    private RowType getRowType() {
+        return adapter.schema().userTableRowType(table.getRoot());
+    }
+
+    public MemoryGroupCursor (MemoryAdapter adapter, GroupTable groupTable, MemoryTableFactory factory) {
         this.adapter = adapter;
         this.table = groupTable;
+        this.factory = factory;
     }
     
-    private boolean idle;
+    private boolean idle = true;
     private boolean destroyed = false;
-    private MemoryAdapter adapter;
-    private GroupTable table;
+    private final MemoryAdapter adapter;
+    private final GroupTable table;
+    private final MemoryTableFactory factory;
     private TableScan scan;
 }

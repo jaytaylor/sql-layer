@@ -34,6 +34,7 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.statistics.IndexStatistics;
 
@@ -43,7 +44,8 @@ public interface MemoryTableFactory {
     public abstract UserTable getTableDefinition();
     
     // Used by (Memory)StoreAdapter to get cursors 
-    public abstract GroupCursor getGroupCursor(Session session);
+    public abstract MemoryGroupCursor.TableScan getTableScan(RowType rowType);
+
     public abstract Cursor getIndexCursor (Index index, Session session, 
             IndexKeyRange keyRange,
             API.Ordering ordering,

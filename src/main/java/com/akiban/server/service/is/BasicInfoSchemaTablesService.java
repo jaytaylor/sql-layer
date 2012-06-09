@@ -24,51 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.row;
+package com.akiban.server.service.is;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
-
-public class ValuesRow extends AbstractRow
-{
-    // Object interface
-
-    @Override
-    public String toString()
-    {
-        return valuesHolder.toString();
-    }
-
-    // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        return valuesHolder.valueSourceAt(i);
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return null;
-    }
-
-    // ValuesRow interface
-
-    public ValuesRow(RowType rowType, Object... values)
-    {
-        this.rowType = rowType;
-        this.valuesHolder = new RowValuesHolder(values);
-    }
-
-    // Object state
-
-    private final RowType rowType;
-    private final RowValuesHolder valuesHolder;
+public interface BasicInfoSchemaTablesService {
 }

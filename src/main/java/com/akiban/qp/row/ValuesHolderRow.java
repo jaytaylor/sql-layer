@@ -32,7 +32,7 @@ import com.akiban.server.types.util.ValueHolder;
 
 public class ValuesHolderRow extends AbstractValuesHolderRow {
 
-    // ValuesHolderRow interface -- mostly just promoting visiblity
+    // ValuesHolderRow interface -- mostly just promoting visibility
 
     @Override
     public void clear() {
