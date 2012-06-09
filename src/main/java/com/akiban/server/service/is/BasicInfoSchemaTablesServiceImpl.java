@@ -253,22 +253,24 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         @Override
         public MemoryGroupCursor.TableScan getTableScan(final RowType rowType) {
-            final Iterator[] it = {aisHolder.getAis().getUserTables().values().iterator(), null};
             return new MemoryGroupCursor.TableScan() {
+                final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+                Iterator<Column> columnIt;
+
                 @Override
                 public boolean hasNext() {
-                    if(it[1] != null && it[1].hasNext()) {
+                    if(columnIt != null && columnIt.hasNext()) {
                         return true;
                     }
-                    return it[0].hasNext();
+                    return tableIt.hasNext(); // Every table has columns
                 }
 
                 @Override
                 public Row next() {
-                    if((it[1] == null) || (!it[1].hasNext() && it[0].hasNext())) {
-                        it[1] = ((UserTable)it[0].next()).getColumns().iterator();
+                    if(columnIt == null || !columnIt.hasNext()) {
+                        columnIt = tableIt.next().getColumns().iterator();
                     }
-                    Column column = (Column)it[1].next();
+                    Column column = columnIt.next();
 
                     Integer scale = null;
                     Integer precision = null;
