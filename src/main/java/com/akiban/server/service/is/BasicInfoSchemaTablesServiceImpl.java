@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Schema;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
@@ -82,6 +83,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         final TableName SCHEMATA = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "schemata");
         final TableName TABLES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "tables");
         final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
+        final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
 
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.userTable(SCHEMATA)
@@ -119,6 +121,18 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 //primary key(schema_name, table_name, column_name),
                 //foreign key(schema_name, table_name) references tables(schema_name, table_name),
                 //foreign key (type) references types (type_name));
+        builder.userTable(INDEXES)
+                .colString("schema_name", 128, false)
+                .colString("table_name", 128, false)
+                .colString("index_name", 128, false)
+                .colString("group_name", 128, false)
+                .colLong("index_id", false)
+                .colString("index_type", 128, false)
+                .colString("is_unique", 3, false);
+                //primary key(schema_name, group_name, index_name),
+                //foreign key (schema_name, constraint_table_name, constraint_name)
+                //references constraints (schema_name, table_name, constraint_name)
+                //foreign key(group_name) references group (group_name));
 
         Session session = sessionService.createSession();
         AkibanInformationSchema ais = builder.ais();
@@ -133,6 +147,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         {
             UserTable columns = ais.getUserTable(COLUMNS);
             schemaManager.registerMemoryInformationSchemaTable(session, columns, new ColumnsFactory(columns));
+        }
+        {
+            UserTable indexes = ais.getUserTable(INDEXES);
+            schemaManager.registerMemoryInformationSchemaTable(session, indexes, new IndexesFactory(indexes));
         }
     }
 
@@ -303,6 +321,70 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             long count = 0;
             for(UserTable table : aisHolder.getAis().getUserTables().values()) {
                 count += table.getColumns().size(); // TODO: IncludingInternal()?
+            }
+            return count;
+        }
+    }
+
+    private class IndexesFactory extends BasicFactoryBase {
+        public IndexesFactory(UserTable sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public MemoryGroupCursor.TableScan getTableScan(final RowType rowType) {
+            return new MemoryGroupCursor.TableScan() {
+                final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+                Iterator<TableIndex> indexIt;
+
+                private boolean advanceIfNeeded() {
+                    while(indexIt == null || !indexIt.hasNext()) {
+                        if(tableIt.hasNext()) {
+                            indexIt = tableIt.next().getIndexes().iterator();
+                        } else {
+                            return false;
+                        }
+                    }
+                    return true;
+                }
+
+                @Override
+                public boolean hasNext() {
+                    return advanceIfNeeded();
+                }
+
+                @Override
+                public Row next() {
+                    if(!advanceIfNeeded()) {
+                        throw new NoSuchElementException();
+                    }
+                    TableIndex index = indexIt.next();
+                    final String indexType;
+                    if(index.isPrimaryKey()) {
+                        indexType = Index.PRIMARY_KEY_CONSTRAINT;
+                    } else if(index.isUnique()) {
+                        indexType = Index.UNIQUE_KEY_CONSTRAINT;
+                    } else {
+                        indexType = "INDEX";
+                    }
+                    return new ValuesRow(rowType,
+                                         index.getIndexName().getSchemaName(),
+                                         index.getIndexName().getTableName(),
+                                         index.getIndexName().getName(),
+                                         index.getTable().getGroup().getName(),
+                                         index.getIndexId(),
+                                         indexType,
+                                         index.isUnique() ? "YES" : "NO",
+                                         1 /* hidden pk */);
+                }
+            };
+        }
+
+        @Override
+        public long rowCount() {
+            long count = 0;
+            for(UserTable table : aisHolder.getAis().getUserTables().values()) {
+                count += table.getIndexes().size(); // TODO: IncludingInternal()?
             }
             return count;
         }
