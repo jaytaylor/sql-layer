@@ -31,7 +31,6 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -48,8 +47,8 @@ public class TTrigs extends TOverloadBase
             ret[n] = new TTrigs(values[n], ins);
         return ret;
     }
-    
-    private static final int TWO_ARG[] = new int[]{0, 1};
+
+    private static final int TWO_ARGS[] = new int[]{0, 1};
     private static final int ONE_ARG[] = new int[]{0};
     static enum TrigType
     {
@@ -119,7 +118,7 @@ public class TTrigs extends TOverloadBase
                 return Math.atan(1 / var);
             }
         }, 
-        ATAN(TWO_ARG)
+        ATAN(TWO_ARGS)
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -127,7 +126,7 @@ public class TTrigs extends TOverloadBase
                 return Math.atan2(inputs.get(0).getDouble(),inputs.get(1).getDouble());
             }
         },
-        ATAN2(TWO_ARG)
+        ATAN2(TWO_ARGS)
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -183,7 +182,7 @@ public class TTrigs extends TOverloadBase
         }
         public final int covering[];
     }
-    
+
     private final TrigType trigType;
     private final TInstance argType;
     
@@ -192,11 +191,11 @@ public class TTrigs extends TOverloadBase
         this.trigType = trigType;
         this.argType = argType;
     }
-    
+
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(AkNumeric.DOUBLE, trigType.covering);
+        builder.covers(argType.typeClass(), trigType.covering);
     }
 
     @Override
@@ -216,5 +215,4 @@ public class TTrigs extends TOverloadBase
     {
         return TOverloadResult.fixed(argType);
     }
-    
 }
