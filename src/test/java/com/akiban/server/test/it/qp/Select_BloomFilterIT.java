@@ -213,6 +213,24 @@ public class Select_BloomFilterIT extends OperatorITBase
     }
 
     @Test
+    public void test7()
+    {
+        Operator plan = plan(7);
+        RowBase[] expected = new RowBase[] {
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void test8()
+    {
+        Operator plan = plan(8);
+        RowBase[] expected = new RowBase[] {
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
     public void testCursor()
     {
         Operator plan = plan(6);
