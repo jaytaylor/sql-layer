@@ -136,22 +136,21 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         Session session = sessionService.createSession();
         AkibanInformationSchema ais = builder.ais();
-        {
-            UserTable schemata = ais.getUserTable(SCHEMATA);
-            schemaManager.registerMemoryInformationSchemaTable(session, schemata, new SchemaFactory(schemata));
-        }
-        {
-            UserTable tables = ais.getUserTable(TABLES);
-            schemaManager.registerMemoryInformationSchemaTable(session, tables, new TableFactory(tables));
-        }
-        {
-            UserTable columns = ais.getUserTable(COLUMNS);
-            schemaManager.registerMemoryInformationSchemaTable(session, columns, new ColumnsFactory(columns));
-        }
-        {
-            UserTable indexes = ais.getUserTable(INDEXES);
-            schemaManager.registerMemoryInformationSchemaTable(session, indexes, new IndexesFactory(indexes));
-        }
+
+        // SCHEMAS
+        UserTable schemata = ais.getUserTable(SCHEMATA);
+        schemaManager.registerMemoryInformationSchemaTable(session, schemata, new SchemaFactory(schemata));
+        // TABLES
+        UserTable tables = ais.getUserTable(TABLES);
+        schemaManager.registerMemoryInformationSchemaTable(session, tables, new TableFactory(tables));
+        // COLUMNS
+        UserTable columns = ais.getUserTable(COLUMNS);
+        schemaManager.registerMemoryInformationSchemaTable(session, columns, new ColumnsFactory(columns));
+        // INDEXES
+        UserTable indexes = ais.getUserTable(INDEXES);
+        schemaManager.registerMemoryInformationSchemaTable(session, indexes, new IndexesFactory(indexes));
+
+        session.close();
     }
 
     @Override
@@ -198,32 +197,40 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(final RowType rowType) {
-            final Iterator<Schema> it = aisHolder.getAis().getSchemas().values().iterator();
-            return new MemoryGroupCursor.TableScan() {
-                @Override
-                public boolean hasNext() {
-                    return it.hasNext();
-                }
-
-                @Override
-                public Row next() {
-                    Schema schema = it.next();
-                    return new ValuesRow(rowType,
-                                         schema.getName(),
-                                         null,
-                                         null,
-                                         null,
-                                         null,
-                                         1 /*hidden pk*/);
-
-                }
-            };
+        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
+            return new Scan(rowType);
         }
 
         @Override
         public long rowCount() {
             return aisHolder.getAis().getSchemas().size();
+        }
+
+        private class Scan extends MemoryGroupCursor.TableScan {
+            final RowType rowType;
+            final Iterator<Schema> it = aisHolder.getAis().getSchemas().values().iterator();
+            int rowCounter;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            @Override
+            public Row next() {
+                Schema schema = it.next();
+                return new ValuesRow(rowType,
+                                     schema.getName(),
+                                     null, // owner?
+                                     null, // charset?
+                                     null, // collation?
+                                     ++rowCounter /*hidden pk*/);
+
+            }
         }
     }
 
@@ -233,34 +240,43 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(final RowType rowType) {
-            final Iterator<UserTable> it = aisHolder.getAis().getUserTables().values().iterator();
-            return new MemoryGroupCursor.TableScan() {
-                @Override
-                public boolean hasNext() {
-                    return it.hasNext();
-                }
-
-                @Override
-                public Row next() {
-                    UserTable table = it.next();
-                    final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
-                    return new ValuesRow(rowType,
-                                         table.getName().getSchemaName(),
-                                         table.getName().getTableName(),
-                                         table.getGroup().getName(),
-                                         tableType,
-                                         table.getTableId(),
-                                         table.getCharsetAndCollation().charset(),
-                                         table.getCharsetAndCollation().collation(),
-                                         1 /* hidden pk */);
-                }
-            };
+        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
+            return new Scan(rowType);
         }
 
         @Override
         public long rowCount() {
             return aisHolder.getAis().getUserTables().size();
+        }
+
+        private class Scan extends MemoryGroupCursor.TableScan {
+            final RowType rowType;
+            final Iterator<UserTable> it = aisHolder.getAis().getUserTables().values().iterator();
+            int rowCounter;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return it.hasNext();
+            }
+
+            @Override
+            public Row next() {
+                UserTable table = it.next();
+                final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
+                return new ValuesRow(rowType,
+                                     table.getName().getSchemaName(),
+                                     table.getName().getTableName(),
+                                     table.getGroup().getName(),
+                                     tableType,
+                                     table.getTableId(),
+                                     table.getCharsetAndCollation().charset(),
+                                     table.getCharsetAndCollation().collation(),
+                                     ++rowCounter /* hidden pk */);
+            }
         }
     }
 
@@ -270,50 +286,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(final RowType rowType) {
-            return new MemoryGroupCursor.TableScan() {
-                final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
-                Iterator<Column> columnIt;
-
-                @Override
-                public boolean hasNext() {
-                    if(columnIt != null && columnIt.hasNext()) {
-                        return true;
-                    }
-                    return tableIt.hasNext(); // Every table has columns
-                }
-
-                @Override
-                public Row next() {
-                    if(columnIt == null || !columnIt.hasNext()) {
-                        columnIt = tableIt.next().getColumns().iterator();
-                    }
-                    Column column = columnIt.next();
-
-                    Integer scale = null;
-                    Integer precision = null;
-                    if(column.getType().akType() == AkType.DECIMAL) {
-                        scale = column.getTypeParameter1().intValue();
-                        precision = column.getTypeParameter2().intValue();
-                    }
-
-                    return new ValuesRow(rowType,
-                                         column.getTable().getName().getSchemaName(),
-                                         column.getTable().getName().getTableName(),
-                                         column.getName(),
-                                         column.getPosition(),
-                                         column.getType().name(),
-                                         column.getNullable() ? "YES" : "NO",
-                                         column.getMaxStorageSize().intValue(),
-                                         scale,
-                                         precision,
-                                         column.getPrefixSize(),
-                                         column.getInitialAutoIncrementValue(),
-                                         column.getCharsetAndCollation().charset(),
-                                         column.getCharsetAndCollation().collation(),
-                                         1 /* hidden pk */);
-                }
-            };
+        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
+            return new Scan(rowType);
         }
 
         @Override
@@ -324,6 +298,56 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             }
             return count;
         }
+
+        private class Scan extends MemoryGroupCursor.TableScan {
+            final RowType rowType;
+            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            Iterator<Column> columnIt;
+            int rowCounter;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            @Override
+            public boolean hasNext() {
+                if(columnIt != null && columnIt.hasNext()) {
+                    return true;
+                }
+                return tableIt.hasNext(); // Every table has columns
+            }
+
+            @Override
+            public Row next() {
+                if(columnIt == null || !columnIt.hasNext()) {
+                    columnIt = tableIt.next().getColumns().iterator();
+                }
+                Column column = columnIt.next();
+
+                Integer scale = null;
+                Integer precision = null;
+                if(column.getType().akType() == AkType.DECIMAL) {
+                    scale = column.getTypeParameter1().intValue();
+                    precision = column.getTypeParameter2().intValue();
+                }
+
+                return new ValuesRow(rowType,
+                                     column.getTable().getName().getSchemaName(),
+                                     column.getTable().getName().getTableName(),
+                                     column.getName(),
+                                     column.getPosition(),
+                                     column.getType().name(),
+                                     column.getNullable() ? "YES" : "NO",
+                                     column.getMaxStorageSize().intValue(),
+                                     scale,
+                                     precision,
+                                     column.getPrefixSize(),
+                                     column.getInitialAutoIncrementValue(),
+                                     column.getCharsetAndCollation().charset(),
+                                     column.getCharsetAndCollation().collation(),
+                                     ++rowCounter /* hidden pk */);
+            }
+        }
     }
 
     private class IndexesFactory extends BasicFactoryBase {
@@ -332,52 +356,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(final RowType rowType) {
-            return new MemoryGroupCursor.TableScan() {
-                final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
-                Iterator<TableIndex> indexIt;
-
-                private boolean advanceIfNeeded() {
-                    while(indexIt == null || !indexIt.hasNext()) {
-                        if(tableIt.hasNext()) {
-                            indexIt = tableIt.next().getIndexes().iterator();
-                        } else {
-                            return false;
-                        }
-                    }
-                    return true;
-                }
-
-                @Override
-                public boolean hasNext() {
-                    return advanceIfNeeded();
-                }
-
-                @Override
-                public Row next() {
-                    if(!advanceIfNeeded()) {
-                        throw new NoSuchElementException();
-                    }
-                    TableIndex index = indexIt.next();
-                    final String indexType;
-                    if(index.isPrimaryKey()) {
-                        indexType = Index.PRIMARY_KEY_CONSTRAINT;
-                    } else if(index.isUnique()) {
-                        indexType = Index.UNIQUE_KEY_CONSTRAINT;
-                    } else {
-                        indexType = "INDEX";
-                    }
-                    return new ValuesRow(rowType,
-                                         index.getIndexName().getSchemaName(),
-                                         index.getIndexName().getTableName(),
-                                         index.getIndexName().getName(),
-                                         index.getTable().getGroup().getName(),
-                                         index.getIndexId(),
-                                         indexType,
-                                         index.isUnique() ? "YES" : "NO",
-                                         1 /* hidden pk */);
-                }
-            };
+        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
+            return new IndexesFactory.Scan(rowType);
         }
 
         @Override
@@ -387,6 +367,58 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 count += table.getIndexes().size(); // TODO: IncludingInternal()?
             }
             return count;
+        }
+
+        private class Scan extends MemoryGroupCursor.TableScan {
+            final RowType rowType;
+            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            Iterator<TableIndex> indexIt;
+            int rowCounter;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            private boolean advanceIfNeeded() {
+                while(indexIt == null || !indexIt.hasNext()) {
+                    if(tableIt.hasNext()) {
+                        indexIt = tableIt.next().getIndexes().iterator();
+                    } else {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return advanceIfNeeded();
+            }
+
+            @Override
+            public Row next() {
+                if(!advanceIfNeeded()) {
+                    throw new NoSuchElementException();
+                }
+                TableIndex index = indexIt.next();
+                final String indexType;
+                if(index.isPrimaryKey()) {
+                    indexType = Index.PRIMARY_KEY_CONSTRAINT;
+                } else if(index.isUnique()) {
+                    indexType = Index.UNIQUE_KEY_CONSTRAINT;
+                } else {
+                    indexType = "INDEX";
+                }
+                return new ValuesRow(rowType,
+                                     index.getIndexName().getSchemaName(),
+                                     index.getIndexName().getTableName(),
+                                     index.getIndexName().getName(),
+                                     index.getTable().getGroup().getName(),
+                                     index.getIndexId(),
+                                     indexType,
+                                     index.isUnique() ? "YES" : "NO",
+                                     ++rowCounter /*hidden pk*/);
+            }
         }
     }
 }
