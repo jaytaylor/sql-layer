@@ -157,7 +157,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
 
             long ret = (d1[0] - d2[0]) * 12 + d1[1] - d2[1];
             
-            // adust the day difference
+            // adjust the day difference
             if (ret > 0 && d1[2] < d2[2]) --ret;
             else if (ret < 0 && d1[2] > d2[2]) ++ret;
                             
