@@ -123,10 +123,7 @@ public abstract class TClass {
     // for use by subclasses
 
     protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);
-    
-    protected void validate(TInstance instance) {
-        // default has no action
-    }
+    protected abstract void validate(TInstance instance);
     
     // for use by this class
     

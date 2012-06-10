@@ -49,6 +49,11 @@ public class MBigDecimal extends TClass {
     }
 
     @Override
+    protected void validate(TInstance instance) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
     protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
         // Determine precision of TInstance
         /*switch (mode) {

@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TypeDeclarationException;
 import com.akiban.server.types3.common.types.NumericAttribute;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -40,6 +41,13 @@ public class MNumeric extends TClass {
                 NumericAttribute.values(),
                 1, 1, serializationSize, 
                 pUnderlying);
+    }
+
+    @Override
+    protected void validate(TInstance instance) {
+        int m = instance.attribute(NumericAttribute.WIDTH);
+        if (m < 0 || m > 255)
+            throw new TypeDeclarationException("width must be 0 < M < 256");
     }
 
     @Override

@@ -28,7 +28,8 @@ package com.akiban.server.types3;
 
 public final class TInstance {
     
-    public int attribute(int index) {
+    public int attribute(Attribute attribute) {
+        int index = attribute.ordinal();
         switch (index) {
         case 0: return attr0;
         case 1: return attr1;
