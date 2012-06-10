@@ -76,7 +76,7 @@ public class StringFactory implements TFactory
         String charsetName = values.stringAt(StringAttribute.CHARSET, DEFAULT_CHARSET.name());
         int charsetId = Enums.ordinalOf(Charset.class, charsetName);
         int collation = values.intAt(StringAttribute.COLLATION, DEFAULT_COLLATION_ID); // TODO need something similar
-        return new TInstance(tclass, length, charsetId, collation);
+        return tclass.instance(length, charsetId, collation);
     }
 
 }

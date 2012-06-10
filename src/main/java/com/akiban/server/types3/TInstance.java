@@ -27,7 +27,7 @@
 package com.akiban.server.types3;
 
 public final class TInstance {
-
+    
     public int attribute(int index) {
         switch (index) {
         case 0: return attr0;
@@ -42,22 +42,7 @@ public final class TInstance {
         return tclass;
     }
 
-    public TInstance(TClass tclass) {
-        this(tclass, 0, EMPTY, EMPTY, EMPTY, EMPTY);
-    }
-
-    public TInstance(TClass tclass, int attr0) {
-        this(tclass, 1, attr0, EMPTY, EMPTY, EMPTY);
-    }
-    public TInstance(TClass tclass, int attr0, int attr1) {
-        this(tclass, 2, attr0, attr1, EMPTY, EMPTY);
-    }
-
-    public TInstance(TClass tclass, int attr0, int attr1, int attr2) {
-        this(tclass, 3, attr0, attr1, attr2, EMPTY);
-    }
-
-    public TInstance(TClass tclass, int attr0, int attr1, int attr2, int attr3) {
+    TInstance(TClass tclass, int attr0, int attr1, int attr2, int attr3) {
         this(tclass, 4, attr0, attr1, attr2, attr3);
     }
 
@@ -68,6 +53,10 @@ public final class TInstance {
     public TInstance setNullable(Boolean nullable) {
         isNullable = nullable;
         return this;
+    }
+
+    public TInstance copy() {
+        return new TInstance(tclass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
 
     // object interface
@@ -86,6 +75,4 @@ public final class TInstance {
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
-
-    private static final int EMPTY = -1;
 }

@@ -38,7 +38,7 @@ class MNumericFactory implements TFactory {
     public TInstance create(TAttributesDeclaration declaration) {
         TAttributeValues vals = declaration.validate(1, 1);
         int m = vals.intAt(NumericAttribute.WIDTH, DEFAULT_M);
-        return new TInstance(tClass, m);
+        return tClass.instance(m);
     }
 
     MNumericFactory(TClass tClass) {

@@ -36,43 +36,29 @@ public abstract class TClass {
 
     public abstract TFactory factory();
 
-    /**
-     * Method to create an instance of this tclass
-     * Should be overriden as needed
-     */
     public TInstance instance()
     {
-        if (nAttributes() != 0)
-            throw new AkibanInternalException("called with wrong argument count");
-        return new TInstance(this);
+        return createInstance(0, EMPTY, EMPTY, EMPTY, EMPTY);
     }
     
     public TInstance instance(int arg0)
     {
-        if (nAttributes() != 1)
-            throw new AkibanInternalException("called with wrong argument count");
-        return new TInstance(this, arg0);
+        return createInstance(1, arg0, EMPTY, EMPTY, EMPTY);
     }
     
     public TInstance instance(int arg0, int arg1)
     {
-        if (nAttributes() != 2)
-            throw new AkibanInternalException("called with wrong argument count");
-        return new TInstance(this, arg0, arg1);
+        return createInstance(2, arg0, arg1, EMPTY, EMPTY);
     }
     
     public TInstance instance(int arg0, int arg1, int arg2)
     {
-        if (nAttributes() != 3)
-            throw new AkibanInternalException("called with wrong argument count");
-        return new TInstance(this, arg0, arg1, arg2);
+        return createInstance(3, arg0, arg1, arg2, EMPTY);
     }
     
     public TInstance instance(int arg0, int arg1, int arg2, int arg3)
     {
-        if (nAttributes() != 4)
-            throw new AkibanInternalException("called with wrong argument count");
-        return new TInstance(this, arg0, arg1, arg2, arg3);
+        return createInstance(4, arg0, arg1, arg2, arg3);
     }
     
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {
@@ -137,6 +123,22 @@ public abstract class TClass {
     // for use by subclasses
 
     protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);
+    
+    protected void validate(TInstance instance) {
+        // default has no action
+    }
+    
+    // for use by this class
+    
+    private TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+        if (nAttributes() != nAttrs)
+            throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
+        TInstance result = new TInstance(this, attr0, attr1, attr2, attr3);
+        validate(result);
+        return result;
+    }
+    
+    // state
 
      protected TClass(TName name,
             Attribute[] attributes, 
@@ -158,8 +160,6 @@ public abstract class TClass {
                  throw new IllegalNameException("attribute[" + i + "] for " + name + " has invalid name: " + attrValue);
          }
      }
-     
-    
 
      protected TClass(TBundleID bundle,
              String name,
@@ -181,4 +181,5 @@ public abstract class TClass {
     private final int serializationSize;
     private final PUnderlying pUnderlying;
     private static final Pattern ALL_ALPHAS = Pattern.compile("[a-z][A-Z]+");
+    private static final int EMPTY = -1;
 }

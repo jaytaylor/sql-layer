@@ -41,25 +41,15 @@ public class MDouble extends TClass
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
     
-    private static final TInstance PLAIN_DOUBLE = new TInstance(INSTANCE, 
-            DEFAULT_DOUBLE_PRECISION,
-            DEFAULT_DOUBLE_SCALE);
-    
-    private static class DoubleFactory implements TFactory
+    private class DoubleFactory implements TFactory
     {
-        private final TClass tclass;
-        
-        DoubleFactory (TClass tclass)
-        {
-            this.tclass = tclass;
-        }
 
         @Override
         public TInstance create(TAttributesDeclaration declaration)
         {
             // DOUBLE could have 0 attributes
             TAttributeValues values = declaration.validate(2, 0);
-            return new TInstance(tclass,
+            return instance(
                     values.intAt(DoubleAttribute.PRECISION, DEFAULT_DOUBLE_PRECISION),
                     values.intAt(DoubleAttribute.SCALE, DEFAULT_DOUBLE_SCALE));
         }
@@ -76,19 +66,13 @@ public class MDouble extends TClass
     @Override
     public TInstance instance()
     {
-        return PLAIN_DOUBLE;
-    }
-    
-    @Override
-    public TInstance instance(int precision, int scale)
-    {
-        return new TInstance(this, precision, scale);
+        return instance(DEFAULT_DOUBLE_PRECISION, DEFAULT_DOUBLE_SCALE);
     }
     
     @Override
     public TFactory factory()
     {
-        return new DoubleFactory(this);
+        return new DoubleFactory();
     }
 
     @Override
