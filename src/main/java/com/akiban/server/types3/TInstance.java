@@ -42,22 +42,6 @@ public final class TInstance {
         return tclass;
     }
 
-    TInstance(TClass tclass) {
-        this(tclass, 0, EMPTY, EMPTY, EMPTY, EMPTY);
-    }
-
-    TInstance(TClass tclass, int attr0) {
-        this(tclass, 1, attr0, EMPTY, EMPTY, EMPTY);
-    }
-
-    TInstance(TClass tclass, int attr0, int attr1) {
-        this(tclass, 2, attr0, attr1, EMPTY, EMPTY);
-    }
-
-    TInstance(TClass tclass, int attr0, int attr1, int attr2) {
-        this(tclass, 3, attr0, attr1, attr2, EMPTY);
-    }
-
     TInstance(TClass tclass, int attr0, int attr1, int attr2, int attr3) {
         this(tclass, 4, attr0, attr1, attr2, attr3);
     }
@@ -91,6 +75,4 @@ public final class TInstance {
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
-
-    private static final int EMPTY = -1;
 }
