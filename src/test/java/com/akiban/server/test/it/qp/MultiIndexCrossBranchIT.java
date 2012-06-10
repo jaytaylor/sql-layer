@@ -43,7 +43,7 @@ import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.qp.operator.API.IntersectOutputOption.*;
+import static com.akiban.qp.operator.API.IntersectOption.*;
 import static com.akiban.server.expression.std.Expressions.field;
 
 public class MultiIndexCrossBranchIT extends OperatorITBase
@@ -200,7 +200,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
-    private Operator intersectCyDz(int key, IntersectOutputOption side)
+    private Operator intersectCyDz(int key, IntersectOption side)
     {
         Operator plan =
             intersect_Ordered(

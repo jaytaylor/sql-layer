@@ -176,7 +176,7 @@ public class TableGroupJoinTree extends BaseJoinable
     private TableGroup group;
     private TableGroupJoinNode root;
     private Set<TableSource> required;
-    private PlanNode scan;
+    private BaseScan scan;
     
     public TableGroupJoinTree(TableGroupJoinNode root) {
         this.group = root.getTable().getGroup();
@@ -197,10 +197,10 @@ public class TableGroupJoinTree extends BaseJoinable
         this.required = required;
     }
     
-    public PlanNode getScan() {
+    public BaseScan getScan() {
         return scan;
     }
-    public void setScan(PlanNode scan) {
+    public void setScan(BaseScan scan) {
         this.scan = scan;
     }
     

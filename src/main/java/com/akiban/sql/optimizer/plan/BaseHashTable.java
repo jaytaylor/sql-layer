@@ -24,32 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.sql.optimizer.plan;
 
-import com.persistit.Key;
-import com.persistit.exception.PersistitException;
+import java.util.List;
 
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
-
-class  MixedOrderScanStateUnbounded extends MixedOrderScanState
+/** Some kind of hash table for joining, etc. */
+public abstract class BaseHashTable extends BasePlanElement
 {
-    @Override
-    public boolean startScan() throws PersistitException
-    {
-        Key.Direction direction;
-        if (ascending) {
-            cursor.exchange.append(Key.BEFORE);
-            direction = Key.GT;
-        } else {
-            cursor.exchange.append(Key.AFTER);
-            direction = Key.LT;
-        }
-        SORT_TRAVERSE.hit();
-        return cursor.exchange.traverse(direction, false);
+    protected BaseHashTable() {
     }
 
-    public MixedOrderScanStateUnbounded(SortCursorMixedOrder cursor, int field) throws PersistitException
-    {
-        super(cursor, field, cursor.ordering().ascending(field));
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16);
     }
 }

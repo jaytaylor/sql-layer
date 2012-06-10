@@ -38,7 +38,6 @@ public class MapJoin extends BasePlanNode implements PlanWithInput
     // This is non-null only until the map has been folded.
     private JoinType joinType;
     private PlanNode outer, inner;
-    private Set<ColumnSource> outerTables;
 
     public MapJoin(JoinType joinType, PlanNode outer, PlanNode inner) {
         this.joinType = joinType;
@@ -68,13 +67,6 @@ public class MapJoin extends BasePlanNode implements PlanWithInput
     public void setInner(PlanNode inner) {
         this.inner = inner;
         inner.setOutput(this);
-    }
-
-    public Set<ColumnSource> getOuterTables() {
-        return outerTables;
-    }
-    public void setOuterTables(Set<ColumnSource> outerTables) {
-        this.outerTables = outerTables;
     }
 
     @Override
@@ -114,8 +106,6 @@ public class MapJoin extends BasePlanNode implements PlanWithInput
         super.deepCopy(map);
         outer = (PlanNode)outer.duplicate(map);
         inner = (PlanNode)inner.duplicate(map);
-        if (outerTables != null)
-            outerTables = duplicateSet(outerTables, map);
     }
 
 }
