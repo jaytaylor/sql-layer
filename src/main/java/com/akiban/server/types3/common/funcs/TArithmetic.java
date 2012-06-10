@@ -27,11 +27,16 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public abstract class TArithmetic extends TOverloadBase {
- 
+
+    protected TArithmetic(String overloadName, TClass inputType, NoAttrTClass resultType) {
+        this(overloadName, inputType, resultType.instance());
+    }
+
     protected TArithmetic(String overloadName, TClass inputType, TInstance resultType) {
        this.overloadName = overloadName;
        this.inputType = inputType;

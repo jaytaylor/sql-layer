@@ -26,7 +26,13 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.common.types.NoAttrTClass;
+
 public class TOverloadResult {
+    
+    public static TOverloadResult fixed(NoAttrTClass plainTClass) {
+        return new TOverloadResult(Category.FIXED, plainTClass.instance(), null, null);
+    }
 
     public static TOverloadResult fixed(TInstance tInstance) {
         return new TOverloadResult(Category.FIXED, tInstance, null, null);

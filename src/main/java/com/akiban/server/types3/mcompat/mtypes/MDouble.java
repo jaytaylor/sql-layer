@@ -80,5 +80,9 @@ public class MDouble extends TClass
     {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
+
+    @Override
+    protected void validate(TInstance instance) {
+        throw new UnsupportedOperationException(); // TODO
+    }
 }

@@ -50,6 +50,10 @@ public final class XInt extends TClass {
         return FACTORY;
     }
 
+    @Override
+    protected void validate(TInstance instance) {
+    }
+
     private XInt() {
         super(XBund.ID, "xint", new Attribute[]{}, 1, 1, 4, PUnderlying.INT_32);
     }

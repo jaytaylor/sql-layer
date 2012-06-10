@@ -45,6 +45,10 @@ public class NoAttrTClass extends TClass {
         return instance0; // doesn't matter which it is
     }
 
+    @Override
+    protected void validate(TInstance instance) {
+    }
+
     public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
                            int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
         super(bundle, name, Attribute.NONE, internalRepVersion, serializationVersion, serializationSize, pUnderlying);
