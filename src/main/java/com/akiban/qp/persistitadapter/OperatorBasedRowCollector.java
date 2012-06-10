@@ -222,7 +222,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         }
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
-            // HAPI query root table = predicate table
+            // UserTable, column predicates apply to it alone
             ? new OneTableRowCollector(config,
                                        session,
                                        store,
@@ -233,7 +233,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        startColumns,
                                        end,
                                        endColumns)
-            // HAPI query root table != predicate table
+            // GroupTable, column predicates can apply to two distinct tables
             : new TwoTableRowCollector(config,
                                        session,
                                        store,
