@@ -118,7 +118,7 @@ public class ConvExpression extends AbstractTernaryExpression
             try
             {
                 valueHolder().putString(doConvert(
-                        truncate(num.getString()), 
+                        truncateFactional(num.getString()), 
                         fromBase, 
                         toBase));
                 return valueHolder();
@@ -140,17 +140,13 @@ public class ConvExpression extends AbstractTernaryExpression
          * @return the substring starting from [0,n-1], where n is the position
          *         of the first '.'
          */
-        private static String truncate (String st)
+        private static String truncateFactional (String st)
         {
-            StringBuilder b = new StringBuilder();
-            
-            char ch;
-            for (int n = 0; n < st.length(); ++n)
-                if ((ch = st.charAt(n)) == '.')
-                    return b.toString();
-                 else
-                    b.append(ch);
-            return b.toString();
+            int dot = st.indexOf('.');
+            if (dot >= 0)
+                return st.substring(0, dot);
+            else
+                return st;
         }
     
         /**
@@ -173,7 +169,7 @@ public class ConvExpression extends AbstractTernaryExpression
             
             // if the number is signed and the toBase value is unsigned
             // interpret the number as unsigned
-            if (!signed && num.compareTo(BigInteger.ZERO) < 0)
+            if (!signed && num.signum() < 0)
                 num = num.abs().xor(N64).add(BigInteger.ONE);
             
             return num.toString(toBase).toUpperCase();
