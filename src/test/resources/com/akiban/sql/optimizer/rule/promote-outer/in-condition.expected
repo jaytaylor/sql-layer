@@ -1,0 +1,11 @@
+SelectQuery@fd13604
+  ResultSet@703148b8[cid, name, oid, cid, order_date]
+    Project@339d6193[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
+      Select@2171145e[ANY(Subquery@6f03879)]
+        JoinNode@50b937e(INNER[customers.cid == orders.cid])
+          TableSource@3b0037c8(customers)
+          TableSource@b4e49bb(orders)
+
+Subquery@6f03879
+  Project@40ca99c9[orders.order_date == VALUES[0]]
+    ExpressionsSource@35367c5a([[2011-01-01], [2010-12-31]])

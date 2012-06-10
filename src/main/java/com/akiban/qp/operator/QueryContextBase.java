@@ -36,10 +36,10 @@ import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.BloomFilter;
 import com.akiban.util.SparseArray;
 
 import java.math.BigDecimal;
@@ -163,6 +163,18 @@ public abstract class QueryContextBase implements QueryContext
     public void setHKey(int index, HKey hKey)
     {
         bindings.set(index, hKey);
+    }
+
+    @Override
+    public BloomFilter getBloomFilter(int index) {
+        if (!bindings.isDefined(index))
+            throw new BindingNotSetException(index);
+        return (BloomFilter)bindings.get(index);
+    }
+
+    @Override
+    public void setBloomFilter(int index, BloomFilter filter) {
+        bindings.set(index, filter);
     }
 
     @Override

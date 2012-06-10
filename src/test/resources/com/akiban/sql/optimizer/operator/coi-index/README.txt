@@ -64,6 +64,8 @@ select-12: list of AND !='s into UNION
 
 select-13: cross group outer join
 
+select-14: NOT EXISTS
+
 update-1: change column to literal
 
 update-2: change column to expression (column itself)

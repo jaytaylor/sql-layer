@@ -31,7 +31,7 @@ import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.util.Strings;
 import java.util.*;
 
-public abstract class IndexScan extends BasePlanNode implements IndexIntersectionNode<ConditionExpression,IndexScan>
+public abstract class IndexScan extends BaseScan implements IndexIntersectionNode<ConditionExpression,IndexScan>
 {
     public static enum OrderEffectiveness {
         NONE, PARTIAL_GROUPED, GROUPED, SORTED
@@ -43,9 +43,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
 
     // Tables that would still need to be fetched if this index were used.
     private Set<TableSource> requiredTables;
-
-    // Estimated cost of using this index.
-    private CostEstimate costEstimate;
     
     // The cost of just the scan of this index, not counting lookups, flattening, etc
     private CostEstimate scanCostEstimate;
@@ -109,13 +106,6 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
 
     public void setScanCostEstimate(CostEstimate scanCostEstimate) {
         this.scanCostEstimate = scanCostEstimate;
-    }
-
-    public CostEstimate getCostEstimate() {
-        return costEstimate;
-    }
-    public void setCostEstimate(CostEstimate costEstimate) {
-        this.costEstimate = costEstimate;
     }
 
     @Override
@@ -217,9 +207,9 @@ public abstract class IndexScan extends BasePlanNode implements IndexIntersectio
             str.append(getHighComparand());
         }
         describeConditionRange(str);
-        if (full && costEstimate != null) {
+        if (full && getCostEstimate() != null) {
             str.append(", ");
-            str.append(costEstimate);
+            str.append(getCostEstimate());
         }
         str.append(")");
     }

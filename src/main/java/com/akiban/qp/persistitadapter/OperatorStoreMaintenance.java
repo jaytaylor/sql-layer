@@ -46,7 +46,6 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
-import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -246,8 +245,8 @@ final class OperatorStoreMaintenance {
                 rowType.userTable(),
                 branchTables.fromRoot().get(0).userTable()
         );
-        plan = API.ancestorLookup_Default(plan, groupTable, rowType, Collections.singleton(parentRowType), API.LookupOption.DISCARD_INPUT);
-        plan = API.branchLookup_Default(plan, groupTable, parentRowType, rowType, API.LookupOption.DISCARD_INPUT);
+        plan = API.ancestorLookup_Default(plan, groupTable, rowType, Collections.singleton(parentRowType), API.InputPreservationOption.DISCARD_INPUT);
+        plan = API.branchLookup_Default(plan, groupTable, parentRowType, rowType, API.InputPreservationOption.DISCARD_INPUT);
         plan = API.filter_Default(plan, Collections.singleton(rowType));
         return plan;
     }
@@ -296,7 +295,7 @@ final class OperatorStoreMaintenance {
                     groupIndex.getGroup().getGroupTable(),
                     rowType,
                     child,
-                    API.LookupOption.KEEP_INPUT
+                    API.InputPreservationOption.KEEP_INPUT
             );
         }
         if (!branchTables.fromRoot().get(0).equals(rowType)) {
@@ -305,7 +304,7 @@ final class OperatorStoreMaintenance {
                     groupIndex.getGroup().getGroupTable(),
                     rowType,
                     ancestors(rowType, branchTables.fromRoot()),
-                    API.LookupOption.KEEP_INPUT
+                    API.InputPreservationOption.KEEP_INPUT
             );
         }
 

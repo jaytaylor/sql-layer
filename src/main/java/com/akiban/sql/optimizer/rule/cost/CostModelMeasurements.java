@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.rule.costmodel;
+package com.akiban.sql.optimizer.rule.cost;
 
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
@@ -71,4 +71,8 @@ public interface CostModelMeasurements
     final double INTERSECT_PER_ROW = 0.25;
     // From HKeyUnionCT
     final double HKEY_UNION_PER_ROW = 2;
+    // From Select_BloomFilterCT.
+    final double BLOOM_FILTER_LOAD_PER_ROW = 0.24;
+    final double BLOOM_FILTER_SCAN_PER_ROW = 0.39;
+    final double BLOOM_FILTER_SCAN_SELECTIVITY_COEFFICIENT = 7.41;
 }

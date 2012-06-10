@@ -30,7 +30,6 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.error.InvalidOperationException;
@@ -41,7 +40,6 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
 
@@ -129,7 +127,7 @@ public class SimpleJoinPT extends QPProfilePTBase
                     coi,
                     itemIidIndexRowType,
                     Arrays.asList(itemRowType, orderRowType),
-                    LookupOption.DISCARD_INPUT),
+                    InputPreservationOption.DISCARD_INPUT),
                 orderRowType,
                 itemRowType,
                 JoinType.INNER_JOIN);

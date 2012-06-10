@@ -69,7 +69,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return specialFunctionNode((SpecialFunctionNode)node);
         case NodeTypes.CURRENT_DATETIME_OPERATOR_NODE:
             return currentDatetimeOperatorNode((CurrentDatetimeOperatorNode)node);
-        case NodeTypes.DB2_LENGTH_OPERATOR_NODE:
+        case NodeTypes.OCTET_LENGTH_OPERATOR_NODE:
         case NodeTypes.EXTRACT_OPERATOR_NODE:
         case NodeTypes.CHAR_LENGTH_OPERATOR_NODE:
         case NodeTypes.SIMPLE_STRING_OPERATOR_NODE:

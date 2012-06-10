@@ -38,9 +38,9 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.optimizer.rule.TestCostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;

@@ -43,6 +43,9 @@ JVM_OPTS="$JVM_OPTS -Dmysql.install.dir=/usr/local/mysql"
 # Here we create the arguments that will get passed to the jvm when
 # starting the akiban server.
 
+# Enable assertions.
+JVM_OPTS="$JVM_OPTS -ea"
+
 # enable thread priorities, primarily so we can give periodic tasks
 # a lower priority to avoid interfering with client workload
 JVM_OPTS="$JVM_OPTS -XX:+UseThreadPriorities"
