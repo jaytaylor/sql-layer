@@ -32,6 +32,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -46,7 +47,10 @@ public class InetAton extends TOverloadBase
     
     public InetAton(TClass tclass, TInstance returnType)
     {
+        assert tclass instanceof TString : "expecting a string class";
         this.argType = tclass;
+        
+        // TODO: assert returnType instaceof BIGINT ...
         this.returnType = returnType;
     }
 
@@ -102,5 +106,4 @@ public class InetAton extends TOverloadBase
     {
         return TOverloadResult.fixed(returnType);
     }
-    
 }
