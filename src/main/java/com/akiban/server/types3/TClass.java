@@ -36,10 +36,6 @@ public abstract class TClass {
 
     public abstract TFactory factory();
 
-    /**
-     * Method to create an instance of this tclass
-     * Should be overriden as needed
-     */
     public TInstance instance()
     {
         if (nAttributes() != 0)

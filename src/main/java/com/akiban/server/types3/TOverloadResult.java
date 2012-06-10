@@ -26,33 +26,31 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.util.ArgumentValidation;
-
 public class TOverloadResult {
 
     public static TOverloadResult fixed(TInstance tInstance) {
-        return new TOverloadResult(tInstance.typeClass()); // TODO should be the instance, not the class
+        return new TOverloadResult(Category.FIXED, tInstance, null, null);
     }
 
     public static TOverloadResult picking() {
-        return new TOverloadResult(-1); // TODO shouldn't need the index
+        return new TOverloadResult(Category.PICKING, null, null, null);
     }
 
     public static TOverloadResult custom(TInstance castSource, TCustomOverloadResult rule) {
-        return new TOverloadResult(rule, castSource);
+        return new TOverloadResult(Category.CUSTOM, null, rule, castSource);
     }
 
     public static TOverloadResult custom(TCustomOverloadResult rule) {
-        return new TOverloadResult(rule);
+        return new TOverloadResult(Category.CUSTOM, null, rule, null);
     }
 
     public Category category() {
         return category;
     }
 
-    public TClass fixed() {
+    public TInstance fixed() {
         check(Category.FIXED);
-        return fixedType;
+        return fixedInstance;
     }
 
     public TCustomOverloadResult customRule() {
@@ -70,7 +68,7 @@ public class TOverloadResult {
     public String toString() {
         switch (category) {
         case CUSTOM:    return "custom rule";
-        case FIXED:     return fixedType.toString();
+        case FIXED:     return fixedInstance.toString();
         case PICKING:   return "picking";
         default: throw new AssertionError(category);
         }
@@ -84,42 +82,19 @@ public class TOverloadResult {
 
     // state
 
-    @Deprecated
-    public TOverloadResult(TClass fixedType) {
-        this(Category.FIXED, fixedType, -1, null, null);
-        ArgumentValidation.notNull("fixed type", fixedType);
-    }
-
-    @Deprecated
-    public TOverloadResult(int pickingInputSet) {
-        this(Category.PICKING, null, pickingInputSet, null, null);
-    }
-
-    @Deprecated
-    public TOverloadResult(TCustomOverloadResult rule) {
-        this(rule, null);
-    }
-
-    @Deprecated
-    public TOverloadResult(TCustomOverloadResult rule, TInstance castSource) {
-        this(Category.CUSTOM, null, -1, rule, castSource);
-        ArgumentValidation.notNull("custom combine rule", rule);
-    }
-
     private TOverloadResult(Category category,
-                            TClass fixedType,
-                            int pickingInputSet,
+                            TInstance fixedInstance,
                             TCustomOverloadResult customRule,
                             TInstance castSource)
     {
         this.category = category;
-        this.fixedType = fixedType;
+        this.fixedInstance = fixedInstance;
         this.customRule = customRule;
         this.castSource = castSource;
     }
 
     private final Category category;
-    private final TClass fixedType;
+    private final TInstance fixedInstance;
     private final TCustomOverloadResult customRule;
     private final TInstance castSource;
 

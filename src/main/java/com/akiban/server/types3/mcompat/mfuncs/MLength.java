@@ -100,6 +100,6 @@ public abstract class MLength extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        return new TOverloadResult(MNumeric.INT);
+        return TOverloadResult.fixed(MNumeric.INT.instance());
     }
 }

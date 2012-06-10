@@ -27,7 +27,7 @@
 package com.akiban.server.types3;
 
 public final class TInstance {
-
+    
     public int attribute(int index) {
         switch (index) {
         case 0: return attr0;
@@ -69,6 +69,10 @@ public final class TInstance {
     public TInstance setNullable(Boolean nullable) {
         isNullable = nullable;
         return this;
+    }
+
+    public TInstance copy() {
+        return new TInstance(tclass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
 
     // object interface
