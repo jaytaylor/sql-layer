@@ -42,22 +42,23 @@ public final class TInstance {
         return tclass;
     }
 
-    public TInstance(TClass tclass) {
+    TInstance(TClass tclass) {
         this(tclass, 0, EMPTY, EMPTY, EMPTY, EMPTY);
     }
 
-    public TInstance(TClass tclass, int attr0) {
+    TInstance(TClass tclass, int attr0) {
         this(tclass, 1, attr0, EMPTY, EMPTY, EMPTY);
     }
-    public TInstance(TClass tclass, int attr0, int attr1) {
+
+    TInstance(TClass tclass, int attr0, int attr1) {
         this(tclass, 2, attr0, attr1, EMPTY, EMPTY);
     }
 
-    public TInstance(TClass tclass, int attr0, int attr1, int attr2) {
+    TInstance(TClass tclass, int attr0, int attr1, int attr2) {
         this(tclass, 3, attr0, attr1, attr2, EMPTY);
     }
 
-    public TInstance(TClass tclass, int attr0, int attr1, int attr2, int attr3) {
+    TInstance(TClass tclass, int attr0, int attr1, int attr2, int attr3) {
         this(tclass, 4, attr0, attr1, attr2, attr3);
     }
 

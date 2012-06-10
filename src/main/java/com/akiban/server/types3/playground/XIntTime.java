@@ -34,7 +34,7 @@ import com.akiban.server.types3.texpressions.TQueryContextExpression;
 public final class XIntTime extends TQueryContextExpression {
     @Override
     public TInstance resultType() {
-        return XInt.INSTANCE;
+        return XInt.TYPE_CLASS.instance();
     }
 
     @Override

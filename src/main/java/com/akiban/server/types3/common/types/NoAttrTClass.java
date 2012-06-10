@@ -33,20 +33,7 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
-import java.util.concurrent.atomic.AtomicReference;
-
 public class NoAttrTClass extends TClass {
-
-    @Override
-    public TInstance instance() {
-        TInstance result = tInstance.get();
-        if (result == null) {
-            tInstance.compareAndSet(null, new TInstance(this));
-            // Either we installed the new TInstance, or someone else beat us to it. Either way, use what's there.
-            result = tInstance.get();
-        }
-        return result;
-    }
 
     @Override
     public TFactory factory() {
@@ -62,6 +49,4 @@ public class NoAttrTClass extends TClass {
                            int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
         super(bundle, name, Attribute.NONE, internalRepVersion, serializationVersion, serializationSize, pUnderlying);
     }
-
-    private final AtomicReference<TInstance> tInstance = new AtomicReference<TInstance>();
 }
