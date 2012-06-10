@@ -55,7 +55,7 @@ public class RowDataOutput implements LegacyRowOutput {
 
     @Override
     public void wroteRow(boolean limitExceeded) {
-        throw new UnsupportedOperationException("Shouldn't be calling wroteRow for output to an HAPI request");
+        throw new UnsupportedOperationException();
     }
 
     @Override
