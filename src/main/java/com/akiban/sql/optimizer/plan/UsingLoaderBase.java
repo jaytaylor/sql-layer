@@ -24,36 +24,49 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.persistit.exception.PersistitException;
-
-class SortCursorMixedOrderUnbounded extends SortCursorMixedOrder
+/** A context with some kind of loaded object. */
+public abstract class UsingLoaderBase extends BasePlanWithInput
 {
-    // SortCursorMixedOrder interface
+    private PlanNode loader;
+
+    public UsingLoaderBase(PlanNode loader, PlanNode input) {
+        super(input);
+        this.loader = loader;
+        loader.setOutput(this);
+    }
+
+    public PlanNode getLoader() {
+        return loader;
+    }
+    public void setLoader(PlanNode loader) {
+        this.loader = loader;
+        loader.setOutput(this);
+    }
 
     @Override
-    public void initializeScanStates() throws PersistitException
-    {
-        for (int f = 0; f < orderingColumns(); f++) {
-            scanStates.add(new MixedOrderScanStateUnbounded(this, scanStates.size()));
-        }
-        if (orderingColumns() < keyColumns()) {
-            this.scanStates.add(new MixedOrderScanStateRestOfKey(this, scanStates.size()));
+    public void replaceInput(PlanNode oldInput, PlanNode newInput) {
+        super.replaceInput(oldInput, newInput);
+        if (loader == oldInput) {
+            loader = newInput;
+            loader.setOutput(this);
         }
     }
 
-    // SortCursorMixedOrderUnbounded interface
-
-    public SortCursorMixedOrderUnbounded(QueryContext context,
-                                         IterationHelper iterationHelper,
-                                         IndexKeyRange keyRange,
-                                         API.Ordering ordering)
-    {
-        super(context, iterationHelper, keyRange, ordering);
+    @Override
+    public boolean accept(PlanVisitor v) {
+        if (v.visitEnter(this)) {
+            loader.accept(v);
+            getInput().accept(v);
+        }
+        return v.visitLeave(this);
     }
+
+    @Override
+    protected void deepCopy(DuplicateMap map) {
+        super.deepCopy(map);
+        loader = (PlanNode)loader.duplicate(map);
+    }
+
 }

@@ -714,6 +714,19 @@ public final class SchemaManagerIT extends ITBase {
         registerISTable(makeSimpleISTable(tableName), VERSION);
     }
 
+    @Test
+    public void sameRootNameMultipleSchemasAndRestart() throws Exception {
+        final String SCHEMA1 = SCHEMA + "1";
+        final String SCHEMA2 = SCHEMA + "2";
+        createTable(SCHEMA1, T1_NAME, T1_DDL);
+        createTable(SCHEMA2, T1_NAME, T1_DDL);
+        assertTablesInSchema(SCHEMA1, T1_NAME);
+        assertTablesInSchema(SCHEMA2, T1_NAME);
+
+        safeRestart();
+        assertTablesInSchema(SCHEMA1, T1_NAME);
+        assertTablesInSchema(SCHEMA2, T1_NAME);
+    }
 
     /*
      * Next three tests are confirming that the MetaModel and Protobuf

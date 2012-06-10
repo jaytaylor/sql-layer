@@ -1,3 +1,15 @@
+bloom-filter-1: Use a Bloom filter to help with selective semi-join
+
+bloom-filter-1l: LIMIT adjusted when costing
+
+bloom-filter-1n: Extra columns means not semi-join
+
+bloom-filter-1o: Outer join
+
+bloom-filter-1x: Written with EXISTS
+
+bloom-filter-2: Do not use when not selective
+
 choose-condition-1: narrow and wide
 
 choose-condition-2: wide and narrow
@@ -45,6 +57,8 @@ two-groups: group and non-group joins
 two-groups-indexed: two groups with condition on one
 
 two-groups-not-covering: join condition makes outer index not covering
+
+two-groups-aggregated: ordered index drives aggregate
 
 no-stats: no statistics
 

@@ -137,6 +137,11 @@ public class CostModel
         return (nLeftRows + nRightRows) * INTERSECT_PER_ROW;
     }
 
+    public double union(int nLeftRows, int nRightRows)
+    {
+        return (nLeftRows + nRightRows) * UNION_PER_ROW;
+    }
+
     public double hKeyUnion(int nLeftRows, int nRightRows)
     {
         return (nLeftRows + nRightRows) * HKEY_UNION_PER_ROW;

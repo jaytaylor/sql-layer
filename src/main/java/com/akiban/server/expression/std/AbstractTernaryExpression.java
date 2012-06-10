@@ -39,6 +39,13 @@ public abstract class AbstractTernaryExpression extends AbstractCompositeExpress
         if (args.size() != 3)
             throw new WrongExpressionArityException(3, args.size());
     }
+    
+    public AbstractTernaryExpression (AkType type, Expression first, Expression second, Expression third)
+    {
+        super(type, args);
+        if (args.size() != 3)
+            throw new WrongExpressionArityException(3, args.size());
+    }
 
     protected final Expression first()
     {

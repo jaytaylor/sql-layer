@@ -173,9 +173,7 @@ public class AggregateSplitter extends BaseRule
         if (!(input instanceof IndexScan))
             return false;
         IndexScan index = (IndexScan)input;
-        int nequals = 0;
-        if (index.getEqualityComparands() != null)
-            nequals = index.getEqualityComparands().size();
+        int nequals = index.getNEquality();
         List<Sort.OrderByExpression> ordering = index.getOrdering();
         // Get number of leading columns available for ordering. This
         // includes those tested for equality, which only have that
@@ -184,15 +182,24 @@ public class AggregateSplitter extends BaseRule
         AggregateFunctionExpression aggr1 = source.getAggregates().get(0);
         for (int i = 0; i < ncols; i++) {
             Sort.OrderByExpression orderBy = ordering.get(i);
+            if (orderBy.getExpression() == null) continue;
             if (orderBy.getExpression().equals(aggr1.getOperand())) {
                 if ((i == nequals) &&
                     (orderBy.isAscending() != aggr1.getFunction().equals("MIN"))) {
                     // Fetching the MAX of an ascending index (or MIN
-                    // or descending): reverse the scan to get it
+                    // of descending): reverse the scan to get it
                     // first.  (Order doesn't matter on the
                     // equalities, MIN and MAX are the same.)
                     for (Sort.OrderByExpression otherOtherBy : ordering) {
                         otherOtherBy.setAscending(!otherOtherBy.isAscending());
+                    }
+                }
+                if ((index instanceof SingleIndexScan) &&
+                    (index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE)) {
+                    SingleIndexScan sindex = (SingleIndexScan)index;
+                    if (sindex.getConditionRange() != null) {
+                        // Need to make sure index gets the right kind of merge.
+                        sindex.setOrderEffectiveness(IndexScan.OrderEffectiveness.FOR_MIN_MAX);
                     }
                 }
                 return true;

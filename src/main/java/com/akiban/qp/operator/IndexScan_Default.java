@@ -30,6 +30,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -231,6 +232,12 @@ class IndexScan_Default extends Operator
             } finally {
                 TAP_NEXT.out();
             }
+        }
+
+        @Override
+        public void jump(Row row, ColumnSelector columnSelector)
+        {
+            cursor.jump(row, columnSelector);
         }
 
         @Override
