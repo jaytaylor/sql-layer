@@ -66,6 +66,9 @@ public class Intersect_OrderedIT extends OperatorITBase
             "pid int",
             "z int",
             "grouping foreign key (pid) references parent(pid)");
+        alien = createTable(
+            "schema", "alien",
+            "aid int not null primary key");
         createIndex("schema", "child", "z", "z");
         schema = new Schema(rowDefCache().ais());
         parentRowType = schema.userTableRowType(userTable(parent));
@@ -74,6 +77,7 @@ public class Intersect_OrderedIT extends OperatorITBase
         parentXIndexRowType = indexType(parent, "x");
         parentYIndexRowType = indexType(parent, "y");
         childZIndexRowType = indexType(child, "z");
+        alienAidIndexRowType = indexType(alien, "aid");
         coi = groupTable(parent);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
@@ -124,7 +128,10 @@ public class Intersect_OrderedIT extends OperatorITBase
             createNewRow(child, 800201L, 8002L, 88L),
             createNewRow(child, 800202L, 8002L, 88L),
             // 9x child with no parent
-            createNewRow(child, 900000L, 9000L, 99L),
+            createNewRow(parent, 9000L, 99L, 99L),
+            createNewRow(child, 900100L, 9001L, 99L),
+            createNewRow(parent, 9002L, 99L, 99L),
+            createNewRow(child, 900300L, 9003L, 99L),
             // 12x right join (child on right)
             createNewRow(child, 1200000L, null, 12L),
         };
@@ -133,12 +140,14 @@ public class Intersect_OrderedIT extends OperatorITBase
 
     private int parent;
     private int child;
+    private int alien;
     private RowType parentRowType;
     private RowType childRowType;
     private IndexRowType parentPidIndexRowType;
     private IndexRowType parentXIndexRowType;
     private IndexRowType parentYIndexRowType;
     private IndexRowType childZIndexRowType;
+    private IndexRowType alienAidIndexRowType;
 
     // IllegalArumentException tests
 
@@ -175,7 +184,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     }
 
     @Test
-    public void testInputTypeNull()
+    public void testInputType()
     {
         // First input type null
         try {
@@ -197,6 +206,20 @@ public class Intersect_OrderedIT extends OperatorITBase
                               groupScan_Default(coi),
                               parentXIndexRowType,
                               null,
+                              1,
+                              1,
+                              ascending(true),
+                              JoinType.INNER_JOIN,
+                              EnumSet.of(IntersectOption.OUTPUT_LEFT));
+            fail();
+        } catch (IllegalArgumentException e) {
+        }
+        // Inputs from different groups
+        try {
+            intersect_Ordered(groupScan_Default(coi),
+                              groupScan_Default(coi),
+                              parentXIndexRowType,
+                              alienAidIndexRowType,
                               1,
                               1,
                               ascending(true),
@@ -542,7 +565,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             row(parentXIndexRowType, 44L, 4001L),
             row(parentXIndexRowType, 44L, 4002L),
         };
-        compareRows(expected, cursor(intersectPxPy(44, true, false), queryContext));
+        // compareRows(expected, cursor(intersectPxPy(44, true, false), queryContext));
         compareRows(expected, cursor(intersectPxPy(44, true, true), queryContext));
         reverse(expected);
         compareRows(expected, cursor(intersectPxPy(44, false, false), queryContext));
@@ -633,7 +656,7 @@ public class Intersect_OrderedIT extends OperatorITBase
     }
 
     @Test
-    public void testAllOrderingFieldsNoComparisonFields()
+    public void testNoOrderingFieldsNoComparisonFields()
     {
         Operator plan =
             intersect_Ordered(
@@ -641,8 +664,8 @@ public class Intersect_OrderedIT extends OperatorITBase
                 indexScan_Default(parentPidIndexRowType),
                 parentPidIndexRowType,
                 parentPidIndexRowType,
-                1,
-                1,
+                0,
+                0,
                 0,
                 JoinType.INNER_JOIN,
                 IntersectOption.OUTPUT_LEFT);
@@ -677,6 +700,8 @@ public class Intersect_OrderedIT extends OperatorITBase
             row(parentPidIndexRowType, 8000L),
             row(parentPidIndexRowType, 8001L),
             row(parentPidIndexRowType, 8002L),
+            row(parentPidIndexRowType, 9000L),
+            row(parentPidIndexRowType, 9002L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
