@@ -29,6 +29,7 @@ package com.akiban.server.service.is;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -84,6 +85,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         final TableName TABLES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "tables");
         final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
         final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
+        final TableName INDEX_COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_columns");
 
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.userTable(SCHEMATA)
@@ -133,6 +135,20 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 //foreign key (schema_name, constraint_table_name, constraint_name)
                 //references constraints (schema_name, table_name, constraint_name)
                 //foreign key(group_name) references group (group_name));
+        builder.userTable(INDEX_COLUMNS)
+                .colString("schema_name", 128, false)
+                .colString("group_name", 128, false)
+                .colString("index_name", 128, false)
+                .colString("table_name", 128, false)
+                .colString("column_name", 128, false)
+                .colLong("ordinal_position", false)
+                .colString("is_ascending", 128, false)
+                .colLong("indexed_length", true);
+                //primary key(schema_name, group_name, index_name, table_name, column_name),
+                //foreign key(schema_name, group_name, index_name)
+                //references indexes (schema_name, group_name, index_name),
+                //foreign key (schema_name, table_name, column_name)
+                //references columns (schema_name, table_name, column_name));
 
         Session session = sessionService.createSession();
         AkibanInformationSchema ais = builder.ais();
@@ -149,6 +165,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         // INDEXES
         UserTable indexes = ais.getUserTable(INDEXES);
         schemaManager.registerMemoryInformationSchemaTable(session, indexes, new IndexesFactory(indexes));
+        // INDEX_COLUMNS
+        UserTable index_columns = ais.getUserTable(INDEX_COLUMNS);
+        schemaManager.registerMemoryInformationSchemaTable(session, index_columns, new IndexColumnsFactory(index_columns));
 
         session.close();
     }
@@ -417,6 +436,80 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      index.getIndexId(),
                                      indexType,
                                      index.isUnique() ? "YES" : "NO",
+                                     ++rowCounter /*hidden pk*/);
+            }
+        }
+    }
+
+    private class IndexColumnsFactory extends BasicFactoryBase {
+        public IndexColumnsFactory(UserTable sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
+            return new IndexColumnsFactory.Scan(rowType);
+        }
+
+        @Override
+        public long rowCount() {
+            long count = 0;
+            for(UserTable table : aisHolder.getAis().getUserTables().values()) {
+                for(Index index : table.getIndexes()) {
+                    count += index.getKeyColumns().size();
+                }
+            }
+            return count;
+        }
+
+        private class Scan extends MemoryGroupCursor.TableScan {
+            final RowType rowType;
+            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            Iterator<TableIndex> indexIt;
+            Iterator<IndexColumn> indexColumnIt;
+            int rowCounter;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            private boolean advanceIfNeeded() {
+                while(indexColumnIt == null || !indexColumnIt.hasNext()) {
+                    while(indexIt == null || !indexIt.hasNext()) {
+                        if(tableIt.hasNext()) {
+                            indexIt = tableIt.next().getIndexes().iterator();
+                        } else {
+                            return false;
+                        }
+                    }
+                    if(indexIt.hasNext()) {
+                        indexColumnIt = indexIt.next().getKeyColumns().iterator();
+                        break;
+                    }
+                }
+                return true;
+            }
+
+            @Override
+            public boolean hasNext() {
+                return advanceIfNeeded();
+            }
+
+            @Override
+            public Row next() {
+                if(!advanceIfNeeded()) {
+                    throw new NoSuchElementException();
+                }
+                IndexColumn indexColumn = indexColumnIt.next();
+                return new ValuesRow(rowType,
+                                     indexColumn.getIndex().getIndexName().getSchemaName(),
+                                     indexColumn.getColumn().getTable().getGroup().getName(),
+                                     indexColumn.getIndex().getIndexName().getName(),
+                                     indexColumn.getColumn().getTable().getName().getTableName(),
+                                     indexColumn.getColumn().getName(),
+                                     indexColumn.getPosition(),
+                                     indexColumn.isAscending() ? "YES" : "NO",
+                                     indexColumn.getIndexedLength(),
                                      ++rowCounter /*hidden pk*/);
             }
         }
