@@ -59,8 +59,6 @@ public class GroupScanIT extends OperatorITBase
     @Test
     public void testFullScan()
     {
-        TapReport[] a = Tap.getReport("operator: root");
-        TapReport[] b = Tap.getReports();
         use(db);
         Operator groupScan = groupScan_Default(coi);
         Cursor cursor = cursor(groupScan, queryContext);
