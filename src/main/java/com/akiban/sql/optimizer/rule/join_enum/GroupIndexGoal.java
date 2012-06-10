@@ -612,8 +612,9 @@ public class GroupIndexGoal implements Comparator<IndexScan>
             CostEstimate previousBestCost = previousBest.getCostEstimate();
             for (Iterator<SingleIndexScan> iter = enumerator.leavesIterator(); iter.hasNext(); ) {
                 SingleIndexScan scan = iter.next();
-                if (scan.getScanCostEstimate().compareTo(previousBestCost) > 0) {
-                    logger.debug("Not intersecting {} {}", scan, scan.getScanCostEstimate());
+                CostEstimate scanCost = estimateIntersectionCost(scan);
+                if (scanCost.compareTo(previousBestCost) > 0) {
+                    logger.debug("Not intersecting {} {}", scan, scanCost);
                     iter.remove();
                 }
             }
@@ -933,6 +934,22 @@ public class GroupIndexGoal implements Comparator<IndexScan>
 
         estimator.setLimit(limit);
 
+        return estimator.getCostEstimate();
+    }
+
+    public CostEstimate estimateIntersectionCost(IndexScan index) {
+        if (index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE)
+            return index.getScanCostEstimate();
+        long limit = queryGoal.getLimit();
+        if (limit < 0)
+            return index.getScanCostEstimate();
+        // There is a limit and this index looks to be sorted, so adjust for that
+        // limit. Otherwise, the scan only cost, which includes all rows, will appear
+        // too large compared to a limit-aware best plan.
+        PlanCostEstimator estimator = 
+            new PlanCostEstimator(queryGoal.getCostEstimator());
+        estimator.indexScan(index);
+        estimator.setLimit(limit);
         return estimator.getCostEstimate();
     }
 
