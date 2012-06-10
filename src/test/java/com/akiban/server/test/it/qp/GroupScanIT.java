@@ -34,6 +34,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -57,6 +59,8 @@ public class GroupScanIT extends OperatorITBase
     @Test
     public void testFullScan()
     {
+        TapReport[] a = Tap.getReport("operator: root");
+        TapReport[] b = Tap.getReports();
         use(db);
         Operator groupScan = groupScan_Default(coi);
         Cursor cursor = cursor(groupScan, queryContext);

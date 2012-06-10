@@ -202,8 +202,10 @@ public abstract class Tap
 
     public static void enableInitial()
     {
-        for (Dispatch dispatch : DISPATCHES.values()) {
-            dispatch.setEnabled(initiallyEnabledPattern.matcher(dispatch.getName()).find());
+        if (initiallyEnabledPattern != null) {
+            for (Dispatch dispatch : DISPATCHES.values()) {
+                dispatch.setEnabled(initiallyEnabledPattern.matcher(dispatch.getName()).find());
+            }
         }
     }
     
