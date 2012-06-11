@@ -26,10 +26,13 @@
 
 package com.akiban.server.test.it.store;
 
+import com.akiban.server.service.config.Property;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Before;
+
+import java.util.Collection;
 
 public class PersistitStoreSchemaManagerITBase extends ITBase {
     protected PersistitStoreSchemaManager pssm;
@@ -49,8 +52,12 @@ public class PersistitStoreSchemaManagerITBase extends ITBase {
     }
 
     protected void safeRestart() throws Exception {
+        safeRestart(defaultPropertiesToPreserveOnRestart());
+    }
+
+    protected void safeRestart(Collection<Property> properties) throws Exception {
         pssm = null;
-        safeRestartTestServices();
+        safeRestartTestServices(properties);
         pssm = castToPSSM();
     }
 }

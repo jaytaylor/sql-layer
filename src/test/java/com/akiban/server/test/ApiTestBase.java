@@ -283,11 +283,20 @@ public class ApiTestBase {
         return sm.getSessionService().createSession();
     }
 
+    protected Collection<Property> defaultPropertiesToPreserveOnRestart() {
+        List<Property> properties = new ArrayList<Property>();
+        properties.add(new Property("akserver.datapath", treeService().getDataPath()));
+        return properties;
+    }
+
     public final void safeRestartTestServices() throws Exception {
-        final String datapath = serviceManager().getTreeService().getDataPath();
+        safeRestartTestServices(defaultPropertiesToPreserveOnRestart());
+    }
+
+    public final void safeRestartTestServices(Collection<Property> propertiesToPreserve) throws Exception {
         Thread.sleep(1000);  // Let journal flush
         crashTestServices(); // TODO: WHY doesn't this work with stop?
-        restartTestServices(Collections.singleton(new Property("akserver.datapath", datapath)));
+        restartTestServices(propertiesToPreserve);
     }
 
     protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {

@@ -153,6 +153,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
+    public static final String SKIP_AIS_UPGRADE_PROPERTY = "akserver.skip_ais_upgrade";
     public static final SerializationType DEFAULT_SERIALIZATION = SerializationType.PROTOBUF;
 
     private static final String METAMODEL_PARENT_KEY = "byAIS";
@@ -169,6 +170,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private final ConfigurationService config;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
+    private boolean skipAISUpgrade;
     private SerializationType serializationType = SerializationType.NONE;
     private final Set<TableName> legacyISTables = new HashSet<TableName>();
     private static volatile Runnable upgradeHook;
@@ -610,6 +612,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     public void start() {
         updateTimestamp = new AtomicLong();
 
+        skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
@@ -619,7 +622,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         try {
             final AkibanInformationSchema newAIS = loadAISFromStorage();
             if(serializationType == SerializationType.META_MODEL) {
-                performUpgrade(newAIS);
+                if(!skipAISUpgrade) {
+                    performUpgrade(newAIS);
+                } else {
+                    LOG.warn("Skipping AIS upgrade");
+                }
             }
 
             transactionally(sessionService.createSession(), new ThrowingRunnable() {
@@ -638,6 +645,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         this.aish.setAis(null);
         this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
+        this.skipAISUpgrade = false;
         this.serializationType = SerializationType.NONE;
         this.legacyISTables.clear();
     }

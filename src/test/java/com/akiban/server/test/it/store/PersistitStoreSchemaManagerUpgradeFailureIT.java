@@ -26,15 +26,17 @@
 
 package com.akiban.server.test.it.store;
 
-import com.akiban.ais.AISComparator;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.service.config.Property;
 import com.akiban.server.store.PSSMTestShim;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import org.junit.Test;
 
+import java.util.Collection;
 import java.util.concurrent.Callable;
 
 import static com.akiban.ais.CAOIBuilderFiller.*;
+import static com.akiban.server.store.PersistitStoreSchemaManager.*;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
@@ -46,10 +48,20 @@ import static org.junit.Assert.fail;
  * Test should be deleted when MetaModel is no longer supported.
  */
 public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreSchemaManagerITBase {
+    private final static String SCHEMA = "test";
+    private final static String[] TABLE_LOAD_ORDER = {CUSTOMER_TABLE, ADDRESS_TABLE, ORDER_TABLE, ITEM_TABLE, COMPONENT_TABLE};
+
     private static class FailingUpgradeHook implements Runnable {
         @Override
         public void run() {
             throw new RuntimeException("Injected failure");
+        }
+    }
+
+    private static void checkTables(String msg, AkibanInformationSchema ais) {
+        // Simple check that tables still exist
+        for(String table : TABLE_LOAD_ORDER) {
+            assertNotNull(table + " " + msg, ais.getUserTable(SCHEMA, table));
         }
     }
 
@@ -64,14 +76,10 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
             }
         });
 
-
-        // Set up mildly non-trivial, MetaModel based schema
-        pssm.setSerializationType(PersistitStoreSchemaManager.SerializationType.META_MODEL);
-
-        final String SCHEMA = "test";
-        final String[] LOAD_ORDER = {CUSTOMER_TABLE, ADDRESS_TABLE, ORDER_TABLE, ITEM_TABLE, COMPONENT_TABLE};
+        // Set up non-trivial MetaModel based schema
+        pssm.setSerializationType(SerializationType.META_MODEL);
         final AkibanInformationSchema ais = createAndFillBuilder(SCHEMA).ais();
-        for(final String table : LOAD_ORDER) {
+        for(final String table : TABLE_LOAD_ORDER) {
             transactionally(new Callable<Void>() {
                 @Override
                 public Void call() throws Exception {
@@ -90,16 +98,17 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
             // expected
         }
 
+        // Try again with upgrading disabled, hook still active
+        Collection<Property> props = defaultPropertiesToPreserveOnRestart();
+        props.add(new Property(PersistitStoreSchemaManager.SKIP_AIS_UPGRADE_PROPERTY, "true"));
+        safeRestart(props);
+        assertEquals("Skipped upgrade serialization", SerializationType.META_MODEL, pssm.getSerializationType());
+        checkTables("Skipped upgrade AIS", pssm.getAis(session()));
+
         // Unset hook, restart again (causing upgrade)
         PSSMTestShim.setUpgradeHook(null);
         safeRestart();
-
-        // Check state of upgraded schema
-        assertEquals("Upgraded serialization", PersistitStoreSchemaManager.SerializationType.PROTOBUF, pssm.getSerializationType());
-        AkibanInformationSchema upgradedAIS = pssm.getAis(session());
-        // Simple check that tables still exist
-        for(String table : LOAD_ORDER) {
-            assertNotNull(table + " exists after upgrade", upgradedAIS.getUserTable(SCHEMA, table));
-        }
+        assertEquals("Upgraded serialization", SerializationType.PROTOBUF, pssm.getSerializationType());
+        checkTables("Upgraded AIS", pssm.getAis(session()));
     }
 }
