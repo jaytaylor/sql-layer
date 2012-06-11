@@ -62,10 +62,10 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
     private static void checkTables(String msg, AkibanInformationSchema ais, TableName... extraTables) {
         // Simple check that tables still exist
         for(String table : TABLE_LOAD_ORDER) {
-            assertNotNull(table + " " + msg, ais.getUserTable(SCHEMA, table));
+            assertNotNull(table + " should exist, " + msg, ais.getUserTable(SCHEMA, table));
         }
         for(TableName name : extraTables) {
-            assertNotNull(name + " " + msg, ais.getUserTable(name));
+            assertNotNull(name + " should exist, " + msg, ais.getUserTable(name));
         }
     }
 

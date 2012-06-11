@@ -624,11 +624,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         try {
             final AkibanInformationSchema newAIS = loadAISFromStorage();
-            if(serializationType == SerializationType.META_MODEL) {
-                if(!skipAISUpgrade) {
-                    performUpgrade(newAIS);
-                } else {
-                    LOG.warn("Skipping AIS upgrade");
+            final boolean hasISSchema = newAIS.getSchema(TableName.INFORMATION_SCHEMA) != null;
+            if(!skipAISUpgrade) {
+                if(serializationType == SerializationType.META_MODEL) {
+                    performMetaModelUpgrade(newAIS);
+                } else if(serializationType == SerializationType.PROTOBUF && !hasISSchema) {
+                    performProtobufUpgrade(newAIS);
+                }
+            } else {
+                LOG.warn("Skipping AIS upgrade");
+                if(!hasISSchema) {
                     injectLegacyPrimordialTables(newAIS);
                 }
             }
@@ -1015,7 +1020,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
     }
 
-    private void performUpgrade(final AkibanInformationSchema newAIS) throws PersistitException {
+    /**
+     * Handle pre-1.2.1 volumes that have MetaModel based serialization
+     * @param newAIS The the AIS as it existed on disk.
+     */
+    private void performMetaModelUpgrade(final AkibanInformationSchema newAIS) throws PersistitException {
         assert serializationType == SerializationType.META_MODEL : serializationType;
         LOG.info("Performing AIS upgrade");
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
@@ -1037,6 +1046,21 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             }
         });
         LOG.info("AIS upgrade succeeded");
+    }
+
+    /**
+     * Handle 1.2.1 and 1.2.2 volumes that have Protobuf serialization but no
+     * AIS (index_statistics, index_statistics_entry) tables saved.
+     */
+    private void performProtobufUpgrade(final AkibanInformationSchema newAIS) {
+        injectUpgradedPrimordialTables(newAIS);
+
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+            @Override
+            public void run(Session session) throws PersistitException {
+                saveAISChange(session, newAIS, Collections.singleton(TableName.INFORMATION_SCHEMA));
+            }
+        });
     }
 
     /**
