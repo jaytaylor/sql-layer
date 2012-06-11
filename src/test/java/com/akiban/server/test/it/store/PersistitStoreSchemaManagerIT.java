@@ -27,11 +27,7 @@
 package com.akiban.server.test.it.store;
 
 import com.akiban.server.store.PSSMTestShim;
-import com.akiban.server.store.PersistitStoreSchemaManager;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.test.it.ITBase;
 import com.google.inject.ProvisionException;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;
@@ -40,34 +36,13 @@ import static com.akiban.server.test.it.store.SchemaManagerIT.*;
 import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
 import static org.junit.Assert.assertEquals;
 
-public class PersistitStoreSchemaManagerIT extends ITBase {
-    private PersistitStoreSchemaManager pssm;
-
-    private PersistitStoreSchemaManager castToPSSM() {
-        SchemaManager schemaManager = serviceManager().getSchemaManager();
-        if(schemaManager instanceof PersistitStoreSchemaManager) {
-            return (PersistitStoreSchemaManager)schemaManager;
-        } else {
-            throw new IllegalStateException("Expected PersistitStoreSchemaManager!");
-        }
-    }
-
-    @Before
-    public void setUpPSSM() {
-        pssm = castToPSSM();
-    }
-
-    private void safeRestart() throws Exception {
-        safeRestartTestServices();
-        pssm = castToPSSM();
-    }
-
+public class PersistitStoreSchemaManagerIT extends PersistitStoreSchemaManagerITBase {
     @Test
     public void existingMetaModelReadAndUpgraded() throws Exception {
         transactionally(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                PSSMTestShim.clearAISFromDisk(session(), pssm);
+                PSSMTestShim.clearAISFromDisk(pssm, session());
                 return null;
             }
         });
@@ -95,8 +70,6 @@ public class PersistitStoreSchemaManagerIT extends ITBase {
     // Provision = error during startup of PSSM
     @Test(expected=ProvisionException.class)
     public void mixedMetaModelAndProtobufIsIllegal() throws Exception {
-        castToPSSM();
-
         // Create a bad volume on purpose to make sure we detect on load
         pssm.setSerializationType(SerializationType.META_MODEL);
         createTable(SCHEMA, T1_NAME, T1_DDL);

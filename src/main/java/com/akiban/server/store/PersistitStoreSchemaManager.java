@@ -171,6 +171,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private int maxAISBufferSize;
     private SerializationType serializationType = SerializationType.NONE;
     private final Set<TableName> legacyISTables = new HashSet<TableName>();
+    private static volatile Runnable upgradeHook;
 
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
@@ -1003,7 +1004,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     private void performUpgrade(final AkibanInformationSchema newAIS) throws PersistitException {
         assert serializationType == SerializationType.META_MODEL : serializationType;
-        LOG.info("Attempting AIS upgrade");
+        LOG.info("Performing AIS upgrade");
         transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
@@ -1015,6 +1016,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 Set<SerializationType> allTypes = getAllSerializationTypes(session);
                 if(allTypes.size() != 1 || !allTypes.contains(SerializationType.PROTOBUF)) {
                     throw new IllegalStateException("Upgrade left invalid serialization: " + allTypes);
+                }
+
+                if(upgradeHook != null) {
+                    upgradeHook.run();
                 }
             }
         });
@@ -1144,7 +1149,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 saveProtobuf(ex, buffer, newAIS, schema);
             break;
             case META_MODEL:
-                saveMetaModel(ex, buffer, newAIS, schema);
+                saveMetaModel(ex, buffer, newAIS, getVolumeForSchemaTree(schema));
             break;
             default:
                 throw new IllegalStateException("Cannon serialize as " + serializationType);
@@ -1169,5 +1174,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 txn.end();
             }
         }
+    }
+
+    static void setUpgradeHook(Runnable upgradeHook) {
+        PersistitStoreSchemaManager.upgradeHook = upgradeHook;
     }
 }

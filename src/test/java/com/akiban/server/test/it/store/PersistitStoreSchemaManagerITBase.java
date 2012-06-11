@@ -24,17 +24,33 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.store;
+package com.akiban.server.test.it.store;
 
-import com.akiban.server.service.session.Session;
-import com.persistit.exception.PersistitException;
+import com.akiban.server.store.PersistitStoreSchemaManager;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.test.it.ITBase;
+import org.junit.Before;
 
-public class PSSMTestShim {
-    public static void clearAISFromDisk(PersistitStoreSchemaManager pssm, Session session) throws PersistitException {
-        pssm.clearAndReSaveAIS(session, null);
+public class PersistitStoreSchemaManagerITBase extends ITBase {
+    protected PersistitStoreSchemaManager pssm;
+
+    private PersistitStoreSchemaManager castToPSSM() {
+        SchemaManager schemaManager = serviceManager().getSchemaManager();
+        if(schemaManager instanceof PersistitStoreSchemaManager) {
+            return (PersistitStoreSchemaManager)schemaManager;
+        } else {
+            throw new IllegalStateException("Expected PersistitStoreSchemaManager!");
+        }
     }
 
-    public static void setUpgradeHook(Runnable upgradeHook) {
-        PersistitStoreSchemaManager.setUpgradeHook(upgradeHook);
+    @Before
+    public void setUpPSSM() {
+        pssm = castToPSSM();
+    }
+
+    protected void safeRestart() throws Exception {
+        pssm = null;
+        safeRestartTestServices();
+        pssm = castToPSSM();
     }
 }
