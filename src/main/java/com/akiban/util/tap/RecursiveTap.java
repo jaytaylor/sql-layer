@@ -98,12 +98,12 @@ abstract class RecursiveTap extends Tap
         cumulativeNanos = 0;
     }
 
-    public final void appendReport(StringBuilder buffer)
+    public void appendReport(StringBuilder buffer)
     {
         buffer.append(String.format("%20s inCount=%,10d outCount=%,10d time=%,12dms",
                                 name, inCount, outCount, cumulativeNanos / 1000000));
         if (outCount > 0) {
-            buffer.append(String.format("  per=%,12dns  interval=%,12dns",
+            buffer.append(String.format("  per=%,12dns  interval=%,12dns; ",
                                     cumulativeNanos / outCount, (endNanos - startNanos) / outCount));
         }
     }
@@ -179,6 +179,14 @@ abstract class RecursiveTap extends Tap
             }
             reports[r] = new TapReport(name, inCount, outCount, cumulativeNanos);
             return reports;
+        }
+
+        @Override
+        public final void appendReport(StringBuilder buffer)
+        {
+            for (Subsidiary tap : subsidiaryTaps) {
+                tap.appendReport(buffer);
+            }
         }
 
         // RecursiveTap interface
