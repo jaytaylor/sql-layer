@@ -127,15 +127,7 @@ public final class SchemaManagerIT extends ITBase {
     private List<String> getSchemaStringsWithoutAIS(final boolean withGroupTables) throws Exception {
         return transactionally(new Callable<List<String>>() {
             public List<String> call() throws Exception {
-                List<String> statements = schemaManager.schemaStrings(session(), withGroupTables);
-                Iterator<String> it = statements.iterator();
-                while(it.hasNext()) {
-                    String ddl = it.next();
-                    if(ddl.contains(TableName.INFORMATION_SCHEMA)) {
-                        it.remove();
-                    }
-                }
-                return statements;
+                return schemaManager.schemaStrings(session(), false, withGroupTables);
             }
         });
     }
@@ -739,7 +731,7 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     /**
-     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
+     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean, boolean)} is correct for
      * the given tables. The only guarantees are that schemas are created with 'if not exists',
      * a schema statement comes before any table in it, and a create table statement is fully qualified.
      * @param schemaAndTables Map of schema names to table names that should exist

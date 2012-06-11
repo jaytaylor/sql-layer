@@ -558,7 +558,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public List<String> schemaStrings(Session session, boolean withGroupTables) {
+    public List<String> schemaStrings(Session session, boolean withISTables, boolean withGroupTables) {
         final AkibanInformationSchema ais = getAis();
         final DDLGenerator generator = new DDLGenerator();
         final List<String> ddlList = new ArrayList<String>();
@@ -567,6 +567,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         boolean firstPass = true;
         while(firstPass || tableCollection != null) {
             for(Table table : tableCollection) {
+                if(!withISTables && TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
+                    continue;
+                }
                 final String schemaName = table.getName().getSchemaName();
                 if(!sawSchemas.contains(schemaName)) {
                     final String createSchema = String.format(CREATE_SCHEMA_FORMATTER, schemaName);

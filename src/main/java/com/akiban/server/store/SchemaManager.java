@@ -147,10 +147,11 @@ public interface SchemaManager {
      * any table in that schema. No other guarantees are given about ordering.
      *
      * @param session The Session to operate under.
+     * @param withGroupTables If true, include 'create table' statements for tables in the I_S.
      * @param withGroupTables If true, include 'create table' statements for every GroupTable.
      * @return List of every create statement request.
      */
-    List<String> schemaStrings(Session session, boolean withGroupTables);
+    List<String> schemaStrings(Session session, boolean withISTables, boolean withGroupTables);
 
     /**
      * Return the last timestamp for the last successful change through the SchemaManager.
