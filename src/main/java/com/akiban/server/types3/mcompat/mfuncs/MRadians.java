@@ -40,7 +40,7 @@ public class MRadians extends TOverloadBase {
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.DOUBLE, 0);
+        builder.covers(MDouble.INSTANCE, 0);
     }
 
     @Override
