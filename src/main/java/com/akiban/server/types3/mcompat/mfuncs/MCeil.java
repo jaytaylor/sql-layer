@@ -24,52 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.common.BigDecimalWrapper;
-import java.math.BigDecimal;
-import java.math.RoundingMode;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class MBigDecimalWrapper implements BigDecimalWrapper {
-
-    @Override
-    public void reset() {
-        value = BigDecimal.ZERO;
-    }
-            
-    @Override
-    public BigDecimalWrapper add(BigDecimalWrapper other) {
-        MBigDecimalWrapper o = (MBigDecimalWrapper) other;
-        value = value.add(o.value);
-        return this;
-    }
+public class MCeil extends TOverloadBase {
 
     @Override
-    public BigDecimalWrapper subtract(BigDecimalWrapper other) {
-        MBigDecimalWrapper o = (MBigDecimalWrapper) other;
-        value = value.subtract(o.value);
-        return this;
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(MNumeric.DECIMAL, 0);
     }
 
     @Override
-    public BigDecimalWrapper multiply(BigDecimalWrapper other) {
-        MBigDecimalWrapper o = (MBigDecimalWrapper) other;
-        value = value.multiply(o.value);
-        return this;
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
+        output.putInt64(result.ceil());
     }
 
     @Override
-    public BigDecimalWrapper divide(BigDecimalWrapper other) {
-        MBigDecimalWrapper o = (MBigDecimalWrapper) other;
-        value = value.divide(o.value);
-        return this;
+    public String overloadName() {
+        return "CEIL";
     }
 
     @Override
-    public long ceil() {
-        value.setScale(0, RoundingMode.CEILING);
-        return value.longValue();
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(MNumeric.DECIMAL.instance());
     }
-    
-    private BigDecimal value;
 }
