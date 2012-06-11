@@ -10,5 +10,6 @@ public interface BigDecimalWrapper {
      BigDecimalWrapper subtract(BigDecimalWrapper augend);
      BigDecimalWrapper multiply(BigDecimalWrapper augend);
      BigDecimalWrapper divide(BigDecimalWrapper augend);
+     int getSign();
      void reset();
 }
