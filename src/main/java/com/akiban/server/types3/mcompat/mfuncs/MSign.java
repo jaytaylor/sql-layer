@@ -29,7 +29,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.BigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -45,9 +45,9 @@ public class MSign extends TOverloadBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        BigDecimalWrapper num = (BigDecimalWrapper) inputs.get(0).getObject();
+        MBigDecimalWrapper num = (MBigDecimalWrapper) inputs.get(0).getObject();
         
-        output.putInt32(num.getSign());      
+        output.putInt64(num.getSign());      
     }
 
     @Override
@@ -57,6 +57,6 @@ public class MSign extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.INT.instance());
+        return TOverloadResult.fixed(MNumeric.BIGINT.instance());
     }
 }
