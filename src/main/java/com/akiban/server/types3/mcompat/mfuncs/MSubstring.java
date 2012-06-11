@@ -26,45 +26,38 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public abstract class MSubstring extends TOverloadBase {
 
-    public int doEvaluate(LazyList<? extends PValueSource> inputs, String str, int length) {
-        
+    protected int adjustIndex(String str, int index) {
         // String operand
         if (str.equals("")) {
             return -1;
         }
         
-        // FROM operand
-        int from = inputs.get(1).getInt32();
-        
         // if from is negative or zero, start from the end, and adjust
         // index by 1 since index in sql starts at 1 NOT 0
-        from += (from < 0? length : -1);
+        index += (index < 0? str.length() : -1);
        
-        // if from is still neg, return empty string
-        if (from < 0) {
+        // if from is still neg, return -1
+        if (index < 0) {
             return -1;
         }
         
-        return from;
+        return index;
     }
     
-    public String getSubstring(int to, int from, String str, int length) {
-                
+    protected String getSubstring(int to, int from, String str) {            
         // if to <= fr => return empty
-        if (to < from || from >= length)
+        if (to < from || from >= str.length())
         {
             return "";    
         }
         
-        to = (to > length - 1 ? length - 1 : to); 
+        to = (to > str.length() - 1 ? str.length() - 1 : to); 
         return str.substring(from, to + 1);
     }
 

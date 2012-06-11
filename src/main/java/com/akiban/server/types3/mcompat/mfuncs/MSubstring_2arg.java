@@ -45,10 +45,9 @@ public class MSubstring_2arg extends MSubstring {
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         String str = (String) inputs.get(0).getObject();
-        int length = str.length();
-        int from = doEvaluate(inputs, str, length);
+        int from = adjustIndex(str, inputs.get(1).getInt32());
       
         if (from == -1) output.putObject("");
-        else output.putObject(getSubstring(str.length() - 1, from, str, length));
+        else output.putObject(getSubstring(str.length() - 1, from, str));
     } 
 }
