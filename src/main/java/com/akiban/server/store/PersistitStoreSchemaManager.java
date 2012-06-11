@@ -863,8 +863,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             @Override
             public boolean shouldSaveTable(Table table) {
                 final String schemaName = table.getName().getSchemaName();
-                return !schemaName.equals(TableName.INFORMATION_SCHEMA) &&
-                        getVolumeForSchemaTree(schemaName).equals(volume);
+                return !schemaName.equals("akiban_information_schema") &&
+                       !schemaName.equals(TableName.INFORMATION_SCHEMA) &&
+                       getVolumeForSchemaTree(schemaName).equals(volume);
             }
         }.save(newAIS);
         buffer.flip();
