@@ -626,6 +626,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                     performUpgrade(newAIS);
                 } else {
                     LOG.warn("Skipping AIS upgrade");
+                    injectLegacyPrimordialTables(newAIS);
                 }
             }
 

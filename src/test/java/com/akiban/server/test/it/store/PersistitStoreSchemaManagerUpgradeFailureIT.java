@@ -27,6 +27,7 @@
 package com.akiban.server.test.it.store;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
 import com.akiban.server.service.config.Property;
 import com.akiban.server.store.PSSMTestShim;
 import com.akiban.server.store.PersistitStoreSchemaManager;
@@ -58,10 +59,13 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
         }
     }
 
-    private static void checkTables(String msg, AkibanInformationSchema ais) {
+    private static void checkTables(String msg, AkibanInformationSchema ais, TableName... extraTables) {
         // Simple check that tables still exist
         for(String table : TABLE_LOAD_ORDER) {
             assertNotNull(table + " " + msg, ais.getUserTable(SCHEMA, table));
+        }
+        for(TableName name : extraTables) {
+            assertNotNull(name + " " + msg, ais.getUserTable(name));
         }
     }
 
@@ -103,7 +107,9 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
         props.add(new Property(PersistitStoreSchemaManager.SKIP_AIS_UPGRADE_PROPERTY, "true"));
         safeRestart(props);
         assertEquals("Skipped upgrade serialization", SerializationType.META_MODEL, pssm.getSerializationType());
-        checkTables("Skipped upgrade AIS", pssm.getAis(session()));
+        checkTables("Skipped upgrade AIS", pssm.getAis(session()),
+                    new  TableName("akiban_information_schema", "zindex_statistics"),
+                    new  TableName("akiban_information_schema", "zindex_statistics_entry"));
 
         // Unset hook, restart again (causing upgrade)
         PSSMTestShim.setUpgradeHook(null);
