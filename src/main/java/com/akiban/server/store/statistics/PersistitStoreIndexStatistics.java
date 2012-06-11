@@ -102,7 +102,7 @@ public class PersistitStoreIndexStatistics
     }
 
     /* Storage formats.
-     * Keep in sync with akiban_information_schema.
+     * Keep in sync with IndexStatisticsServiceImpl
      */
     private static final int TABLE_ID_FIELD_INDEX = 0;
     private static final int INDEX_ID_FIELD_INDEX = 1;

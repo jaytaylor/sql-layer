@@ -40,7 +40,7 @@ import com.akiban.server.service.session.Session;
 public interface SchemaManager {
     /**
      * <p>
-     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated and accessed through the normal
      * {@link Store} methods.
      * </p>
@@ -60,7 +60,7 @@ public interface SchemaManager {
     TableName registerStoredInformationSchemaTable(Session session, UserTable newTable, int version);
 
     /**
-     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated on demand and accessed through
      * the given {@link MemoryTableFactory}.
      *

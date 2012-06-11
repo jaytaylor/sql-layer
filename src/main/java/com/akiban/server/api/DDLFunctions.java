@@ -138,7 +138,7 @@ public interface DDLFunctions {
     RowDef getRowDef(int tableId) throws RowDefNotFoundException;
 
     /**
-     * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>akiban_information_schema</tt>
+     * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>information_schema</tt>
      * schema. The DDLs will be arranged such that it should be safe to call them in order, but they will not contain
      * any DROP commands; it is up to the caller to drop all conflicting tables. Schemas will be created with
      * <tt>IF NOT EXISTS</tt>, so the caller does not need to drop conflicting schemas.

@@ -131,7 +131,7 @@ public final class SchemaManagerIT extends ITBase {
                 Iterator<String> it = statements.iterator();
                 while(it.hasNext()) {
                     String ddl = it.next();
-                    if(ddl.contains("akiban_information_schema")) {
+                    if(ddl.contains(TableName.INFORMATION_SCHEMA)) {
                         it.remove();
                     }
                 }
@@ -547,15 +547,15 @@ public final class SchemaManagerIT extends ITBase {
         /*
          * Simple sanity check. Change as needed but remember it is an UPGRADE ISSUE.
          */
-        final String SCHEMA = "akiban_information_schema";
+        final String SCHEMA = "information_schema";
         final String STATS_TABLE = "index_statistics";
         final String ENTRY_TABLE = "index_statistics_entry";
-        final String STATS_DDL = "create table `akiban_information_schema`.`index_statistics`("+
+        final String STATS_DDL = "create table `information_schema`.`index_statistics`("+
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp, "+
             "`row_count` bigint, `sampled_count` bigint, "+
             "PRIMARY KEY(`table_id`, `index_id`)"+
         ") engine=akibandb";
-        final String ENTRY_DDL = "create table `akiban_information_schema`.`index_statistics_entry`("+
+        final String ENTRY_DDL = "create table `information_schema`.`index_statistics_entry`("+
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
             "`item_number` int NOT NULL, `key_string` varchar(2048), `key_bytes` varbinary(4096), "+
             "`eq_count` bigint, `lt_count` bigint, `distinct_count` bigint, "+
@@ -598,7 +598,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test
     public void registerMemoryTableBasic() throws Exception {
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         MemoryTableFactory factory = new MemoryTableFactoryMock();
         registerISTable(makeSimpleISTable(tableName), factory);
 
@@ -626,7 +626,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test(expected=DuplicateTableNameException.class)
     public void noDuplicateMemoryTables() throws Exception {
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName);
         MemoryTableFactory factory = new MemoryTableFactoryMock();
         registerISTable(sourceTable, factory);
@@ -635,7 +635,7 @@ public final class SchemaManagerIT extends ITBase {
 
     @Test(expected=IllegalArgumentException.class)
     public void noNullMemoryTableFactory() throws Exception {
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         registerISTable(makeSimpleISTable(tableName), null);
     }
 
@@ -648,7 +648,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void registerStoredTableBasic() throws Exception {
         final Integer VERSION = 5;
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
 
         registerISTable(makeSimpleISTable(tableName), VERSION);
         {
@@ -675,7 +675,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void canRegisterStoredTableWithSameVersion() throws Exception {
         final Integer VERSION = 5;
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName);
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION);
@@ -684,7 +684,7 @@ public final class SchemaManagerIT extends ITBase {
     @Test(expected=ISTableVersionMismatchException.class)
     public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
         final Integer VERSION = 5;
-        final TableName tableName = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "test_table");
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName);
         registerISTable(sourceTable, VERSION);
         registerISTable(sourceTable, VERSION + 1);

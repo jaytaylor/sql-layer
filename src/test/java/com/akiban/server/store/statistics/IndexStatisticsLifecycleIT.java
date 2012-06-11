@@ -68,7 +68,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
     }
     
     // Check what stats are in the database. Do this using the
-    // akiban_information_schema instead of any IndexStatistics API so
+    // information_schema instead of any IndexStatistics API so
     // as to detect problems with the loader / caches, etc.
     protected Map<Index,Integer> check() throws Exception {
         Map<Index,Integer> result = new HashMap<Index,Integer>();

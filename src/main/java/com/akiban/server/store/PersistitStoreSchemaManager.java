@@ -427,7 +427,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     @Override
     public void deleteTableDefinition(final Session session, final String schemaName,
                                       final String tableName) {
-        if (TableName.AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
+        if (TableName.INFORMATION_SCHEMA.equals(schemaName)) {
             return;
         }
 
@@ -759,7 +759,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * is compatible with the registered table from IndexStatisticsService.
      */
     private static void injectUpgradedPrimordialTables(AkibanInformationSchema ais) {
-        injectPrimordialTables(ais, TableName.AKIBAN_INFORMATION_SCHEMA, "");
+        injectPrimordialTables(ais, TableName.INFORMATION_SCHEMA, "");
     }
 
     /**
@@ -863,7 +863,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             @Override
             public boolean shouldSaveTable(Table table) {
                 final String schemaName = table.getName().getSchemaName();
-                return !schemaName.equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
+                return !schemaName.equals(TableName.INFORMATION_SCHEMA) &&
                         getVolumeForSchemaTree(schemaName).equals(volume);
             }
         }.save(newAIS);
@@ -878,7 +878,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String schema)
             throws PersistitException {
         final ProtobufWriter.TableSelector selector;
-        if(TableName.AKIBAN_INFORMATION_SCHEMA.equals(schema)) {
+        if(TableName.INFORMATION_SCHEMA.equals(schema)) {
             selector = new ProtobufWriter.SchemaSelector(schema) {
                 @Override
                 public boolean isSelected(UserTable table) {
@@ -1100,9 +1100,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     private static void checkAISSchema(TableName tableName, boolean shouldBeAIS) {
-        final boolean isAIS = TableName.AKIBAN_INFORMATION_SCHEMA.equals(tableName.getSchemaName());
+        final boolean isAIS = TableName.INFORMATION_SCHEMA.equals(tableName.getSchemaName());
         if(shouldBeAIS && !isAIS) {
-            throw new IllegalArgumentException("Table required to be in "+TableName.AKIBAN_INFORMATION_SCHEMA+" schema");
+            throw new IllegalArgumentException("Table required to be in "+TableName.INFORMATION_SCHEMA +" schema");
         }
         if(!shouldBeAIS && isAIS) {
             throw new ProtectedTableDDLException(tableName);
@@ -1132,7 +1132,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     private static void preserveExtraInfo(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS) {
-        Schema schema = curAIS.getSchema(TableName.AKIBAN_INFORMATION_SCHEMA);
+        Schema schema = curAIS.getSchema(TableName.INFORMATION_SCHEMA);
         if(schema == null) {
             return;
         }
