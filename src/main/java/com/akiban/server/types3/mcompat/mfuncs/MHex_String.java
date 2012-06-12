@@ -24,20 +24,30 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import java.nio.charset.Charset;
 
-public class MString extends TString
-{
-    public static final MString VARCHAR = new MString("varchar", -1);
-    public static final MString VARBINARY = new MString("varbinary", -1);
-    
-    // TODO: define CHAR
-    
-    private MString(String name, int serialisationSize)
-    {       
-        super(MBundle.INSTANCE, name, serialisationSize);
+public class MHex_String extends MHex {
+
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(MString.VARCHAR, 0);
+    }
+
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        String st = (String) inputs.get(0).getObject();
+        StringBuilder builder = new StringBuilder();
+        
+        for (byte ch : st.getBytes(Charset.defaultCharset()))
+            builder.append(String.format("%02X", ch));
+        output.putObject(builder.toString());     
     }
 }

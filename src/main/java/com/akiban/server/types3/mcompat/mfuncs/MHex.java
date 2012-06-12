@@ -24,20 +24,22 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class MString extends TString
-{
-    public static final MString VARCHAR = new MString("varchar", -1);
-    public static final MString VARBINARY = new MString("varbinary", -1);
-    
-    // TODO: define CHAR
-    
-    private MString(String name, int serialisationSize)
-    {       
-        super(MBundle.INSTANCE, name, serialisationSize);
+public abstract class MHex extends TOverloadBase {
+
+    @Override
+    public String overloadName() {
+        return "HEX";
     }
+
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(MString.VARCHAR.instance());
+    }
+
 }
