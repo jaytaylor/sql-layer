@@ -28,13 +28,18 @@ package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.List;
 
 public abstract class UpperLower extends TOverloadBase
 {
@@ -84,7 +89,14 @@ public abstract class UpperLower extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        // TODO: return the actual argument's type
-        return TOverloadResult.fixed(stringType.instance());
+        // actual return type is exactly the same as input type
+        return TOverloadResult.custom(new TCustomOverloadResult()
+        {
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context)
+            {
+                return inputs.get(0).instance();
+            }
+        });
     }
 }
