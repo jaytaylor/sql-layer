@@ -45,11 +45,9 @@ import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.operator.API.Ordering;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.statistics.IndexStatistics;
@@ -115,9 +113,9 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         public TestFactory (TableName name) {
             table = AISBBasedBuilder.create().userTable(name.getSchemaName(),name.getTableName()).colLong("c1").pk("c1").ais().getUserTable(name);
         }
+
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
-            // TODO Auto-generated method stub
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adaper) {
             return null;
         }
 
@@ -125,7 +123,6 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         public Cursor getIndexCursor(Index index, Session session,
                 IndexKeyRange keyRange, Ordering ordering,
                 IndexScanSelector scanSelector) {
-            // TODO Auto-generated method stub
             return null;
         }
 
@@ -141,13 +138,11 @@ public class MemoryAdapterIT extends PostgresServerITBase {
 
         @Override
         public long rowCount() {
-            // TODO Auto-generated method stub
             return 0;
         }
+
         @Override
-        public IndexStatistics computeIndexStatistics(Session session,
-                Index index) {
-            // TODO Auto-generated method stub
+        public IndexStatistics computeIndexStatistics(Session session, Index index) {
             return null;
         }
         private UserTable table;

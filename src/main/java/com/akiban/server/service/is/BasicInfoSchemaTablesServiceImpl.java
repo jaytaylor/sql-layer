@@ -37,6 +37,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.qp.operator.API;
@@ -55,7 +56,8 @@ import com.akiban.server.types.AkType;
 import com.google.inject.Inject;
 
 import java.util.Iterator;
-import java.util.NoSuchElementException;
+
+import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
 public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
     private final AisHolder aisHolder;
@@ -208,6 +210,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         public IndexStatistics computeIndexStatistics(Session session, Index index) {
             throw new UnsupportedOperationException();
         }
+
+        protected RowType getRowType(MemoryAdapter adapter) {
+            return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable.getName()));
+        }
     }
 
     private class SchemaFactory extends BasicFactoryBase {
@@ -216,8 +222,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
-            return new Scan(rowType);
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -225,7 +231,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return aisHolder.getAis().getSchemas().size();
         }
 
-        private class Scan extends MemoryGroupCursor.TableScan {
+        private class Scan implements GroupScan {
             final RowType rowType;
             final Iterator<Schema> it = aisHolder.getAis().getSchemas().values().iterator();
             int rowCounter;
@@ -235,20 +241,22 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             }
 
             @Override
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            @Override
             public Row next() {
+                if(!it.hasNext()) {
+                    return null;
+                }
                 Schema schema = it.next();
                 return new ValuesRow(rowType,
                                      schema.getName(),
-                                     null, // owner?
-                                     null, // charset?
-                                     null, // collation?
+                                     null, // owner
+                                     null, // charset
+                                     null, // collation
                                      ++rowCounter /*hidden pk*/);
 
+            }
+
+            @Override
+            public void close() {
             }
         }
     }
@@ -259,8 +267,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
-            return new Scan(rowType);
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -268,7 +276,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return aisHolder.getAis().getUserTables().size();
         }
 
-        private class Scan extends MemoryGroupCursor.TableScan {
+        private class Scan implements GroupScan {
             final RowType rowType;
             final Iterator<UserTable> it = aisHolder.getAis().getUserTables().values().iterator();
             int rowCounter;
@@ -278,12 +286,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             }
 
             @Override
-            public boolean hasNext() {
-                return it.hasNext();
-            }
-
-            @Override
             public Row next() {
+                if(!it.hasNext()) {
+                    return null;
+                }
                 UserTable table = it.next();
                 final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
                 return new ValuesRow(rowType,
@@ -296,6 +302,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      table.getCharsetAndCollation().collation(),
                                      ++rowCounter /* hidden pk */);
             }
+
+            @Override
+            public void close() {
+            }
         }
     }
 
@@ -305,20 +315,20 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
-            return new Scan(rowType);
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             long count = 0;
             for(UserTable table : aisHolder.getAis().getUserTables().values()) {
-                count += table.getColumns().size(); // TODO: IncludingInternal()?
+                count += table.getColumns().size();
             }
             return count;
         }
 
-        private class Scan extends MemoryGroupCursor.TableScan {
+        private class Scan implements GroupScan {
             final RowType rowType;
             final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
             Iterator<Column> columnIt;
@@ -329,17 +339,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             }
 
             @Override
-            public boolean hasNext() {
-                if(columnIt != null && columnIt.hasNext()) {
-                    return true;
-                }
-                return tableIt.hasNext(); // Every table has columns
-            }
-
-            @Override
             public Row next() {
                 if(columnIt == null || !columnIt.hasNext()) {
-                    columnIt = tableIt.next().getColumns().iterator();
+                    if(tableIt.hasNext()) {
+                        columnIt = tableIt.next().getColumns().iterator();
+                    } else {
+                        return null;
+                    }
                 }
                 Column column = columnIt.next();
 
@@ -366,6 +372,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      column.getCharsetAndCollation().collation(),
                                      ++rowCounter /* hidden pk */);
             }
+
+            @Override
+            public void close() {
+            }
         }
     }
 
@@ -375,8 +385,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
-            return new IndexesFactory.Scan(rowType);
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -388,7 +398,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan extends MemoryGroupCursor.TableScan {
+        private class Scan implements GroupScan {
             final RowType rowType;
             final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
             Iterator<TableIndex> indexIt;
@@ -410,14 +420,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             }
 
             @Override
-            public boolean hasNext() {
-                return advanceIfNeeded();
-            }
-
-            @Override
             public Row next() {
                 if(!advanceIfNeeded()) {
-                    throw new NoSuchElementException();
+                    return null;
                 }
                 TableIndex index = indexIt.next();
                 final String indexType;
@@ -438,6 +443,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      index.isUnique() ? "YES" : "NO",
                                      ++rowCounter /*hidden pk*/);
             }
+
+            @Override
+            public void close() {
+            }
         }
     }
 
@@ -447,8 +456,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         @Override
-        public MemoryGroupCursor.TableScan getTableScan(RowType rowType) {
-            return new IndexColumnsFactory.Scan(rowType);
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -462,7 +471,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan extends MemoryGroupCursor.TableScan {
+        private class Scan implements GroupScan {
             final RowType rowType;
             final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
             Iterator<TableIndex> indexIt;
@@ -491,14 +500,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             }
 
             @Override
-            public boolean hasNext() {
-                return advanceIfNeeded();
-            }
-
-            @Override
             public Row next() {
                 if(!advanceIfNeeded()) {
-                    throw new NoSuchElementException();
+                    return null;
                 }
                 IndexColumn indexColumn = indexColumnIt.next();
                 return new ValuesRow(rowType,
@@ -511,6 +515,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      indexColumn.isAscending() ? "YES" : "NO",
                                      indexColumn.getIndexedLength(),
                                      ++rowCounter /*hidden pk*/);
+            }
+
+            @Override
+            public void close() {
             }
         }
     }

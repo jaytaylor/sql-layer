@@ -56,7 +56,7 @@ public class MemoryAdapter extends StoreAdapter {
 
     @Override
     public GroupCursor newGroupCursor(GroupTable groupTable) {
-        return new MemoryGroupCursor(this, groupTable, groupTable.getRoot().getMemoryTableFactory());
+        return new MemoryGroupCursor(this, groupTable);
     }
 
     @Override
