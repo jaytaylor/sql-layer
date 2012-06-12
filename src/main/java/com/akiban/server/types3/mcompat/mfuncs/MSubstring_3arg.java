@@ -26,13 +26,14 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import java.util.List;
 
 public class MSubstring_3arg extends MSubstring {
 
@@ -51,4 +52,32 @@ public class MSubstring_3arg extends MSubstring {
         if (from == -1) output.putObject("");
         else output.putObject(getSubstring(from + inputs.get(2).getInt32() -1, from, str));
     }
+    
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.custom(new TCustomOverloadResult() {
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                TPreptimeValue preptimeValue = inputs.get(0);
+                int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
+                int stringCharsetId = preptimeValue.instance().attribute(StringAttribute.CHARSET);
+                
+                final int offset, substringLength, calculatedLength;
+                TPreptimeValue offsetValue = inputs.get(1);
+                if (offsetValue.value() == null)
+                    offset = 0; // assume string starts at beginning
+                else 
+                    offset = offsetValue.value().getInt32();
+                
+                TPreptimeValue substringLengthValue = inputs.get(2);
+                if (substringLengthValue.value() == null)
+                    substringLength = Integer.MAX_VALUE; // assume string is unbounded
+                else
+                    substringLength = substringLengthValue.value().getInt32();
+                
+                calculatedLength = calculateCharLength(stringLength, offset, substringLength);
+                return MString.VARCHAR.instance(calculatedLength, stringCharsetId);
+            }
+        });
+    }  
 }

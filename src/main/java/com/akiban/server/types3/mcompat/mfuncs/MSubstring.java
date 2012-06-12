@@ -26,9 +26,11 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.List;
 
 public abstract class MSubstring extends TOverloadBase {
 
@@ -65,9 +67,11 @@ public abstract class MSubstring extends TOverloadBase {
     public String overloadName() {
         return "SUBSTRING";
     }
-
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MString.VARCHAR.instance());
-    }   
+    
+    public int calculateCharLength(int stringLength, int offset, int substringLength) {
+        if (stringLength < Math.abs(offset) || substringLength <= 0)
+            return 0;
+        int ret = offset > 0 ? stringLength - offset + 1 : offset * -1;
+        return Math.min(ret, substringLength);
+    }
 }
