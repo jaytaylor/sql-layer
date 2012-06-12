@@ -39,7 +39,7 @@ public class MSubstring_3arg extends MSubstring {
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(MString.VARCHAR, 0);
-        builder.vararg(MNumeric.INT, 1);
+        builder.covers(MNumeric.INT, 1, 2);
     }
 
     @Override
