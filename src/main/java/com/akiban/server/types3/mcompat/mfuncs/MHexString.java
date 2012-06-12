@@ -28,20 +28,26 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import java.nio.charset.Charset;
 
-public class MHex_Numeric extends MHex {
+public class MHexString extends MHexBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.BIGINT, 0);
+        builder.covers(MString.VARCHAR, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        output.putObject(Long.toHexString(inputs.get(0).getInt64()));
+        String st = (String) inputs.get(0).getObject();
+        StringBuilder builder = new StringBuilder();
+        
+        for (byte ch : st.getBytes(Charset.defaultCharset()))
+            builder.append(String.format("%02X", ch));
+        output.putObject(builder.toString());     
     }
 }

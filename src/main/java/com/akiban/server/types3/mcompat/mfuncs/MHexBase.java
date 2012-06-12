@@ -30,7 +30,7 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public abstract class MHex extends TOverloadBase {
+public abstract class MHexBase extends TOverloadBase {
 
     @Override
     public String overloadName() {
