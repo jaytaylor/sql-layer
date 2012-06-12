@@ -236,8 +236,8 @@
                 </configuration>
                 <executions>
                     <execution>
-                        <id>make-assembly</id> <!-- This is used for inheritance merges ?? -->
-                        <phase>install</phase> <!-- Append to the install phase -->
+                        <id>make-assembly</id>
+                        <phase>package</phase>
                         <goals>
                             <goal>single</goal>
                         </goals>
