@@ -118,19 +118,17 @@ public abstract class LeftRight extends TOverloadBase
             {
                 TPreptimeValue len = inputs.get(1);
                 
-                // if second argument is not available
-                if (len == null || len.value().isNull())
+                // if second argument is not available or is null
+                if (len.value() == null || len.value().isNull())
                 {
                     TPreptimeValue st = inputs.get(0);
                     
                     // if the string is also not available
                     // the return the precision of the string's type
-                    if (st == null || st.value().isNull())
-                        // TODO: not possible to get the type at this poitn yet
-                        // so just return the max value of varchar
-                        return stringType.instance(255);
+                    if (st.value() == null || st.value().isNull())
+                        return st.instance();
                     else // if the string is available, return its length
-                        return stringType.instance(inputs.get(0).instance().attribute(StringAttribute.LENGTH));
+                        return stringType.instance(((String)st.value().getObject()).length());
                 }
                 else
                     return stringType.instance(len.value().getInt32());
