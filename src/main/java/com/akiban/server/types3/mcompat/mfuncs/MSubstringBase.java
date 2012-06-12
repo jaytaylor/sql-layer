@@ -32,7 +32,7 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
 
-public abstract class MSubstring extends TOverloadBase {
+public abstract class MSubstringBase extends TOverloadBase {
 
     protected int adjustIndex(String str, int index) {
         // String operand

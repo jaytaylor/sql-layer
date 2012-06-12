@@ -35,24 +35,25 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import java.util.List;
 
-public class MSubstring_2arg extends MSubstring {
+public class MSubstringThreeArg extends MSubstringBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(MString.VARCHAR, 0);
-        builder.covers(MNumeric.INT, 1);
+        builder.covers(MNumeric.INT, 1, 2);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         String str = (String) inputs.get(0).getObject();
+        int length = str.length();
         int from = adjustIndex(str, inputs.get(1).getInt32());
-      
+        
         if (from == -1) output.putObject("");
-        else output.putObject(getSubstring(str.length() - 1, from, str));
-    } 
+        else output.putObject(getSubstring(from + inputs.get(2).getInt32() -1, from, str));
+    }
     
-        @Override
+    @Override
     public TOverloadResult resultType() {
         return TOverloadResult.custom(new TCustomOverloadResult() {
             @Override
@@ -61,16 +62,22 @@ public class MSubstring_2arg extends MSubstring {
                 int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
                 int stringCharsetId = preptimeValue.instance().attribute(StringAttribute.CHARSET);
                 
-                final int offset, calculatedLength;
+                final int offset, substringLength, calculatedLength;
                 TPreptimeValue offsetValue = inputs.get(1);
                 if (offsetValue.value() == null)
                     offset = 0; // assume string starts at beginning
                 else 
                     offset = offsetValue.value().getInt32();
                 
-                calculatedLength = calculateCharLength(stringLength, offset, Integer.MAX_VALUE);
+                TPreptimeValue substringLengthValue = inputs.get(2);
+                if (substringLengthValue.value() == null)
+                    substringLength = Integer.MAX_VALUE; // assume string is unbounded
+                else
+                    substringLength = substringLengthValue.value().getInt32();
+                
+                calculatedLength = calculateCharLength(stringLength, offset, substringLength);
                 return MString.VARCHAR.instance(calculatedLength, stringCharsetId);
             }
         });
-    }
+    }  
 }
