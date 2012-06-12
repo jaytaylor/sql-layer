@@ -23,13 +23,40 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.TTrigs;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-public class AkTrig
-{
-    public static final TOverload TRIGS[] = TTrigs.create(AkNumeric.DOUBLE.instance());
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
+
+public class MSign extends TOverloadBase {
+    
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(MNumeric.DECIMAL, 0);
+    }
+
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        MBigDecimalWrapper num = (MBigDecimalWrapper) inputs.get(0).getObject();
+        
+        output.putInt64(num.getSign());      
+    }
+
+    @Override
+    public String overloadName() {
+        return "SIGN";
+    }
+
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(MNumeric.BIGINT.instance());
+    }
 }
