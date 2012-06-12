@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
-import com.akiban.qp.rowtype.RowType;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -42,7 +42,7 @@ public final class RowValuesHolder {
         return sources[i];
     }
 
-    public RowValuesHolder(Object... values) {
+    public RowValuesHolder(Object[] values) {
         this.values = new Object[values.length];
         System.arraycopy(values, 0, this.values, 0, this.values.length);
         this.sources = createSources(this.values);

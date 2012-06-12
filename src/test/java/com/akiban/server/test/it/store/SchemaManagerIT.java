@@ -59,7 +59,6 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.ISTableVersionMismatchException;
