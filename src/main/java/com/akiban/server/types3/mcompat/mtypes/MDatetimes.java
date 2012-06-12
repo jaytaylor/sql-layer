@@ -36,11 +36,11 @@ public class MDatetimes {
     private static final TBundleID bundle = MBundle.INSTANCE.id();
     
     public static final NoAttrTClass DATE = new NoAttrTClass(bundle,
-            "date", 1, 1, 3, PUnderlying.INT_32);
+            "date", 1, 1, 4, PUnderlying.INT_32);
     public static final NoAttrTClass DATETIME = new NoAttrTClass(bundle,
-            "datetime", 1, 1, 5, PUnderlying.INT_64);
+            "datetime", 1, 1, 8, PUnderlying.INT_64);
     public static final NoAttrTClass TIME = new NoAttrTClass(bundle,
-            "time", 1, 1, 3, PUnderlying.INT_32);
+            "time", 1, 1, 4, PUnderlying.INT_32);
     public static final NoAttrTClass YEAR = new NoAttrTClass(bundle,
             "year", 1, 1, 1, PUnderlying.INT_8);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
