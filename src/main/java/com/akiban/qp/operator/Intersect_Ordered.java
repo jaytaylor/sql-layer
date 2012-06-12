@@ -252,8 +252,15 @@ class Intersect_Ordered extends Operator
         }
         int leftFieldsToCompare = leftIndex.getKeyColumns().size() - leftFixedFields + undeclaredHKeyColumns.size();
         int rightFieldsToCompare = rightIndex.getKeyColumns().size() - rightFixedFields + undeclaredHKeyColumns.size();
-        assert leftFieldsToCompare == rightFieldsToCompare;
-        return leftFieldsToCompare;
+        int fieldsToCompare = min(leftFieldsToCompare, rightFieldsToCompare);
+        // TODO: Assertions to check:
+        // TODO: - All common hkey columns are included by the left index among the first
+        // TODO:   (leftFixedFields + fieldsToCompare) columns, and by the right index among the
+        // TODO:   first (rightFixedFields + fieldsToCompare) columns.
+        // TODO: - Following the fixed fields, matching fields from the left and right indexes are either:
+        // TODO:    - The identical column (for non-hkey columns), or
+        // TODO:    - hkey columns from the same index, and at the same position within the segment.
+        return fieldsToCompare;
     }
 
     // Class state
