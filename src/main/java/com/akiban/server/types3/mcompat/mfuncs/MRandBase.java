@@ -32,7 +32,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.Random;
 
-public abstract class MRand extends TOverloadBase {
+public abstract class MRandBase extends TOverloadBase {
 
     protected boolean doEvaluate(TExecutionContext context, PValueTarget output) {
         boolean hasExectimeObject = context.hasExectimeObject(0).equals(true);

@@ -33,7 +33,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import java.util.Random;
 
-public class MRand_noargs extends MRand {
+public class MRandNoArg extends MRandBase {
 
     private Random random = null; 
     

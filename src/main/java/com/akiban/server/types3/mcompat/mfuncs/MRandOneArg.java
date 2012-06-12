@@ -34,7 +34,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import java.util.Random;
 
-public class MRand_1arg extends MRand {
+public class MRandOneArg extends MRandBase {
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
