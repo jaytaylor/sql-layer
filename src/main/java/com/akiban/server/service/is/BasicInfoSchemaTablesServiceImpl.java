@@ -60,6 +60,12 @@ import java.util.Iterator;
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
 public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
+    static final TableName SCHEMATA = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "schemata");
+    static final TableName TABLES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "tables");
+    static final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
+    static final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
+    static final TableName INDEX_COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_columns");
+
     private final AisHolder aisHolder;
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
@@ -83,77 +89,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
     @Override
     public void start() {
-        final TableName SCHEMATA = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "schemata");
-        final TableName TABLES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "tables");
-        final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
-        final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
-        final TableName INDEX_COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_columns");
-
-        NewAISBuilder builder = AISBBasedBuilder.create();
-        builder.userTable(SCHEMATA)
-                .colString("schema_name", 128, false)
-                .colString("schema_owner", 128, true)
-                .colString("default_character_set_name", 128, true)
-                .colString("default_collation_name", 128, true);
-                //.pk("schema_name")
-        builder.userTable(TABLES)
-                .colString("table_schema", 128, false)
-                .colString("table_name", 128, false)
-                .colString("group_name", 128, false)
-                .colString("table_type", 128, false)
-                .colLong("table_id", false)
-                .colString("default_character_set_name", 128, false)
-                .colString("default_collation_name", 128, false);
-                //primary key (schema_name, table_name),
-                //unique key (table_id),
-                //foreign_key (schema_name) references schemata,
-                //foreign key (schema_name, group_name) references groups);
-        builder.userTable(COLUMNS)
-                .colString("schema_name", 128, false)
-                .colString("table_name", 128, false)
-                .colString("column_name", 128, false)
-                .colLong("position", false)
-                .colString("type", 32, false)
-                .colString("nullable", 3, false)
-                .colLong("length", false)
-                .colLong("precision", true)
-                .colLong("scale", true)
-                .colLong("prefix_size", true)
-                .colBigInt("identity_start", true)
-                .colString("character_set", 128, false)
-                .colString("collation", 128, false);
-                //primary key(schema_name, table_name, column_name),
-                //foreign key(schema_name, table_name) references tables(schema_name, table_name),
-                //foreign key (type) references types (type_name));
-        builder.userTable(INDEXES)
-                .colString("schema_name", 128, false)
-                .colString("table_name", 128, false)
-                .colString("index_name", 128, false)
-                .colString("group_name", 128, false)
-                .colLong("index_id", false)
-                .colString("index_type", 128, false)
-                .colString("is_unique", 3, false);
-                //primary key(schema_name, group_name, index_name),
-                //foreign key (schema_name, constraint_table_name, constraint_name)
-                //references constraints (schema_name, table_name, constraint_name)
-                //foreign key(group_name) references group (group_name));
-        builder.userTable(INDEX_COLUMNS)
-                .colString("schema_name", 128, false)
-                .colString("group_name", 128, false)
-                .colString("index_name", 128, false)
-                .colString("table_name", 128, false)
-                .colString("column_name", 128, false)
-                .colLong("ordinal_position", false)
-                .colString("is_ascending", 128, false)
-                .colLong("indexed_length", true);
-                //primary key(schema_name, group_name, index_name, table_name, column_name),
-                //foreign key(schema_name, group_name, index_name)
-                //references indexes (schema_name, group_name, index_name),
-                //foreign key (schema_name, table_name, column_name)
-                //references columns (schema_name, table_name, column_name));
+        AkibanInformationSchema ais = createTablesToRegister();
 
         Session session = sessionService.createSession();
-        AkibanInformationSchema ais = builder.ais();
 
         // SCHEMAS
         UserTable schemata = ais.getUserTable(SCHEMATA);
@@ -170,6 +108,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         // INDEX_COLUMNS
         UserTable index_columns = ais.getUserTable(INDEX_COLUMNS);
         schemaManager.registerMemoryInformationSchemaTable(session, index_columns, new IndexColumnsFactory(index_columns));
+
+        // update attachFactories() when adding new tables
 
         session.close();
     }
@@ -393,7 +333,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         public long rowCount() {
             long count = 0;
             for(UserTable table : aisHolder.getAis().getUserTables().values()) {
-                count += table.getIndexes().size(); // TODO: IncludingInternal()?
+                count += table.getIndexes().size();
             }
             return count;
         }
@@ -521,5 +461,94 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             public void close() {
             }
         }
+    }
+
+    //
+    // Package, for testing
+    //
+
+    static AkibanInformationSchema createTablesToRegister() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMATA)
+                .colString("schema_name", 128, false)
+                .colString("schema_owner", 128, true)
+                .colString("default_character_set_name", 128, true)
+                .colString("default_collation_name", 128, true);
+        //.pk("schema_name")
+        builder.userTable(TABLES)
+                .colString("table_schema", 128, false)
+                .colString("table_name", 128, false)
+                .colString("group_name", 128, false)
+                .colString("table_type", 128, false)
+                .colLong("table_id", false)
+                .colString("default_character_set_name", 128, false)
+                .colString("default_collation_name", 128, false);
+        //primary key (schema_name, table_name),
+        //unique key (table_id),
+        //foreign_key (schema_name) references schemata,
+        //foreign key (schema_name, group_name) references groups);
+        builder.userTable(COLUMNS)
+                .colString("schema_name", 128, false)
+                .colString("table_name", 128, false)
+                .colString("column_name", 128, false)
+                .colLong("position", false)
+                .colString("type", 32, false)
+                .colString("nullable", 3, false)
+                .colLong("length", false)
+                .colLong("precision", true)
+                .colLong("scale", true)
+                .colLong("prefix_size", true)
+                .colBigInt("identity_start", true)
+                .colString("character_set", 128, false)
+                .colString("collation", 128, false);
+        //primary key(schema_name, table_name, column_name),
+        //foreign key(schema_name, table_name) references tables(schema_name, table_name),
+        //foreign key (type) references types (type_name));
+        builder.userTable(INDEXES)
+                .colString("schema_name", 128, false)
+                .colString("table_name", 128, false)
+                .colString("index_name", 128, false)
+                .colString("group_name", 128, false)
+                .colLong("index_id", false)
+                .colString("index_type", 128, false)
+                .colString("is_unique", 3, false);
+        //primary key(schema_name, group_name, index_name),
+        //foreign key (schema_name, constraint_table_name, constraint_name)
+        //references constraints (schema_name, table_name, constraint_name)
+        //foreign key(group_name) references group (group_name));
+        builder.userTable(INDEX_COLUMNS)
+                .colString("schema_name", 128, false)
+                .colString("group_name", 128, false)
+                .colString("index_name", 128, false)
+                .colString("table_name", 128, false)
+                .colString("column_name", 128, false)
+                .colLong("ordinal_position", false)
+                .colString("is_ascending", 128, false)
+                .colLong("indexed_length", true);
+        //primary key(schema_name, group_name, index_name, table_name, column_name),
+        //foreign key(schema_name, group_name, index_name)
+        //references indexes (schema_name, group_name, index_name),
+        //foreign key (schema_name, table_name, column_name)
+        //references columns (schema_name, table_name, column_name));
+
+        return builder.ais(false);
+    }
+
+    void attachFactories(AkibanInformationSchema ais) {
+        // SCHEMAS
+        UserTable schemata = ais.getUserTable(SCHEMATA);
+        schemata.setMemoryTableFactory(new SchemaFactory(schemata));
+        // TABLES
+        UserTable tables = ais.getUserTable(TABLES);
+        tables.setMemoryTableFactory(new TableFactory(tables));
+        // COLUMNS
+        UserTable columns = ais.getUserTable(COLUMNS);
+        columns.setMemoryTableFactory(new ColumnsFactory(columns));
+        // INDEXES
+        UserTable indexes = ais.getUserTable(INDEXES);
+        indexes.setMemoryTableFactory(new IndexesFactory(indexes));
+        // INDEX_COLUMNS
+        UserTable index_columns = ais.getUserTable(INDEX_COLUMNS);
+        index_columns.setMemoryTableFactory(new IndexColumnsFactory(index_columns));
     }
 }
