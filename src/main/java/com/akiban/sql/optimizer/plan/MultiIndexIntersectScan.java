@@ -153,8 +153,8 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    public int getPeggedCount() {
-        return outputScan.getPeggedCount();
+    public int getNEquality() {
+        return outputScan.getNEquality();
     }
 
     @Override

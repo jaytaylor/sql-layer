@@ -28,12 +28,21 @@ package com.akiban.qp.operator.memoryadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
+import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.server.service.session.Session;
 
 public interface MemoryTableFactory {
+    public TableName getName();
     public Table getTableDefinition();
     public GroupCursor getGroupCursor(Session session);
-    public Cursor getIndexCursor (Index index, Session session);
+    public Cursor getIndexCursor (Index index, Session session, 
+            IndexKeyRange keyRange,
+            API.Ordering ordering,
+            IndexScanSelector scanSelector);
+    public long rowCount();
 }

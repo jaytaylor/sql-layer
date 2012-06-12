@@ -27,13 +27,8 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.*;
-import com.akiban.server.aggregation.AggregatorFactory;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types.AkType;
 
 import java.util.*;
-
-import static java.lang.Math.max;
 
 // UserTable RowTypes are indexed by the UserTable's RowDef's ordinal. Derived RowTypes get higher values.
 

@@ -26,12 +26,13 @@
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.qp.operator.*;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.*;
 import com.akiban.qp.persistitadapter.sort.IterationHelper;
 import com.akiban.qp.persistitadapter.sort.SortCursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.ShareHolder;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
@@ -68,6 +69,16 @@ class PersistitIndexCursor implements Cursor
         } while (needAnother);
         assert (next == null) == idle;
         return next;
+    }
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        if (exchange == null) {
+            exchange = adapter.takeExchange(indexRowType.index());
+            idle = false;
+        }
+        sortCursor.jump(row, columnSelector);
     }
 
     @Override

@@ -1,0 +1,6 @@
+SelectQuery@3532a7a4
+  ResultSet@109c1b45[_SQL_COL_1]
+    Project@78c25787[GROUP[0]]
+      AggregateSource@18c137be(FIRST_FROM_INDEX,[MAX])
+        Project@1c6f1994[customers.name]
+          SingleIndexScan@41f85221(Index(test.customers.name[IndexColumn(name)]), covering/NONE/reverse, rows = 100, cost = 74.1740)

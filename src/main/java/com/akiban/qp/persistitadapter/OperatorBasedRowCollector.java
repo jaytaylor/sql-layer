@@ -38,6 +38,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.dml.scan.PredicateLimit;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -45,7 +46,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
@@ -222,7 +222,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         }
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
-            // HAPI query root table = predicate table
+            // UserTable, column predicates apply to it alone
             ? new OneTableRowCollector(config,
                                        session,
                                        store,
@@ -233,7 +233,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        startColumns,
                                        end,
                                        endColumns)
-            // HAPI query root table != predicate table
+            // GroupTable, column predicates can apply to two distinct tables
             : new TwoTableRowCollector(config,
                                        session,
                                        store,

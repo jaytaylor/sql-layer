@@ -153,7 +153,7 @@ public class LikeExpression extends AbstractCompositeExpression
            
             try
             {
-                return BoolValueSource.of(matcher.match(left));
+                return BoolValueSource.of(matcher.match(left, 1) >= 0);
             }
             catch (InvalidOperationException e)
             {

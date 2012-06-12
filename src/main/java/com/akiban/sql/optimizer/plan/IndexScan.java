@@ -34,7 +34,7 @@ import java.util.*;
 public abstract class IndexScan extends BaseScan implements IndexIntersectionNode<ConditionExpression,IndexScan>
 {
     public static enum OrderEffectiveness {
-        NONE, PARTIAL_GROUPED, GROUPED, SORTED
+        NONE, PARTIAL_GROUPED, GROUPED, SORTED, FOR_MIN_MAX
     }
 
     private TableSource rootMostTable, rootMostInnerTable, leafMostInnerTable, leafMostTable;
@@ -132,6 +132,11 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
         super.deepCopy(map);
     }
 
+    @Override
+    public int getPeggedCount() {
+        return getNEquality();
+    }
+
     public abstract List<OrderByExpression> getOrdering();
     public abstract OrderEffectiveness getOrderEffectiveness();
     public abstract List<ExpressionNode> getColumns();
@@ -145,6 +150,7 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public abstract boolean isHighInclusive();
     public abstract void visitComparands(ExpressionRewriteVisitor v);
     public abstract void visitComparands(ExpressionVisitor v);
+    public abstract int getNEquality();
     
     @Override
     public String summaryString() {

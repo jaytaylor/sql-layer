@@ -1,0 +1,1 @@
+CREATE INDEX sku_and_date_2 ON customers(items.sku, orders.order_date, orders.oid) USING LEFT JOIN;

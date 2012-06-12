@@ -240,7 +240,7 @@ class GroupScan_Default extends Operator
         @Override
         public Cursor cursor(QueryContext context)
         {
-            return context.getStore().newGroupCursor(groupTable());
+            return context.getStore(groupTable().getName()).newGroupCursor(groupTable());
         }
 
         // FullGroupCursorCreator interface
@@ -267,7 +267,12 @@ class GroupScan_Default extends Operator
         @Override
         public Cursor cursor(QueryContext context)
         {
-            return new HKeyBoundCursor(context, context.getStore().newGroupCursor(groupTable()), hKeyBindingPosition, deep, hKeyType, shortenUntil);
+            return new HKeyBoundCursor(context, 
+                    context.getStore(groupTable().getName()).newGroupCursor(groupTable()), 
+                    hKeyBindingPosition, 
+                    deep, 
+                    hKeyType, 
+                    shortenUntil);
         }
 
         // PositionalGroupCursorCreator interface

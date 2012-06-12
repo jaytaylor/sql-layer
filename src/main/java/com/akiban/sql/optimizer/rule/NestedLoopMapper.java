@@ -38,9 +38,8 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 
 /** Convert nested loop join into map.
- * This rule only does the immediate conversion to a Map node and
- * recording of bound tables. The map still needs to be folded after
- * conditions have moved down and so on.
+ * This rule only does the immediate conversion to a Map. The map
+ * still needs to be folded after conditions have moved down and so on.
  */
 public class NestedLoopMapper extends BaseRule
 {
@@ -73,8 +72,11 @@ public class NestedLoopMapper extends BaseRule
         public boolean visit(PlanNode n) {
             if (n instanceof JoinNode) {
                 JoinNode j = (JoinNode)n;
-                if (j.getImplementation() == JoinNode.Implementation.NESTED_LOOPS)
+                switch (j.getImplementation()) {
+                case NESTED_LOOPS:
+                case BLOOM_FILTER:
                     result.add(j);
+                }
             }
             return true;
         }
@@ -99,49 +101,32 @@ public class NestedLoopMapper extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<JoinNode> joins = new NestedLoopsJoinsFinder().find(query);
-        List<MapJoin> maps = new ArrayList<MapJoin>(joins.size());
         for (JoinNode join : joins) {
-            MapJoin map = new MapJoin(join.getJoinType(), 
-                                      join.getLeft(), join.getRight());
+            PlanNode outer = join.getLeft();
+            PlanNode inner = join.getRight();
             if (join.hasJoinConditions())
-                map.setInner(new Select(map.getInner(), join.getJoinConditions()));
-            join.getOutput().replaceInput(join, map);
-            maps.add(map);
-        }
-        for (MapJoin map : maps) {
-            map.setOuterTables(getBoundTables(map.getOuter()));
-        }
-    }
-
-    protected Set<ColumnSource> getBoundTables(PlanNode node) {
-        if (node instanceof TableJoins)
-            return new HashSet<ColumnSource>(((TableJoins)node).getTables());
-        else if (node instanceof TableGroupJoinTree) {
-            Set<ColumnSource> set = new HashSet<ColumnSource>();
-            for (TableGroupJoinTree.TableGroupJoinNode table : (TableGroupJoinTree)node) {
-                set.add(table.getTable());
+                inner = new Select(inner, join.getJoinConditions());
+            PlanNode map;
+            switch (join.getImplementation()) {
+            case NESTED_LOOPS:
+                map = new MapJoin(join.getJoinType(), outer, inner);
+                break;
+            case BLOOM_FILTER:
+                {
+                    HashJoinNode hjoin = (HashJoinNode)join;
+                    BloomFilter bf = (BloomFilter)hjoin.getHashTable();
+                    map = new BloomFilterFilter(bf, hjoin.getMatchColumns(),
+                                                outer, inner);
+                    PlanNode loader = hjoin.getLoader();
+                    loader = new Project(loader, hjoin.getHashColumns());
+                    map = new UsingBloomFilter(bf, loader, map);
+                }
+                break;
+            default:
+                assert false : join;
+                map = join;
             }
-            return set;
-        }
-        else if (node instanceof ColumnSource) {
-            // Not Collections.singleton(); need modifiable collection.
-            Set<ColumnSource> single = new HashSet<ColumnSource>(1);
-            single.add((ColumnSource)node);
-            return single;
-        }
-        else if (node instanceof MapJoin) {
-            MapJoin map = (MapJoin)node;
-            Set<ColumnSource> combined = getBoundTables(map.getOuter());
-            combined.addAll(getBoundTables(map.getInner()));
-            return combined;
-        }
-        else if (node instanceof Select) {
-            // Might be the Select we just added above with join conditions.
-            return getBoundTables(((Select)node).getInput());
-        }
-        else {
-            assert false : "Unknown map join input";
-            return Collections.<ColumnSource>emptySet();
+            join.getOutput().replaceInput(join, map);
         }
     }
 
