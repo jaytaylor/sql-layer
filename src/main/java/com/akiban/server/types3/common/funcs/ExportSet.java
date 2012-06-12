@@ -44,8 +44,10 @@ import java.util.List;
 
 public abstract class  ExportSet extends TOverloadBase
 {
+    private static final BigInteger MASK = new BigInteger("ffffffffffffffff", 16);
     private static final int DEFAULT_LENGTH = 64;
     private static final String DEFAULT_DELIM = ",";
+    
     public static TOverload[] createOverloads(final TClass intType, final TClass stringType, final TClass uBigintType)
     {
         return new TOverload[]
@@ -117,7 +119,7 @@ public abstract class  ExportSet extends TOverloadBase
         };
     }
             
-    protected static String computeSet(BigInteger num, String bits[], String delim, int length)
+    private static String computeSet(BigInteger num, String bits[], String delim, int length)
     {
         char digits[] = num.toString(2).toCharArray();
         int count = 0;
@@ -135,6 +137,16 @@ public abstract class  ExportSet extends TOverloadBase
         return ret.toString();
     }
     
+    private static BigInteger getUnsignedBigint64(long num)
+    {
+        // if it's negative, get the two's complement
+        BigInteger ret = BigInteger.valueOf(num);
+        if (num < 0)
+            return ret.abs().xor(MASK).and(BigInteger.ONE);
+        else
+            return ret;
+    }
+    
     protected abstract String getDelimeter(LazyList<? extends PValueSource> inputs);
     protected abstract int getLength(LazyList<? extends PValueSource> inputs);
 
@@ -147,7 +159,7 @@ public abstract class  ExportSet extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        output.putObject(computeSet((BigInteger)inputs.get(0),
+        output.putObject(computeSet(getUnsignedBigint64(inputs.get(0).getInt64()),
                                      new String[]{(String)inputs.get(2).getObject(),
                                                   (String)inputs.get(1).getObject()},
                                      getDelimeter(inputs),
