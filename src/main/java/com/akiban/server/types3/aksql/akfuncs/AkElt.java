@@ -24,15 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.aksql.aktypes.AkString;
 import com.akiban.server.types3.common.funcs.Elt;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 
-public class MElt
+public class AkElt
 {
-    // TODO define all overloads of ELT here ?
-    public static final TOverload INSTANCE = new Elt(MNumeric.INT, MString.VARCHAR);
+    public static final TOverload INSTANCE = new Elt(AkNumeric.INT, AkString.VARCHAR);
 }
