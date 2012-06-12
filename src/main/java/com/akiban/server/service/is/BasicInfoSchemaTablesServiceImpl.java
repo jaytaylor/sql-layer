@@ -480,7 +480,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("table_name", 128, false)
                 .colString("group_name", 128, false)
                 .colString("table_type", 128, false)
-                .colLong("table_id", false)
+                .colBigInt("table_id", false)
                 .colString("default_character_set_name", 128, false)
                 .colString("default_collation_name", 128, false);
         //primary key (schema_name, table_name),
@@ -491,13 +491,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("schema_name", 128, false)
                 .colString("table_name", 128, false)
                 .colString("column_name", 128, false)
-                .colLong("position", false)
+                .colBigInt("position", false)
                 .colString("type", 32, false)
                 .colString("nullable", 3, false)
-                .colLong("length", false)
-                .colLong("precision", true)
-                .colLong("scale", true)
-                .colLong("prefix_size", true)
+                .colBigInt("length", false)
+                .colBigInt("precision", true)
+                .colBigInt("scale", true)
+                .colBigInt("prefix_size", true)
                 .colBigInt("identity_start", true)
                 .colString("character_set", 128, false)
                 .colString("collation", 128, false);
@@ -509,7 +509,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("table_name", 128, false)
                 .colString("index_name", 128, false)
                 .colString("group_name", 128, false)
-                .colLong("index_id", false)
+                .colBigInt("index_id", false)
                 .colString("index_type", 128, false)
                 .colString("is_unique", 3, false);
         //primary key(schema_name, group_name, index_name),
@@ -522,9 +522,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("index_name", 128, false)
                 .colString("table_name", 128, false)
                 .colString("column_name", 128, false)
-                .colLong("ordinal_position", false)
+                .colBigInt("ordinal_position", false)
                 .colString("is_ascending", 128, false)
-                .colLong("indexed_length", true);
+                .colBigInt("indexed_length", true);
         //primary key(schema_name, group_name, index_name, table_name, column_name),
         //foreign key(schema_name, group_name, index_name)
         //references indexes (schema_name, group_name, index_name),
