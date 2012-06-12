@@ -27,7 +27,6 @@ package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -45,14 +44,18 @@ public class AkLog extends TOverloadBase{
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        PValueSource source = inputs.get(0);
-        double value = source.getDouble();
-        if (value < 0)
+        double value0 = inputs.get(0).getDouble();
+        if (value0 < 0)
             output.putNull();
         else if (inputs.size() == 1)
-            output.putDouble(Math.log(value));
-        else
-            output.putDouble(Math.log(value)/Math.log(inputs.get(1).getDouble()));
+            output.putDouble(Math.log(value0));
+        else {
+            double value1 = inputs.get(1).getDouble();
+            if (1 == value1)
+                output.putNull();
+            else
+                output.putDouble(Math.log(value0)/Math.log(value1));
+        }
     }
 
     @Override

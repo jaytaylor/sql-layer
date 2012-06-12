@@ -36,6 +36,8 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class Coalesce extends TOverloadBase {
+    
+    private final TClass returnType;
 
     public Coalesce(TClass returnType) {
         this.returnType = returnType;
@@ -73,7 +75,4 @@ public class Coalesce extends TOverloadBase {
             return Constantness.NOT_CONST;
         return preptimeValue.isNull() ? Constantness.UNKNOWN : Constantness.CONST;
     }
-
-    private final TClass returnType;
-
 }

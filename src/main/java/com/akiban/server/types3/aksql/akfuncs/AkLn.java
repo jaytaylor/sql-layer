@@ -44,8 +44,7 @@ public class AkLn extends TOverloadBase{
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        PValueSource source = inputs.get(0);
-        double value = source.getDouble();
+        double value = inputs.get(0).getDouble();
         if (value < 0)
             output.putNull();
         else

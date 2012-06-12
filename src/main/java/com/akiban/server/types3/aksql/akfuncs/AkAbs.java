@@ -26,6 +26,7 @@
 package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
@@ -35,17 +36,23 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class AkAbs extends TOverloadBase{
+    
+    private final TClass returnType;
+    
+    public AkAbs(TClass returnType) {
+        this.returnType = returnType;
+    }
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(AkNumeric.DOUBLE, 0);
+        builder.covers(returnType, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        PValueSource source = inputs.get(0);
-        double value = source.getDouble();
+        double value = inputs.get(0).getDouble();
         output.putDouble(Math.abs(value));
     }
 
@@ -58,6 +65,6 @@ public class AkAbs extends TOverloadBase{
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
+        return TOverloadResult.fixed(returnType.instance());
     }
 }
