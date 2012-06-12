@@ -28,15 +28,29 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.common.funcs.TArithmetic;
-import java.math.BigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
 public class MArithmetic {   
 
+    private static final int DEC_INDEX = 0;
     private MArithmetic() {}
+    
+    private static BigDecimalWrapper getWrapper(TExecutionContext context)
+    {
+        BigDecimalWrapper wrapper = (BigDecimalWrapper)context.exectimeObjectAt(DEC_INDEX);
+        // Why would we need a Supplier?
+        if (wrapper == null)
+            context.putExectimeObject(DEC_INDEX, wrapper = new MBigDecimalWrapper());
+        wrapper.reset();
+        return wrapper;
+    }
     
     // Add functions
     TArithmetic ADD_TINYINT = new TArithmetic("+", MNumeric.TINYINT, MNumeric.MEDIUMINT.instance(5)) {
@@ -87,11 +101,9 @@ public class MArithmetic {
     TArithmetic ADD_DECIMAL = new TArithmetic("+", MNumeric.DECIMAL, null) { // TODO instance
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            // TODO: Make this faster
-            BigDecimal dec0 = (BigDecimal) inputs.get(0).getObject();
-            BigDecimal dec1 = (BigDecimal) inputs.get(1).getObject();
-            BigDecimal result = dec0.add(dec1);
-            output.putObject(result);
+            output.putObject(getWrapper(context)
+                        .add((BigDecimalWrapper)inputs.get(0).getObject())
+                        .add((BigDecimalWrapper)inputs.get(1).getObject()));
         }
     };
     
@@ -144,27 +156,86 @@ public class MArithmetic {
     TArithmetic SUBTRACT_DECIMAL = new TArithmetic("-", MNumeric.DECIMAL, null) { // TODO
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            // TODO: Make this faster
-            BigDecimal dec0 = (BigDecimal) inputs.get(0).getObject();
-            BigDecimal dec1 = (BigDecimal) inputs.get(1).getObject();
-            BigDecimal result = dec0.subtract(dec1);
-            output.putObject(result);
+            output.putObject(getWrapper(context)
+                        .add((BigDecimalWrapper)inputs.get(0).getObject())
+                        .subtract((BigDecimalWrapper)inputs.get(1).getObject()));
         }
     };
     
-    // Divide functions
+    // (Regular) Divide functions
+    TArithmetic DIVIDE_TINYINT = new TArithmetic("/", MNumeric.TINYINT, MDouble.INSTANCE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            int divisor = inputs.get(1).getInt8();
+            if (divisor == 0)
+                output.putNull();
+            else
+                output.putDouble((double)inputs.get(0).getInt8() / divisor);
+        }
+    };
+
+    TArithmetic DIVIDE_SMALLINT = new TArithmetic("/", MNumeric.SMALLINT, MDouble.INSTANCE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            int divisor = inputs.get(1).getInt16();
+            if (divisor == 0)
+                output.putNull();
+            else
+                output.putDouble((double)inputs.get(0).getInt16() / divisor);
+        }
+    };
+    
+    TArithmetic DIVIDE_INT = new TArithmetic("/", MNumeric.INT, MDouble.INSTANCE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            int divisor = inputs.get(1).getInt32();
+            if (divisor == 0L)
+                output.putNull();
+            else
+                output.putDouble((double)inputs.get(0).getInt32() / divisor);
+        }
+    };
+    
+    TArithmetic DIVIDE_BIGINT = new TArithmetic("/", MNumeric.BIGINT, MDouble.INSTANCE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            long divisor = inputs.get(1).getInt64();
+            if (divisor == 0L)
+                output.putNull();
+            else
+                output.putDouble((double)inputs.get(0).getInt64() / divisor);
+        }
+    };
+
+    TArithmetic DIVIDE_DOUBLE = new TArithmetic("/", MDouble.INSTANCE, MDouble.INSTANCE.instance())
+    {
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+        {
+            double divisor = inputs.get(1).getDouble();
+            if (Double.compare(divisor, 0) == 0)
+                output.putNull();
+            else
+                output.putDouble(inputs.get(0).getDouble() / divisor);
+        }
+    };
+
     TArithmetic DIVIDE_DECIMAL = new TArithmetic("/", MNumeric.DECIMAL, null) { // TODO
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            // TODO: Make this faster
-            BigDecimal dec0 = (BigDecimal) inputs.get(0).getObject();
-            BigDecimal dec1 = (BigDecimal) inputs.get(1).getObject();
-            
-            if (dec1.intValue() == 0) output.putNull();
-            else {
-                BigDecimal result = dec0.divide(dec1);
-                output.putObject(result);
-            }
+            output.putObject(getWrapper(context)
+                        .add((BigDecimalWrapper)inputs.get(0).getObject())
+                        .divide((BigDecimalWrapper)inputs.get(1).getObject(),
+                                 context.outputTInstance().attribute(  // get the scale computed
+                                        MBigDecimal.Attrs.SCALE.ordinal()))); // during expr generation time
         }
     };
     
