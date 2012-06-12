@@ -26,7 +26,11 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+
 public class MElt
 {
     // TODO define all overloads of ELT here ?
+    public static final TOverload INSTANCE = new Elt(MNumeric.INT, MString.VARCHAR);
 }
