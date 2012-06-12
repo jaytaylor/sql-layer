@@ -87,7 +87,7 @@ public class Conv extends TOverloadBase
         else
             try
             {
-                output.putObject(doConvert(truncateFractional(st),
+                output.putObject(doConvert((st),
                                            fromBase,
                                            toBase));
             }
@@ -142,13 +142,17 @@ public class Conv extends TOverloadBase
         return num <= max && num >= min;
     }
     
-    private static String truncateFractional(String st)
+    private static String truncateNonDigits(String st)
     {
-        int dot = st.indexOf('.');
-        if (dot >= 0)
-            return st.substring(0, dot);
-        else
-            return st;
+        StringBuilder ret = new StringBuilder();
+        int index = 0;
+        char ch;
+        for(; index < st.length(); ++index)
+            if (!Character.isDigit(ch = st.charAt(index)))
+                return ret.toString();
+            else 
+                ret.append(ch);
+        return ret.toString();
     }
     
     /**
