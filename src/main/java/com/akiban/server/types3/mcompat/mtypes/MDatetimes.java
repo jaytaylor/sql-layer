@@ -24,40 +24,25 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
-public class AkDegrees extends TOverloadBase {
+public class MDatetimes {
 
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(AkNumeric.DOUBLE, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        output.putDouble(Math.toDegrees(inputs.get(0).getDouble()));
-    }
-
-    @Override
-    public String overloadName() {
-        return "DEGREES";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-<<<<<<< TREE
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
-=======
-        return TOverloadResult.fixed(AkNumeric.DOUBLE);
->>>>>>> MERGE-SOURCE
-    }
+    private static final TBundleID bundle = MBundle.INSTANCE.id();
+    
+    public static final NoAttrTClass DATE = new NoAttrTClass(bundle,
+            "date", 1, 1, 4, PUnderlying.INT_32);
+    public static final NoAttrTClass DATETIME = new NoAttrTClass(bundle,
+            "datetime", 1, 1, 8, PUnderlying.INT_64);
+    public static final NoAttrTClass TIME = new NoAttrTClass(bundle,
+            "time", 1, 1, 4, PUnderlying.INT_32);
+    public static final NoAttrTClass YEAR = new NoAttrTClass(bundle,
+            "year", 1, 1, 1, PUnderlying.INT_8);
+    public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
+            "timestamp", 1, 1, 4, PUnderlying.INT_32);
 }

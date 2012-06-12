@@ -56,5 +56,12 @@ public abstract class TString extends TClass
     {
         throw new UnsupportedOperationException("Not supported yet.");
     }
-    
+
+    @Override
+    protected void validate(TInstance instance) {
+        int length = instance.attribute(StringAttribute.LENGTH);
+        int charsetId = instance.attribute(StringAttribute.CHARSET);
+        int collaitonid = instance.attribute(StringAttribute.COLLATION);
+        throw new UnsupportedOperationException(); // TODO
+    }
 }

@@ -27,6 +27,7 @@
 package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TOverload;
@@ -81,7 +82,7 @@ public abstract class TOverloadBase implements TOverload {
         finishPreptimePhase(context);
 
         TExecutionContext execContext = context.createExecutionContext();
-        LazyList<PValueSource> inputValues = new LazyList<PValueSource>() {
+        LazyList<PValueSource> inputValues = new LazyListBase<PValueSource>() {
             @Override
             public PValueSource get(int i) {
                 TPreptimeValue ptValue = inputs.get(i);

@@ -24,40 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class AkDegrees extends TOverloadBase {
-
+public class MRadians extends TOverloadBase {
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(AkNumeric.DOUBLE, 0);
+        builder.covers(MDouble.INSTANCE, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        output.putDouble(Math.toDegrees(inputs.get(0).getDouble()));
+        output.putDouble(Math.toRadians(inputs.get(0).getDouble()));
     }
 
     @Override
     public String overloadName() {
-        return "DEGREES";
+        return "RADIANS";
     }
 
     @Override
     public TOverloadResult resultType() {
-<<<<<<< TREE
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
-=======
-        return TOverloadResult.fixed(AkNumeric.DOUBLE);
->>>>>>> MERGE-SOURCE
+        return TOverloadResult.fixed(MDouble.INSTANCE.instance());
     }
+
 }

@@ -36,16 +36,21 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 public class MBigDecimal extends TClass {
 
     public enum Attrs implements Attribute {
-        M, D
+        PRECISION, SCALE
     }
 
-    public MBigDecimal() {
+    public MBigDecimal(){
         super(MBundle.INSTANCE.id(), "decimal", Attrs.values(), 1, 1, 8, PUnderlying.INT_64);
     }
 
     @Override
     public TFactory factory() {
         return new MNumericFactory(this);
+    }
+
+    @Override
+    protected void validate(TInstance instance) {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override

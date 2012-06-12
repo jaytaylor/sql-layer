@@ -41,18 +41,18 @@ import java.util.Arrays;
 
 public final class XMain {
     public static void main(String[] args) throws InterruptedException {
-        TPreparedExpression literal3 = new TPreparedLiteral(XInt.INSTANCE, pvalue32(3));
-        TPreparedExpression literal5 = new TPreparedLiteral(XInt.INSTANCE, pvalue32(5));
+        TPreparedExpression literal3 = new TPreparedLiteral(XInt.TYPE_CLASS.instance(), pvalue32(3));
+        TPreparedExpression literal5 = new TPreparedLiteral(XInt.TYPE_CLASS.instance(), pvalue32(5));
 
         TValidatedOverload validatedAdd = new TValidatedOverload(new XAddInt());
 
         TPreparedExpression preparedExpression = new TPreparedFunction(
                 validatedAdd,
-                XInt.INSTANCE,
+                XInt.TYPE_CLASS.instance(),
                 Arrays.asList(literal3, literal5));
         preparedExpression = new TPreparedFunction(
                 validatedAdd,
-                XInt.INSTANCE,
+                XInt.TYPE_CLASS.instance(),
                 Arrays.asList(preparedExpression, new XIntTime())
         );
 

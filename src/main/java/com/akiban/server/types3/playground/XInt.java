@@ -42,14 +42,16 @@ public final class XInt extends TClass {
 
     @Override
     protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-        assert instance0 == INSTANCE;
-        assert instance1 == INSTANCE;
-        return INSTANCE;
+        return instance0;
     }
 
     @Override
     public TFactory factory() {
         return FACTORY;
+    }
+
+    @Override
+    protected void validate(TInstance instance) {
     }
 
     private XInt() {
@@ -58,12 +60,11 @@ public final class XInt extends TClass {
 
     public static final XInt TYPE_CLASS = new XInt();
 
-    private static final TFactory FACTORY = new TFactory() {
+    private final TFactory FACTORY = new TFactory() {
         @Override
         public TInstance create(TAttributesDeclaration declaration) {
             declaration.validate(0, 0);
-            return INSTANCE;
+            return instance();
         }
     };
-    static final TInstance INSTANCE = new TInstance(TYPE_CLASS);
 }

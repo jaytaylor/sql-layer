@@ -29,6 +29,7 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
@@ -49,7 +50,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
     @Override
     public TPreptimeValue evaluateConstant() {
-        return overload.overload().evaluateConstant(preptimeContext, new LazyList<TPreptimeValue>() {
+        return overload.overload().evaluateConstant(preptimeContext, new LazyListBase<TPreptimeValue>() {
             @Override
             public TPreptimeValue get(int i) {
                 return inputs.get(i).evaluateConstant();
@@ -140,7 +141,7 @@ public final class TPreparedFunction implements TPreparedExpression {
         private final PValue resultValue;
         private final TExecutionContext context;
 
-        private final LazyList<PValueSource> evaluations = new LazyList<PValueSource>() {
+        private final LazyList<PValueSource> evaluations = new LazyListBase<PValueSource>() {
             @Override
             public PValueSource get(int i) {
                 PValueSource value = inputValues[i];
