@@ -87,7 +87,7 @@ public class Conv extends TOverloadBase
         else
             try
             {
-                output.putObject(doConvert((st),
+                output.putObject(doConvert(truncateNonDigits(st),
                                            fromBase,
                                            toBase));
             }
@@ -142,7 +142,7 @@ public class Conv extends TOverloadBase
         return num <= max && num >= min;
     }
     
-    private static String truncateNonDigits(String st)
+    public static String truncateNonDigits(String st)
     {
         StringBuilder ret = new StringBuilder();
         int index = 0;
