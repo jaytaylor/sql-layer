@@ -295,6 +295,12 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                     scale = column.getTypeParameter1().intValue();
                     precision = column.getTypeParameter2().intValue();
                 }
+                final Long length;
+                if(column.getType().fixedSize()) {
+                    length = column.getMaxStorageSize();
+                } else {
+                    length = column.getTypeParameter1();
+                }
 
                 return new ValuesRow(rowType,
                                      column.getTable().getName().getSchemaName(),
@@ -303,7 +309,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      column.getPosition(),
                                      column.getType().name(),
                                      column.getNullable() ? "YES" : "NO",
-                                     column.getMaxStorageSize().intValue(),
+                                     length,
                                      scale,
                                      precision,
                                      column.getPrefixSize(),
