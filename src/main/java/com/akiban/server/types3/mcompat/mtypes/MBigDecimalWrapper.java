@@ -65,6 +65,10 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         return this;
     }
     
+    public int getSign() {
+        return value.signum();
+    }
+    
     private BigDecimal value;
 
     @Override
