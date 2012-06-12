@@ -52,7 +52,7 @@ public class Elt extends TOverloadBase
     {
         // ELT(<INT>, <T> ....)
         // argc >= 2
-        builder.covers(intType, 0).pickingVararg(type, 1).pickingVararg(intType);
+        builder.covers(intType, 0).pickingVararg(type, 1).pickingVararg(type);
     }
 
     @Override
