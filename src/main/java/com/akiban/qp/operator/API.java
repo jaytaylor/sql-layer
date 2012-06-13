@@ -147,7 +147,7 @@ public class API
                                                 GroupTable groupTable,
                                                 RowType inputRowType,
                                                 UserTableRowType outputRowType,
-                                                LookupOption flag)
+                                                InputPreservationOption flag)
     {
         return branchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, NO_LIMIT);
     }
@@ -156,7 +156,7 @@ public class API
                                                 GroupTable groupTable,
                                                 RowType inputRowType,
                                                 UserTableRowType outputRowType,
-                                                LookupOption flag,
+                                                InputPreservationOption flag,
                                                 Limit limit)
     {
         return new BranchLookup_Default(inputOperator, groupTable, inputRowType, outputRowType, flag, limit);
@@ -166,7 +166,7 @@ public class API
     public static Operator branchLookup_Nested(GroupTable groupTable,
                                                RowType inputRowType,
                                                UserTableRowType outputRowType,
-                                               LookupOption flag,
+                                               InputPreservationOption flag,
                                                int inputBindingPosition)
     {
         return new BranchLookup_Nested(groupTable,
@@ -181,7 +181,7 @@ public class API
                                                RowType inputRowType,
                                                UserTableRowType ancestorRowType,
                                                UserTableRowType outputRowType,
-                                               LookupOption flag,
+                                               InputPreservationOption flag,
                                                int inputBindingPosition)
     {
         return new BranchLookup_Nested(groupTable,
@@ -214,14 +214,14 @@ public class API
                                                   GroupTable groupTable,
                                                   RowType rowType,
                                                   Collection<UserTableRowType> ancestorTypes,
-                                                  LookupOption flag)
+                                                  InputPreservationOption flag)
     {
         return new AncestorLookup_Default(inputOperator, groupTable, rowType, ancestorTypes, flag);
     }
 
     public static Operator ancestorLookup_Nested(GroupTable groupTable,
                                                  RowType rowType,
-                                                 Collection<? extends RowType> ancestorTypes,
+                                                 Collection<UserTableRowType> ancestorTypes,
                                                  int hKeyBindingPosition)
     {
         return new AncestorLookup_Nested(groupTable, rowType, ancestorTypes, hKeyBindingPosition);
@@ -270,6 +270,9 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
+        if (indexKeyRange == null) {
+            indexKeyRange = IndexKeyRange.unbounded(indexType);
+        }
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
 
@@ -439,9 +442,11 @@ public class API
 
     // IfEmpty
 
-    public static Operator ifEmpty_Default(Operator input, RowType rowType, List<? extends Expression> expressions)
+    public static Operator ifEmpty_Default(Operator input, RowType rowType,
+                                           List<? extends Expression> expressions,
+                                           InputPreservationOption inputPreservation)
     {
-        return new IfEmpty_Default(input, rowType, expressions);
+        return new IfEmpty_Default(input, rowType, expressions, inputPreservation);
     }
 
     // Union
@@ -460,7 +465,7 @@ public class API
                                             int rightOrderingFields,
                                             int comparisonFields,
                                             JoinType joinType,
-                                            IntersectOutputOption intersectOutput)
+                                            IntersectOption intersectOutput)
     {
         if (comparisonFields < 0) {
             throw new IllegalArgumentException();
@@ -473,7 +478,7 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     intersectOutput);
+                                     EnumSet.of(intersectOutput));
     }
     
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -482,7 +487,7 @@ public class API
                                             int rightOrderingFields,
                                             boolean[] ascending,
                                             JoinType joinType,
-                                            IntersectOutputOption intersectOutput)
+                                            EnumSet<IntersectOption> intersectOptions)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
@@ -490,11 +495,26 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     intersectOutput);
+                                     intersectOptions);
     }
     
+    // Union
+
+    public static Operator union_Ordered(Operator leftInput, Operator rightInput,
+                                          IndexRowType leftRowType, IndexRowType rightRowType,
+                                          int leftOrderingFields,
+                                          int rightOrderingFields,
+                                          boolean[] ascending)
+    {
+        return new Union_Ordered(leftInput, rightInput,
+                                 leftRowType, rightRowType,
+                                 leftOrderingFields,
+                                 rightOrderingFields,
+                                 ascending);
+    }
+
     // HKeyUnion
-    
+
     public static Operator hKeyUnion_Ordered(Operator leftInput, Operator rightInput,
                                              RowType leftRowType, RowType rightRowType,
                                              int leftOrderingFields, int rightOrderingFields,
@@ -506,6 +526,34 @@ public class API
                                      leftOrderingFields, rightOrderingFields,
                                      comparisonFields,
                                      outputHKeyTableRowType);
+    }
+
+    // Using_BloomFilter
+
+    public static Operator using_BloomFilter(Operator filterInput,
+                                             RowType filterRowType,
+                                             long estimatedRowCount,
+                                             int filterBindingPosition,
+                                             Operator streamInput)
+    {
+        return new Using_BloomFilter(filterInput,
+                                     filterRowType,
+                                     estimatedRowCount,
+                                     filterBindingPosition,
+                                     streamInput);
+    }
+
+    // Select_BloomFilter
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends Expression> filterFields,
+                                              int bindingPosition)
+    {
+        return new Select_BloomFilter(input,
+                                      onPositive,
+                                      filterFields,
+                                      bindingPosition);
     }
 
     // Insert
@@ -558,7 +606,8 @@ public class API
 
     // Lookup flags
 
-    public static enum LookupOption {
+    public static enum InputPreservationOption
+    {
         KEEP_INPUT,
         DISCARD_INPUT
     }
@@ -572,9 +621,12 @@ public class API
 
     // Intersect output flags
 
-    public static enum IntersectOutputOption {
+    public static enum IntersectOption
+    {
         OUTPUT_LEFT,
-        OUTPUT_RIGHT
+        OUTPUT_RIGHT,
+        SEQUENTIAL_SCAN,
+        SKIP_SCAN
     }
 
     // Ordering specification

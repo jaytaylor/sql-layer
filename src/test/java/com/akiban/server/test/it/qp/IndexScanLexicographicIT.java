@@ -26,6 +26,9 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.message.AkibanConnection;
+import com.akiban.message.AkibanConnectionImpl;
+import com.akiban.message.Message;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
@@ -36,22 +39,39 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.message.ScanRowsRequest;
+import com.akiban.server.message.ScanRowsResponse;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.service.config.Property;
+import com.akiban.server.service.network.NetworkService;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.util.GrowableByteBuffer;
+import com.persistit.Transaction;
+import com.persistit.exception.PersistitException;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
 import static com.akiban.qp.operator.API.ordering;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /*
- * A *semi-bounded* scan is one in which a start or end value is specified and we go to one end of the index or the
+ * A *lexicographic* scan is one in which a start or end value is specified and we go to one end of the index or the
  * other. It differs from a one-side-bounded scan in that there are no equality matches. E.g., if we have an index
- * on (x, y), then the one-side-bounded scan >(10, 5) finds all records such that x = 10 and y > 5. A semi-bounded
- * scan finds all records following (10, 5), and could include rows with x > 10. MySQL does semi-bounded scans.
+ * on (x, y), then the one-side-bounded scan >(10, 5) finds all records such that x = 10 and y > 5. A lexicographic
+ * scan finds all records following (10, 5), and could include rows with x > 10. MySQL does lexicographic scans.
  */
 
 public class IndexScanLexicographicIT extends OperatorITBase
@@ -59,6 +79,21 @@ public class IndexScanLexicographicIT extends OperatorITBase
     @Before
     public void before()
     {
+/*
+        NetworkService ns = serviceManager().getServiceByClass(NetworkService.class);
+        try {
+            connection = new AkibanConnectionImpl(ns.getNetworkHost(), ns.getNetworkPort());
+        } catch (IOException e) {
+            fail();
+        }
+        transaction = serviceManager().getTreeService().getTransaction(session());
+        try {
+            transaction.end();
+            transaction.begin();
+        } catch (PersistitException e) {
+            fail();
+        }
+*/
         t = createTable(
             "schema", "t",
             "id int not null primary key",
@@ -187,6 +222,32 @@ public class IndexScanLexicographicIT extends OperatorITBase
              1001, 1002, 1003, 1004, 1005);
     }
 
+    // Inspired by bug 1005308
+    @Ignore
+    @Test
+    public void test_HiMoreConstrainedThanLo() throws Exception
+    {
+        NewRow loRow = new NiceRow(t, store());
+        loRow.put(1, 1); // a = 1
+        RowData loRowData = loRow.toRowData();
+        NewRow hiRow = new NiceRow(t, store());
+        hiRow.put(1, 1); // a = 1
+        hiRow.put(2, 18); // b = 18
+        RowData hiRowData = hiRow.toRowData();
+        ScanRowsRequest request =
+            new ScanRowsRequest(aisGeneration(),
+                                t,
+                                idxRowType.index().getIndexId(),
+                                (byte) ScanFlag.toRowDataFormat(EnumSet.of(ScanFlag.END_RANGE_EXCLUSIVE,
+                                                                           ScanFlag.LEXICOGRAPHIC)),
+                                null,
+                                loRowData,
+                                new SetColumnSelector(1),
+                                hiRowData,
+                                new SetColumnSelector(1, 2));
+        request.executeDML(dml(), session(), store());
+    }
+
     // For use by this class
 
     private void test(IndexKeyRange keyRange, API.Ordering ordering, int ... expectedIds)
@@ -220,7 +281,6 @@ public class IndexScanLexicographicIT extends OperatorITBase
             bound = new IndexBound(row(idxRowType, a, b, c), new SetColumnSelector(0, 1, 2));
         }
         IndexKeyRange indexKeyRange = IndexKeyRange.startingAt(idxRowType, bound, inclusive);
-        indexKeyRange.lexicographic(true);
         return indexKeyRange;
     }
 
@@ -238,7 +298,6 @@ public class IndexScanLexicographicIT extends OperatorITBase
             bound = new IndexBound(row(idxRowType, a, b, c), new SetColumnSelector(0, 1, 2));
         }
         IndexKeyRange indexKeyRange = IndexKeyRange.endingAt(idxRowType, bound, inclusive);
-        indexKeyRange.lexicographic(true);
         return indexKeyRange;
     }
 
@@ -267,8 +326,7 @@ public class IndexScanLexicographicIT extends OperatorITBase
         } else {
             hi = new IndexBound(row(idxRowType, aHi, bHi, cHi), new SetColumnSelector(0, 1, 2));
         }
-        IndexKeyRange indexKeyRange = IndexKeyRange.bounded(idxRowType, lo, loInclusive, hi, hiInclusive);
-        indexKeyRange.lexicographic(true);
+        IndexKeyRange indexKeyRange = IndexKeyRange.startingAtAndEndingAt(idxRowType, lo, loInclusive, hi, hiInclusive);
         return indexKeyRange;
     }
 
@@ -304,4 +362,6 @@ public class IndexScanLexicographicIT extends OperatorITBase
     private int t;
     private RowType tRowType;
     private IndexRowType idxRowType;
+    private AkibanConnection connection;
+    private Transaction transaction;
 }

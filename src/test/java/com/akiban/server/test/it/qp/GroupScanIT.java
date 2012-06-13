@@ -34,6 +34,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Test;
 
 import java.util.Arrays;
@@ -101,7 +103,7 @@ public class GroupScanIT extends OperatorITBase
                                                                  coi,
                                                                  orderSalesmanIndexRowType,
                                                                  Arrays.asList(customerRowType),
-                                                                 LookupOption.DISCARD_INPUT);
+                                                                 InputPreservationOption.DISCARD_INPUT);
         Cursor cursor = cursor(ancestorLookup, queryContext);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor);
@@ -124,7 +126,7 @@ public class GroupScanIT extends OperatorITBase
         IndexBound tom = orderSalesmanIndexBound("tom");
         IndexKeyRange indexKeyRange = IndexKeyRange.bounded(orderSalesmanIndexRowType, tom, true, tom, true);
         Operator groupScan = indexScan_Default(orderSalesmanIndexRowType, false, indexKeyRange);
-        Operator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT  );
+        Operator lookup = branchLookup_Default(groupScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT  );
         Cursor cursor = cursor(lookup, queryContext);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),

@@ -343,6 +343,12 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
+        public HKey ancestorHKey(UserTable table)
+        {
+            return delegate.ancestorHKey(table);
+        }
+
+        @Override
         public boolean ancestorOf(RowBase that) {
             return delegate.ancestorOf(that);
         }

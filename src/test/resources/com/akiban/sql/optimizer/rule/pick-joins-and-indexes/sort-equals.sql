@@ -1,0 +1,1 @@
+SELECT name FROM customers WHERE name = 'Smith' ORDER BY 1

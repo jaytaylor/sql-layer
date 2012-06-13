@@ -2054,15 +2054,13 @@ public final class NewGiUpdateIT extends ITBase {
                 containingTables.add(ais.getUserTable(tableId));
             }
             long result = 0;
-            int giValueIndex = 0;
             for(UserTable table = giToCheck.leafMostTable();
                 table != giToCheck.rootMostTable().parentTable();
                 table = table.parentTable())
             {
                 if (containingTables.remove(table)) {
-                    result |= 1 << giValueIndex;
+                    result |= 1 << table.getDepth();
                 }
-                ++giValueIndex;
             }
             if (!containingTables.isEmpty())
                 throw new RuntimeException("tables specified not in the branch: " + containingTables);

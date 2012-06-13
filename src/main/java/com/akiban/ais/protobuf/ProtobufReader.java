@@ -37,6 +37,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -56,6 +57,7 @@ import java.util.List;
 public class ProtobufReader {
     private final AkibanInformationSchema destAIS;
     private final AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
+    private final NameGenerator nameGenerator = new DefaultNameGenerator();
 
     public ProtobufReader() {
         this(new AkibanInformationSchema());
@@ -150,7 +152,7 @@ public class ProtobufReader {
         for(AISProtobuf.Group pbGroup : pbGroups) {
             hasRequiredFields(pbGroup);
             String rootTableName = pbGroup.getRootTableName();
-            Group group = Group.create(destAIS, rootTableName);
+            Group group = Group.create(destAIS, nameGenerator.generateGroupName(rootTableName));
             String treeName = pbGroup.hasTreeName() ? pbGroup.getTreeName() : null;
             newGroups.add(new NewGroupInfo(schema, group, pbGroup, treeName));
         }
@@ -168,7 +170,6 @@ public class ProtobufReader {
 
         List<Join> joinsNeedingGroup = new ArrayList<Join>();
         
-        DefaultNameGenerator nameGenerator = new DefaultNameGenerator();
         for(NewGroupInfo newGroupInfo : newGroups) {
             String rootTableName = newGroupInfo.pbGroup.getRootTableName();
             UserTable rootUserTable = destAIS.getUserTable(newGroupInfo.schema, rootTableName);
@@ -214,6 +215,9 @@ public class ProtobufReader {
                     pbTable.hasTableId() ? pbTable.getTableId() : generatedId++
             );
             userTable.setCharsetAndCollation(getCharColl(pbTable.hasCharColl(), pbTable.getCharColl()));
+            if(pbTable.hasVersion()) {
+                userTable.setVersion(pbTable.getVersion());
+            }
             loadColumns(userTable, pbTable.getColumnsList());
             loadTableIndexes(userTable, pbTable.getIndexesList());
         }
@@ -400,7 +404,8 @@ public class ProtobufReader {
                 AISProtobuf.Table.INDEXES_FIELD_NUMBER,
                 AISProtobuf.Table.PARENTTABLE_FIELD_NUMBER,
                 AISProtobuf.Table.DESCRIPTION_FIELD_NUMBER,
-                AISProtobuf.Table.PROTECTED_FIELD_NUMBER
+                AISProtobuf.Table.PROTECTED_FIELD_NUMBER,
+                AISProtobuf.Table.VERSION_FIELD_NUMBER
         );
     }
 

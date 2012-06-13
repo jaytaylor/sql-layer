@@ -35,6 +35,7 @@ public interface RowBase extends BoundExpressions
 {
     RowType rowType();
     HKey hKey();
+    HKey ancestorHKey(UserTable table);
     boolean ancestorOf(RowBase that);
     boolean containsRealRowOf(UserTable userTable);
     Row subRow(RowType subRowType);

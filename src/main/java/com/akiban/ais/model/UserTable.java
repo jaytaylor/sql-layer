@@ -26,6 +26,7 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
@@ -113,19 +114,9 @@ public class UserTable extends Table
             if (descendantJoinColumn != null) {
                 Column descendantColumn = descendantJoinColumn.getChild();
                 matchingColumns.add(descendantColumn);
-                findMatchingDescendantColumns(descendantJoinColumn.getChild(), matchingColumns);
+                join.getChild().findMatchingDescendantColumns(descendantJoinColumn.getChild(), matchingColumns);
             }
         }
-    }
-
-    public void setSize(int size)
-    {
-        this.size = size;
-    }
-
-    public int getSize()
-    {
-        return size;
     }
 
     public void addCandidateParentJoin(Join parentJoin)
@@ -328,19 +319,9 @@ public class UserTable extends Table
         return ancestors;
     }
 
-    public Boolean isLookupTable()
-    {
-        return migrationUsage == MigrationUsage.AKIBAN_LOOKUP_TABLE;
-    }
-
     public Boolean isRoot()
     {
         return getGroup() == null || getParentJoin() == null;
-    }
-
-    public void setLookupTable(Boolean isLookup)
-    {
-        setMigrationUsage(isLookup ? MigrationUsage.AKIBAN_LOOKUP_TABLE : MigrationUsage.AKIBAN_STANDARD);
     }
 
     public MigrationUsage getMigrationUsage()
@@ -396,6 +377,7 @@ public class UserTable extends Table
                     allHKeyColumns.add(hKeyColumn.column());
                 }
             }
+            allHKeyColumns = Collections.unmodifiableList(allHKeyColumns);
         }
         return allHKeyColumns;
     }
@@ -429,6 +411,35 @@ public class UserTable extends Table
             }
         }
         return hKeyDependentTables;
+    }
+
+    public boolean hasMemoryTableFactory()
+    {
+        return tableFactory != null;
+    }
+
+    public MemoryTableFactory getMemoryTableFactory()
+    {
+        return tableFactory;
+    }
+
+    public void setMemoryTableFactory(MemoryTableFactory tableFactory)
+    {
+        this.tableFactory = tableFactory;
+    }
+
+    public boolean hasVersion()
+    {
+        return version != null;
+    }
+
+    public Integer getVersion()
+    {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
     
     private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
@@ -523,7 +534,6 @@ public class UserTable extends Table
     private final List<Join> candidateChildJoins = new ArrayList<Join>();
     private final Object lazyEvaluationLock = new Object();
 
-    private int size;
     private PrimaryKey primaryKey;
     private HKey hKey;
     private boolean containsOwnHKey;
@@ -532,6 +542,8 @@ public class UserTable extends Table
     private Integer depth = null;
     private volatile List<UserTable> hKeyDependentTables;
     private volatile List<UserTable> ancestors;
+    private MemoryTableFactory tableFactory;
+    private Integer version;
 
     // consts
 

@@ -5,6 +5,6 @@ SelectQuery@5c4e2f0a
         Flatten@7f702c48(customers INNER orders)
           AncestorLookup@1d6b6c55(orders -> [customers, orders])
             Select@77954f89[orders.order_date != Cast(2011-04-01 AS DATE NOT NULL)]
-              SingleIndexScan@6b98e8b4(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >Cast(2011-01-01 AS DATE NOT NULL), rows = 850, cost = 88536.5)
+              SingleIndexScan@6b98e8b4(Index(test.orders.order_date[IndexColumn(order_date)]), NONE, >Cast(2011-01-01 AS DATE NOT NULL), rows = 849, cost = 88536.5)
             TableSource@56a6cbf7(customers - TableGroup@3d5b89c(customers))
             TableSource@6098f192(orders - TableGroupJoin@444b0bbb(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

@@ -1,0 +1,1 @@
+CREATE INDEX cname_and_state ON customers(customers.name, addresses.state) USING LEFT JOIN;

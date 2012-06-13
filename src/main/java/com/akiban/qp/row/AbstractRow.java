@@ -52,6 +52,12 @@ public abstract class AbstractRow implements Row
     public abstract HKey hKey();
 
     @Override
+    public HKey ancestorHKey(UserTable table)
+    {
+        throw new UnsupportedOperationException(getClass().toString());
+    }
+
+    @Override
     public final boolean ancestorOf(RowBase that)
     {
         return this.hKey().prefixOf(that.hKey());

@@ -51,11 +51,12 @@ public final class IndexScanSelectorTest {
         ParameterizationBuilder builder = new ParameterizationBuilder();
 
         builder.add("ONCE", null, null);
-        param(builder, IndexScanSelector.leftJoinAfter(ais.oiGroupIndex, ais.o), "10");
-        param(builder, IndexScanSelector.leftJoinAfter(ais.oiGroupIndex, ais.i), "11");
-        param(builder, IndexScanSelector.rightJoinUntil(ais.oiGroupIndex, ais.o), "11");
-        param(builder, IndexScanSelector.rightJoinUntil(ais.oiGroupIndex, ais.i), "01");
-        param(builder, IndexScanSelector.inner(ais.oiGroupIndex), "11");
+        // bitmap descriptors are leaf to root
+        param(builder, IndexScanSelector.leftJoinAfter(ais.oiGroupIndex, ais.o), "010");
+        param(builder, IndexScanSelector.leftJoinAfter(ais.oiGroupIndex, ais.i), "110");
+        param(builder, IndexScanSelector.rightJoinUntil(ais.oiGroupIndex, ais.o), "110");
+        param(builder, IndexScanSelector.rightJoinUntil(ais.oiGroupIndex, ais.i), "100");
+        param(builder, IndexScanSelector.inner(ais.oiGroupIndex), "110");
 
         return builder.asList();
     }

@@ -26,7 +26,7 @@
 
 package com.akiban.sql.optimizer.rule.join_enum;
 
-import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.IndexScan.OrderEffectiveness;
@@ -53,6 +53,7 @@ public class QueryIndexGoal
     private AggregateSource grouping;
     private Sort ordering;
     private Project projectDistinct;
+    private Limit limit;
 
     private TableNode updateTarget;
 
@@ -61,13 +62,15 @@ public class QueryIndexGoal
                           ConditionList whereConditions,
                           AggregateSource grouping,
                           Sort ordering,
-                          Project projectDistinct) {
+                          Project projectDistinct,
+                          Limit limit) {
         this.query = query;
         this.costEstimator = costEstimator;
         this.whereConditions = whereConditions;
         this.grouping = grouping;
         this.ordering = ordering;
         this.projectDistinct = projectDistinct;
+        this.limit = limit;
 
         if ((query instanceof UpdateStatement) ||
             (query instanceof DeleteStatement))
@@ -104,6 +107,16 @@ public class QueryIndexGoal
             return ((orderEffectiveness != IndexScan.OrderEffectiveness.SORTED) &&
                     (orderEffectiveness != IndexScan.OrderEffectiveness.GROUPED));
         return false;
+    }
+
+    public int sortFields() {
+        if (ordering != null)
+            return ordering.getOrderBy().size();
+        if (projectDistinct != null)
+            return projectDistinct.getFields().size();
+        if (grouping != null)
+            return grouping.getNGroupBy();
+        return 0;
     }
 
     /** Change GROUP BY, and ORDER BY upstream of <code>node</code> as
@@ -145,6 +158,13 @@ public class QueryIndexGoal
             }
             distinct.setImplementation(implementation);
         }
+    }
+
+    public long getLimit() {
+        if ((limit == null) || limit.isOffsetParameter() || limit.isLimitParameter())
+            return -1;
+        // The number of rows that must be processed before you are done.
+        return (limit.getOffset() + limit.getLimit());
     }
 
 }

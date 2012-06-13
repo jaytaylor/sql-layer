@@ -454,6 +454,10 @@ public class ApiTestBase {
         return createTable(schema, table, unifiedDef.toString());
     }
 
+    protected final int createTable(TableName tableName, String... definitions) throws InvalidOperationException {
+        return createTable(tableName.getSchemaName(), tableName.getTableName(), definitions);
+    }
+
     private AkibanInformationSchema createIndexInternal(String schema, String table, String indexName, String... indexCols) {
         String ddl = String.format("CREATE INDEX \"%s\" ON \"%s\".\"%s\"(%s)", indexName, schema, table,
                                    Strings.join(Arrays.asList(indexCols), ","));
@@ -791,7 +795,11 @@ public class ApiTestBase {
     }
 
     protected final UserTable getUserTable(String schema, String name) {
-        return ddl().getUserTable(session(), tableName(schema, name));
+        return getUserTable(tableName(schema, name));
+    }
+
+    protected final UserTable getUserTable(TableName name) {
+        return ddl().getUserTable(session(), name);
     }
 
     protected final UserTable getUserTable(int tableId) {

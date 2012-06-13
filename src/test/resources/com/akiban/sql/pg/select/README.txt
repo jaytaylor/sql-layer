@@ -86,6 +86,10 @@ select-24g: RIGHT join group index
 
 select-25u: USER environment functions
 
+select-26: index range
+
+select-27: side branch with outer join
+
 types: select all typed fields
 
 types_a_date: match literal

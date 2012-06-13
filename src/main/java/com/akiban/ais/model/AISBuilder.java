@@ -257,6 +257,11 @@ public class
         LOG.info("basicSchemaIsComplete");
         for (UserTable userTable : ais.getUserTables().values()) {
             userTable.endTable();
+            // endTable may have created new index, set its tree name if so
+            Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+            if (index.getTreeName() == null) {
+                index.setTreeName(nameGenerator.generateIndexTreeName(index));
+            }
         }
         for (ForwardTableReference forwardTableReference : forwardReferences.values()) {
             UserTable childTable = forwardTableReference.childTable();
@@ -761,6 +766,19 @@ public class
     
     public int getIndexIdOffset() {
         return indexIdGenerator;
+    }
+
+    /**
+     * Tree names are normally set when adding a table to a group (all tables in a group
+     * must have the same tree name). If testing parts of builder that aren't grouped and
+     * LIVE_VALIDATIONS are called, this is a simple work around for that.
+     */
+    public void setTableTreeNamesForTest() {
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getTreeName() == null) {
+                table.setTreeName(table.getName().getDescription());
+            }
+        }
     }
 
     // State
