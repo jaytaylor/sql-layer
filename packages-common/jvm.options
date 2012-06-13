@@ -70,7 +70,7 @@ JVM_OPTS="$JVM_OPTS -Djava.net.preferIPv4Stack=true"
 if [ "`uname`" = "Linux" ] ; then
     # reduce the per-thread stack size 
     # Only do so on Linux where it is known to be supported.
-    JVM_OPTS="$JVM_OPTS -Xss128k"
+    JVM_OPTS="$JVM_OPTS -Xss160k"
 fi
 
 # GC tuning options
