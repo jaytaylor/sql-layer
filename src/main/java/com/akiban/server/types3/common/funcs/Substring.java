@@ -36,108 +36,106 @@ import java.util.List;
 public abstract class Substring extends TOverloadBase {
 
     public static TOverload[] create(TClass stringType, TClass numericType) {
-        return new TOverload[]{
-            // TWO ARGUMENTS
-                    new Substring(stringType, numericType) {
+        TOverload twoArgs =
+                new Substring(stringType, numericType) {
 
-                        @Override
-                        protected void buildInputSets(TInputSetBuilder builder) {
-                            builder.covers(stringType, 0);
-                            builder.covers(numericType, 1);
-                        }
+                    @Override
+                    protected void buildInputSets(TInputSetBuilder builder) {
+                        builder.covers(stringType, 0);
+                        builder.covers(numericType, 1);
+                    }
 
-                        @Override
-                        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                            String str = (String) inputs.get(0).getObject();
-                            int from = adjustIndex(str, inputs.get(1).getInt32());
+                    @Override
+                    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                        String str = (String) inputs.get(0).getObject();
+                        int from = adjustIndex(str, inputs.get(1).getInt32());
 
-                            if (from == -1) {
-                                output.putObject("");
-                            } else {
-                                output.putObject(getSubstring(str.length() - 1, from, str));
-                            }
-                        }
-
-                        @Override
-                        public TOverloadResult resultType() {
-                            return TOverloadResult.custom(new TCustomOverloadResult() {
-
-                                @Override
-                                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                                    TPreptimeValue preptimeValue = inputs.get(0);
-                                    int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
-                                    int stringCharsetId = preptimeValue.instance().attribute(StringAttribute.CHARSET);
-
-                                    final int offset, calculatedLength;
-                                    TPreptimeValue offsetValue = inputs.get(1);
-                                    if (offsetValue.value() == null) {
-                                        offset = 0; // assume string starts at beginning
-                                    } else {
-                                        offset = offsetValue.value().getInt32();
-                                    }
-
-                                    calculatedLength = calculateCharLength(stringLength, offset, Integer.MAX_VALUE);
-                                    return stringType.instance(calculatedLength, stringCharsetId);
-                                }
-                            });
-                        }
-                    },
-            // THREE ARGUMENTS
-                    new Substring(stringType, numericType) {
-
-                        @Override
-                        protected void buildInputSets(TInputSetBuilder builder) {
-                            builder.covers(stringType, 0);
-                            builder.covers(numericType, 1, 2);
-                        }
-
-                        @Override
-                        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                            String str = (String) inputs.get(0).getObject();
-                            int length = str.length();
-                            int from = adjustIndex(str, inputs.get(1).getInt32());
-
-                            if (from == -1) {
-                                output.putObject("");
-                            } else {
-                                output.putObject(getSubstring(from + inputs.get(2).getInt32() - 1, from, str));
-                            }
-                        }
-
-                        @Override
-                        public TOverloadResult resultType() {
-                            return TOverloadResult.custom(new TCustomOverloadResult() {
-
-                                @Override
-                                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                                    TPreptimeValue preptimeValue = inputs.get(0);
-                                    int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
-                                    int stringCharsetId = preptimeValue.instance().attribute(StringAttribute.CHARSET);
-
-                                    final int offset, substringLength, calculatedLength;
-                                    TPreptimeValue offsetValue = inputs.get(1);
-                                    if (offsetValue.value() == null) {
-                                        offset = 0; // assume string starts at beginning
-                                    } else {
-                                        offset = offsetValue.value().getInt32();
-                                    }
-
-                                    TPreptimeValue substringLengthValue = inputs.get(2);
-                                    if (substringLengthValue.value() == null) {
-                                        substringLength = Integer.MAX_VALUE; // assume string is unbounded
-                                    } else {
-                                        substringLength = substringLengthValue.value().getInt32();
-                                    }
-
-                                    calculatedLength = calculateCharLength(stringLength, offset, substringLength);
-                                    return stringType.instance(calculatedLength, stringCharsetId);
-                                }
-                            });
+                        if (from == -1) {
+                            output.putObject("");
+                        } else {
+                            output.putObject(getSubstring(str.length() - 1, from, str));
                         }
                     }
+
+                    @Override
+                    public TOverloadResult resultType() {
+                        return TOverloadResult.custom(new TCustomOverloadResult() {
+
+                            @Override
+                            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                                TPreptimeValue preptimeValue = inputs.get(0);
+                                int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
+                                int stringCharsetId = preptimeValue.instance().attribute(StringAttribute.CHARSET);
+
+                                final int offset, calculatedLength;
+                                TPreptimeValue offsetValue = inputs.get(1);
+                                if (offsetValue.value() == null) {
+                                    offset = 0; // assume string starts at beginning
+                                } else {
+                                    offset = offsetValue.value().getInt32();
+                                }
+
+                                calculatedLength = calculateCharLength(stringLength, offset, Integer.MAX_VALUE);
+                                return stringType.instance(calculatedLength, stringCharsetId);
+                            }
+                        });
+                    }
                 };
+        TOverload threeArgs =
+                new Substring(stringType, numericType) {
+
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+                builder.covers(stringType, 0);
+                builder.covers(numericType, 1, 2);
+            }
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                String str = (String) inputs.get(0).getObject();
+                int length = str.length();
+                int from = adjustIndex(str, inputs.get(1).getInt32());
+
+                if (from == -1) {
+                    output.putObject("");
+                } else {
+                    output.putObject(getSubstring(from + inputs.get(2).getInt32() - 1, from, str));
+                }
+            }
+
+            @Override
+            public TOverloadResult resultType() {
+                return TOverloadResult.custom(new TCustomOverloadResult() {
+
+                    @Override
+                    public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                        TPreptimeValue preptimeValue = inputs.get(0);
+                        int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
+                        int stringCharsetId = preptimeValue.instance().attribute(StringAttribute.CHARSET);
+
+                        final int offset, substringLength, calculatedLength;
+                        TPreptimeValue offsetValue = inputs.get(1);
+                        if (offsetValue.value() == null) {
+                            offset = 0; // assume string starts at beginning
+                        } else {
+                            offset = offsetValue.value().getInt32();
+                        }
+
+                        TPreptimeValue substringLengthValue = inputs.get(2);
+                        if (substringLengthValue.value() == null) {
+                            substringLength = Integer.MAX_VALUE; // assume string is unbounded
+                        } else {
+                            substringLength = substringLengthValue.value().getInt32();
+                        }
+
+                        calculatedLength = calculateCharLength(stringLength, offset, substringLength);
+                        return stringType.instance(calculatedLength, stringCharsetId);
+                    }
+                });
+            }
+        };
+        return new TOverload[]{twoArgs, threeArgs};
     }
-    
     protected final TClass stringType;
     protected final TClass numericType;
 
