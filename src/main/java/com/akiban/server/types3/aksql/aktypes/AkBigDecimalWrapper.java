@@ -75,9 +75,16 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
+    public long ceil() {
+        value.setScale(0, RoundingMode.CEILING);
+        return value.longValue();
+    }
+    
+    @Override
     public int getSign() {
         return value.signum();
     }
         
     private BigDecimal value;
+
 }

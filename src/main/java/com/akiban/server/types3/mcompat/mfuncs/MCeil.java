@@ -26,15 +26,15 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.List;
 
 public class MCeil extends TOverloadBase {
 
@@ -56,6 +56,28 @@ public class MCeil extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.DECIMAL.instance());
+        return TOverloadResult.custom(new TCustomOverloadResult() {
+            private final int ZERO_DEFAULT = 13;
+            private final int BIGINT_DEFAULT = 17;
+            private final int DECIMAL_DEFAULT = 16;
+
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                TPreptimeValue preptimeValue = inputs.get(0);
+                int precision = preptimeValue.instance().attribute(MBigDecimal.Attrs.PRECISION);
+                int scale = preptimeValue.instance().attribute(MBigDecimal.Attrs.SCALE);
+                
+                // Special case: DECIMAL(0,0)
+                if (precision + scale == 0) 
+                    return MNumeric.BIGINT.instance(ZERO_DEFAULT);
+                
+                int length = precision - scale;
+                if (length >= 0 && length < 9)
+                    return MNumeric.INT.instance(length+3);
+                if (length >= 9 && length < 14)
+                    return MNumeric.BIGINT.instance(BIGINT_DEFAULT);
+                return MNumeric.DECIMAL.instance(DECIMAL_DEFAULT, 0);
+            }         
+        });
     }
 }
