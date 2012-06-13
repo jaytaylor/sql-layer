@@ -54,10 +54,6 @@ public class AkDegrees extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-<<<<<<< TREE
         return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
-=======
-        return TOverloadResult.fixed(AkNumeric.DOUBLE);
->>>>>>> MERGE-SOURCE
     }
 }
