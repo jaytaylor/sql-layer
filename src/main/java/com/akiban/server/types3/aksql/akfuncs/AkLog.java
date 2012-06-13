@@ -38,7 +38,7 @@ public class AkLog extends TOverloadBase{
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(AkNumeric.DOUBLE, 0).covers(AkNumeric.DOUBLE, 1);
+        builder.covers(AkNumeric.DOUBLE, 0, 1);
     }
 
     @Override

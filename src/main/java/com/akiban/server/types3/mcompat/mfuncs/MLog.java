@@ -39,7 +39,7 @@ public class MLog extends TOverloadBase{
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(MNumeric.DECIMAL, 0).covers(MNumeric.DECIMAL, 1);
+        builder.covers(MNumeric.DECIMAL, 0, 1);
     }
 
     @Override
