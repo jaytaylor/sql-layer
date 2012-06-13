@@ -38,8 +38,6 @@ import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.sql.RegexFilenameFilter;
 
-import com.akiban.ais.model.Index.JoinType;
-
 import org.junit.Ignore;
 
 import java.io.BufferedReader;

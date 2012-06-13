@@ -43,7 +43,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.operator.memoryadapter.MemoryAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;

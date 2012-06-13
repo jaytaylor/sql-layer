@@ -37,7 +37,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
-import com.google.common.base.Function;
 
 import java.util.Collection;
 import java.util.List;

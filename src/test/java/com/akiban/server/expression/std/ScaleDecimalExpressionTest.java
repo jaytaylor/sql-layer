@@ -28,7 +28,6 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.OverflowException;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;

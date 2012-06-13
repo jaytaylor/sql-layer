@@ -28,17 +28,13 @@ package com.akiban.sql.server;
 
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.error.TransactionInProgressException;
-import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.session.Session;
 
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.RollbackException;
 
 import java.util.Date;
-import java.io.InterruptedIOException;
 
 public class ServerTransaction
 {

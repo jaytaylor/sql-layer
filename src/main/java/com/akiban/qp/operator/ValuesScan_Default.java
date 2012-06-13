@@ -33,7 +33,6 @@ import java.util.Iterator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
 /**

@@ -38,7 +38,6 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.RowCollector;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {

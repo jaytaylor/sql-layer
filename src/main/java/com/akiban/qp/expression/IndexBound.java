@@ -27,8 +27,6 @@
 package com.akiban.qp.expression;
 
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
 
 public class IndexBound

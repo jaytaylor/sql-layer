@@ -26,7 +26,6 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
@@ -39,13 +38,11 @@ import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 

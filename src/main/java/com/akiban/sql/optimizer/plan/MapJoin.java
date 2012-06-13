@@ -28,8 +28,6 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
-import com.akiban.server.error.AkibanInternalException;
-
 import java.util.*;
 
 /** A join implementation using Map. */

@@ -29,7 +29,6 @@ package com.akiban.qp.row;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.ValueSource;
 
 public interface RowBase extends BoundExpressions
 {

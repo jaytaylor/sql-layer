@@ -32,7 +32,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.ByteSource;
-import com.persistit.Key;
 import com.persistit.Value;
 
 import java.math.BigDecimal;

@@ -50,7 +50,6 @@ import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
 import static java.lang.Math.abs;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 public class SkipScanPerformanceIT extends OperatorITBase

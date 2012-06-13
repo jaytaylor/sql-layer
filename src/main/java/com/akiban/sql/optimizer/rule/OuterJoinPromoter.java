@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.error.UnsupportedSQLException;
-
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 

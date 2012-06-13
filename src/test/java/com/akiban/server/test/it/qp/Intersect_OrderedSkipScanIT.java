@@ -44,7 +44,6 @@ import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
-import static junit.framework.Assert.fail;
 
 public class Intersect_OrderedSkipScanIT extends OperatorITBase
 {

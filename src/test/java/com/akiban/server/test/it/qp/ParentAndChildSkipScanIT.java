@@ -44,7 +44,6 @@ import org.junit.Test;
 import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.indexScan_Default;
 import static com.akiban.server.expression.std.Expressions.field;
 
 public class ParentAndChildSkipScanIT extends OperatorITBase

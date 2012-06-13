@@ -35,14 +35,8 @@ import com.akiban.qp.row.OverlayingRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.store.PersistitStore;
 import com.akiban.util.tap.Tap;
-import com.akiban.util.tap.TapReport;
-import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.concurrent.Callable;

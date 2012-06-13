@@ -36,7 +36,6 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
-import com.akiban.server.error.SubqueryResultsSetupException;
 import com.akiban.server.error.TableIsBadSubqueryException;
 import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.error.ViewHasBadSubqueryException;

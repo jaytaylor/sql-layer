@@ -29,7 +29,6 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionType;
 import java.util.List;
 
 public abstract class TernaryComposer implements ExpressionComposer

@@ -29,7 +29,6 @@ package com.akiban.qp.operator;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.exec.Plannable;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
