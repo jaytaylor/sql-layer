@@ -683,7 +683,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case VARCHAR:
             if (sqlType != null)
                 return ExpressionTypes.varchar(sqlType.getMaximumWidth(),
-                                               sqlType.getCollation());
+                                               sqlType.getCharacterAttributes());
             else
                 return ExpressionTypes.varchar(TypeId.VARCHAR_ID.getMaximumMaximumWidth(), null);
         case VARBINARY:

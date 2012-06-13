@@ -31,6 +31,8 @@ import com.akiban.server.expression.ExpressionType;
 
 import com.akiban.server.types.AkType;
 
+import com.akiban.sql.types.CharacterTypeAttributes;
+
 public class ExpressionTypes
 {
     public static final ExpressionType BOOL = newType(AkType.BOOL);
@@ -61,8 +63,8 @@ public class ExpressionTypes
         return varchar(length, null);
     }
 
-    public static ExpressionType varchar(int length, String collation) {
-        return newType(AkType.VARCHAR, length, 0, collation);
+    public static ExpressionType varchar(int length, CharacterTypeAttributes characterAttributes) {
+        return newType(AkType.VARCHAR, length, 0, characterAttributes);
     }
 
     public static ExpressionType varbinary(int length) {
@@ -82,8 +84,8 @@ public class ExpressionTypes
     }
 
     public static ExpressionType newType(AkType type, int precision, int scale, 
-                                         String collation) {
-        return new ExpressionTypeImpl(type, precision, scale, collation);
+                                         CharacterTypeAttributes characterAttributes) {
+        return new ExpressionTypeImpl(type, precision, scale, characterAttributes);
     }
 
     static class ExpressionTypeImpl implements ExpressionType {
@@ -103,29 +105,29 @@ public class ExpressionTypes
         }
 
         @Override
-        public String getCollation() {
-            return collation;
+        public CharacterTypeAttributes getCharacterAttributes() {
+            return characterAttributes;
         }
 
         @Override
         public String toString() {
             StringBuilder str = new StringBuilder(type.toString());
             str.append("(").append(precision).append(",").append(scale).append(")");
-            if (collation != null)
-                str.append(" COLLATE ").append(collation);
+            if (characterAttributes != null)
+                str.append(" ").append(characterAttributes);
             return str.toString();
         }
         
-        ExpressionTypeImpl(AkType type, int precision, int scale, String collation) {
+        ExpressionTypeImpl(AkType type, int precision, int scale, CharacterTypeAttributes characterAttributes) {
             this.type = type;
             this.precision = precision;
             this.scale = scale;
-            this.collation = collation;
+            this.characterAttributes = characterAttributes;
         }
 
         private AkType type;
         private int precision, scale;
-        private String collation;
+        private CharacterTypeAttributes characterAttributes;
     }
     
     private ExpressionTypes() {
