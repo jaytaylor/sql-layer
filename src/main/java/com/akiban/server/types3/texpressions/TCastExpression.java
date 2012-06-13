@@ -29,10 +29,14 @@ package com.akiban.server.types3.texpressions;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+
+import java.util.Collections;
 
 public final class TCastExpression implements TPreparedExpression {
     @Override
@@ -43,7 +47,7 @@ public final class TCastExpression implements TPreparedExpression {
         }
         else {
             value = new PValue(cast.targetClass().underlyingType());
-            cast.evaluate(inputValue.value(), targetInstance, value);
+            cast.evaluate(null, inputValue.value(), value);
         }
         return new TPreptimeValue(targetInstance, value);
     }
@@ -55,14 +59,16 @@ public final class TCastExpression implements TPreparedExpression {
 
     @Override
     public TEvaluatableExpression build() {
-        return new CastEvaluation(input.build(), cast, targetInstance);
+        TExecutionContext context = preptimeContext.createExecutionContext();
+        return new CastEvaluation(input.build(), context, cast);
     }
 
-    public TCastExpression(TPreparedExpression input, TCast cast) {
+    public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance) {
         this.input = input;
         this.cast = cast;
         inputValue = input.evaluateConstant();
-        targetInstance = cast.targetInstance(inputValue);
+        this.targetInstance = targetInstance;
+        this.preptimeContext = new TPreptimeContext(Collections.singletonList(input.resultType()), targetInstance);
     }
 
 
@@ -70,6 +76,7 @@ public final class TCastExpression implements TPreparedExpression {
     private final TInstance targetInstance;
     private final TPreparedExpression input;
     private final TCast cast;
+    private final TPreptimeContext preptimeContext;
 
     private static class CastEvaluation implements TEvaluatableExpression {
         @Override
@@ -81,7 +88,7 @@ public final class TCastExpression implements TPreparedExpression {
         public void evaluate() {
             inputEval.evaluate();
             PValueSource inputVal = inputEval.resultValue();
-            cast.evaluate(inputVal, targetInstance, value);
+            cast.evaluate(null, inputVal, value);
         }
 
         @Override
@@ -94,15 +101,15 @@ public final class TCastExpression implements TPreparedExpression {
             inputEval.with(context);
         }
 
-        private CastEvaluation(TEvaluatableExpression inputEval, TCast cast, TInstance targetInstance) {
+        private CastEvaluation(TEvaluatableExpression inputEval, TExecutionContext context, TCast cast) {
+            this.context = context;
             this.inputEval = inputEval;
             this.cast = cast;
-            this.targetInstance = targetInstance;
-            this.value = new PValue(targetInstance.typeClass().underlyingType());
+            this.value = new PValue(context.outputTInstance().typeClass().underlyingType());
         }
 
-        private final TInstance targetInstance;
         private final TEvaluatableExpression inputEval;
+        private final TExecutionContext context;
         private final TCast cast;
         private final PValue value;
     }

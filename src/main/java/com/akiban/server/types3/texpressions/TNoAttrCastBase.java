@@ -24,17 +24,29 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.texpressions;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.common.types.NoAttrTClass;
 
-public interface TCast {
-    boolean isAutomatic();
-    Constantness constness();
-    public TClass sourceClass();
-    public TClass targetClass();
-    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput);
-    public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target);
+public abstract class TNoAttrCastBase extends TCastBase {
+
+    @Override
+    public TClass targetClass() {
+        return tClass;
+    }
+
+    @Override
+    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput) {
+        return tClass.instance();
+    }
+
+    protected TNoAttrCastBase(NoAttrTClass tClass) {
+        this.tClass = tClass;
+    }
+
+    private final NoAttrTClass tClass;
 }

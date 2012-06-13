@@ -59,7 +59,7 @@ public final class TExecutionContext {
         return preptimeCache.getIfDefined(index);
     }
 
-    public Object hasExectimeObject(int index) {
+    public boolean hasExectimeObject(int index) {
         return exectimeCache != null && exectimeCache.isDefined(index);
     }
 
