@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.error.OverflowException;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -69,6 +68,18 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     @Override
     public long ceil() {
         value.setScale(0, RoundingMode.CEILING);
+        return value.longValue();
+    }
+    
+    @Override
+    public long floor() {
+        value.setScale(0, RoundingMode.FLOOR);
+        return value.longValue();
+    }
+    
+    @Override
+    public long truncate(int scale) {
+        value.setScale(scale, RoundingMode.DOWN);
         return value.longValue();
     }
     
