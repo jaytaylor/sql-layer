@@ -271,7 +271,7 @@ public abstract class Tap
         StringBuilder sb = new StringBuilder();
         for (Tap tap : dispatchesCopy()) {
             int length = sb.length();
-            tap.appendReport(sb);
+            tap.appendReport(null, sb);
             if (sb.length() > length) {
                 sb.append(NEW_LINE);
             }
@@ -343,7 +343,7 @@ public abstract class Tap
 
     abstract void out();
 
-    abstract void appendReport(StringBuilder buffer);
+    abstract void appendReport(String label, StringBuilder buffer);
 
     abstract TapReport[] getReports();
 
