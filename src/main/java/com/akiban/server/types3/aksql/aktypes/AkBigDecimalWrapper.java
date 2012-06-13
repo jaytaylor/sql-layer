@@ -28,6 +28,7 @@ package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 public class AkBigDecimalWrapper implements BigDecimalWrapper {
     
@@ -63,6 +64,20 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         value = value.divide(o.value);
         return this;
     }
-    
+
+    @Override
+    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
+    {
+        value = value.divide(((AkBigDecimalWrapper)augend).value,
+                scale,
+                RoundingMode.HALF_UP);
+        return this;
+    }
+
+    @Override
+    public int getSign() {
+        return value.signum();
+    }
+        
     private BigDecimal value;
 }

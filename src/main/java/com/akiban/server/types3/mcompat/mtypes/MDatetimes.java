@@ -23,13 +23,26 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.TTrigs;
+package com.akiban.server.types3.mcompat.mtypes;
 
-public class AkTrig
-{
-    public static final TOverload TRIGS[] = TTrigs.create(AkNumeric.DOUBLE.instance());
+import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.pvalue.PUnderlying;
+
+public class MDatetimes {
+
+    private static final TBundleID bundle = MBundle.INSTANCE.id();
+    
+    public static final NoAttrTClass DATE = new NoAttrTClass(bundle,
+            "date", 1, 1, 4, PUnderlying.INT_32);
+    public static final NoAttrTClass DATETIME = new NoAttrTClass(bundle,
+            "datetime", 1, 1, 8, PUnderlying.INT_64);
+    public static final NoAttrTClass TIME = new NoAttrTClass(bundle,
+            "time", 1, 1, 4, PUnderlying.INT_32);
+    public static final NoAttrTClass YEAR = new NoAttrTClass(bundle,
+            "year", 1, 1, 1, PUnderlying.INT_8);
+    public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
+            "timestamp", 1, 1, 4, PUnderlying.INT_32);
 }

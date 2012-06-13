@@ -23,13 +23,17 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.aksql.akfuncs;
+
+package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.TTrigs;
+import com.akiban.server.types3.common.funcs.LeftRight;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
-public class AkTrig
+public class MLeftRight
 {
-    public static final TOverload TRIGS[] = TTrigs.create(AkNumeric.DOUBLE.instance());
+    public static final TOverload LEFT = LeftRight.getLeft(MString.VARCHAR, MNumeric.INT);
+    
+    public static final TOverload RIGHT = LeftRight.getRight(MString.VARCHAR, MNumeric.INT);
 }

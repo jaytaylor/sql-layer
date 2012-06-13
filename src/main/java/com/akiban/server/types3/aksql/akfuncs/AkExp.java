@@ -23,13 +23,14 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.TTrigs;
+import com.akiban.server.types3.common.funcs.Exp;
 
-public class AkTrig
+public class AkExp
 {
-    public static final TOverload TRIGS[] = TTrigs.create(AkNumeric.DOUBLE.instance());
+    public static final TOverload INSTANCE = new Exp(AkNumeric.DOUBLE);
 }

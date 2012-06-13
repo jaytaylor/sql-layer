@@ -46,6 +46,22 @@ public abstract class TString extends TClass
     }
     
     @Override
+    public TInstance instance()
+    {
+        return instance(StringFactory.DEFAULT_LENGTH, 
+                        StringFactory.DEFAULT_CHARSET.ordinal(),
+                        StringFactory.DEFAULT_COLLATION_ID);
+    }
+
+    @Override
+    public TInstance instance(int length)
+    {
+        return instance(length < 0 ? 0 : length, 
+                        StringFactory.DEFAULT_CHARSET.ordinal(),
+                        StringFactory.DEFAULT_COLLATION_ID);
+    }
+    
+    @Override
     public TFactory factory()
     {
         return new StringFactory(this);

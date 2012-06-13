@@ -69,13 +69,22 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     @Override
     public long ceil() {
         value.setScale(0, RoundingMode.CEILING);
-        
-        if (LONG_MAX.compareTo(value) > 0 || LONG_MIN.compareTo(value) < 0)
-            throw new OverflowException();
         return value.longValue();
     }
     
+    @Override
+    public int getSign() {
+        return value.signum();
+    }
+    
     private BigDecimal value;
-    private static final BigDecimal LONG_MAX = new BigDecimal(Long.MAX_VALUE);
-    private static final BigDecimal LONG_MIN = new BigDecimal(Long.MIN_VALUE);
+
+    @Override
+    public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
+    {
+        value = value.divide(((MBigDecimalWrapper)augend).value,
+                scale,
+                RoundingMode.HALF_UP);
+        return this;
+    }
 }
