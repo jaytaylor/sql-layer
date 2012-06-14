@@ -60,9 +60,9 @@ class Dispatch extends Tap
         currentTap.reset();
     }
 
-    public void appendReport(StringBuilder buffer)
+    public void appendReport(String label, StringBuilder buffer)
     {
-        currentTap.appendReport(buffer);
+        currentTap.appendReport(label, buffer);
     }
 
     public TapReport[] getReports()

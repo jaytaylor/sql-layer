@@ -33,9 +33,7 @@ import com.akiban.server.rowdata.SchemaFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.io.File;
 import java.io.FileInputStream;
 

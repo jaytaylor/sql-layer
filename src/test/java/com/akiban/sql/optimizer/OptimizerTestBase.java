@@ -34,15 +34,12 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index.JoinType;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
-import com.akiban.util.Strings;
 import org.junit.Before;
 import org.junit.Ignore;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 

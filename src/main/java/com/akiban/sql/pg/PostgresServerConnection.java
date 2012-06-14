@@ -43,7 +43,6 @@ import com.akiban.ais.model.TableName;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.operator.memoryadapter.MemoryAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
@@ -631,14 +630,14 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void rebuildCompiler() {
         parser = new SQLParser();
         Set<SQLParserFeature> features = parser.getFeatures();
-        if (false) {
-            // TODO: Need some kind of MySQL compatibility setting(s).
-            // These are the ones not currently on by default.
+        // TODO: Others that are on by defaults could have override to turn them
+        // off, but they are pretty harmless.
+        if (Boolean.parseBoolean(getProperty("parserInfixBit", "false")))
             features.add(SQLParserFeature.INFIX_BIT_OPERATORS);
+        if (Boolean.parseBoolean(getProperty("parserInfixLogical", "false")))
             features.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
+        if ("string".equals(getProperty("parserDoubleQuoted", "identifier")))
             features.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
-        }
-
         defaultSchemaName = getProperty("database");
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
@@ -799,6 +798,9 @@ public class PostgresServerConnection extends ServerSessionBase
             return true;
         }
         if ("OutputFormat".equals(key) ||
+            "parserInfixBit".equals(key) ||
+            "parserInfixLogical".equals(key) ||
+            "parserDoubleQuoted".equals(key) ||
             "cbo".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();

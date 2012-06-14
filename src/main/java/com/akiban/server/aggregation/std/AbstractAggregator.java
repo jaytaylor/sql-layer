@@ -29,7 +29,6 @@ package com.akiban.server.aggregation.std;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;

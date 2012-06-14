@@ -249,12 +249,13 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    public int getPeggedCount() {
-        // Note! Really what we want are the *leading* equalities. But this method is only
-        // used in the context of MultiIndexEnumerator, which will only put in leading
-        // equalities.
-        List<ExpressionNode> equalityComparands = getEqualityComparands();
-        return (equalityComparands == null) ? 0 : equalityComparands.size();
+    public int getNEquality() {
+        int nequals = 0;
+        if (equalityComparands != null)
+            nequals = equalityComparands.size();
+        if ((conditionRange != null) && conditionRange.isAllSingle())
+            nequals++;
+        return nequals;
     }
 
     @Override

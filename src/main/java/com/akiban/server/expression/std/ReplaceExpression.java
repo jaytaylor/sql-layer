@@ -45,9 +45,9 @@ public class ReplaceExpression extends AbstractTernaryExpression
     public static final ExpressionComposer COMPOSER = new TernaryComposer()
     {
         @Override
-        protected Expression compose(Expression first, Expression second, Expression third)
+        protected Expression doCompose(List<? extends Expression> arguments)
         {
-            return new ReplaceExpression(first, second, third);
+            return new ReplaceExpression(arguments);
         }
 
         @Override
@@ -94,9 +94,9 @@ public class ReplaceExpression extends AbstractTernaryExpression
         }
     }
 
-    public ReplaceExpression (Expression first, Expression second, Expression third)
+    public ReplaceExpression (List<? extends Expression> arguments)
     {
-        super(AkType.VARCHAR, first, second, third);
+        super(AkType.VARCHAR, arguments);
     }
 
     @Override

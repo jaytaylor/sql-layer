@@ -4,5 +4,5 @@ SelectQuery@6b98e8b4
       Select@444b0bbb[]
         Flatten@3b8e80a6(customers)
           AncestorLookup@1aef4504(customers -> [customers])
-            IndexScan@529c176c(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith)
+            SingleIndexScan@529c176c(Index(test.customers.name[IndexColumn(name)]), NONE, =Smith)
             TableSource@56b61c3(customers - TableGroup@1de4eb5b(customers))

@@ -38,7 +38,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.server.ServerServiceRequirements;
 
 public class PersistitCLILoadablePlanIT extends ITBase {
 

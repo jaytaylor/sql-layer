@@ -28,6 +28,6 @@ package com.akiban.server.expression.std;
 
 public interface Matcher
 {
-    boolean match(String str);
+    int match(String str, int count);
     boolean sameState(String pattern, char escape);
 }
