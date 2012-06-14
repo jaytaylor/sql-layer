@@ -52,10 +52,15 @@ public abstract class Pad extends TOverloadBase
                 @Override
                 String doPadding(String st, int times, String toAdd)
                 {
-                    StringBuilder prefix = new StringBuilder();
-                    
-                    while (times-- >= 0)
+                    StringBuilder prefix = new StringBuilder();                    
+                    int delta = times - st.length();
+                    int limit = delta / toAdd.length();
+                    int remain = delta % toAdd.length();
+
+                    while (limit-- > 0)
                         prefix.append(toAdd);
+                    for (int n = 0; n < remain; ++n)
+                        prefix.append(toAdd.charAt(n));
                     
                     return prefix.append(st).toString();
                 }   
@@ -66,8 +71,15 @@ public abstract class Pad extends TOverloadBase
                 String doPadding(String st, int times, String toAdd)
                 {
                     StringBuilder ret = new StringBuilder(st);
-                    while (times-- >= 0)
+                    int delta = times - st.length();
+                    int limit = delta / toAdd.length();
+                    int remain = delta % toAdd.length();
+                    
+                    while (limit-- > 0)
                         ret.append(toAdd);
+                    for (int n = 0; n < remain; ++n)
+                        ret.append(toAdd.charAt(n));
+
                     return ret.toString();
                 }
             }
@@ -126,10 +138,12 @@ public abstract class Pad extends TOverloadBase
             {
                 PValueSource len = inputs.get(1).value();
                 
-                // if the argument isn't availabe or is null
+                // if the argument isn't availabe
                 // return LONGTEXT 
-                if (len == null || len.isNull())
+                if (len == null)
                     throw new UnsupportedOperationException("LONGTEXT type is not available");
+                else if (len.isNull())
+                    return stringType.instance(0);
                 else
                     return stringType.instance(len.getInt32());
             }
