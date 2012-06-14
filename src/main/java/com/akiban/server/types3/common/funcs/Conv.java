@@ -85,17 +85,7 @@ public class Conv extends TOverloadBase
                 || !isInRange(Math.abs(toBase), MIN_BASE, MAX_BASE)) // toBase can be negative
             output.putNull();
         else
-            try
-            {
-                output.putObject(doConvert(truncateNonDigits(st),
-                                           fromBase,
-                                           toBase));
-            }
-            catch (NumberFormatException e) // in valid digits will result in 
-            {                               // zero string (as per MySQL)
-                context.warnClient(new InvalidCharToNumException(e.getMessage()));
-                output.putObject("0");
-            }
+            output.putObject(doConvert(truncateNonDigits(st),fromBase, toBase));
     }
 
     @Override
@@ -166,6 +156,7 @@ public class Conv extends TOverloadBase
      */
     private static String doConvert(String st, int fromBase, int toBase)
     {
+        if (st.isEmpty()) return "";
         boolean signed = toBase < 0;
         if (signed)
             toBase = -toBase;
@@ -177,6 +168,10 @@ public class Conv extends TOverloadBase
         if (!signed && num.signum() < 0)
             num = num.abs().xor(N64).add(BigInteger.ONE);
 
+        // cap the output to <= N64
+        if (num.compareTo(N64) > 0)
+            num = N64;
+        
         return num.toString(toBase).toUpperCase();
      }
 }
