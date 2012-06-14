@@ -26,24 +26,11 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.Rand;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import java.util.Random;
 
-public class MRandOneArg extends MRandBase {
-    
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.vararg(MNumeric.INT, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        if (!doEvaluate(context, output))
-            putRandom(context, new Random(inputs.get(0).getInt32()), output);
-    }
+public class MRand {
+    public static final TOverload[] INSTANCES = Rand.create(MNumeric.INT, MDouble.INSTANCE);
 }
