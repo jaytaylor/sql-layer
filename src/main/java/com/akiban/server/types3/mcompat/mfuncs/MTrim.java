@@ -32,5 +32,5 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public class MTrim {
-    public static final TOverload INSTANCES[] = Trim.create(MString.VARCHAR, MNumeric.INT);
+    public static final TOverload[] INSTANCES = Trim.create(MString.VARCHAR, MNumeric.INT);
 }
