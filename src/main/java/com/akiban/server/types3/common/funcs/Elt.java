@@ -59,7 +59,7 @@ public class Elt extends TOverloadBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         int index = inputs.get(0).getInt32();
-        if (index < 0 || index > inputs.size())
+        if (index < 1 || index > inputs.size())
             output.putNull();
         else
             output.putValueSource(inputs.get(index));
