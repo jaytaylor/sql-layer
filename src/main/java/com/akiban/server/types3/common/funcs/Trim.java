@@ -34,67 +34,77 @@ import java.util.List;
 
 public abstract class Trim extends TOverloadBase {
 
-    public static TOverload[] create(TClass stringType) {
-        TOverload rtrim = new Trim(stringType, TrimType.TRAILING) {
+    // Described by TRIM(<trim_spec>, <char_to_trim>, <string_to_trim>
+    public static TOverload[] create(TClass stringType, TClass intType) {
+        TOverload rtrim = new Trim(stringType, intType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String st = (String) inputs.get(0).getObject();
-                output.putObject(ltrim(st, DEFAULT_TRIM));
+                String trim = (String) inputs.get(1).getObject();
+                String st = (String) inputs.get(2).getObject();
+                output.putObject(ltrim(st, trim));
+            }
+
+            @Override
+            public String overloadName() {
+                return "RTRIM";
             }
         };
 
-        TOverload ltrim = new Trim(stringType, TrimType.LEADING) {
+        TOverload ltrim = new Trim(stringType, intType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String st = (String) inputs.get(0).getObject();
-                output.putObject(rtrim(st, DEFAULT_TRIM));
+                String trim = (String) inputs.get(1).getObject();
+                String st = (String) inputs.get(2).getObject();
+                output.putObject(rtrim(st, trim));
+            }
+
+            @Override
+            public String overloadName() {
+                return "LTRIM";
             }
         };
 
-        TOverload trim = new Trim(stringType, null) {
+        TOverload trim = new Trim(stringType, intType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String st = (String) inputs.get(0).getObject();
-                st = ltrim(st, DEFAULT_TRIM);
-                output.putObject(rtrim(st, DEFAULT_TRIM));
+                int trimType = inputs.get(0).getInt32();
+                String trim = (String) inputs.get(1).getObject();
+                String st = (String) inputs.get(2).getObject();
+                
+                if (trimType != 1)
+                    st = ltrim(st, trim);
+                if (trimType != 0)
+                    st = rtrim(st, trim);
+                output.putObject(st);
+            }
+
+            @Override
+            public String overloadName() {
+                return "TRIM";
             }
         };
         
         // TODO: support LEADING, TRAILING, BOTH options in TRIM
         return new TOverload[]{ltrim, rtrim, trim};
     }
-
-    public static enum TrimType {
-
-        LEADING, TRAILING
-    };
+    
+    // TRIM TYPE 0 -- Remove LEADING characters as specified
+    // TRIM TYPE 1 -- Remove TRAILING characters as specified
     protected final TClass stringType;
-    protected final TrimType trimType;
-    protected static final char DEFAULT_TRIM = ' ';
+    protected final TClass intType;
 
-    private Trim(TClass stringType, TrimType trimType) {
+    private Trim(TClass stringType, TClass intType) {
         this.stringType = stringType;
-        this.trimType = trimType;
+        this.intType = intType;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(stringType, 0);
-    }
-
-    @Override
-    public String overloadName() {
-        String name = "";
-        if (trimType == TrimType.LEADING) {
-            name += "L";
-        }
-        if (trimType == TrimType.TRAILING) {
-            name += "R";
-        }
-        return name + "TRIM";
+        builder.covers(intType, 0);
+        builder.covers(stringType, 1, 2);
     }
 
     @Override
@@ -110,19 +120,23 @@ public abstract class Trim extends TOverloadBase {
     }
 
     // Helper methods
-    protected static String ltrim(String st, char ch) {
-        for (int n = 0; n < st.length(); ++n) {
-            if (st.charAt(n) != ch) {
-                return st.substring(n);
+    protected static String ltrim(String st, String trim) {
+        int n = 0;
+        while (n < st.length()) {
+            for (int i = 0; i < trim.length(); ++i, ++n) {
+                if (st.charAt(n) != trim.charAt(i))
+                    return st.substring(n);
             }
         }
         return "";
     }
 
-    protected static String rtrim(String st, char ch) {
-        for (int n = st.length() - 1; n >= 0; --n) {
-            if (st.charAt(n) != ch) {
-                return st.substring(0, n + 1);
+    protected static String rtrim(String st, String trim) {
+        int n = st.length() - 1;
+        while (n >= 0) {
+            for (int i = trim.length()-1; i >= 0; --i, --n) {
+                if (st.charAt(n) != trim.charAt(i))
+                    return st.substring(0, n + 1);
             }
         }
         return "";
