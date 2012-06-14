@@ -26,64 +26,8 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.List;
+import com.akiban.server.types3.TOverload;
 
-public class MCeil extends TOverloadBase {
-
-    private TClass argumentType;
-    
-    private MCeil(TClass argumentType) {
-        this.argumentType = argumentType;
-    }
-    
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(argumentType, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
-        output.putObject(result.ceil());
-    }
-
-    @Override
-    public String overloadName() {
-        return "CEIL";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.custom(MNumeric.DECIMAL.instance(), new TCustomOverloadResult() {
-            private final int ZERO_DEFAULT = 13;
-            private final int BIGINT_DEFAULT = 17;
-            private final int DECIMAL_DEFAULT = 16;
-
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                TPreptimeValue preptimeValue = inputs.get(0);
-                int precision = preptimeValue.instance().attribute(MBigDecimal.Attrs.PRECISION);
-                int scale = preptimeValue.instance().attribute(MBigDecimal.Attrs.SCALE);
-                
-                // Special case: DECIMAL(0,0)
-                if (precision + scale == 0) 
-                    return MNumeric.BIGINT.instance(ZERO_DEFAULT);
-                
-                int length = precision - scale;
-                if (length >= 0 && length < 9)
-                    return MNumeric.INT.instance(length+3);
-                if (length >= 9 && length < 14)
-                    return MNumeric.BIGINT.instance(BIGINT_DEFAULT);
-                return MNumeric.DECIMAL.instance(DECIMAL_DEFAULT, 0);
-            }         
-        });
-    }
+public class MCeil {
+    public static final TOverload[] INSTANCES = MCeilBase.create();
 }
