@@ -63,7 +63,7 @@ import static java.lang.Math.min;
  * <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
  * <li><b>boolean[] ascending:</b> The length of this array specifies the number of fields to be compared in the merge
  * for the purpose of determining whether a left row and right row agree and will result in an output row,
- * ascending.length <= min(leftOrderingFields, rightOrderingFields. ascending[i] is true if the ith such field
+ * ascending.length <= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field
  * is ascending, false if it is descending. This ordering specification must be consistent with the order of both
  * input streams.
  * <li><b>JoinType joinType:</b>
@@ -89,7 +89,8 @@ import static java.lang.Math.min;
  * <h1>Assumptions</h1>
  * <p/>
  * Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt>
- * and <tt>rightOrderingFields</tt>.
+ * and <tt>rightOrderingFields</tt>, and ordered according to <tt>ascending</tt>. The order of rows in both
+ * input streams must be consistent with <tt>ascending.</tt>
  * <p/>
  * The input row types must correspond to indexes in the same group (as determined by the index's leafmost table).
  * This constraint may be relaxed in the future, but then the number of fields to compare is likely to be required
