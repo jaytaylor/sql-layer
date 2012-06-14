@@ -33,6 +33,8 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.DoubleAttribute;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import java.math.BigDecimal;
+import java.math.MathContext;
 
 public class MDouble extends TClass
 {
@@ -41,9 +43,33 @@ public class MDouble extends TClass
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
     
+    public static double round(TInstance instance, double val)
+    {
+        assert instance.typeClass() instanceof MDouble : "instance has to be of type MDouble";
+        
+        // needs optimisation
+        String st = Double.toString(val);
+        char num[] = st.toCharArray();
+        
+        // check the scale
+        int point = st.indexOf('.');
+        
+        if (point >= 0)
+        {
+            int lastDigit = instance.attribute(DoubleAttribute.SCALE) + point;
+            
+            // actual length is longer than expected, then trucate/round it
+            if (st.length() > lastDigit)
+            {
+                if (st.charAt(lastDigit + 1) > '4')
+                    ++num[lastDigit];
+            }
+            
+        }
+    }
+    
     private class DoubleFactory implements TFactory
     {
-
         @Override
         public TInstance create(TAttributesDeclaration declaration)
         {
