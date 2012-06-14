@@ -38,9 +38,15 @@ import java.util.List;
 
 public class MCeil extends TOverloadBase {
 
+    private TClass argumentType;
+    
+    private MCeil(TClass argumentType) {
+        this.argumentType = argumentType;
+    }
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.DECIMAL, 0);
+        builder.covers(argumentType, 0);
     }
 
     @Override
