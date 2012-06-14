@@ -46,7 +46,7 @@ public class MCeil extends TOverloadBase {
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
-        output.putInt64(result.ceil());
+        output.putObject(result.ceil());
     }
 
     @Override
@@ -56,7 +56,7 @@ public class MCeil extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.custom(new TCustomOverloadResult() {
+        return TOverloadResult.custom(MNumeric.DECIMAL.instance(), new TCustomOverloadResult() {
             private final int ZERO_DEFAULT = 13;
             private final int BIGINT_DEFAULT = 17;
             private final int DECIMAL_DEFAULT = 16;

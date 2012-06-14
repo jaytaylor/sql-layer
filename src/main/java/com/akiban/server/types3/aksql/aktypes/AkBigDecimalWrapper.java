@@ -75,9 +75,9 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
-    public long ceil() {
+    public BigDecimal ceil() {
         value.setScale(0, RoundingMode.CEILING);
-        return value.longValue();
+        return value;
     }
     
     @Override

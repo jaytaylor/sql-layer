@@ -67,9 +67,9 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
-    public long ceil() {
+    public BigDecimal ceil() {
         value.setScale(0, RoundingMode.CEILING);
-        return value.longValue();
+        return value;
     }
     
     @Override
@@ -77,8 +77,6 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         return value.signum();
     }
     
-    private BigDecimal value;
-
     @Override
     public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
     {
@@ -87,4 +85,7 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
                 RoundingMode.HALF_UP);
         return this;
     }
+
+    private BigDecimal value;
 }
+
