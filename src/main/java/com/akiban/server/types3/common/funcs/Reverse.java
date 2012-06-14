@@ -28,53 +28,47 @@ package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.List;
 
-public class Coalesce extends TOverloadBase {
-
-    public Coalesce(TClass returnType) {
-        this.returnType = returnType;
-    }
-    
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.pickingVararg(returnType);
+public class Reverse extends TOverloadBase
+{
+    private final TClass stringType;
+    public Reverse (TClass stringType)
+    {
+        this.stringType = stringType;
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        for (int i = 0; i < inputs.size(); ++i) {
-            if (!inputs.get(i).isNull()) {
-                output.putObject(inputs.get(i).getObject());
-                return;
-            }
-        }
-        output.putNull();
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(stringType, 0);
     }
 
     @Override
-    public String overloadName() {
-        return "COALESCE";
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+        output.putObject(new StringBuilder((String)inputs.get(0).getObject()).reverse().toString());
     }
 
     @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.picking();
+    public String overloadName()
+    {
+        return "REVERSE";
     }
 
     @Override
-    protected Constantness constness(int inputIndex, PValueSource preptimeValue) {
-        if (preptimeValue == null)
-            return Constantness.NOT_CONST;
-        return preptimeValue.isNull() ? Constantness.UNKNOWN : Constantness.CONST;
+    public TOverloadResult resultType()
+    { 
+        return TOverloadResult.picking();  
     }
-
-    private final TClass returnType;
-
 }
