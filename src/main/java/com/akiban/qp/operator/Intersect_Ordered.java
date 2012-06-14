@@ -230,30 +230,44 @@ class Intersect_Ordered extends Operator
             leftTable = leftTable.parentTable();
             rightTable = rightTable.parentTable();
         }
-        List<Column> undeclaredHKeyColumns = new ArrayList<Column>(leftTable.allHKeyColumns());
-        // Remove common hkey columns fixed by either index scan. If fixed by one, it must be fixed by the other.
-        // (Otherwise, there would be a common hkey column used for ordering only one input, and the
-        // index scans would then not be ordered compatibly.)
-        List<IndexColumn> leftIndexColumns = leftIndex.getAllColumns();
-        int leftDeclaredFields = leftIndex.getKeyColumns().size();
-        for (int f = 0; f < leftDeclaredFields; f++) {
-            Column column = leftIndexColumns.get(f).getColumn();
-            if (undeclaredHKeyColumns.contains(column)) {
-                undeclaredHKeyColumns.remove(column);
+        // left table is now the nearest common ancestor.
+        HKey nearestAncestorHKey = leftTable.hKey();
+        // Following the fixed fields are fields to be compared. We want to find how many of these there are.
+        // Walk the two lists of fields as long as:
+        // - The corresponding index columns are the identical Column objects, or
+        // - The corresponding index columns correspond to the same hkey column or equivalent.
+        int lf = leftFixedFields;
+        int rf = rightFixedFields;
+        boolean match;
+        do {
+            match = false;
+            if (lf < leftIndex.getAllColumns().size() && rf < rightIndex.getAllColumns().size()) {
+                Column leftColumn = leftIndex.getAllColumns().get(lf).getColumn();
+                Column rightColumn = rightIndex.getAllColumns().get(rf).getColumn();
+                if (leftColumn == rightColumn) {
+                    match = true;
+                } else {
+                    for (HKeySegment segment : nearestAncestorHKey.segments()) {
+                        for (HKeyColumn hKeyColumn : segment.columns()) {
+                            List<Column> equivalentColumns = hKeyColumn.equivalentColumns();
+                            if (equivalentColumns.contains(leftColumn) && equivalentColumns.contains(rightColumn)) {
+                                match = true;
+                            }
+                        }
+                    }
+                }
+                if (match) {
+                    lf++;
+                    rf++;
+                }
             }
-        }
-        List<IndexColumn> rightIndexColumns = rightIndex.getAllColumns();
-        int rightDeclaredFields = rightIndex.getKeyColumns().size();
-        for (int f = 0; f < rightDeclaredFields; f++) {
-            Column column = rightIndexColumns.get(f).getColumn();
-            if (undeclaredHKeyColumns.contains(column)) {
-                undeclaredHKeyColumns.remove(column);
-            }
-        }
-        int leftFieldsToCompare = leftIndex.getKeyColumns().size() - leftFixedFields + undeclaredHKeyColumns.size();
-        int rightFieldsToCompare = rightIndex.getKeyColumns().size() - rightFixedFields + undeclaredHKeyColumns.size();
+        } while (match);
+        int leftFieldsToCompare = lf - leftFixedFields;
+        int rightFieldsToCompare = rf - rightFixedFields;
         int fieldsToCompare = min(leftFieldsToCompare, rightFieldsToCompare);
-        // TODO: Assertions to check:
+        // TODO: Is this correct? Requires additional checking of inputs. assert fieldsToCompare > 0;
+        //
+        // TODO: Other assertions to check:
         // TODO: - All common hkey columns are included by the left index among the first
         // TODO:   (leftFixedFields + fieldsToCompare) columns, and by the right index among the
         // TODO:   first (rightFixedFields + fieldsToCompare) columns.
