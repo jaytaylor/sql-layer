@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
