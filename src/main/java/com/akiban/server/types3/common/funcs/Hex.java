@@ -26,10 +26,13 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.nio.charset.Charset;
 
 public abstract class Hex extends TOverloadBase {
 
@@ -46,8 +49,11 @@ public abstract class Hex extends TOverloadBase {
                     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                         String st = (String) inputs.get(0).getObject();
                         StringBuilder builder = new StringBuilder();
-
-                        for (byte ch : st.getBytes()) {
+                        int charsetId = context.inputTInstanceAt(0).attribute(StringAttribute.CHARSET);
+                        String charsetName = (StringFactory.Charset.values())[charsetId].name();
+                        
+                        Charset charset = Charset.forName(charsetName);
+                        for (byte ch : st.getBytes(charset)) {
                             builder.append(String.format("%02X", ch));
                         }
                         output.putObject(builder.toString());
