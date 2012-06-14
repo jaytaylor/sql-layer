@@ -38,6 +38,7 @@ import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.EnumSet;
@@ -47,6 +48,7 @@ import static com.akiban.server.expression.std.Expressions.field;
 
 // Testing Intersect_Ordered key comparisons, which are done at the Persistit level.
 
+@Ignore
 public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
 {
     @Before
@@ -102,6 +104,7 @@ public class Intersect_OrderedByteArrayComparisonIT extends OperatorITBase
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1001L),
             row(leftIndexRowType, 1L, 502L, "x", 999L, 1002L),
         };
+        dump(plan);
         compareRows(expected, cursor(plan, queryContext));
         plan = intersectPlan(1, IntersectOption.OUTPUT_RIGHT, true, false);
         expected = new RowBase[]{
