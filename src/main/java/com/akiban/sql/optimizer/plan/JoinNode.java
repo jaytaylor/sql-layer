@@ -28,8 +28,6 @@ package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.error.AkibanInternalException;
 
-import java.util.*;
-
 /** A join between two tables / subjoins. */
 public class JoinNode extends BaseJoinable implements PlanWithInput
 {

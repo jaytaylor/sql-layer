@@ -26,7 +26,6 @@
 
 package com.akiban.server.service.servicemanager;
 
-import com.akiban.server.AkServer;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.ServiceManager;

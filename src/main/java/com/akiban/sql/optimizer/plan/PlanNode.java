@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.Map;
-
 public interface PlanNode extends PlanElement
 {
     public PlanWithInput getOutput();

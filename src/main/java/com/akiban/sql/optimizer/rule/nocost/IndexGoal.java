@@ -29,7 +29,6 @@ package com.akiban.sql.optimizer.rule.nocost;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.rule.range.ColumnRanges;
-import com.akiban.sql.optimizer.rule.range.RangeSegment;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;

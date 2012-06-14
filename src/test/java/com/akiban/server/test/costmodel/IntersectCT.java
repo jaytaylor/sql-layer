@@ -46,7 +46,6 @@ import org.junit.Test;
 import java.util.Random;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class IntersectCT extends CostModelBase
 {

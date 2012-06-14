@@ -44,7 +44,6 @@ import org.junit.Test;
 import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.indexScan_Default;
 import static com.akiban.server.expression.std.Expressions.field;
 
 public class ParentAndChildSkipScanIT extends OperatorITBase
@@ -75,6 +74,7 @@ public class ParentAndChildSkipScanIT extends OperatorITBase
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         db = new NewRow[]{
+            createNewRow(parent, 60L, 1L),
             createNewRow(child, 7000L, 70L, 2L),
             createNewRow(parent, 80L, 1L),
             createNewRow(child, 8000L, 80L, 2L),

@@ -38,7 +38,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.OperatorExecutionBase;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.row.ImmutableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.row.ValuesRow;
@@ -59,9 +58,6 @@ import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.ShareHolder;
-import com.akiban.util.Shareable;
 
 import com.persistit.Exchange;
 import com.persistit.Key;

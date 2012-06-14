@@ -32,7 +32,6 @@ import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

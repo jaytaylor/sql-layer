@@ -30,15 +30,12 @@ import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
-import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.*;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.Expression;
 import org.junit.Before;
 import org.junit.Test;
-
-import java.util.Collections;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;

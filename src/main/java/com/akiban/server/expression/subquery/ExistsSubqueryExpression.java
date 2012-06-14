@@ -30,7 +30,6 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 

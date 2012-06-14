@@ -34,7 +34,6 @@ import org.junit.Test;
 import static junit.framework.Assert.*;
 
 import java.io.StringWriter;
-import java.util.*;
 import java.io.File;
 
 public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase

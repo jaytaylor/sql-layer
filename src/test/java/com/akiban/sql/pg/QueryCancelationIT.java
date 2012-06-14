@@ -27,7 +27,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.error.ErrorCode;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.sql.Connection;

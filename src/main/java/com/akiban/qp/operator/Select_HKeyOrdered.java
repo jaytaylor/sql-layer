@@ -206,7 +206,7 @@ class Select_HKeyOrdered extends Operator
         @Override
         public void close()
         {
-            // TODO: Reenable this when bug 1007882 is understood: CursorLifecycle.checkIdleOrActive(this);
+            CursorLifecycle.checkIdleOrActive(this);
             if (!isIdle()) {
                 selectedRow.release();
                 input.close();

@@ -26,18 +26,6 @@
 
 package com.akiban.sql.optimizer.rule.cost;
 
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public interface CostModelMeasurements
 {
     // From SelectCT
