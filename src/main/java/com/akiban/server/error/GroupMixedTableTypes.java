@@ -24,11 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.server.error;
 
 import com.akiban.ais.model.TableName;
 
-public interface MemoryStore {
-    public void registerTable (TableName name, MemoryTableFactory factory);
-    public MemoryTableFactory getFactory (TableName name);
+public class GroupMixedTableTypes extends InvalidOperationException {
+
+    public GroupMixedTableTypes (String groupName, boolean isMemoryTable, TableName table1) {
+        super (ErrorCode.GROUP_MIXED_TABLE_TYPES, groupName, isMemoryTable ? "is": "is not", 
+                table1.getSchemaName(), table1.getTableName());
+    }
 }

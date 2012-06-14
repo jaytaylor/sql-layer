@@ -53,7 +53,7 @@ public interface ServiceManager {
     AkServerInterface getAkSserver();
 
     Store getStore();
-    
+
     TreeService getTreeService();
 
     MemcacheService getMemcacheService();

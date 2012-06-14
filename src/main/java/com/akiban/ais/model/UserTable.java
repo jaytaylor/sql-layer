@@ -26,7 +26,7 @@
 
 package com.akiban.ais.model;
 
-import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;

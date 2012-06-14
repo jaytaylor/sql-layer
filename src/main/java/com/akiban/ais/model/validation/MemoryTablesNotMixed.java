@@ -24,25 +24,35 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.ais.model.validation;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.GroupCursor;
-import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.server.service.session.Session;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.GroupMixedTableTypes;
 
-public interface MemoryTableFactory {
-    public TableName getName();
-    public Table getTableDefinition();
-    public GroupCursor getGroupCursor(Session session);
-    public Cursor getIndexCursor (Index index, Session session, 
-            IndexKeyRange keyRange,
-            API.Ordering ordering,
-            IndexScanSelector scanSelector);
-    public long rowCount();
+/**
+ * Validates that groups do not mix memory tables and Storage tables in the same group.
+ * @author tjoneslo
+ *
+ */
+public class MemoryTablesNotMixed implements AISValidation {
+    
+    @Override
+    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
+        for (Group group : ais.getGroups().values()) {
+            validateGroup (ais, group, output);
+        }
+    }
+
+    private void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
+        boolean rootMemoryTable = group.getGroupTable().getRoot().hasMemoryTableFactory();
+        for (UserTable userTable : ais.getUserTables().values()) {
+            if (userTable.getGroup() == group &&
+                    userTable.hasMemoryTableFactory() != rootMemoryTable) {
+                output.reportFailure(new AISValidationFailure (
+                        new GroupMixedTableTypes(group.getName(), rootMemoryTable, userTable.getName())));
+            }
+        }
+    }
 }

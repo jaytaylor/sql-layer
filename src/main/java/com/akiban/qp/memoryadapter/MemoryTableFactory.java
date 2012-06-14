@@ -24,65 +24,35 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.qp.memoryadapter;
 
-import java.util.HashMap;
-import java.util.Map;
-
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.service.Service;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.GroupCursor;
+import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.SchemaManager;
-import com.google.inject.Inject;
+import com.akiban.server.store.statistics.IndexStatistics;
 
-public class MemoryStoreImpl implements MemoryStore, Service<MemoryStore> {
-
-    @Inject
-    public MemoryStoreImpl (SchemaManager schema)
-    {
-        this.schema = schema;
-        map = new HashMap<TableName, MemoryTableFactory>();
-    }
-
-    @Override
-    public MemoryTableFactory getFactory(TableName name) {
-        return map.get(name);
-    }
-
-    @Override
-    public void registerTable(TableName name, MemoryTableFactory factory) {
-        map.put(name, factory);
-        schema.createTableDefinition((Session)null, (UserTable) factory.getTableDefinition());
-    }
-
-    @Override
-    public MemoryStore cast() {
-        return this;
-    }
-
-    @Override
-    public Class<MemoryStore> castClass() {
-        return MemoryStore.class;
-    }
-
-    @Override
-    public void crash() {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void start() {
-        // TODO Auto-generated method stub
-        
-    }
-
-    @Override
-    public void stop() {
-        // TODO Auto-generated method stub
-        
-    }
-    private final SchemaManager schema;
-    private Map<TableName, MemoryTableFactory> map; 
+public interface MemoryTableFactory {
+    // Used by MemoryStore to hold this factory
+    public abstract TableName getName();
+    public abstract UserTable getTableDefinition();
+    
+    // Used by (Memory)StoreAdapter to get cursors 
+    public abstract GroupCursor getGroupCursor(Session session);
+    public abstract Cursor getIndexCursor (Index index, Session session, 
+            IndexKeyRange keyRange,
+            API.Ordering ordering,
+            IndexScanSelector scanSelector);
+    
+    // Used by IndexStatistics to compute index statistics
+    public abstract long rowCount();
+    
+    // This should return null for all indexes
+    // TODO: describe index implementation on memory tables. 
+    public abstract IndexStatistics computeIndexStatistics(Session session, Index index);
 }
