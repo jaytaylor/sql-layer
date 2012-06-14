@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.persistitadapter.sort;
@@ -19,10 +30,11 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.persistit.Key;
 
-// For a semi-bounded (mysqlish) index scan
+// For a lexicographic (mysqlish) index scan
 
 class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 {
@@ -48,26 +60,39 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
 
     protected void evaluateBoundaries(QueryContext context)
     {
-        if (start == null) {
-            startKey = null;
+        BoundExpressions startExpressions = null;
+        if (startBoundColumns == 0 || start == null) {
+            startKey.append(startBoundary);
         } else {
-            BoundExpressions startExpressions = start.boundExpressions(context);
+            startExpressions = start.boundExpressions(context);
             startKey.clear();
             startKeyTarget.attach(startKey);
-            for (int f = 0; f < boundColumns; f++) {
-                startKeyTarget.expectingType(types[f]);
-                Converters.convert(startExpressions.eval(f), startKeyTarget);
+            for (int f = 0; f < startBoundColumns; f++) {
+                if (start.columnSelector().includesColumn(f)) {
+                    startKeyTarget.expectingType(types[f]);
+                    Converters.convert(startExpressions.eval(f), startKeyTarget);
+                }
             }
         }
-        if (end == null) {
+        BoundExpressions endExpressions;
+        if (endBoundColumns == 0 || end == null) {
             endKey = null;
         } else {
-            BoundExpressions endExpressions = end.boundExpressions(context);
+            endExpressions = end.boundExpressions(context);
             endKey.clear();
             endKeyTarget.attach(endKey);
-            for (int f = 0; f < boundColumns; f++) {
-                endKeyTarget.expectingType(types[f]);
-                Converters.convert(endExpressions.eval(f), endKeyTarget);
+            for (int f = 0; f < endBoundColumns; f++) {
+                if (end.columnSelector().includesColumn(f)) {
+                    ValueSource valueSource = endExpressions.eval(f);
+                    if (valueSource.isNull() && startExpressions != null && !startExpressions.eval(f).isNull()) {
+                        endKey.append(Key.AFTER);
+                    } else {
+                        endKeyTarget.expectingType(types[f]);
+                        Converters.convert(valueSource, endKeyTarget);
+                    }
+                } else {
+                    endKey.append(Key.AFTER);
+                }
             }
         }
     }

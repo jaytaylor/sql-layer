@@ -5,15 +5,15 @@
     "schema" : "coi",
     "tables" : [
         [ "customer",
-            "cid int key",
+            "cid int not null primary key",
             "name varchar(32)"
         ],
 
         [ "orders",
-            "oid int key",
+            "oid int not null primary key",
             "c_id int",
             "when varchar(10)",
-            "CONSTRAINT __akiban_o FOREIGN KEY __akiban_o (c_id) REFERENCES customer(cid)"
+            "GROUPING FOREIGN KEY (c_id) REFERENCES customer(cid)"
         ]
     ],
     "write_rows" : {

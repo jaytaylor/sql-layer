@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.keyupdate;
@@ -40,11 +51,11 @@ public abstract class GIUpdateITBase extends ITBase {
 
     @Before
     public final void createTables() {
-        c = createTable(SCHEMA, "c", "cid int key, name varchar(32)");
-        o = createTable(SCHEMA, "o", "oid int key, c_id int, when varchar(32)", akibanFK("c_id", "c", "cid") );
-        i = createTable(SCHEMA, "i", "iid int key, o_id int, sku int", akibanFK("o_id", "o", "oid") );
-        h = createTable(SCHEMA, "h", "sid int key, i_id int, handling_instructions varchar(32)", akibanFK("i_id", "i", "iid") );
-        a = createTable(SCHEMA, "a", "oid int key, c_id int, street varchar(56)", akibanFK("c_id", "c", "cid") );
+        c = createTable(SCHEMA, "c", "cid int not null primary key, name varchar(32)");
+        o = createTable(SCHEMA, "o", "oid int not null primary key, c_id int, when varchar(32)", akibanFK("c_id", "c", "cid") );
+        i = createTable(SCHEMA, "i", "iid int not null primary key, o_id int, sku int", akibanFK("o_id", "o", "oid") );
+        h = createTable(SCHEMA, "h", "sid int not null primary key, i_id int, handling_instructions varchar(32)", akibanFK("i_id", "i", "iid") );
+        a = createTable(SCHEMA, "a", "oid int not null primary key, c_id int, street varchar(56)", akibanFK("c_id", "c", "cid") );
         groupName = getUserTable(c).getGroup().getName();
     }
 
@@ -123,15 +134,13 @@ public abstract class GIUpdateITBase extends ITBase {
         if (groupIndex == null)
             throw new RuntimeException("group index undefined: " + indexName);
         long result = 0;
-        int giValueIndex = 0;
         for(UserTable table = groupIndex.leafMostTable();
             table != groupIndex.rootMostTable().parentTable();
             table = table.parentTable())
         {
             if (containingTables.remove(table)) {
-                result |= ONE << giValueIndex;
+                result |= 1 << table.getDepth();
             }
-            ++giValueIndex;
         }
         if (!containingTables.isEmpty())
             throw new RuntimeException("tables specified not in the branch: " + containingTables);
@@ -156,19 +165,6 @@ public abstract class GIUpdateITBase extends ITBase {
         this.joinType = joinType;
     }
 
-    private static int one() {
-//        // The JIT should recognize that 0.999... == 1 and optimize this loop, but it seems to spin for a while.
-//        // I should probably use a StringBuilder instead of creating a new String each time, that might fix this?
-//        String nines = "0.9";
-//        while(true) {
-//            BigDecimal asBigDecimal = new BigDecimal(nines);
-//            if (asBigDecimal.equals(BigDecimal.ONE))
-//                return asBigDecimal.intValue();
-//            nines += '9';
-//        }
-        return 1;
-    }
-
     private final Index.JoinType joinType;
     private final String groupIndexName = "test_gi";
 
@@ -182,7 +178,6 @@ public abstract class GIUpdateITBase extends ITBase {
     // consts
 
     private static final String SCHEMA = "coia";
-    private final int ONE = one(); // prevents javac from inlining the 1 literal
 
     // nested class
 

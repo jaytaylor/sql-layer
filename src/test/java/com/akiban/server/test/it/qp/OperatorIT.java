@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
@@ -18,7 +29,6 @@ package com.akiban.server.test.it.qp;
 import com.akiban.ais.model.*;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
@@ -33,7 +43,6 @@ import java.util.Arrays;
 import static com.akiban.server.expression.std.Expressions.*;
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.JoinType.*;
-import static org.junit.Assert.assertEquals;
 
 public class OperatorIT extends OperatorITBase
 {
@@ -148,7 +157,7 @@ public class OperatorIT extends OperatorITBase
     public void testIndexLookup()
     {
         Operator indexScan = indexScan_Default(indexType(order, "salesman"));
-        Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT);
+        Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
                                            row(itemRowType, 122L, 12L),
@@ -168,12 +177,12 @@ public class OperatorIT extends OperatorITBase
     public void testIndexLookupWithOneAncestor()
     {
         Operator indexScan = indexScan_Default(indexType(order, "salesman"));
-        Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, LookupOption.DISCARD_INPUT);
+        Operator lookup = branchLookup_Default(indexScan, coi, orderSalesmanIndexRowType, orderRowType, InputPreservationOption.DISCARD_INPUT);
         Operator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  orderRowType,
                                                                  Arrays.asList(customerRowType),
-                                                                 LookupOption.KEEP_INPUT);
+                                                                 InputPreservationOption.KEEP_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 12L, 1L, "david"),
                                            row(itemRowType, 121L, 12L),
@@ -201,12 +210,12 @@ public class OperatorIT extends OperatorITBase
                                                        coi,
                                                        itemOidIndexRowType,
                                                        itemRowType,
-                                                       LookupOption.DISCARD_INPUT);
+                                                       InputPreservationOption.DISCARD_INPUT);
         Operator ancestorLookup = ancestorLookup_Default(lookup,
                                                                  coi,
                                                                  itemRowType,
                                                                  Arrays.asList(customerRowType, orderRowType),
-                                                                 LookupOption.KEEP_INPUT);
+                                                                 InputPreservationOption.KEEP_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 1L, "xyz"),
                                            row(orderRowType, 11L, 1L, "ori"),
                                            row(itemRowType, 111L, 11L),
@@ -259,7 +268,7 @@ public class OperatorIT extends OperatorITBase
                                                        coi,
                                                        orderSalesmanIndexRowType,
                                                        orderRowType,
-                                                       LookupOption.DISCARD_INPUT);
+                                                       InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(orderRowType, 21L, 2L, "tom"),
                                            row(itemRowType, 211L, 21L),
                                            row(itemRowType, 212L, 21L)};
@@ -279,7 +288,7 @@ public class OperatorIT extends OperatorITBase
                                                                  coi,
                                                                  orderSalesmanIndexRowType,
                                                                  Arrays.asList(customerRowType),
-                                                                 LookupOption.DISCARD_INPUT);
+                                                                 InputPreservationOption.DISCARD_INPUT);
         RowBase[] expected = new RowBase[]{row(customerRowType, 2L, "abc")};
         compareRows(expected, cursor(ancestorLookup, queryContext));
     }

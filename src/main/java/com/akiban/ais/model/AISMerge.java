@@ -1,17 +1,29 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.ais.model;
 
 import org.slf4j.Logger;
@@ -24,6 +36,9 @@ import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
+import java.util.HashSet;
+import java.util.Set;
+
 /**
  * AISMerge is designed to merge a single UserTable definition into an existing AIS. The merge process 
  * does not assume that UserTable.getAIS() returns a validated and complete 
@@ -32,15 +47,14 @@ import com.akiban.server.error.JoinToWrongColumnsException;
  * AISMerge makes a copy of the primaryAIS (from the constructor) before performing the merge process. 
  * The final results is this copies AIS, plus new table, with the full AISValidations suite run, and 
  * frozen. If you pass a frozen AIS into the merge, the copy process unfreeze the copy.
- * 
- * @See UserTable
- * @See AkibanInformationSchema
  */
 public class AISMerge {
+    private static final int AIS_TABLE_ID_OFFSET = 1000000000;
+
     /* state */
     private AkibanInformationSchema targetAIS;
     private UserTable sourceTable;
-    private NameGenerator groupNames; 
+    private NameGenerator nameGenerator;
     private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
 
     /**
@@ -48,15 +62,15 @@ public class AISMerge {
      * 
      * @param primaryAIS - where the table will end up
      * @param newTable - UserTable to merge into the primaryAIS
-     * @throws Exception
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
         targetAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(targetAIS)).save(primaryAIS);
         
         sourceTable = newTable;
-       
-        groupNames = new DefaultNameGenerator().setDefaultGroupNames(targetAIS.getGroups().keySet());
+        nameGenerator = new DefaultNameGenerator().
+                setDefaultGroupNames(targetAIS.getGroups().keySet()).
+                setDefaultTreeNames(computeTreeNames(targetAIS));
     }
     
     /**
@@ -78,8 +92,12 @@ public class AISMerge {
         // TableSubsetWriter doesn't do. 
         LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
 
-        final AISBuilder builder = new AISBuilder(targetAIS);
-        builder.setTableIdOffset(computeTableIdOffset(targetAIS));
+        final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
+        if(TableName.AKIBAN_INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName())) {
+            builder.setTableIdOffset(computeAISTableIdOffset(targetAIS));
+        } else {
+            builder.setTableIdOffset(computeTableIdOffset(targetAIS));
+        }
 
         if (sourceTable.getParentJoin() != null) {
             String parentSchemaName = sourceTable.getParentJoin().getParent().getName().getSchemaName();
@@ -97,8 +115,8 @@ public class AISMerge {
         // Joins or group table?
         if (sourceTable.getParentJoin() == null) {
             LOG.debug("Table is root or lone table");
-            String groupName = groupNames.generateGroupName(sourceTable);
-            String groupTableName = groupNames.generateGroupTableName(groupName);
+            String groupName = nameGenerator.generateGroupName(sourceTable);
+            String groupTableName = nameGenerator.generateGroupTableName(groupName);
             builder.basicSchemaIsComplete();            
             builder.createGroup(groupName, 
                     sourceTable.getName().getSchemaName(), 
@@ -180,9 +198,9 @@ public class AISMerge {
             throw new JoinToUnknownTableException(sourceTable.getName(), new TableName(parentSchemaName, parentTableName));
          }
         LOG.debug(String.format("Table is child of table %s", parentTable.getName().toString()));
-        String joinName = groupNames.generateJoinName(parentTable.getName(),
-                                                      sourceTable.getName(),
-                                                      join.getJoinColumns());
+        String joinName = nameGenerator.generateJoinName(parentTable.getName(),
+                                                         sourceTable.getName(),
+                                                         join.getJoinColumns());
         builder.joinTables(joinName,
                 parentSchemaName,
                 parentTableName,
@@ -238,23 +256,30 @@ public class AISMerge {
     }
 */
 
-    private int computeTableIdOffset(AkibanInformationSchema ais) {
+    private static int computeTableIdOffset(AkibanInformationSchema ais) {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
-        int offset = 1;
+        return computeTableIdOffset(ais, 1, false);
+    }
+
+    private static int computeAISTableIdOffset(AkibanInformationSchema ais) {
+        return computeTableIdOffset(ais, AIS_TABLE_ID_OFFSET, true);
+    }
+
+    private static int computeTableIdOffset(AkibanInformationSchema ais, int offset, boolean includeAIS) {
         for(UserTable table : ais.getUserTables().values()) {
-            if(!table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
+            if(table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) == includeAIS) {
                 offset = Math.max(offset, table.getTableId() + 1);
             }
         }
         for (GroupTable table : ais.getGroupTables().values()) {
-            if (!table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
+            if (table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) == includeAIS) {
                 offset = Math.max(offset, table.getTableId() + 1);
             }
         }
         return offset;
     }
 
-    private int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
+    private static int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
         int offset = 1;
         Group group = ais.getGroup(groupName);
         for(UserTable table : ais.getUserTables().values()) {
@@ -268,5 +293,24 @@ public class AISMerge {
             offset = Math.max(offset, index.getIndexId() + 1); 
         }
         return offset;
+    }
+
+    public static Set<String> computeTreeNames (AkibanInformationSchema ais) {
+        // Collect all tree names
+        Set<String> treeNames = new HashSet<String>();
+        for(Group group : ais.getGroups().values()) {
+            for(Index index : group.getIndexes()) {
+                treeNames.add(index.getTreeName());
+            }
+        }
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getParentJoin() == null) {
+                treeNames.add(table.getTreeName());
+            }
+            for(Index index : table.getIndexesIncludingInternal()) {
+                treeNames.add(index.getTreeName());
+            }
+        }
+        return treeNames;
     }
 }

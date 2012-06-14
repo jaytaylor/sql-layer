@@ -1,0 +1,10 @@
+SelectQuery@1422384
+  ResultSet@67e779a1[name, order_date]
+    Project@de26e52[customers.name, orders.order_date]
+      Select@114a947[]
+        Flatten@17599cc(customers LEFT orders)
+          BranchLookup@1c45731(customers -> orders)
+            AncestorLookup@1388e5e(addresses -> [customers])
+              SingleIndexScan@ad483(Index(test.addresses.state[IndexColumn(state)]), NONE, =MA)
+              TableSource@1bef1ac(customers - TableGroup@1861086(customers))
+            TableSource@192425a(orders - TableGroupJoin@1f52460(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

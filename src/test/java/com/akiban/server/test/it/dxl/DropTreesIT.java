@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.dxl;
@@ -73,7 +84,7 @@ public final class DropTreesIT extends ITBase {
     
     @Test
     public void singleTableNoData() throws Exception {
-        int tid = createTable("s", "t", "id int key");
+        int tid = createTable("s", "t", "id int not null primary key");
         Table t = getUserTable(tid);
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
@@ -84,7 +95,7 @@ public final class DropTreesIT extends ITBase {
         final TableName name = new TableName("s", "t");
         for(int i = 1; i <= 5; ++i) {
             try {
-                int tid = createTable(name.getSchemaName(), name.getTableName(), "id int key");
+                int tid = createTable(name.getSchemaName(), name.getTableName(), "id int not null primary key");
                 Table t = getUserTable(tid);
                 ddl().dropTable(session(), name);
                 expectNoTree(t);
@@ -96,7 +107,7 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void singleTableWithData() throws Exception {
-        int tid = createTable("s", "t", "id int key, name varchar(32)");
+        int tid = createTable("s", "t", "id int not null primary key, name varchar(32)");
         Table t = getUserTable(tid);
         writeRows(createNewRow(tid, 1L, "joe"),
                   createNewRow(tid, 2L, "bob"),
@@ -108,8 +119,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void groupedTablesNoData() throws Exception {
-        int pid = createTable("s", "p", "id int key");
-        int cid = createTable("s", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key");
+        int cid = createTable("s", "c", "id int not null primary key, pid int, grouping foreign key(pid) references p(id)");
         Table p = getUserTable(pid);
         Table c = getUserTable(cid);
         ddl().dropTable(session(), c.getName());
@@ -120,8 +131,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void groupedTablesWithData() throws Exception {
-        int pid = createTable("s", "p", "id int key");
-        int cid = createTable("s", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key");
+        int cid = createTable("s", "c", "id int not null primary key, pid int, grouping foreign key(pid) references p(id)");
         writeRows(createNewRow(pid, 1L),
                   createNewRow(pid, 2L),
                   createNewRow(pid, 3L));
@@ -140,7 +151,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void secondaryIndexNoData() throws Exception {
-        int tid = createTable("s", "t", "id int key, c char(10), index c(c)");
+        int tid = createTable("s", "t", "id int not null primary key, c char(10)");
+        createIndex("s", "t", "c", "c");
         Table t = getUserTable(tid);
         Index c = t.getIndex("c");
         ddl().dropTable(session(), t.getName());
@@ -150,7 +162,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void secondaryIndexWithData() throws Exception {
-        int tid = createTable("s", "t", "id int key, c char(10), index c(c)");
+        int tid = createTable("s", "t", "id int not null primary key, c char(10)");
+        createIndex("s", "t", "c", "c");
         writeRows(createNewRow(tid, 1L, "abcd"),
                   createNewRow(tid, 2L, "efgh"),
                   createNewRow(tid, 3L, "ijkl"));
@@ -165,7 +178,7 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void addSecondaryIndexNoData() throws Exception {
-        int tid = createTable("s", "t", "id int key, other int");
+        int tid = createTable("s", "t", "id int not null primary key, other int");
         Table t = getUserTable(tid);
         ddl().createIndexes(session(), Collections.singleton(createSimpleIndex(t, "other")));
         t = getUserTable(tid);
@@ -177,7 +190,7 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void addSecondaryIndexWithData() throws Exception {
-        int tid = createTable("s", "t", "id int key, other int");
+        int tid = createTable("s", "t", "id int not null primary key, other int");
         writeRows(createNewRow(tid, 1L, 10L),
                   createNewRow(tid, 2L, 20L),
                   createNewRow(tid, 3L, 30L));
@@ -195,7 +208,9 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void dropSecondaryIndexNoData() throws Exception {
-        int tid = createTable("s", "t", "id int key, c char(10), index c(c), key c(c)");
+        int tid = createTable("s", "t", "id int not null primary key, c char(10)");
+        createIndex("s", "t", "c", "c");
+        createIndex("s", "t", "c2", "c");
         Table t = getUserTable(tid);
         Index c = t.getIndex("c");
         ddl().dropTableIndexes(session(), t.getName(), Collections.singleton("c"));
@@ -206,7 +221,9 @@ public final class DropTreesIT extends ITBase {
     
     @Test
     public void dropSecondaryIndexWithData() throws Exception {
-        int tid = createTable("s", "t", "id int key, c char(10), index c(c), key c(c)");
+        int tid = createTable("s", "t", "id int not null primary key, c char(10)");
+        createIndex("s", "t", "c", "c");
+        createIndex("s", "t", "c2", "c");
         writeRows(createNewRow(tid, 1L, "mnop"),
                   createNewRow(tid, 2L, "qrst"),
                   createNewRow(tid, 3L, "uvwx"));
@@ -223,8 +240,9 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void childSecondaryIndexNoData() throws Exception {
-        int pid = createTable("s", "p", "id int key");
-        int cid = createTable("s", "c", "id int key, i int, pid int, key i(i), constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key");
+        int cid = createTable("s", "c", "id int not null primary key, i int, pid int, grouping foreign key(pid) references p(id)");
+        createIndex("s", "c", "i", "i");
         Table p = getUserTable(pid);
         Table c = getUserTable(cid);
         Index i = c.getIndex("i");
@@ -236,8 +254,9 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void childSecondaryIndexWithData() throws Exception {
-        int pid = createTable("s", "p", "id int key");
-        int cid = createTable("s", "c", "id int key, i int, pid int, key i(i), constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key");
+        int cid = createTable("s", "c", "id int not null primary key, i int, pid int, grouping foreign key(pid) references p(id)");
+        createIndex("s", "c", "i", "i");
         writeRows(createNewRow(pid, 1L),
                   createNewRow(pid, 2L));
         Table p = getUserTable(pid);
@@ -256,7 +275,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void pkLessRootNoData() throws Exception {
-        int tid = createTable("s", "t", "i int, key i(i)");
+        int tid = createTable("s", "t", "i int");
+        createIndex("s", "t", "i", "i");
         UserTable t = getUserTable(tid);
         Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
         ddl().dropTable(session(), t.getName());
@@ -266,15 +286,14 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void pkLessRootWithData() throws Exception {
-        int tid = createTable("s", "t", "i int, key i(i)");
+        int tid = createTable("s", "t", "i int");
+        createIndex("s", "t", "i", "i");
         writeRows(createNewRow(tid, 10L, 0L),
                   createNewRow(tid, 20L, 0L));
         UserTable t = getUserTable(tid);
         expectTree(t);
         Index pk = t.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
-        if(!pk.isHKeyEquivalent()) {
-            expectTree(pk);
-        }
+        expectTree(pk);
         ddl().dropTable(session(), t.getName());
         expectNoTree(t);
         expectNoTree(pk);
@@ -282,8 +301,9 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void pkLessChildNoData() throws Exception {
-        int pid = createTable("s", "p", "id int key");
-        int cid = createTable("s", "c", "i int, pid int, key i(i), constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key");
+        int cid = createTable("s", "c", "i int, pid int, grouping foreign key(pid) references p(id)");
+        createIndex("s", "c", "i", "i");
         Table p = getUserTable(pid);
         UserTable c = getUserTable(cid);
         Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
@@ -296,8 +316,9 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void pkLessChildTableWithData() throws Exception {
-        int pid = createTable("s", "p", "id int key");
-        int cid = createTable("s", "c", "i int, pid int, key i(i), constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key");
+        int cid = createTable("s", "c", "i int, pid int, grouping foreign key(pid) references p(id)");
+        createIndex("s", "c", "i", "i");
         writeRows(createNewRow(pid, 1L),
                   createNewRow(pid, 2L));
         Table p = getUserTable(pid);
@@ -307,9 +328,7 @@ public final class DropTreesIT extends ITBase {
         UserTable c = getUserTable(cid);
         expectTree(c);
         Index pk = c.getIndexIncludingInternal(Index.PRIMARY_KEY_CONSTRAINT);
-        if(!pk.isHKeyEquivalent()) {
-            expectTree(pk);
-        }
+        expectTree(pk);
         ddl().dropTable(session(), c.getName());
         expectNoTree(pk);
         ddl().dropTable(session(), p.getName());
@@ -319,8 +338,9 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void groupedTablesWithDataTryDropParent() throws Exception {
-        int pid = createTable("s", "p", "id int key, o int, key o(o)");
-        int cid = createTable("s", "c", "id int key, pid int, constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key, o int");
+        createIndex("s", "p", "o", "o");
+        int cid = createTable("s", "c", "id int not null primary key, pid int, grouping foreign key(pid) references p(id)");
         writeRows(createNewRow(pid, 1L, 100L),
                   createNewRow(pid, 2L, 200L),
                   createNewRow(pid, 3L, 300L));
@@ -350,8 +370,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void dropTableInGroupIndexWithNoData() throws Exception {
-        int pid = createTable("s", "p", "id int key, name varchar(32)");
-        int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
+        int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
         Table p = getUserTable(pid);
         Table c = getUserTable(cid);
         Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
@@ -364,8 +384,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void dropTableInGroupIndexWithData() throws Exception {
-        int pid = createTable("s", "p", "id int key, name varchar(32)");
-        int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
+        int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
         Table p = getUserTable(pid);
         Table c = getUserTable(cid);
         Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
@@ -384,8 +404,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void dropGroupIndexWithNoData() throws Exception {
-        int pid = createTable("s", "p", "id int key, name varchar(32)");
-        int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
+        int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
         Table p = getUserTable(pid);
         Table c = getUserTable(cid);
         Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
@@ -399,8 +419,8 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void dropGroupIndexWithData() throws Exception {
-        int pid = createTable("s", "p", "id int key, name varchar(32)");
-        int cid = createTable("s", "c", "id int key, pid int, val int, constraint __akiban foreign key(pid) references p(id))");
+        int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
+        int cid = createTable("s", "c", "id int not null primary key, pid int, val int, grouping foreign key(pid) references p(id)");
         Table p = getUserTable(pid);
         Table c = getUserTable(cid);
         Index index = createGroupIndex(p.getGroup().getName(), "name_val", "p.name,c.val");
@@ -420,7 +440,7 @@ public final class DropTreesIT extends ITBase {
 
     @Test
     public void dropSingleTableWithGroupIndexWithNoData() throws Exception {
-        int pid = createTable("s", "p", "id int key, name varchar(32)");
+        int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
         Table p = getUserTable(pid);
         Index index = createGroupIndex(p.getGroup().getName(), "name", "p.name");
         ddl().dropTable(session(), p.getName());
@@ -431,7 +451,7 @@ public final class DropTreesIT extends ITBase {
     @Ignore("Can't write rows to group index that is on single/root table?")
     @Test
     public void dropSingleTableWithGroupIndexWithData() throws Exception {
-        int pid = createTable("s", "p", "id int key, name varchar(32)");
+        int pid = createTable("s", "p", "id int not null primary key, name varchar(32)");
         Table p = getUserTable(pid);
         Index index = createGroupIndex(p.getGroup().getName(), "name", "p.name");
         writeRows(createNewRow(pid, 1, "foo"),

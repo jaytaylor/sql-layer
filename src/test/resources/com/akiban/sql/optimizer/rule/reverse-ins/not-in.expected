@@ -1,0 +1,8 @@
+SelectQuery@17698cbe
+  ResultSet@129719f4[cid]
+    MapJoin@4ce51960()
+      SingleIndexScan@4c53ccba(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740)
+      Project@7e28ebb4[customers.cid]
+        Select@308ab721[]
+          OnlyIfEmpty@6c74b024
+            SingleIndexScan@56de24c5(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =customers.name, rows = 100, cost = 81.7260)

@@ -1,21 +1,33 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -100,15 +112,18 @@ final class UnionAll_Default extends Operator {
 
     @Override
     protected Cursor cursor(QueryContext context) {
-        return new Execution(context, inputs, inputTypes, outputRowType);
+        return new Execution(context);
     }
 
     UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type) {
         ArgumentValidation.notNull("first input", input1);
+        ArgumentValidation.notNull("first input type", input1Type);
         ArgumentValidation.notNull("second input", input2);
+        ArgumentValidation.notNull("second input type", input2Type);
         this.outputRowType = rowType(input1Type, input2Type);
         this.inputs = Arrays.asList(input1, input2);
         this.inputTypes = Arrays.asList(input1Type, input2Type);
+        ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
     }
 
     // for use in this package (in ctor and unit tests)
@@ -177,19 +192,24 @@ final class UnionAll_Default extends Operator {
         return new OperationExplainer(Type.UNION_ALL, att);
     }
 
-    private static final class Execution implements Cursor {
-
+    private class Execution extends OperatorExecutionBase implements Cursor {
 
         @Override
         public void open() {
             TAP_OPEN.in();
-            TAP_OPEN.out();
+            try {
+                CursorLifecycle.checkIdle(this);
+                idle = false;
+            } finally {
+                TAP_OPEN.out();
+            }
         }
 
         @Override
         public Row next() {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 Row outputRow;
                 if (currentCursor == null) {
                     outputRow = nextCursorFirstRow();
@@ -203,6 +223,7 @@ final class UnionAll_Default extends Operator {
                 }
                 if (outputRow == null) {
                     close();
+                    idle = true;
                     return null;
                 }
                 return wrapped(outputRow);
@@ -213,26 +234,51 @@ final class UnionAll_Default extends Operator {
 
         @Override
         public void close() {
+            CursorLifecycle.checkIdleOrActive(this);
             inputOperatorsIndex = -1;
-            if (currentCursor != null)
+            if (currentCursor != null) {
                 currentCursor.close();
-            else
                 currentCursor = null;
+            }
             currentInputRowType = null;
             rowHolder.release();
+            idle = true;
         }
 
-        private Execution(QueryContext context,
-                          List<? extends Operator> inputOperators,
-                          List<? extends RowType> inputRowTypes,
-                          RowType outputType)
+        @Override
+        public void destroy()
         {
-            this.context = context;
-            this.inputOperators = inputOperators;
-            this.inputRowTypes = inputRowTypes;
-            this.outputRowType = outputType;
-            assert this.inputOperators.size() == this.inputRowTypes.size()
-                    : this.inputOperators + ".size() != " + this.inputRowTypes.size() + ".size()";
+            close();
+            for (Cursor cursor : cursors) {
+                if (cursor != null) {
+                    cursor.destroy();
+                }
+            }
+            destroyed = true;
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return !destroyed && idle;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !destroyed && !idle;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return destroyed;
+        }
+
+        private Execution(QueryContext context)
+        {
+            super(context);
+            cursors = new Cursor[inputs.size()];
         }
 
         /**
@@ -242,8 +288,8 @@ final class UnionAll_Default extends Operator {
          * @return the first row of the next cursor that has a non-null row, or null if no such cursors remain
          */
         private Row nextCursorFirstRow() {
-            while (++inputOperatorsIndex < inputOperators.size()) {
-                Cursor nextCursor = inputOperators.get(inputOperatorsIndex).cursor(context);
+            while (++inputOperatorsIndex < inputs.size()) {
+                Cursor nextCursor = cursor(inputOperatorsIndex);
                 nextCursor.open();
                 Row nextRow = nextCursor.next();
                 if (nextRow == null) {
@@ -251,7 +297,7 @@ final class UnionAll_Default extends Operator {
                 }
                 else {
                     currentCursor = nextCursor;
-                    this.currentInputRowType = inputRowTypes.get(inputOperatorsIndex);
+                    this.currentInputRowType = inputTypes.get(inputOperatorsIndex);
                     return nextRow;
                 }
             }
@@ -278,14 +324,21 @@ final class UnionAll_Default extends Operator {
             return row;
         }
 
-        private final QueryContext context;
-        private final List<? extends Operator> inputOperators;
-        private final List<? extends RowType> inputRowTypes;
-        private final RowType outputRowType;
+        private Cursor cursor(int i)
+        {
+            if (cursors[i] == null) {
+                cursors[i] = inputs.get(i).cursor(context);
+            }
+            return cursors[i];
+        }
+
         private final ShareHolder<MasqueradingRow> rowHolder = new ShareHolder<MasqueradingRow>();
         private int inputOperatorsIndex = -1; // right before the first operator
+        private Cursor[] cursors;
         private Cursor currentCursor;
         private RowType currentInputRowType;
+        private boolean idle = true;
+        private boolean destroyed = false;
     }
 
     static class WrongRowTypeException extends AkibanInternalException {
@@ -295,6 +348,12 @@ final class UnionAll_Default extends Operator {
     }
 
     private static class MasqueradingRow implements Row {
+
+        @Override
+        public int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
+        {
+            return delegate.compareTo(row, leftStartIndex, rightStartIndex, fieldCount);
+        }
 
         @Override
         public RowType rowType() {
@@ -307,23 +366,19 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
+        public HKey ancestorHKey(UserTable table)
+        {
+            return delegate.ancestorHKey(table);
+        }
+
+        @Override
         public boolean ancestorOf(RowBase that) {
             return delegate.ancestorOf(that);
         }
 
         @Override
         public boolean containsRealRowOf(UserTable userTable) {
-            return delegate.containsRealRowOf(userTable);
-        }
-
-        @Override
-        public int runId() {
-            return delegate.runId();
-        }
-
-        @Override
-        public void runId(int runId) {
-            delegate.runId(runId);
+            throw new UnsupportedOperationException(getClass().toString());
         }
 
         @Override

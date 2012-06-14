@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
@@ -18,7 +29,8 @@ package com.akiban.sql.pg;
 import com.akiban.server.error.InvalidOperationException;
 
 import java.io.File;
-import java.io.FileReader;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.Connection;
@@ -27,7 +39,6 @@ import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Ignore;
-import org.junit.Test;
 
 /**
  * A base class for integration tests that use data from YAML files to specify
@@ -42,27 +53,38 @@ public class PostgresServerYamlITBase {
 
     private static final PostgresServerIT manageServer = new PostgresServerIT();
 
-    protected static Connection connection;
-
     protected PostgresServerYamlITBase() { }
 
     @BeforeClass
     public static void openTheConnection() throws Exception {
 	manageServer.startTestServices();
-	manageServer.openTheConnection();
-	connection = manageServer.getConnection();
+        manageServer.ensureConnection();
     }
 
     @AfterClass
     public static void closeTheConnection() throws Exception {
 	manageServer.stopTestServices();
-	manageServer.closeTheConnection();
-	connection = null;
+        manageServer.closeTheConnection();
     }
 
     @Before
     public void dropAllTables() {
 	manageServer.accessDropAllTables();
+    }
+
+    protected static Connection getConnection() throws Exception {
+        return manageServer.ensureConnection();
+    }
+
+    protected static void forgetConnection() {
+	if (DEBUG) {
+	    System.err.println("Closing possibly damaged connection");
+	}
+        try {
+            manageServer.closeTheConnection();
+        }
+        catch (Exception ex) {
+        }
     }
 
     /**
@@ -71,22 +93,20 @@ public class PostgresServerYamlITBase {
      * @param file the file
      * @throws IOException if there is an error accessing the file
      */
-    protected void testYaml(File file) throws IOException {
+    protected void testYaml(File file) throws Exception {
 	if (DEBUG) {
 	    System.err.println("\nFile: " + file);
 	}
-	Throwable exception = null;
+	Connection connection = getConnection();
+        Throwable exception = null;
 	Reader in = null;
 	try {
-	    in = new FileReader(file);
+	    in = new InputStreamReader(new FileInputStream(file), "UTF-8");
 	    new YamlTester(file.toString(), in, connection).test();
 	    if (DEBUG) {
 		System.err.println("Test passed");
 	    }
-	} catch (RuntimeException e) {
-	    exception = e;
-	    throw e;
-	} catch (IOException e) {
+	} catch (Exception e) {
 	    exception = e;
 	    throw e;
 	} catch (Error e) {
@@ -94,7 +114,8 @@ public class PostgresServerYamlITBase {
 	    throw e;
 	} finally {
 	    if (exception != null) {
-		System.err.println("Test failed: " + exception);
+                System.err.println("Test failed: " + exception);
+		forgetConnection();
 	    }
 	    if (in != null) {
 		in.close();
@@ -111,8 +132,10 @@ public class PostgresServerYamlITBase {
 	void accessDropAllTables() throws InvalidOperationException {
 	    dropAllTables();
 	}
-	Connection getConnection() {
-	    return connection;
+	Connection ensureConnection() throws Exception {
+	    if (connection == null)
+                openTheConnection();
+            return connection;
 	}
     }
 }

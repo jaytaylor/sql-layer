@@ -1,0 +1,41 @@
+Index: PRIMARY
+RowCount: 300
+SampledCount: 3
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [2]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [3]
+    lt: 0
+Table: customers
+Timestamp: 2012-03-15T22:41:25.293Z
+---
+Index: name
+RowCount: 300
+SampledCount: 3
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 1
+    key: [Adams]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Jones]
+    lt: 0
+  - distinct: 0
+    eq: 1
+    key: [Smith]
+    lt: 0
+Table: customers
+Timestamp: 2012-03-15T22:41:25.194Z

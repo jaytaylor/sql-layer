@@ -1,1 +1,0 @@
-SELECT user.child.name AS name FROM user.child, user.parent, user.child AS c2 WHERE (user.parent.name = 'foo') AND ((user.parent.id = c2.pid) AND ((c2.name = 'bar') AND ((user.child.pid = user.parent.id) AND TRUE)))

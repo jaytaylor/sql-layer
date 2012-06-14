@@ -1,22 +1,35 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 
 package com.akiban.server.expression.std;
 
+import java.text.DateFormatSymbols;
 import java.util.HashMap;
+import java.util.Locale;
 import org.joda.time.DateTimeFieldType;
 import org.joda.time.MutableDateTime;
 
@@ -1158,6 +1171,11 @@ public enum DateTimeField
         while (cal.getDayOfWeek() != firstDay)
             cal.setDayOfMonth(++firstD);
 
+        // reset cal
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
+        
         if (da < firstD) return yr -1;
         else return yr;
     }
@@ -1188,9 +1206,16 @@ public enum DateTimeField
         cal.setDayOfMonth(da);
 
         int dayOfYear = cal.getDayOfYear();
-
-        if (dayOfYear < firstD) return (lowestIs0 ? 0 : getWeek(cal, yr-1, 12, 31, firstDay, lowestIs0));
-        else return (dayOfYear - firstD) / 7 +1;
+        int result;
+        
+        if (dayOfYear < firstD) result =  (lowestIs0 ? 0 : getWeek(cal, yr-1, 12, 31, firstDay, lowestIs0));
+        else result = (dayOfYear - firstD) / 7 +1;
+        
+        // reset cal
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
+        return result;
     }
 
     /**
@@ -1239,46 +1264,20 @@ public enum DateTimeField
     static protected final HashMap<String, Integer> month = new HashMap<String, Integer>();
     static
     {
-        weekDay.put("SUNDAY", 0);
-        weekDay.put("MONDAY", 1);
-        weekDay.put("TUESDAY", 2);
-        weekDay.put("WEDNESDAY", 3);
-        weekDay.put("THURSDAY", 4);
-        weekDay.put("FRIDAY", 5);
-        weekDay.put("SATURDAY", 6);
+        DateFormatSymbols fm = new DateFormatSymbols(new Locale(System.getProperty("user.language")));
+        String mon [] = fm.getMonths(), shortMon[] = fm.getShortMonths(),
+               wk[] = fm.getWeekdays(), shortWk[] = fm.getShortWeekdays();
 
-        abbWeekday.put("SUN", 0);
-        abbWeekday.put("MON", 1);
-        abbWeekday.put("TUE", 2);
-        abbWeekday.put("WED", 3);
-        abbWeekday.put("THU", 4);
-        abbWeekday.put("FRI", 5);
-        abbWeekday.put("SAT", 6);
-
-        abbMonth.put("JAN", 1);
-        abbMonth.put("FEB", 2);
-        abbMonth.put("MAR", 3);
-        abbMonth.put("APR", 4);
-        abbMonth.put("MAY", 5);
-        abbMonth.put("JUN", 6);
-        abbMonth.put("JUL", 7);
-        abbMonth.put("AUG", 8);
-        abbMonth.put("SEP", 9);
-        abbMonth.put("OCT", 10);
-        abbMonth.put("NOV", 11);
-        abbMonth.put("DEC", 12);
-
-        month.put("JANUARY", 1);
-        month.put("FEBRUARY", 2);
-        month.put("MARCH", 3);
-        month.put("APRIL", 4);
-        month.put("MAY", 5);
-        month.put("JUNE", 6);
-        month.put("JULY", 7);
-        month.put("AUGUST", 8);
-        month.put("SEPTEMBER", 9);
-        month.put("OCTOBER", 10);
-        month.put("NOVEMBER", 11);
-        month.put("DECEMBER", 12);
+        for (int n = 0; n < 12; ++n)
+        {
+            month.put(mon[n].toUpperCase(), n+1);
+            abbMonth.put(shortMon[n].toUpperCase(), n+1);
+        }
+        
+        for (int n = 1; n < 8; ++n)
+        {
+            weekDay.put(wk[n].toUpperCase(), n-1);
+            abbWeekday.put(shortWk[n].toUpperCase(), n-1);
+        }
     }
 }

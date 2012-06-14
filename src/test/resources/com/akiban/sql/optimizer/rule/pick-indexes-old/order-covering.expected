@@ -1,0 +1,6 @@
+SelectQuery@4f09dcbb
+  ResultSet@107aa187[name]
+    Project@6302ae84[customers.name]
+      Select@450f8ee4[]
+        TableJoins@6e3e28(TableGroup@45b2b450(customers) - SingleIndexScan@575c13ef(Index(test.customers.name[IndexColumn(name)]), covering/SORTED))
+          TableSource@209daa17(customers - TableGroup@45b2b450(customers))

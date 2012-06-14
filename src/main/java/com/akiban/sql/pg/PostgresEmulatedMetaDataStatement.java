@@ -1,24 +1,36 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
+import java.io.ByteArrayOutputStream;
 
 /**
  * Canned handling for fixed SQL text that comes from tools that
@@ -28,7 +40,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 {
     enum Query {
         // ODBC driver sends this at the start; returning no rows is fine (and normal).
-        ODBC_LO_TYPE_QUERY("select oid, typbasetype from pg_type where typname = 'lo'");
+        ODBC_LO_TYPE_QUERY("select oid, typbasetype from pg_type where typname = 'lo'"),
+        // SEQUEL 3.33.0 (http://sequel.rubyforge.org/) sends this when opening a new connection
+        SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'");
 
         // TODO: May need regex for some cases.
         private String sql;
@@ -49,7 +63,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     static final PostgresType OID_PG_TYPE = 
-        new PostgresType(PostgresType.OID_TYPE_OID, (short)4, -1, AkType.LONG);
+        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG);
+    static final PostgresType TYPNAME_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR);
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -67,6 +83,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             ncols = 2;
             names = new String[] { "oid", "typbasetype" };
             types = new PostgresType[] { OID_PG_TYPE, OID_PG_TYPE };
+            break;
+        case SEQUEL_B_TYPE_QUERY:
+            ncols = 2;
+            names = new String[] { "oid", "typname" };
+            types = new PostgresType[] { OID_PG_TYPE, TYPNAME_PG_TYPE };
             break;
         default:
             return;
@@ -103,6 +124,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case ODBC_LO_TYPE_QUERY:
             nrows = odbcLoTypeQuery(messenger, maxrows);
             break;
+        case SEQUEL_B_TYPE_QUERY:
+            nrows = sequelBTypeQuery(messenger, maxrows);
+            break;
         }
         {        
           messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -114,6 +138,37 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int odbcLoTypeQuery(PostgresMessenger messenger, int maxrows) {
         return 0;
+    }
+
+    private int sequelBTypeQuery(PostgresMessenger messenger, int maxrows) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+    	for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
+            if (pgtype.getType() == PostgresType.TypeOid.TypType.BASE) {
+                messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+                messenger.writeShort(2); // 2 columns for this query
+                ByteArrayOutputStream bytes = encoder.encodeObject(pgtype.getOid(), OID_PG_TYPE, false);
+                if (bytes == null) {
+                    messenger.writeInt(-1);
+                } else {
+                    messenger.writeInt(bytes.size());
+                    messenger.writeByteStream(bytes);
+                }
+                bytes = encoder.encodeObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
+                if (bytes == null) {
+                    messenger.writeInt(-1);
+                } else {
+                    messenger.writeInt(bytes.size());
+                    messenger.writeByteStream(bytes);
+                }
+                messenger.sendMessage();
+                nrows++;
+                if ((maxrows > 0) && (nrows >= maxrows)) {
+                    break;
+                }
+            }
+        }
+        return nrows;
     }
 
 }

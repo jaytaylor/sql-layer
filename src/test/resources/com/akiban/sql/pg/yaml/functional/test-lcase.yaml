@@ -1,0 +1,40 @@
+#test the LCASE and LOWER functions
+---
+- Include: all-types-schema.yaml
+---
+- Statement: INSERT INTO all_types
+    (integer_field, varchar_field, double_field, date_field)
+    VALUES (1, 'one', 1.5, '2001-01-01'), (2, 'TWO', 2.5, '2002-02-02'), (3, 'THREE', 3.5, '2003-03-03');
+--- #test LCASE on field
+- Statement: SELECT LCASE(varchar_field) from all_types;
+- output: [['one'], ['two'], ['three']]
+--- #test LCASE in WHERE clause
+- Statement: SELECT integer_field FROM all_types WHERE LCASE(varchar_field) = LOWER(varchar_field);
+- output: [[1], [2], [3]]
+--- # test with params
+- Statement: SELECT LOWER(?) FROM all_types;
+- params: [['ABC']]
+- output: [['abc'], ['abc'], ['abc']]
+--- # test LCASE on double field
+- Statement: SELECT LCASE(double_field) from all_types;
+- output: [[1.5], [2.5], [3.5]]
+--- # test with literal null
+- Statement: SELECT LCASE(null) FROM all_types;
+- output: [[null], [null], [null]]
+--- # test with param in WHERE clause
+- Statement: SELECT varchar_field from all_types WHERE LOWER(?) = LCASE(varchar_field);
+- params: [['two']]
+- output: [['TWO']]
+--- # test empty string
+- Statement: SELECT UCASE('') from all_types;
+- output: [[''], [''], ['']]
+--- # test wrong arity: empty list
+- Statement: SELECT LCASE() from all_types;
+- error: [42000]
+--- # test wrong arity: extraneous arguments
+- Statement: SELECT LOWER ('abc', 'def') from all_types;
+- error: [42000]
+--- # test with date_field in WHERE clause
+- Statement: SELECT varchar_field from all_types WHERE LCASE(date_field) = LOWER(date_field);
+- row_count: 3
+...

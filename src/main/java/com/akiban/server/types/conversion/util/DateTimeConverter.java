@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.types.conversion.util;
@@ -26,7 +37,7 @@ import org.joda.time.MutableDateTime;
 class DateTimeConverter implements AbstractConverter<MutableDateTime>
 {
     @Override
-    public  MutableDateTime get(ValueSource source) 
+    public  MutableDateTime get(ValueSource source)
     {
         if (source.isNull()) return null;
         long [] ymd_hms;
@@ -40,16 +51,15 @@ class DateTimeConverter implements AbstractConverter<MutableDateTime>
                                 getYearMonthDayHourMinuteSecond(source.getDateTime());
                             checkArgs(ymd_hms);
                             break;
-            case TIMESTAMP: return new MutableDateTime(source.getTimestamp() * 1000); 
+            case TIMESTAMP: return new MutableDateTime(source.getTimestamp() * 1000);
             case TIME:      ymd_hms =  Extractors.getLongExtractor(AkType.TIME).
                                 getYearMonthDayHourMinuteSecond(source.getTime()); break;
             case VARCHAR:   return get(source.getString());
             case TEXT:      return get(source.getText());
             case YEAR:      throw new InvalidParameterValueException("Invalid Date Value");
-            default:        throw new InconvertibleTypesException(source.getConversionType(), 
+            default:        throw new InconvertibleTypesException(source.getConversionType(),
                                                                     AkType.DATETIME);
         }
-        
         return new MutableDateTime((int)ymd_hms[0], (int)ymd_hms[1], (int)ymd_hms[2],
                 (int)ymd_hms[3], (int)ymd_hms[4], (int)ymd_hms[5], 0, DateTimeZone.getDefault());
     }
@@ -60,10 +70,10 @@ class DateTimeConverter implements AbstractConverter<MutableDateTime>
     }
 
     @Override
-    public MutableDateTime get(String source) 
+    public MutableDateTime get(String source)
     {
         return MutableDateTime.parse(source);
     }
-    
+
     protected DateTimeConverter () {}
 }

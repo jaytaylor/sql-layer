@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
@@ -40,8 +51,8 @@ import java.util.Set;
 
  <h1>Overview</h1>
 
- If the input stream has at least one row, the output stream is identical to the input stream.
- Otherwise, the output stream contains one row, composed by a specified list of expressions.
+ If the input stream has no rows, the output stream contains one row, composed by a specified list of expressions.
+ Otherwise, the output is either the input rows or no rows at all, controlled by an InputPreservationOption.
 
  <h1>Arguments</h1>
 
@@ -54,12 +65,15 @@ import java.util.Set;
  <li>List<? extends Expression>:</li> Expressions computing the columns of the row that is output
  in case the input stream is empty.
 
+ <li>InputPreservationOption inputPreservation:</li> indicates whether input rows are output when present.
+
  <ul>
 
  <h1>Behavior</h1>
 
- If the input stream has at least one row, the output stream is identical to the input stream.
- Otherwise, the output stream contains one row, composed by a specified list of expressions.
+ If the input stream has no rows, then a row, composed by a specified list of expressions, is written to the output
+ stream. Otherwise, input rows are written to output if inputPreservation is KEEP_INPUT; otherwise input rows
+ are not written to output.
 
  <h1>Output</h1>
 
@@ -98,6 +112,8 @@ class IfEmpty_Default extends Operator
             }
             buffer.append(expression.toString());
         }
+        buffer.append(", ");
+        buffer.append(inputPreservation);
         buffer.append(')');
         return buffer.toString();
     }
@@ -134,15 +150,18 @@ class IfEmpty_Default extends Operator
 
     public IfEmpty_Default(Operator inputOperator,
                            RowType rowType,
-                           List<? extends Expression> expressions)
+                           List<? extends Expression> expressions,
+                           API.InputPreservationOption inputPreservation)
     {
         ArgumentValidation.notNull("inputOperator", inputOperator);
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notNull("expressions", expressions);
+        ArgumentValidation.notNull("inputPreservation", inputPreservation);
         ArgumentValidation.isEQ("rowType.nFields()", rowType.nFields(), "expressions.size()", expressions.size());
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.expressions = new ArrayList<Expression>(expressions);
+        this.inputPreservation = inputPreservation;
     }
 
     // Class state
@@ -156,6 +175,7 @@ class IfEmpty_Default extends Operator
     private final Operator inputOperator;
     private final RowType rowType;
     private final List<Expression> expressions;
+    private final API.InputPreservationOption inputPreservation;
 
     @Override
     public Explainer getExplainer()
@@ -172,7 +192,7 @@ class IfEmpty_Default extends Operator
 
     enum InputState
     {
-        UNKNOWN, EMPTY, NON_EMPTY
+        UNKNOWN, DONE, ECHO_INPUT
     }
 
     private class Execution extends OperatorExecutionBase implements Cursor
@@ -184,6 +204,7 @@ class IfEmpty_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 this.input.open();
                 this.closed = false;
                 this.inputState = InputState.UNKNOWN;
@@ -197,6 +218,7 @@ class IfEmpty_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 Row row = null;
                 checkQueryCancelation();
                 switch (inputState) {
@@ -204,15 +226,18 @@ class IfEmpty_Default extends Operator
                         row = input.next();
                         if (row == null) {
                             row = emptySubstitute();
-                            inputState = InputState.EMPTY;
+                            inputState = InputState.DONE;
+                        } else if (inputPreservation == API.InputPreservationOption.KEEP_INPUT) {
+                            inputState = InputState.ECHO_INPUT;
                         } else {
-                            inputState = InputState.NON_EMPTY;
+                            row = null;
+                            inputState = InputState.DONE;
                         }
                         break;
-                    case EMPTY:
+                    case DONE:
                         row = null;
                         break;
-                    case NON_EMPTY:
+                    case ECHO_INPUT:
                         row = input.next();
                         break;
                 }
@@ -231,10 +256,38 @@ class IfEmpty_Default extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             if (!closed) {
                 input.close();
                 closed = true;
             }
+        }
+
+        @Override
+        public void destroy()
+        {
+            input.destroy();
+            for (ExpressionEvaluation evaluation : evaluations) {
+                evaluation.destroy();
+            }
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return input.isDestroyed();
         }
 
         // Execution interface
@@ -282,7 +335,7 @@ class IfEmpty_Default extends Operator
         private final Cursor input;
         private final List<ExpressionEvaluation> evaluations;
         private final ShareHolder<ValuesHolderRow> emptySubstitute = new ShareHolder<ValuesHolderRow>();
-        private boolean closed;
+        private boolean closed = true;
         private InputState inputState;
     }
 }

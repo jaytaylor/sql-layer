@@ -1,35 +1,43 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.persistitadapter;
 
-import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.server.api.dml.scan.NewRow;
-import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
+import com.akiban.server.api.dml.scan.NewRow;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.RowCollector;
 
 public class OneTableRowCollector extends OperatorBasedRowCollector
 {
@@ -63,37 +71,22 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
         if (predicateIndex != null) {
             // Index bounds
             IndexRowType indexRowType = schema.indexRowType(predicateIndex);
-            ColumnSelector tableSelector;
             if (start == null && end == null) {
                 indexKeyRange = IndexKeyRange.unbounded(indexRowType);
             } else {
-                // The start and end selectors should match.
-                assert !(startColumns == null && endColumns == null);
-                if (startColumns == null) {
-                    tableSelector = endColumns;
-                } else if (endColumns == null) {
-                    tableSelector = startColumns;
-                } else {
-                    // Make sure the two selectors match
-                    for (int i = 0; i < queryRootTable.getColumns().size(); i++) {
-                        assert startColumns.includesColumn(i) == endColumns.includesColumn(i);
-                    }
-                    tableSelector = startColumns;
-                }
-                // tableSelector is in terms of table column positions. Need a ColumnSelector based
-                // on index column positions.
-                ColumnSelector indexSelector = indexSelectorFromTableSelector(predicateIndex, tableSelector);
+                ColumnSelector indexStartSelector = indexSelectorFromTableSelector(predicateIndex, startColumns);
+                ColumnSelector indexEndSelector = indexSelectorFromTableSelector(predicateIndex, endColumns);
                 IndexBound lo = null;
                 if (start != null) {
                     assert start.getRowDefId() == queryRootTable.getTableId();
                     NewRow loRow = new LegacyRowWrapper(start, store);
-                    lo = new IndexBound(new NewRowBackedIndexRow(queryRootType, loRow, predicateIndex), indexSelector);
+                    lo = new IndexBound(new NewRowBackedIndexRow(queryRootType, loRow, predicateIndex), indexStartSelector);
                 }
                 IndexBound hi = null;
                 if (end != null) {
                     assert end.getRowDefId() == queryRootTable.getTableId();
                     NewRow hiRow = new LegacyRowWrapper(end, store);
-                    hi = new IndexBound(new NewRowBackedIndexRow(queryRootType, hiRow, predicateIndex), indexSelector);
+                    hi = new IndexBound(new NewRowBackedIndexRow(queryRootType, hiRow, predicateIndex), indexEndSelector);
                 }
                 boolean loInclusive = start != null && (scanFlags & (SCAN_FLAGS_START_AT_EDGE | SCAN_FLAGS_START_EXCLUSIVE)) == 0;
                 boolean hiInclusive = end != null && (scanFlags & (SCAN_FLAGS_END_AT_EDGE | SCAN_FLAGS_END_EXCLUSIVE)) == 0;
@@ -102,12 +95,11 @@ public class OneTableRowCollector extends OperatorBasedRowCollector
                     ? IndexKeyRange.endingAt(indexRowType, hi, hiInclusive) :
                     hi == null
                     ? IndexKeyRange.startingAt(indexRowType, lo, loInclusive)
-                    : IndexKeyRange.bounded(indexRowType,
-                                            lo,
-                                            loInclusive,
-                                            hi,
-                                            hiInclusive);
-                indexKeyRange.lexicographic((scanFlags & RowCollector.SCAN_FLAGS_LEXICOGRAPHIC) != 0);
+                    : IndexKeyRange.startingAtAndEndingAt(indexRowType,
+                                                          lo,
+                                                          loInclusive,
+                                                          hi,
+                                                          hiInclusive);
             }
         }
     }

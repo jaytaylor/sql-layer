@@ -1,8 +1,8 @@
 SelectQuery@694b081b
   ResultSet@1effc3eb[cid, name, oid, cid, order_date]
-    Project@29978933[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
+    Project@29978933[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date]
       Select@23e45a5c[]
-        Flatten@234265(user.customers INNER user.orders)
-          GroupScan@64e8606c(Group(customers -> user._akiban_customers))
-            TableSource@5c74cb02(user.customers - TableGroup@5a92668c(customers))
-            TableSource@77bc1fb9(user.orders - TableGroupJoin@418a9fc8(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+        Flatten@234265(customers INNER orders)
+          GroupScan@64e8606c(Group(customers -> test._akiban_customers), rows = 1000, cost = 59716.0)
+            TableSource@5c74cb02(customers - TableGroup@5a92668c(customers))
+            TableSource@77bc1fb9(orders - TableGroupJoin@418a9fc8(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

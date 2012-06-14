@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.persistitadapter;
@@ -22,8 +33,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.error.PersistitAdapterException;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.PointTap;
@@ -44,42 +55,39 @@ class OperatorStoreGIHandler {
         }
 
         Exchange exchange = adapter.takeExchange(groupIndex);
-        Key key = exchange.getKey();
-        key.clear();
-        target.attach(key);
-        IndexRowComposition irc = groupIndex.indexRowComposition();
+        try {
+            Key key = exchange.getKey();
+            key.clear();
+            target.attach(key);
+            IndexRowComposition irc = groupIndex.indexRowComposition();
 
-        for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
-            assert irc.isInRowData(i);
-            assert ! irc.isInHKey(i);
+            for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
+                assert irc.isInRowData(i);
+                assert ! irc.isInHKey(i);
 
-            final int flattenedIndex = irc.getFieldPosition(i);
-            Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
+                final int flattenedIndex = irc.getFieldPosition(i);
+                Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
 
-            ValueSource source = row.eval(flattenedIndex);
-            Converters.convert(source, target.expectingType(column));
-        }
+                ValueSource source = row.eval(flattenedIndex);
+                Converters.convert(source, target.expectingType(column));
+            }
+            // The group index row's value contains a bitmap indicating which of the tables covered by the index
+            // have rows contributing to this index row. The leafmost table of the index is represented by bit position 0.
+            exchange.getValue().clear();
+            exchange.getValue().put(tableBitmap(groupIndex, row));
 
-        // Description of group index entry values:
-        // The value of each index key is the depth of the leafmost table for which there is an actual row.
-        // For instance, if you have a COI group and a group index on (i.sku, o.date), LEFT JOIN semantics mean
-        // that an order with no items will have an index key of (null, <date>, <hkey>) with value = depth(o) == 1.
-        // If you then give that order an item with a null sku, the index key will still be
-        // (null, <date>, <hkey) but its value will be depth(i) == 2.
-        // This depth is stored as an int (we don't anticipate any group branches with depth > 2^31-1).
-        long realTablesMap = realTablesMap(groupIndex, row);
-        exchange.getValue().clear();
-        exchange.getValue().put(realTablesMap);
-
-        switch (action) {
-        case STORE:
-            storeExchange(groupIndex, exchange);
-            break;
-        case DELETE:
-            removeExchange(groupIndex, exchange);
-            break;
-        default:
-            throw new UnsupportedOperationException(action.name());
+            switch (action) {
+            case STORE:
+                storeExchange(groupIndex, exchange);
+                break;
+            case DELETE:
+                removeExchange(groupIndex, exchange);
+                break;
+            default:
+                throw new UnsupportedOperationException(action.name());
+            }
+        } finally {
+            adapter.returnExchange(exchange);
         }
     }
 
@@ -116,8 +124,7 @@ class OperatorStoreGIHandler {
 
     private void removeExchange(GroupIndex groupIndex, Exchange exchange) {
         try {
-            if (exchange.fetch().getValue().isDefined()) { // see bug 914044 for why we can't do if(exchange.remove())
-                exchange.remove();
+            if (exchange.remove()) {
                 AccumulatorAdapter.updateAndGet(AccumulatorAdapter.AccumInfo.ROW_COUNT, exchange, -1);
             }
             else
@@ -130,7 +137,7 @@ class OperatorStoreGIHandler {
         }
     }
 
-    private static long realTablesMap(GroupIndex groupIndex, Row row) {
+    private static long tableBitmap(GroupIndex groupIndex, Row row) {
         long result = 0;
          int indexFromEnd = 0;
          for(UserTable table=groupIndex.leafMostTable(), END=groupIndex.rootMostTable().parentTable();
@@ -138,7 +145,7 @@ class OperatorStoreGIHandler {
                 table = table.parentTable()
         ){
             if (row.containsRealRowOf(table)) {
-                result |= 1 << indexFromEnd;
+                result |= 1 << table.getDepth();
             }
             ++indexFromEnd;
         }

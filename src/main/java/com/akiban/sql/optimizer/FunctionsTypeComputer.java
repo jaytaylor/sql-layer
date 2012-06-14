@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer;
@@ -58,24 +69,32 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return specialFunctionNode((SpecialFunctionNode)node);
         case NodeTypes.CURRENT_DATETIME_OPERATOR_NODE:
             return currentDatetimeOperatorNode((CurrentDatetimeOperatorNode)node);
-        case NodeTypes.DB2_LENGTH_OPERATOR_NODE:
+        case NodeTypes.OCTET_LENGTH_OPERATOR_NODE:
         case NodeTypes.EXTRACT_OPERATOR_NODE:
         case NodeTypes.CHAR_LENGTH_OPERATOR_NODE:
         case NodeTypes.SIMPLE_STRING_OPERATOR_NODE:
         case NodeTypes.UNARY_DATE_TIMESTAMP_OPERATOR_NODE:
+        case NodeTypes.ABSOLUTE_OPERATOR_NODE:
+        case NodeTypes.SQRT_OPERATOR_NODE:
+        case NodeTypes.UNARY_PLUS_OPERATOR_NODE:
+        case NodeTypes.UNARY_MINUS_OPERATOR_NODE:
+        case NodeTypes.UNARY_BITNOT_OPERATOR_NODE:
             return unaryOperatorFunction((UnaryOperatorNode)node);
         case NodeTypes.LIKE_OPERATOR_NODE:
         case NodeTypes.LOCATE_FUNCTION_NODE:
         case NodeTypes.SUBSTRING_OPERATOR_NODE:
-        case NodeTypes.TRIM_OPERATOR_NODE:
         case NodeTypes.TIMESTAMP_ADD_FN_NODE:
         case NodeTypes.TIMESTAMP_DIFF_FN_NODE:
             return ternaryOperatorFunction((TernaryOperatorNode)node);
+        case NodeTypes.LEFT_FN_NODE:
+        case NodeTypes.RIGHT_FN_NODE:
+        case NodeTypes.TRIM_OPERATOR_NODE:
         case NodeTypes.BINARY_DIVIDE_OPERATOR_NODE:
         case NodeTypes.BINARY_MINUS_OPERATOR_NODE:
         case NodeTypes.BINARY_PLUS_OPERATOR_NODE:
         case NodeTypes.BINARY_TIMES_OPERATOR_NODE:
         case NodeTypes.MOD_OPERATOR_NODE:
+        case NodeTypes.BINARY_BIT_OPERATOR_NODE:
             return binaryOperatorFunction((BinaryOperatorNode)node);
         default:
             return super.computeType(node);
@@ -496,8 +515,6 @@ public class FunctionsTypeComputer extends AISTypeComputer
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             return ExpressionTypes.BOOL;
-        case TypeId.FormatIds.CHAR_TYPE_ID:
-            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
         case TypeId.FormatIds.DATE_TYPE_ID:
             return ExpressionTypes.DATE;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
@@ -542,8 +559,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
                 return ExpressionTypes.DATETIME;
             else
                 return ExpressionTypes.TIMESTAMP;
+        case TypeId.FormatIds.BIT_TYPE_ID:
         case TypeId.FormatIds.VARBIT_TYPE_ID:
             return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
+        case TypeId.FormatIds.CHAR_TYPE_ID:
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
             return ExpressionTypes.varchar(sqlType.getMaximumWidth());
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
@@ -602,7 +621,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case TEXT:
             return new DataTypeDescriptor(TypeId.LONGVARCHAR_ID, isNullable);
         case VARBINARY:
-            return new DataTypeDescriptor(TypeId.LONGVARBIT_ID, isNullable);
+            return new DataTypeDescriptor(TypeId.VARBIT_ID, isNullable);
         case NULL:
             return null;
         case DATETIME:

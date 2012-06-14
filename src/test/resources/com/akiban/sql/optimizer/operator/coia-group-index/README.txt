@@ -36,6 +36,8 @@ select-7oo: ordering group index with left join at leaf
 
 select-7ooo: ordering group index with left joins along
 
+select-13: IN using index union
+
 select-14: IN using index
 
 select-14p: IN using index with parameters
@@ -64,3 +66,4 @@ select-19i: aggregation and IN
 
 select-19x: aggregation from MAX
 
+select-20: subquery with cross-group join

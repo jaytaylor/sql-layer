@@ -1,22 +1,35 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.expression;
 
+import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.ConstantColumnSelector;
 
 public class IndexKeyRange
 {
@@ -24,12 +37,12 @@ public class IndexKeyRange
     {
         StringBuilder buffer = new StringBuilder();
         buffer.append('(');
-        if (lo != null) {
+        if (lo != null && boundColumns > 0) {
             buffer.append(loInclusive() ? ">=" : ">");
             buffer.append(lo.toString());
         }
         buffer.append(',');
-        if (hi != null) {
+        if (hi != null && boundColumns > 0) {
             buffer.append(hiInclusive() ? "<=" : "<");
             buffer.append(hi.toString());
         }
@@ -79,7 +92,8 @@ public class IndexKeyRange
      */
     public static IndexKeyRange unbounded(IndexRowType indexRowType)
     {
-        return new IndexKeyRange(indexRowType);
+        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType), ConstantColumnSelector.ALL_OFF);
+        return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false, false);
     }
 
     /**
@@ -105,11 +119,12 @@ public class IndexKeyRange
         if (lo == null || hi == null) {
             throw new IllegalArgumentException("IndexBound arguments must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive);
+        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, false);
     }
 
     /**
      * Describes all keys in the index starting at or after lo, depending on loInclusive.
+     * This is used only in lexicographic scans.
      *
      * @param indexRowType The row type of index keys.
      * @param lo           Lower bound of the range.
@@ -123,11 +138,11 @@ public class IndexKeyRange
         if (lo == null) {
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
-        return new IndexKeyRange(indexRowType, lo, loInclusive, null, false);
+        return new IndexKeyRange(indexRowType, lo, loInclusive, null, false, true);
     }
 
     /**
-     * Describes all keys in the index starting at or after lo, depending on loInclusive.
+     * Describes all keys in the index ending at or before hi, depending on hiInclusive.
      *
      * @param indexRowType The row type of index keys.
      * @param hi           Upper bound of the range.
@@ -141,68 +156,105 @@ public class IndexKeyRange
         if (hi == null) {
             throw new IllegalArgumentException("IndexBound argument must not be null");
         }
-        return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive);
+        return new IndexKeyRange(indexRowType, null, false, hi, hiInclusive, true);
     }
 
-    // An Akiban index scan normally allows a range for only the last specified part of the bound. E.g.,
-    // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
-    // 10-20 and 800-888. MySQL support requires a different approach in which we start at the lower bound and
-    // scan everything in the index up to the upper bound. So (1, 10, 800) - (1, 20, 888) is legal, and could return
-    // a row that is lexicographically between these bounds, but outside some range, e.g. (1, 11, 900). This will
-    // also be useful in supporting queries such as select * from t where (x, y) > (5, 7).
-    public void lexicographic(boolean lexicographic)
+    /**
+     * Describes all keys in the index starting at or after lo, depending on loInclusive; and
+     * ending at or before hi, depending on hiInclusive.
+     * This is used only in lexicographic scans.
+     *
+     * @param indexRowType The row type of index keys.
+     * @param lo           Lower bound of the range.
+     * @param loInclusive  True if the lower bound is inclusive, false if exclusive.
+     * @param hi           Upper bound of the range.
+     * @param hiInclusive  True if the upper bound is inclusive, false if exclusive.
+     * @return IndexKeyRange covering the keys ending at or before lo.
+     */
+    public static IndexKeyRange startingAtAndEndingAt(
+        IndexRowType indexRowType,
+        IndexBound lo,
+        boolean loInclusive,
+        IndexBound hi,
+        boolean hiInclusive)
     {
-        this.lexicographic = lexicographic;
+        if (hi == null) {
+            throw new IllegalArgumentException("IndexBound argument must not be null");
+        }
+        return new IndexKeyRange(indexRowType, lo, loInclusive, hi, hiInclusive, true);
     }
 
     public boolean lexicographic()
     {
-        // return (lo == null || hi == null) && lo != hi;
         return lexicographic;
     }
 
-    private IndexKeyRange(IndexRowType indexRowType)
+    public IndexKeyRange resetLo(IndexBound newLo)
     {
-        this.boundColumns = 0;
-        this.indexRowType = indexRowType;
-        this.lo = null;
-        this.loInclusive = false;
-        this.hi = null;
-        this.hiInclusive = false;
+        IndexKeyRange restart = new IndexKeyRange(this);
+        restart.boundColumns = boundColumns(indexRowType, newLo);
+        restart.lo = newLo;
+        restart.loInclusive = true;
+        return restart;
+    }
+
+    public IndexKeyRange resetHi(IndexBound newHi)
+    {
+        IndexKeyRange restart = new IndexKeyRange(this);
+        restart.boundColumns = boundColumns(indexRowType, newHi);
+        restart.hi = newHi;
+        restart.hiInclusive = true;
+        return restart;
     }
 
     private IndexKeyRange(IndexRowType indexRowType,
                           IndexBound lo,
                           boolean loInclusive,
                           IndexBound hi,
-                          boolean hiInclusive)
+                          boolean hiInclusive,
+                          boolean lexicographic)
     {
         this.boundColumns =
             lo == null
             ? boundColumns(indexRowType, hi) :
             hi == null
             ? boundColumns(indexRowType, lo)
-            : boundColumns(indexRowType, lo, hi);
+            : boundColumns(indexRowType, lo, hi, lexicographic);
         this.indexRowType = indexRowType;
         this.lo = lo;
         this.loInclusive = loInclusive;
         this.hi = hi;
         this.hiInclusive = hiInclusive;
+        this.lexicographic = lexicographic;
     }
 
-    private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi)
+    private IndexKeyRange(IndexKeyRange indexKeyRange)
+    {
+        this.indexRowType = indexKeyRange.indexRowType;
+        this.boundColumns = indexKeyRange.boundColumns;
+        this.lo = indexKeyRange.lo;
+        this.loInclusive = indexKeyRange.loInclusive;
+        this.hi = indexKeyRange.hi;
+        this.hiInclusive = indexKeyRange.hiInclusive;
+        this.lexicographic = indexKeyRange.lexicographic;
+    }
+
+    private static int boundColumns(IndexRowType indexRowType, IndexBound lo, IndexBound hi, boolean lexicographic)
     {
         ColumnSelector loSelector = lo.columnSelector();
         ColumnSelector hiSelector = hi.columnSelector();
         boolean selected = true;
         int boundColumns = 0;
-        for (int i = 0; i < indexRowType.declaredFields(); i++) {
-            if (loSelector.includesColumn(i) != hiSelector.includesColumn(i)) {
+        for (int i = 0; i < indexRowType.nFields(); i++) {
+            if (!lexicographic && loSelector.includesColumn(i) != hiSelector.includesColumn(i)) {
                 throw new IllegalArgumentException(
                     String.format("IndexBound arguments specify different fields of index %s", indexRowType));
             }
             if (selected) {
-                if (loSelector.includesColumn(i)) {
+                // loSelector.includesColumn(i) will equal hiSelector.includesColumn(i) for non-lexicographic
+                // ranges. For lexicographic, we want boundColumns to indicate the maximum value, relying on
+                // SortCursorUnidirectionalLexicographic to take care of the shorter one.
+                if (loSelector.includesColumn(i) || hiSelector.includesColumn(i)) {
                     boundColumns++;
                 } else {
                     selected = false;
@@ -214,7 +266,6 @@ public class IndexKeyRange
                 }
             }
         }
-        assert boundColumns > 0;
         return boundColumns;
     }
 
@@ -223,7 +274,7 @@ public class IndexKeyRange
         ColumnSelector selector = bound.columnSelector();
         boolean selected = true;
         int boundColumns = 0;
-        for (int i = 0; i < indexRowType.declaredFields(); i++) {
+        for (int i = 0; i < indexRowType.nFields(); i++) {
             if (selected) {
                 if (selector.includesColumn(i)) {
                     boundColumns++;
@@ -244,10 +295,16 @@ public class IndexKeyRange
     // Object state
 
     private final IndexRowType indexRowType;
-    private final int boundColumns;
-    private final IndexBound lo;
-    private final boolean loInclusive;
-    private final IndexBound hi;
-    private final boolean hiInclusive;
-    private boolean lexicographic = false;
+    private int boundColumns;
+    private IndexBound lo;
+    private boolean loInclusive;
+    private IndexBound hi;
+    private boolean hiInclusive;
+    // An Akiban index scan normally allows a range for only the last specified part of the bound. E.g.,
+    // (1, 10, 800) - (1, 10, 888) is legal, but (1, 10, 800) - (1, 20, 888) is not, because there are two ranges,
+    // 10-20 and 800-888. MySQL support requires a different approach in which we start at the lower bound and
+    // scan everything in the index up to the upper bound. So (1, 10, 800) - (1, 20, 888) is legal, and could return
+    // a row that is lexicographically between these bounds, but outside some range, e.g. (1, 11, 900). This will
+    // also be useful in supporting queries such as select * from t where (x, y) > (5, 7).
+    private final boolean lexicographic;
 }

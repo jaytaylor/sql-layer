@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
@@ -18,9 +29,6 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.rule.AggregateMapper.AggregateSourceFinder;
 
 import com.akiban.server.error.UnsupportedSQLException;
-
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.AggregateSource.Implementation;
@@ -133,8 +141,8 @@ public class AggregateSplitter extends BaseRule
         if (!select.getConditions().isEmpty())
             return null;
         input = select.getInput();
-        if (input instanceof IndexScan) {
-            IndexScan index = (IndexScan)input;
+        if (input instanceof SingleIndexScan) {
+            SingleIndexScan index = (SingleIndexScan)input;
             if (index.isCovering() && !index.hasConditions() &&
                 index.getIndex().isTableIndex())
                 return index.getLeafMostTable();
@@ -162,9 +170,7 @@ public class AggregateSplitter extends BaseRule
         if (!(input instanceof IndexScan))
             return false;
         IndexScan index = (IndexScan)input;
-        int nequals = 0;
-        if (index.getEqualityComparands() != null)
-            nequals = index.getEqualityComparands().size();
+        int nequals = index.getNEquality();
         List<Sort.OrderByExpression> ordering = index.getOrdering();
         // Get number of leading columns available for ordering. This
         // includes those tested for equality, which only have that
@@ -173,15 +179,24 @@ public class AggregateSplitter extends BaseRule
         AggregateFunctionExpression aggr1 = source.getAggregates().get(0);
         for (int i = 0; i < ncols; i++) {
             Sort.OrderByExpression orderBy = ordering.get(i);
+            if (orderBy.getExpression() == null) continue;
             if (orderBy.getExpression().equals(aggr1.getOperand())) {
                 if ((i == nequals) &&
                     (orderBy.isAscending() != aggr1.getFunction().equals("MIN"))) {
                     // Fetching the MAX of an ascending index (or MIN
-                    // or descending): reverse the scan to get it
+                    // of descending): reverse the scan to get it
                     // first.  (Order doesn't matter on the
                     // equalities, MIN and MAX are the same.)
                     for (Sort.OrderByExpression otherOtherBy : ordering) {
                         otherOtherBy.setAscending(!otherOtherBy.isAscending());
+                    }
+                }
+                if ((index instanceof SingleIndexScan) &&
+                    (index.getOrderEffectiveness() == IndexScan.OrderEffectiveness.NONE)) {
+                    SingleIndexScan sindex = (SingleIndexScan)index;
+                    if (sindex.getConditionRange() != null) {
+                        // Need to make sure index gets the right kind of merge.
+                        sindex.setOrderEffectiveness(IndexScan.OrderEffectiveness.FOR_MIN_MAX);
                     }
                 }
                 return true;

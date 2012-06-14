@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
@@ -199,9 +210,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
                 filter_Default(
                     groupScan_Default(coi),
                     Collections.singleton(customerRowType)),
-                ifEmpty_Default(project,
-                                projectRowType,
-                                Arrays.asList(boundField(customerRowType, 0, 0), literal(null))),
+                ifEmpty_Default(project, projectRowType, Arrays.asList(boundField(customerRowType, 0, 0), literal(null)), InputPreservationOption.KEEP_INPUT),
                 0);
         RowBase[] expected = new RowBase[]{
             row(projectRowType, 1L, 100L),
@@ -215,6 +224,40 @@ public class Map_NestedLoopsIT extends OperatorITBase
             row(projectRowType, 6L, null),
         };
         compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            map_NestedLoops(
+                indexScan_Default(itemOidIndexRowType, false),
+                ancestorLookup_Nested(coi, itemOidIndexRowType, Collections.singleton(itemRowType), 0),
+                0);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(itemRowType, 1000L, 100L),
+                    row(itemRowType, 1001L, 100L),
+                    row(itemRowType, 1010L, 101L),
+                    row(itemRowType, 1011L, 101L),
+                    row(itemRowType, 2000L, 200L),
+                    row(itemRowType, 2001L, 200L),
+                    row(itemRowType, 2010L, 201L),
+                    row(itemRowType, 2011L, 201L),
+                    row(itemRowType, 3000L, 300L),
+                    row(itemRowType, 3001L, 300L),
+                    row(itemRowType, 4000L, 400L),
+                    row(itemRowType, 4001L, 400L),
+                    row(itemRowType, 4010L, 401L),
+                    row(itemRowType, 4011L, 401L),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     @Test

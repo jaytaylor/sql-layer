@@ -1,4 +1,7 @@
 # Test the bitwise AND function
+# Related bug: 906453
+---
+- Message: Suppressed due to bug 906453 https://bugs.launchpad.net/akiban-server/+bug/906453
 ---
 - Properties: all
 - suppressed: true
@@ -36,6 +39,5 @@
       (2004, 'ANTH', 'Lower', -19),
       (2005, 'ENGL', 'Upper', -28)
 ---
-- Statement: SELECT Dept, Level, 
-(ClassID) AS BitwiseAND FROM Classes GROUP BY Dept, Level ORDER BY DEPT, LEVEL;
+- Statement: SELECT Dept, Level, (ClassID) AS BitwiseAND FROM Classes GROUP BY Dept, Level ORDER BY DEPT, LEVEL;
 - output: [['ANTH','Lower',960],['ANTH','Upper',960],['ENGL','Lower',1011],['ENGL','Upper',960],['MATH',Lower,992],['MATH','Upper',963]]    

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.expression;
@@ -28,6 +39,17 @@ import java.util.List;
  * @see com.akiban.server.service.functions.Scalar.
  */
 public interface ExpressionComposer {
+    public static enum NullTreating
+    {
+        IGNORE,       // The function will treat NULL as if it were any regular value
+       
+        RETURN_NULL,  // The function will return NULL if at least one of its operands is NULL
+        
+        REMOVE        // The function essentially ignores NULL, so constant NULL could be removed from the operand-list
+                      // The differene between this and IGNORE is that
+                                // This doesn't care about NULL, NULL operand(s) will simply be skipped
+                                // while IGNORE might do something with NULL
+    }
     /**
      * - Adjust input types, if needed
      * - Return the type of a composed expression when passed the given types.
@@ -47,4 +69,26 @@ public interface ExpressionComposer {
      * Otherwise, it can use one of the {@link com.akiban.server.types.extract.Extractors}.
      */
     Expression compose(List<? extends Expression> arguments);
+    
+    /**
+     * typesList.size() should be (arguments.size() + 1), where the last element 
+     * in typesList is the return type, and the rest is the arguments' type
+     * 
+     * @param arguments
+     * @param typesList: arguments' type AND the return type.
+     * @return 
+     */
+    Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList);
+    
+    /**
+     * 
+     * @return IGNORE 
+     *                  If NULL operand(s) will simply be ignored
+     *         RETURN_NULL
+     *                  If NULL operand(s) will make this expression return NULL
+     *         REMOVE
+     *                  If NULL expression(s) should be removed (optimisation purpose)
+     *         
+     */
+    NullTreating getNullTreating();
 }

@@ -1,4 +1,6 @@
 # Inserting boolean literal fails
+# BUG: 889229
+# Status: confirmed
 ---
 - CreateTable: t (b boolean)
 ---

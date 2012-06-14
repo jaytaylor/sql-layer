@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.ais.model;
@@ -37,15 +48,6 @@ public class AkibanInformationSchema implements Traversable
             addType(type);
         }
         charsetAndCollation = CharsetAndCollation.intern(DEFAULT_CHARSET, DEFAULT_COLLATION);
-    }
-
-    public AkibanInformationSchema(AkibanInformationSchema ais)
-    {
-        this();
-        groups.putAll(ais.getGroups());
-        userTables.putAll(ais.getUserTables());
-        groupTables.putAll(ais.getGroupTables());
-        joins.putAll(ais.getJoins());
     }
 
 
@@ -196,6 +198,16 @@ public class AkibanInformationSchema implements Traversable
         return joins.get(joinName);
     }
 
+    public Map<String, Schema> getSchemas()
+    {
+        return schemas;
+    }
+
+    public Schema getSchema(String schema)
+    {
+        return schemas.get(schema);
+    }
+
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
@@ -258,7 +270,16 @@ public class AkibanInformationSchema implements Traversable
 
     public void addUserTable(UserTable table)
     {
-        userTables.put(table.getName(), table);
+        TableName tableName = table.getName();
+        userTables.put(tableName, table);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(tableName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(tableName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addUserTable(table);
     }
 
     public void addGroupTable(GroupTable table)
@@ -289,6 +310,11 @@ public class AkibanInformationSchema implements Traversable
     public void addJoin(Join join)
     {
         joins.put(join.getName(), join);
+    }
+
+    public void addSchema(Schema schema)
+    {
+        schemas.put(schema.getName(), schema);
     }
 
     public void deleteGroupAndGroupTable(Group group)
@@ -533,6 +559,10 @@ public class AkibanInformationSchema implements Traversable
 
     void removeTable(TableName name) {
         userTables.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeTable(name.getTableName());
+        }
         invalidateTableIdMap();
     }
 
@@ -546,6 +576,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
+    private final Map<String, Schema> schemas = new TreeMap<String, Schema>();
     private final CharsetAndCollation charsetAndCollation;
 
     private Map<Integer, UserTable> userTablesById = null;

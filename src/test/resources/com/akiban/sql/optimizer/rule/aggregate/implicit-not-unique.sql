@@ -1,0 +1,1 @@
+SELECT cid, name FROM customers GROUP BY name

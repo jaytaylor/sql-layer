@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.ais.model;
@@ -53,6 +64,7 @@ public class AISBuilderTest
         builder.column("schema", "customer", "customer_id", 0, "int", 0L, 0L, false, false, null, null);
         builder.column("schema", "customer", "customer_name", 1, "varchar", 64L, 0L, false, false, null, null);
         builder.basicSchemaIsComplete();
+        builder.setTableTreeNamesForTest();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         Assert.assertEquals(1, ais.getUserTables().size());
         Assert.assertEquals(0, ais.getGroupTables().size());
@@ -145,6 +157,56 @@ public class AISBuilderTest
 
         Assert.assertEquals(0,
                 builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS).failures().size());
+    }
+
+    @Test
+    public void testMultipleTableSameColumnNameLongGroupTableNames() {
+        final int TABLE_COUNT = 11;
+        final String SCHEMA = "schema";
+        final String PARENT_NAME = "p";
+        final String PARENT_PK_COL = "id";
+        final String CHILD_PREFIX = "t";
+        final String CHILD_JOIN_COL = "pid";
+
+        String longName = "";
+        while(longName.length() < AISBuilder.MAX_COLUMN_NAME_LENGTH) {
+            longName += "x";
+        }
+
+        AISBuilder builder = new AISBuilder();
+        for(int i = 0; i < TABLE_COUNT; ++i) {
+            String name = i == 0 ? PARENT_NAME : CHILD_PREFIX + i;
+            String pkCol = i == 0 ? PARENT_PK_COL : longName;
+            builder.userTable(SCHEMA, name);
+            builder.column(SCHEMA, name, pkCol, 0, "int", 0L, 0L, false, false, null, null);
+            builder.index(SCHEMA, name, "PRIMARY", true, "PRIMARY");
+            builder.indexColumn(SCHEMA, name, "PRIMARY", pkCol, 0, true, null);
+            if(i > 0) {
+                builder.column(SCHEMA, name, CHILD_JOIN_COL, 1, "int", 0L, 0L, true, false, null, null);
+            }
+        }
+        builder.basicSchemaIsComplete();
+
+        String groupTableName = "_" + PARENT_NAME;
+        builder.createGroup(PARENT_NAME, SCHEMA, groupTableName);
+        for(int i = 1; i < TABLE_COUNT; ++i) {
+            String childName = CHILD_PREFIX + i;
+            builder.joinTables(childName, SCHEMA, PARENT_NAME, SCHEMA, childName);
+            builder.joinColumns(childName, SCHEMA, PARENT_NAME, "id", SCHEMA, childName, CHILD_JOIN_COL);
+            builder.addJoinToGroup(PARENT_NAME, childName, 0);
+        }
+        builder.groupingIsComplete();
+
+        GroupTable groupTable = builder.akibanInformationSchema().getGroupTable(SCHEMA, groupTableName);
+        Assert.assertNotNull("Found group table", groupTable);
+
+        for(Column column : groupTable.getColumns()) {
+            int len = column.getName().length();
+            Assert.assertTrue("Less or equal than max length: "+len, len <= AISBuilder.MAX_COLUMN_NAME_LENGTH);
+            if (column.getUserColumn().getName().equals(longName)) {
+                Assert.assertEquals("Group table column length", AISBuilder.MAX_COLUMN_NAME_LENGTH, len);
+            }
+        }
     }
 
     @Test
@@ -712,6 +774,7 @@ public class AISBuilderTest
         builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
         builder.userTableInitialAutoIncrement("s", "b", 5L);
         builder.basicSchemaIsComplete();
+        builder.setTableTreeNamesForTest();
         // Check autoinc state
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("s", "b");
@@ -735,6 +798,7 @@ public class AISBuilderTest
         builder.column("s", "b", "z", 2, "int", 0L, 0L, false, false, null, null);
         builder.userTableInitialAutoIncrement("s", "b", 5L);
         builder.basicSchemaIsComplete();
+        builder.setTableTreeNamesForTest();
         // Check autoinc state
         AkibanInformationSchema ais = builder.akibanInformationSchema();
         UserTable table = ais.getUserTable("s", "b");
@@ -1253,10 +1317,10 @@ public class AISBuilderTest
             builder.column("test", "c", "name", 1, "varchar", 64L, 0L, false, false, null, null);
             builder.basicSchemaIsComplete();
             builder.createGroup("coi", "test", "_akiban_c");
-            builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        builder.groupIndex("coi", "name_date", false, Index.JoinType.LEFT);
         builder.groupIndexColumn("coi", "name_date", "test", "c",  "name", 0);
     }
 

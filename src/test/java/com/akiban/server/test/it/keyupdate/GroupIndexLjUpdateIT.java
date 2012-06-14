@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.keyupdate;
@@ -146,7 +157,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 "Horton, 01-01-1999, 3333, 1, 11, 103 => " + containing(c, o, i),
                 "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
         );
-        // delete grandparent
+        // delete parent
         deleteAndCheck(
                 createNewRow(o, 11L, 1L, "01-01-2001"),
                 "Horton, 02-02-2002, null, 1, 12, null => " + containing(c, o)
@@ -201,7 +212,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
 
-        // delete from root on up
+        // delete from root on down
         dml().deleteRow(session(), createNewRow(c, 1L, "Horton"));
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
 
@@ -225,7 +236,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
         );
         checkIndex(indexName, "1111, handle with care, 1, 11, 101, 1001 => " + containing(i, h));
 
-        // delete from root on up
+        // delete from root on down
 
         dml().deleteRow(session(), createNewRow(o, 11L, 1L, "01-01-2001"));
         checkIndex(indexName, "1111, handle with care, null, 11, 101, 1001 => " + containing(i, h));
@@ -425,6 +436,8 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 null
         );
 
+        // TODO: This test fails on the first row. last two nulls are 101, 1001, reflecting the old home
+        // TODO: of the row. Ancestor lookup broken due to use of wrong column?
         checkIndex(
                 indexName,
                 "1111, don't break, 2, 12, 101, 1001 => " + containing(i, h),
@@ -510,8 +523,7 @@ public final class GroupIndexLjUpdateIT extends GIUpdateITBase {
                 createNewRow(o, 12L, 2L, "02-02-2002"),
                 createNewRow(i, 102L, 12L, "2222"),
 
-                createNewRow(o, 66L, 6L,
- "03-03-2003"),
+                createNewRow(o, 66L, 6L, "03-03-2003"),
                 createNewRow(i, 666L, 66L, "6666")
         );
         checkIndex(

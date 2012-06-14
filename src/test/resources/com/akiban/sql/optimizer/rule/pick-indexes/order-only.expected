@@ -1,6 +1,0 @@
-SelectQuery@566e9e64
-  ResultSet@7860e390[iid, oid, sku, quan]
-    Project@20fc40ae[user.items.iid, user.items.oid, user.items.sku, user.items.quan]
-      Select@10fa706d[user.items.quan > 100]
-        TableJoins@29eb0cd0(TableGroup@6964130(customers) - IndexScan@7291b9b0(Index(user.items.sku[IndexColumn(sku)]), SORTED))
-          TableSource@228917a2(user.items - TableGroup@6964130(customers))

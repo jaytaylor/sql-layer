@@ -1,4 +1,6 @@
-# Invalid MONTH TO HOUR interval triggers assertion (bug 912343)
+# Invalid MONTH TO HOUR interval triggers assertion 
+# BUG bug 912343
+# Status new
 ---
 - CreateTable: t (dummy int)
 ---

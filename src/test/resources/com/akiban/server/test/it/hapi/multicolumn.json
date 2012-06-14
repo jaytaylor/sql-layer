@@ -5,21 +5,21 @@
 
     "tables" : [
         [ "p1",
-            "pid int key",
+            "pid int not null primary key",
             "status1 int",
             "status2 int",
-            "KEY p1_multi (status1, status2)"
+            "index(status1,status2)"
         ],
 
         [ "c1",
-            "cid int key",
+            "cid int not null primary key",
             "pid int",
             "firstname varchar(32)",
             "midinitial varchar(1)",
             "lastname varchar(32)",
-            "CONSTRAINT __akiban_fk_c1 FOREIGN KEY __akiban_fk_c1 (pid) REFERENCES p1(pid)",
-            "UNIQUE KEY name_by_last(lastname, firstname, midinitial)",
-            "UNIQUE KEY name_by_first(firstname, lastname, midinitial)"
+            "GROUPING FOREIGN KEY (pid) REFERENCES p1(pid)",
+            "CONSTRAINT name_by_last UNIQUE(lastname, firstname, midinitial)",
+            "CONSTRAINT name_by_first UNIQUE(firstname, lastname, midinitial)"
         ]
     ],
 
@@ -39,7 +39,7 @@
 "tests" : {
     "p1 nochildren" : {
         "get"           : "test:p1:status1=2,status2=4",
-        "expect index"  : "p1_multi",
+        "expect index"  : "status1_status2",
         "expect result" :
         {
             "@p1" : [

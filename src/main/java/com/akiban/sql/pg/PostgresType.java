@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
@@ -19,21 +30,14 @@ import com.akiban.sql.server.ServerType;
 
 import com.akiban.server.error.UnknownDataTypeException;
 import com.akiban.server.error.UnknownTypeSizeException;
-import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.types.AkType;
 
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
-
-import java.io.*;
-import java.text.*;
-import java.util.*;
 
 /** A type according to the PostgreSQL regime.
  * Information corresponds more-or-less directly to what's in the 
@@ -43,112 +47,154 @@ public class PostgresType extends ServerType
 {
     /*** Type OIDs ***/
 
-    public static final int BOOL_TYPE_OID = 16;
-    public static final int BYTEA_TYPE_OID = 17;
-    public static final int CHAR_TYPE_OID = 18;
-    public static final int NAME_TYPE_OID = 19;
-    public static final int INT8_TYPE_OID = 20;
-    public static final int INT2_TYPE_OID = 21;
-    public static final int INT2VECTOR_TYPE_OID = 22;
-    public static final int INT4_TYPE_OID = 23;
-    public static final int REGPROC_TYPE_OID = 24;
-    public static final int TEXT_TYPE_OID = 25;
-    public static final int OID_TYPE_OID = 26;
-    public static final int TID_TYPE_OID = 27;
-    public static final int XID_TYPE_OID = 28;
-    public static final int CID_TYPE_OID = 29;
-    public static final int OIDVECTOR_TYPE_OID = 30;
-    public static final int PG_TYPE_TYPE_OID = 71;
-    public static final int PG_ATTRIBUTE_TYPE_OID = 75;
-    public static final int PG_PROC_TYPE_OID = 81;
-    public static final int PG_CLASS_TYPE_OID = 83;
-    public static final int XML_TYPE_OID = 142;
-    public static final int _XML_TYPE_OID = 143;
-    public static final int SMGR_TYPE_OID = 210;
-    public static final int POINT_TYPE_OID = 600;
-    public static final int LSEG_TYPE_OID = 601;
-    public static final int PATH_TYPE_OID = 602;
-    public static final int BOX_TYPE_OID = 603;
-    public static final int POLYGON_TYPE_OID = 604;
-    public static final int LINE_TYPE_OID = 628;
-    public static final int _LINE_TYPE_OID = 629;
-    public static final int FLOAT4_TYPE_OID = 700;
-    public static final int FLOAT8_TYPE_OID = 701;
-    public static final int ABSTIME_TYPE_OID = 702;
-    public static final int RELTIME_TYPE_OID = 703;
-    public static final int TINTERVAL_TYPE_OID = 704;
-    public static final int UNKNOWN_TYPE_OID = 705;
-    public static final int CIRCLE_TYPE_OID = 718;
-    public static final int _CIRCLE_TYPE_OID = 719;
-    public static final int MONEY_TYPE_OID = 790;
-    public static final int _MONEY_TYPE_OID = 791;
-    public static final int MACADDR_TYPE_OID = 829;
-    public static final int INET_TYPE_OID = 869;
-    public static final int CIDR_TYPE_OID = 650;
-    public static final int _BOOL_TYPE_OID = 1000;
-    public static final int _BYTEA_TYPE_OID = 1001;
-    public static final int _CHAR_TYPE_OID = 1002;
-    public static final int _NAME_TYPE_OID = 1003;
-    public static final int _INT2_TYPE_OID = 1005;
-    public static final int _INT2VECTOR_TYPE_OID = 1006;
-    public static final int _INT4_TYPE_OID = 1007;
-    public static final int _REGPROC_TYPE_OID = 1008;
-    public static final int _TEXT_TYPE_OID = 1009;
-    public static final int _OID_TYPE_OID = 1028;
-    public static final int _TID_TYPE_OID = 1010;
-    public static final int _XID_TYPE_OID = 1011;
-    public static final int _CID_TYPE_OID = 1012;
-    public static final int _OIDVECTOR_TYPE_OID = 1013;
-    public static final int _BPCHAR_TYPE_OID = 1014;
-    public static final int _VARCHAR_TYPE_OID = 1015;
-    public static final int _INT8_TYPE_OID = 1016;
-    public static final int _POINT_TYPE_OID = 1017;
-    public static final int _LSEG_TYPE_OID = 1018;
-    public static final int _PATH_TYPE_OID = 1019;
-    public static final int _BOX_TYPE_OID = 1020;
-    public static final int _FLOAT4_TYPE_OID = 1021;
-    public static final int _FLOAT8_TYPE_OID = 1022;
-    public static final int _ABSTIME_TYPE_OID = 1023;
-    public static final int _RELTIME_TYPE_OID = 1024;
-    public static final int _TINTERVAL_TYPE_OID = 1025;
-    public static final int _POLYGON_TYPE_OID = 1027;
-    public static final int ACLITEM_TYPE_OID = 1033;
-    public static final int _ACLITEM_TYPE_OID = 1034;
-    public static final int _MACADDR_TYPE_OID = 1040;
-    public static final int _INET_TYPE_OID = 1041;
-    public static final int _CIDR_TYPE_OID = 651;
-    public static final int _CSTRING_TYPE_OID = 1263;
-    public static final int BPCHAR_TYPE_OID = 1042;
-    public static final int VARCHAR_TYPE_OID = 1043;
-    public static final int DATE_TYPE_OID = 1082;
-    public static final int TIME_TYPE_OID = 1083;
-    public static final int TIMESTAMP_TYPE_OID = 1114;
-    public static final int _TIMESTAMP_TYPE_OID = 1115;
-    public static final int _DATE_TYPE_OID = 1182;
-    public static final int _TIME_TYPE_OID = 1183;
-    public static final int TIMESTAMPTZ_TYPE_OID = 1184;
-    public static final int _TIMESTAMPTZ_TYPE_OID = 1185;
-    public static final int INTERVAL_TYPE_OID = 1186;
-    public static final int _INTERVAL_TYPE_OID = 1187;
-    public static final int _NUMERIC_TYPE_OID = 1231;
-    public static final int TIMETZ_TYPE_OID = 1266;
-    public static final int _TIMETZ_TYPE_OID = 1270;
-    public static final int BIT_TYPE_OID = 1560;
-    public static final int _BIT_TYPE_OID = 1561;
-    public static final int VARBIT_TYPE_OID = 1562;
-    public static final int _VARBIT_TYPE_OID = 1563;
-    public static final int NUMERIC_TYPE_OID = 1700;
-    public static final int REFCURSOR_TYPE_OID = 1790;
-    public static final int _REFCURSOR_TYPE_OID = 2201;
-    public static final int REGPROCEDURE_TYPE_OID = 2202;
-    public static final int REGOPER_TYPE_OID = 2203;
-    public static final int REGOPERATOR_TYPE_OID = 2204;
+    public enum TypeOid {
+
+        BOOL_TYPE_OID(16, "bool", TypType.BASE),
+        BYTEA_TYPE_OID(17, "bytea", TypType.BASE),
+        CHAR_TYPE_OID(18, "char", TypType.BASE),
+        NAME_TYPE_OID(19, "name", TypType.BASE),
+        INT8_TYPE_OID(20, "int8", TypType.BASE),
+        INT2_TYPE_OID(21, "int2", TypType.BASE),
+        INT2VECTOR_TYPE_OID(22, "int2vector", TypType.BASE),
+        INT4_TYPE_OID(23, "int4", TypType.BASE),
+        REGPROC_TYPE_OID(24, "regproc", TypType.BASE),
+        TEXT_TYPE_OID(25, "text", TypType.BASE),
+        OID_TYPE_OID(26, "oid", TypType.BASE),
+        TID_TYPE_OID(27, "tid", TypType.BASE),
+        XID_TYPE_OID(28, "xid", TypType.BASE),
+        CID_TYPE_OID(29, "cid", TypType.BASE),
+        OIDVECTOR_TYPE_OID(30, "oidvector", TypType.BASE),
+        PG_TYPE_TYPE_OID(71, "pg_type", TypType.COMPOSITE),
+        PG_ATTRIBUTE_TYPE_OID(75, "pg_attribute", TypType.COMPOSITE),
+        PG_PROC_TYPE_OID(81, "pg_proc", TypType.COMPOSITE),
+        PG_CLASS_TYPE_OID(83, "pg_class", TypType.COMPOSITE),
+        XML_TYPE_OID(142, "xml", TypType.BASE),
+        _XML_TYPE_OID(143, "_xml", TypType.BASE),
+        SMGR_TYPE_OID(210, "smgr", TypType.BASE),
+        POINT_TYPE_OID(600, "point", TypType.BASE),
+        LSEG_TYPE_OID(601, "lseg", TypType.BASE),
+        PATH_TYPE_OID(602, "path", TypType.BASE),
+        BOX_TYPE_OID(603, "box", TypType.BASE),
+        POLYGON_TYPE_OID(604, "polygon", TypType.BASE),
+        LINE_TYPE_OID(628, "line", TypType.BASE),
+        _LINE_TYPE_OID(629, "_line", TypType.BASE),
+        FLOAT4_TYPE_OID(700, "float4", TypType.BASE),
+        FLOAT8_TYPE_OID(701, "float8", TypType.BASE),
+        ABSTIME_TYPE_OID(702, "abstime", TypType.BASE),
+        RELTIME_TYPE_OID(703, "reltime", TypType.BASE),
+        TINTERVAL_TYPE_OID(704, "tinterval", TypType.BASE),
+        UNKNOWN_TYPE_OID(705, "unknown", TypType.BASE),
+        CIRCLE_TYPE_OID(718, "circle", TypType.BASE),
+        _CIRCLE_TYPE_OID(719, "_circle", TypType.BASE),
+        MONEY_TYPE_OID(790, "money", TypType.BASE),
+        _MONEY_TYPE_OID(791, "_money", TypType.BASE),
+        MACADDR_TYPE_OID(829, "macaddr", TypType.BASE),
+        INET_TYPE_OID(869, "inet", TypType.BASE),
+        CIDR_TYPE_OID(650, "cidr", TypType.BASE),
+        _BOOL_TYPE_OID(1000, "_bool", TypType.BASE),
+        _BYTEA_TYPE_OID(1001, "_bytea", TypType.BASE),
+        _CHAR_TYPE_OID(1002, "_char", TypType.BASE),
+        _NAME_TYPE_OID(1003, "_name", TypType.BASE),
+        _INT2_TYPE_OID(1005, "_int2", TypType.BASE),
+        _INT2VECTOR_TYPE_OID(1006, "_int2vector", TypType.BASE),
+        _INT4_TYPE_OID(1007, "_int4", TypType.BASE),
+        _REGPROC_TYPE_OID(1008, "_regproc", TypType.BASE),
+        _TEXT_TYPE_OID(1009, "_text", TypType.BASE),
+        _OID_TYPE_OID(1028, "_oid", TypType.BASE),
+        _TID_TYPE_OID(1010, "_tid", TypType.BASE),
+        _XID_TYPE_OID(1011, "_xid", TypType.BASE),
+        _CID_TYPE_OID(1012, "_cid", TypType.BASE),
+        _OIDVECTOR_TYPE_OID(1013, "_oidvector", TypType.BASE),
+        _BPCHAR_TYPE_OID(1014, "_bpchar", TypType.BASE),
+        _VARCHAR_TYPE_OID(1015, "_varchar", TypType.BASE),
+        _INT8_TYPE_OID(1016, "_int8", TypType.BASE),
+        _POINT_TYPE_OID(1017, "_point", TypType.BASE),
+        _LSEG_TYPE_OID(1018, "_lseg", TypType.BASE),
+        _PATH_TYPE_OID(1019, "_path", TypType.BASE),
+        _BOX_TYPE_OID(1020, "_box", TypType.BASE),
+        _FLOAT4_TYPE_OID(1021, "_float4", TypType.BASE),
+        _FLOAT8_TYPE_OID(1022, "_float8", TypType.BASE),
+        _ABSTIME_TYPE_OID(1023, "_abstime", TypType.BASE),
+        _RELTIME_TYPE_OID(1024, "_reltime", TypType.BASE),
+        _TINTERVAL_TYPE_OID(1025, "_tinterval", TypType.BASE),
+        _POLYGON_TYPE_OID(1027, "_polygon", TypType.BASE),
+        ACLITEM_TYPE_OID(1033, "_aclitem", TypType.BASE),
+        _ACLITEM_TYPE_OID(1034, "_aclitem", TypType.BASE),
+        _MACADDR_TYPE_OID(1040, "_macaddr", TypType.BASE),
+        _INET_TYPE_OID(1041, "_inet", TypType.BASE),
+        _CIDR_TYPE_OID(651, "_cidr", TypType.BASE),
+        _CSTRING_TYPE_OID(1263, "_cstring", TypType.BASE),
+        BPCHAR_TYPE_OID(1042, "bpchar", TypType.BASE),
+        VARCHAR_TYPE_OID(1043, "varchar", TypType.BASE),
+        DATE_TYPE_OID(1082, "date", TypType.BASE),
+        TIME_TYPE_OID(1083, "time", TypType.BASE),
+        TIMESTAMP_TYPE_OID(1114, "timestamp", TypType.BASE),
+        _TIMESTAMP_TYPE_OID(1115, "_timestamp", TypType.BASE),
+        _DATE_TYPE_OID(1182, "_date", TypType.BASE),
+        _TIME_TYPE_OID(1183, "_time", TypType.BASE),
+        TIMESTAMPTZ_TYPE_OID(1184, "timestamptz", TypType.BASE),
+        _TIMESTAMPTZ_TYPE_OID(1185, "_timestamptz", TypType.BASE),
+        INTERVAL_TYPE_OID(1186, "interval", TypType.BASE),
+        _INTERVAL_TYPE_OID(1187, "_interval", TypType.BASE),
+        _NUMERIC_TYPE_OID(1231, "_numeric", TypType.BASE),
+        TIMETZ_TYPE_OID(1266, "timetz", TypType.BASE),
+        _TIMETZ_TYPE_OID(1270, "_timetz", TypType.BASE),
+        BIT_TYPE_OID(1560, "bit", TypType.BASE),
+        _BIT_TYPE_OID(1561, "_bit", TypType.BASE),
+        VARBIT_TYPE_OID(1562, "varbit", TypType.BASE),
+        _VARBIT_TYPE_OID(1563, "_varbit", TypType.BASE),
+        NUMERIC_TYPE_OID(1700, "numeric", TypType.BASE),
+        REFCURSOR_TYPE_OID(1790, "refcursor", TypType.BASE),
+        _REFCURSOR_TYPE_OID(2201, "_refcursor", TypType.BASE),
+        REGPROCEDURE_TYPE_OID(2202, "regprocedure", TypType.BASE),
+        REGOPER_TYPE_OID(2203, "regoper", TypType.BASE),
+        REGOPERATOR_TYPE_OID(2204, "regoperator", TypType.BASE);
+        
+        enum TypType {
+            BASE,
+            COMPOSITE,
+            DOMAIN,
+            ENUM,
+            PSEDUO;
+        }
+
+        private int oid;
+        private String name;
+        private TypType type;
+        
+        TypeOid(int oid, String name, TypType type) {
+            this.oid = oid;
+            this.name = name;
+            this.type = type;
+        }
+
+        public int getOid() {
+            return oid;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        public TypType getType() {
+            return type;
+        }
+
+        public static TypeOid fromOid(int oid) {
+            for (TypeOid inst : values()) {
+                if (inst.getOid() == oid) {
+                    return inst;
+                }
+            }
+            return null;
+        }
+
+    }
     
     /*** Representation. ***/
     private int oid;
     private short length;
     private int modifier;
-    private AkType akType;
 
     public PostgresType(int oid, short length, int modifier, AkType akType) {
         super(akType);
@@ -179,22 +225,22 @@ public class PostgresType extends ServerType
         String encoding = aisType.encoding();
 
         if ("VARCHAR".equals(encoding))
-            oid = VARCHAR_TYPE_OID;
+            oid = TypeOid.VARCHAR_TYPE_OID.getOid();
         else if ("INT".equals(encoding) ||
                  "U_INT".equals(encoding)) {
             switch (aisType.maxSizeBytes().intValue()) {
             case 1:
-                oid = INT2_TYPE_OID; // No INT1; this also could be BOOLEAN (TINYINT(1)).
+                oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1; this also could be BOOLEAN (TINYINT(1)).
                 break;
             case 2:
             case 3:
-                oid = INT2_TYPE_OID;
+                oid = TypeOid.INT2_TYPE_OID.getOid();
                 break;
             case 4:
-                oid = INT4_TYPE_OID;
+                oid = TypeOid.INT4_TYPE_OID.getOid();
                 break;
             case 8:
-                oid = INT8_TYPE_OID;
+                oid = TypeOid.INT8_TYPE_OID.getOid();
                 break;
             default:
                 throw new UnknownTypeSizeException (aisType);
@@ -202,31 +248,31 @@ public class PostgresType extends ServerType
         }
         else if ("U_BIGINT".equals(encoding))
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
-            return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
+            return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
                                     aisType.akType());
         else if ("DATE".equals(encoding))
-            oid = DATE_TYPE_OID;
+            oid = TypeOid.DATE_TYPE_OID.getOid();
         else if ("TIME".equals(encoding))
-            oid = TIME_TYPE_OID;
+            oid = TypeOid.TIME_TYPE_OID.getOid();
         else if ("DATETIME".equals(encoding) ||
                  "TIMESTAMP".equals(encoding))
-            oid = TIMESTAMP_TYPE_OID;
+            oid = TypeOid.TIMESTAMP_TYPE_OID.getOid();
         else if ("BLOB".equals(encoding) ||
                  "TEXT".equals(encoding))
-            oid = TEXT_TYPE_OID;
+            oid = TypeOid.TEXT_TYPE_OID.getOid();
         else if ("YEAR".equals(encoding))
-            oid = INT2_TYPE_OID; // No INT1
+            oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1
         else if ("DECIMAL".equals(encoding) ||
                  "U_DECIMAL".equals(encoding))
-            oid = NUMERIC_TYPE_OID;
+            oid = TypeOid.NUMERIC_TYPE_OID.getOid();
         else if ("FLOAT".equals(encoding) ||
                  "U_FLOAT".equals(encoding))
-            oid = FLOAT4_TYPE_OID;
+            oid = TypeOid.FLOAT4_TYPE_OID.getOid();
         else if ("DOUBLE".equals(encoding) ||
                  "U_DOUBLE".equals(encoding))
-            oid = FLOAT8_TYPE_OID;
+            oid = TypeOid.FLOAT8_TYPE_OID.getOid();
         else if ("VARBINARY".equals(encoding))
-            oid = BYTEA_TYPE_OID;
+            oid = TypeOid.BYTEA_TYPE_OID.getOid();
         else
             throw new UnknownDataTypeException (encoding);
 
@@ -261,43 +307,43 @@ public class PostgresType extends ServerType
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
-            oid = INTERVAL_TYPE_OID;
+            oid = TypeOid.INTERVAL_TYPE_OID.getOid();
             akType = AkType.INTERVAL_MILLIS;
             break;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
-            oid = INTERVAL_TYPE_OID;
+            oid = TypeOid.INTERVAL_TYPE_OID.getOid();
             akType = AkType.INTERVAL_MONTH;
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
-            oid = BIT_TYPE_OID;
-            akType = AkType.INT;
+            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-            oid = BOOL_TYPE_OID;
+            oid = TypeOid.BOOL_TYPE_OID.getOid();
             akType = AkType.BOOL;
             break;
         case TypeId.FormatIds.CHAR_TYPE_ID:
-            oid = CHAR_TYPE_OID;
+            oid = TypeOid.CHAR_TYPE_OID.getOid();
             akType = AkType.VARCHAR;
             break;
         case TypeId.FormatIds.DATE_TYPE_ID:
-            oid = DATE_TYPE_OID;
+            oid = TypeOid.DATE_TYPE_OID.getOid();
             akType = AkType.DATE;
             break;
         case TypeId.FormatIds.DECIMAL_TYPE_ID:
         case TypeId.FormatIds.NUMERIC_TYPE_ID:
-            oid = NUMERIC_TYPE_OID;
+            oid = TypeOid.NUMERIC_TYPE_OID.getOid();
             akType = AkType.DECIMAL;
             break;
         case TypeId.FormatIds.DOUBLE_TYPE_ID:
-            oid = FLOAT8_TYPE_OID;
+            oid = TypeOid.FLOAT8_TYPE_OID.getOid();
             if (typeId.isUnsigned())
                 akType = AkType.U_DOUBLE;
             else
                 akType = AkType.DOUBLE;
             break;
         case TypeId.FormatIds.INT_TYPE_ID:
-            oid = INT4_TYPE_OID;
+            oid = TypeOid.INT4_TYPE_OID.getOid();
             if (typeId.isUnsigned())
                 akType = AkType.U_INT;
             else
@@ -305,39 +351,39 @@ public class PostgresType extends ServerType
             break;
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned())
-                return new PostgresType(NUMERIC_TYPE_OID, (short)8, (20 << 16) + 4,
+                return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
                                         AkType.U_BIGINT);
-            oid = INT8_TYPE_OID;
+            oid = TypeOid.INT8_TYPE_OID.getOid();
             akType = AkType.LONG;
             break;
         case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
-            oid = TEXT_TYPE_OID;
+            oid = TypeOid.TEXT_TYPE_OID.getOid();
             akType = AkType.TEXT;
             break;
         case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
-            oid = TEXT_TYPE_OID;
+            oid = TypeOid.TEXT_TYPE_OID.getOid();
             akType = AkType.TEXT;
             break;
         case TypeId.FormatIds.REAL_TYPE_ID:
-            oid = FLOAT4_TYPE_OID;
+            oid = TypeOid.FLOAT4_TYPE_OID.getOid();
             if (typeId.isUnsigned())
                 akType = AkType.U_FLOAT;
             else
                 akType = AkType.FLOAT;
             break;
         case TypeId.FormatIds.SMALLINT_TYPE_ID:
-            oid = INT2_TYPE_OID;
+            oid = TypeOid.INT2_TYPE_OID.getOid();
             if (typeId == TypeId.YEAR_ID)
                 akType = AkType.YEAR;
             else
                 akType = AkType.INT;
             break;
         case TypeId.FormatIds.TIME_TYPE_ID:
-            oid = TIME_TYPE_OID;
+            oid = TypeOid.TIME_TYPE_OID.getOid();
             akType = AkType.TIME;
             break;
         case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
-            oid = TIMESTAMP_TYPE_OID;
+            oid = TypeOid.TIMESTAMP_TYPE_OID.getOid();
             if (typeId == TypeId.DATETIME_ID)
                 akType = AkType.DATETIME;
             else
@@ -347,27 +393,27 @@ public class PostgresType extends ServerType
                 akType = AkType.TIMESTAMP;
             break;
         case TypeId.FormatIds.TINYINT_TYPE_ID:
-            oid = INT2_TYPE_OID; // No INT1
+            oid = TypeOid.INT2_TYPE_OID.getOid(); // No INT1
             akType = AkType.INT;
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
-            oid = VARBIT_TYPE_OID;
+            oid = TypeOid.BYTEA_TYPE_OID.getOid();
             akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:
-            oid = TEXT_TYPE_OID;
+            oid = TypeOid.TEXT_TYPE_OID.getOid();
             akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            oid = VARCHAR_TYPE_OID;
+            oid = TypeOid.VARCHAR_TYPE_OID.getOid();
             akType = AkType.VARCHAR;
             break;
         case TypeId.FormatIds.CLOB_TYPE_ID:
-            oid = TEXT_TYPE_OID;
+            oid = TypeOid.TEXT_TYPE_OID.getOid();
             akType = AkType.TEXT;
             break;
         case TypeId.FormatIds.XML_TYPE_ID:
-            oid = XML_TYPE_OID;
+            oid = TypeOid.XML_TYPE_OID.getOid();
             akType = AkType.TEXT;
             break;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
@@ -397,6 +443,21 @@ public class PostgresType extends ServerType
         }
         
         return new PostgresType(oid, length, modifier, akType);
+    }
+
+    @Override
+    public String toString() {
+        StringBuilder str = new StringBuilder(super.toString());
+        if (length >= 0) {
+            str.append("(").append(length);
+            if (modifier >= 0)
+                str.append(",").append(modifier);
+            str.append(")");
+        }
+        TypeOid inst = TypeOid.fromOid(oid);
+        if (inst != null)
+            str.append("/").append(inst.getName());
+        return str.toString();
     }
 
 }

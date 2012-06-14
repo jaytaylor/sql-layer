@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
@@ -27,12 +38,10 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
+import com.akiban.qp.rowtype.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -66,7 +75,7 @@ import java.math.BigDecimal;
  <li><b>RowType outputRowType:</b> Type at the root of the branch to be
  retrieved.
 
- <li><b>API.LookupOption flag:</b> Indicates whether rows of type rowType
+ <li><b>API.InputPreservationOption flag:</b> Indicates whether rows of type rowType
  will be preserved in the output stream (flag = KEEP_INPUT), or
  discarded (flag = DISCARD_INPUT).
 
@@ -190,22 +199,24 @@ public class BranchLookup_Default extends Operator
     public BranchLookup_Default(Operator inputOperator,
                                 GroupTable groupTable,
                                 RowType inputRowType,
-                                RowType outputRowType,
-                                API.LookupOption flag,
+                                UserTableRowType outputRowType,
+                                API.InputPreservationOption flag,
                                 Limit limit)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notNull("outputRowType", outputRowType);
         ArgumentValidation.notNull("limit", limit);
-        ArgumentValidation.isTrue("inputRowType instanceof IndexRowType || outputRowType != inputRowType",
-                                  inputRowType instanceof IndexRowType || outputRowType != inputRowType);
-        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || !keepInput",
-                                  inputRowType instanceof UserTableRowType || flag == API.LookupOption.DISCARD_INPUT);
+        ArgumentValidation.isTrue("outputRowType != inputRowType", outputRowType != inputRowType);
+        ArgumentValidation.isTrue("inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT",
+                                  inputRowType instanceof UserTableRowType || flag == API.InputPreservationOption.DISCARD_INPUT);
         UserTableRowType inputTableType = null;
         if (inputRowType instanceof UserTableRowType) {
             inputTableType = (UserTableRowType) inputRowType;
         } else if (inputRowType instanceof IndexRowType) {
             inputTableType = ((IndexRowType) inputRowType).tableType();
+        } else if (inputRowType instanceof HKeyRowType) {
+            Schema schema = outputRowType.schema();
+            inputTableType = schema.userTableRowType(inputRowType.hKey().userTable());
         }
         assert inputTableType != null : inputRowType;
         UserTable inputTable = inputTableType.userTable();
@@ -214,14 +225,13 @@ public class BranchLookup_Default extends Operator
                                   inputTable.getGroup(),
                                   "outputTable.getGroup()",
                                   outputTable.getGroup());
-        this.keepInput = flag == API.LookupOption.KEEP_INPUT;
+        this.keepInput = flag == API.InputPreservationOption.KEEP_INPUT;
         this.inputOperator = inputOperator;
         this.groupTable = groupTable;
         this.inputRowType = inputRowType;
         this.outputRowType = outputRowType;
         this.limit = limit;
-        UserTable commonAncestor = commonAncestor(inputTable, outputTable);
-        this.commonSegments = commonAncestor.getDepth() + 1;
+        this.commonAncestor = commonAncestor(inputTable, outputTable);
         switch (outputTable.getDepth() - commonAncestor.getDepth()) {
             case 0:
                 branchRootOrdinal = -1;
@@ -238,10 +248,13 @@ public class BranchLookup_Default extends Operator
         // is false. Otherwise, branchRoot's parent is the common ancestor. Find inputTable's ancestor that is also
         // a child of the common ancestor. Then compare these ordinals to determine whether input precedes branch.
         if (this.branchRootOrdinal == -1) {
+            // output type is ancestor of input row type
             this.inputPrecedesBranch = false;
         } else if (inputTable == commonAncestor) {
+            // input row type is parent of output type
             this.inputPrecedesBranch = true;
         } else {
+            // neither input type nor output type is the common ancestor
             UserTable ancestorOfInputAndChildOfCommon = inputTable;
             while (ancestorOfInputAndChildOfCommon.parentTable() != commonAncestor) {
                 ancestorOfInputAndChildOfCommon = ancestorOfInputAndChildOfCommon.parentTable();
@@ -281,11 +294,11 @@ public class BranchLookup_Default extends Operator
     private final Operator inputOperator;
     private final GroupTable groupTable;
     private final RowType inputRowType;
-    private final RowType outputRowType;
+    private final UserTableRowType outputRowType;
     private final boolean keepInput;
     // If keepInput is true, inputPrecedesBranch controls whether input row appears before the retrieved branch.
     private final boolean inputPrecedesBranch;
-    private final int commonSegments;
+    private final UserTable commonAncestor;
     private final int branchRootOrdinal;
     private final Limit limit;
 
@@ -306,8 +319,10 @@ public class BranchLookup_Default extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 inputCursor.open();
                 advanceInput();
+                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -318,6 +333,7 @@ public class BranchLookup_Default extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row nextRow = null;
                 while (nextRow == null && inputRow.isHolding()) {
@@ -357,10 +373,40 @@ public class BranchLookup_Default extends Operator
         @Override
         public void close()
         {
-            inputCursor.close();
-            inputRow.release();
-            lookupCursor.close();
-            lookupRow.release();
+            CursorLifecycle.checkIdleOrActive(this);
+            if (!idle) {
+                inputCursor.close();
+                inputRow.release();
+                lookupCursor.close();
+                lookupRow.release();
+                idle = true;
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            inputCursor.destroy();
+            lookupCursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return idle;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !idle;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return inputCursor.isDestroyed();
         }
 
         // Execution interface
@@ -370,7 +416,7 @@ public class BranchLookup_Default extends Operator
             super(context);
             this.inputCursor = input;
             this.lookupCursor = adapter().newGroupCursor(groupTable);
-            this.lookupRowHKey = adapter().newHKey(outputRowType);
+            this.lookupRowHKey = adapter().newHKey(outputRowType.hKey());
         }
 
         // For use by this class
@@ -384,7 +430,6 @@ public class BranchLookup_Default extends Operator
                     lookupRow.release();
                     close();
                 } else {
-                    currentLookupRow.runId(inputRow.get().runId());
                     lookupRow.hold(currentLookupRow);
                 }
             } else {
@@ -402,7 +447,7 @@ public class BranchLookup_Default extends Operator
             if (currentInputRow != null) {
                 if (currentInputRow.rowType() == inputRowType) {
                     lookupRow.release();
-                    computeLookupRowHKey(currentInputRow.hKey());
+                    computeLookupRowHKey(currentInputRow);
                     lookupCursor.rebind(lookupRowHKey, true);
                     lookupCursor.open();
                 }
@@ -412,10 +457,10 @@ public class BranchLookup_Default extends Operator
             }
         }
 
-        private void computeLookupRowHKey(HKey inputRowHKey)
+        private void computeLookupRowHKey(Row row)
         {
-            inputRowHKey.copyTo(lookupRowHKey);
-            lookupRowHKey.useSegments(commonSegments);
+            HKey ancestorHKey = row.ancestorHKey(commonAncestor);
+            ancestorHKey.copyTo(lookupRowHKey);
             if (branchRootOrdinal != -1) {
                 lookupRowHKey.extendWithOrdinal(branchRootOrdinal);
             }
@@ -429,6 +474,7 @@ public class BranchLookup_Default extends Operator
         private final ShareHolder<Row> lookupRow = new ShareHolder<Row>();
         private final HKey lookupRowHKey;
         private LookupState lookupState;
+        private boolean idle = true;
     }
 
     // Inner classes

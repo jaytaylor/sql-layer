@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.server;
@@ -18,7 +29,6 @@ package com.akiban.sql.server;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
@@ -27,10 +37,8 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
-import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.parser.SQLParser;
-
-import org.joda.time.DateTime;
 
 import java.util.*;
 
@@ -39,19 +47,22 @@ public abstract class ServerSessionBase implements ServerSession
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
 
     protected final ServerServiceRequirements reqs;
-    protected Properties properties;
+    protected Properties properties, compilerProperties;
     protected Map<String,Object> attributes = new HashMap<String,Object>();
     
     protected Session session;
     protected long aisTimestamp = -1;
     protected AkibanInformationSchema ais;
-    protected StoreAdapter adapter;
+    protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
+        new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
+    //protected StoreAdapter adapter;
     protected String defaultSchemaName;
     protected SQLParser parser;
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
 
+    protected Long queryTimeoutSec = null;
     protected ServerValueEncoder.ZeroDateTimeBehavior zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.NONE;
     protected QueryContext.NotificationLevel maxNotificationLevel = QueryContext.NotificationLevel.INFO;
 
@@ -101,6 +112,10 @@ public abstract class ServerSessionBase implements ServerSession
             maxNotificationLevel = (value == null) ? 
                 QueryContext.NotificationLevel.INFO :
                 QueryContext.NotificationLevel.valueOf(value);
+            return true;
+        }
+        if ("queryTimeoutSec".equals(key)) {
+            queryTimeoutSec = (value == null) ? null : Long.valueOf(value);
             return true;
         }
         return false;
@@ -157,7 +172,9 @@ public abstract class ServerSessionBase implements ServerSession
     
     @Override
     public Properties getCompilerProperties() {
-        return reqs.config().deriveProperties(COMPILER_PROPERTIES_PREFIX);
+        if (compilerProperties == null)
+            compilerProperties = reqs.config().deriveProperties(COMPILER_PROPERTIES_PREFIX);
+        return compilerProperties;
     }
 
     @Override
@@ -167,9 +184,9 @@ public abstract class ServerSessionBase implements ServerSession
 
     @Override
     public StoreAdapter getStore() {
-        return adapter;
+        return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
-
+    
     @Override
     public TreeService getTreeService() {
         return reqs.treeService();
@@ -229,13 +246,18 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
+    public Long getQueryTimeoutSec() {
+        return queryTimeoutSec;
+    }
+
+    @Override
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior() {
         return zeroDateTimeBehavior;
     }
 
     @Override
-    public CostEstimator costEstimator() {
-        return new ServerCostEstimator(this, reqs);
+    public CostEstimator costEstimator(ServerOperatorCompiler compiler) {
+        return new ServerCostEstimator(this, reqs, compiler);
     }
 
     /** Prepare to execute given statement.

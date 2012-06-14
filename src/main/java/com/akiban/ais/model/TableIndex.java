@@ -1,30 +1,49 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.ais.model;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 
 import com.akiban.ais.model.validation.AISInvariants;
 
 public class TableIndex extends Index
 {
-    public static TableIndex create(AkibanInformationSchema ais, Table table, String indexName, Integer indexId,
-                                    Boolean isUnique, String constraint)
+    public static TableIndex create(AkibanInformationSchema ais,
+                                    Table table,
+                                    String indexName,
+                                    Integer indexId,
+                                    Boolean isUnique,
+                                    String constraint)
     {
+        table.checkMutability();
         ais.checkMutability();
+        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
         TableIndex index = new TableIndex(table, indexName, indexId, isUnique, constraint);
         table.addIndex(index);
         return index;
@@ -32,10 +51,8 @@ public class TableIndex extends Index
 
     public TableIndex(Table table, String indexName, Integer indexId, Boolean isUnique, String constraint)
     {
-        // Index check indexName for null state. 
+        // Index check indexName for null state.
         super(table.getName(), indexName, indexId, isUnique, constraint);
-        table.checkMutability();
-        AISInvariants.checkDuplicateIndexesInTable(table, indexName);
         this.table = table;
     }
 
@@ -46,23 +63,57 @@ public class TableIndex extends Index
     }
 
     @Override
-    public void computeFieldAssociations(Map<Table, Integer> ordinalMap) {
-        computeFieldAssociations(ordinalMap, getTable(), null);
-    }
-
-    @Override
-    protected Column indexRowCompositionColumn(HKeyColumn hKeyColumn) {
-        return hKeyColumn.column();
+    public void computeFieldAssociations(Map<Table, Integer> ordinalMap)
+    {
+        freezeColumns();
+        AssociationBuilder toIndexRowBuilder = new AssociationBuilder();
+        AssociationBuilder toHKeyBuilder = new AssociationBuilder();
+        List<Column> indexColumns = new ArrayList<Column>();
+        // Add index key fields
+        for (IndexColumn iColumn : getKeyColumns()) {
+            Column column = iColumn.getColumn();
+            indexColumns.add(column);
+            toIndexRowBuilder.rowCompEntry(column.getPosition(), -1);
+        }
+        // Add leafward-biased hkey fields not already included
+        int indexColumnPosition = indexColumns.size();
+        hKeyColumns = new ArrayList<IndexColumn>();
+        HKey hKey = hKey();
+        for (HKeySegment hKeySegment : hKey.segments()) {
+            Integer ordinal = ordinalMap.get(hKeySegment.table());
+            assert ordinal != null : hKeySegment.table();
+            toHKeyBuilder.toHKeyEntry(ordinal, -1);
+            for (HKeyColumn hKeyColumn : hKeySegment.columns()) {
+                Column column = hKeyColumn.column();
+                if (!indexColumns.contains(column)) {
+                    if (table.getColumnsIncludingInternal().contains(column)) {
+                        toIndexRowBuilder.rowCompEntry(column.getPosition(), -1);
+                    } else {
+                        assert hKeySegment.table().isUserTable() : this;
+                        toIndexRowBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
+                    }
+                    indexColumns.add(column);
+                    hKeyColumns.add(new IndexColumn(this, column, indexColumnPosition, true, 0));
+                    indexColumnPosition++;
+                }
+                toHKeyBuilder.toHKeyEntry(-1, indexColumns.indexOf(column));
+            }
+        }
+        allColumns = new ArrayList<IndexColumn>();
+        allColumns.addAll(keyColumns);
+        allColumns.addAll(hKeyColumns);
+        indexRowComposition = toIndexRowBuilder.createIndexRowComposition();
+        indexToHKey = toHKeyBuilder.createIndexToHKey();
     }
 
     @Override
     public Table leafMostTable() {
-        return getTable();
+        return table;
     }
 
     @Override
     public Table rootMostTable() {
-        return getTable();
+        return table;
     }
 
     @Override
@@ -73,6 +124,11 @@ public class TableIndex extends Index
     public Table getTable()
     {
         return table;
+    }
+
+    public IndexToHKey indexToHKey()
+    {
+        return indexToHKey;
     }
 
     // For a user table index: the user table hkey
@@ -106,4 +162,6 @@ public class TableIndex extends Index
 
     private final Table table;
     private HKey hKey;
+    private List<IndexColumn> hKeyColumns;
+    private IndexToHKey indexToHKey;
 }

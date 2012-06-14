@@ -1,5 +1,4 @@
 PhysicalUpdate
-  Insert_Default(project to table user.orders ([Literal(205), Field(0), Literal(NULL)]))
-    project to table user.orders ([Literal(205), Field(0), Literal(NULL)])
-      AncestorLookup_Default(Index(user.customers.name[IndexColumn(name)]) -> [user.customers])
-        IndexScan_Default(Index(user.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Jones)],<=UnboundExpressions[Literal(Jones)]))
+  Insert_Default(project to table test.orders ([Literal(205), Field(1), Literal(NULL)]))
+    project to table test.orders ([Literal(205), Field(1), Literal(NULL)])
+      IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Jones)],<=UnboundExpressions[Literal(Jones)]))

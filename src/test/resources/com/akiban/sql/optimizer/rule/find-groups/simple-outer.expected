@@ -1,10 +1,8 @@
-SelectQuery@b1aebf
-  ResultSet@57249e1a[cid, name, oid, cid, order_date, iid, oid, sku, quan, price]
-    Project@2507e9a8[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date, user.items.iid, user.items.oid, user.items.sku, user.items.quan, user.items.price]
-      Select@1c65216[]
-        TableJoins@63843ca4(TableGroup@10ea9ba(customers))
-          JoinNode@1372656(LEFT/GROUP[user.items.oid == user.orders.oid] - TableGroupJoin@1b6101e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-            JoinNode@1dc423f(LEFT/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@1815bfb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@1bdc9d8(user.customers - TableGroup@10ea9ba(customers))
-              TableSource@1a918d5(user.orders - TableGroupJoin@1815bfb(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@9d6065(user.items - TableGroupJoin@1b6101e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+SelectQuery@23930c3a
+  ResultSet@b07c615[cid, name, oid, cid, order_date, iid, oid, sku, quan, price]
+    Project@2b5d925b[customers.cid, customers.name, orders.oid, orders.cid, orders.order_date, items.iid, items.oid, items.sku, items.quan, items.price]
+      Select@c33aa9b[]
+        TableGroupJoinTree@1405ac5f(TableGroup@779b3e(customers), customers LEFT orders LEFT items)
+          TableSource@639b99d(customers - TableGroup@779b3e(customers))
+            TableSource@37c8f59c(orders - TableGroupJoin@2c7103af(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@6a74f160(items - TableGroupJoin@2fa8ecf4(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

@@ -1,8 +1,0 @@
-SelectQuery@615724a0
-  ResultSet@2025b64d[id, name, state, id, pid, name, id, pid, name]
-    Project@be389b8[user.parent.id, user.parent.name, user.parent.state, user.child.id, user.child.pid, user.child.name, user.child.id, user.child.pid, user.child.name]
-      Select@7669521[]
-        TableGroupJoinTree@5fc8ad52(TableGroup@5dee69d3(parent), parent INNER child INNER child)
-          TableSource@37f808e6(user.parent - TableGroup@5dee69d3(parent))
-            TableSource@7d1050be(user.child - TableGroupJoin@6feb139e(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
-            TableSource@3a252a17(user.child - TableGroupJoin@32552379(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))

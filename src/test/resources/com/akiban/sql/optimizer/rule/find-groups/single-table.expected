@@ -1,6 +1,6 @@
-SelectQuery@7bd349e2
-  ResultSet@77def3f5[cid, name]
-    Project@4e62974e[user.customers.cid, user.customers.name]
-      Select@63db6942[user.customers.name == Smith]
-        TableJoins@6fa37fac(TableGroup@14800aa1(customers))
-          TableSource@59db9f45(user.customers - TableGroup@14800aa1(customers))
+SelectQuery@699238ad
+  ResultSet@7ec71c00[cid, name]
+    Project@41ff8506[customers.cid, customers.name]
+      Select@6e766ec3[customers.name == Smith]
+        TableGroupJoinTree@2161fcdd(TableGroup@2820224a(customers), customers)
+          TableSource@4eabaf8c(customers - TableGroup@2820224a(customers))

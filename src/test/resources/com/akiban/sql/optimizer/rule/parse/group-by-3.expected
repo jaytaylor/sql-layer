@@ -1,10 +1,10 @@
 SelectQuery@e8eeca
   ResultSet@9549af[uname, cvalue]
-    Project@118a770[upper(user.customers.name), COUNT(*)]
+    Project@118a770[upper(customers.name), COUNT(*)]
       Sort@198d9cf[COUNT(*) DESC]
         Select@3e574[]
-          AggregateSource@1cd427a([upper(user.customers.name)],[])
-            Select@c791f4[user.customers.cid == user.orders.cid]
+          AggregateSource@1cd427a([upper(customers.name)],[])
+            Select@c791f4[customers.cid == orders.cid]
               JoinNode@3f58bb(INNER)
-                TableSource@4391f0(user.customers)
-                TableSource@da9067(user.orders)
+                TableSource@4391f0(customers)
+                TableSource@da9067(orders)

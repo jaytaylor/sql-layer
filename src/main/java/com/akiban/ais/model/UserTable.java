@@ -1,20 +1,32 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.ais.model;
 
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
@@ -102,19 +114,9 @@ public class UserTable extends Table
             if (descendantJoinColumn != null) {
                 Column descendantColumn = descendantJoinColumn.getChild();
                 matchingColumns.add(descendantColumn);
-                findMatchingDescendantColumns(descendantJoinColumn.getChild(), matchingColumns);
+                join.getChild().findMatchingDescendantColumns(descendantJoinColumn.getChild(), matchingColumns);
             }
         }
-    }
-
-    public void setSize(int size)
-    {
-        this.size = size;
-    }
-
-    public int getSize()
-    {
-        return size;
     }
 
     public void addCandidateParentJoin(Join parentJoin)
@@ -298,19 +300,28 @@ public class UserTable extends Table
         return depth;
     }
 
-    public Boolean isLookupTable()
-    {
-        return migrationUsage == MigrationUsage.AKIBAN_LOOKUP_TABLE;
+    /**
+     * Returns a list of ancestors, starting from the root and ending with this table
+     * @return ancestors, including this table and starting from the root
+     */
+    public synchronized List<UserTable> getAncestors() {
+        if (ancestors == null) {
+            synchronized (lazyEvaluationLock) {
+                if (ancestors == null) {
+                    ancestors = new ArrayList<UserTable>(getDepth());
+                    for (UserTable table = this; table != null; table = table.parentTable()) {
+                        ancestors.add(table);
+                    }
+                    Collections.reverse(ancestors);
+                }
+            }
+        }
+        return ancestors;
     }
 
     public Boolean isRoot()
     {
         return getGroup() == null || getParentJoin() == null;
-    }
-
-    public void setLookupTable(Boolean isLookup)
-    {
-        setMigrationUsage(isLookup ? MigrationUsage.AKIBAN_LOOKUP_TABLE : MigrationUsage.AKIBAN_STANDARD);
     }
 
     public MigrationUsage getMigrationUsage()
@@ -366,6 +377,7 @@ public class UserTable extends Table
                     allHKeyColumns.add(hKeyColumn.column());
                 }
             }
+            allHKeyColumns = Collections.unmodifiableList(allHKeyColumns);
         }
         return allHKeyColumns;
     }
@@ -399,6 +411,35 @@ public class UserTable extends Table
             }
         }
         return hKeyDependentTables;
+    }
+
+    public boolean hasMemoryTableFactory()
+    {
+        return tableFactory != null;
+    }
+
+    public MemoryTableFactory getMemoryTableFactory()
+    {
+        return tableFactory;
+    }
+
+    public void setMemoryTableFactory(MemoryTableFactory tableFactory)
+    {
+        this.tableFactory = tableFactory;
+    }
+
+    public boolean hasVersion()
+    {
+        return version != null;
+    }
+
+    public Integer getVersion()
+    {
+        return version;
+    }
+
+    public void setVersion(int version) {
+        this.version = version;
     }
     
     private void addTableAndDescendents(UserTable table, List<UserTable> accumulator)
@@ -493,7 +534,6 @@ public class UserTable extends Table
     private final List<Join> candidateChildJoins = new ArrayList<Join>();
     private final Object lazyEvaluationLock = new Object();
 
-    private int size;
     private PrimaryKey primaryKey;
     private HKey hKey;
     private boolean containsOwnHKey;
@@ -501,6 +541,9 @@ public class UserTable extends Table
     private List<Column> allHKeyColumns;
     private Integer depth = null;
     private volatile List<UserTable> hKeyDependentTables;
+    private volatile List<UserTable> ancestors;
+    private MemoryTableFactory tableFactory;
+    private Integer version;
 
     // consts
 

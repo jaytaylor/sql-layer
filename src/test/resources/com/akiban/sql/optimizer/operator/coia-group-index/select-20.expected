@@ -1,0 +1,3 @@
+PhysicalSelect[name:varchar(32)[VARCHAR], _SQL_COL_1:VARCHAR(32)]
+  project([Field(0), VALUE(Map_NestedLoops)])
+    IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (,))

@@ -1,36 +1,51 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
-import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.types.DataTypeDescriptor;
-import static com.akiban.server.expression.std.Expressions.*;
+import com.akiban.sql.types.TypeId;
+
+import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.InExpression;
-import com.akiban.server.types.AkType;
+import com.akiban.server.expression.std.IntervalCastExpression;
+import static com.akiban.server.expression.std.Expressions.*;
+import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.expression.std.IntervalCastExpression;
-import com.akiban.sql.pg.PostgresType;
-import com.akiban.sql.types.TypeId;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.extract.Extractors;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -38,6 +53,8 @@ import java.util.List;
 /** Turn {@link ExpressionNode} into {@link Expression}. */
 public class ExpressionAssembler
 {
+    private static final Logger logger = LoggerFactory.getLogger(ExpressionAssembler.class);
+
     private FunctionsRegistry functionsRegistry;
 
     public ExpressionAssembler(RulesContext rulesContext) {
@@ -45,6 +62,11 @@ public class ExpressionAssembler
                                   rulesContext).getFunctionsRegistry();
     }
 
+    public FunctionsRegistry getFunctionRegistry()
+    {
+        return functionsRegistry;
+    }
+    
     public interface ColumnExpressionToIndex {
         /** Return the field position of the given column in the target row. */
         public int getIndex(ColumnExpression column);
@@ -169,6 +191,8 @@ public class ExpressionAssembler
                 return boundField(boundRow.getRowType(), rowIndex, fieldIndex);
             }
         }
+        logger.debug("Did not find {} from {} in {}", 
+                     new Object[] { column, column.getTable(), boundRows });
         throw new AkibanInternalException("Column not found " + column);
     }
 
@@ -235,7 +259,7 @@ public class ExpressionAssembler
         eval.of(planContext.getQueryContext());
         ValueSource valueSource = eval.eval();
         if (node instanceof ConditionExpression) {
-            boolean value = Extractors.getBooleanExtractor().getBoolean(valueSource, false);
+            Boolean value = Extractors.getBooleanExtractor().getBoolean(valueSource, null);
             return new BooleanConstantExpression(value,
                                                  node.getSQLtype(), 
                                                  node.getSQLsource());

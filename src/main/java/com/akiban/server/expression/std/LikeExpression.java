@@ -1,21 +1,33 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
@@ -26,7 +38,6 @@ import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
@@ -78,20 +89,36 @@ public class LikeExpression extends AbstractCompositeExpression
 
             return ExpressionTypes.BOOL;
         }
+
+        @Override
+        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
+        {
+            throw new UnsupportedOperationException("Not supported in LIKE yet.");
+        }
+
+        @Override
+        public NullTreating getNullTreating()
+        {
+            return NullTreating.RETURN_NULL;
+        }
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
-        private final boolean case_insens;
-        private char esca = '\\';
-        private boolean noWildcardU = false;
-        private boolean noWildcardP = false;       
-        private QueryContext context;
+        private Matcher matcher = null;
+        private final boolean ignore_case;
         
-        public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEval, boolean mode)
+        private boolean isConst;
+        private String oldPat;
+        private char oldEsc;
+        
+        public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEval, 
+                boolean isConst,
+                boolean mode)
         {
             super(childrenEval);
-            this.case_insens = mode;
+            this.ignore_case = mode;
+            this.isConst = isConst;
         }
 
         @Override
@@ -101,174 +128,51 @@ public class LikeExpression extends AbstractCompositeExpression
             ValueSource r = this.children().get(1).eval();
             if (l.isNull() || r.isNull()) return NullValueSource.only();
 
-            String left = Extractors.getStringExtractor().getObject(l);
-            String right = Extractors.getStringExtractor().getObject(r);
             
+            String left = l.getString();
+            String right = r.getString();
+            
+            char esca;
             if (children().size() == 3)
             {
                 ValueSource escapSource = children().get(2).eval();
                 if (escapSource.isNull()) return NullValueSource.only();
+                String e = escapSource.getString();
+                if (e.length() != 1)
+                    throw new InvalidParameterValueException("Invalid escape character: " + e);
                 esca = escapSource.getString().charAt(0);
             }
-            noWildcardU = esca == '_';
-            noWildcardP = esca == '%';
-
-            context = queryContext();
-            return BoolValueSource.of(compareS(left,right, case_insens));
-        }
-
-        private  Boolean compareS(String left, String right, boolean case_insensitive)
-        {
-            int l = 0, r = 0;
-            int lLimit = left.length(), rLimit = right.length();
-            if (rLimit == 0) return lLimit == 0;
-
-            Loop2:
-            while (l < lLimit && r < rLimit)
+            else
+                esca = '\\';
+            
+            if (matcher == null
+                    || !isConst && (!right.equals(oldPat) || esca != oldEsc))
             {
-                char lchar = left.charAt(l);
-                char rchar = right.charAt(r);
-
-                if(rchar == '%' && !noWildcardP )
-                {
-                    char afterP;
-                    boolean esc = false;
-                    do
-                    {
-                        if (r + 1 == rLimit) return true;
-                        afterP = right.charAt(++r);
-                    }
-                    while (afterP == '%' );// %%%% is no different than %, so skip multiple %s
-                    if (afterP == esca )
-                        if (r +1 < rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_'  || right.charAt(r+1) == esca))
-                        {
-                            afterP = right.charAt(++r);
-                            esc = true;
-                        }
-                        else
-                        {
-                            if (context != null)
-                                context.warnClient(new InvalidParameterValueException("invalid escape sequence"));
-                            return null;
-                        }
-
-                    while (l < lLimit) // loop1: attempt to find a matching sequence in left that starts with afterP
-                    {
-                        lchar = left.charAt(l++);
-                        if (lchar == afterP  || 
-                                Character.toUpperCase(lchar) == Character.toUpperCase(afterP) && case_insensitive
-                                || afterP == '_' && !noWildcardU && !esc ) // found a *potentially* matching sequence
-                        {
-                            --l;
-                            int oldR = r;
-                            boolean oldEsc = esc;
-                            while (l < lLimit && r < rLimit)
-                            {
-                                lchar = left.charAt(l);
-                                rchar = right.charAt(r);
-
-                                if (rchar == esca && !esc)
-                                {
-                                    if (r +1 <rLimit && (right.charAt(r+1) == '%' || right.charAt(r+1) == '_' || right.charAt(r+1) == esca))
-                                    {
-                                        rchar = right.charAt(++r);
-                                        esc = true;
-                                    }
-                                    else
-                                    {
-                                        if (context != null)
-                                            context.warnClient(new InvalidParameterValueException("invalid escape sequence"));
-                                        return null;
-                                    }
-                                }
-
-                                if (rchar == '%' && !esc) continue Loop2;
-
-                                if (lchar == rchar || 
-                                        Character.toUpperCase(lchar) == Character.toUpperCase(rchar) && case_insensitive
-                                        || rchar == '_' && !esc && !noWildcardU)
-                                {
-                                    ++l;
-                                    ++r;
-                                    esc = false;
-                                }
-                                else
-                                {
-                                    if (l >= lLimit) return false; // end of left string, lchar didn't match => false
-                                    r = oldR;
-                                    break;
-                                }
-                            }
-                            if (l == lLimit) break Loop2; // end of left string (the sequence is matching so far)
-                            else
-                            {
-                                esc = oldEsc;
-                                r = oldR;
-                            }// the sequence didn't match, reset to initial state, search for next sequence in left
-                        }
-                    }
-                    return false; // the only way to make it out of loop1 is for left to end earlier than right not matching ANY char at all
-                }
-                else if (rchar == '_' && !noWildcardU )
-                {
-                    ++r;
-                    ++l;
-                }
-                else if (rchar == esca)
-                {
-                    if ( r + 1 < rLimit && (right.charAt(r+1) == '_' || right.charAt(r+1) == '%' || right.charAt(r+1) == esca)) rchar = right.charAt(++r);
-                    else 
-                    {
-                        if (context != null)
-                                context.warnClient(new InvalidParameterValueException("invalid escape sequence"));
-                            return null;
-                    }
-
-                    if (lchar == rchar || Character.toUpperCase(lchar) == Character.toUpperCase(rchar) && case_insensitive )
-                    {
-                        ++l;
-                        ++r;
-                    }
-                    else return false;
-                }
-                else
-                {
-                    if (lchar == rchar || Character.toUpperCase(lchar) == Character.toUpperCase(rchar) && case_insensitive )
-                    {
-                        ++l;
-                        ++r;
-                    }
-                    else return false;
-                }
+                oldPat = right;
+                oldEsc = esca;
+                matcher = Matchers.getMatcher(right, esca, ignore_case);
             }
-
-            if (l == lLimit)
-                if (r < rLimit)
-                {
-                    while (r < rLimit)
-                    {
-                        if (right.charAt(r) != '%') return false; // and r-1 != escape
-                        else if (r + 1 < rLimit && (right.charAt(r+1) == '%'  || right.charAt(r+1) == '_')&& noWildcardP) return false; // % is  escaped
-                        else if (noWildcardP) // % is by itself (invalide escape sequence)
-                        {
-                            if (context != null)
-                                context.warnClient(new InvalidParameterValueException("invalid escape sequence"));
-                            return null;
-                        } 
-                        ++r;
-                    }
-                    return true;
-                }
-                else return true;
-            else return false;
+                 
+           
+            try
+            {
+                return BoolValueSource.of(matcher.match(left, 1) >= 0);
+            }
+            catch (InvalidOperationException e)
+            {
+                QueryContext context = queryContext();
+                if (context != null)
+                    context.warnClient(e);
+                return NullValueSource.only();
+            }
         }
     }
-
-    private final boolean case_insens;
+        
+    private final boolean ignore_case;
     public LikeExpression (List <? extends Expression> children, boolean mode)
     {
         super(AkType.BOOL, checkArgs(children));
-        this.case_insens = mode;
+        this.ignore_case = mode;
     }
 
     private static List<? extends Expression> checkArgs(List<? extends Expression> children)
@@ -279,7 +183,7 @@ public class LikeExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected boolean nullIsContaminating()
+    public boolean nullIsContaminating()
     {
         return true;
     }
@@ -295,10 +199,22 @@ public class LikeExpression extends AbstractCompositeExpression
     {
         return new ExpressionExplainer (Type.BINARY_OPERATOR, name(), children());
     }
-    
+
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("LIKE_");
+        sb.append(ignore_case? "IN" : "");
+        sb.append("SENSITIVE");
+    }
+
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(childrenEvaluations(), case_insens);
+       return new InnerEvaluation(childrenEvaluations()
+               , children().size() == 2 
+                    ? children().get(1).isConstant()
+                    : children().get(1).isConstant() && children().get(2).isConstant()
+               , ignore_case);
     }
 }

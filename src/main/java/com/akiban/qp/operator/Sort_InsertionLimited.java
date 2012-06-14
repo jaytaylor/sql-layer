@@ -1,22 +1,33 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
 
-import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ProjectedRow;
+import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ToObjectValueTarget;
@@ -30,8 +41,6 @@ import com.akiban.sql.optimizer.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 
 import java.math.BigDecimal;
 import java.util.*;
@@ -166,7 +175,7 @@ class Sort_InsertionLimited extends Operator
 
     // Inner classes
 
-    private enum State { CLOSED, FILLING, EMPTYING }
+    private enum State { CLOSED, FILLING, EMPTYING, DESTROYED }
 
     private class Execution extends OperatorExecutionBase implements Cursor
     {
@@ -177,6 +186,7 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 input.open();
                 state = State.FILLING;
                 for (ExpressionEvaluation eval : evaluations)
@@ -192,6 +202,7 @@ class Sort_InsertionLimited extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 switch (state) {
                 case FILLING:
@@ -216,12 +227,17 @@ class Sort_InsertionLimited extends Operator
                                 Holder last = sorted.last();
                                 if (last.compareTo(holder) > 0) {
                                     // New row is less, so keep it
-                                    // instead.
-                                    sorted.remove(last);
-                                    last.empty();
-                                    holder.freeze();
+                                    // instead unless it's already in
+                                    // there (in suppress dups case).
                                     boolean added = sorted.add(holder);
-                                    assert added;
+                                    if (added) {
+                                        sorted.remove(last);
+                                        last.empty();
+                                        holder.freeze();
+                                    }
+                                    else {
+                                        assert !preserveDuplicates;
+                                    }
                                 }
                                 else {
                                     // Will not be using new row.
@@ -243,6 +259,10 @@ class Sort_InsertionLimited extends Operator
                         return null;
                     }
                 case CLOSED:
+                    return null;
+                case DESTROYED:
+                    assert false;
+                    return null;
                 default:
                     return null;
                 }
@@ -254,6 +274,7 @@ class Sort_InsertionLimited extends Operator
         @Override
         public void close()
         {
+            CursorLifecycle.checkIdleOrActive(this);
             input.close();
             if (sorted != null) {
                 if (iterator == null)
@@ -265,6 +286,35 @@ class Sort_InsertionLimited extends Operator
                 sorted = null;
             }
             state = State.CLOSED;
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            input.destroy();
+            for (ExpressionEvaluation evaluation : evaluations) {
+                evaluation.destroy();
+            }
+            state = State.DESTROYED;
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return state == State.CLOSED;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return state == State.FILLING || state == State.EMPTYING;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return state == State.DESTROYED;
         }
 
         // Execution interface
@@ -285,7 +335,7 @@ class Sort_InsertionLimited extends Operator
 
         private final Cursor input;
         private final List<ExpressionEvaluation> evaluations;
-        private State state;
+        private State state = State.CLOSED;
         private SortedSet<Holder> sorted;
         private Iterator<Holder> iterator;
     }
@@ -300,7 +350,7 @@ class Sort_InsertionLimited extends Operator
         private int index;
         private ShareHolder<Row> row;
         private ToObjectValueTarget target = new ToObjectValueTarget();
-        private Comparable[] values;
+        private Comparable<Holder>[] values;
 
         public Holder(int index, Row arow, List<ExpressionEvaluation> evaluations) {
             this.index = index;

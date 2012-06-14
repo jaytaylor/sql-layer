@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
@@ -19,22 +30,17 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
-import com.akiban.qp.rowtype.AisRowType;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.*;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Set;
 
-import static com.akiban.qp.operator.API.FlattenOption.*;
-import static com.akiban.qp.operator.API.JoinType.*;
-import static com.akiban.qp.operator.API.LookupOption.*;
+import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
+import static com.akiban.qp.operator.API.InputPreservationOption.DISCARD_INPUT;
+import static com.akiban.qp.operator.API.InputPreservationOption.KEEP_INPUT;
 import static com.akiban.qp.operator.API.*;
 import static org.junit.Assert.assertTrue;
 
@@ -51,30 +57,30 @@ public class Product3WayIT extends OperatorITBase
         // Don't call super.before(). This is a different schema from most operator ITs.
         r = createTable(
             "schema", "r",
-            "rid int not null key",
-            "rvalue varchar(20)," +
-            "index(rvalue)");
+            "rid int not null primary key",
+            "rvalue varchar(20)");
+        createIndex("schema", "r", "rvalue", "rvalue");
         a = createTable(
             "schema", "a",
-            "aid int not null key",
+            "aid int not null primary key",
             "rid int",
             "avalue varchar(20)",
-            "constraint __akiban_ra foreign key __akiban_ra(rid) references r(rid)",
-            "index(avalue)");
+            "grouping foreign key(rid) references r(rid)");
+        createIndex("schema", "a", "avalue", "avalue");
         b = createTable(
             "schema", "b",
-            "bid int not null key",
+            "bid int not null primary key",
             "rid int",
             "bvalue varchar(20)",
-            "constraint __akiban_rb foreign key __akiban_rb(rid) references r(rid)",
-            "index(bvalue)");
+            "grouping foreign key(rid) references r(rid)");
+        createIndex("schema", "b", "bvalue", "bvalue");
         c = createTable(
             "schema", "c",
-            "cid int not null key",
+            "cid int not null primary key",
             "rid int",
             "cvalue varchar(20)",
-            "constraint __akiban_rc foreign key __akiban_rc(rid) references r(rid)",
-            "index(cvalue)");
+            "grouping foreign key(rid) references r(rid)");
+        createIndex("schema", "c", "cvalue", "cvalue");
         schema = new Schema(rowDefCache().ais());
         rRowType = schema.userTableRowType(userTable(r));
         aRowType = schema.userTableRowType(userTable(a));
@@ -308,9 +314,9 @@ public class Product3WayIT extends OperatorITBase
 
     // TODO: Test handling of rows whose type is not involved in product.
 
-    private Set<AisRowType> removeDescendentTypes(AisRowType type)
+    private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
     {
-        Set<AisRowType> keepTypes = type.schema().userTableTypes();
+        Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }
@@ -319,10 +325,10 @@ public class Product3WayIT extends OperatorITBase
     protected int a;
     protected int c;
     protected int b;
-    protected RowType rRowType;
-    protected RowType aRowType;
-    protected RowType cRowType;
-    protected RowType bRowType;
+    protected UserTableRowType rRowType;
+    protected UserTableRowType aRowType;
+    protected UserTableRowType cRowType;
+    protected UserTableRowType bRowType;
     protected IndexRowType aValueIndexRowType;
     protected IndexRowType rValueIndexRowType;
     protected GroupTable rabc;

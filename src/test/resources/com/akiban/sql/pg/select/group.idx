@@ -1,3 +1,0 @@
-customers	cname_and_sku	customers.name,items.sku
-customers	sku_and_date	items.sku,orders.order_date
-customers	date_and_name	orders.order_date,customers.name	RIGHT

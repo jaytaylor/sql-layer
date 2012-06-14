@@ -1,127 +1,87 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.lang.management.ManagementFactory;
-import java.lang.management.RuntimeMXBean;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.Set;
 import java.util.TreeSet;
 
-import javax.management.JMX;
+import javax.management.Attribute;
 import javax.management.MBeanAttributeInfo;
 import javax.management.MBeanInfo;
 import javax.management.MBeanNotificationInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanParameterInfo;
 import javax.management.MBeanServerConnection;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 import javax.management.remote.JMXConnector;
 import javax.management.remote.JMXConnectorFactory;
 import javax.management.remote.JMXServiceURL;
-import com.akiban.server.manage.ManageMXBean;
-import com.akiban.server.manage.ManageMXBeanImpl;
-import com.akiban.server.store.statistics.IndexStatisticsMXBean;
 
 /* Provides a JMX interface to the server in the test framework  */
 public class JMXInterpreter {
 
-    private JMXServiceURL serviceURL;
-    private JMXConnector connector;
+    public JMXServiceURL serviceURL;
+    private JmxAdapter adapter;
+    private boolean debug;
 
-    void openConnection() {
-        try {
-            connector = JMXConnectorFactory.connect(serviceURL);
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
+    public JMXInterpreter(boolean debug) {
+        this.debug = debug;
     }
 
-    void openConnection(String host, String port) {
-        try {
-            setServiceURL(host, port);
-            openConnection();
-        } catch (MalformedURLException e) {
-            System.out.println(e.getMessage());
+    void ensureConnection(String host, int port) {
+        if (adapter == null) {
+            adapter = new RemoteJmxAdapter(host, port);
+            if (!adapter.tryOpen()) {
+                if (debug)
+                    System.out.println("Couldn't connect to remote JMX adapter: " + adapter.describeConnection());
+                adapter = new LocalJmxAdapter();
+                if ((!adapter.tryOpen()) && debug)
+                    System.out.println("Couldn't connect to local JMX adapter: " + adapter.describeConnection());
+            }
         }
-    }
-
-    public String remoteRuntime() throws IOException {
-        //Get an MBeanServerConnection on the remote VM.
-        final MBeanServerConnection remote = connector
-                .getMBeanServerConnection();
-
-        final RuntimeMXBean remoteRuntime = ManagementFactory
-                .newPlatformMXBeanProxy(remote,
-                        ManagementFactory.RUNTIME_MXBEAN_NAME,
-                        RuntimeMXBean.class);
-
-        return "Target VM is: " + remoteRuntime.getName()
-                + System.getProperty("line.separator") + "Started since: "
-                + remoteRuntime.getUptime()
-                + System.getProperty("line.separator") + "With Classpath: "
-                + remoteRuntime.getClassPath()
-                + System.getProperty("line.separator") + "And args: "
-                + remoteRuntime.getInputArguments();
     }
 
     public void close() {
         try {
-            if (connector != null) {
-                connector.close();
+            if (adapter != null) {
+                adapter.close();
             }
         } catch (IOException e) {
             System.out.println(e.getMessage());
         }
     }
 
-    public MBeanServerConnection setup(JMXConnector connector) {
-        MBeanServerConnection mbsc = null;
-        try {
-            mbsc = connector.getMBeanServerConnection();
-        } catch (IOException e) {
-            System.out.println(e.getMessage());
-        }
-        return mbsc;
-    }
-
-    public JMXServiceURL getServiceURL() {
-        return serviceURL;
-    }
-
-    //service:jmx:rmi:///jndi/rmi://localhost:8082/jmxrmi
-    public void setServiceURL(String host, String port)
-            throws MalformedURLException {
-        this.serviceURL = new JMXServiceURL("service:jmx:rmi:///jndi/rmi://"
-                + host + ":" + port + "/jmxrmi");
-    }
-
-    public void setServiceURL(JMXServiceURL serviceURL) {
-        this.serviceURL = serviceURL;
-    }
-
-    public JMXConnector getConnector() {
-        return connector;
-    }
-
-    public void setConnector(JMXConnector connector) {
-        this.connector = connector;
+    public JmxAdapter getAdapter() {
+        return adapter;
     }
 
     /* Used for generating documentation for the wiki */
@@ -217,47 +177,144 @@ public class JMXInterpreter {
                 }
 
                 if (p < params.length - 1) {
-                    System.out.print(',');
+                    System.out.print(", ");
                 }
             }
             System.out.println(") | ");
         }
     }
 
-    /*
-     * Actual Bean implementations 
-     */
-    public ManageMXBean getAkServer(JMXConnector connector) {
-        MBeanServerConnection mbsc = setup(connector);
-        ManageMXBean mxbeanProxy = null;
-
+    
+    public Object makeBeanCall(String host, int port, String objectName,
+            String method, Object[] parameters, String callType) throws Exception {
+        ensureConnection(host, port);
+        if (adapter == null) {
+            throw new Exception("Can't connect");
+        }
+        MBeanServerConnection mbs = adapter.getConnection();
         ObjectName mxbeanName = null;
-        try {
-            mxbeanName = new ObjectName(ManageMXBeanImpl.BEAN_NAME);
-        } catch (MalformedObjectNameException e) {
-            System.out.println(e.getMessage());
-        } catch (NullPointerException e) {
-            System.out.println(e.getMessage());
+            mxbeanName = new ObjectName(objectName);
+        
+        MBeanInfo info = mbs.getMBeanInfo(mxbeanName);
+        String[] signature = null;
+        if (callType.equalsIgnoreCase("method")) {
+            MBeanOperationInfo[] ops = info.getOperations();
+            for (int x=0;x < ops.length;x++) {
+                if (method.equalsIgnoreCase(ops[x].getDescription())) {
+                    signature = new String[ops[x].getSignature().length];
+                    for (int a=0;a < ops[x].getSignature().length;a++) {
+                        signature[a] = ops[x].getSignature()[a].getType();
+                    }
+                    break;
+                }
+            }    
         }
-        mxbeanProxy = (ManageMXBean) JMX.newMXBeanProxy(mbsc, mxbeanName,
-                ManageMXBean.class);
-
-        return mxbeanProxy;
+        Object data = null;
+        if (callType.equalsIgnoreCase("method")) {
+            data = mbs.invoke(mxbeanName, method, parameters , signature);
+        } else if (callType.equalsIgnoreCase("get")) {
+            data = mbs.getAttribute(mxbeanName, method);
+        } else {
+            Attribute attrib = null;
+            for (int x=0;x < info.getAttributes().length;x++) {
+                if (method.equalsIgnoreCase(info.getAttributes()[x].getName())) {
+                    if (info.getAttributes()[x].getType().equalsIgnoreCase(double.class.getName())) {
+                        attrib = new Attribute(method, new Double(String.valueOf(parameters[0])));
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(long.class.getName())) {
+                        attrib = new Attribute(method, new Long(String.valueOf(parameters[0])));
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(int.class.getName())) {
+                        attrib = new Attribute(method, new Integer(String.valueOf(parameters[0])));
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(String.class.getName())) {
+                        attrib = new Attribute(method, String.valueOf(parameters[0]));
+                    } else if (info.getAttributes()[x].getType().equalsIgnoreCase(Boolean.class.getName())) {
+                        attrib = new Attribute(method, new Boolean(String.valueOf(parameters[0])));
+                    } else {
+                        throw new Exception("Unknown Attribute type found as "+info.getAttributes()[x].getType());
+                    }
+                    break;
+                }
+            }
+            mbs.setAttribute(mxbeanName, attrib);
+        }
+        
+        return data;
     }
 
-    public IndexStatisticsMXBean getIndexStatisticsMXBean(JMXConnector connector) {
-        MBeanServerConnection mbsc = setup(connector);
-        IndexStatisticsMXBean mxbeanProxy = null;
-        try {
-            ObjectName mxbeanName = new ObjectName(
-                    "com.akiban:type=IndexStatistics");
-            mxbeanProxy = JMX.newMXBeanProxy(mbsc, mxbeanName,
-                    IndexStatisticsMXBean.class);
-
-        } catch (MalformedObjectNameException e) {
-            System.out.println(e.getMessage());
-        }
-        return (IndexStatisticsMXBean) mxbeanProxy;
+    public interface JmxAdapter extends Closeable {
+        boolean tryOpen();
+        String describeConnection();
+        MBeanServerConnection getConnection();
     }
 
+    private static class RemoteJmxAdapter implements JmxAdapter {
+
+        @Override
+        public boolean tryOpen() {
+            JMXServiceURL serviceUrl;
+            //service:jmx:rmi:///jndi/rmi://localhost:8082/jmxrmi
+            try {
+                serviceUrl = new JMXServiceURL(urlString);
+            }
+            catch (MalformedURLException e) {
+                System.err.println("Malformed JMX connection string: " + urlString);
+                return false;
+            }
+            try {
+                connector = JMXConnectorFactory.connect(serviceUrl);
+                connection = connector.getMBeanServerConnection();
+            }
+            catch (IOException e) {
+                return false;
+            }
+            assert connection != null;
+            return true;
+        }
+
+        @Override
+        public MBeanServerConnection getConnection() {
+            if (connection == null)
+                throw new IllegalStateException("not connected: " + describeConnection());
+            return connection;
+        }
+
+        @Override
+        public String describeConnection() {
+            return urlString;
+        }
+
+        @Override
+        public void close() throws IOException {
+            connector.close();
+        }
+
+        public RemoteJmxAdapter(String host, int port) {
+            urlString = "service:jmx:rmi:///jndi/rmi://" + host + ":" + port + "/jmxrmi";
+        }
+
+        private final String urlString;
+        private JMXConnector connector;
+        private MBeanServerConnection connection;
+    }
+
+    private static class LocalJmxAdapter implements JmxAdapter {
+        @Override
+        public boolean tryOpen() {
+            return true;
+        }
+
+        @Override
+        public String describeConnection() {
+            return "local VM connection";
+        }
+
+        @Override
+        public MBeanServerConnection getConnection() {
+            return ManagementFactory.getPlatformMBeanServer();
+        }
+
+        @Override
+        public void close() {
+            // nothing to do
+        }
+    }
 }

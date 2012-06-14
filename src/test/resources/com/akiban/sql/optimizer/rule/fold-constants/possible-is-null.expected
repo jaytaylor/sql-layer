@@ -1,7 +1,7 @@
 SelectQuery@519549e
   ResultSet@420253af[name, order_date]
-    Project@26c42804[user.customers.name, user.orders.order_date]
-      Select@181f327e[isNull(user.customers.name)]
-        JoinNode@4eb7cd92(RIGHT[user.customers.cid == user.orders.cid])
-          TableSource@5ad3c69c(user.customers)
-          TableSource@5945a5a(user.orders)
+    Project@26c42804[customers.name, orders.order_date]
+      Select@181f327e[isNull(customers.name)]
+        JoinNode@4eb7cd92(RIGHT[customers.cid == orders.cid])
+          TableSource@5ad3c69c(customers)
+          TableSource@5945a5a(orders)

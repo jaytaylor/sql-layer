@@ -41,11 +41,11 @@ resultSet:
 		null
 		correlation Name: null
 		null
-		userData: user.t2
+		userData: test.t2
 targetTableName: 	
 	com.akiban.sql.parser.TableName@a5d
 	t1
-	userData: user.t1
+	userData: test.t1
 targetColumnList: 	
 	com.akiban.sql.parser.ResultColumnList@7e78fc6
 

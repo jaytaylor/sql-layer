@@ -1,39 +1,43 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.store;
 
 import static com.akiban.server.service.tree.TreeService.SCHEMA_TREE_NAME;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.nio.BufferOverflowException;
-import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 
 import com.akiban.ais.metamodel.io.AISTarget;
@@ -45,55 +49,44 @@ import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
+import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.HKeyColumn;
-import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.Type;
-import com.akiban.server.encoding.EncoderFactory;
+import com.akiban.ais.model.validation.AISValidations;
+import com.akiban.ais.protobuf.ProtobufReader;
+import com.akiban.ais.protobuf.ProtobufWriter;
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.IndexLacksColumnsException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
-import com.akiban.server.error.JoinToMultipleParentsException;
-import com.akiban.server.error.JoinToProtectedTableException;
-import com.akiban.server.error.JoinToUnknownTableException;
-import com.akiban.server.error.JoinToWrongColumnsException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchGroupException;
 import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.SchemaDefParseException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
-import com.akiban.server.error.SchemaLoadIOException;
 import com.akiban.server.error.TableNotInGroupException;
-import com.akiban.server.error.UnsupportedCharsetException;
-import com.akiban.server.error.UnsupportedDataTypeException;
-import com.akiban.server.error.UnsupportedIndexDataTypeException;
-import com.akiban.server.error.UnsupportedIndexPrefixException;
-import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.util.GrowableByteBuffer;
 import com.google.inject.Inject;
 
+import com.persistit.Key;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.ddl.SchemaDef;
-import com.akiban.ais.ddl.SchemaDefToAis;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -102,50 +95,70 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.util.DDLGenerator;
-import com.akiban.server.AkServer;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.service.tree.TreeVisitor;
 import com.persistit.Exchange;
-import com.persistit.Key;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 
-public class PersistitStoreSchemaManager implements Service<SchemaManager>,
-        SchemaManager {
-
-    final static int AIS_BASE_TABLE_ID = 1000000000;
-    
-    static final String AIS_DDL_NAME = "akiban_information_schema.ddl";
-
-    static final String BY_AIS = "byAIS";
-
-    private static final Logger LOG = LoggerFactory
-            .getLogger(PersistitStoreSchemaManager.class.getName());
-
-    private final static String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
-
-    private final static boolean forceToDisk = true;
-
-    /**
-     * Maximum size that can can be stored in an index.
-     */
-    static final int MAX_INDEX_STORAGE_SIZE = Key.MAX_KEY_LENGTH;
-
-    /**
-     * Maximum size for an ordinal value as stored with the HKey. Note that this
-     * <b>must match</b> the EWIDTH_XXX definition from {@link Key}, where XXX
-     * is the return type of {@link com.akiban.server.rowdata.RowDef#getOrdinal()}.
-     * Currently this is int and {@link Key#EWIDTH_INT}.
-     */
-    static final int MAX_ORDINAL_STORAGE_SIZE = 5;
+/**
+ * <p>
+ * Storage as of v1.2.1 (05/2012), Protobuf bytes per schema:
+ * <table border="1">
+ *     <tr>
+ *         <th>key</th>
+ *         <th>value</th>
+ *         <th>description</th>
+ *     </tr>
+ *     <tr>
+ *         <td>"byPBAIS",(int)version,"schema1"</td>
+ *         <td>byte[]</td>
+ *         <td>Key is a pair of version (int, see {@link #PROTOBUF_PSSM_VERSION} for current) and schema name (string).<br>
+ *             Value is as constructed by {@link ProtobufWriter}.
+ *     </tr>
+ *     <tr>
+ *         <td>"byPBAIS",(int)version,"schema2"</td>
+ *         <td>...</td>
+ *         <td>...</td>
+ *     </tr>
+ * </table>
+ * <br>
+ * <p>
+ * Storage as of v0.4 (05/2011), MetaModel bytes per AIS:
+ * <table border="1">
+ *     <tr>
+ *         <th>key</th>
+ *         <th>value</th>
+ *         <th>description</th>
+ *     </tr>
+ *     <tr>
+ *         <td>"byAIS"</td>
+ *         <td>byte[]</td>
+ *         <td>Value is as constructed by {@link MessageTarget}</td>
+ *     </tr>
+ * </table>
+ * </p>
+ * </p>
+ */
+public class PersistitStoreSchemaManager implements Service<SchemaManager>, SchemaManager {
+    public static enum SerializationType {
+        NONE,
+        META_MODEL,
+        PROTOBUF,
+        UNKNOWN
+    }
 
     public static final String MAX_AIS_SIZE_PROPERTY = "akserver.max_ais_size_bytes";
+    public static final SerializationType DEFAULT_SERIALIZATION = SerializationType.PROTOBUF;
 
-    private static final String TREE_NAME_SEPARATOR = "$$";
+    private static final String METAMODEL_PARENT_KEY = "byAIS";
+    private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
+    private static final int PROTOBUF_PSSM_VERSION = 1;
 
-    private static final AtomicInteger indexCounter = new AtomicInteger(0);
+    private static final String CREATE_SCHEMA_FORMATTER = "create schema if not exists `%s`;";
+    private static final Logger LOG = LoggerFactory.getLogger(PersistitStoreSchemaManager.class.getName());
 
     private final AisHolder aish;
     private final SessionService sessionService;
@@ -154,7 +167,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     private final ConfigurationService config;
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
-    private ByteBuffer aisByteBuffer;
+    private SerializationType serializationType = SerializationType.NONE;
+    private final Set<TableName> legacyISTables = new HashSet<TableName>();
 
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
@@ -165,160 +179,60 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         this.store = store;
     }
 
-    private static String computeTreeName(Group group, Index index) {
-        IndexName iName = index.getIndexName();
-        return group.getName() + TREE_NAME_SEPARATOR +
-               iName.getSchemaName() + TREE_NAME_SEPARATOR +
-               iName.getTableName() + TREE_NAME_SEPARATOR +
-               iName.getName() + TREE_NAME_SEPARATOR +
-               indexCounter.getAndIncrement(); // Ensure uniqueness when tables are copied, (e.g. rename, alter table).
-    }
-
-    /**
-     * The AISBuilder normally sets tree names for GroupTable indexes but on a brand new table,
-     * those indexes don't have tree names yet (they are set afterwards). This syncs up all the
-     * tree names on the given GroupTable.
-     * @param groupTable GroupTable to fix up
-     */
-    private static void syncIndexTreeNames(GroupTable groupTable) {
-        for(TableIndex index : groupTable.getIndexes()) {
-            if(!index.getKeyColumns().isEmpty()) {
-                Column groupColumn = index.getKeyColumns().get(0).getColumn();
-                Column userColumn = groupColumn.getUserColumn();
-                assert userColumn != null : groupColumn;
-                boolean found = false;
-                for(TableIndex userIndex : userColumn.getUserTable().getIndexesIncludingInternal()) {
-                    if(userIndex.getIndexId().equals(index.getIndexId())) {
-                        index.setTreeName(userIndex.getTreeName());
-                        found = true;
-                        break;
-                    }
-                }
-                assert found : index;
+    @Override
+    public TableName registerStoredInformationSchemaTable(Session session, UserTable newTable, int version) {
+        final TableName newName = newTable.getName();
+        checkAISSchema(newName, true);
+        UserTable curTable = getAis().getUserTable(newName);
+        if(curTable != null) {
+            Integer oldVersion = curTable.getVersion();
+            if(Integer.valueOf(version).equals(oldVersion)) {
+                return newName;
+            } else {
+                throw new ISTableVersionMismatchException(oldVersion, version);
             }
         }
+        return createTableCommon(session, newTable, true, version, null);
     }
 
-    // TODO: Cleanup {@link #createIndexes(Session, Collection)} so AISBuilder can set final tree name
-    // on an index and {@link #syncIndexTreeNames(GroupTable)} could go away entirely
-    private static void setTreeNames(UserTable newTable) {
-        Group group = newTable.getGroup();
-        GroupTable groupTable = group.getGroupTable();
-        newTable.setTreeName(groupTable.getTreeName());
-        for(TableIndex index : newTable.getIndexesIncludingInternal()) {
-            index.setTreeName(computeTreeName(group, index));
-        }
-        syncIndexTreeNames(groupTable);
-    }
-
-    
     @Override
-    public TableName createTableDefinition(Session session, final UserTable newTable)
-    {
-        AISMerge merge = new AISMerge (getAis(), newTable);
-        merge.merge();
-        
-        final String schemaName = newTable.getName().getSchemaName();
-        final UserTable finalTable = merge.getAIS().getUserTable(newTable.getName());
-        //validateIndexSizes(newTable);
-        setTreeNames(finalTable);
-        
-        try {
-            commitAISChange(session, merge.getAIS(), schemaName);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
+    public TableName registerMemoryInformationSchemaTable(Session session, UserTable newTable, MemoryTableFactory factory) {
+        if(factory == null) {
+            throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
-            
-        return newTable.getName();
+        return createTableCommon(session, newTable, true, null, factory);
     }
-    
+
     @Override
-    public TableName createTableDefinition(final Session session, final String defaultSchemaName,
-                                           final String originalDDL) {
-        String ddlStatement = originalDDL;
-        SchemaDef schemaDef = parseTableStatement(defaultSchemaName, ddlStatement);
-        SchemaDef.UserTableDef tableDef = schemaDef.getCurrentTable();
-        if (tableDef.isLikeTableDef()) {
-            final SchemaDef.CName srcName = tableDef.getLikeCName();
-            assert srcName.getSchema() != null : originalDDL;
-            final Table srcTable = aish.getAis().getTable(srcName.getSchema(), srcName.getName());
-            if (srcTable == null) {
-                throw new NoSuchTableException (srcName.getSchema(), srcName.getName());
-            }
-            final SchemaDef.CName dstName = tableDef.getCName();
-            assert dstName.getSchema() != null : originalDDL;
-            DDLGenerator gen = new DDLGenerator(dstName.getSchema(), dstName.getName());
-            ddlStatement = gen.createTable(srcTable);
-            schemaDef = parseTableStatement(defaultSchemaName, ddlStatement);
-            tableDef = schemaDef.getCurrentTable();
-        }
-
-        final String schemaName = tableDef.getCName().getSchema();
-        final String tableName = tableDef.getCName().getName();
-        final Table curTable = getAis().getTable(schemaName, tableName);
-        if (curTable != null) {
-            throw new DuplicateTableNameException (new TableName(schemaName, tableName));
-        }
-
-        validateTableDefinition(tableDef);
-        final AkibanInformationSchema newAIS = addSchemaDefToAIS(schemaDef);
-        final UserTable newTable = newAIS.getUserTable(schemaName, tableName);
-        
-        //TODO: remove this (and the definition) when the AISValidate is turned on
-        validateIndexSizes(newTable);
-        setTreeNames(newTable);
-        
-        // TODO: A dozen or two ITs need updated before can validate through this (or mostly NOT NULL
-        // primary key parts, a few modifications of frozen AIS)
-        //newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-        //newAIS.freeze();
-        try {
-            commitAISChange(session, newAIS, schemaName);
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
-        }
-        return newTable.getName();
+    public TableName createTableDefinition(Session session, UserTable newTable) {
+        return createTableCommon(session, newTable, false, null, null);
     }
 
     @Override
     public void renameTable(Session session, TableName currentName, TableName newName) {
-        String curSchema = currentName.getSchemaName();
-        String newSchema = newName.getSchemaName();
-        if(curSchema.equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
-            throw new ProtectedTableDDLException(currentName);
-        }
-        if(newSchema.equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
-            throw new ProtectedTableDDLException(newName);
-        }
+        checkTableName(currentName, true, false);
+        checkTableName(newName, false, false);
 
-        UserTable curTable = getAis().getUserTable(currentName);
-        UserTable newTable = getAis().getUserTable(newName);
-        if(curTable == null) {
-            throw new NoSuchTableException(currentName.getSchemaName(), currentName.getTableName());
-        }
-        if(newTable != null) {
-            throw new DuplicateTableNameException(newName);
-        }
-
-        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(newAIS)).save(getAis());
-        newTable = newAIS.getUserTable(currentName);
+        final AkibanInformationSchema newAIS = copyAIS(getAis());
+        final UserTable newTable = newAIS.getUserTable(currentName);
         
         AISTableNameChanger nameChanger = new AISTableNameChanger(newTable);
         nameChanger.setSchemaName(newName.getSchemaName());
         nameChanger.setNewTableName(newName.getTableName());
         nameChanger.doChange();
-        
-        String vol1 = getVolumeForSchemaTree(currentName.getSchemaName());
-        String vol2 = getVolumeForSchemaTree(newName.getSchemaName());
 
-        try {
-            commitAISChange(session, newAIS, currentName.getSchemaName());
-            if(!vol1.equals(vol2)) {
-                commitAISChange(session, newAIS, newName.getSchemaName());
-            }
-        } catch (PersistitException ex) {
-            throw new PersistitAdapterException(ex);
+        // AISTableNameChanger doesn't bother with group names or group tables, fix them with the builder
+        AISBuilder builder = new AISBuilder(newAIS);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+        newAIS.freeze();
+
+        final String curSchema = currentName.getSchemaName();
+        final String newSchema = newName.getSchemaName();
+        if(curSchema.equals(newSchema)) {
+            commitAISChange(session, newAIS, Collections.singleton(curSchema));
+        } else {
+            commitAISChange(session, newAIS, Arrays.asList(curSchema, newSchema));
         }
     }
 
@@ -347,14 +261,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         return false;
     }
     
-    @Override
-    public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-        final Map<String,String> volumeToSchema = new HashMap<String,String>();
-        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(newAIS)).save(getAis());
+    public static Collection<Index> createIndexes(AkibanInformationSchema newAIS,
+                                                  Collection<? extends Index> indexesToAdd) {
         final AISBuilder builder = new AISBuilder(newAIS);
-
         final List<Index> newIndexes = new ArrayList<Index>();
+        final NameGenerator nameGen = new DefaultNameGenerator().setDefaultTreeNames(AISMerge.computeTreeNames(newAIS));
 
         for(Index index : indexesToAdd) {
             final IndexName indexName = index.getIndexName();
@@ -365,7 +276,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             final Index curIndex;
             final Index newIndex;
             final Group newGroup;
-            final String schemaName;
 
             switch(index.getIndexType()) {
                 case TABLE:
@@ -376,9 +286,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         throw new NoSuchTableException(tableName);
                     }
                     curIndex = newTable.getIndex(indexName.getName());
-                    schemaName = indexName.getSchemaName();
                     newGroup = newTable.getGroup();
-                    Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
+                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
                     newIndex = TableIndex.create(newAIS, newTable, indexName.getName(), newId, index.isUnique(),
                                                  index.getConstraint());
                 }
@@ -390,8 +299,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         throw new NoSuchGroupException(indexName.getTableName());
                     }
                     curIndex = newGroup.getIndex(indexName.getName());
-                    schemaName = indexName.getSchemaName();
-                    Integer newId = SchemaDefToAis.findMaxIndexIDInGroup(newAIS, newGroup) + 1;
+                    Integer newId = findMaxIndexIDInGroup(newAIS, newGroup) + 1;
                     newIndex = GroupIndex.create(newAIS, newGroup, indexName.getName(), newId, index.isUnique(),
                                                  index.getConstraint(), index.getJoinType());
                 }
@@ -409,8 +317,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                         index.getIndexName().getName());
             }
 
-            volumeToSchema.put(getVolumeForSchemaTree(schemaName), schemaName);
-
             UserTable lastTable = null;
             for(IndexColumn indexCol : index.getKeyColumns()) {
                 final TableName refTableName = indexCol.getColumn().getTable().getName();
@@ -421,7 +327,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 if(!newRefTable.getGroup().equals(newGroup)) {
                     throw new TableNotInGroupException (refTableName);
                 }
-                // TODO: Checked in newIndex.addColumn(newIndexCol) ?  
+                // TODO: Checked in newIndex.addColumn(newIndexCol) ?
                 if(lastTable != null && !inSameBranch(lastTable, newRefTable)) {
                     throw new BranchingGroupIndexException (
                             index.getIndexName().getName(),
@@ -446,37 +352,39 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             }
 
             newIndex.freezeColumns();
-            newIndex.setTreeName(computeTreeName(newGroup, newIndex));
+            newIndex.setTreeName(nameGen.generateIndexTreeName(newIndex));
             newIndexes.add(newIndex);
             builder.generateGroupTableIndexes(newGroup);
         }
+        return newIndexes;
+    }
+    
+    @Override
+    public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
+        final Set<String> schemas = new HashSet<String>();
+        final AkibanInformationSchema newAIS = copyAIS(getAis());
 
-        for(String schema : volumeToSchema.values()) {
-            try {
-                commitAISChange(session, newAIS, schema);
-            } catch (PersistitException ex) {
-                throw new PersistitAdapterException(ex);
-            }
+        Collection<Index> newIndexes = createIndexes(newAIS, indexesToAdd);
+        for(Index index : newIndexes) {
+            schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
         }
         
+        commitAISChange(session, newAIS, schemas);
         return newIndexes;
     }
 
     @Override
     public void dropIndexes(Session session, Collection<Index> indexesToDrop) {
-        final AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(newAIS)).save(getAis());
+        final AkibanInformationSchema newAIS = copyAIS(getAis());
         final AISBuilder builder = new AISBuilder(newAIS);
-        final Map<String,String> volumeToSchema = new HashMap<String,String>();
+        final Set<String> schemas = new HashSet<String>();
 
         for(Index index : indexesToDrop) {
             final IndexName name = index.getIndexName();
-            String schemaName = null;
             switch(index.getIndexType()) {
                 case TABLE:
                     Table newTable = newAIS.getUserTable(new TableName(name.getSchemaName(), name.getTableName()));
                     if(newTable != null) {
-                        schemaName = newTable.getName().getSchemaName();
                         newTable.removeIndexes(Collections.singleton(newTable.getIndex(name.getName())));
                         builder.generateGroupTableIndexes(newTable.getGroup());
                     }
@@ -484,7 +392,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                 case GROUP:
                     Group newGroup = newAIS.getGroup(name.getTableName());
                     if(newGroup != null) {
-                        schemaName = newGroup.getGroupTable().getName().getSchemaName();
                         newGroup.removeIndexes(Collections.singleton(newGroup.getIndex(name.getName())));
                     }
                 break;
@@ -492,16 +399,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
                     throw new IllegalArgumentException("Unknown index type: " + index);
             }
 
-            volumeToSchema.put(getVolumeForSchemaTree(schemaName), schemaName);
+            schemas.add(DefaultNameGenerator.schemaNameForIndex(index));
         }
 
-        for(String schema : volumeToSchema.values()) {
-            try {
-                commitAISChange(session, newAIS, schema);
-            } catch (PersistitException ex) {
-                throw new PersistitAdapterException(ex);
-            }
-        }
+        commitAISChange(session, newAIS, schemas);
     }
 
 
@@ -516,6 +417,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         if (table == null) {
             return;
         }
+
 
         final List<TableName> tables = new ArrayList<TableName>();
         if (table.isGroupTable() == true) {
@@ -538,22 +440,26 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
             tables.add(table.getName());
         }
 
+        final Set<String> schemas = new HashSet<String>();
+        final List<Integer> tableIDs = new ArrayList<Integer>();
+        for(TableName name : tables) {
+            schemas.add(name.getSchemaName());
+            tableIDs.add(getAis().getTable(name).getTableId());
+        }
+
         final AkibanInformationSchema newAIS = removeTablesFromAIS(tables);
         try {
-            commitAISChange(session, newAIS, schemaName);
+            commitAISChange(session, newAIS, schemas);
             // Success, remaining cleanup
-            deleteTableStatuses(tables);
+            deleteTableStatuses(tableIDs);
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
     }
 
-    private void deleteTableStatuses(List<TableName> tables) throws PersistitException {
-        for(final TableName tn : tables) {
-            UserTable table = getAis().getUserTable(tn);
-            if(table != null) {
-                treeService.getTableStatusCache().drop(table.getTableId());
-            }
+    private void deleteTableStatuses(List<Integer> tableIDs) throws PersistitException {
+        for(Integer id : tableIDs) {
+            treeService.getTableStatusCache().drop(id);
         }
     }
 
@@ -592,7 +498,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     private void setGroupTableIds(AkibanInformationSchema newAIS) {
-       // Old behavior, reassign group table IDs
+        // Old behavior, reassign group table IDs
         for(GroupTable groupTable: newAIS.getGroupTables().values()) {
             final UserTable root = groupTable.getRoot();
             assert root != null : "Group with no root table: " + groupTable;
@@ -601,35 +507,22 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     }
 
     /**
-     * Construct a new AIS instance containing a copy of the currently known
-     * data, see @{link #ais}, and the given schemaDef.
-     * @param schemaDef SchemaDef to combine.
-     * @return A completely new AIS
-     * @throws Exception For any error.
-     */
-    private AkibanInformationSchema addSchemaDefToAIS(SchemaDef schemaDef) {
-        AkibanInformationSchema newAis = new AkibanInformationSchema();
-        new Writer(new AISTarget(newAis)).save(getAis());
-        new SchemaDefToAis(schemaDef, newAis, true).getAis();
-        setGroupTableIds(newAis);
-        return newAis;
-    }
-
-    /**
      * Construct a new AIS instance containing a copy of the currently known data, see @{link #ais},
      * minus the given list of TableNames.
      * @param tableNames List of tables to exclude from new AIS.
      * @return A completely new AIS.
-     * @throws Exception For any error.
      */
     private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames) {
         AkibanInformationSchema newAis = new AkibanInformationSchema();
-        new TableSubsetWriter(new AISTarget(newAis)) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                return !tableNames.contains(table.getName());
-            }
-        }.save(getAis());
+        copyAIS(newAis,
+                getAis(),
+                new TableSubsetWriter(new AISTarget(newAis)) {
+                    @Override
+                    public boolean shouldSaveTable(Table table) {
+                        return !tableNames.contains(table.getName());
+                    }
+                }
+        );
 
         // Fix up group table columns and indexes for modified groups
         AISBuilder builder = new AISBuilder(newAis);
@@ -709,19 +602,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
     @Override
     public void start() {
         updateTimestamp = new AtomicLong();
+
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
             maxAISBufferSize = 0;
         }
-        // 0 = unlimited, start off at 1MB in this case.
-        aisByteBuffer = ByteBuffer.allocate(maxAISBufferSize != 0 ? maxAISBufferSize : 1<<20);
+
         try {
-            afterStart();
+            loadAISFromStorage();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
-        } catch (IOException e) {
-            throw new SchemaLoadIOException(e.getMessage());
         }
     }
 
@@ -730,7 +621,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         this.aish.setAis(null);
         this.updateTimestamp = null;
         this.maxAISBufferSize = 0;
-        this.aisByteBuffer = null;
+        this.serializationType = SerializationType.NONE;
+        this.legacyISTables.clear();
     }
 
     @Override
@@ -738,56 +630,183 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         stop();
     }
 
+    private static AkibanInformationSchema createPrimordialAIS() {
+        /*
+         * Big, ugly, and lots of hard coding. This is because any change in
+         * table definition or derived data (tree name, ids, etc) affects the
+         * compatibility of existing volumes. If we stopped creating this at
+         * every start-up and only did it once (on fresh volume), this could
+         * much shortened -- but that is only a possible TO-DO item.
+         */
+        final String SCHEMA = "akiban_information_schema";
+        final String STATS = "zindex_statistics";
+        final int STATS_ID = 1000000009;
+        final String ENTRY = "zindex_statistics_entry";
+        final int ENTRY_ID = 1000000010;
+        final String PRIMARY = "PRIMARY";
+        final String FK_NAME = "__akiban_fk_0";
+        final String GROUP = STATS;
+        final String GROUP_TABLE = "_akiban_" + STATS;
+        final String JOIN = String.format("%s/%s/%s/%s", SCHEMA, STATS, SCHEMA, ENTRY);
+        final String STATS_TREE = "akiban_information_schema$$_akiban_zindex_statistics";
+        final String TREE_NAME_FORMAT = "%s$$%s$$%s$$%s$$%d";
+        final String STATS_PK_TREE = String.format(TREE_NAME_FORMAT, STATS, SCHEMA, STATS, PRIMARY, 9);
+        final String ENTRY_PK_TREE = String.format(TREE_NAME_FORMAT, STATS, SCHEMA, ENTRY, PRIMARY, 11);
+        final String ENTRY_FK_TREE = String.format(TREE_NAME_FORMAT, STATS, SCHEMA, ENTRY, FK_NAME, 10);
+
+        AISBuilder builder = new AISBuilder();
+
+        int col = 0;
+        builder.userTable(SCHEMA, STATS);
+        builder.column(SCHEMA, STATS,           "table_id", col++,       "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, STATS,           "index_id", col++,       "int", null, null, false, false, null, null);
+        builder.column(SCHEMA, STATS, "analysis_timestamp", col++, "timestamp", null, null,  true, false, null, null);
+        builder.column(SCHEMA, STATS,          "row_count", col++,    "bigint", null, null,  true, false, null, null);
+        builder.column(SCHEMA, STATS,      "sampled_count", col++,    "bigint", null, null,  true, false, null, null);
+        col = 0;
+        builder.index(SCHEMA, STATS, PRIMARY, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, STATS, PRIMARY, "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, STATS, PRIMARY, "index_id", col++, true, null);
+
+        col = 0;
+        builder.userTable(SCHEMA, ENTRY);
+        builder.column(SCHEMA, ENTRY,       "table_id", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "index_id", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,   "column_count", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,    "item_number", col++,       "int",  null, null, false, false, null, null);
+        builder.column(SCHEMA, ENTRY,     "key_string", col++,   "varchar", 2048L, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,      "key_bytes", col++, "varbinary", 4096L, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "eq_count", col++,    "bigint",  null, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,       "lt_count", col++,    "bigint",  null, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY, "distinct_count", col++,    "bigint",  null, null,  true, false, null, null);
+        col = 0;
+        builder.index(SCHEMA, ENTRY, PRIMARY, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,     "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,     "index_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY, "column_count", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, PRIMARY,  "item_number", col++, true, null);
+        col = 0;
+        builder.index(SCHEMA, ENTRY, FK_NAME, false, "FOREIGN KEY");
+        builder.indexColumn(SCHEMA, ENTRY, FK_NAME, "table_id", col++, true, null);
+        builder.indexColumn(SCHEMA, ENTRY, FK_NAME, "index_id", col++, true, null);
+
+        builder.joinTables(JOIN, SCHEMA, STATS, SCHEMA, ENTRY);
+        builder.joinColumns(JOIN, SCHEMA, STATS, "table_id", SCHEMA, ENTRY, "table_id");
+        builder.joinColumns(JOIN, SCHEMA, STATS, "index_id", SCHEMA, ENTRY, "index_id");
+
+        builder.createGroup(GROUP, SCHEMA, GROUP_TABLE);
+        builder.addJoinToGroup(GROUP, JOIN, 0);
+
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+        AkibanInformationSchema primordialAIS = builder.akibanInformationSchema();
+
+        UserTable statsTable = primordialAIS.getUserTable(SCHEMA, STATS);
+        statsTable.getGroup().getGroupTable().setTreeName(STATS_TREE);
+        statsTable.setTableId(STATS_ID);
+        statsTable.setTreeName(STATS_TREE);
+        statsTable.getIndex(PRIMARY).setTreeName(STATS_PK_TREE);
+        
+        UserTable entryTable = primordialAIS.getUserTable(SCHEMA, ENTRY);
+        entryTable.setTableId(ENTRY_ID);
+        entryTable.setTreeName(STATS_TREE);
+        entryTable.getIndex(PRIMARY).setTreeName(ENTRY_PK_TREE);
+        entryTable.getIndex(FK_NAME).setTreeName(ENTRY_FK_TREE);
+
+        primordialAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS);
+
+        return primordialAIS;
+    }
+
     /**
-     * Load the AIS tables from file and then load the serialized AIS from each
-     * {@link TreeService#SCHEMA_TREE_NAME} in each volume. This must be done
-     * in afterStart because it requires other services, TreeService and Store
-     * specifically, to be up and functional
-     * @throws PersistitException 
-     * @throws IOException 
+     * Load the AIS tables from file by iterating every volume and reading the contents
+     * of the {@link TreeService#SCHEMA_TREE_NAME} tree.
+     * @throws PersistitException
      */
-    private void afterStart() throws PersistitException, IOException {
-        InputStream aisFileStream = null;
+    private void loadAISFromStorage() throws PersistitException {
+        final AkibanInformationSchema newAIS = createPrimordialAIS();
+        setGroupTableIds(newAIS);
+        for(UserTable table : newAIS.getUserTables().values()) {
+            legacyISTables.add(table.getName());
+        }
+
         final Session session = sessionService.createSession();
         final Transaction transaction = treeService.getTransaction(session);
         transaction.begin();
         try {
-            // Create AIS tables
-            aisFileStream = AkServer.class.getClassLoader().getResourceAsStream(AIS_DDL_NAME);
-            SchemaDef schemaDef = SchemaDef.parseSchemaFromStream(aisFileStream);
-            final AkibanInformationSchema newAIS = new SchemaDefToAis(schemaDef, true).getAis();
-            int curId = AIS_BASE_TABLE_ID;
-            for(UserTable table : newAIS.getUserTables().values()) {
-                table.setTableId(curId++);
-                setTreeNames(table);
-            }
-            setGroupTableIds(newAIS);
-
-            // Load stored AIS data from each schema tree
             treeService.visitStorage(session, new TreeVisitor() {
-                                         @Override
-                                         public void visit(Exchange ex) throws PersistitException{
-                                             ex.clear().append(BY_AIS);
-                                             if(ex.isValueDefined()) {
-                                                 byte[] storedAIS = ex.fetch().getValue().getByteArray();
-                                                 ByteBuffer buffer = ByteBuffer.wrap(storedAIS);
-                                                 new Reader(new MessageSource(buffer)).load(newAIS);
-                                             }
-                                         }
-                                     }, SCHEMA_TREE_NAME);
+                @Override
+                public void visit(Exchange ex) throws PersistitException{
+
+                    // TODO: This is where the "automatic upgrade" would go
+
+                    SerializationType typeForVolume = detectSerializationType(ex);
+                    switch(typeForVolume) {
+                        case NONE:
+                            // Empty tree, nothing to do
+                        break;
+                        case META_MODEL:
+                            checkAndSetSerialization(typeForVolume);
+                            loadMetaModel(ex, newAIS);
+                        break;
+                        case PROTOBUF:
+                            checkAndSetSerialization(typeForVolume);
+                            loadProtobuf(ex, newAIS);
+                        break;
+                        case UNKNOWN:
+                            throw new IllegalStateException("Unknown AIS serialization: " + ex);
+                        default:
+                            throw new IllegalStateException("Unhandled serialization type: " + typeForVolume);
+                    }
+                }
+            }, SCHEMA_TREE_NAME);
 
             buildRowDefCache(newAIS);
             transaction.commit();
         } finally {
-            if(aisFileStream != null) {
-                aisFileStream.close();
-            }
-            if(!transaction.isCommitted()) {
-                transaction.rollback();
-            }
             transaction.end();
             session.close();
         }
+    }
+
+    private static void loadMetaModel(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+        ex.clear().append(METAMODEL_PARENT_KEY).fetch();
+        if(!ex.getValue().isDefined()) {
+            throw new IllegalStateException(ex.toString() + " has no associated value (expected byte[])");
+        }
+        byte[] storedAIS = ex.getValue().getByteArray();
+        GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
+        Reader reader = new Reader(new MessageSource(buffer));
+        reader.load(newAIS);
+    }
+
+    private static void loadProtobuf(Exchange ex, AkibanInformationSchema newAIS) throws PersistitException {
+        ProtobufReader reader = new ProtobufReader(newAIS);
+        Key key = ex.getKey();
+        key.clear().append(PROTOBUF_PARENT_KEY).append(Key.BEFORE);
+        while(ex.next(true)) {
+            if(key.getDepth() != 3) {
+                throw new IllegalStateException("Unexpected "+PROTOBUF_PARENT_KEY+" format: " + key);
+            }
+
+            key.indexTo(1);
+            int storedVersion = key.decodeInt();
+            String storedSchema = key.decodeString();
+            if(storedVersion != PROTOBUF_PSSM_VERSION) {
+                throw new IllegalArgumentException("Unsupported version for schema "+storedSchema+": " + storedVersion);
+            }
+
+            byte[] storedAIS = ex.getValue().getByteArray();
+            GrowableByteBuffer buffer = GrowableByteBuffer.wrap(storedAIS);
+            reader.loadBuffer(buffer);
+        }
+
+        reader.loadAIS();
+
+        // ProtobufWriter does not save group tables (by design) so generate columns and indexes
+        AISBuilder builder = new AISBuilder(newAIS);
+        builder.groupingIsComplete();
     }
 
     private void buildRowDefCache(final AkibanInformationSchema newAis) throws PersistitException {
@@ -799,216 +818,82 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
         aish.setAis(newAis);
     }
 
-    private SchemaDef parseTableStatement(String defaultSchemaName, String ddl) throws InvalidOperationException {
-        SchemaDef def = new SchemaDef();
-        def.setMasterSchemaName(defaultSchemaName);
-        try {
-            def.parseCreateTable(ddl);
-        } catch (SchemaDef.SchemaDefException ex) {
-            throw new SchemaDefParseException(defaultSchemaName, ex.getMessage(), ddl);
-        }
-        return def;
-    }
-
-    private void validateTableDefinition(final SchemaDef.UserTableDef tableDef) {
-        final String schemaName = tableDef.getCName().getSchema();
-        final String tableName = tableDef.getCName().getName();
-        if (TableName.AKIBAN_INFORMATION_SCHEMA.equals(schemaName)) {
-            throw new ProtectedTableDDLException(new TableName(tableName, schemaName));
-        }
-
-        final String tableCharset = tableDef.getCharset();
-        if (tableCharset != null && !Charset.isSupported(tableCharset)) {
-            throw new UnsupportedCharsetException(schemaName, tableName, tableCharset);
-        }
-
-        for (SchemaDef.ColumnDef col : tableDef.getColumns()) {
-            final String typeName = col.getType();
-            if (!getAis().isTypeSupported(typeName)) {
-                throw new UnsupportedDataTypeException (
-                        new TableName(schemaName, tableName),
-                        col.getName(), typeName);
-            }
-            final String charset = col.getCharset();
-            if (charset != null && !Charset.isSupported(charset)) {
-                throw new UnsupportedCharsetException(schemaName, tableName, charset);
-            }
-        }
-
-        for (SchemaDef.IndexColumnDef colDef : tableDef.getPrimaryKey().getColumns()) {
-            final SchemaDef.ColumnDef col = tableDef.getColumn(colDef.getColumnName());
-            if (col != null) {
-                final String typeName = col.getType();
-                if (!getAis().isTypeSupportedAsIndex(typeName)) {
-                    throw new UnsupportedIndexDataTypeException (new TableName(schemaName, tableName),
-                            "PRIMARY", colDef.getColumnName(), typeName);
-                }
-            }
-        }
-
-        for (SchemaDef.IndexDef index : tableDef.getIndexes()) {
-            for (String colName : index.getColumnNames()) {
-                final SchemaDef.ColumnDef col = tableDef.getColumn(colName);
-                if (col != null) {
-                    final String typeName = col.getType();
-                    if (!getAis().isTypeSupportedAsIndex(typeName)) {
-                        throw new UnsupportedIndexDataTypeException (new TableName (schemaName, tableName),
-                                index.getName(), colName, typeName);
-                    }
-                }
-            }
-        }
-
-        final List<SchemaDef.ReferenceDef> parentJoins = tableDef
-                .getAkibanJoinRefs();
-        if (parentJoins.isEmpty()) {
-            return;
-        }
-
-        if (parentJoins.size() > 1) {
-            throw new JoinToMultipleParentsException (new TableName(schemaName, tableName));
-        }
-
-        final SchemaDef.ReferenceDef parentJoin = parentJoins.get(0);
-        final String parentTableName = parentJoin.getTableName();
-        final String parentSchema = parentJoin.getSchemaName() != null ? parentJoin
-                .getSchemaName() : schemaName;
-
-        if (TableName.AKIBAN_INFORMATION_SCHEMA.equals(parentSchema)) {
-            throw new JoinToProtectedTableException (new TableName(schemaName, tableName), new TableName(parentSchema, parentTableName));
-        }
-
-        final UserTable parentTable = getAis().getUserTable(parentSchema,
-                parentTableName);
-        if (schemaName.equals(parentSchema)
-                && tableName.equals(parentTableName) || parentTable == null) {
-            throw new JoinToUnknownTableException (new TableName (schemaName, tableName), 
-                    new TableName(parentSchema, parentTableName));
-        }
-
-        List<String> childColumns = parentJoin.getIndex().getColumnNames();
-        List<String> parentColumns = parentJoin.getColumns();
-        List<Column> parentPKColumns = parentTable.getPrimaryKey() == null ? null
-                : parentTable.getPrimaryKey().getColumns();
-        if (parentColumns.size() != childColumns.size()
-                || parentPKColumns == null
-                || parentColumns.size() != parentPKColumns.size()) {
-            
-            throw new JoinColumnMismatchException (childColumns.size(), 
-                   new TableName(schemaName, tableName),
-                   parentTable.getName(),
-                   parentColumns.size());
-        }
-
-        Iterator<String> childColumnIt = childColumns.iterator();
-        Iterator<Column> parentPKIt = parentPKColumns.iterator();
-        for (String parentColumnName : parentColumns) {
-            // Check same columns
-            String childColumnName = childColumnIt.next();
-            Column parentPKColumn = parentPKIt.next();
-            if (!parentColumnName.equalsIgnoreCase(parentPKColumn.getName())) {
-                throw new JoinToWrongColumnsException (
-                        new TableName(schemaName, tableName), parentColumnName,
-                        new TableName(parentSchema, parentTableName), parentPKColumn.getName());
-            }
-            // Check child column exists
-            SchemaDef.ColumnDef columnDef = tableDef.getColumn(childColumnName);
-            if (columnDef == null) {
-                throw new JoinToWrongColumnsException (
-                        new TableName(schemaName, tableName), childColumnName,
-                        new TableName(parentSchema, parentTableName), "UNKNOWN");
-            }
-            // Check child and parent column types
-            final String type = columnDef.getType();
-            final String parentType = parentPKColumn.getType().name();
-            if (!getAis().canTypesBeJoined(parentType, type)) {
-                throw new JoinToWrongColumnsException (new TableName (schemaName, tableName), columnDef.getName(),
-                        new TableName (parentSchema, parentTableName), parentPKColumn.getName());
-            }
-        }
-    }
-
-    private long getMaxKeyStorageSize(final Column column) {
-        final Type type = column.getType();
-        return EncoderFactory.valueOf(type.encoding(), type).getMaxKeyStorageSize(column);
-    }
-
-    private void validateIndexSizes(final UserTable table) throws InvalidOperationException {
-        final HKey hkey = table.hKey();
-
-        long hkeySize = 0;
-        int ordinalSize = 0;
-        for(HKeySegment hkSeg : hkey.segments()) {
-            ordinalSize += MAX_ORDINAL_STORAGE_SIZE; // one per segment (i.e. table)
-            for(HKeyColumn hkCol : hkSeg.columns()) {
-                hkeySize += getMaxKeyStorageSize(hkCol.column());
-            }
-        }
-
-        // HKey is too large due to pk being too big or group is too nested
-        if((hkeySize + ordinalSize) > MAX_INDEX_STORAGE_SIZE) {
-            throw new UnsupportedIndexSizeException (table.getName(), "HKey");
-        }
-
-        // includingInternal so all indexes are checked, including (hidden) PRIMARY, since any non-hkey
-        // equivalent index will a) get an index tree and b) have column(s) contributing additional size
-        for(Index index : table.getIndexesIncludingInternal()) {
-            long fullKeySize = hkeySize;
-            for(IndexColumn iColumn : index.getKeyColumns()) {
-                final Column column = iColumn.getColumn();
-                // Only indexed columns not in hkey contribute new information
-                if(!hkey.containsColumn(column)) {
-                    fullKeySize += getMaxKeyStorageSize((column));
-                }
-
-                // Reject prefix indexes until supported (bug760202)
-                if(index.isUnique() && iColumn.getIndexedLength() != null) {
-                    throw new UnsupportedIndexPrefixException (table.getName(), index.getIndexName().getName());
-                }
-            }
-            if(fullKeySize > MAX_INDEX_STORAGE_SIZE) {
-                throw new UnsupportedIndexSizeException (table.getName(), index.getIndexName().getName());
-            }
-        }
-    }
-
     /**
-     * Serialize the given AIS into a ByteBuffer in the MessageTarget format. Only tables existing
-     * in the given volume will be written.
+     * Serialize the given AIS into a ByteBuffer, either appropriate format according to the
+     * {@link #serializationType} variable. An exception will be thrown in the required
+     * size exceeds the {@link #maxAISBufferSize} setting.
+     *
      * @param newAIS The AIS to serialize.
-     * @param volumeName Volume to restrict tables to.
-     * @return ByteBuffer
-     * @throws Exception For any error during serialization or if the buffer is too small.
+     * @param schemaName Schema to restrict tables to.
      */
-    private ByteBuffer trySerializeAIS(final AkibanInformationSchema newAIS, final String volumeName) {
-        boolean finishedSerializing = false;
-        while(!finishedSerializing) {
-            try {
-                aisByteBuffer.clear();
-                new TableSubsetWriter(new MessageTarget(aisByteBuffer)) {
-                    @Override
-                    public boolean shouldSaveTable(Table table) {
-                        final String schemaName = table.getName().getSchemaName();
-                        return !schemaName.equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
-                               getVolumeForSchemaTree(schemaName).equals(volumeName);
-                    }
-                }.save(newAIS);
-                aisByteBuffer.flip();
-                finishedSerializing = true;
+    private void saveAISToStorage(Exchange ex, AkibanInformationSchema newAIS, String schemaName) throws PersistitException {
+        int maxSize = maxAISBufferSize == 0 ? Integer.MAX_VALUE : maxAISBufferSize;
+        GrowableByteBuffer byteBuffer = new GrowableByteBuffer(4096, 4096, maxSize);
+        try {
+            if(serializationType == SerializationType.NONE) {
+                serializationType = DEFAULT_SERIALIZATION;
             }
-            catch(BufferOverflowException e) {
-                if(aisByteBuffer.capacity() == maxAISBufferSize) {
-                    throw new AISTooLargeException (aisByteBuffer.capacity(), maxAISBufferSize);
-                }
-                
-                int newCapacity = aisByteBuffer.capacity() * 2;
-                if(maxAISBufferSize != 0 && newCapacity > maxAISBufferSize) {
-                    newCapacity = maxAISBufferSize;
-                }
-                aisByteBuffer = ByteBuffer.allocate(newCapacity);
+            switch(serializationType) {
+                case META_MODEL:
+                    saveMetaModel(ex, byteBuffer, newAIS, getVolumeForSchemaTree(schemaName));
+                break;
+                case PROTOBUF:
+                    saveProtobuf(ex, byteBuffer, newAIS, schemaName);
+                break;
+                default:
+                    throw new IllegalStateException("Unsupported serialization: " + serializationType);
             }
         }
-        return aisByteBuffer;
+        catch(BufferOverflowException e) {
+            throw new AISTooLargeException(maxSize);
+        }
+    }
+
+    private void saveMetaModel(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String volume)
+            throws PersistitException {
+        buffer.clear();
+        new TableSubsetWriter(new MessageTarget(buffer)) {
+            @Override
+            public boolean shouldSaveTable(Table table) {
+                final String schemaName = table.getName().getSchemaName();
+                return !schemaName.equals(TableName.AKIBAN_INFORMATION_SCHEMA) &&
+                        getVolumeForSchemaTree(schemaName).equals(volume);
+            }
+        }.save(newAIS);
+        buffer.flip();
+
+        ex.clear().append(METAMODEL_PARENT_KEY);
+        ex.getValue().clear();
+        ex.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
+        ex.store();
+    }
+
+    private void saveProtobuf(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String schema)
+            throws PersistitException {
+        final ProtobufWriter.TableSelector selector;
+        if(TableName.AKIBAN_INFORMATION_SCHEMA.equals(schema)) {
+            selector = new ProtobufWriter.SchemaSelector(schema) {
+                @Override
+                public boolean isSelected(UserTable table) {
+                    return !legacyISTables.contains(table.getName()) &&
+                           !table.hasMemoryTableFactory();
+                }
+            };
+        } else {
+            selector = new ProtobufWriter.SchemaSelector(schema);
+        }
+
+        ex.clear().append(PROTOBUF_PARENT_KEY).append(PROTOBUF_PSSM_VERSION).append(schema);
+        if(newAIS.getSchema(schema) != null) {
+            buffer.clear();
+            new ProtobufWriter(buffer, selector).save(newAIS);
+            buffer.flip();
+
+            ex.getValue().clear().putByteArray(buffer.array(), buffer.position(), buffer.limit());
+            ex.store();
+        } else {
+            ex.remove();
+        }
     }
 
     private String getVolumeForSchemaTree(final String schemaName) {
@@ -1019,35 +904,190 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>,
      * Internal helper intended to be called to finalize any AIS change. This includes create, delete,
      * alter, etc. This currently updates the {@link TreeService#SCHEMA_TREE_NAME} for a given schema,
      * rebuilds the {@link Store#getRowDefCache()}, and sets the {@link #getAis()} variable.
+     *
      * @param session Session to run under
-     * @param newAIS The new AIS to store in the {@link #BY_AIS} key range <b>and</b> commit as {@link #getAis()}.
-     * @param schemaName The schema the change affected.
-     * @throws PersistitException
+     * @param newAIS The new AIS to store on disk <b>and</b> commit as {@link #getAis()}.
+     * @param schemaNames The schemas affected by the change.
      */
-    private void commitAISChange(final Session session, final AkibanInformationSchema newAIS, final String schemaName)
-            throws PersistitException {
+    private void commitAISChange(Session session, AkibanInformationSchema newAIS, Collection<String> schemaNames) {
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
 
-        //TODO: Verify the newAIS.isFrozen(), if not throw an exception. 
-        ByteBuffer buffer = trySerializeAIS(newAIS, getVolumeForSchemaTree(schemaName));
-        final TreeLink schemaTreeLink =  treeService.treeLink(schemaName, SCHEMA_TREE_NAME);
-        final Exchange schemaEx = treeService.getExchange(session, schemaTreeLink);
-        
+        Exchange schemaEx = null;
         try {
-            schemaEx.clear().append(BY_AIS);
-            schemaEx.getValue().clear();
-            schemaEx.getValue().putByteArray(buffer.array(), buffer.position(), buffer.limit());
-            schemaEx.store();
+            for(String schema : schemaNames) {
+                TreeLink schemaTreeLink =  treeService.treeLink(schema, SCHEMA_TREE_NAME);
+                schemaEx = treeService.getExchange(session, schemaTreeLink);
+                saveAISToStorage(schemaEx, newAIS, schema);
+                treeService.releaseExchange(session, schemaEx);
+            }
 
             try {
                 buildRowDefCache(newAIS);
-            }
-            catch (PersistitException e) {
+            } catch (PersistitException e) {
                 LOG.error("AIS change successful and stored on disk but RowDefCache creation failed!");
                 LOG.error("RUNNING STATE NOW INCONSISTENT");
                 throw e;
             }
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
         } finally {
-            treeService.releaseExchange(session, schemaEx);
+            if(schemaEx != null) {
+                treeService.releaseExchange(session, schemaEx);
+            }
+        }
+    }
+
+    public static SerializationType detectSerializationType(Exchange ex) {
+        try {
+            SerializationType type = SerializationType.NONE;
+
+            // Simple heuristic to determine which style AIS storage we have
+            boolean hasMetaModel = ex.clear().append(METAMODEL_PARENT_KEY).isValueDefined();
+            boolean hasProtobuf = ex.clear().append(PROTOBUF_PARENT_KEY).hasChildren();
+
+            if(hasMetaModel && hasProtobuf) {
+                throw new IllegalStateException("Both AIS and Protobuf serializations");
+            }
+            else if(hasMetaModel) {
+                type = SerializationType.META_MODEL;
+            }
+            else if(hasProtobuf) {
+                type = SerializationType.PROTOBUF;
+            }
+            else {
+                ex.clear().append(Key.BEFORE);
+                if(ex.next(true)) {
+                    type = SerializationType.UNKNOWN;
+                }
+            }
+
+            return type;
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
+    }
+
+    private void checkAndSetSerialization(SerializationType newSerializationType) {
+        if((serializationType != SerializationType.NONE) && (serializationType != newSerializationType)) {
+            throw new IllegalStateException("Mixed serialization types: " + serializationType + " vs " + newSerializationType);
+        }
+        serializationType = newSerializationType;
+    }
+
+    /**
+     * @return All serialization types from all volumes
+     */
+    public List<SerializationType> getAllSerializationTypes(Session session) {
+        final List<SerializationType> allTypes = new ArrayList<SerializationType>();
+        try {
+            treeService.visitStorage(session, new TreeVisitor() {
+                @Override
+                public void visit(Exchange exchange) throws PersistitException {
+                    allTypes.add(detectSerializationType(exchange));
+                }
+            }, SCHEMA_TREE_NAME);
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        }
+        return allTypes;
+    }
+
+    /**
+     * @return Current serialization type
+     */
+    public SerializationType getSerializationType() {
+        return serializationType;
+    }
+
+    /**
+     * @param serializationType Serialization type to use
+     */
+    public void setSerializationType(SerializationType serializationType) {
+        this.serializationType = serializationType;
+    }
+
+    /**
+     * Find the maximum index ID from all of the indexes within the given group.
+     */
+    private static int findMaxIndexIDInGroup(AkibanInformationSchema ais, Group group) {
+        int maxId = Integer.MIN_VALUE;
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getGroup().equals(group)) {
+                for(Index index : table.getIndexesIncludingInternal()) {
+                    maxId = Math.max(index.getIndexId(), maxId);
+                }
+            }
+        }
+        for(Index index : group.getIndexes()) {
+            maxId = Math.max(index.getIndexId(), maxId);
+        }
+        return maxId;
+    }
+
+    private TableName createTableCommon(Session session, UserTable newTable, boolean isInternal,
+                                        Integer version, MemoryTableFactory factory) {
+        final TableName newName = newTable.getName();
+        checkTableName(newName, false, isInternal);
+        AISMerge merge = new AISMerge(getAis(), newTable);
+        preserveExtraInfo(merge.getAIS(), getAis());
+        merge.merge();
+        if(factory != null) {
+            merge.getAIS().getUserTable(newName).setMemoryTableFactory(factory);
+        }
+        if(version != null) {
+            merge.getAIS().getUserTable(newName).setVersion(version);
+        }
+        commitAISChange(session, merge.getAIS(), Collections.singleton(newName.getSchemaName()));
+        return getAis().getUserTable(newName).getName();
+    }
+
+    private static void checkAISSchema(TableName tableName, boolean shouldBeAIS) {
+        final boolean isAIS = TableName.AKIBAN_INFORMATION_SCHEMA.equals(tableName.getSchemaName());
+        if(shouldBeAIS && !isAIS) {
+            throw new IllegalArgumentException("Table required to be in "+TableName.AKIBAN_INFORMATION_SCHEMA+" schema");
+        }
+        if(!shouldBeAIS && isAIS) {
+            throw new ProtectedTableDDLException(tableName);
+        }
+    }
+
+    private void checkExists(TableName tableName, boolean shouldExist) {
+        final boolean tableExists = getAis().getTable(tableName) != null;
+        if(shouldExist && !tableExists) {
+            throw new NoSuchTableException(tableName);
+        }
+        if(!shouldExist && tableExists) {
+            throw new DuplicateTableNameException(tableName);
+        }
+    }
+
+    private void checkTableName(TableName tableName, boolean shouldExist, boolean aisAllowed) {
+        checkAISSchema(tableName, aisAllowed);
+        checkExists(tableName, shouldExist);
+    }
+
+    private static AkibanInformationSchema copyAIS(AkibanInformationSchema curAIS) {
+        AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        return copyAIS(newAIS, curAIS, new Writer(new AISTarget(newAIS)));
+    }
+
+    private static AkibanInformationSchema copyAIS(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS, Writer writer) {
+        writer.save(curAIS);
+        preserveExtraInfo(newAIS, curAIS);
+        return newAIS;
+    }
+
+    private static void preserveExtraInfo(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS) {
+        for(UserTable table : curAIS.getSchema(TableName.AKIBAN_INFORMATION_SCHEMA).getUserTables().values()) {
+            UserTable newTable = newAIS.getUserTable(table.getName());
+            if(newTable != null) {
+                if(table.hasMemoryTableFactory()) {
+                    newTable.setMemoryTableFactory(table.getMemoryTableFactory());
+                }
+                if(table.hasVersion()) {
+                    newTable.setVersion(table.getVersion());
+                }
+            }
         }
     }
 }

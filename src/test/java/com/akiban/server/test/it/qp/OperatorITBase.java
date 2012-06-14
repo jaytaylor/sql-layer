@@ -1,25 +1,34 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.*;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -27,9 +36,7 @@ import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.ValuesHolderRow;
-import com.akiban.qp.rowtype.AisRowType;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
@@ -50,6 +57,7 @@ import java.util.List;
 
 import static com.akiban.qp.operator.API.cursor;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 public class OperatorITBase extends ITBase
@@ -77,36 +85,38 @@ public class OperatorITBase extends ITBase
     {
         customer = createTable(
             "schema", "customer",
-            "cid int not null key",
-            "name varchar(20)," +
-            "index(name)");
+            "cid int not null primary key",
+            "name varchar(20)");
+        createIndex("schema", "customer", "name", "name");
         order = createTable(
             "schema", "order",
-            "oid int not null key",
+            "oid int not null primary key",
             "cid int",
             "salesman varchar(20)",
-            "constraint __akiban_oc foreign key __akiban_oc(cid) references customer(cid)",
-            "index(salesman)",
-            "index(cid)");
+            "grouping foreign key (cid) references customer(cid)");
+        createIndex("schema", "order", "salesman", "salesman");
+        createIndex("schema", "order", "cid", "cid");
         item = createTable(
             "schema", "item",
-            "iid int not null key",
+            "iid int not null primary key",
             "oid int",
-            "index(oid, iid)",
-            "constraint __akiban_io foreign key __akiban_io(oid) references order(oid)");
+            "grouping foreign key (oid) references \"order\"(oid)");
+        createIndex("schema", "item", "oid", "oid");
+        createIndex("schema", "item", "oid2", "oid", "iid");
         address = createTable(
             "schema", "address",
-            "aid int not null key",
+            "aid int not null primary key",
             "cid int",
             "address varchar(100)",
-            "index(cid)",
-            "constraint __akiban_ac foreign key __akiban_ac(cid) references customer(cid)",
-            "index(address)");
+            "grouping foreign key (cid) references customer(cid)");
+        createIndex("schema", "address", "cid", "cid");
+        createIndex("schema", "address", "address", "address");
         schema = new Schema(rowDefCache().ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
         itemRowType = schema.userTableRowType(userTable(item));
         addressRowType = schema.userTableRowType(userTable(address));
+        orderHKeyRowType = schema.newHKeyRowType(orderRowType.hKey());
         customerNameIndexRowType = indexType(customer, "name");
         orderSalesmanIndexRowType = indexType(order, "salesman");
         orderCidIndexRowType = indexType(order, "cid");
@@ -117,6 +127,10 @@ public class OperatorITBase extends ITBase
         addressCidIndexRowType = indexType(address, "cid");
         addressAddressIndexRowType = indexType(address, "address");
         coi = groupTable(customer);
+        customerOrdinal =  ddl().getTable(session(),  customer).rowDef().getOrdinal();
+        orderOrdinal =  ddl().getTable(session(),  order).rowDef().getOrdinal();
+        itemOrdinal = ddl().getTable(session(),  item).rowDef().getOrdinal();
+        addressOrdinal =  ddl().getTable(session(),  address).rowDef().getOrdinal();
         db = new NewRow[]{createNewRow(customer, 1L, "xyz"),
                           createNewRow(customer, 2L, "abc"),
                           createNewRow(order, 11L, 1L, "ori"),
@@ -133,6 +147,83 @@ public class OperatorITBase extends ITBase
                           createNewRow(item, 222L, 22L)};
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
+    }
+
+    protected void testCursorLifecycle(Operator scan, CursorLifecycleTestCase testCase)
+    {
+        Cursor cursor = cursor(scan, queryContext);
+        // Check idle following creation
+        assertTrue(cursor.isIdle());
+        // Check active following open
+        testCase.firstSetup();
+        cursor.open();
+        assertTrue(cursor.isActive());
+        // Check idle following close
+        cursor.close();
+        assertTrue(cursor.isIdle());
+        // Check active following re-open
+        testCase.firstSetup();
+        cursor.open();
+        assertTrue(cursor.isActive());
+        cursor.close();
+        // Check active during iteration
+        testCase.firstSetup();
+        if (testCase.hKeyComparison()) {
+            compareRenderedHKeys(testCase.firstExpectedHKeys(), cursor);
+        } else {
+            compareRows(testCase.firstExpectedRows(), cursor);
+        }
+        assertTrue(cursor.isIdle());
+        // Check close during iteration.
+        if (testCase.hKeyComparison()
+            ? testCase.firstExpectedHKeys().length > 1
+            : testCase.firstExpectedRows().length > 1) {
+            testCase.firstSetup();
+            cursor.open();
+            cursor.next();
+            assertTrue(cursor.isActive());
+            cursor.close();
+            assertTrue(cursor.isIdle());
+        }
+        // Check that a second execution works
+        testCase.secondSetup();
+        if (testCase.hKeyComparison()) {
+            compareRenderedHKeys(testCase.secondExpectedHKeys(), cursor);
+        } else {
+            compareRows(testCase.secondExpectedRows(), cursor);
+        }
+        assertTrue(cursor.isIdle());
+        // Check close of idle cursor is permitted
+        try {
+            cursor.close();
+        } catch (CursorLifecycle.WrongStateException e) {
+            fail();
+        }
+        // Check destroyed following destroy
+        cursor.destroy();
+        assertTrue(cursor.isDestroyed());
+        // Check open after destroy disallowed
+        try {
+            testCase.firstSetup();
+            cursor.open();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
+        // Check next after destroy disallowed
+        try {
+            cursor.next();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
+        // Check close after destroy disallowed
+        try {
+            cursor.close();
+            fail();
+        } catch (CursorLifecycle.WrongStateException e) {
+            // expected
+        }
     }
 
     protected void use(NewRow[] db)
@@ -166,6 +257,28 @@ public class OperatorITBase extends ITBase
             }
         }
         return null;
+    }
+
+    protected IndexRowType groupIndexType(Index.JoinType joinType, String ... columnNames)
+    {
+        IndexRowType selectedGroupIndexRowType = null;
+        for (IndexRowType groupIndexRowType : schema.groupIndexRowTypes()) {
+            boolean match = groupIndexRowType.index().getJoinType() == joinType;
+            for (IndexColumn indexColumn : groupIndexRowType.index().getKeyColumns()) {
+                Column column = indexColumn.getColumn();
+                String indexColumnName = String.format("%s.%s", column.getTable().getName().getTableName(),
+                                                       column.getName());
+                // Why do index column names lose case?!
+                if (indexColumn.getPosition() < columnNames.length &&
+                    !columnNames[indexColumn.getPosition()].equalsIgnoreCase(indexColumnName)) {
+                    match = false;
+                }
+            }
+            if (match) {
+                selectedGroupIndexRowType = groupIndexRowType;
+            }
+        }
+        return selectedGroupIndexRowType;
     }
 
     protected ColumnSelector columnSelector(final Index index)
@@ -230,6 +343,11 @@ public class OperatorITBase extends ITBase
 */
     }
 
+    protected String hKeyValue(Long x)
+    {
+        return x == null ? "null" : String.format("(long)%d", x);
+    }
+
     // Useful when scanning is expected to throw an exception
     protected void scan(Cursor cursor)
     {
@@ -270,6 +388,21 @@ public class OperatorITBase extends ITBase
         dumpToAssertion(cursor(plan, queryContext));
     }
 
+    protected void dump(Cursor cursor)
+    {
+        cursor.open();
+        Row row;
+        while ((row = cursor.next()) != null) {
+            System.out.println(String.valueOf(row));
+        }
+        cursor.close();
+    }
+    
+    protected void dump(Operator plan)
+    {
+        dump(cursor(plan, queryContext));
+    }
+
     protected void compareRenderedHKeys(String[] expected, Cursor cursor)
     {
         int count;
@@ -298,10 +431,11 @@ public class OperatorITBase extends ITBase
     protected int order;
     protected int item;
     protected int address;
-    protected AisRowType customerRowType;
-    protected AisRowType orderRowType;
-    protected AisRowType itemRowType;
-    protected AisRowType addressRowType;
+    protected UserTableRowType customerRowType;
+    protected UserTableRowType orderRowType;
+    protected UserTableRowType itemRowType;
+    protected UserTableRowType addressRowType;
+    protected HKeyRowType orderHKeyRowType;
     protected IndexRowType customerCidIndexRowType;
     protected IndexRowType customerNameIndexRowType;
     protected IndexRowType orderSalesmanIndexRowType;
@@ -317,4 +451,44 @@ public class OperatorITBase extends ITBase
     protected NewRow[] emptyDB = new NewRow[0];
     protected PersistitAdapter adapter;
     protected QueryContext queryContext;
+    protected int customerOrdinal;
+    protected int orderOrdinal;
+    protected int itemOrdinal;
+    protected int addressOrdinal;
+
+    protected static abstract class CursorLifecycleTestCase
+    {
+        public boolean hKeyComparison()
+        {
+            return false;
+        }
+
+        public void firstSetup()
+        {}
+
+        public RowBase[] firstExpectedRows()
+        {
+            fail();
+            return null;
+        }
+
+        public String[] firstExpectedHKeys()
+        {
+            fail();
+            return null;
+        }
+
+        public void secondSetup()
+        {}
+
+        public RowBase[] secondExpectedRows()
+        {
+            return firstExpectedRows();
+        }
+
+        public String[] secondExpectedHKeys()
+        {
+            return firstExpectedHKeys();
+        }
+    }
 }

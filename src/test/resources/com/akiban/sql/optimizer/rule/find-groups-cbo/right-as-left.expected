@@ -1,8 +1,0 @@
-SelectQuery@32554189
-  ResultSet@7b41a32f[name, order_date, sku, quan]
-    Project@1240a1e1[user.customers.name, user.orders.order_date, user.items.sku, user.items.quan]
-      Select@5143c423[user.orders.order_date > Cast(2011-01-01 AS DATE NOT NULL)]
-        TableGroupJoinTree@3801ff83(TableGroup@b2e0e2f(customers), customers RIGHT orders INNER items)
-          TableSource@4dc6bbd3(user.customers - TableGroup@b2e0e2f(customers))
-            TableSource@380b4f9(user.orders - TableGroupJoin@7ca53564(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@76e9493a(user.items - TableGroupJoin@4254782a(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))

@@ -1,0 +1,9 @@
+SELECT a.*, (SELECT b.col2 FROM b WHERE b.col1 = a.col1), (SELECT c.col2 FROM c WHERE c.col1 = a.col1) FROM a
+    a.col1
+    a.col2
+-- subquery at depth 1:
+    b.col2
+    b.col1  a.col1
+-- subquery at depth 1:
+    c.col2
+    c.col1  a.col1

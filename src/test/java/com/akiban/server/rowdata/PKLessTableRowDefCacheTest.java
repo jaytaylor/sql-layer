@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.rowdata;
@@ -27,23 +38,22 @@ public class PKLessTableRowDefCacheTest
     public void testPKLessRoot() throws Exception
     {
         String[] ddl = {
-            String.format("use %s;", SCHEMA),
             "create table test(",
             "    a int, ",
             "    b int, ",
             "    c int, ",
             "    d int, ",
             "    e int, ",
-            "    key e_d(e, d), ",
-            "    unique key d_b(d, b)",
-            ");"
+            "    constraint d_b unique(d, b)",
+            ");",
+            "create index e_d on test(e, d);"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
         RowDef test = rowDefCache.getRowDef(tableName("test"));
         UserTable t = (UserTable) test.table();
         Assert.assertEquals(2, test.getHKeyDepth()); // test ordinal, test row counter
         checkHKey(t.hKey(), t, t, Column.AKIBAN_PK_NAME);
-        Index index;
+        TableIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // e, d index
@@ -74,9 +84,8 @@ public class PKLessTableRowDefCacheTest
     public void testPKLessNonRoot() throws Exception
     {
         String[] ddl = {
-            String.format("use %s;", SCHEMA),
             "create table parent(",
-            "    p1 int, ",
+            "    p1 int not null, ",
             "    p2 int, ",
             "    primary key(p1)",
             "); ",
@@ -84,12 +93,12 @@ public class PKLessTableRowDefCacheTest
             "    c1 int, ",
             "    c2 int, ",
             "    p1 int, ",
-            "    constraint __akiban_fk foreign key fk(p1) references parent(p1), ",
-            "    key c2_c1(c2, c1)",
-            ");"
+            "    grouping foreign key(p1) references parent(p1)",
+            ");",
+            "create index c2_c1 on child(c2, c1);"
         };
         RowDefCache rowDefCache = SCHEMA_FACTORY.rowDefCache(ddl);
-        Index index;
+        TableIndex index;
         IndexRowComposition rowComp;
         IndexToHKey indexToHKey;
         // ------------------------- parent ----------------------------------------------------------------------------
@@ -114,19 +123,18 @@ public class PKLessTableRowDefCacheTest
         checkHKey(c.hKey(),
                   p, c, "p1",
                   c, c, Column.AKIBAN_PK_NAME);
-        // c2, c1 index
+        // c2, c1 index. Row is (c.c2, c.c1, c.p1, c.HIDDEN_PK)
         index = c.getIndex("c2_c1");
         Assert.assertTrue(!index.isPrimaryKey());
         Assert.assertTrue(!index.isUnique());
-        // assertTrue(!index.isHKeyEquivalent());
         rowComp = index.indexRowComposition();
         Assert.assertEquals(1, rowComp.getFieldPosition(0)); // child.c2
         Assert.assertEquals(0, rowComp.getFieldPosition(1)); // child.c1
         indexToHKey = index.indexToHKey();
         Assert.assertEquals(parent.getOrdinal(), indexToHKey.getOrdinal(0)); // parent ordinal
-        Assert.assertEquals(2, indexToHKey.getFieldPosition(1)); // child p1
+        Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // child p1
         Assert.assertEquals(child.getOrdinal(), indexToHKey.getOrdinal(2)); // child ordinal
-        Assert.assertEquals(2, indexToHKey.getIndexRowPosition(1)); // child row counter
+        Assert.assertEquals(3, indexToHKey.getIndexRowPosition(3)); // child row counter
     }
 
     private TableName tableName(String name)
@@ -155,5 +163,5 @@ public class PKLessTableRowDefCacheTest
     }
 
     private static final String SCHEMA = "schema";
-    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory();
+    private static final SchemaFactory SCHEMA_FACTORY = new SchemaFactory(SCHEMA);
 }

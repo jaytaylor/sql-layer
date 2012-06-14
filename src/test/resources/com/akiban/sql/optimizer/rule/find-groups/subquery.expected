@@ -1,13 +1,12 @@
-SelectQuery@14acfcd
-  ResultSet@57f2e95f[name, order_date]
-    Project@cb78915[user.customers.name, user.orders.order_date]
-      Select@19113f8[EXISTS(Subquery@626bd9e0)]
-        TableJoins@7e266b44(TableGroup@100bac2(customers))
-          JoinNode@ab54eb(INNER/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@542529(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@53ab04(user.customers - TableGroup@100bac2(customers))
-            TableSource@e51b2c(user.orders - TableGroupJoin@542529(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
+SelectQuery@51970991
+  ResultSet@12f53870[name, order_date]
+    Project@214c4ac9[customers.name, orders.order_date]
+      Select@17c1e333[EXISTS(Subquery@3a2b3574)]
+        TableGroupJoinTree@6ac27081(TableGroup@3685be9(customers), customers INNER orders)
+          TableSource@490241ae(customers - TableGroup@3685be9(customers))
+            TableSource@33262bf4(orders - TableGroupJoin@386a1fbe(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
 
-Subquery@626bd9e0
-  Select@15aed57[user.items.oid == user.orders.oid, user.items.sku == 1234]
-    TableJoins@7844a013(TableGroup@100bac2(customers))
-      TableSource@941db6(user.items - TableGroupJoin@2acc57(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+Subquery@3a2b3574
+  Select@3f4a0fe1[items.oid == orders.oid, items.sku == 1234]
+    TableGroupJoinTree@17589d3d(TableGroup@3685be9(customers), items)
+      TableSource@f0fba68(items - TableGroup@3685be9(customers))

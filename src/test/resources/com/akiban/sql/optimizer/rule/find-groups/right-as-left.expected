@@ -1,10 +1,8 @@
-SelectQuery@5502abdb
-  ResultSet@2260e277[name, order_date, sku, quan]
-    Project@6b40443[user.customers.name, user.orders.order_date, user.items.sku, user.items.quan]
-      Select@1483ce25[user.orders.order_date > Cast(2011-01-01 AS DATE NOT NULL)]
-        TableJoins@5952e9a8(TableGroup@526a4268(customers))
-          JoinNode@3e2de41d(RIGHT/GROUP[user.orders.cid == user.customers.cid] - TableGroupJoin@36db4bcf(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@649e4dc0(user.customers - TableGroup@526a4268(customers))
-            JoinNode@774e1f2b(INNER/GROUP[user.items.oid == user.orders.oid] - TableGroupJoin@29e07d3e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-              TableSource@4a6a00ca(user.orders - TableGroupJoin@36db4bcf(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-              TableSource@7559f3f0(user.items - TableGroupJoin@29e07d3e(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
+SelectQuery@32554189
+  ResultSet@7b41a32f[name, order_date, sku, quan]
+    Project@1240a1e1[customers.name, orders.order_date, items.sku, items.quan]
+      Select@5143c423[orders.order_date > Cast(2011-01-01 AS DATE NOT NULL)]
+        TableGroupJoinTree@3801ff83(TableGroup@b2e0e2f(customers), customers RIGHT orders INNER items)
+          TableSource@4dc6bbd3(customers - TableGroup@b2e0e2f(customers))
+            TableSource@380b4f9(orders - TableGroupJoin@7ca53564(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+              TableSource@76e9493a(items - TableGroupJoin@4254782a(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

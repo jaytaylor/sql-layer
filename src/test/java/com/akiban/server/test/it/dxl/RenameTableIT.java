@@ -1,22 +1,34 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedTableDDLException;
@@ -40,19 +52,19 @@ public class RenameTableIT extends ITBase {
     private static final String I_NAME = "i";
 
     private void createCTable() {
-        createTable(SCHEMA, C_NAME, "id int, primary key(id)");
+        createTable(SCHEMA, C_NAME, "id int not null, primary key(id)");
     }
 
     private void createATable() {
-        createTable(SCHEMA, A_NAME, "id int, cid int, primary key(id)", akibanFK("cid", C_NAME, "id"));
+        createTable(SCHEMA, A_NAME, "id int not null, cid int, primary key(id)", akibanFK("cid", C_NAME, "id"));
     }
 
     private void createOTable() {
-        createTable(SCHEMA, O_NAME, "id int, cid int, primary key(id)", akibanFK("cid", C_NAME, "id"));
+        createTable(SCHEMA, O_NAME, "id int not null, cid int, primary key(id)", akibanFK("cid", C_NAME, "id"));
     }
 
     private void createITable() {
-        createTable(SCHEMA, I_NAME, "id int, oid int, primary key(id)", akibanFK("oid", O_NAME, "id"));
+        createTable(SCHEMA, I_NAME, "id int not null, oid int, primary key(id)", akibanFK("oid", O_NAME, "id"));
     }
 
     private int writeCRows() {
@@ -133,7 +145,7 @@ public class RenameTableIT extends ITBase {
         final String NEW_NAME = "new_name";
         createCTable();
         int rowCount = writeCRows();
-        createTable(SCHEMA, NEW_NAME, "id int key");
+        createTable(SCHEMA, NEW_NAME, "id int not null primary key");
         try {
             ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(SCHEMA, NEW_NAME));
             Assert.fail("Expected DuplicateTableNameException");
@@ -151,7 +163,7 @@ public class RenameTableIT extends ITBase {
         final String NEW_NAME = "new_name";
         createCTable();
         int rowCount = writeCRows();
-        createTable(NEW_SCHEMA, NEW_NAME, "id int key");
+        createTable(NEW_SCHEMA, NEW_NAME, "id int not null primary key");
         try {
             ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(NEW_SCHEMA, NEW_NAME));
             Assert.fail("Expected DuplicateTableNameException");
@@ -286,6 +298,43 @@ public class RenameTableIT extends ITBase {
                 expectStatusAndScanCount(tn.getSchemaName(), tn.getTableName(), COUNTS[j]);
             }
 
+        }
+    }
+
+    /**
+     * bug999467, simulate many repeated alters
+     */
+    @Test
+    public void renameSameTablesMultipleTimes() {
+        final int LOOPS = 3;
+        final String COL_DEFS = "c1 INT";
+        final TableName NAME1 = tableName("test", "t1");
+        final TableName NAME2 = tableName("test", "sql#foo-1");
+        final TableName NAME3 = tableName("test", "sql#foo_1");
+
+        int initialTid = createTable(NAME1, COL_DEFS);
+        writeRows(
+                createNewRow(initialTid, 1, -1L),
+                createNewRow(initialTid, 2, -1L),
+                createNewRow(initialTid, 3, -1L)
+        );
+
+        for(int i = 1; i <= LOOPS; ++i) {
+            // Create new table, copy old table from a pk scan
+            int tid2 = createTable(NAME2, COL_DEFS);
+            List<NewRow> pkRows = scanAllIndex(getUserTable(tableId(NAME1)).getPrimaryKeyIncludingInternal().getIndex());
+            assertEquals("Row scanned from original on loop "+i, 3, pkRows.size());
+            for(NewRow row : pkRows) {
+                writeRow(tid2, row.get(0), -1L);
+            }
+            // Rename both
+            ddl().renameTable(session(), NAME1, NAME3);
+            ddl().renameTable(session(), NAME2, NAME1);
+            ddl().dropTable(session(), NAME3);
+            updateAISGeneration();
+            // Confirm
+            List<NewRow> newTableRows = scanAll(scanAllRequest(tableId(NAME1)));
+            assertEquals("Rows scanned after renames and drop on loop "+i, 3, newTableRows.size());
         }
     }
 }

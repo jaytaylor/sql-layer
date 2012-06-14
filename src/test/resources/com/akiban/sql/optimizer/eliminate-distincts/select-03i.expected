@@ -1,0 +1,1 @@
+SELECT test.parent.name AS name, test.child.name AS name FROM test.parent INNER JOIN test.child ON ((test.parent.id = test.child.pid) AND TRUE)

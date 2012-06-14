@@ -1,0 +1,6 @@
+SelectQuery@24e1fb6c
+  ResultSet@7041825e[bid, name, copyright, author]
+    Project@5cd622e5[books.bid, books.name, books.copyright, books.author]
+      Select@6e8d1800[]
+        TableJoins@7122e0b3(TableGroup@7d41cd01(books) - SingleIndexScan@6afa3ce5(Index(test.books.copyright[IndexColumn(copyright), IndexColumn(author), IndexColumn(name)]), SORTED/reverse, =Cast(1975 AS YEAR NOT NULL)))
+          TableSource@1391f61c(books - TableGroup@7d41cd01(books))

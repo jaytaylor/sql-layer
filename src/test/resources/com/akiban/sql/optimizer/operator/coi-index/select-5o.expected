@@ -1,6 +1,0 @@
-PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
-  project([Field(1), Field(4)])
-    Sort_Tree(flatten(user.customers, user.orders))
-      Filter_Default([flatten(user.customers, user.orders)])
-        Flatten_HKeyOrdered(user.customers LEFT user.orders)
-          GroupScan_Default(full scan on _akiban_customers)

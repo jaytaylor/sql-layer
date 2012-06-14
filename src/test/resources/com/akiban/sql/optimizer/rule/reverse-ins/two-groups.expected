@@ -1,17 +1,16 @@
-SelectQuery@14fdb00d
-  ResultSet@1b31303f[order_date, sku, quan, name]
-    MapJoin@470b9279()
-      ExpressionsSource@7a0d85cc([[1234], [4567]])
-      MapJoin@48bd6a5f()
-        Flatten@b92a848(user.customers INNER user.orders INNER user.items)
-          AncestorLookup@496614e7(user.items -> [user.customers, user.orders, user.items])
-            IndexScan@4ce66f56(Index(user.items.sku[IndexColumn(sku)]), NONE, =VALUES[0])
-            TableSource@5749b290(user.customers - TableGroup@2c979e8b(customers))
-            TableSource@276a38b5(user.orders - TableGroupJoin@1629ce8c(Join(user/customers/cid/user/user.orders/cid: user.orders -> user.customers, group(customers))))
-            TableSource@4e4ee70b(user.items - TableGroupJoin@12b754b2(Join(user/orders/oid/user/user.items/oid: user.items -> user.orders, group(customers))))
-        Project@3a56860b[user.orders.order_date, user.items.sku, user.items.quan, user.child.name]
-          Select@67a5a19[]
-            Flatten@42197bb7(user.child)
-              BranchLookup@17094d48(user.parent -> user.parent)
-                IndexScan@63b0bdc8(Index(user.parent.name[IndexColumn(name)]), NONE, =user.customers.name)
-                TableSource@761eec35(user.child - TableGroupJoin@687bc899(Join(user/parent/id/user/user.child/pid: user.child -> user.parent, group(parent))))
+SelectQuery@3590ed52
+  ResultSet@3dccbdf7[city, state, name]
+    MapJoin@62b92956()
+      ExpressionsSource@2d68be1b([[MA], [NH], [VT]])
+      MapJoin@6a48ffbc()
+        Flatten@587b8be7(customers INNER addresses)
+          AncestorLookup@171e1813(addresses -> [customers, addresses])
+            SingleIndexScan@39fa487f(Index(test.addresses.state[IndexColumn(state)]), NONE, =VALUES[0], rows = 11, cost = 1146.02)
+            TableSource@38da9246(customers - TableGroup@558fee4f(customers))
+            TableSource@15b94ed3(addresses - TableGroupJoin@64f007ad(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
+        Project@4ccbc2d3[addresses.city, addresses.state, child.name]
+          Select@5563d208[]
+            Flatten@38be9340(child)
+              BranchLookup@67b56bda(parent -> parent)
+                SingleIndexScan@2698dd08(Index(test.parent.name[IndexColumn(name)]), NONE, =customers.name, rows = 10, cost = 426.731)
+                TableSource@7448bc3d(child - TableGroupJoin@2f995c9a(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))

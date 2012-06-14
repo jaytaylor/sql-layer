@@ -6,7 +6,7 @@
     "schema" : "test",
 
     "tables" : [
-        ["dates", "id int key", "d date", "index(d)"]
+        ["dates", "id int not null primary key", "d date", "index(d)"]
     ],
 
     "write_rows" : {

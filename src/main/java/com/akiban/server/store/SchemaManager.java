@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.store;
@@ -23,25 +34,51 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {
+    /**
+     * <p>
+     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * schema. This table will be be populated and accessed through the normal
+     * {@link Store} methods.
+     * </p>
+     * <p>
+     * As this table contains rows that will go to disk, a caller specified
+     * version will also be stored to facilitate upgrades. If this table
+     * already exists (i.e. created on a previous start-up), the version must
+     * match or an exception will be thrown. Upgrade and/or conversion must be
+     * handled by the caller.
+     * </p>
+     *
+     * @param newTable New table to create.
+     * @param version Version of the table being created.
+     *
+     * @return Name of the table that was created.
+     */
+    TableName registerStoredInformationSchemaTable(Session session, UserTable newTable, int version);
 
     /**
-     * Create a new table in the SchemaManager. This currently parses a given DDL statement,
-     * validates it, and then adds the table to the existing AIS. Successful completion of
-     * this method results in a new timestamp and schema generation, see
+     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * schema. This table will be be populated on demand and accessed through
+     * the given {@link MemoryTableFactory}.
+     *
+     * @param newTable New table to create.
+     * @param factory Factory to service this table.
+     *
+     * @return Name of the table that was created.
+     */
+    TableName registerMemoryInformationSchemaTable(Session session, UserTable newTable, MemoryTableFactory factory);
+
+    /**
+     * Create a new table in the SchemaManager. Successful completion of this
+     * method results in a new timestamp and schema generation, see
      * {@link #getUpdateTimestamp()} and {@link #getSchemaGeneration()} respectively.
      * @param session Session to operate under
-     * @param defaultSchemaName Default schema name to use if statement does not contain one.
-     * @param statement A valid DDL statement of the form 'create table t(...)'
-     * @throws Exception If the statement is invalid, the table contains unsupported parts (e.g. data type), or
-     * there is an internal error.
+     * @param newTable New table to add
      * @return The name of the table that was created.
-     * @throws Exception 
      */
-    TableName createTableDefinition(Session session, String defaultSchemaName, String statement);
-    
     TableName createTableDefinition(Session session, UserTable newTable);
 
     /**
@@ -49,8 +86,6 @@ public interface SchemaManager {
      * @param session Session
      * @param currentName Current name of table
      * @param newName Desired name of table
-     * @throws Exception 
-     * @throws Exception For any error
      */
     void renameTable(Session session, TableName currentName, TableName newName);
 
@@ -60,10 +95,7 @@ public interface SchemaManager {
      *
      * @param session Session to operate under.
      * @param indexes List of index definitions to add.
-     * @throws Exception If the request is invalid (e.g. duplicate index name, malformed Index) or there
-     * was an internal error.
      * @return List of newly created indexes.
-     * @throws Exception 
      */
     Collection<Index> createIndexes(Session session, Collection<? extends Index> indexes);
 
@@ -72,8 +104,6 @@ public interface SchemaManager {
      * supported through this interface.
      * @param session Session to operate under.
      * @param indexes List of indexes to drop.
-     * @throws Exception 
-     * @throws Exception If there was an internal error.
      */
     void dropIndexes(Session session, Collection<Index> indexes);
 
@@ -83,8 +113,6 @@ public interface SchemaManager {
      * @param session The session to operate under.
      * @param schemaName The name of the schema the table is in.
      * @param tableName The name of the table.
-     * @throws Exception 
-     * @throws Exception If the definition cannot be deleted (e.g. table is referenced) or an internal error.
      */
     void deleteTableDefinition(Session session, String schemaName, String tableName);
 
@@ -102,8 +130,6 @@ public interface SchemaManager {
      * @param session Session to operate under.
      * @param schemaName Schema to to query.
      * @return Map, keyed by table name, of all TableDefinitions.
-     * @throws Exception 
-     * @throws Exception For an internal error.
      */
     SortedMap<String, TableDefinition> getTableDefinitions(Session session, String schemaName);
 
@@ -118,12 +144,11 @@ public interface SchemaManager {
     /**
      * Generate DDL statements for every schema, user, and, optionally, group tables.
      * The format of the 'create schema' contains if not exists and will occur before
-     * any table in that schema. No other garauntees are given about ordering.
+     * any table in that schema. No other guarantees are given about ordering.
      *
      * @param session The Session to operate under.
      * @param withGroupTables If true, include 'create table' statements for every GroupTable.
      * @return List of every create statement request.
-     * @throws Exception For any internal error.
      */
     List<String> schemaStrings(Session session, boolean withGroupTables);
 
@@ -147,6 +172,4 @@ public interface SchemaManager {
      * @return The current schema generation value.
      */
     int getSchemaGeneration();
-
-
 }

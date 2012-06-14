@@ -1,21 +1,31 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
@@ -27,14 +37,12 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.RulesTestHelper;
-import com.akiban.sql.optimizer.rule.TestCostEstimator;
+import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.akiban.junit.NamedParameterizedRunner;
 import com.akiban.junit.NamedParameterizedRunner.TestParameters;
 import com.akiban.junit.Parameterization;
-import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 
@@ -58,7 +66,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     public static final File RESOURCE_DIR = 
         new File(OptimizerTestBase.RESOURCE_DIR, "operator");
 
-    protected File schemaFile, indexFile, statsFile, propertiesFile;
+    protected File schemaFile, statsFile, propertiesFile;
     protected SQLParser parser;
     protected OperatorCompiler compiler;
 
@@ -66,8 +74,6 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     public void makeCompiler() throws Exception {
         parser = new SQLParser();
         AkibanInformationSchema ais = OptimizerTestBase.parseSchema(schemaFile);
-        if (indexFile != null)
-            OptimizerTestBase.loadGroupIndexes(ais, indexFile);
         Properties properties = new Properties();
         if (propertiesFile != null) {
             FileInputStream fstr = new FileInputStream(propertiesFile);
@@ -78,10 +84,7 @@ public class OperatorCompilerTest extends NamedParamsTestBase
                 fstr.close();
             }
         }
-        compiler = TestOperatorCompiler.create(parser, properties, ais, 
-                                               OptimizerTestBase.DEFAULT_SCHEMA,
-                                               new FunctionsRegistryImpl(),
-                                               new TestCostEstimator(ais, OptimizerTestBase.DEFAULT_SCHEMA, statsFile));
+        compiler = TestOperatorCompiler.create(parser, ais, statsFile, properties);
     }
 
     static class TestResultColumn extends PhysicalResultColumn {
@@ -103,21 +106,26 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     }
     
     public static class TestOperatorCompiler extends OperatorCompiler {
-        public static OperatorCompiler create(SQLParser parser, Properties properties,
-                                              AkibanInformationSchema ais, 
-                                              String defaultSchemaName,
-                                              FunctionsRegistry functionsRegistry,
-                                              CostEstimator costEstimator) {
-            RulesTestHelper.ensureRowDefs(ais);
-            return new TestOperatorCompiler(parser, properties, ais, defaultSchemaName, functionsRegistry, costEstimator);
+        private TestOperatorCompiler() {
         }
 
-        private TestOperatorCompiler(SQLParser parser, Properties properties,
-                                     AkibanInformationSchema ais, 
-                                     String defaultSchemaName,
-                                     FunctionsRegistry functionsRegistry,
-                                     CostEstimator costEstimator) {
-            super(parser, properties, ais, defaultSchemaName, functionsRegistry, costEstimator);
+        public static TestOperatorCompiler create(SQLParser parser, 
+                                                  AkibanInformationSchema ais, 
+                                                  File statsFile,
+                                                  Properties properties) 
+                throws IOException {
+            RulesTestHelper.ensureRowDefs(ais);
+            TestOperatorCompiler compiler = new TestOperatorCompiler();
+            compiler.initProperties(properties);
+            compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
+            compiler.initParser(parser);
+            compiler.initFunctionsRegistry(new FunctionsRegistryImpl());
+            if (Boolean.parseBoolean(properties.getProperty("cbo", "true")))
+                compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
+            else
+                compiler.initCostEstimator(null);
+            compiler.initDone();
+            return compiler;
         }
 
         @Override
@@ -142,23 +150,22 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             })) {
             File schemaFile = new File(subdir, "schema.ddl");
             if (schemaFile.exists()) {
-                File indexFile = new File(subdir, "group.idx");
-                if (!indexFile.exists())
-                    indexFile = null;
                 File statsFile = new File(subdir, "stats.yaml");
                 if (!statsFile.exists())
                     statsFile = null;
-                File propertiesFile = new File(subdir, "compiler.properties");
-                if (!propertiesFile.exists())
-                    propertiesFile = null;
+                File compilerPropertiesFile = new File(subdir, "compiler.properties");
+                if (!compilerPropertiesFile.exists())
+                    compilerPropertiesFile = null;
                 for (Object[] args : sqlAndExpected(subdir)) {
-                    Object[] nargs = new Object[args.length+4];
+                    File propertiesFile = new File(subdir, args[0] + ".properties");
+                    if (!propertiesFile.exists())
+                        propertiesFile = compilerPropertiesFile;
+                    Object[] nargs = new Object[args.length+3];
                     nargs[0] = subdir.getName() + "/" + args[0];
                     nargs[1] = schemaFile;
-                    nargs[2] = indexFile;
-                    nargs[3] = statsFile;
-                    nargs[4] = propertiesFile;
-                    System.arraycopy(args, 1, nargs, 5, args.length-1);
+                    nargs[2] = statsFile;
+                    nargs[3] = propertiesFile;
+                    System.arraycopy(args, 1, nargs, 4, args.length-1);
                     result.add(nargs);
                 }
             }
@@ -167,11 +174,10 @@ public class OperatorCompilerTest extends NamedParamsTestBase
     }
 
     public OperatorCompilerTest(String caseName, 
-                                File schemaFile, File indexFile, File statsFile, File propertiesFile,
+                                File schemaFile, File statsFile, File propertiesFile,
                                 String sql, String expected, String error) {
         super(caseName, sql, expected, error);
         this.schemaFile = schemaFile;
-        this.indexFile = indexFile;
         this.statsFile = statsFile;
         this.propertiesFile = propertiesFile;
     }

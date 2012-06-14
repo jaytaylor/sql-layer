@@ -1,22 +1,34 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
+import com.akiban.qp.operator.API.JoinType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -77,6 +89,7 @@ public class OperatorAssembler extends BaseRule
     private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
     private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
 
+    public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
     @Override
     protected Logger getLogger() {
@@ -227,44 +240,88 @@ public class OperatorAssembler extends BaseRule
         // Assemble an ordinary stream node.
         protected RowStream assembleStream(PlanNode node) {
             if (node instanceof IndexScan)
-                return assembleIndexScan((IndexScan)node);
+                return assembleIndexScan((IndexScan) node);
             else if (node instanceof GroupScan)
-                return assembleGroupScan((GroupScan)node);
+                return assembleGroupScan((GroupScan) node);
             else if (node instanceof Select)
-                return assembleSelect((Select)node);
+                return assembleSelect((Select) node);
             else if (node instanceof Flatten)
-                return assembleFlatten((Flatten)node);
+                return assembleFlatten((Flatten) node);
             else if (node instanceof AncestorLookup)
-                return assembleAncestorLookup((AncestorLookup)node);
+                return assembleAncestorLookup((AncestorLookup) node);
             else if (node instanceof BranchLookup)
-                return assembleBranchLookup((BranchLookup)node);
+                return assembleBranchLookup((BranchLookup) node);
             else if (node instanceof MapJoin)
-                return assembleMapJoin((MapJoin)node);
+                return assembleMapJoin((MapJoin) node);
             else if (node instanceof Product)
-                return assembleProduct((Product)node);
+                return assembleProduct((Product) node);
             else if (node instanceof AggregateSource)
-                return assembleAggregateSource((AggregateSource)node);
+                return assembleAggregateSource((AggregateSource) node);
             else if (node instanceof Distinct)
-                return assembleDistinct((Distinct)node);
+                return assembleDistinct((Distinct) node);
             else if (node instanceof Sort            )
-                return assembleSort((Sort)node);
+                return assembleSort((Sort) node);
             else if (node instanceof Limit)
-                return assembleLimit((Limit)node);
+                return assembleLimit((Limit) node);
             else if (node instanceof NullIfEmpty)
-                return assembleNullIfEmpty((NullIfEmpty)node);
+                return assembleNullIfEmpty((NullIfEmpty) node);
+            else if (node instanceof OnlyIfEmpty)
+                return assembleOnlyIfEmpty((OnlyIfEmpty) node);
             else if (node instanceof Project)
-                return assembleProject((Project)node);
+                return assembleProject((Project) node);
             else if (node instanceof ExpressionsSource)
-                return assembleExpressionsSource((ExpressionsSource)node);
+                return assembleExpressionsSource((ExpressionsSource) node);
             else if (node instanceof SubquerySource)
-                return assembleSubquerySource((SubquerySource)node);
+                return assembleSubquerySource((SubquerySource) node);
             else if (node instanceof NullSource)
-                return assembleNullSource((NullSource)node);
+                return assembleNullSource((NullSource) node);
+            else if (node instanceof UsingBloomFilter)
+                return assembleUsingBloomFilter((UsingBloomFilter) node);
+            else if (node instanceof BloomFilterFilter)
+                return assembleBloomFilterFilter((BloomFilterFilter) node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
+        
+        protected RowStream assembleIndexScan(IndexScan index) {
+            return assembleIndexScan(index, false, useSkipScan(index));
+        }
 
-        protected RowStream assembleIndexScan(IndexScan indexScan) {
+        protected RowStream assembleIndexScan(IndexScan index, boolean forIntersection, boolean useSkipScan) {
+            if (index instanceof SingleIndexScan)
+                return assembleSingleIndexScan((SingleIndexScan) index, forIntersection);
+            else if (index instanceof MultiIndexIntersectScan)
+                return assembleIndexIntersection((MultiIndexIntersectScan) index, useSkipScan);
+            else
+                throw new UnsupportedSQLException("Plan node " + index, null);
+        }
+
+        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index, boolean useSkipScan) {
+            RowStream stream = new RowStream();
+            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan(), 
+                                                     true, useSkipScan);
+            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan(), 
+                                                       true, useSkipScan);
+            stream.operator = API.intersect_Ordered(
+                    outputScan.operator,
+                    selectorScan.operator,
+                    (IndexRowType) outputScan.rowType,
+                    (IndexRowType) selectorScan.rowType,
+                    index.getOutputOrderingFields(),
+                    index.getSelectorOrderingFields(),
+                    index.getComparisonFieldDirections(),
+                    JoinType.INNER_JOIN,
+                    (useSkipScan) ? 
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
+                               API.IntersectOption.SKIP_SCAN) :
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
+                               API.IntersectOption.SEQUENTIAL_SCAN));
+            stream.rowType = outputScan.rowType;
+            stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
+            return stream;
+        }
+
+        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan, boolean forIntersection) {
             RowStream stream = new RowStream();
             Index index = indexScan.getIndex();
             IndexRowType indexRowType = schema.indexRowType(index);
@@ -298,6 +355,18 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 ColumnRanges range = indexScan.getConditionRange();
+                // Non-single-point ranges are ordered by the ranges
+                // themselves as part of merging segments, so that index
+                // column is an ordering column.
+                // Single-point ranges have only one value for the range column,
+                // so they can order by the following columns if we're
+                // willing to do the more expensive ordered union.
+                // Determine whether anything is taking advantage of this:
+                // * Index is being intersected.
+                // * Index is effective for query ordering.
+                // ** See also special case in AggregateSplitter.directIndexMinMax().
+                boolean unionOrdered = (range.isAllSingle() && 
+                     (forIntersection || (indexScan.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE)));
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
@@ -307,6 +376,19 @@ public class OperatorAssembler extends BaseRule
                         stream.operator = scan;
                         stream.rowType = indexRowType;
                     }
+                    else if (unionOrdered) {
+                        int nequals = indexScan.getNEquality();
+                        List<OrderByExpression> ordering = indexScan.getOrdering();
+                        int nordering = ordering.size() - nequals;
+                        boolean[] ascending = new boolean[nordering];
+                        for (int i = 0; i < nordering; i++) {
+                            ascending[i] = ordering.get(nequals + i).isAscending();
+                        }
+                        stream.operator = API.union_Ordered(stream.operator, scan,
+                                                            (IndexRowType)stream.rowType, indexRowType,
+                                                            nordering, nordering, 
+                                                            ascending);
+                    }
                     else {
                         stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
                         stream.rowType = stream.operator.rowType();
@@ -315,6 +397,42 @@ public class OperatorAssembler extends BaseRule
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
+        }
+
+        /** If there are this many or more scans feeding into a tree
+         * of intersection / union, then skip scan is enabled for it.
+         * (3 scans means 2 intersections or intersection with a two-value union.)
+         */
+        public static final int SKIP_SCAN_MIN_COUNT_DEFAULT = 3;
+
+        protected boolean useSkipScan(IndexScan index) {
+            if (!(index instanceof MultiIndexIntersectScan))
+                return false;
+            int count = countScans(index);
+            int minCount;
+            String prop = rulesContext.getProperty("skipScanMinCount");
+            if (prop != null)
+                minCount = Integer.valueOf(prop);
+            else
+                minCount = SKIP_SCAN_MIN_COUNT_DEFAULT;
+            return (count >= minCount);
+        }
+
+        private int countScans(IndexScan index) {
+            if (index instanceof SingleIndexScan) {
+                SingleIndexScan sindex = (SingleIndexScan)index;
+                if (sindex.getConditionRange() == null)
+                    return 1;
+                else
+                    return sindex.getConditionRange().getSegments().size();
+            }
+            else if (index instanceof MultiIndexIntersectScan) {
+                MultiIndexIntersectScan mindex = (MultiIndexIntersectScan)index;
+                return countScans(mindex.getOutputIndexScan()) +
+                       countScans(mindex.getSelectorIndexScan());
+            }
+            else
+                return 0;
         }
 
         protected RowStream assembleGroupScan(GroupScan groupScan) {
@@ -441,14 +559,14 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(ancestorLookup.getInput());
             GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
             RowType inputRowType = stream.rowType; // The index row type.
-            API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
+            API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
             if (!(inputRowType instanceof IndexRowType)) {
                 // Getting from branch lookup.
                 inputRowType = tableRowType(ancestorLookup.getDescendant());
-                flag = API.LookupOption.KEEP_INPUT;
+                flag = API.InputPreservationOption.KEEP_INPUT;
             }
-            List<RowType> ancestorTypes = 
-                new ArrayList<RowType>(ancestorLookup.getAncestors().size());
+            List<UserTableRowType> ancestorTypes =
+                new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
             for (TableNode table : ancestorLookup.getAncestors()) {
                 ancestorTypes.add(tableRowType(table));
             }
@@ -468,11 +586,11 @@ public class OperatorAssembler extends BaseRule
             if (branchLookup.getInput() != null) {
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
-                API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
+                API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
                 if (!(inputRowType instanceof IndexRowType)) {
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
-                    flag = API.LookupOption.KEEP_INPUT;
+                    flag = API.InputPreservationOption.KEEP_INPUT;
                 }
                 stream.operator = API.branchLookup_Default(stream.operator, 
                                                            groupTable, 
@@ -482,9 +600,10 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 stream = new RowStream();
-                API.LookupOption flag = API.LookupOption.KEEP_INPUT;
+                API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
                 stream.operator = API.branchLookup_Nested(groupTable, 
                                                           tableRowType(branchLookup.getSource()),
+                                                          tableRowType(branchLookup.getAncestor()),
                                                           tableRowType(branchLookup.getBranch()), 
                                                           flag,
                                                           currentBindingPosition());
@@ -497,8 +616,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleMapJoin(MapJoin mapJoin) {
+            int pos = pushBoundRow(null); // Allocate slot in case loops in outer.
             RowStream ostream = assembleStream(mapJoin.getOuter());
-            pushBoundRow(ostream.fieldOffsets);
+            boundRows.set(pos, ostream.fieldOffsets);
             RowStream stream = assembleStream(mapJoin.getInner());
             stream.operator = API.map_NestedLoops(ostream.operator, 
                                                   stream.operator,
@@ -508,6 +628,9 @@ public class OperatorAssembler extends BaseRule
         }
 
         protected RowStream assembleProduct(Product product) {
+            UserTableRowType ancestorRowType = null;
+            if (product.getAncestor() != null)
+                ancestorRowType = tableRowType(product.getAncestor());
             RowStream pstream = new RowStream();
             Flattened flattened = new Flattened();
             int nbound = 0;
@@ -529,6 +652,7 @@ public class OperatorAssembler extends BaseRule
                     pstream.operator = API.product_NestedLoops(pstream.operator,
                                                                stream.operator,
                                                                pstream.rowType,
+                                                               ancestorRowType,
                                                                stream.rowType,
                                                                currentBindingPosition());
                     pstream.rowType = pstream.operator.rowType();
@@ -639,8 +763,6 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        static final int INSERTION_SORT_MAX_LIMIT = 100;
-
         protected RowStream assembleSort(Sort sort) {
             return assembleSort(sort, 
                                 sort.getOutput(), API.SortOption.PRESERVE_DUPLICATES);
@@ -711,11 +833,52 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleNullIfEmpty(RowStream stream) {
             Expression[] nulls = new Expression[stream.rowType.nFields()];
             Arrays.fill(nulls, LiteralExpression.forNull());
-            stream.operator = API.ifEmpty_Default(stream.operator,
-                                                  stream.rowType,
-                                                  Arrays.asList(nulls));
+            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.KEEP_INPUT);
             return stream;
         }
+
+        protected RowStream assembleOnlyIfEmpty(OnlyIfEmpty onlyIfEmpty) {
+            RowStream stream = assembleStream(onlyIfEmpty.getInput());
+            stream.operator = API.limit_Default(stream.operator, 0, false, 1, false);
+            // Nulls here have no semantic meaning, but they're easier than trying to
+            // figure out an interesting non-null value for each
+            // AkType in the row. All that really matters is that the
+            // row is there.
+            Expression[] nulls = new Expression[stream.rowType.nFields()];
+            Arrays.fill(nulls, LiteralExpression.forNull());
+            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.DISCARD_INPUT);
+            return stream;
+        }
+
+        protected RowStream assembleUsingBloomFilter(UsingBloomFilter usingBloomFilter) {
+            BloomFilter bloomFilter = usingBloomFilter.getBloomFilter();
+            int pos = pushHashTable(bloomFilter);
+            RowStream lstream = assembleStream(usingBloomFilter.getLoader());
+            RowStream stream = assembleStream(usingBloomFilter.getInput());
+            stream.operator = API.using_BloomFilter(lstream.operator,
+                                                    lstream.rowType,
+                                                    bloomFilter.getEstimatedSize(),
+                                                    pos,
+                                                    stream.operator);
+            popHashTable(bloomFilter);
+            return stream;
+        }
+
+        protected RowStream assembleBloomFilterFilter(BloomFilterFilter bloomFilterFilter) {
+            BloomFilter bloomFilter = bloomFilterFilter.getBloomFilter();
+            int pos = getHashTablePosition(bloomFilter);
+            RowStream stream = assembleStream(bloomFilterFilter.getInput());
+            boundRows.set(pos, stream.fieldOffsets);
+            RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
+            boundRows.set(pos, null);
+            List<Expression> fields = assembleExpressions(bloomFilterFilter.getLookupExpressions(),
+                                                          stream.fieldOffsets);
+            stream.operator = API.select_BloomFilter(stream.operator,
+                                                     cstream.operator,
+                                                     fields,
+                                                     pos);
+            return stream;
+        }        
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
@@ -767,19 +930,25 @@ public class OperatorAssembler extends BaseRule
             pushBoundRow(fieldOffsets);
             PlanNode subquery = sexpr.getSubquery().getQuery();
             ExpressionNode expression = null;
+            boolean fieldExpression = false;
             if ((sexpr instanceof AnyCondition) ||
                 (sexpr instanceof SubqueryValueExpression)) {
                 if (subquery instanceof ResultSet)
                     subquery = ((ResultSet)subquery).getInput();
-                if (!(subquery instanceof Project))
-                    throw new AkibanInternalException("subquery does not have project");
-                Project project = (Project)subquery;
-                subquery = project.getInput();
-                expression = project.getFields().get(0);
+                if (subquery instanceof Project) {
+                    Project project = (Project)subquery;
+                    subquery = project.getInput();
+                    expression = project.getFields().get(0);
+                }
+                else {
+                    fieldExpression = true;
+                }
             }
             RowStream stream = assembleQuery(subquery);
             Expression innerExpression = null;
-            if (expression != null)
+            if (fieldExpression)
+                innerExpression = Expressions.field(stream.rowType, 0);
+            else if (expression != null)
                 innerExpression = assembleExpression(expression, stream.fieldOffsets);
             Expression result = assembleSubqueryExpression(sexpr, 
                                                            stream.operator,
@@ -839,7 +1008,7 @@ public class OperatorAssembler extends BaseRule
         }
 
         // Generate key range bounds.
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets) {
+        protected IndexKeyRange assembleIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets) {
             return assembleIndexKeyRange(
                     index,
                     fieldOffsets,
@@ -850,7 +1019,7 @@ public class OperatorAssembler extends BaseRule
             );
         }
 
-        protected IndexKeyRange assembleIndexKeyRange(IndexScan index, ColumnExpressionToIndex fieldOffsets,
+        protected IndexKeyRange assembleIndexKeyRange(SingleIndexScan index, ColumnExpressionToIndex fieldOffsets,
                                                       RangeSegment segment)
         {
             return assembleIndexKeyRange(
@@ -863,7 +1032,7 @@ public class OperatorAssembler extends BaseRule
             );
         }
 
-        private IndexKeyRange assembleIndexKeyRange(IndexScan index,
+        private IndexKeyRange assembleIndexKeyRange(SingleIndexScan index,
                                                     ColumnExpressionToIndex fieldOffsets,
                                                     ExpressionNode lowComparand,
                                                     boolean lowInclusive, ExpressionNode highComparand,
@@ -875,7 +1044,11 @@ public class OperatorAssembler extends BaseRule
                     (lowComparand == null) && (highComparand == null))
                 return IndexKeyRange.unbounded(indexRowType);
 
-            int nkeys = index.getIndex().getKeyColumns().size();
+            int nkeys = 0;
+            if (equalityComparands != null)
+                nkeys = equalityComparands.size();
+            if ((lowComparand != null) || (highComparand != null))
+                nkeys++;
             Expression[] keys = new Expression[nkeys];
             Arrays.fill(keys, LiteralExpression.forNull());
 
@@ -951,7 +1124,7 @@ public class OperatorAssembler extends BaseRule
             return schema.newValuesType(fields);
         }
 
-        protected IndexRowType getIndexRowType(IndexScan index) {
+        protected IndexRowType getIndexRowType(SingleIndexScan index) {
             return schema.indexRowType(index.getIndex());
         }
 
@@ -989,12 +1162,12 @@ public class OperatorAssembler extends BaseRule
          * of a row of the index's user table. */
         protected ColumnSelector getIndexColumnSelector(final Index index, 
                                                         final int nkeys) {
-            assert nkeys <= index.getKeyColumns().size() : index + " " + nkeys;
-                return new ColumnSelector() {
-                        public boolean includesColumn(int columnPosition) {
-                            return columnPosition < nkeys;
-                        }
-                    };
+            assert nkeys <= index.getAllColumns().size() : index + " " + nkeys;
+            return new ColumnSelector() {
+                    public boolean includesColumn(int columnPosition) {
+                        return columnPosition < nkeys;
+                    }
+                };
         }
 
         /** Return a {@link Row} for the given index containing the given
@@ -1030,6 +1203,7 @@ public class OperatorAssembler extends BaseRule
 
         protected int expressionBindingsOffset, loopBindingsOffset;
         protected Stack<ColumnExpressionToIndex> boundRows = new Stack<ColumnExpressionToIndex>(); // Needs to be List<>.
+        protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<BaseHashTable,Integer>();
 
         protected void computeBindingsOffsets() {
             expressionBindingsOffset = 0;
@@ -1046,8 +1220,10 @@ public class OperatorAssembler extends BaseRule
             loopBindingsOffset = expressionBindingsOffset;
         }
 
-        protected void pushBoundRow(ColumnExpressionToIndex boundRow) {
+        protected int pushBoundRow(ColumnExpressionToIndex boundRow) {
+            int position = boundRows.size();
             boundRows.push(boundRow);
+            return position;
         }
 
         protected void popBoundRow() {
@@ -1056,6 +1232,22 @@ public class OperatorAssembler extends BaseRule
 
         protected int currentBindingPosition() {
             return loopBindingsOffset + boundRows.size() - 1;
+        }
+
+        protected int pushHashTable(BaseHashTable hashTable) {
+            int position = pushBoundRow(null);
+            hashTablePositions.put(hashTable, position);
+            return position;
+        }
+
+        protected void popHashTable(BaseHashTable hashTable) {
+            popBoundRow();
+            int position = hashTablePositions.remove(hashTable);
+            assert (position == boundRows.size());
+        }
+
+        protected int getHashTablePosition(BaseHashTable hashTable) {
+            return hashTablePositions.get(hashTable);
         }
 
         class ColumnBoundRows implements ColumnExpressionContext {
@@ -1136,6 +1328,11 @@ public class OperatorAssembler extends BaseRule
             else
                 return column.getPosition();
         }
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + source + ")";
+        }
     }
 
     // Index used as field source (e.g., covering).
@@ -1152,6 +1349,12 @@ public class OperatorAssembler extends BaseRule
         // (Covering index or condition before lookup.)
         public int getIndex(ColumnExpression column) {
             return index.getColumns().indexOf(column);
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + index + ")";
         }
     }
 
@@ -1204,6 +1407,12 @@ public class OperatorAssembler extends BaseRule
                                 other.tableOffsets.get(otherTable));
                 }
             }
+        }
+
+
+        @Override
+        public String toString() {
+            return super.toString() + "(" + tableOffsets.keySet() + ")";
         }
     }
 

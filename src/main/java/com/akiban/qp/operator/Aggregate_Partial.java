@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
@@ -171,12 +182,7 @@ final class Aggregate_Partial extends Operator
         }
         return new AggregateCursor(
                 context,
-                inputOperator.cursor(context),
-                inputRowType,
-                aggregatorFactories,
-                aggregators,
-                inputsIndex,
-                outputType
+                aggregators
         );
     }
 
@@ -287,17 +293,17 @@ final class Aggregate_Partial extends Operator
 
     // nested classes
 
-    private static class AggregateCursor extends OperatorExecutionBase implements Cursor
+    private class AggregateCursor extends OperatorExecutionBase implements Cursor
     {
 
         // Cursor interface
 
         @Override
         public void open() {
-            if (cursorState != CursorState.CLOSED)
-                throw new IllegalStateException("can't open cursor: already open");
             TAP_OPEN.in();
             try {
+                if (cursorState != CursorState.CLOSED)
+                    throw new IllegalStateException("can't open cursor: already open");
                 inputCursor.open();
                 cursorState = CursorState.OPENING;
             } finally {
@@ -309,6 +315,7 @@ final class Aggregate_Partial extends Operator
         public Row next() {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 if (cursorState == CursorState.CLOSED)
                     throw new IllegalStateException("cursor not open");
@@ -351,11 +358,38 @@ final class Aggregate_Partial extends Operator
 
         @Override
         public void close() {
+            CursorLifecycle.checkIdleOrActive(this);
             if (cursorState != CursorState.CLOSED) {
                 holder.release();
                 inputCursor.close();
                 cursorState = CursorState.CLOSED;
             }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            inputCursor.destroy();
+            cursorState = CursorState.DESTROYED;
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return cursorState == CursorState.CLOSED;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return cursorState != CursorState.DESTROYED && cursorState != CursorState.CLOSED;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return cursorState == CursorState.DESTROYED;
         }
 
         // for use in this class
@@ -448,25 +482,16 @@ final class Aggregate_Partial extends Operator
         }
 
         private ValuesHolderRow unsharedOutputRow() {
-            return new ValuesHolderRow(outputRowType); // TODO row sharing, etc
+            return new ValuesHolderRow(outputType); // TODO row sharing, etc
         }
 
         // AggregateCursor interface
 
         private AggregateCursor(QueryContext context,
-                                Cursor inputCursor,
-                                RowType inputRowType,
-                                List<AggregatorFactory> aggregatorFactories,
-                                List<Aggregator> aggregators,
-                                int inputsIndex,
-                                AggregatedRowType outputRowType) {
+                                List<Aggregator> aggregators) {
             super(context);
-            this.inputCursor = inputCursor;
-            this.inputRowType = inputRowType;
-            this.aggregatorFactories = aggregatorFactories;
+            this.inputCursor = inputOperator.cursor(context);
             this.aggregators = aggregators;
-            this.inputsIndex = inputsIndex;
-            this.outputRowType = outputRowType;
             keyValues = new ArrayList<ValueHolder>();
             for (int i = 0; i < inputsIndex; ++i) {
                 keyValues.add(new ValueHolder());
@@ -477,11 +502,7 @@ final class Aggregate_Partial extends Operator
         // object state
 
         private final Cursor inputCursor;
-        private final RowType inputRowType;
-        private final List<AggregatorFactory> aggregatorFactories;
         private final List<Aggregator> aggregators;
-        private final int inputsIndex;
-        private final AggregatedRowType outputRowType;
         private final List<ValueHolder> keyValues;
         private final ValueHolder scratchValueHolder = new ValueHolder();
         private final ShareHolder<Row> holder = new ShareHolder<Row>();
@@ -506,7 +527,11 @@ final class Aggregate_Partial extends Operator
         /**
          * The cursor is closed.
          */
-        CLOSED
+        CLOSED,
+        /**
+         * The cursor is destroyed.
+         */
+        DESTROYED
     }
 
 }

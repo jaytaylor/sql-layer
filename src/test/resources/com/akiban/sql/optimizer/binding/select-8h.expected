@@ -1,0 +1,80 @@
+com.akiban.sql.parser.CursorNode@1bb0889a
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@62d844a9
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@f6d64c5
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@56f2c96c
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@5d85fe0c
+			columnName: x
+			tableName: null
+			type: null
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@48c5186e
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@7e9f5cc
+		exposedName: zs
+		name: zs
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.AggregateNode@11082823
+			aggregateName: SUM
+			operator: null
+			methodName: null
+			type: null
+			operand: 				
+				com.akiban.sql.parser.ColumnReference@2e831a91
+				columnName: z
+				tableName: null
+				type: null
+				userData: t1.z from com.akiban.sql.parser.FromBaseTable@48c5186e
+	fromList: 		
+		com.akiban.sql.parser.FromList@21453d72
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@48c5186e
+		tableName: t1
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: test.t1
+	groupByList:		
+		com.akiban.sql.parser.GroupByList@3c70315
+
+		[0]:		
+		com.akiban.sql.parser.GroupByColumn@7e9b59a2
+		columnPosition: -1
+		columnExpression: 			
+			com.akiban.sql.parser.ColumnReference@919db9e
+			columnName: x
+			tableName: null
+			type: null
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@48c5186e
+	havingClause:		
+		com.akiban.sql.parser.BinaryRelationalOperatorNode@6483e5f1
+		operator: >
+		methodName: greaterThan
+		type: null
+		leftOperand: 			
+			com.akiban.sql.parser.ColumnReference@a166bd
+			columnName: zs
+			tableName: null
+			type: null
+			userData: com.akiban.sql.parser.ResultColumn@7e9f5cc
+		rightOperand: 			
+			com.akiban.sql.parser.NumericConstantNode@6460029d
+			value: 0
+			type: INTEGER NOT NULL

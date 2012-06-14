@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.store.statistics;
@@ -24,6 +35,7 @@ import com.akiban.ais.model.TableName;
 
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
@@ -76,13 +88,13 @@ public class IndexStatisticsYamlLoader
         this.defaultSchema = defaultSchema;
     }
     
-    public Map<Index,IndexStatistics> load(File file) throws IOException {
+    public Map<Index,IndexStatistics> load(File file, boolean statsIgnoreMissingIndexes) throws IOException {
         Map<Index,IndexStatistics> result = new TreeMap<Index,IndexStatistics>(INDEX_NAME_COMPARATOR);
         Yaml yaml = new Yaml();
         FileInputStream istr = new FileInputStream(file);
         try {
             for (Object doc : yaml.loadAll(istr)) {
-                parseStatistics(doc, result);
+                parseStatistics(doc, result, statsIgnoreMissingIndexes);
             }
         }
         finally {
@@ -91,7 +103,11 @@ public class IndexStatisticsYamlLoader
         return result;
     }
 
-    protected void parseStatistics(Object obj, Map<Index,IndexStatistics> result) {
+    public Map<Index,IndexStatistics> load(File file) throws IOException {
+        return load(file, false);
+    }
+
+    protected void parseStatistics(Object obj, Map<Index,IndexStatistics> result, boolean statsIgnoreMissingIndexes) {
         if (!(obj instanceof Map))
             throw new AkibanInternalException("Document not in expected format");
         Map<?,?> map = (Map<?,?>)obj;
@@ -104,8 +120,11 @@ public class IndexStatisticsYamlLoader
         Index index = table.getIndex(indexName);
         if (index == null) {
             index = table.getGroup().getIndex(indexName);
-            if (index == null)
+            if (index == null) {
+                if (statsIgnoreMissingIndexes)
+                    return;
                 throw new NoSuchIndexException(indexName);
+            }
         }
         IndexStatistics stats = new IndexStatistics(index);
         Date timestamp = (Date)map.get(TIMESTAMP_KEY);
@@ -163,19 +182,12 @@ public class IndexStatisticsYamlLoader
         return key;
     }
 
-    public void dump(Map<Index,IndexStatistics> stats, File file) throws IOException {
+    public void dump(Map<Index,IndexStatistics> stats, Writer writer) throws IOException {
         List<Object> docs = new ArrayList<Object>(stats.size());
         for (Map.Entry<Index,IndexStatistics> stat : stats.entrySet()) {
             docs.add(buildStatistics(stat.getKey(), stat.getValue()));
         }
-        Yaml yaml = new Yaml();
-        FileWriter ostr = new FileWriter(file);
-        try {
-            yaml.dumpAll(docs.iterator(), ostr);
-        }
-        finally {
-            ostr.close();
-        }
+        new Yaml().dumpAll(docs.iterator(), writer);
     }
 
     protected Object buildStatistics(Index index, IndexStatistics indexStatistics) {
@@ -220,11 +232,30 @@ public class IndexStatisticsYamlLoader
         List<Object> result = new ArrayList<Object>(columnCount);
         for (int i = 0; i < columnCount; i++) {
             keySource.attach(key, index.getKeyColumns().get(i));
-            // TODO: Special handling for date/time types to make them
-            // more legible than internal long representation?
-            result.add(valueTarget.convertFromSource(keySource));
+            valueTarget.expectType(convertToType(keySource.getConversionType()));
+            Converters.convert(keySource, valueTarget);
+            result.add(valueTarget.lastConvertedValue());
         }
         return result;
+    }
+
+    /** If the AkType's internal representation corresponds to a Java
+     * type for which there is standard YAML tag, can use
+     * it. Otherwise, must resort to string, either because the
+     * internal value isn't friendly (<code>Date</code> is a <code>Long</code>) 
+     * or isn't standard (<code>Decimal</code> turns into <code>!!float</code>).
+     */
+    protected static AkType convertToType(AkType sourceType) {
+        switch (sourceType) {
+        case DOUBLE:
+        case FLOAT:
+        case INT:
+        case LONG:
+        case BOOL:
+            return sourceType;
+        default:
+            return AkType.VARCHAR;
+        }
     }
 
 }

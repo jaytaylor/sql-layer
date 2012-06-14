@@ -1,31 +1,49 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.server.service.session.Session;
+import com.akiban.server.error.InconvertibleTypesException;
+import com.akiban.server.error.InvalidCharToNumException;
+import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.QueryCanceledException;
+import com.akiban.server.error.QueryTimedOutException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.util.BloomFilter;
 import com.akiban.util.SparseArray;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Date;
 
 public abstract class QueryContextBase implements QueryContext
@@ -58,8 +76,44 @@ public abstract class QueryContextBase implements QueryContext
             holder = new ValueHolder();
             bindings.set(index, holder);
         }
+        
         holder.expectType(type);
-        Converters.convert(value, holder);
+        try
+        {
+            Converters.convert(value, holder);
+        }
+        catch (InvalidDateFormatException e)
+        {
+            errorCase(e, holder);
+        }
+        catch (InconvertibleTypesException e)
+        {
+            errorCase(e, holder);
+        }
+        catch (InvalidCharToNumException e)
+        {
+            errorCase(e, holder);
+        }
+    }
+    
+    private void errorCase (InvalidOperationException e, ValueHolder holder)
+    {
+        warnClient(e);
+        switch(holder.getConversionType())
+        {
+            case DECIMAL:   holder.putDecimal(BigDecimal.ZERO); break;
+            case U_BIGINT:  holder.putUBigInt(BigInteger.ZERO); break;
+            case LONG:
+            case U_INT:
+            case INT:        holder.putRaw(holder.getConversionType(), 0L); break;
+            case U_DOUBLE:   
+            case DOUBLE:     holder.putRaw(holder.getConversionType(), 0.0d);
+            case U_FLOAT:
+            case FLOAT:      holder.putRaw(holder.getConversionType(), 0.0f); break;
+            case TIME:       holder.putTime(0L);
+            default:         holder.putNull();
+
+        }
     }
 
     @Override
@@ -112,6 +166,18 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     @Override
+    public BloomFilter getBloomFilter(int index) {
+        if (!bindings.isDefined(index))
+            throw new BindingNotSetException(index);
+        return (BloomFilter)bindings.get(index);
+    }
+
+    @Override
+    public void setBloomFilter(int index, BloomFilter filter) {
+        bindings.set(index, filter);
+    }
+
+    @Override
     public Date getCurrentDate() {
         return new Date();
     }
@@ -129,6 +195,25 @@ public abstract class QueryContextBase implements QueryContext
     @Override
     public void warnClient(InvalidOperationException exception) {
         notifyClient(NotificationLevel.WARNING, exception.getCode(), exception.getShortMessage());
+    }
+
+    @Override
+    public long getQueryTimeoutSec() {
+        return getStore().getQueryTimeoutSec();
+    }
+
+    @Override
+    public void checkQueryCancelation() {
+        if (getSession().isCurrentQueryCanceled()) {
+            throw new QueryCanceledException(getSession());
+        }
+        long queryTimeoutSec = getQueryTimeoutSec();
+        if (queryTimeoutSec >= 0) {
+            long runningTimeMsec = System.currentTimeMillis() - getStartTime();
+            if (runningTimeMsec > queryTimeoutSec * 1000) {
+                throw new QueryTimedOutException(runningTimeMsec);
+            }
+        }
     }
 
 }

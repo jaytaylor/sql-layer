@@ -1,25 +1,41 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.server.expression.std;
 
+import java.math.BigDecimal;
+import java.text.DateFormatSymbols;
+import java.util.Locale;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.extract.Extractors;
 import java.util.Arrays;
+import org.joda.time.DateTime;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -27,8 +43,84 @@ import static org.junit.Assert.assertTrue;
 
 public class ExtractExpressionTest extends ComposedExpressionTestBase
 {
-    private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, false);
+    private static final CompositionTestInfo testInfo = new CompositionTestInfo(1, AkType.DATE, true);
+      
+    @Test
+    public void testNull() // test null for Extract functions
+    {
+        for (ExtractExpression.TargetExtractType type : ExtractExpression.TargetExtractType.values())
+            assertTrue("ValueSource is NULL", new ExtractExpression(LiteralExpression.forNull(), type).evaluation().eval().isNull());        
+    }
+    
+    //-----------------------------LAST DAY------------------------------------    
+    @Test
+    public void quarter()
+    {        
+        testAndCheck("2009-01-01", 1);
+        testAndCheck("2009-03-31", 1);
+        testAndCheck("2009-04-01", 2);
+        testAndCheck("2009-06-25", 2);
+        testAndCheck("2009-07-01", 3);
+        testAndCheck("2009-09-30", 3);
+        testAndCheck("2009-10-01", 4);
+        testAndCheck("2009-12-01", 4);
+    }
+    
+    private static void testAndCheck (String date, int expected)
+    {        
+     
+        Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(date));        
+        Expression top = ExtractExpression.QUARTER_COMPOSER.compose(Arrays.asList(in));
+        
+        assertEquals("QUATER(" + date + "): ", expected, top.evaluation().eval().getInt());        
+    }
+    
+    //-----------------------------LAST DAY------------------------------------
+    @Test
+    public void testDayOfYearFromDecimal()
+    {
+        Expression arg = new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(20081231.5d));
+        Expression top = ExtractExpression.DAY_YEAR_COMPOSER.compose(Arrays.asList(arg));
+        
+        assertTrue("Top should be null: ", top.evaluation().eval().isNull());
+    }
 
+    @Test
+    public void testLastDayNull()
+    {
+        Expression in = ExprUtil.lit(20091231.6);
+        Expression top = ExtractExpression.LAST_DAY_COMPOSER.compose(Arrays.asList(in));
+        
+        assertTrue("LAST_DAY(20091231.6) should be NULL", top.evaluation().eval().isNull());
+    }
+    @Test
+    public void lastDay()
+    {
+        for (int yr : new int[]{2000, 1900, 2001, 2002, 2003, 2004})
+            for (int month = 1; month < 13; ++month)
+            {
+                Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(yr + "-" + month + "-12"));
+                Expression top = ExtractExpression.LAST_DAY_COMPOSER.compose(Arrays.asList(in));
+                DateTime datetime = DateTime.parse(Extractors.getStringExtractor().getObject(in.evaluation().eval()));
+                assertEquals("Last day of Month: " + month,
+                              Extractors.getLongExtractor(AkType.DATE).getLong( yr + "-" + month + "-" + datetime.dayOfMonth().getMaximumValue()) ,
+                              top.evaluation().eval().getDate());
+            }
+    }
+    //-----------------------------MONTHNAME------------------------------------
+    @Test
+    public void monthName()
+    {
+        for (int month = 0; month < 12; ++month)
+        {
+            Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-" + (month+1) + "-12"));
+            Expression top = ExtractExpression.MONTH_NAME_COMPOSER.compose(Arrays.asList(in));
+
+            assertEquals(new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths()[month],
+                          top.evaluation().eval().getString());
+        }
+    }
+        
     // --------------------------- GET DAY OF YEAR -----------------------------
     private static final Long [] outputs = {1L, 365L, 1L, 366L, 365L, null, null, null, 1L, 365L};
     private static final String[] inputs = {"2009-01-01 12:30:10", "2009-12-31 00:14:12",
@@ -42,8 +134,6 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     // Thus testing for dayOfYear(TIMESTAMP([invalid date])) is impossible and unnecessary.
     private static final String[] inputsForTimestamp = {"2009-01-01 12:30:10", "2009-12-31 00:14:12",
                     "2008-01-01 14:59:12", "2008-12-31 13:43:24", "1900-12-31 00:12:12"};
-    
-    private static final int invalidCases = 5; // number of test-cases with inallid dates
     
     @Test
     public void getDayOfYearFromDate ()
@@ -144,10 +234,12 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     @Test
     public void getDateFromDouble()
     {
-        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 20091212.5);
         Expression top = getTopExp(ExtractExpression.DATE_COMPOSER, arg);
 
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals("DATE(20091212.5) ", 
+                     "2009-12-13", 
+                     Extractors.getLongExtractor(AkType.DATE).asString(top.evaluation().eval().getDate()));
     }
 
     @Test
@@ -370,10 +462,10 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     @Test
     public void getDayFromDouble()
     {
-        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 20091212.5);
         Expression top = getTopExp(ExtractExpression.DAY_COMPOSER, arg);
 
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals("DAY(20091212.5) ", 13, top.evaluation().eval().getInt());
     }
 
     @Test
@@ -469,7 +561,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
         Expression top = getTopExp(ExtractExpression.HOUR_COMPOSER, arg);
 
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals("HOUR(2345.5) ", 0, top.evaluation().eval().getInt());
     }
 
     @Test
@@ -554,7 +646,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
         Expression top = getTopExp(ExtractExpression.MINUTE_COMPOSER, arg);
 
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals("MINUTE(2345.5) ", 23, top.evaluation().eval().getInt());
     }
 
     @Test
@@ -732,10 +824,10 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     @Test
     public void getSecondFromDouble()
     {
-        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.3);
         Expression top = getTopExp(ExtractExpression.SECOND_COMPOSER, arg);
 
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals("SECOND(2345.3) ", 45, top.evaluation().eval().getInt());
     }
 
     @Test
@@ -821,10 +913,10 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     @Test
     public void getTimeFromDouble()
     {
-        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.5);
+        Expression arg = new LiteralExpression(AkType.DOUBLE, 2345.49);
         Expression top = getTopExp(ExtractExpression.TIME_COMPOSER, arg);
 
-        assertTrue(top.evaluation().eval().isNull());
+        assertEquals("TIME(2345.49) ", 2345, top.evaluation().eval().getTime());
     }
 
     @Test

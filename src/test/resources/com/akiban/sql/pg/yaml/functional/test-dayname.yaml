@@ -1,4 +1,12 @@
 # Test the dayname() function
+# Related bug(s): 903221
+# Status: fix released
+#
+# bug: TIME type not convertible to DATE
+# Status confirmed
+#
+# bug 902168
+# status new
 ---
 - Include: all-types-schema.yaml
 ---
@@ -7,11 +15,10 @@
 # 903221
 - Statement: select dayname('1999-12-15') from all_types;
 - output: [['Wednesday']]
----
-# will be working after some change in ExtractorForTime
+#--- # bug: time is currently not convertible to DATE
 #- Statement: select dayname('15:02:33') from all_types;
 #- output: [[null]]
-#---
+---
 - Statement: select dayname('1999-12-22 01:23:35') from all_types;
 - output: [['Wednesday']]
 ---  
@@ -28,16 +35,16 @@
 - output: [[null]]
 #---  
 #- Include: all-datetime-schema.yaml
-#---
+#--- bug: time not convertible to date
 #- Statement: select id,dayname(time_field), dayname from datetime_matrix where dayname(time_field) is not null;
 #- row_count: 0
-#---
+#--- # not working due to the broken all-datetime-schema
 #- Statement: select id,dayname(timestamp_field), dayname from datetime_matrix where dayname(timestamp_field) <> dayname;
-#- row_count: 0
+#- row_count: 524
 #---
 #- Statement: select id,dayname(date_field), dayname from datetime_matrix where dayname(date_field) <> dayname;
-#- row_count: 0
-#---
+#- row_count: 524
+#--- bug 902168
 #- Statement: select dayname('A') from all_types;
 #- output: [[null]]
 #---

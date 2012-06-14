@@ -1,9 +1,0 @@
-SelectQuery@4af6fd54
-  ResultSet@1d71bc3f[cid, name, oid, cid, order_date]
-    Project@15fddb33[user.customers.cid, user.customers.name, user.orders.oid, user.orders.cid, user.orders.order_date]
-      Select@4d41fc8c[user.orders.cid >= user.customers.cid]
-        JoinNode@272b72f4(INNER[])
-          TableGroupJoinTree@15880543(TableGroup@15117cc0(customers), customers)
-            TableSource@39019275(user.customers - TableGroup@15117cc0(customers))
-          TableGroupJoinTree@2f152c0e(TableGroup@16ff6348(customers), orders)
-            TableSource@16365c90(user.orders - TableGroup@16ff6348(customers))

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.operator;
@@ -19,6 +30,7 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.optimizer.explain.Explainer;
@@ -26,6 +38,7 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -116,7 +129,7 @@ class AncestorLookup_Nested extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s -> %s)", getClass().getSimpleName(), rowType, ancestorTypes);
+        return String.format("%s(%s -> %s)", getClass().getSimpleName(), rowType, ancestors);
     }
 
     // Operator interface
@@ -142,52 +155,68 @@ class AncestorLookup_Nested extends Operator
 
     public AncestorLookup_Nested(GroupTable groupTable,
                                  RowType rowType,
-                                 Collection<? extends RowType> ancestorTypes,
+                                 Collection<UserTableRowType> ancestorTypes,
                                  int inputBindingPosition)
+    {
+        validateArguments(groupTable, rowType, ancestorTypes, inputBindingPosition);
+        this.groupTable = groupTable;
+        this.rowType = rowType;
+        this.inputBindingPosition = inputBindingPosition;
+        // Sort ancestor types by depth
+        this.ancestors = new ArrayList<UserTable>(ancestorTypes.size());
+        for (UserTableRowType ancestorType : ancestorTypes) {
+            this.ancestors.add(ancestorType.userTable());
+        }
+        if (this.ancestors.size() > 1) {
+            Collections.sort(this.ancestors,
+                             new Comparator<UserTable>()
+                             {
+                                 @Override
+                                 public int compare(UserTable x, UserTable y)
+                                 {
+                                     return x.getDepth() - y.getDepth();
+                                 }
+                             });
+        }
+    }
+
+    // For use by this class
+
+    private void validateArguments(GroupTable groupTable,
+                                   RowType rowType,
+                                   Collection<? extends RowType> ancestorTypes,
+                                   int inputBindingPosition)
     {
         ArgumentValidation.notNull("groupTable", groupTable);
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notNull("ancestorTypes", ancestorTypes);
         ArgumentValidation.notEmpty("ancestorTypes", ancestorTypes);
         ArgumentValidation.isTrue("inputBindingPosition >= 0", inputBindingPosition >= 0);
-        // Keeping index rows not currently supported
-        boolean inputFromIndex = rowType instanceof IndexRowType;
-        RowType tableRowType =
-            inputFromIndex
-            ? ((IndexRowType) rowType).tableType()
-            : rowType;
-        // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
-        // is from an index. I.e., this operator can be used for an index lookup.
-        for (RowType ancestorType : ancestorTypes) {
-            ArgumentValidation.isTrue("inputFromIndex || ancestorType1 != tableRowType",
-                                      inputFromIndex || ancestorType != tableRowType);
-            ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
-                                      ancestorType.ancestorOf(tableRowType));
-            ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
-                                      ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
-        }
-        this.groupTable = groupTable;
-        this.rowType = rowType;
-        this.inputBindingPosition = inputBindingPosition;
-        // Sort ancestor types by depth
-        this.ancestorTypes = new ArrayList<RowType>(ancestorTypes);
-        if (this.ancestorTypes.size() > 1) {
-            Collections.sort(this.ancestorTypes,
-                             new Comparator<RowType>()
-                             {
-                                 @Override
-                                 public int compare(RowType x, RowType y)
-                                 {
-                                     UserTable xTable = x.userTable();
-                                     UserTable yTable = y.userTable();
-                                     return xTable.getDepth() - yTable.getDepth();
-                                 }
-                             });
-        }
-        this.ancestorTypeDepth = new int[ancestorTypes.size()];
-        int a = 0;
-        for (RowType ancestorType : this.ancestorTypes) {
-            this.ancestorTypeDepth[a++] = ancestorType.userTable().getDepth() + 1;
+        if (rowType instanceof IndexRowType) {
+            // Keeping index rows not supported
+            RowType tableRowType = ((IndexRowType) rowType).tableType();
+            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+            // is from an index. I.e., this operator can be used for an index lookup.
+            for (RowType ancestorType : ancestorTypes) {
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(tableRowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup());
+            }
+        } else if (rowType instanceof UserTableRowType) {
+            // Each ancestorType must be an ancestor of rowType. ancestorType = tableRowType is OK only if the input
+            // is from an index. I.e., this operator can be used for an index lookup.
+            for (RowType ancestorType : ancestorTypes) {
+                ArgumentValidation.isTrue("ancestorType != tableRowType",
+                                          ancestorType != rowType);
+                ArgumentValidation.isTrue("ancestorType.ancestorOf(tableRowType)",
+                                          ancestorType.ancestorOf(rowType));
+                ArgumentValidation.isTrue("ancestorType.userTable().getGroup() == tableRowType.userTable().getGroup()",
+                                          ancestorType.userTable().getGroup() == rowType.userTable().getGroup());
+            }
+        } else if (rowType instanceof HKeyRowType) {
+        } else {
+            ArgumentValidation.isTrue("invalid rowType", false);
         }
     }
 
@@ -201,8 +230,7 @@ class AncestorLookup_Nested extends Operator
 
     private final GroupTable groupTable;
     private final RowType rowType;
-    private final List<RowType> ancestorTypes;
-    private final int[] ancestorTypeDepth;
+    private final List<UserTable> ancestors;
     private final int inputBindingPosition;
 
     @Override
@@ -225,13 +253,14 @@ class AncestorLookup_Nested extends Operator
         {
             TAP_OPEN.in();
             try {
+                CursorLifecycle.checkIdle(this);
                 Row rowFromBindings = context.getRow(inputBindingPosition);
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("AncestorLookup_Nested: open using {}", rowFromBindings);
                 }
                 assert rowFromBindings.rowType() == rowType : rowFromBindings;
-                rowFromBindings.hKey().copyTo(hKey);
-                findAncestors();
+                findAncestors(rowFromBindings);
+                closed = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -242,6 +271,7 @@ class AncestorLookup_Nested extends Operator
         {
             TAP_NEXT.in();
             try {
+                CursorLifecycle.checkIdleOrActive(this);
                 checkQueryCancelation();
                 Row row = pending.take();
                 if (LOG.isDebugEnabled()) {
@@ -259,8 +289,37 @@ class AncestorLookup_Nested extends Operator
         @Override
         public void close()
         {
-            pending.clear();
-            ancestorCursor.close();
+            CursorLifecycle.checkIdleOrActive(this);
+            if (!closed) {
+                pending.clear();
+                ancestorCursor.close();
+                closed = true;
+            }
+        }
+
+        @Override
+        public void destroy()
+        {
+            close();
+            ancestorCursor.destroy();
+        }
+
+        @Override
+        public boolean isIdle()
+        {
+            return closed;
+        }
+
+        @Override
+        public boolean isActive()
+        {
+            return !closed;
+        }
+
+        @Override
+        public boolean isDestroyed()
+        {
+            return ancestorCursor.isDestroyed();
         }
 
         // Execution interface
@@ -268,26 +327,21 @@ class AncestorLookup_Nested extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.pending = new PendingRows(ancestorTypeDepth.length);
+            this.pending = new PendingRows(ancestors.size() + 1);
             this.ancestorCursor = adapter().newGroupCursor(groupTable);
-            this.hKey = adapter().newHKey(rowType);
         }
 
         // For use by this class
 
-        private void findAncestors()
+        private void findAncestors(Row row)
         {
             assert pending.isEmpty();
-            int nSegments = hKey.segments();
-            for (int depth : ancestorTypeDepth) {
-                hKey.useSegments(depth);
-                Row row = readAncestorRow(hKey);
-                if (row != null) {
-                    pending.add(row);
+            for (int i = 0; i < ancestors.size(); i++) {
+                Row ancestorRow = readAncestorRow(row.ancestorHKey(ancestors.get(i)));
+                if (ancestorRow != null) {
+                    pending.add(ancestorRow);
                 }
             }
-            // Restore the hkey to its original state
-            hKey.useSegments(nSegments);
         }
 
         private Row readAncestorRow(HKey hKey)
@@ -309,6 +363,6 @@ class AncestorLookup_Nested extends Operator
 
         private final GroupCursor ancestorCursor;
         private final PendingRows pending;
-        private final HKey hKey;
+        private boolean closed = true;
     }
 }

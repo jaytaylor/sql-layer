@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.hapi;
@@ -22,7 +33,6 @@ import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiRequestException;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.service.memcache.ParsedHapiGetRequest;
@@ -202,17 +212,42 @@ public final class JsonHapiIT extends ITBase {
         return params;
     }
 
+    private static class TableDesc {
+        final String name;
+        final String columns;
+        
+        public TableDesc(String name, String columns) {
+            this.name = name;
+            this.columns = columns;
+        }
+    }
+    
+    private static class IndexDesc {
+        final static String INDEX_START = "index(";
+        final String tableName;
+        final String name;
+        final String columns;
+        
+        public IndexDesc(String tableName, String name, String columns) {
+            this.tableName = tableName;
+            this.name = name;
+            this.columns = columns;
+        }
+    }
+    
     private static class TestSetupInfo {
         final List<String> defaultProcessors;
         final String schema;
-        final List<String> ddls;
+        final List<TableDesc> tableDDL;
+        final List<IndexDesc> indexDDL;
         final Map<String,JSONArray> writeRows;
 
-        private TestSetupInfo(String schema, List<String> ddls, Map<String,JSONArray> writeRows, JSONArray processors)
+        private TestSetupInfo(String schema, List<TableDesc> tableDDL, List<IndexDesc> indexDDL, Map<String,JSONArray> writeRows, JSONArray processors)
         throws JSONException
         {
             this.schema = schema;
-            this.ddls = ddls;
+            this.tableDDL = tableDDL;
+            this.indexDDL = indexDDL;
             this.writeRows = writeRows;
             if (processors == null) {
                 this.defaultProcessors = Collections.unmodifiableList( Arrays.asList(DEFAULT_TEST_PROCESSORS));
@@ -228,7 +263,7 @@ public final class JsonHapiIT extends ITBase {
 
         @Override
         public String toString() {
-            return String.format("TestSetupInfo{schema=%s, ddls=%s, writeRows=%s}", schema, ddls, writeRows);
+            return String.format("TestSetupInfo{schema=%s, ddls=%s, writeRows=%s}", schema, tableDDL, writeRows);
         }
     }
 
@@ -413,7 +448,8 @@ public final class JsonHapiIT extends ITBase {
         validateKeys("setup", setupJSON, SETUP_KEYS_REQUIRED, SETUP_KEYS_OPTIONAL);
         final String schema;
         final Map<String,JSONArray> writeRows;
-        final List<String> ddls = new ArrayList<String>();
+        final List<TableDesc> tableDDL = new ArrayList<TableDesc>();
+        final List<IndexDesc> indexDDL = new ArrayList<IndexDesc>();
 
         schema = setupJSON.optString(SETUP_SCHEMA, SETUP_SCHEMA_DEFAULT);
 
@@ -430,9 +466,16 @@ public final class JsonHapiIT extends ITBase {
             }
             ddlComponents.clear();
             for(int j=1, MAX2 = tableDefinition.length(); j < MAX2; ++j) {
-                ddlComponents.add(tableDefinition.getString(j));
+                String def = tableDefinition.getString(j);
+                if(def.startsWith(IndexDesc.INDEX_START)) {
+                    String indexColumns = def.substring(IndexDesc.INDEX_START.length(), def.length() - 1);
+                    String indexName = indexColumns.replace(",", "_");
+                    indexDDL.add(new IndexDesc(tableName, indexName, indexColumns));
+                } else {
+                    ddlComponents.add(tableDefinition.getString(j));
+                }
             }
-            ddls.add(String.format("CREATE TABLE `%s` (%s)", tableName, Strings.join(ddlComponents, ", ")));
+            tableDDL.add(new TableDesc(tableName, Strings.join(ddlComponents, ", ")));
         }
 
         final JSONObject writeRowsJSON = setupJSON.optJSONObject(SETUP_WRITE_ROWS);
@@ -458,7 +501,8 @@ public final class JsonHapiIT extends ITBase {
         }
         return new TestSetupInfo(
                 schema,
-                Collections.unmodifiableList(ddls),
+                Collections.unmodifiableList(tableDDL),
+                Collections.unmodifiableList(indexDDL),
                 writeRows,
                 setupJSON.optJSONArray(PROCESSORS_DEFAULT)
         );
@@ -485,8 +529,15 @@ public final class JsonHapiIT extends ITBase {
 
     @Before
     public void setUp() throws InvalidOperationException, JSONException {
-        for(String ddl : setupInfo.ddls) {
-            ddl().createTable(session(), setupInfo.schema, ddl);
+        for(TableDesc desc : setupInfo.tableDDL) {
+            createTable(setupInfo.schema, desc.name, desc.columns);
+        }
+        for(IndexDesc desc : setupInfo.indexDDL) {
+            String indexName = desc.name;
+            if (indexName.startsWith("\"") && indexName.endsWith("\"")) {
+                indexName = indexName.substring(1, indexName.length() - 1);
+            }
+            createIndex(setupInfo.schema, desc.tableName, indexName, desc.columns);
         }
         if (runInfo.writeRows) {
             for(Map.Entry<String,JSONArray> entry : setupInfo.writeRows.entrySet()) {

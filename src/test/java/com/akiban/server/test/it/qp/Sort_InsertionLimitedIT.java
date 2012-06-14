@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
@@ -470,7 +481,7 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
     }
 
     @Test
-    public void testSuppressDuplicates()
+    public void testSuppressDuplicateCID()
     {
         Operator project =
             project_Default(
@@ -493,6 +504,32 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, 2L),
             row(projectType, 3L),
             row(projectType, 5L),
+        };
+        compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testSuppressDuplicateName()
+    {
+        Operator project =
+            project_Default(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                Arrays.asList(field(orderRowType, 2)));
+        RowType projectType = project.rowType();
+        Operator plan =
+            sort_InsertionLimited(
+                project,
+                projectType,
+                ordering(field(projectType, 0), true),
+                SortOption.SUPPRESS_DUPLICATES,
+                2);
+
+        RowBase[] expected = new RowBase[]{
+            row(projectType, "david"),
+            row(projectType, "jack"),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -525,6 +562,34 @@ public class Sort_InsertionLimitedIT extends OperatorITBase
             row(projectType, "northbridge"),
         };
         compareRows(expected, cursor(plan, queryContext));
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator plan =
+            sort_InsertionLimited(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Collections.singleton(orderRowType)),
+                orderRowType,
+                ordering(field(orderRowType, 2), true, field(orderRowType, 1), false),
+                SortOption.PRESERVE_DUPLICATES,
+                4);
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(orderRowType, 31L, 3L, "david"),
+                    row(orderRowType, 21L, 2L, "david"),
+                    row(orderRowType, 12L, 1L, "david"),
+                    row(orderRowType, 22L, 2L, "jack"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
     }
 
     private Ordering ordering(Object... objects)

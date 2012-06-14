@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.sql.pg;
@@ -24,14 +35,16 @@ import com.akiban.junit.Parameterization;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import static junit.framework.Assert.*;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.ResultSetMetaData;
 
 import java.io.File;
+import java.util.Arrays;
 import java.util.Collection;
+
+import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
 public class PostgresServerSelectIT extends PostgresServerFilesITBase 
@@ -40,10 +53,28 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
     public static final File RESOURCE_DIR = 
         new File(PostgresServerITBase.RESOURCE_DIR, "select");
 
+    private void createHardCodedTables() {
+        // Hack-ish way to create types with types that aren't supported by our SQL
+        SimpleColumn columns[] = {
+                new SimpleColumn("a_int", "int"), new SimpleColumn("a_uint", "int unsigned"),
+                new SimpleColumn("a_float", "float"), new SimpleColumn("a_ufloat", "float unsigned"),
+                new SimpleColumn("a_double", "double"), new SimpleColumn("a_udouble", "double unsigned"),
+                new SimpleColumn("a_decimal", "decimal", 5L, 2L), new SimpleColumn("a_udecimal", "decimal unsigned", 5L, 2L),
+                new SimpleColumn("a_varchar", "varchar", 16L, null), new SimpleColumn("a_date", "date"),
+                new SimpleColumn("a_time", "time"), new SimpleColumn("a_datetime", "datetime"),
+                new SimpleColumn("a_timestamp", "timestamp"), new SimpleColumn("a_year", "year"),
+                new SimpleColumn("a_text", "text")
+        };
+
+        createTableFromTypes(SCHEMA_NAME, "types", true, false, columns);
+        createTableFromTypes(SCHEMA_NAME, "types_i", true, true, Arrays.copyOf(columns, columns.length - 1));
+    }
+
     @Before
     // Note that this runs _after_ super's openTheConnection(), which
     // means that there is always an AIS generation flush.
     public void loadDatabase() throws Exception {
+        createHardCodedTables();
         loadDatabase(RESOURCE_DIR);
     }
 

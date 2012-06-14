@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.qp.row;
@@ -52,11 +63,6 @@ public class FlattenedRow extends AbstractRow
     }
 
     @Override
-    public boolean containsRealRowOf(UserTable userTable) {
-        return containRealRowOf(parenth, childh, userTable);
-    }
-
-    @Override
     public HKey hKey()
     {
         return hKey;
@@ -80,6 +86,16 @@ public class FlattenedRow extends AbstractRow
         return subRow;
     }
 
+    @Override
+    public boolean containsRealRowOf(UserTable userTable)
+    {
+        return     (parenth.isHolding() && parenth.get().rowType().hasUserTable() && parenth.get().rowType().userTable() == userTable)
+                   || (childh.isHolding() && childh.get().rowType().hasUserTable() && childh.get().rowType().userTable() == userTable)
+                   || (parenth.isHolding() && parenth.get().containsRealRowOf(userTable))
+                   || (childh.isHolding() && childh.get().containsRealRowOf(userTable))
+            ;
+    }
+
     // FlattenedRow interface
 
     public FlattenedRow(FlattenedRowType rowType, Row parent, Row child, HKey hKey)
@@ -95,7 +111,6 @@ public class FlattenedRow extends AbstractRow
         if (parent != null && !rowType.parentType().equals(parent.rowType())) {
             throw new IllegalArgumentException("mismatched type between " +rowType+ " and parent " + parent.rowType());
         }
-        super.runId(parent == null ? child.runId() : parent.runId());
     }
 
     // Object state

@@ -1,17 +1,29 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.ais.model.validation;
 
 import java.util.Arrays;
@@ -32,7 +44,6 @@ public final class AISValidations {
     public static final AISValidation JOIN_TO_PARENT_PK = new JoinToParentPK();
     public static final AISValidation JOIN_TO_ONE_PARENT = new JoinToOneParent();
     public static final AISValidation PRIMARY_KEY_IS_NOT_NULL = new PrimaryKeyIsNotNull();
-    public static final AISValidation PROTECTED_TABLES = new ProtectedTables();
     public static final AISValidation REFERENCES_CORRECT = new ReferencesCorrect();
     public static final AISValidation SUPPORTED_COLUMN_TYPES = new SupportedColumnTypes();    
     public static final AISValidation TABLE_COLUMNS_MATCH_GROUP = new TableColumnsMatchGroupColumns();
@@ -44,12 +55,12 @@ public final class AISValidations {
     public static final AISValidation TABLE_TREE_NAMES_UNIQUE = new TableTreeNamesUnique();
     public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
     public static final AISValidation GROUP_INDEX_DEPTH = new GroupIndexDepth();
-    
+    public static final AISValidation TREE_NAMES_NOT_NULL = new TreeNamesAreNotNull();
+
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
     static {
         LIVE_AIS_VALIDATIONS = Collections.unmodifiableList(Arrays.asList(
-                PROTECTED_TABLES,
                 TABLE_HAS_PRIMARY_KEY,
                 PRIMARY_KEY_IS_NOT_NULL,
                 SUPPORTED_COLUMN_TYPES,
@@ -71,7 +82,8 @@ public final class AISValidations {
                 TABLE_TREE_NAMES_UNIQUE,
                 INDEX_TREE_NAMES_UNIQUE,
                 TYPES_ARE_FROM_STATIC,
-                GROUP_INDEX_DEPTH
+                GROUP_INDEX_DEPTH,
+                TREE_NAMES_NOT_NULL
                 //CHARACTER_SET_SUPPORTED
                 ));
     }

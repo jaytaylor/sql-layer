@@ -1,22 +1,32 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -119,8 +129,8 @@ public class
         Table table = ais.getTable(schemaName, tableName);
         checkFound(table, "creating index", "table",
                 concat(schemaName, tableName));
-        TableIndex.create(ais, table, indexName, indexIdGenerator++, unique,
-                constraint);
+        Index index = TableIndex.create(ais, table, indexName, indexIdGenerator++, unique, constraint);
+        index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
     public void groupIndex(String groupName, String indexName, Boolean unique, Index.JoinType joinType)
@@ -129,7 +139,8 @@ public class
         Group group = ais.getGroup(groupName);
         checkFound(group, "creating group index", "group", groupName);
         String constraint = unique ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT;
-        GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
+        Index index = GroupIndex.create(ais, group, indexName, indexIdGenerator++, unique, constraint, joinType);
+        index.setTreeName(nameGenerator.generateIndexTreeName(index));
     }
 
     @Deprecated
@@ -165,9 +176,6 @@ public class
         Index index = group.getIndex(indexName);
         checkFound(index, "creating group index column", "index", concat(groupName, indexName));
         Table table = ais.getTable(schemaName, tableName);
-        if (table.getGroup() == null) {
-            throw new IllegalArgumentException("table is ungrouped: " + table);
-        }
         if (!table.getGroup().getName().equals(groupName)) {
             throw new IllegalArgumentException("group name mismatch: " + groupName + " != " + table.getGroup());
         }
@@ -247,6 +255,11 @@ public class
         LOG.info("basicSchemaIsComplete");
         for (UserTable userTable : ais.getUserTables().values()) {
             userTable.endTable();
+            // endTable may have created new index, set its tree name if so
+            Index index = userTable.getPrimaryKeyIncludingInternal().getIndex();
+            if (index.getTreeName() == null) {
+                index.setTreeName(nameGenerator.generateIndexTreeName(index));
+            }
         }
         for (ForwardTableReference forwardTableReference : forwardReferences.values()) {
             UserTable childTable = forwardTableReference.childTable();
@@ -272,34 +285,16 @@ public class
         forwardReferences.clear();
     }
 
-    private String computeTreeName(String groupSchemaName, String groupTableName) {
-        String proposedName = groupSchemaName + "$$" + groupTableName;
-        Collection<GroupTable> groupTables = ais.getGroupTables().values();
-        int saw = 0;
-        while(saw < groupTables.size()) {
-            saw = 0;
-            for(GroupTable table : groupTables) {
-                if(table.getTreeName().equals(proposedName)) {
-                    proposedName += "+";
-                    break;
-                }
-                ++saw;
-            }
-        }
-        return proposedName;
-    }
-
     // API for describing groups
 
     public void createGroup(String groupName, String groupSchemaName,
             String groupTableName) {
         LOG.info("createGroup: " + groupName + " -> " + groupSchemaName + "."
                 + groupTableName);
-        String treeName = computeTreeName(groupSchemaName, groupTableName);
         GroupTable groupTable = GroupTable.create(ais, groupSchemaName, groupTableName, tableIdGenerator++);
         Group group = Group.create(ais, groupName);
-        groupTable.setTreeName(treeName);
         groupTable.setGroup(group);
+        groupTable.setTreeName(nameGenerator.generateGroupTreeName(group));
     }
 
     public void deleteGroup(String groupName) {
@@ -581,7 +576,7 @@ public class
                 + groupTable + " and user table " + userTable);
 
         for (TableIndex userIndex : userTable.getIndexesIncludingInternal()) {
-            String indexName = nameGenerator.generateGroupIndexName(userIndex);
+            String indexName = nameGenerator.generateGroupTableIndexName(userIndex);
 
             // Check if the index we're about to add is already in the table.
             // This can happen if the user alters one or more groups, then
@@ -761,6 +756,27 @@ public class
     private void setTablesGroup(Table table, Group group) {
         table.setGroup(group);
         table.setTreeName(group != null ? group.getGroupTable().getTreeName() : "");
+    }
+
+    public int getTableIdOffset() {
+        return tableIdGenerator;
+    }
+    
+    public int getIndexIdOffset() {
+        return indexIdGenerator;
+    }
+
+    /**
+     * Tree names are normally set when adding a table to a group (all tables in a group
+     * must have the same tree name). If testing parts of builder that aren't grouped and
+     * LIVE_VALIDATIONS are called, this is a simple work around for that.
+     */
+    public void setTableTreeNamesForTest() {
+        for(UserTable table : ais.getUserTables().values()) {
+            if(table.getTreeName() == null) {
+                table.setTreeName(table.getName().getDescription());
+            }
+        }
     }
 
     // State

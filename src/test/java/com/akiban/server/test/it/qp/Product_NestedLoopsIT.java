@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.test.it.qp;
@@ -21,6 +32,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.AisRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
@@ -29,9 +41,9 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Set;
 
+import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.INNER_JOIN;
-import static com.akiban.qp.operator.API.*;
 import static com.akiban.qp.rowtype.RowTypeChecks.checkRowTypeFields;
 import static com.akiban.server.types.AkType.INT;
 import static com.akiban.server.types.AkType.VARCHAR;
@@ -139,11 +151,11 @@ public class Product_NestedLoopsIT extends OperatorITBase
                             coi,
                             customerNameIndexRowType,
                             Collections.singleton(customerRowType),
-                            LookupOption.DISCARD_INPUT),
+                            InputPreservationOption.DISCARD_INPUT),
                         coi,
                         customerRowType,
                         orderRowType,
-                        LookupOption.KEEP_INPUT),
+                        InputPreservationOption.KEEP_INPUT),
                     removeDescendentTypes(orderRowType)),
                 customerRowType,
                 orderRowType,
@@ -151,7 +163,7 @@ public class Product_NestedLoopsIT extends OperatorITBase
                 KEEP_PARENT);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -182,13 +194,13 @@ public class Product_NestedLoopsIT extends OperatorITBase
                     coi,
                     orderSalesmanIndexRowType,
                     Arrays.asList(orderRowType, customerRowType),
-                    LookupOption.DISCARD_INPUT),
+                    InputPreservationOption.DISCARD_INPUT),
                 customerRowType,
                 orderRowType,
                 INNER_JOIN);
         Operator flattenCA =
             flatten_HKeyOrdered(
-                branchLookup_Nested(coi, customerRowType, addressRowType, LookupOption.KEEP_INPUT, 0),
+                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
                 customerRowType,
                 addressRowType,
                 INNER_JOIN);
@@ -209,11 +221,112 @@ public class Product_NestedLoopsIT extends OperatorITBase
         compareRows(expected, cursor);
     }
 
-    // TODO: Test handling of rows whose type is not involved in product.
-
-    private Set<AisRowType> removeDescendentTypes(AisRowType type)
+    @Test
+    public void testProductOfTwoOccurrencesOfSameBranch()
     {
-        Set<AisRowType> keepTypes = type.schema().userTableTypes();
+        Operator flattenCAOuter =
+            flatten_HKeyOrdered(
+                filter_Default(
+                    groupScan_Default(coi),
+                    Arrays.asList(customerRowType, addressRowType)),
+                customerRowType,
+                addressRowType,
+                JoinType.LEFT_JOIN,
+                FlattenOption.KEEP_PARENT);
+        Operator flattenCAInner =
+            flatten_HKeyOrdered(
+                branchLookup_Nested(
+                    coi,
+                    customerRowType,
+                    customerRowType,
+                    addressRowType,
+                    InputPreservationOption.KEEP_INPUT,
+                    0),
+                customerRowType,
+                addressRowType,
+                JoinType.LEFT_JOIN);
+        Operator product =
+            product_NestedLoops(
+                flattenCAOuter,
+                flattenCAInner,
+                flattenCAOuter.rowType(),
+                customerRowType,
+                flattenCAInner.rowType(),
+                0);
+        RowType productRowType = product.rowType();
+        RowBase[] expected = new RowBase[]{
+            row(productRowType, 1L, "northbridge", 1000L, 1L, "111 1000 st", 1000L, 1L, "111 1000 st"),
+            row(productRowType, 1L, "northbridge", 1000L, 1L, "111 1000 st", 1001L, 1L, "111 1001 st"),
+            row(productRowType, 1L, "northbridge", 1001L, 1L, "111 1001 st", 1000L, 1L, "111 1000 st"),
+            row(productRowType, 1L, "northbridge", 1001L, 1L, "111 1001 st", 1001L, 1L, "111 1001 st"),
+            row(productRowType, 2L, "foundation", 2000L, 2L, "222 2000 st", 2000L, 2L, "222 2000 st"),
+            row(productRowType, 3L, "matrix", 3000L, 3L, "333 3000 st", 3000, 3L, "333 3000 st"),
+            row(productRowType, 3L, "matrix", 3000L, 3L, "333 3000 st", 3001, 3L, "333 3001 st"),
+            row(productRowType, 3L, "matrix", 3001L, 3L, "333 3001 st", 3000, 3L, "333 3000 st"),
+            row(productRowType, 3L, "matrix", 3001L, 3L, "333 3001 st", 3001, 3L, "333 3001 st"),
+            row(productRowType, 4L, "atlas", null, null, null, null, null, null),
+            row(productRowType, 5L, "highland", 5000L, 5L, "555 5000 st", 5000, 5L, "555 5000 st"),
+            row(productRowType, 5L, "highland", 5000L, 5L, "555 5000 st", 5001, 5L, "555 5001 st"),
+            row(productRowType, 5L, "highland", 5001L, 5L, "555 5001 st", 5000, 5L, "555 5000 st"),
+            row(productRowType, 5L, "highland", 5001L, 5L, "555 5001 st", 5001, 5L, "555 5001 st"),
+            row(productRowType, 6L, "flybridge", null, null, null, null, null, null),
+        };
+        compareRows(expected, cursor(product, queryContext));
+    }
+
+    @Test
+    public void testCursor()
+    {
+        Operator flattenCO =
+            flatten_HKeyOrdered(
+                filter_Default(
+                    branchLookup_Default(
+                        ancestorLookup_Default(
+                            indexScan_Default(customerNameIndexRowType, false),
+                            coi,
+                            customerNameIndexRowType,
+                            Collections.singleton(customerRowType),
+                            InputPreservationOption.DISCARD_INPUT),
+                        coi,
+                        customerRowType,
+                        orderRowType,
+                        InputPreservationOption.KEEP_INPUT),
+                    removeDescendentTypes(orderRowType)),
+                customerRowType,
+                orderRowType,
+                INNER_JOIN,
+                KEEP_PARENT);
+        Operator flattenCA =
+            flatten_HKeyOrdered(
+                branchLookup_Nested(coi, customerRowType, addressRowType, InputPreservationOption.KEEP_INPUT, 0),
+                customerRowType,
+                addressRowType,
+                INNER_JOIN);
+        Operator plan = product_NestedLoops(flattenCO, flattenCA, flattenCO.rowType(), flattenCA.rowType(), 0);
+        final RowType coaRowType = plan.rowType();
+        CursorLifecycleTestCase testCase = new CursorLifecycleTestCase()
+        {
+            @Override
+            public RowBase[] firstExpectedRows()
+            {
+                return new RowBase[] {
+                    row(coaRowType, 2L, "foundation", 200L, 2L, "david", 2000L, 2L, "222 2000 st"),
+                    row(coaRowType, 2L, "foundation", 201L, 2L, "david", 2000L, 2L, "222 2000 st"),
+                    row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3000L, 3L, "333 3000 st"),
+                    row(coaRowType, 3L, "matrix", 300L, 3L, "tom", 3001L, 3L, "333 3001 st"),
+                    row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+                    row(coaRowType, 1L, "northbridge", 100L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+                    row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1000L, 1L, "111 1000 st"),
+                    row(coaRowType, 1L, "northbridge", 101L, 1L, "ori", 1001L, 1L, "111 1001 st"),
+                };
+            }
+        };
+        testCursorLifecycle(plan, testCase);
+    }
+
+    private Set<UserTableRowType> removeDescendentTypes(AisRowType type)
+    {
+        Set<UserTableRowType> keepTypes = type.schema().userTableTypes();
         keepTypes.removeAll(Schema.descendentTypes(type, keepTypes));
         return keepTypes;
     }

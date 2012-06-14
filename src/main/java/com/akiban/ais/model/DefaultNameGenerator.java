@@ -1,17 +1,29 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.ais.model;
 
 import java.util.HashMap;
@@ -24,6 +36,7 @@ import com.akiban.ais.model.AISBuilder.ColumnName;
 import com.akiban.util.Strings;
 
 public class DefaultNameGenerator implements NameGenerator {
+    public static final String TREE_NAME_SEPARATOR = ".";
 
     /**
      * For truncated columns [only], we record a mapping of the original
@@ -34,19 +47,14 @@ public class DefaultNameGenerator implements NameGenerator {
     private final HashMap<ColumnName, String> generatedColumnNames = new HashMap<ColumnName, String>();
     private final Set<String> groupNames = new HashSet<String>();
     private final Set<String> indexNames = new HashSet<String>();
+    private final Set<String> treeNames = new HashSet<String>();
     
     @Override
     public String generateColumnName(Column column) {
         UserTable table = (UserTable) column.getTable();
 
-        StringBuilder ret = new StringBuilder(table.getName()
-                .getTableName()).append("$").append(column.getName());
-
-        if (ret.length() <= AISBuilder.MAX_COLUMN_NAME_LENGTH) {
-            return ret.toString();
-        }
-        final ColumnName id = new ColumnName(table.getName(),
-                column.getName());
+        // Return existing if we've already generated one for this column
+        final ColumnName id = new ColumnName(table.getName(), column.getName());
         {
             String possible = generatedColumnNames.get(id);
             if (possible != null) {
@@ -54,16 +62,22 @@ public class DefaultNameGenerator implements NameGenerator {
             }
         }
 
-        // We need to truncate, but first see if this column name is already
-        // known
-        ret.delete(0, ret.length() - AISBuilder.MAX_COLUMN_NAME_LENGTH);
+        StringBuilder ret = new StringBuilder(table.getName().getTableName()).append("$").append(column.getName());
+        if (ret.length() > AISBuilder.MAX_COLUMN_NAME_LENGTH) {
+            ret.delete(0, ret.length() - AISBuilder.MAX_COLUMN_NAME_LENGTH);
+        }
+
         int anonId = 0;
+        int keepLen = ret.length();
         String retValue;
-        while (generatedColumnNames.containsValue((retValue = ret
-                .toString()))) {
+        while (generatedColumnNames.containsValue(retValue = ret.toString())) {
+            ret.setLength(keepLen);
             int digits = countDigits(++anonId);
-            int len = ret.length();
-            ret.delete(len - (digits + 1), len);
+            int newLenOverflow = AISBuilder.MAX_COLUMN_NAME_LENGTH - (keepLen + digits + 1);
+            if (newLenOverflow < 0) {
+                keepLen += newLenOverflow;
+                ret.setLength(keepLen);
+            }
             ret.append('$').append(anonId);
         }
 
@@ -88,29 +102,20 @@ public class DefaultNameGenerator implements NameGenerator {
     }
 
     @Override
-    public String generateGroupIndexName(TableIndex userTableIndex) {
+    public String generateGroupTableIndexName(TableIndex userTableIndex) {
         return userTableIndex.getTable().getName().getTableName() + "$"
         + userTableIndex.getIndexName().getName();
     }
 
     @Override
     public String generateGroupName(UserTable userTable) {
-        String startingName = userTable.getName().getTableName();
-        if (groupNames.add(startingName)) {
-            return startingName;
-        }
-        int i = 0;
-        StringBuilder builder = new StringBuilder(startingName).append('$');
-        final int appendAt = builder.length();
-        String ret;
-
-        do {
-            builder.setLength(appendAt);
-            builder.append(i++);
-        }
-        while(!groupNames.add(ret = builder.toString()));
-        
-        return ret;
+        return generateGroupName(userTable.getName().getTableName());
+    }
+    
+    @Override
+    public String generateGroupName(final String tableName) {
+        String proposed = tableName;
+        return makeUnique(groupNames, proposed);
     }
 
     @Override
@@ -120,6 +125,11 @@ public class DefaultNameGenerator implements NameGenerator {
 
     public DefaultNameGenerator setDefaultGroupNames (Set<String> initialSet) {
         groupNames.addAll(initialSet);
+        return this;
+    }
+
+    public DefaultNameGenerator setDefaultTreeNames (Set<String> initialSet) {
+        treeNames.addAll(initialSet);
         return this;
     }
     
@@ -157,8 +167,68 @@ public class DefaultNameGenerator implements NameGenerator {
                 parentTable.getTableName(),
                 Strings.join(pkColNames, ","),
                 childTable.getSchemaName(),
-                childTable.getTableName(),
+                childTable, // TODO: This shold be getTableName(), but preserve old behavior for test existing output
                 Strings.join(fkColNames, ","));
         return ret.toLowerCase().replace(',', '_');
+    }
+
+    public String generateIndexTreeName(Index index) {
+        // schema.table.index
+        final TableName tableName;
+        switch(index.getIndexType()) {
+            case TABLE:
+                tableName = ((TableIndex)index).getTable().getName();
+            break;
+            case GROUP:
+                UserTable root = ((GroupIndex)index).getGroup().getGroupTable().getRoot();
+                if(root == null) {
+                    throw new IllegalArgumentException("Grouping incomplete (no root)");
+                }
+                tableName = root.getName();
+            break;
+            default:
+                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
+        }
+        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
+                          escapeForTreeName(tableName.getTableName()) + TREE_NAME_SEPARATOR +
+                          escapeForTreeName(index.getIndexName().getName());
+        return makeUnique(treeNames, proposed);
+    }
+
+    @Override
+    public String generateGroupTreeName(Group group) {
+        // schema.group_name
+        TableName tableName = group.getGroupTable().getName();
+        String proposed = escapeForTreeName(tableName.getSchemaName()) + TREE_NAME_SEPARATOR +
+                          escapeForTreeName(group.getName());
+        return makeUnique(treeNames, proposed);
+    }
+
+    private static String makeUnique(Set<String> set, String original) {
+        int counter = 1;
+        String proposed = original;
+        while(!set.add(proposed)) {
+            proposed = original + "$" + counter++;
+        }
+        return proposed;
+    }
+
+    public static String escapeForTreeName(String name) {
+        return name.replace(TREE_NAME_SEPARATOR, "\\" + TREE_NAME_SEPARATOR);
+    }
+
+    public static String schemaNameForIndex(Index index) {
+        final Table table;
+        switch(index.getIndexType()) {
+            case TABLE:
+                table = ((TableIndex)index).getTable();
+                break;
+            case GROUP:
+                table = ((GroupIndex)index).getGroup().getGroupTable();
+                break;
+            default:
+                throw new IllegalArgumentException("Unknown type: " + index.getIndexType());
+        }
+        return table.getName().getSchemaName();
     }
 }

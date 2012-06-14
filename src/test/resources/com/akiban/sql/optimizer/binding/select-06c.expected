@@ -1,0 +1,99 @@
+com.akiban.sql.parser.CursorNode@6f25844f
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@811978b
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@23309e87
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@4cf7c31d
+		exposedName: x
+		name: x
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@1e2acc65
+			columnName: x
+			tableName: t1
+			type: null
+			userData: t1.x from com.akiban.sql.parser.FromBaseTable@44050988
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@bd10a5c
+		exposedName: y
+		name: y
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@48ff2413
+			columnName: y
+			tableName: t1
+			type: null
+			userData: t1.y from com.akiban.sql.parser.FromBaseTable@44050988
+		[2]:		
+		com.akiban.sql.parser.ResultColumn@669980d5
+		exposedName: z
+		name: z
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@67d95492
+			columnName: z
+			tableName: t1
+			type: null
+			userData: t1.z from com.akiban.sql.parser.FromBaseTable@44050988
+		[3]:		
+		com.akiban.sql.parser.ResultColumn@6d3f7281
+		exposedName: w
+		name: w
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@6076ab2f
+			columnName: w
+			tableName: t2
+			type: null
+			userData: t2.w from com.akiban.sql.parser.FromBaseTable@26b4e29b
+		[4]:		
+		com.akiban.sql.parser.ResultColumn@ee0cc23
+		exposedName: z
+		name: z
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@487a1576
+			columnName: z
+			tableName: t2
+			type: null
+			userData: t2.z from com.akiban.sql.parser.FromBaseTable@26b4e29b
+	fromList: 		
+		com.akiban.sql.parser.FromList@47171b26
+
+		[0]:		
+		com.akiban.sql.parser.JoinNode@3df78040
+		nestedInParens: false
+		correlation Name: null
+		null
+		leftResultSet: 			
+			com.akiban.sql.parser.FromBaseTable@44050988
+			tableName: t1
+			updateOrDelete: null
+			null
+			correlation Name: null
+			null
+			userData: test.t1
+		rightResultSet: 			
+			com.akiban.sql.parser.FromBaseTable@26b4e29b
+			tableName: t2
+			updateOrDelete: null
+			null
+			correlation Name: null
+			null
+			userData: test.t2

@@ -1,16 +1,27 @@
 /**
- * Copyright (C) 2011 Akiban Technologies Inc.
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Affero General Public License, version 3,
- * as published by the Free Software Foundation.
+ * END USER LICENSE AGREEMENT (“EULA”)
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Public License for more details.
+ * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
+ * http://www.akiban.com/licensing/20110913
  *
- * You should have received a copy of the GNU Affero General Public License
- * along with this program.  If not, see http://www.gnu.org/licenses.
+ * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
+ * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
+ * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
+ *
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
+ * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * YOUR INITIAL PURCHASE.
+ *
+ * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
+ * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
+ * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
+ * BY SUCH AUTHORIZED PERSONNEL.
+ *
+ * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
+ * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
+ * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
 package com.akiban.server.store.statistics;
@@ -118,28 +129,22 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
         Integer parentNameCount = entries.get(parentName);
         assertNotNull("parent name was analyzed", parentNameCount);
         assertEquals("parent name two entries", 2, parentNameCount.intValue());
-        GroupIndex bothNames = ais.getGroup("parent").getIndex("names");
-        assertNull("group index not analyzed", entries.get(bothNames));
-        
-        executeStatement.executeUpdate("ALTER TABLE parent UPDATE STATISTICS names");
-        entries = check();
-        ais = ddl().getAIS(session());
-        bothNames = ais.getGroup("parent").getIndex("names");
-        Integer bothNamesCount = entries.get(bothNames);
-        assertNotNull("group index was analyzed", bothNamesCount);
-        assertEquals("group index two entries", 4, bothNamesCount.intValue());
+        GroupIndex bothValue = ais.getGroup("parent").getIndex("value");
+        Integer bothValueCount = entries.get(bothValue);
+        assertNotNull("group index was analyzed", bothValueCount);
+        assertEquals("group index two entries", 4, bothValueCount.intValue());
 
         executeStatement.executeUpdate("DROP INDEX parent.name");
         entries = check();
         ais = ddl().getAIS(session());
         parentPK = ais.getTable(SCHEMA_NAME, "parent").getIndex("PRIMARY");
-        bothNames = ais.getGroup("parent").getIndex("names");
+        bothValue = ais.getGroup("parent").getIndex("value");
         parentPKCount = entries.get(parentPK);
-        bothNamesCount = entries.get(bothNames);
+        bothValueCount = entries.get(bothValue);
         assertEquals("parent PK intact after name drop", 2, parentPKCount.intValue());
-        assertEquals("group index intact after name drop", 4, bothNamesCount.intValue());
+        assertEquals("group index intact after name drop", 4, bothValueCount.intValue());
 
-        executeStatement.executeUpdate("DROP INDEX names");
+        executeStatement.executeUpdate("DROP INDEX value");
         entries = check();
         ais = ddl().getAIS(session());
         parentPK = ais.getTable(SCHEMA_NAME, "parent").getIndex("PRIMARY");
