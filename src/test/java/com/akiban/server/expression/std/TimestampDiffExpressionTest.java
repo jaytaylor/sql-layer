@@ -136,10 +136,10 @@ public class TimestampDiffExpressionTest extends ComposedExpressionTestBase
     
     private static void param (ParameterizationBuilder p, Type interval, Expression date1, Expression date2, Long exp)
     {
-        p.add("TIMESTAMPDIFF(" + interval + ", " + date1 + ", " + date2 + ") ",
+        p.add("TIMESTAMPDIFF(" + interval + ", " + date2 + ", " + date1 + ") ",
                 interval,
-                date1,
                 date2,
+                date1,
                 exp);
     }
     

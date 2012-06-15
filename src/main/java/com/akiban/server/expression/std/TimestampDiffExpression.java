@@ -116,7 +116,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     case TernaryOperatorNode.YEAR_INTERVAL:
                     case TernaryOperatorNode.QUARTER_INTERVAL:
                     case TernaryOperatorNode.MONTH_INTERVAL:
-                        valueHolder().putLong(doSubstract(tryGetYMD(date1), tryGetYMD(date2))
+                        valueHolder().putLong(doSubstract(tryGetYMD(date2), tryGetYMD(date1))
                                 / MONTH_DIV[type - MONTH_BASE]);
                         break;
                     case TernaryOperatorNode.WEEK_INTERVAL:
@@ -125,7 +125,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
                     case TernaryOperatorNode.MINUTE_INTERVAL:
                     case TernaryOperatorNode.SECOND_INTERVAL:
                     case TernaryOperatorNode.FRAC_SECOND_INTERVAL:
-                        valueHolder().putLong((tryGetUnix(date1) - tryGetUnix(date2)) 
+                        valueHolder().putLong((tryGetUnix(date2) - tryGetUnix(date1)) 
                                 / MILLIS_DIV[type - MILLIS_BASE]);
                         break;
                     default:
