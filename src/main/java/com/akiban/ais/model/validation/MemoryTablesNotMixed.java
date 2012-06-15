@@ -29,27 +29,33 @@ package com.akiban.ais.model.validation;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.error.GroupHasMultipleRootsException;
+import com.akiban.server.error.GroupMixedTableTypes;
 
-class GroupTableSingleRoot implements AISValidation {
-
+/**
+ * Validates that groups do not mix memory tables and Storage tables in the same group.
+ * @author tjoneslo
+ *
+ */
+public class MemoryTablesNotMixed implements AISValidation {
+    
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Group group : ais.getGroups().values()) {
             validateGroup (ais, group, output);
         }
     }
-    
+
     private void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
-        UserTable root = null;
+        UserTable rootTable = group.getGroupTable().getRoot();
+        if(rootTable == null) {
+            return; // Caught elsewhere
+        }
+        boolean rootMemoryTable = rootTable.hasMemoryTableFactory();
         for (UserTable userTable : ais.getUserTables().values()) {
-            if (userTable.getGroup() == group && userTable.getParentJoin() == null) {
-                if (root == null) {
-                    root = userTable;
-                } else {
-                    output.reportFailure(new AISValidationFailure (
-                            new GroupHasMultipleRootsException (group.getName(), root.getName(),userTable.getName())));
-                }
+            if (userTable.getGroup() == group &&
+                    userTable.hasMemoryTableFactory() != rootMemoryTable) {
+                output.reportFailure(new AISValidationFailure (
+                        new GroupMixedTableTypes(group.getName(), rootMemoryTable, userTable.getName())));
             }
         }
     }

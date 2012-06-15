@@ -24,11 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.qp.memoryadapter;
 
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.GroupCursor;
@@ -49,19 +50,18 @@ public class MemoryAdapter extends StoreAdapter {
 
     public MemoryAdapter(Schema schema, 
             Session session,
-            ConfigurationService config,
-            MemoryStore memoryStore) {
+            ConfigurationService config) {
         super(schema, session, config);
-        this.memoryStore = memoryStore;
     }
 
     @Override
     public GroupCursor newGroupCursor(GroupTable groupTable) {
-        return memoryStore.getFactory(groupTable.getName()).getGroupCursor(getSession());
+        return groupTable.getRoot().getMemoryTableFactory().getGroupCursor(getSession());
     }
 
     @Override
-    public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata) {
+    public <HKEY extends HKey> HKEY newHKey(
+            com.akiban.ais.model.HKey hKeyMetadata) {
         throw new UnsupportedOperationException();
     }
 
@@ -69,22 +69,19 @@ public class MemoryAdapter extends StoreAdapter {
     public Cursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
             IndexScanSelector scanSelector) {
-        TableName name = new TableName(index.getIndexName().getSchemaName(), index.getIndexName().getTableName());
-        return memoryStore.getFactory(name).getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
-    }
-
-
-    @Override
-    public long getQueryTimeoutSec() {
-        return getConfig().queryTimeoutSec();
+        
+        Table table = index.rootMostTable();
+        if (table.isUserTable()) {
+            return ((UserTable)table).getMemoryTableFactory().getIndexCursor(index, getSession(), keyRange, ordering, scanSelector);
+        }
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public long rowCount(RowType tableType) {
         long count = 0;
         if (tableType.hasUserTable()) {
-            TableName name= tableType.userTable().getName();
-            count = memoryStore.getFactory(name).rowCount();
+            count = tableType.userTable().getMemoryTableFactory().rowCount();
         }
         return count;
     }
@@ -110,6 +107,4 @@ public class MemoryAdapter extends StoreAdapter {
     public void deleteRow(Row oldRow) {
         throw new UnsupportedOperationException();
     }
-    
-    private final MemoryStore memoryStore;
 }

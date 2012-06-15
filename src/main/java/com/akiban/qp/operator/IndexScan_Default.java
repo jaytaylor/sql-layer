@@ -27,6 +27,8 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
@@ -275,7 +277,9 @@ class IndexScan_Default extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.cursor = adapter().newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
+            
+            UserTable table = (UserTable)index.rootMostTable();
+            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
         }
 
         // Object state
