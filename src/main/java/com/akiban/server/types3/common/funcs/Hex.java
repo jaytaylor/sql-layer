@@ -28,11 +28,13 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.StringFactory;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.nio.charset.Charset;
+import java.util.List;
 
 public abstract class Hex extends TOverloadBase {
 
@@ -89,6 +91,14 @@ public abstract class Hex extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(stringType.instance());
+        return TOverloadResult.custom(new TCustomOverloadResult() {
+
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                int attributeLength = inputs.get(0).instance().attribute(StringAttribute.LENGTH);
+                return MString.VARCHAR.instance(attributeLength*2);
+            }
+            
+        });
     }
 }

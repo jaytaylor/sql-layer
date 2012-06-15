@@ -27,18 +27,20 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import com.akiban.util.Strings;
+import java.util.List;
 
 public class MUnhex extends TOverloadBase {
 
+    private final int VARBINARY_MAX_LENGTH = 65;
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(MString.VARCHAR, 0);
@@ -64,7 +66,18 @@ public class MUnhex extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MString.VARBINARY.instance());
-    }
+        return TOverloadResult.custom(new TCustomOverloadResult() {
 
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                TPreptimeValue preptimeValue = inputs.get(0);
+                int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
+                int varbinLength = stringLength / 2;
+                if (varbinLength > VARBINARY_MAX_LENGTH)
+                    return MString.VARBINARY.instance(VARBINARY_MAX_LENGTH);
+                else
+                    return MString.VARBINARY.instance(varbinLength);
+            }        
+        });
+    }
 }
