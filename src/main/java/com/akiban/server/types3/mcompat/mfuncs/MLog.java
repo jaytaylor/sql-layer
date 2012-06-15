@@ -49,8 +49,10 @@ public class MLog extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        if (Math.min(inputs.get(1).getDouble(), inputs.get(0).getDouble()-1) > 0)
-            output.putDouble(Math.log(inputs.get(1).getDouble())/Math.log(inputs.get(0).getDouble()));
+        double arg1 = inputs.get(0).getDouble();
+        double arg2 = inputs.get(1).getDouble();
+        if (Math.min(arg2, arg1-1) > 0)
+            output.putDouble(Math.log(arg2)/Math.log(arg1));
         else
             output.putNull();
     }
