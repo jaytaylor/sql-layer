@@ -26,9 +26,7 @@
 
 package com.akiban.server.error;
 
-import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.QueryTreeNode;
-import com.akiban.sql.unparser.NodeToString;
 
 public final class OrderGroupByNonIntegerConstant extends BaseSQLException {
     public OrderGroupByNonIntegerConstant(String which, QueryTreeNode sql) {

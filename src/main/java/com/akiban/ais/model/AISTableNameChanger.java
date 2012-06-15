@@ -27,7 +27,6 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
-import java.util.List;
 
 public class AISTableNameChanger {
     public AISTableNameChanger(UserTable table)

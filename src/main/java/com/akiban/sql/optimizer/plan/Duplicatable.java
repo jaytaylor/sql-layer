@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.Map;
-
 /** Somewhat like Cloneable, except that a deep copy is implied and it's possible
  * to request that the same object not be cloned twice in the new tree by keeping
  * it in a map.

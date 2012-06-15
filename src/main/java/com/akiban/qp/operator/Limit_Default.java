@@ -30,8 +30,6 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.akiban.util.tap.Tap;
 import com.akiban.server.error.NegativeLimitException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;

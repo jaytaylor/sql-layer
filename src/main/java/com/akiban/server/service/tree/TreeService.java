@@ -36,7 +36,6 @@ import com.persistit.Transaction;
 import com.persistit.Tree;
 import com.persistit.Volume;
 import com.persistit.exception.PersistitException;
-import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * An abstraction for a layer that stores and retrieves data

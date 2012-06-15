@@ -28,12 +28,12 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
-import com.akiban.server.expression.std.ArithExpression.InnerEvaluation;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
+import java.util.Arrays;
 import java.util.List;
 
 public class MakeTimeExpression extends AbstractTernaryExpression
@@ -41,12 +41,6 @@ public class MakeTimeExpression extends AbstractTernaryExpression
     @Scalar("maketime")
     public static final ExpressionComposer COMPOSER = new TernaryComposer()
     {
-
-        @Override
-        protected Expression compose(Expression first, Expression second, Expression third)
-        {
-            return new MakeTimeExpression(first, second, third);
-        }
         
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
@@ -64,7 +58,13 @@ public class MakeTimeExpression extends AbstractTernaryExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in MAKETIME yet.");
+            return new MakeTimeExpression(arguments);
+        }
+
+        @Override
+        protected Expression doCompose(List<? extends Expression> arguments)
+        {
+            return new MakeTimeExpression(arguments);
         }
         
     };
@@ -102,11 +102,17 @@ public class MakeTimeExpression extends AbstractTernaryExpression
                 
     }
     
-    public MakeTimeExpression (Expression first, Expression second, Expression third)
+    public MakeTimeExpression (List<? extends Expression> args)
     {
-        super(AkType.TIME, first, second, third);
+        super(AkType.TIME, args);
     }
 
+    // for testing
+    MakeTimeExpression (Expression arg1, Expression arg2, Expression arg3)
+    {
+        this(Arrays.asList(arg1, arg2, arg3));
+    }
+    
     @Override
     protected void describe(StringBuilder sb)
     {

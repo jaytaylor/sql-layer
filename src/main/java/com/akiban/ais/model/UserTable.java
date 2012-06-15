@@ -377,6 +377,7 @@ public class UserTable extends Table
                     allHKeyColumns.add(hKeyColumn.column());
                 }
             }
+            allHKeyColumns = Collections.unmodifiableList(allHKeyColumns);
         }
         return allHKeyColumns;
     }

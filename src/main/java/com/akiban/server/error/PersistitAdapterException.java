@@ -26,8 +26,6 @@
 
 package com.akiban.server.error;
 
-import com.persistit.exception.PersistitException;
-
 public class PersistitAdapterException extends StoreAdapterRuntimeException {
     public PersistitAdapterException(Throwable ex) {
         super(ErrorCode.PERSISTIT_ERROR, ex.getMessage());

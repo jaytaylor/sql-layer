@@ -43,8 +43,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Set;
 
-import static org.junit.Assert.assertEquals;
-
 public final class ObjectConversionTest extends ConversionTestBase {
 
     @NamedParameterizedRunner.TestParameters

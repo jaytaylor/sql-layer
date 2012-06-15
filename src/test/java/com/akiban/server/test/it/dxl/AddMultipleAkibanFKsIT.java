@@ -26,19 +26,11 @@
 
 package com.akiban.server.test.it.dxl;
 
-import com.akiban.ais.model.*;
-import com.akiban.ais.model.validation.AISValidation;
-import com.akiban.ais.model.validation.AISValidationFailure;
-import com.akiban.ais.model.validation.AISValidationOutput;
-import com.akiban.ais.model.validation.AISValidationResults;
-import com.akiban.server.error.DuplicateIndexTreeNamesException;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
-
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;

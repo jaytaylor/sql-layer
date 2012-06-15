@@ -27,8 +27,6 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.message.AkibanConnection;
-import com.akiban.message.AkibanConnectionImpl;
-import com.akiban.message.Message;
 import com.akiban.qp.expression.IndexBound;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
@@ -43,35 +41,23 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.message.ScanRowsRequest;
-import com.akiban.server.message.ScanRowsResponse;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.service.config.Property;
-import com.akiban.server.service.network.NetworkService;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.util.GrowableByteBuffer;
 import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.qp.operator.API.ordering;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /*
- * A *semi-bounded* scan is one in which a start or end value is specified and we go to one end of the index or the
+ * A *lexicographic* scan is one in which a start or end value is specified and we go to one end of the index or the
  * other. It differs from a one-side-bounded scan in that there are no equality matches. E.g., if we have an index
- * on (x, y), then the one-side-bounded scan >(10, 5) finds all records such that x = 10 and y > 5. A semi-bounded
- * scan finds all records following (10, 5), and could include rows with x > 10. MySQL does semi-bounded scans.
+ * on (x, y), then the one-side-bounded scan >(10, 5) finds all records such that x = 10 and y > 5. A lexicographic
+ * scan finds all records following (10, 5), and could include rows with x > 10. MySQL does lexicographic scans.
  */
 
 public class IndexScanLexicographicIT extends OperatorITBase

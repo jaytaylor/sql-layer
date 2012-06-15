@@ -43,7 +43,6 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.indexScan_Default;
 
 public class UnionAll_DefaultIT extends OperatorITBase
 {

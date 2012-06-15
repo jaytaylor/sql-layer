@@ -48,7 +48,6 @@ import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Compile SQL statements into operator trees.

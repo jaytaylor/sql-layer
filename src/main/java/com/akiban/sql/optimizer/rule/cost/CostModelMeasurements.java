@@ -26,18 +26,6 @@
 
 package com.akiban.sql.optimizer.rule.cost;
 
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.qp.rowtype.UserTableRowType;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 public interface CostModelMeasurements
 {
     // From SelectCT
@@ -69,6 +57,8 @@ public interface CostModelMeasurements
     final double DISTINCT_PER_ROW = 6;
     // From IntersectCT
     final double INTERSECT_PER_ROW = 0.25;
+    // Also based on IntersectIT, since Union_Ordered works very similarly to Intersect_Ordered.
+    final double UNION_PER_ROW = 0.25;
     // From HKeyUnionCT
     final double HKEY_UNION_PER_ROW = 2;
     // From Select_BloomFilterCT.

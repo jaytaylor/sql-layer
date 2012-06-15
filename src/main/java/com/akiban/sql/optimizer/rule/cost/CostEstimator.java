@@ -867,6 +867,23 @@ public abstract class CostEstimator implements TableRowCounts
         return new CostEstimate(nrows, model.fullGroupScan(schema.userTableRowType(root)));
     }
 
+    public CostEstimate costBloomFilter(CostEstimate loaderCost,
+                                        CostEstimate inputCost,
+                                        CostEstimate checkCost,
+                                        double checkSelectivity) {
+        long checkCount = Math.max(Math.round(inputCost.getRowCount() * checkSelectivity),1);
+        // Scan to load plus scan input plus check matching fraction
+        // plus filter setup and use.
+        return new CostEstimate(checkCount,
+                                loaderCost.getCost() +
+                                inputCost.getCost() +
+                                // Model includes cost of one random access for check.
+                             /* checkCost.getCost() * checkCount + */
+                                model.selectWithFilter((int)inputCost.getRowCount(),
+                                                       (int)loaderCost.getRowCount(),
+                                                       checkSelectivity));
+    }
+
     public interface IndexIntersectionCoster {
         public CostEstimate singleIndexScanCost(SingleIndexScan scan, CostEstimator costEstimator);
 
