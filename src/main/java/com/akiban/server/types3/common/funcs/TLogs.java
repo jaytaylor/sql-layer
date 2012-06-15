@@ -82,9 +82,21 @@ public class TLogs extends TOverloadBase
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
             {
-                return Math.log(inputs.get(1).getDouble())/Math.log(inputs.get(0).getDouble());
-                // still have to check inputs.get(0).getDouble > 1
+                if (inputs.size() == 2)
+                    return Math.log(inputs.get(1).getDouble())/Math.log(inputs.get(0).getDouble());
+                else
+                    return Math.log(inputs.get(0).getDouble());
             }
+            
+            @Override
+            boolean isValid(LazyList<? extends PValueSource> inputs)
+            {
+                if (inputs.size() == 2)
+                    return Math.min(inputs.get(1).getDouble(), inputs.get(0).getDouble()-1) > 0;
+                else
+                    return inputs.get(0).getDouble() > 0;
+            }
+            
         };
         
         abstract double evaluate(LazyList<? extends PValueSource> inputs);
@@ -98,6 +110,11 @@ public class TLogs extends TOverloadBase
             covering = ONE_ARG;
         }
         public final int covering[];
+        
+        boolean isValid(LazyList<? extends PValueSource> inputs)
+        {
+            return inputs.get(0).getDouble() > 0;
+        }
     }
 
     private final LogType logType;
@@ -112,17 +129,16 @@ public class TLogs extends TOverloadBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(argType.typeClass(), logType.covering);
+        builder.pickingCovers(argType.typeClass(), logType.covering);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        double value = inputs.get(0).getDouble();
-        if (value < 0) // this check isnt good for 2 argument LOG...
-            output.putNull();
-        else
+        if (logType.isValid(inputs))
             output.putDouble(logType.evaluate(inputs));
+        else
+            output.putNull();
     }
 
     @Override
