@@ -32,6 +32,8 @@ import java.math.RoundingMode;
 
 public class AkBigDecimalWrapper implements BigDecimalWrapper {
     
+    private BigDecimal value;
+
     @Override
     public void reset() {
         value = BigDecimal.ZERO;
@@ -79,5 +81,8 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         return value.signum();
     }
         
-    private BigDecimal value;
+    @Override
+    public BigDecimal abs() {
+        return value.abs();
+    }
 }

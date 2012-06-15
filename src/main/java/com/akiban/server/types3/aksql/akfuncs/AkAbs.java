@@ -26,44 +26,48 @@
 package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.common.funcs.Abs;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class AkAbs extends TOverloadBase{
+public class AkAbs {
     
-    private final TClass returnType;
+    public static final Abs SMALLINT = new Abs(AkNumeric.SMALLINT) {
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            output.putInt16((short) Math.abs(inputs.get(0).getInt16()));
+        }
+        
+    };
     
-    public AkAbs(TClass returnType) {
-        this.returnType = returnType;
-    }
+    public static final Abs INT = new Abs(AkNumeric.INT) {
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            output.putInt32((int) Math.abs(inputs.get(0).getInt32()));
+        }
+        
+    };
     
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(returnType, 0);
-    }
+    public static final Abs BIGINT = new Abs(AkNumeric.BIGINT) {
 
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        double value = inputs.get(0).getDouble();
-        output.putDouble(Math.abs(value));
-    }
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            output.putInt64((long) Math.abs(inputs.get(0).getInt64()));
+        }
+        
+    };
+    
+    public static final Abs DOUBLE = new Abs(AkNumeric.DOUBLE) {
 
-    @Override
-    public String overloadName()
-    {
-        return "ABS";
-    }
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            output.putDouble(Math.abs(inputs.get(0).getDouble()));
+        }
+        
+    };
 
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.fixed(returnType.instance());
-    }
 }

@@ -25,6 +25,8 @@
  */
 package com.akiban.server.types3.common;
 
+import java.math.BigDecimal;
+
 public interface BigDecimalWrapper {
     
      BigDecimalWrapper add(BigDecimalWrapper augend);
@@ -33,5 +35,6 @@ public interface BigDecimalWrapper {
      BigDecimalWrapper divide(BigDecimalWrapper augend);
      BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
      int getSign();
+     BigDecimal abs();
      void reset();
 }
