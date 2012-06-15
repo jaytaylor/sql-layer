@@ -119,7 +119,7 @@ public abstract class Trim extends TOverloadBase {
         while (n < st.length()) {
             for (int i = 0; i < trim.length(); ++i, ++n) {
                 if (st.charAt(n) != trim.charAt(i))
-                    return st.substring(n);
+                    return st.substring(n- i);
             }
         }
         return st;
@@ -130,7 +130,7 @@ public abstract class Trim extends TOverloadBase {
         while (n >= 0) {
             for (int i = trim.length()-1; i >= 0; --i, --n) {
                 if (st.charAt(n) != trim.charAt(i))
-                    return st.substring(0, n + 1);
+                    return st.substring(0, n + trim.length() - i);
             }
         }
         return st;
