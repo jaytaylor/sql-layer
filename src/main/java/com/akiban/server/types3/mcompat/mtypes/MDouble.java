@@ -25,6 +25,8 @@
  */
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.types3.TAttributeValues;
 import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
@@ -33,6 +35,8 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.DoubleAttribute;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import java.util.Arrays;
 
 public class MDouble extends TClass
@@ -82,7 +86,25 @@ public class MDouble extends TClass
         }
         return val;
     }
-    
+
+    @Override
+    public void putSafety(QueryContext context, 
+                          TInstance sourceInstance,
+                          PValueSource sourceValue,
+                          TInstance targetInstance,
+                          PValueTarget targetValue)
+    {
+        double raw = sourceValue.getDouble();
+        double rounded = round(targetInstance, raw);
+        
+        if (Double.compare(raw, rounded) != 0)
+            context.warnClient(new OutOfRangeException(Double.toString(raw)));
+        
+        // TODO: in strict SQL mode, this would be an error
+        // NOT a warning
+        targetValue.putDouble(rounded);
+    }
+
     private class DoubleFactory implements TFactory
     {
         @Override

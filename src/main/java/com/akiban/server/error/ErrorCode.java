@@ -117,6 +117,7 @@ public enum ErrorCode {
         // SubClass 001 - string data, right truncation
         // SubClass 002 - null value, no indicator parameter 
         // SubClass 003 - numeric value out of range
+    VALUE_OUT_OF_RANGE      ("22", "003", Importance.DEBUG, OutOfRangeException.class),
         // SubClass 004 - null value not allowed
         // SubClass 005 - error in assignment
         // SubClass 006 - invalid interval format
