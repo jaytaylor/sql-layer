@@ -54,37 +54,37 @@ public class TLogs extends TOverloadBase
         LN
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(double input)
             {
-                return Math.log(inputs.get(0).getDouble());
+                return Math.log(input);
             }
         },
         LOG
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(double input)
             {
-                return Math.log(inputs.get(0).getDouble());
+                return Math.log(input);
             }
         },
         LOG10
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(double input)
             {
-                return Math.log10(inputs.get(0).getDouble());
+                return Math.log10(input);
             }
         },  
         LOG2
         {
             @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
+            double evaluate(double input)
             {
-                return Math.log(inputs.get(0).getDouble())/ln2;
+                return Math.log(input)/ln2;
             }
         };
         
-        abstract double evaluate(LazyList<? extends PValueSource> inputs);
+        abstract double evaluate(double input);
         
         boolean isValid(LazyList<? extends PValueSource> inputs)
         {
@@ -111,7 +111,7 @@ public class TLogs extends TOverloadBase
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         if (logType.isValid(inputs))
-            output.putDouble(logType.evaluate(inputs));
+            output.putDouble(logType.evaluate(inputs.get(0).getDouble()));
         else
             output.putNull();
     }
