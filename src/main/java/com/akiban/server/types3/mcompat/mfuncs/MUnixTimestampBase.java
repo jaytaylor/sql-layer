@@ -25,12 +25,53 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public abstract class MUnixTimestampBase extends TOverloadBase {
+
+    protected static TOverload[] create(TClass inputType) {
+        TOverload noarg = new MUnixTimestampBase() {
+
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+            }
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                output.putInt64(System.currentTimeMillis());
+            }
+        };
+
+        TOverload onearg = new MUnixTimestampBase() {
+
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+                builder.vararg(inputType, 0);
+            }
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                long millis = inputs.get(0).getInt64();
+                output.putInt64(millis <= 0L ? 0L : millis);
+            }
+        };
+
+        return new TOverload[]{noarg, onearg};
+    }
+    protected final TClass inputType;
+
+    protected MUnixTimestampBase(TClass inputType) {
+        this.inputType = inputType;
+    }
+
+    protected MUnixTimestampBase() {
+        this.inputType = null;
+    }
 
     @Override
     public String overloadName() {

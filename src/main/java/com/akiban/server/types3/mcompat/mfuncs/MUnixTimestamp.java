@@ -27,19 +27,29 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 
-public class MUnixTimestampNoArg extends MUnixTimestampBase {
+public class MUnixTimestamp extends MUnixTimestampBase {
 
+    public static TOverload[] INSTANCES;
+    
+    MUnixTimestamp(TClass inputType) {
+        INSTANCES = MUnixTimestampBase.create(inputType);
+    }
+    
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {}
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.vararg(inputType, 0);
+    }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        // Does this need to be stored by context?
-        output.putInt64(System.currentTimeMillis());
+        long millis = inputs.get(0).getInt64();
+        output.putInt64(millis <= 0L ? 0L : millis);
     }
 }
