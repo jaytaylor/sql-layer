@@ -33,8 +33,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.DoubleAttribute;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import java.math.BigDecimal;
-import java.math.MathContext;
+import java.util.Arrays;
 
 public class MDouble extends TClass
 {
@@ -47,25 +46,40 @@ public class MDouble extends TClass
     {
         assert instance.typeClass() instanceof MDouble : "instance has to be of type MDouble";
         
-        // needs optimisation
+        // TODO: each TInstance (particularly those of numeric tclasses), should
+        // have MAX value field (and probably a MIN value, too)
+
+        // needs optimisation 
+        // (ie., with the MAX/MIN fields, we woudln't need to do any of this)
         String st = Double.toString(val);
-        char num[] = st.toCharArray();
-        
-        // check the scale
         int point = st.indexOf('.');
         
+        int m = instance.attribute(DoubleAttribute.PRECISION) - instance.attribute(DoubleAttribute.SCALE);
+        int d = instance.attribute(DoubleAttribute.SCALE);
+
+        // check [M-D] (number of digits before the decimal point
+        if (point > m)
+        {
+            char ret[] = new char[m + d + 1];
+            Arrays.fill(ret, '9');
+            ret[m] = '.';
+            
+            return Double.parseDouble(new String(ret));
+        }
+
+        // check the scale
         if (point >= 0)
         {
-            int lastDigit = instance.attribute(DoubleAttribute.SCALE) + point;
+            int lastDigit = d + point;
             
             // actual length is longer than expected, then trucate/round it
             if (st.length() > lastDigit)
             {
-                if (st.charAt(lastDigit + 1) > '4')
-                    ++num[lastDigit];
+                double factor = Math.pow(10, d);
+                return  Math.round(factor * val) / factor;
             }
-            
         }
+        return val;
     }
     
     private class DoubleFactory implements TFactory
