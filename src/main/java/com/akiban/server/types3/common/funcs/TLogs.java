@@ -49,11 +49,9 @@ public class TLogs extends TOverloadBase
         return ret;
     }
 
-    private static final int TWO_ARGS[] = new int[]{0, 1};
-    private static final int ONE_ARG[] = new int[]{0};
     static enum LogType
     {
-        LN()
+        LN
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -61,7 +59,15 @@ public class TLogs extends TOverloadBase
                 return Math.log(inputs.get(0).getDouble());
             }
         },
-        LOG10()
+        LOG
+        {
+            @Override
+            double evaluate(LazyList<? extends PValueSource> inputs)
+            {
+                return Math.log(inputs.get(0).getDouble());
+            }
+        },
+        LOG10
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
@@ -69,47 +75,16 @@ public class TLogs extends TOverloadBase
                 return Math.log10(inputs.get(0).getDouble());
             }
         },  
-        LOG2()
+        LOG2
         {
             @Override
             double evaluate(LazyList<? extends PValueSource> inputs)
             {
                 return Math.log(inputs.get(0).getDouble())/ln2;
             }
-        }, 
-        LOG(TWO_ARGS)
-        {
-            @Override
-            double evaluate(LazyList<? extends PValueSource> inputs)
-            {
-                if (inputs.size() == 2)
-                    return Math.log(inputs.get(1).getDouble())/Math.log(inputs.get(0).getDouble());
-                else
-                    return Math.log(inputs.get(0).getDouble());
-            }
-            
-            @Override
-            boolean isValid(LazyList<? extends PValueSource> inputs)
-            {
-                if (inputs.size() == 2)
-                    return Math.min(inputs.get(1).getDouble(), inputs.get(0).getDouble()-1) > 0;
-                else
-                    return inputs.get(0).getDouble() > 0;
-            }
-            
         };
         
         abstract double evaluate(LazyList<? extends PValueSource> inputs);
-        private LogType(int c[])
-        {
-            covering = c;
-        }
-        
-        private LogType()
-        {
-            covering = ONE_ARG;
-        }
-        public final int covering[];
         
         boolean isValid(LazyList<? extends PValueSource> inputs)
         {
@@ -129,7 +104,7 @@ public class TLogs extends TOverloadBase
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.pickingCovers(argType.typeClass(), logType.covering);
+        builder.covers(argType.typeClass(), 0);
     }
 
     @Override
