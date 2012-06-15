@@ -24,16 +24,28 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.Pi;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class AkPi extends Pi {
+public abstract class Pi extends TOverloadBase {
     
     @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
+    protected void buildInputSets(TInputSetBuilder builder) {}
+    
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+        output.putDouble(Math.PI);
+    }
+    
+    @Override
+    public String overloadName() {
+        return "PI";
     }
 }
