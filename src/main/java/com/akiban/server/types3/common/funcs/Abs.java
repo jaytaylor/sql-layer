@@ -27,8 +27,6 @@ package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
