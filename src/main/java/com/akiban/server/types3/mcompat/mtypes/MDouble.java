@@ -57,13 +57,14 @@ public class MDouble extends TClass
         int m = instance.attribute(DoubleAttribute.PRECISION) - instance.attribute(DoubleAttribute.SCALE);
         int d = instance.attribute(DoubleAttribute.SCALE);
 
-        // check [M-D] (number of digits before the decimal point
+        // check [M-D] (number of digits before the decimal point)
         if (point > m)
         {
             char ret[] = new char[m + d + 1];
             Arrays.fill(ret, '9');
             ret[m] = '.';
             
+            // return the max value
             return Double.parseDouble(new String(ret));
         }
 
