@@ -35,8 +35,8 @@ import java.util.List;
 public abstract class Trim extends TOverloadBase {
 
     // Described by TRIM(<trim_spec>, <char_to_trim>, <string_to_trim>
-    public static TOverload[] create(TClass stringType, TClass intType) {
-        TOverload rtrim = new Trim(stringType, intType) {
+    public static TOverload[] create(TClass stringType) {
+        TOverload rtrim = new Trim(stringType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -51,7 +51,7 @@ public abstract class Trim extends TOverloadBase {
             }
         };
 
-        TOverload ltrim = new Trim(stringType, intType) {
+        TOverload ltrim = new Trim(stringType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -66,17 +66,17 @@ public abstract class Trim extends TOverloadBase {
             }
         };
 
-        TOverload trim = new Trim(stringType, intType) {
+        TOverload trim = new Trim(stringType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                int trimType = inputs.get(0).getInt32();
+                TrimType trimType = (TrimType) inputs.get(0).getObject();
                 String trim = (String) inputs.get(1).getObject();
                 String st = (String) inputs.get(2).getObject();
                 
-                if (trimType != 1)
+                if (trimType != TrimType.TRAILING)
                     st = ltrim(st, trim);
-                if (trimType != 0)
+                if (trimType != TrimType.LEADING)
                     st = rtrim(st, trim);
                 output.putObject(st);
             }
@@ -87,36 +87,27 @@ public abstract class Trim extends TOverloadBase {
             }
         };
         
-        // TODO: support LEADING, TRAILING, BOTH options in TRIM
         return new TOverload[]{ltrim, rtrim, trim};
     }
-    
-    // TRIM TYPE 0 -- Remove LEADING characters as specified
-    // TRIM TYPE 1 -- Remove TRAILING characters as specified
-    protected final TClass stringType;
-    protected final TClass intType;
 
-    private Trim(TClass stringType, TClass intType) {
+    protected enum TrimType { LEADING, TRAILING};
+    
+    protected final TClass stringType;
+
+    private Trim(TClass stringType) {
         this.stringType = stringType;
-        this.intType = intType;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(intType, 0);
+        builder.covers(null, 0);
         builder.covers(stringType, 1, 2);
     }
 
     @Override
     public TOverloadResult resultType() {
         // actual return type is exactly the same as input type
-        return TOverloadResult.custom(new TCustomOverloadResult() {
-
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                return inputs.get(0).instance();
-            }
-        });
+        return TOverloadResult.fixed(stringType.instance());
     }
 
     // Helper methods

@@ -32,5 +32,5 @@ import com.akiban.server.types3.aksql.aktypes.AkString;
 import com.akiban.server.types3.common.funcs.Trim;
 
 public class AkTrim {
-    public static final TOverload[] INSTANCES = Trim.create(AkString.VARCHAR, AkNumeric.INT);
+    public static final TOverload[] INSTANCES = Trim.create(AkString.VARCHAR);
 }
