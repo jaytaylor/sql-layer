@@ -35,23 +35,8 @@ import java.util.List;
 public abstract class Trim extends TOverloadBase {
 
     // Described by TRIM(<trim_spec>, <char_to_trim>, <string_to_trim>
-    public static TOverload[] create(TClass stringType) {
-        TOverload rtrim = new Trim(stringType) {
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                String trim = (String) inputs.get(1).getObject();
-                String st = (String) inputs.get(2).getObject();
-                output.putObject(ltrim(st, trim));
-            }
-
-            @Override
-            public String overloadName() {
-                return "RTRIM";
-            }
-        };
-
-        TOverload ltrim = new Trim(stringType) {
+    public static TOverload[] create(TClass stringType, TClass intType) {
+        TOverload rtrim = new Trim(stringType, intType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -62,21 +47,36 @@ public abstract class Trim extends TOverloadBase {
 
             @Override
             public String overloadName() {
+                return "RTRIM";
+            }
+        };
+
+        TOverload ltrim = new Trim(stringType, intType) {
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                String trim = (String) inputs.get(1).getObject();
+                String st = (String) inputs.get(2).getObject();
+                output.putObject(ltrim(st, trim));
+            }
+
+            @Override
+            public String overloadName() {
                 return "LTRIM";
             }
         };
 
-        TOverload trim = new Trim(stringType) {
+        TOverload trim = new Trim(stringType, intType) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                TrimType trimType = (TrimType) inputs.get(0).getObject();
+                int trimType = inputs.get(0).getInt32();
                 String trim = (String) inputs.get(1).getObject();
                 String st = (String) inputs.get(2).getObject();
                 
-                if (trimType != TrimType.TRAILING)
+                if (trimType != RTRIM)
                     st = ltrim(st, trim);
-                if (trimType != TrimType.LEADING)
+                if (trimType != LTRIM)
                     st = rtrim(st, trim);
                 output.putObject(st);
             }
@@ -90,17 +90,20 @@ public abstract class Trim extends TOverloadBase {
         return new TOverload[]{ltrim, rtrim, trim};
     }
 
-    protected enum TrimType { LEADING, TRAILING};
+    protected final int RTRIM = 0;
+    protected final int LTRIM = 1;
     
     protected final TClass stringType;
+    protected final TClass intType;
 
-    private Trim(TClass stringType) {
+    private Trim(TClass stringType, TClass intType) {
         this.stringType = stringType;
+        this.intType = intType;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(null, 0);
+        builder.covers(intType, 0);
         builder.covers(stringType, 1, 2);
     }
 
@@ -119,7 +122,7 @@ public abstract class Trim extends TOverloadBase {
                     return st.substring(n);
             }
         }
-        return "";
+        return st;
     }
 
     protected static String rtrim(String st, String trim) {
@@ -130,6 +133,6 @@ public abstract class Trim extends TOverloadBase {
                     return st.substring(0, n + 1);
             }
         }
-        return "";
+        return st;
     }
 }
