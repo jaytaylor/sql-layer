@@ -322,6 +322,7 @@ public class SelectPreponer extends BaseRule
                         break;
                     case LEFT:
                     case SEMI:
+                    case ANTI:
                         if (prev == map.getInner())
                             return;
                         break;

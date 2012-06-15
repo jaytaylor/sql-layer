@@ -92,7 +92,7 @@ public class IfNullExpressionTest extends ComposedExpressionTestBase
     {
         alreadyExc = true;
         Expression arg = new LiteralExpression(AkType.LONG, 1);
-        List<Expression> args = new ArrayList(nargs);
+        List<Expression> args = new ArrayList<Expression>(nargs);
         for (int n = 0; n < nargs; ++n)
             args.add(arg);
         new IfNullExpression(args);

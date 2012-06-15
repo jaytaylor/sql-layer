@@ -182,7 +182,7 @@ final class JoinDescription
      * @param parent a column in the child-joins list
      * @param child a column in the parent-joins list
      */
-    @SuppressWarnings("unused")
+    //@SuppressWarnings("unused")
     public void removeJoinColumn(String parent, String child)
     {
         int parentIndex = parentColumns.indexOf(parent);

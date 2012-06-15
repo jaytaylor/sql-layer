@@ -30,8 +30,6 @@ import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueSourceIsNullException;
-import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 import org.joda.time.DateTimeZone;
 

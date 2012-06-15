@@ -24,36 +24,18 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.sql.optimizer.plan;
 
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.persistit.exception.PersistitException;
+import java.util.List;
 
-class SortCursorMixedOrderUnbounded extends SortCursorMixedOrder
+/** Some kind of hash table for joining, etc. */
+public abstract class BaseHashTable extends BasePlanElement
 {
-    // SortCursorMixedOrder interface
-
-    @Override
-    public void initializeScanStates() throws PersistitException
-    {
-        for (int f = 0; f < orderingColumns(); f++) {
-            scanStates.add(new MixedOrderScanStateUnbounded(this, scanStates.size()));
-        }
-        if (orderingColumns() < keyColumns()) {
-            this.scanStates.add(new MixedOrderScanStateRestOfKey(this, scanStates.size()));
-        }
+    protected BaseHashTable() {
     }
 
-    // SortCursorMixedOrderUnbounded interface
-
-    public SortCursorMixedOrderUnbounded(QueryContext context,
-                                         IterationHelper iterationHelper,
-                                         IndexKeyRange keyRange,
-                                         API.Ordering ordering)
-    {
-        super(context, iterationHelper, keyRange, ordering);
+    @Override
+    public String toString() {
+        return getClass().getSimpleName() + "@" + Integer.toString(hashCode(), 16);
     }
 }

@@ -24,32 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.persistitadapter.sort;
+package com.akiban.server.error;
 
-import com.persistit.Key;
-import com.persistit.exception.PersistitException;
-
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
-
-class  MixedOrderScanStateUnbounded extends MixedOrderScanState
-{
-    @Override
-    public boolean startScan() throws PersistitException
-    {
-        Key.Direction direction;
-        if (ascending) {
-            cursor.exchange.append(Key.BEFORE);
-            direction = Key.GT;
-        } else {
-            cursor.exchange.append(Key.AFTER);
-            direction = Key.LT;
-        }
-        SORT_TRAVERSE.hit();
-        return cursor.exchange.traverse(direction, false);
-    }
-
-    public MixedOrderScanStateUnbounded(SortCursorMixedOrder cursor, int field) throws PersistitException
-    {
-        super(cursor, field, cursor.ordering().ascending(field));
+public class ISTableVersionMismatchException extends InvalidOperationException {
+    public ISTableVersionMismatchException(Integer storedVersion, Integer newVersion) {
+        super(ErrorCode.IS_TABLE_VERSION_MISMATCH, storedVersion, newVersion);
     }
 }

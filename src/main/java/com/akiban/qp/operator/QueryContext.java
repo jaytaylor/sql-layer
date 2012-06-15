@@ -34,6 +34,7 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.BloomFilter;
 
 import java.util.Date;
 
@@ -105,6 +106,21 @@ public interface QueryContext
      * @param hKey the hKey to assign
      */
     public void setHKey(int index, HKey hKey);
+
+    /**
+     * Gets the bloom filter bound to the given index.
+     * @param index the index to look up
+     * @return the bloom filter at that index
+     * @throws BindingNotSetException if the given index wasn't set
+     */
+    public BloomFilter getBloomFilter(int index);
+
+    /**
+     * Bind a bloom filter to the given index.
+     * @param index the index to set
+     * @param filter the bloom filter to assign
+     */
+    public void setBloomFilter(int index, BloomFilter filter);
 
     /**
      * Get the store associated with this query.

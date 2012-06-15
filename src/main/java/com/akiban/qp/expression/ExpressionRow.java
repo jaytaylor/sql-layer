@@ -29,7 +29,6 @@ package com.akiban.qp.expression;
 import java.util.ArrayList;
 import java.util.List;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
@@ -38,7 +37,6 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.FromObjectValueSource;
 
 public class ExpressionRow extends AbstractRow
 {

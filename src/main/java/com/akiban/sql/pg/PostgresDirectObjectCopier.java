@@ -26,8 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.qp.row.Row;
-
 import java.util.List;
 import java.io.IOException;
 

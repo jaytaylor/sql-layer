@@ -42,8 +42,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.qp.operator.API.IntersectOutputOption.*;
+import static com.akiban.qp.operator.API.IntersectOption.*;
 import static com.akiban.server.expression.std.Expressions.field;
 
 public class MultiIndexCrossBranchIT extends OperatorITBase
@@ -85,21 +84,21 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
             // 0x: Both sides empty
             // 1x: C empty
             createNewRow(p, 10L, 1L),
-            createNewRow(d, 1000L, 10L, 1L),
-            createNewRow(d, 1001L, 10L, 1L),
-            createNewRow(d, 1002L, 10L, 1L),
+            createNewRow(d, 1900L, 10L, 1L),
+            createNewRow(d, 1901L, 10L, 1L),
+            createNewRow(d, 1902L, 10L, 1L),
             // 2x: D empty
             createNewRow(p, 20L, 2L),
-            createNewRow(c, 2000L, 20L, 2L),
-            createNewRow(c, 2001L, 20L, 2L),
-            createNewRow(c, 2002L, 20L, 2L),
+            createNewRow(c, 2800L, 20L, 2L),
+            createNewRow(c, 2801L, 20L, 2L),
+            createNewRow(c, 2802L, 20L, 2L),
             // 3x: C, D non-empty
             createNewRow(p, 30L, 3L),
-            createNewRow(c, 3000L, 30L, 3L),
-            createNewRow(c, 3001L, 30L, 3L),
-            createNewRow(c, 3002L, 30L, 3L),
-            createNewRow(d, 3000L, 30L, 3L),
-            createNewRow(d, 3001L, 30L, 3L),
+            createNewRow(c, 3800L, 30L, 3L),
+            createNewRow(c, 3801L, 30L, 3L),
+            createNewRow(c, 3802L, 30L, 3L),
+            createNewRow(d, 3900L, 30L, 3L),
+            createNewRow(d, 3901L, 30L, 3L),
         };
         use(db);
     }
@@ -148,15 +147,15 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
     {
         Operator plan = intersectCyDz(3, OUTPUT_LEFT);
         RowBase[] expected = new RowBase[]{
-            row(cRowType, 3L, 30L, 3000L),
-            row(cRowType, 3L, 30L, 3001L),
-            row(cRowType, 3L, 30L, 3002L),
+            row(cRowType, 3L, 30L, 3800L),
+            row(cRowType, 3L, 30L, 3801L),
+            row(cRowType, 3L, 30L, 3802L),
         };
         compareRows(expected, cursor(plan, queryContext));
         plan = intersectCyDz(3, OUTPUT_RIGHT);
         expected = new RowBase[]{
-            row(dRowType, 3L, 30L, 3000L),
-            row(dRowType, 3L, 30L, 3001L),
+            row(dRowType, 3L, 30L, 3900L),
+            row(dRowType, 3L, 30L, 3901L),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
@@ -200,7 +199,7 @@ public class MultiIndexCrossBranchIT extends OperatorITBase
         compareRenderedHKeys(expected, cursor(plan, queryContext));
     }
 
-    private Operator intersectCyDz(int key, IntersectOutputOption side)
+    private Operator intersectCyDz(int key, IntersectOption side)
     {
         Operator plan =
             intersect_Ordered(
