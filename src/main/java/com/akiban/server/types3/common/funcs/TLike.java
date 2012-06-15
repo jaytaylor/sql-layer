@@ -117,7 +117,7 @@ public class TLike extends TOverloadBase
 
         try
         {
-            output.putBool(matcher.match(left));
+            output.putBool(matcher.match(left, 1) >= 0);
         }
         catch (InvalidOperationException e)
         {

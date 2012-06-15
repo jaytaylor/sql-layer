@@ -32,15 +32,10 @@ import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
-import org.junit.runners.Parameterized;
-import org.junit.runners.Parameterized.Parameters;
-import org.junit.runner.RunWith;
 
 import java.sql.ResultSet;
 import java.sql.Statement;
-import java.sql.SQLException;
 
-import java.io.File;
 import java.util.Collection;
 import java.util.Collections;
 

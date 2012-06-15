@@ -67,7 +67,9 @@ public abstract class StoreAdapter
                                 API.SortOption sortOption,
                                 InOutTap loadTap);
 
-    public abstract long getQueryTimeoutSec();
+    public long getQueryTimeoutSec() {
+        return config.queryTimeoutSec();
+    }
 
     public abstract long rowCount(RowType tableType);
 

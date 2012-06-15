@@ -31,7 +31,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
-import com.akiban.util.ShareHolder;
 
 public abstract class AbstractRow implements Row
 {

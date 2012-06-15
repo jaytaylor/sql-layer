@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -98,7 +99,7 @@ public class MArithmetic {
         }
     };
      
-    TArithmetic ADD_DECIMAL = new TArithmetic("+", MNumeric.DECIMAL, null) { // TODO instance
+    TArithmetic ADD_DECIMAL = new TArithmetic("+", MNumeric.DECIMAL, (TInstance)null) { // TODO instance
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
@@ -153,7 +154,7 @@ public class MArithmetic {
         }
     };
      
-    TArithmetic SUBTRACT_DECIMAL = new TArithmetic("-", MNumeric.DECIMAL, null) { // TODO
+    TArithmetic SUBTRACT_DECIMAL = new TArithmetic("-", MNumeric.DECIMAL, (TInstance)null) { // TODO
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
@@ -228,7 +229,7 @@ public class MArithmetic {
         }
     };
 
-    TArithmetic DIVIDE_DECIMAL = new TArithmetic("/", MNumeric.DECIMAL, null) { // TODO
+    TArithmetic DIVIDE_DECIMAL = new TArithmetic("/", MNumeric.DECIMAL, (TInstance)null) { // TODO
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
@@ -285,7 +286,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic MULTIPLY_DECIMAL = new TArithmetic("*", MNumeric.DECIMAL, null) { // TODO
+    TArithmetic MULTIPLY_DECIMAL = new TArithmetic("*", MNumeric.DECIMAL, (TInstance)null) { // TODO
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();

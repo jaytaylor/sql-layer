@@ -1960,3 +1960,20 @@ SampledCount: 1000
 Statistics: []
 Table: child
 Timestamp: 2012-03-12T23:56:26.043Z
+---
+Index: cat_sku
+RowCount: 10000
+SampledCount: 10000
+Statistics:
+- Columns: 1
+  Histogram:
+  - distinct: 0
+    eq: 100
+    key: [1]
+    lt: 0
+  - distinct: 0
+    eq: 9900
+    key: [2]
+    lt: 0
+Table: categories
+Timestamp: 2012-06-07T00:00:00.000Z

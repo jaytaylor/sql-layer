@@ -26,15 +26,12 @@
 
 package com.akiban.sql.pg;
 
-import java.io.IOException;
-
 import javax.management.MBeanInfo;
 import javax.management.MBeanOperationInfo;
 import javax.management.MBeanServerConnection;
 import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
 
-import com.akiban.sql.pg.JMXInterpreter.JmxAdapter;
 import junit.framework.Assert;
 
 import org.junit.Test;

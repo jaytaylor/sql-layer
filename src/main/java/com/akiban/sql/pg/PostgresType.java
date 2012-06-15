@@ -30,21 +30,14 @@ import com.akiban.sql.server.ServerType;
 
 import com.akiban.server.error.UnknownDataTypeException;
 import com.akiban.server.error.UnknownTypeSizeException;
-import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.types.AkType;
 
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
-
-import java.io.*;
-import java.text.*;
-import java.util.*;
 
 /** A type according to the PostgreSQL regime.
  * Information corresponds more-or-less directly to what's in the 

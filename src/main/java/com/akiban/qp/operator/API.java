@@ -270,6 +270,9 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
     {
+        if (indexKeyRange == null) {
+            indexKeyRange = IndexKeyRange.unbounded(indexType);
+        }
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }
 
@@ -462,7 +465,7 @@ public class API
                                             int rightOrderingFields,
                                             int comparisonFields,
                                             JoinType joinType,
-                                            IntersectOutputOption intersectOutput)
+                                            IntersectOption intersectOutput)
     {
         if (comparisonFields < 0) {
             throw new IllegalArgumentException();
@@ -475,7 +478,7 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     intersectOutput);
+                                     EnumSet.of(intersectOutput));
     }
     
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -484,7 +487,7 @@ public class API
                                             int rightOrderingFields,
                                             boolean[] ascending,
                                             JoinType joinType,
-                                            IntersectOutputOption intersectOutput)
+                                            EnumSet<IntersectOption> intersectOptions)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
@@ -492,11 +495,26 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     intersectOutput);
+                                     intersectOptions);
     }
     
+    // Union
+
+    public static Operator union_Ordered(Operator leftInput, Operator rightInput,
+                                          IndexRowType leftRowType, IndexRowType rightRowType,
+                                          int leftOrderingFields,
+                                          int rightOrderingFields,
+                                          boolean[] ascending)
+    {
+        return new Union_Ordered(leftInput, rightInput,
+                                 leftRowType, rightRowType,
+                                 leftOrderingFields,
+                                 rightOrderingFields,
+                                 ascending);
+    }
+
     // HKeyUnion
-    
+
     public static Operator hKeyUnion_Ordered(Operator leftInput, Operator rightInput,
                                              RowType leftRowType, RowType rightRowType,
                                              int leftOrderingFields, int rightOrderingFields,
@@ -508,6 +526,34 @@ public class API
                                      leftOrderingFields, rightOrderingFields,
                                      comparisonFields,
                                      outputHKeyTableRowType);
+    }
+
+    // Using_BloomFilter
+
+    public static Operator using_BloomFilter(Operator filterInput,
+                                             RowType filterRowType,
+                                             long estimatedRowCount,
+                                             int filterBindingPosition,
+                                             Operator streamInput)
+    {
+        return new Using_BloomFilter(filterInput,
+                                     filterRowType,
+                                     estimatedRowCount,
+                                     filterBindingPosition,
+                                     streamInput);
+    }
+
+    // Select_BloomFilter
+
+    public static Operator select_BloomFilter(Operator input,
+                                              Operator onPositive,
+                                              List<? extends Expression> filterFields,
+                                              int bindingPosition)
+    {
+        return new Select_BloomFilter(input,
+                                      onPositive,
+                                      filterFields,
+                                      bindingPosition);
     }
 
     // Insert
@@ -575,9 +621,12 @@ public class API
 
     // Intersect output flags
 
-    public static enum IntersectOutputOption {
+    public static enum IntersectOption
+    {
         OUTPUT_LEFT,
-        OUTPUT_RIGHT
+        OUTPUT_RIGHT,
+        SEQUENTIAL_SCAN,
+        SKIP_SCAN
     }
 
     // Ordering specification

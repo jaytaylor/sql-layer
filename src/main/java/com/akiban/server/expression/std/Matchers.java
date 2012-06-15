@@ -66,9 +66,9 @@ public final class Matchers
     static class Empty implements Matcher
     {
         @Override
-        public boolean match(String str)
+        public int match(String str, int count)
         {
-            return str.isEmpty();
+            return str.isEmpty() ? 0 : -1;
         }
 
         @Override
@@ -83,6 +83,18 @@ public final class Matchers
         // global variable, marking the position in the text string
         // should be altered in contain(...)
         protected int nextStart;
+        
+        /**
+         * Search in <code>str</code> for a match with <code>tk</code>
+         * If one is found, set nextStart to the index right after the match
+         * 
+         * @param str
+         * @param start
+         * @param limit
+         * @param tk
+         * @return <code>true</code> if <code>tk</code> is contained within the substring of
+         * <code>str</code> starting at index <code>start</code> and ending at <code>limit<code>
+         */
         protected boolean contain (String str, int start, int limit, Token tk)
         {
             char ch;
@@ -134,6 +146,42 @@ public final class Matchers
         }
     }
     
+    static class Index extends AbstractMatcher
+    {
+        private final Token tk;
+        private final String pattern;
+        
+        public Index(String st)
+        {
+            Map<Character, Integer> map = new HashMap<Character, Integer>();
+            int n;
+            for ( n = 0; n < st.length(); ++n)
+                map.put(st.charAt(n), n);
+            tk = new Token(map, st.toCharArray(), n, false, false);
+            pattern = st;
+        }
+        
+        @Override
+        public int match(String str, int count)
+        {
+            nextStart = 0;
+            do
+            {
+                if (!contain(str, nextStart, str.length(), tk))
+                    return -1; // didn't find anything
+                --count;
+            }
+            while (count != 0);
+            return nextStart - tk.length; // return the index at which the pattern starts
+        }
+
+        @Override
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.equals(this.pattern);
+        }
+    }
+
     /**
      * the pattern starts with percent
      */
@@ -153,15 +201,15 @@ public final class Matchers
         }
         
         @Override
-        public boolean match(String str)
+        public int match(String str, int count)
         {   
             nextStart  = 0;
             for (Token tk : tokens)
                 if (tk.endsWith ? !endWith(str, nextStart, tk)
                                 : !contain(str, nextStart, str.length(), tk))
-                    return false;
+                    return -1;
             
-            return true;
+            return 1; // has no need for the index, thus just return 1 to indicate a 'match'
         }
 
         @Override
@@ -195,7 +243,7 @@ public final class Matchers
         }
         
         @Override
-        public boolean match(String str)
+        public int match(String str, int count)
         {
             char lch, rch;
             int lLimit = str.length(), rLimit = pattern.length();
@@ -212,14 +260,14 @@ public final class Matchers
                         throw new InvalidParameterValueException("Illegal Escaped Sequence");
                     if ((rch = pattern.charAt(r +1)) != (lch = str.charAt(l))
                             && (!ignoreCase || Character.toLowerCase(rch) != Character.toLowerCase(lch)))
-                        return false;
+                        return -1;
                     r += 2;
                     ++l;
                 }
                 else if (rch == '%')
                 {
                     if (r + 1 == r_len) // end of string
-                        return true;
+                        return 1; // has no need for the index, so just return a non negative value
                     
                     percent = true;
                     break;
@@ -233,7 +281,7 @@ public final class Matchers
                 {
                     if (rch != (lch = str.charAt(l))
                             && (!ignoreCase || Character.toLowerCase(rch) != Character.toLowerCase(lch)))
-                        return false;
+                        return -1;
                     ++l;
                     ++r;
                 }
@@ -248,8 +296,8 @@ public final class Matchers
                 for (Token tk : tokens)
                     if (tk.endsWith ? !endWith(str, nextStart, tk)
                                     : !contain(str, nextStart, str.length(), tk))
-                        return false;
-                return true;
+                        return -1;
+                return 1;
             }
             else // at least one of the string reaches its end
             {
@@ -261,13 +309,13 @@ public final class Matchers
                         // but we could just simply return false
                         // it's less likely anyone would intentionally do something just to get an exception
                         if (pattern.charAt(r) != '%' || escape == '%') // not % or %  escaped by itself
-                            return false;
+                            return -1;
                         ++r;
                     }
-                    return true;
+                    return 1;
                 }
                 else 
-                    return false;
+                    return -1;
             }
         }
 
