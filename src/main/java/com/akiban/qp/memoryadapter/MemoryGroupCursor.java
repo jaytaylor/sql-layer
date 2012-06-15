@@ -31,6 +31,7 @@ import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
 
 public class MemoryGroupCursor implements GroupCursor {
 
@@ -85,6 +86,11 @@ public class MemoryGroupCursor implements GroupCursor {
     @Override
     public boolean isIdle() {
         return !destroyed && idle;
+    }
+
+    @Override
+    public void jump(Row row, ColumnSelector selector) {
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     // Abstraction extensions
