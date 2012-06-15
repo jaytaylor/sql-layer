@@ -104,6 +104,11 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewUserTableBuilder userTable(TableName tableName) {
+            return userTable(tableName.getSchemaName(), tableName.getTableName());
+        }
+
+        @Override
         public NewAISGroupIndexStarter groupIndex(String indexName) {
             return groupIndex(indexName, null);
         }

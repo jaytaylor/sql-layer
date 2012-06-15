@@ -200,7 +200,17 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
-        return createTableCommon(session, newTable, true, null, factory);
+        Transaction txn = treeService.getTransaction(session);
+        try {
+            txn.begin();
+            createTableCommon(session, newTable, true, null, factory);
+            txn.commit();
+        } catch(PersistitException e) {
+            throw new PersistitAdapterException(e);
+        } finally {
+            txn.end();
+        }
+        return newTable.getName();
     }
 
     @Override

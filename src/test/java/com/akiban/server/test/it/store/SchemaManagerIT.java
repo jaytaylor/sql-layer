@@ -53,9 +53,10 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.memoryadapter.MemoryGroupCursor;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.DuplicateTableNameException;
@@ -867,7 +868,7 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public GroupCursor getGroupCursor(Session session) {
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
             throw new UnsupportedOperationException();
         }
 
@@ -882,8 +883,7 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public IndexStatistics computeIndexStatistics(Session session,
-                Index index) {
+        public IndexStatistics computeIndexStatistics(Session session, Index index) {
             throw new UnsupportedOperationException();
         }
     }

@@ -26,16 +26,14 @@
 
 package com.akiban.qp.memoryadapter;
 
-import java.util.Iterator;
-
 import com.akiban.ais.model.GroupTable;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.row.ValuesHolderRow;
+import com.akiban.server.api.dml.ColumnSelector;
 
-public abstract class MemoryGroupCursor implements GroupCursor {
+public class MemoryGroupCursor implements GroupCursor {
 
     @Override
     public void rebind(HKey hKey, boolean deep) {
@@ -45,21 +43,17 @@ public abstract class MemoryGroupCursor implements GroupCursor {
     @Override
     public void open() {
         CursorLifecycle.checkIdle(this);
-        memoryOpen();
+        scan = factory.getGroupScan(adapter);
         idle = false;
     }
 
     @Override
     public Row next() {
         CursorLifecycle.checkIdleOrActive(this);
-        Row row = null; 
-        
-        if (scan.hasNext()) {
-            row = scan.next();
-        } else {
+        Row row = scan.next();
+        if(row == null) {
             idle = true;
         }
-        
         return row;
     }
 
@@ -68,8 +62,7 @@ public abstract class MemoryGroupCursor implements GroupCursor {
     public void close() {
         CursorLifecycle.checkIdleOrActive(this);
         if (!idle) {
-            
-            memoryClose();
+            scan.close();
             scan = null;
             idle = true;
         }
@@ -95,47 +88,35 @@ public abstract class MemoryGroupCursor implements GroupCursor {
         return !destroyed && idle;
     }
 
+    @Override
+    public void jump(Row row, ColumnSelector selector) {
+        throw new UnsupportedOperationException(getClass().getName());
+    }
+
     // Abstraction extensions
-    
-    /**
-     * create the TableScan implementation specific to your code 
-     */
-    public abstract TableScan memoryOpen(); 
-    
-    public abstract class TableScan implements Iterator<Row> {
-        public abstract boolean hasNext();
 
-        /*
-         * row.holderAt(i).put<type>(<value>);
-         * return row;
+    public interface GroupScan {
+        /**
+         * Get the next row from the stream.
+         * @return The next row or <code>null</code> if none.
          */
-        public abstract Row next();
-        
-    }
-    
-    /**
-     * Close the cursor processing, if any. 
-     */
-    public void memoryClose() {}
+        public Row next();
 
-    /**
-     * Create a new row for this table. 
-     * @return
-     */
-    protected ValuesHolderRow newRow() {
-        return new ValuesHolderRow (adapter.schema().userTableRowType(table.getRoot()));
+        /**
+         * Clean up any state.
+         */
+        public void close();
     }
-    
-    // Package use
     
     public MemoryGroupCursor (MemoryAdapter adapter, GroupTable groupTable) {
         this.adapter = adapter;
-        this.table = groupTable;
+        this.factory = groupTable.getRoot().getMemoryTableFactory();
+        assert this.factory != null : groupTable;
     }
     
-    private boolean idle;
+    private boolean idle = true;
     private boolean destroyed = false;
-    private MemoryAdapter adapter;
-    private GroupTable table;
-    private TableScan scan;
+    private final MemoryAdapter adapter;
+    private final MemoryTableFactory factory;
+    private GroupScan scan;
 }
