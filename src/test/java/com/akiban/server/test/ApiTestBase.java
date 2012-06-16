@@ -86,9 +86,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.config.Property;
-import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.store.Store;
 import com.akiban.util.ListUtils;
 
@@ -98,7 +96,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -289,15 +286,6 @@ public class ApiTestBase {
         crashTestServices(); // TODO: WHY doesn't this work with stop?
         restartTestServices(Collections.singleton(new Property("akserver.datapath", datapath)));
     }
-
-    protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {
-        memcache().setHapiProcessor(whichHapi);
-        return hapi();
-    }
-
-    protected final HapiProcessor hapi() {
-        return sm.getMemcacheService();
-    }
     
     protected final DMLFunctions dml() {
         return dxl().dmlFunctions();
@@ -336,10 +324,6 @@ public class ApiTestBase {
 
     protected final QueryContext queryContext(PersistitAdapter adapter) {
         return new SimpleQueryContext(adapter);
-    }
-
-    protected final MemcacheService memcache() {
-        return sm.getMemcacheService();
     }
 
     protected final RowDefCache rowDefCache() {

@@ -24,45 +24,38 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.memcache.hprocessor;
+package com.akiban.server.api.dml.scan;
 
-import com.akiban.ais.model.Index;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.api.HapiGetRequest;
-import com.akiban.server.api.HapiOutputter;
-import com.akiban.server.api.HapiProcessor;
-import com.akiban.server.api.HapiRequestException;
-import com.akiban.server.service.session.Session;
+import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.util.ArgumentValidation;
 
-import java.io.IOException;
-import java.io.OutputStream;
-import java.util.ArrayList;
+public final class PredicateLimit implements ScanLimit {
+    private final int rowDefId;
+    private final int limit;
+    private int count = 0;
 
-public class EmptyRows implements HapiProcessor {
-    private static final EmptyRows instance = new EmptyRows();
-
-    public static EmptyRows instance() {
-        return instance;
+    public PredicateLimit(int rowDefId, int limit) {
+        ArgumentValidation.isGTE("limit", limit, 0);
+        this.limit = limit;
+        this.rowDefId = rowDefId;
     }
 
-    private EmptyRows()
-    {}
+    @Override
+    public String toString()
+    {
+        return Integer.toString(limit);
+    }
 
     @Override
-    public void processRequest(Session session, HapiGetRequest request, HapiOutputter outputter, OutputStream outputStream) throws HapiRequestException {
-        try {
-            outputter.output(
-                    new DummyProcessedRequest(request),
-                    true,
-                    new ArrayList<RowData>(),
-                    outputStream);
-        } catch (IOException e) {
-            throw new HapiRequestException("while writing output", e, HapiRequestException.ReasonCode.WRITE_ERROR);
+    public boolean limitReached(RowData candidateRow) {
+        if (candidateRow != null && candidateRow.getRowDefId() == rowDefId) {
+            ++count;
         }
+        return limit == 0 || count > limit;
     }
 
-    @Override
-    public Index findHapiRequestIndex(Session session, HapiGetRequest request) throws HapiRequestException {
-        return null;
+    public int getLimit() {
+        return limit;
     }
 }
