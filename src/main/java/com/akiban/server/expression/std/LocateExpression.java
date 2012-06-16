@@ -49,7 +49,7 @@ public class LocateExpression extends AbstractCompositeExpression
     {
 
         @Override
-        protected Expression compose(Expression first, Expression second) 
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType) 
         {
             return new LocateExpression(Arrays.asList(first, second));
         }

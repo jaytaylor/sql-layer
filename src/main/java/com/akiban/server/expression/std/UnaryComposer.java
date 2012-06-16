@@ -35,16 +35,7 @@ import java.util.List;
 
 abstract class UnaryComposer implements ExpressionComposer {
 
-    protected abstract Expression compose(Expression argument);
-    
-    // Most expressions don't need to access the ExpressionType
-    // But those that do should override this method.
-    protected Expression compose (Expression argument, 
-                                  ExpressionType argType, 
-                                  ExpressionType returnType)
-    {
-        return compose(argument);
-    }
+    protected abstract Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType);
     
     // For most expressions, NULL is contaminating
     // Any expressions that treat NULL specially should override this

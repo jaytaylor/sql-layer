@@ -111,7 +111,7 @@ public class LogExpression extends AbstractCompositeExpression
         }
         
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new LogExpression(Arrays.asList(base.base, argument), base.name());
         }

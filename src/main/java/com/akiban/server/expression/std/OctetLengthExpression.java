@@ -29,6 +29,7 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.service.functions.Scalar;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
@@ -52,7 +53,7 @@ public class OctetLengthExpression extends AbstractUnaryExpression
     public static final ExpressionComposer COMPOSER = new LengthExpression.InternalComposer()
     {       
         @Override
-        protected Expression compose(Expression argument) 
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) 
         {
             return new OctetLengthExpression(argument);
         }

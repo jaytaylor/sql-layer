@@ -34,16 +34,7 @@ import com.akiban.server.expression.ExpressionType;
 import java.util.List;
 
 abstract class BinaryComposer implements ExpressionComposer {
-
-    protected abstract Expression compose(Expression first, Expression second);
-
-    // Most expessions don't need access to types list
-    // Those that do need to override this
-    protected Expression compose (Expression first, Expression second,
-                                  ExpressionType firstType, ExpressionType secondType, ExpressionType topType)
-    {
-        return compose(first, second);
-    }
+    protected abstract Expression compose (Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType);
     
     // For most expressions, NULL is contaminating
     // Any expressions that treat NULL specially should override this

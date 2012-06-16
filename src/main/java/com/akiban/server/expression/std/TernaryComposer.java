@@ -34,7 +34,7 @@ import java.util.List;
 
 public abstract class TernaryComposer implements ExpressionComposer
 {
-    protected abstract Expression doCompose(List<? extends Expression> arguments);
+    protected abstract Expression doCompose(List<? extends Expression> arguments, List<ExpressionType> typesList);
 //    protected abstract ExpressionType composeType(ExpressionType first, ExpressionType second, ExpressionType third);
 
     @Override
@@ -42,7 +42,9 @@ public abstract class TernaryComposer implements ExpressionComposer
     {
         if (arguments.size() != 3)
             throw new WrongExpressionArityException(3, arguments.size());
-        return doCompose(arguments);
+        if (arguments.size() + 1 != typesList.size())
+            throw new IllegalArgumentException("unexpected argc");
+        return doCompose(arguments, typesList);
     }
 
     // For most expressions, NULL is contaminating

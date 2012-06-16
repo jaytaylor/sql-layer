@@ -53,7 +53,7 @@ public class BitLengthExpression extends AbstractUnaryExpression
         // For now compose(...) cannot take such argument
 
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new BitLengthExpression(argument);
         }
