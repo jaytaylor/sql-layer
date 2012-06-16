@@ -26,8 +26,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.session.Session;
 
@@ -51,13 +50,13 @@ public class SimpleQueryContext extends QueryContextBase
     }
 
     @Override
-    public StoreAdapter getStore(final TableName table) {
+    public StoreAdapter getStore(UserTable table) {
         return adapter;
     }
     
     @Override
     public Session getSession() {
-	return adapter.getSession();
+    	return adapter.getSession();
     }
 
     @Override

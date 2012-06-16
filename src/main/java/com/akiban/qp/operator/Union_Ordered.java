@@ -96,7 +96,7 @@ class Union_Ordered extends Operator
     public String toString()
     {
         return String.format("%s(skip %d, compare %d)",
-                             getClass().getSimpleName(), fixedFields, ascending.length);
+                             getClass().getSimpleName(), fixedFields, fieldsToCompare);
     }
 
     // Operator interface
@@ -156,10 +156,14 @@ class Union_Ordered extends Operator
         this.left = left;
         this.right = right;
         this.rowType = leftRowType;
-        this.ascending = Arrays.copyOf(ascending, ascending.length);
         // Setup for row comparisons
         this.fixedFields = rowType.nFields() - leftOrderingFields;
+        this.fieldsToCompare = leftOrderingFields;
+        this.ascending = Arrays.copyOf(ascending, ascending.length);
+        // TODO (in Execution): Check that ascending bits are consistent with SortCursor directions.
     }
+
+    // For use by this class
 
     // Class state
 
@@ -173,6 +177,7 @@ class Union_Ordered extends Operator
     private final Operator right;
     private IndexRowType rowType;
     private final int fixedFields;
+    private final int fieldsToCompare;
     private final boolean[] ascending;
 
     // Inner classes
@@ -236,10 +241,10 @@ class Union_Ordered extends Operator
         }
 
         @Override
-        public void jump(Row row, ColumnSelector columnSelector)
+        public void jump(Row jumpRow, ColumnSelector jumpRowColumnSelector)
         {
-            nextLeftRowSkip(row, fixedFields, columnSelector);
-            nextRightRowSkip(row, fixedFields, columnSelector);
+            nextLeftRowSkip(jumpRow, fixedFields, jumpRowColumnSelector);
+            nextRightRowSkip(jumpRow, fixedFields, jumpRowColumnSelector);
             if (leftRow.isEmpty() && rightRow.isEmpty()) {
                 close();
             }
@@ -324,7 +329,7 @@ class Union_Ordered extends Operator
             } else if (rightRow.isEmpty()) {
                 c = -1;
             } else {
-                c = leftRow.get().compareTo(rightRow.get(), fixedFields, fixedFields, ascending.length);
+                c = leftRow.get().compareTo(rightRow.get(), fixedFields, fixedFields, fieldsToCompare);
                 if (c != 0) {
                     int fieldThatDiffers = (int) abs(c) - 1;
                     if (!ascending[fieldThatDiffers]) {
@@ -335,28 +340,26 @@ class Union_Ordered extends Operator
             return c;
         }
 
-        private void nextLeftRowSkip(Row suffixRow, int suffixRowFixedFields, ColumnSelector suffixRowColumnSelector)
+        private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
             if (leftRow.isHolding()) {
                 addSuffixToSkipRow(leftSkipRow(),
                                    fixedFields,
-                                   suffixRow,
-                                   suffixRowFixedFields,
-                                   ascending.length);
-                leftInput.jump(leftSkipRow, suffixRowColumnSelector);
+                                   jumpRow,
+                                   jumpRowFixedFields);
+                leftInput.jump(leftSkipRow, jumpRowColumnSelector);
                 leftRow.hold(leftInput.next());
             }
         }
 
-        private void nextRightRowSkip(Row suffixRow, int suffixRowFixedFields, ColumnSelector suffixRowColumnSelector)
+        private void nextRightRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
             if (rightRow.isHolding()) {
                 addSuffixToSkipRow(rightSkipRow(),
                                    fixedFields,
-                                   suffixRow,
-                                   suffixRowFixedFields,
-                                   ascending.length);
-                rightInput.jump(rightSkipRow, suffixRowColumnSelector);
+                                   jumpRow,
+                                   jumpRowFixedFields);
+                rightInput.jump(rightSkipRow, jumpRowColumnSelector);
                 rightRow.hold(rightInput.next());
             }
         }
@@ -364,15 +367,14 @@ class Union_Ordered extends Operator
         private void addSuffixToSkipRow(ValuesHolderRow skipRow,
                                         int skipRowFixedFields,
                                         Row suffixRow,
-                                        int suffixRowFixedFields,
-                                        int orderingFields)
+                                        int suffixRowFixedFields)
         {
             if (suffixRow == null) {
-                for (int f = 0; f < orderingFields; f++) {
+                for (int f = 0; f < fieldsToCompare; f++) {
                     skipRow.holderAt(skipRowFixedFields + f).putNull();
                 }
             } else {
-                for (int f = 0; f < orderingFields; f++) {
+                for (int f = 0; f < fieldsToCompare; f++) {
                     skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
                 }
             }

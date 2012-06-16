@@ -51,7 +51,7 @@ public class ValueSources
     
     static
     {
-        map = new EnumMap(AkType.class);
+        map = new EnumMap<AkType, Map<AkType, Comparator<ValueSource>>>(AkType.class);
         
         // date 
         EnumSet<AkType> date = EnumSet.of(DATE, YEAR);
@@ -136,8 +136,8 @@ public class ValueSources
             }                        
         };
 
-        Map<AkType, Comparator<ValueSource>> m2Double = new EnumMap(AkType.class);
-        Map<AkType, Comparator<ValueSource>> m2Decimal = new EnumMap(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m2Double = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m2Decimal = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
         
         //TODO: add BOOL
         for (AkType right : Iterables.concat(floating, exact, date, time, datetime, month, millis, text))
@@ -160,7 +160,7 @@ public class ValueSources
     
         //------------------------------
         // map 3)
-        Map<AkType, Comparator<ValueSource>> m3 = new EnumMap(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m3 = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
         
         Comparator<ValueSource> l_c3 = new Comparator<ValueSource>()
         {
@@ -186,7 +186,7 @@ public class ValueSources
         //------------------------------
         // map 5)
         // interval millis, time
-        Map<AkType, Comparator<ValueSource>> m5 = new EnumMap(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m5 = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
         
         m5.put(AkType.TIME, new Comparator<ValueSource>()
         {
@@ -218,7 +218,7 @@ public class ValueSources
 
         //------------------------------
         // map 8), 9), 10) : left is VARCHAR
-        Map<AkType, Comparator<ValueSource>> m8_9_10 = new EnumMap(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m8_9_10 = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
         
         //8) cast both to double
         m8_9_10.put(BOOL, d_c2);

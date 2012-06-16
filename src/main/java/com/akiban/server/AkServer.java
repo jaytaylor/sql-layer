@@ -26,7 +26,6 @@
 
 package com.akiban.server;
 
-import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.SessionService;

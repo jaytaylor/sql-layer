@@ -37,7 +37,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
-import com.akiban.server.error.SchemaDefParseException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.dxl.IndexCheckSummary;

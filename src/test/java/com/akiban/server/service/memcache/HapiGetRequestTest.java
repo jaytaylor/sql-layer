@@ -44,7 +44,6 @@ import java.util.List;
 
 import static com.akiban.server.api.HapiPredicate.Operator.*;
 import static org.junit.Assert.*;
-import static org.junit.Assert.assertEquals;
 
 @RunWith(NamedParameterizedRunner.class)
 public final class HapiGetRequestTest {

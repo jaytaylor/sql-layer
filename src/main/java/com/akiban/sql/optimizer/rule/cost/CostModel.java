@@ -28,7 +28,6 @@ package com.akiban.sql.optimizer.rule.cost;
 
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.API;
 import com.akiban.qp.rowtype.*;
 
 import java.util.ArrayList;
@@ -37,7 +36,6 @@ import java.util.List;
 import java.util.Map;
 
 import static com.akiban.sql.optimizer.rule.cost.CostModelMeasurements.*;
-import static java.lang.Math.round;
 
 public class CostModel
 {

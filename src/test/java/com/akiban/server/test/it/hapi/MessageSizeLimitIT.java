@@ -39,10 +39,8 @@ import org.json.JSONObject;
 import org.junit.Test;
 
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.List;
 
 import static junit.framework.Assert.assertTrue;
 

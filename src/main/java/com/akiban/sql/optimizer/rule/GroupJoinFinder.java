@@ -254,7 +254,7 @@ public class GroupJoinFinder extends BaseRule
         }
         joinables.clear();
         // Make order of groups predictable.
-        List<TableGroup> keys = new ArrayList(groups.keySet());
+        List<TableGroup> keys = new ArrayList<TableGroup>(groups.keySet());
         Collections.sort(keys, tableGroupComparator);
         for (TableGroup gkey : keys) {
             List<TableSource> group = groups.get(gkey);

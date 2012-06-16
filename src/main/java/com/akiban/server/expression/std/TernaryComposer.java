@@ -29,12 +29,11 @@ package com.akiban.server.expression.std;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionType;
 import java.util.List;
 
 public abstract class TernaryComposer implements ExpressionComposer
 {
-    protected abstract Expression compose(Expression first, Expression second, Expression third);
+    protected abstract Expression doCompose(List<? extends Expression> arguments);
 //    protected abstract ExpressionType composeType(ExpressionType first, ExpressionType second, ExpressionType third);
 
     @Override
@@ -42,7 +41,7 @@ public abstract class TernaryComposer implements ExpressionComposer
     {
         if (arguments.size() != 3)
             throw new WrongExpressionArityException(3, arguments.size());
-        return compose(arguments.get(0), arguments.get(1), arguments.get(2));
+        return doCompose(arguments);
     }
 
     // For most expressions, NULL is contaminating

@@ -53,11 +53,12 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.memoryadapter.MemoryGroupCursor;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.ISTableVersionMismatchException;
@@ -66,6 +67,7 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
+import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.test.it.ITBase;
 import org.junit.Assert;
 import org.junit.Before;
@@ -778,12 +780,12 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public Table getTableDefinition() {
+        public UserTable getTableDefinition() {
             throw new UnsupportedOperationException();
         }
 
         @Override
-        public GroupCursor getGroupCursor(Session session) {
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
             throw new UnsupportedOperationException();
         }
 
@@ -794,6 +796,11 @@ public final class SchemaManagerIT extends ITBase {
 
         @Override
         public long rowCount() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public IndexStatistics computeIndexStatistics(Session session, Index index) {
             throw new UnsupportedOperationException();
         }
     }

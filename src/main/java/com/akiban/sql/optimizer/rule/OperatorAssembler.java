@@ -275,6 +275,10 @@ public class OperatorAssembler extends BaseRule
                 return assembleSubquerySource((SubquerySource) node);
             else if (node instanceof NullSource)
                 return assembleNullSource((NullSource) node);
+            else if (node instanceof UsingBloomFilter)
+                return assembleUsingBloomFilter((UsingBloomFilter) node);
+            else if (node instanceof BloomFilterFilter)
+                return assembleBloomFilterFilter((BloomFilterFilter) node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
@@ -846,6 +850,36 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
+        protected RowStream assembleUsingBloomFilter(UsingBloomFilter usingBloomFilter) {
+            BloomFilter bloomFilter = usingBloomFilter.getBloomFilter();
+            int pos = pushHashTable(bloomFilter);
+            RowStream lstream = assembleStream(usingBloomFilter.getLoader());
+            RowStream stream = assembleStream(usingBloomFilter.getInput());
+            stream.operator = API.using_BloomFilter(lstream.operator,
+                                                    lstream.rowType,
+                                                    bloomFilter.getEstimatedSize(),
+                                                    pos,
+                                                    stream.operator);
+            popHashTable(bloomFilter);
+            return stream;
+        }
+
+        protected RowStream assembleBloomFilterFilter(BloomFilterFilter bloomFilterFilter) {
+            BloomFilter bloomFilter = bloomFilterFilter.getBloomFilter();
+            int pos = getHashTablePosition(bloomFilter);
+            RowStream stream = assembleStream(bloomFilterFilter.getInput());
+            boundRows.set(pos, stream.fieldOffsets);
+            RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
+            boundRows.set(pos, null);
+            List<Expression> fields = assembleExpressions(bloomFilterFilter.getLookupExpressions(),
+                                                          stream.fieldOffsets);
+            stream.operator = API.select_BloomFilter(stream.operator,
+                                                     cstream.operator,
+                                                     fields,
+                                                     pos);
+            return stream;
+        }        
+
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
             stream.operator = API.project_Default(stream.operator,
@@ -1169,6 +1203,7 @@ public class OperatorAssembler extends BaseRule
 
         protected int expressionBindingsOffset, loopBindingsOffset;
         protected Stack<ColumnExpressionToIndex> boundRows = new Stack<ColumnExpressionToIndex>(); // Needs to be List<>.
+        protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<BaseHashTable,Integer>();
 
         protected void computeBindingsOffsets() {
             expressionBindingsOffset = 0;
@@ -1197,6 +1232,22 @@ public class OperatorAssembler extends BaseRule
 
         protected int currentBindingPosition() {
             return loopBindingsOffset + boundRows.size() - 1;
+        }
+
+        protected int pushHashTable(BaseHashTable hashTable) {
+            int position = pushBoundRow(null);
+            hashTablePositions.put(hashTable, position);
+            return position;
+        }
+
+        protected void popHashTable(BaseHashTable hashTable) {
+            popBoundRow();
+            int position = hashTablePositions.remove(hashTable);
+            assert (position == boundRows.size());
+        }
+
+        protected int getHashTablePosition(BaseHashTable hashTable) {
+            return hashTablePositions.get(hashTable);
         }
 
         class ColumnBoundRows implements ColumnExpressionContext {

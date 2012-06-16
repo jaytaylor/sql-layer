@@ -26,7 +26,7 @@
 
 package com.akiban.ais.model;
 
-import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
@@ -292,31 +292,16 @@ public class UserTable extends Table
         }
     }
 
-    public synchronized Integer getDepth()
+    public Integer getDepth()
     {
         if (depth == null && getGroup() != null) {
-            depth = getParentJoin() == null ? 0 : getParentJoin().getParent().getDepth() + 1;
-        }
-        return depth;
-    }
-
-    /**
-     * Returns a list of ancestors, starting from the root and ending with this table
-     * @return ancestors, including this table and starting from the root
-     */
-    public synchronized List<UserTable> getAncestors() {
-        if (ancestors == null) {
-            synchronized (lazyEvaluationLock) {
-                if (ancestors == null) {
-                    ancestors = new ArrayList<UserTable>(getDepth());
-                    for (UserTable table = this; table != null; table = table.parentTable()) {
-                        ancestors.add(table);
-                    }
-                    Collections.reverse(ancestors);
+            synchronized (this) {
+                if (depth == null && getGroup() != null) {
+                    depth = getParentJoin() == null ? 0 : getParentJoin().getParent().getDepth() + 1;
                 }
             }
         }
-        return ancestors;
+        return depth;
     }
 
     public Boolean isRoot()
@@ -377,6 +362,7 @@ public class UserTable extends Table
                     allHKeyColumns.add(hKeyColumn.column());
                 }
             }
+            allHKeyColumns = Collections.unmodifiableList(allHKeyColumns);
         }
         return allHKeyColumns;
     }

@@ -86,6 +86,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
         case NodeTypes.TIMESTAMP_ADD_FN_NODE:
         case NodeTypes.TIMESTAMP_DIFF_FN_NODE:
             return ternaryOperatorFunction((TernaryOperatorNode)node);
+        case NodeTypes.LEFT_FN_NODE:
+        case NodeTypes.RIGHT_FN_NODE:
         case NodeTypes.TRIM_OPERATOR_NODE:
         case NodeTypes.BINARY_DIVIDE_OPERATOR_NODE:
         case NodeTypes.BINARY_MINUS_OPERATOR_NODE:
@@ -562,7 +564,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return ExpressionTypes.varbinary(sqlType.getMaximumWidth());
         case TypeId.FormatIds.CHAR_TYPE_ID:
         case TypeId.FormatIds.VARCHAR_TYPE_ID:
-            return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+            return ExpressionTypes.varchar(sqlType.getMaximumWidth(),
+                                           sqlType.getCharacterAttributes());
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
             return ExpressionTypes.INTERVAL_MILLIS;
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
@@ -679,9 +682,10 @@ public class FunctionsTypeComputer extends AISTypeComputer
             return ExpressionTypes.TEXT;
         case VARCHAR:
             if (sqlType != null)
-                return ExpressionTypes.varchar(sqlType.getMaximumWidth());
+                return ExpressionTypes.varchar(sqlType.getMaximumWidth(),
+                                               sqlType.getCharacterAttributes());
             else
-                return ExpressionTypes.varchar(TypeId.VARCHAR_ID.getMaximumMaximumWidth());
+                return ExpressionTypes.varchar(TypeId.VARCHAR_ID.getMaximumMaximumWidth(), null);
         case VARBINARY:
             if (sqlType != null)
                 return ExpressionTypes.varbinary(sqlType.getMaximumWidth());

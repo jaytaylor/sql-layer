@@ -28,9 +28,7 @@ package com.akiban.sql.pg;
 
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.SQLParserInternalException;
-import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.error.UnsupportedSQLException;
-import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;

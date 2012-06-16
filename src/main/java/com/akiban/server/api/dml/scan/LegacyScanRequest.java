@@ -28,7 +28,6 @@ package com.akiban.server.api.dml.scan;
 
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.api.dml.ColumnSelector;
-import com.akiban.server.error.TableDefinitionMismatchException;
 
 import java.util.Arrays;
 

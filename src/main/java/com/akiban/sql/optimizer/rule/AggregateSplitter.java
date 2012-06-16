@@ -30,9 +30,6 @@ import com.akiban.sql.optimizer.rule.AggregateMapper.AggregateSourceFinder;
 
 import com.akiban.server.error.UnsupportedSQLException;
 
-import com.akiban.sql.types.DataTypeDescriptor;
-import com.akiban.sql.types.TypeId;
-
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.AggregateSource.Implementation;
 

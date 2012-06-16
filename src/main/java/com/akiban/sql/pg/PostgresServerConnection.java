@@ -39,11 +39,11 @@ import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.SQLParserFeature;
 import com.akiban.sql.parser.StatementNode;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.loadableplan.LoadablePlan;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
-import com.akiban.qp.operator.memoryadapter.MemoryAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.*;
@@ -631,14 +631,14 @@ public class PostgresServerConnection extends ServerSessionBase
     protected void rebuildCompiler() {
         parser = new SQLParser();
         Set<SQLParserFeature> features = parser.getFeatures();
-        if (false) {
-            // TODO: Need some kind of MySQL compatibility setting(s).
-            // These are the ones not currently on by default.
+        // TODO: Others that are on by defaults could have override to turn them
+        // off, but they are pretty harmless.
+        if (Boolean.parseBoolean(getProperty("parserInfixBit", "false")))
             features.add(SQLParserFeature.INFIX_BIT_OPERATORS);
+        if (Boolean.parseBoolean(getProperty("parserInfixLogical", "false")))
             features.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
+        if ("string".equals(getProperty("parserDoubleQuoted", "identifier")))
             features.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
-        }
-
         defaultSchemaName = getProperty("database");
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
@@ -649,18 +649,18 @@ public class PostgresServerConnection extends ServerSessionBase
         else
             compiler = PostgresOperatorCompiler.create(this);
         
+        // Add the Persisitit Adapter - default for most tables
         adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
                 new PersistitAdapter(compiler.getSchema(),
                                        reqs.store().getPersistitStore(),
                                        reqs.treeService(),
                                        session,
                                        reqs.config()));
-        /*
+        // Add the Memory Adapter - for the in memory tables
         adapters.put(StoreAdapter.AdapterType.MEMORY_ADAPTER, 
                 new MemoryAdapter(compiler.getSchema(),
                                 session,
                                 reqs.config()));
-        */
         // Statement cache depends on some connection settings.
         statementCache = server.getStatementCache(Arrays.asList(format,
                                                                 Boolean.valueOf(getProperty("cbo"))),
@@ -679,11 +679,10 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     @Override
-    public StoreAdapter getStore(final TableName name) {
-        if (reqs.getMemoryStore().getFactory(name) != null ) {
+    public StoreAdapter getStore(final UserTable table) {
+        if (table.hasMemoryTableFactory()) {
             return adapters.get(StoreAdapter.AdapterType.MEMORY_ADAPTER);
         }
-        
         return adapters.get(StoreAdapter.AdapterType.PERSISTIT_ADAPTER);
     }
 
@@ -799,6 +798,9 @@ public class PostgresServerConnection extends ServerSessionBase
             return true;
         }
         if ("OutputFormat".equals(key) ||
+            "parserInfixBit".equals(key) ||
+            "parserInfixLogical".equals(key) ||
+            "parserDoubleQuoted".equals(key) ||
             "cbo".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();

@@ -62,7 +62,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
-import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;

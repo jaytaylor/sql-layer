@@ -26,7 +26,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.Extractors;

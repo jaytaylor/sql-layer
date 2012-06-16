@@ -267,13 +267,22 @@ public class AISMerge {
 
     private static int computeTableIdOffset(AkibanInformationSchema ais, int offset, boolean includeAIS) {
         for(UserTable table : ais.getUserTables().values()) {
-            if(table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA) == includeAIS) {
+            if(table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
+                if(includeAIS) {
+                    offset = Math.max(offset, table.getTableId() + 1);
+                }
+            } else {
                 offset = Math.max(offset, table.getTableId() + 1);
             }
         }
         for (GroupTable table : ais.getGroupTables().values()) {
-            if (table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA) == includeAIS) {
+            if (table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
+                if(includeAIS) {
+                    offset = Math.max(offset, table.getTableId() + 1);
+                }
+            } else {
                 offset = Math.max(offset, table.getTableId() + 1);
+
             }
         }
         return offset;
