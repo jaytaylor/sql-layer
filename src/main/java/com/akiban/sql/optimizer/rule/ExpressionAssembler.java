@@ -114,15 +114,9 @@ public class ExpressionAssembler
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression) {
             BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
-            return functionsRegistry
-                .composer(bexpr.getOperation().getFunctionName())
-                .compose(Arrays.asList(assembleExpression(bexpr.getLeft(), 
-                                                          columnContext, 
-                                                          subqueryAssembler),
-                                       assembleExpression(bexpr.getRight(), 
-                                                          columnContext,
-                                                          subqueryAssembler)),
-                         null);
+            return assembleFunction(bexpr.getOperation().getFunctionName(),
+                                    Arrays.<ExpressionNode>asList(bexpr.getLeft(), bexpr.getRight()), 
+                                    columnContext, subqueryAssembler);
         }
         else if (node instanceof CastExpression)
             return assembleCastExpression((CastExpression)node,
@@ -137,26 +131,17 @@ public class ExpressionAssembler
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;
-            return functionsRegistry
-                .composer(funcNode.getFunction())
-                .compose(assembleExpressions(funcNode.getOperands(), 
-                                             columnContext, subqueryAssembler),
-                         null);
+            return assembleFunction(funcNode.getFunction(),
+                                    funcNode.getOperands(), 
+                                    columnContext, subqueryAssembler);
         }
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
-            return functionsRegistry
-                .composer("if")
-                .compose(Arrays.asList(assembleExpression(ifElse.getTestCondition(), 
-                                                          columnContext, 
-                                                          subqueryAssembler),
-                                       assembleExpression(ifElse.getThenExpression(), 
-                                                          columnContext,
-                                                          subqueryAssembler),
-                                       assembleExpression(ifElse.getElseExpression(), 
-                                                          columnContext, 
-                                                          subqueryAssembler)),
-                         null);
+            return assembleFunction("if",
+                                    Arrays.asList(ifElse.getTestCondition(), 
+                                                  ifElse.getThenExpression(), 
+                                                  ifElse.getElseExpression()), 
+                                    columnContext, subqueryAssembler);
         }
         else if (node instanceof InListCondition) {
             InListCondition inList = (InListCondition)node;
@@ -175,6 +160,16 @@ public class ExpressionAssembler
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
 
+    public Expression assembleFunction(String functionName,
+                                       List<ExpressionNode> arguments,
+                                       ColumnExpressionContext columnContext,
+                                       SubqueryOperatorAssembler subqueryAssembler) {
+        return functionsRegistry
+            .composer(functionName)
+            .compose(assembleExpressions(arguments, columnContext, subqueryAssembler), 
+                     null);
+    }
+                                       
     public Expression assembleColumnExpression(ColumnExpression column,
                                                ColumnExpressionContext columnContext) {
         ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();
