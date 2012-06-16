@@ -69,12 +69,6 @@ public class LocateExpression extends AbstractCompositeExpression
     public static final ExpressionComposer LOCATE_COMPOSER = new ExpressionComposer ()
     {
         @Override
-        public Expression compose(List<? extends Expression> arguments) 
-        {
-            return new LocateExpression(arguments);
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
@@ -89,7 +83,7 @@ public class LocateExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in LOCATE yet.");
+            return new LocateExpression(arguments);
         }
 
         @Override

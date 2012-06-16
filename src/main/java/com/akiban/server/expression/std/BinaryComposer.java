@@ -39,10 +39,10 @@ abstract class BinaryComposer implements ExpressionComposer {
 
     // Most expessions don't need access to types list
     // Those that do need to override this
-    protected Expression compose (List<? extends Expression> arguments,
-                                ExpressionType first, ExpressionType second, ExpressionType top)
+    protected Expression compose (Expression first, Expression second,
+                                  ExpressionType firstType, ExpressionType secondType, ExpressionType topType)
     {
-        throw new UnsupportedOperationException("not supported");
+        return compose(first, second);
     }
     
     // For most expressions, NULL is contaminating
@@ -60,13 +60,7 @@ abstract class BinaryComposer implements ExpressionComposer {
             throw new WrongExpressionArityException(2, arguments.size());
         if (arguments.size() + 1 != typesList.size())
             throw new IllegalArgumentException("unexpected argc");
-        return compose(arguments, typesList.get(0), typesList.get(1), typesList.get(2));
+        return compose(arguments.get(0), arguments.get(1), typesList.get(0), typesList.get(1), typesList.get(2));
     }
     
-    @Override
-    public Expression compose(List<? extends Expression> arguments) {
-        if (arguments.size() != 2)
-            throw new WrongExpressionArityException(2, arguments.size());
-        return compose(arguments.get(0), arguments.get(1));
-    }
 }

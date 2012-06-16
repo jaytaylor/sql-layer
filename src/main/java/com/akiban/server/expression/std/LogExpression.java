@@ -84,16 +84,6 @@ public class LogExpression extends AbstractCompositeExpression
                 argumentTypes.setType(n, AkType.DOUBLE);
             return ExpressionTypes.DOUBLE;
         }
-
-        @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            int size = arguments.size();
-            if (size != 1 && size != 2)
-                throw new WrongExpressionArityException(2, size);
- 
-            return new LogExpression(arguments, "LOG");
-        }
         
         @Override
         public String toString ()
@@ -104,7 +94,11 @@ public class LogExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in LOG yet.");
+            int size = arguments.size();
+            if (size != 1 && size != 2)
+                throw new WrongExpressionArityException(2, size);
+ 
+            return new LogExpression(arguments, "LOG");
         }
     };
     

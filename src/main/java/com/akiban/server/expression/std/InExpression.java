@@ -49,11 +49,6 @@ public final class InExpression extends AbstractCompositeExpression {
     @Scalar("in")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new InExpression(arguments.get(0), arguments.subList(0, arguments.size()));
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             AkType firstArg = argumentTypes.get(0).getType();
@@ -65,7 +60,7 @@ public final class InExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in IN yet.");
+            return new InExpression(arguments.get(0), arguments.subList(0, arguments.size()));
         }
 
         @Override

@@ -71,12 +71,6 @@ public class LikeExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new LikeExpression(arguments, case_insensitive);
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
@@ -90,7 +84,7 @@ public class LikeExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in LIKE yet.");
+            return new LikeExpression(arguments, case_insensitive);
         }
 
         @Override

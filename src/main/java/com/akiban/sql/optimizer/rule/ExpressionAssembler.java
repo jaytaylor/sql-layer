@@ -121,7 +121,8 @@ public class ExpressionAssembler
                                                           subqueryAssembler),
                                        assembleExpression(bexpr.getRight(), 
                                                           columnContext,
-                                                          subqueryAssembler)));
+                                                          subqueryAssembler)),
+                         null);
         }
         else if (node instanceof CastExpression)
             return assembleCastExpression((CastExpression)node,
@@ -139,7 +140,8 @@ public class ExpressionAssembler
             return functionsRegistry
                 .composer(funcNode.getFunction())
                 .compose(assembleExpressions(funcNode.getOperands(), 
-                                             columnContext, subqueryAssembler));
+                                             columnContext, subqueryAssembler),
+                         null);
         }
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
@@ -153,7 +155,8 @@ public class ExpressionAssembler
                                                           subqueryAssembler),
                                        assembleExpression(ifElse.getElseExpression(), 
                                                           columnContext, 
-                                                          subqueryAssembler)));
+                                                          subqueryAssembler)),
+                         null);
         }
         else if (node instanceof InListCondition) {
             InListCondition inList = (InListCondition)node;

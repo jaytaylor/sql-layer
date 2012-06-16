@@ -118,7 +118,7 @@ public class LeftExpressionTest extends ComposedExpressionTestBase
         List<Expression> args = new ArrayList<Expression>();
         for (int n = 0; n < argc; ++n)
             args.add(LiteralExpression.forNull());
-        LeftExpression.COMPOSER.compose(args);
+        compose(LeftExpression.COMPOSER, args);
         alreadyExc = true;
     }
     

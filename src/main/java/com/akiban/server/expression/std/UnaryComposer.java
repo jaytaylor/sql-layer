@@ -43,7 +43,7 @@ abstract class UnaryComposer implements ExpressionComposer {
                                   ExpressionType argType, 
                                   ExpressionType returnType)
     {
-        throw new UnsupportedOperationException("not supported");
+        return compose(argument);
     }
     
     // For most expressions, NULL is contaminating
@@ -64,10 +64,4 @@ abstract class UnaryComposer implements ExpressionComposer {
         return compose(arguments.get(0), typesList.get(0), typesList.get(1));
     }
     
-    @Override
-    public Expression compose(List<? extends Expression> arguments) {
-        if (arguments.size() != 1)
-            throw new WrongExpressionArityException(1, arguments.size());
-        return compose(arguments.get(0));
-    }
 }

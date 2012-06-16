@@ -64,12 +64,6 @@ public class SubstringIndexExpression extends AbstractTernaryExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new SubstringIndexExpression(arguments);
-        }
-
-        @Override
         public NullTreating getNullTreating()
         {
             return NullTreating.RETURN_NULL;
