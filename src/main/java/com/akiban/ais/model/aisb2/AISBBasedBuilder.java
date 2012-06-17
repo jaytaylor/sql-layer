@@ -73,7 +73,13 @@ public class AISBBasedBuilder
             }
             return aisb.akibanInformationSchema();
         }
-
+        
+        @Override
+        public AkibanInformationSchema unvalidatedAIS() {
+            aisb.basicSchemaIsComplete();
+            aisb.groupingIsComplete();
+            return aisb.akibanInformationSchema();
+        }
         // NewAISBuilder interface
 
         @Override
@@ -339,6 +345,10 @@ public class AISBBasedBuilder
             return aisb.akibanInformationSchema();
         }
 
+        @Override
+        public AkibanInformationSchema unvalidatedAIS() {
+            return aisb.akibanInformationSchema();
+        }
         // NewAISGroupIndexBuilder interface
 
         @Override

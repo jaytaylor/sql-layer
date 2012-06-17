@@ -51,6 +51,19 @@ class JoinToParentPK implements AISValidation {
             }
             TableIndex parentPK = join.getParent().getPrimaryKey().getIndex();
             
+            // bug 931258 : getJoinColumns() asserts if the child specifies more
+            // columns than are in the parent PK. Catch and report as validation failure. 
+            try { 
+                join.getJoinColumns();
+            } catch (AssertionError ex) {
+                output.reportFailure(new AISValidationFailure(
+                        new JoinColumnMismatchException (parentPK.getKeyColumns().size()+1,
+                                join.getChild().getName(),
+                                join.getParent().getName(), 
+                                parentPK.getKeyColumns().size())));
+                return;
+            }
+            
             if (parentPK.getKeyColumns().size() != join.getJoinColumns().size()) {
                 output.reportFailure(new AISValidationFailure(
                         new JoinColumnMismatchException (join.getJoinColumns().size(),
