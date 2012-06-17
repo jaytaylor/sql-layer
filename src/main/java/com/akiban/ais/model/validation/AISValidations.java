@@ -41,7 +41,7 @@ public final class AISValidations {
     public static final AISValidation INDEX_SIZES = new IndexSizes();
     public static final AISValidation INDEX_TREE_NAMES_UNIQUE = new IndexTreeNamesUnique();
     public static final AISValidation JOIN_COLUMN_TYPES_MATCH = new JoinColumnTypesMatch();
-    public static final AISValidation JOIN_TO_PARENT_PK = new JoinToParentPK();
+    public static final AISValidation JOIN_TO_PARENT_PK = new JoinToParentPKTest();
     public static final AISValidation JOIN_TO_ONE_PARENT = new JoinToOneParent();
     public static final AISValidation PRIMARY_KEY_IS_NOT_NULL = new PrimaryKeyIsNotNull();
     public static final AISValidation REFERENCES_CORRECT = new ReferencesCorrect();

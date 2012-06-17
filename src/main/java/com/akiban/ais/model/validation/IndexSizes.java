@@ -123,8 +123,18 @@ class IndexSizes implements AISValidation {
     }
 
     private long validateHKeySize (UserTable table, AISValidationOutput output) {
-        final HKey hkey = table.hKey();
         long hkeySize = 0;
+        HKey hkey; 
+        try {
+        hkey = table.hKey();
+        } catch (NullPointerException ex) {
+            // Bug 931258 : 
+            // The HKey Calculations on the join assumes the parent 
+            // has an explicit Primary Key. The NPE results when the parent table 
+            // does not, or the join is to the wrong columns. Both of these 
+            // are checked in other validations.
+            return hkeySize;
+        }
         int ordinalSize = 0;
         for(HKeySegment hkSeg : hkey.segments()) {
             ordinalSize += MAX_ORDINAL_STORAGE_SIZE; // one per segment (i.e. table)

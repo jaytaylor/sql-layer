@@ -34,6 +34,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinParentNoExplicitPK;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
 class JoinToParentPK implements AISValidation {
@@ -41,8 +42,13 @@ class JoinToParentPK implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Join join : ais.getJoins().values()) {
-            // this is caught by TableHasPrimaryKey validation
-            if (join.getParent().getPrimaryKey() == null) { continue; }
+
+            if (join.getParent().getPrimaryKey() == null) 
+            { 
+                output.reportFailure(new AISValidationFailure (
+                        new JoinParentNoExplicitPK(join.getParent().getName())));
+                continue;
+            }
             TableIndex parentPK = join.getParent().getPrimaryKey().getIndex();
             
             if (parentPK.getKeyColumns().size() != join.getJoinColumns().size()) {
