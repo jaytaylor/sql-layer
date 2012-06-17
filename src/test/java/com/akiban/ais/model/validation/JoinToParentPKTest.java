@@ -110,4 +110,14 @@ public class JoinToParentPKTest {
         Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
         Assert.assertEquals(0, failures.size());
     }
+    
+    @Test
+    public void joinToNonPKColumns() {
+        builder.userTable("j8").colLong("c1").colString("c2", 10).joinTo("t1").on("c2", "c2");
+        Collection<AISValidationFailure> failures = builder.unvalidatedAIS().validate(validations).failures();
+        Assert.assertEquals(1, failures.size());
+        AISValidationFailure fail = failures.iterator().next();
+        Assert.assertEquals(ErrorCode.JOIN_TO_WRONG_COLUMNS, fail.errorCode());
+
+    }
 }
