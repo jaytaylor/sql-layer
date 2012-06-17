@@ -32,7 +32,6 @@ import com.akiban.qp.util.ValueSourceHasher;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
-import com.akiban.util.ByteSource;
 import com.akiban.util.tap.InOutTap;
 
 import java.util.Arrays;

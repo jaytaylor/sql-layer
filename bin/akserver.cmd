@@ -15,7 +15,7 @@ REM along with this program.  If not, see http://www.gnu.org/licenses.
 
 SETLOCAL
 
-SET SERVER_JAR=akiban-server-1.2.3-SNAPSHOT-jar-with-dependencies.jar
+SET SERVER_JAR=akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar
 SET SERVICE_NAME=akserver
 SET SERVICE_DNAME=Akiban Server
 SET SERVICE_DESC=Akiban Database Server

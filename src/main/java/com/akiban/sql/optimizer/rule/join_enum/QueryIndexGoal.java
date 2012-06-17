@@ -30,9 +30,6 @@ import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.IndexScan.OrderEffectiveness;
-import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
-
-import java.util.*;
 
 /** The overall goal of a query: WHERE conditions, ORDER BY, etc. */
 public class QueryIndexGoal

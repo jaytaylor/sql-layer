@@ -26,11 +26,13 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.ais.model.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.api.dml.IndexRowPrefixSelector;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -59,9 +61,11 @@ import static java.lang.Math.min;
  * <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
  * <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
  * <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
- * <li><b>boolean[] ascending:</b> The length of this array specifies the number of fields to be compared in the merge,
- * (<= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field is ascending, false
- * if it is descending.
+ * <li><b>boolean[] ascending:</b> The length of this array specifies the number of fields to be compared in the merge
+ * for the purpose of determining whether a left row and right row agree and will result in an output row,
+ * ascending.length <= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field
+ * is ascending, false if it is descending. This ordering specification must be consistent with the order of both
+ * input streams.
  * <li><b>JoinType joinType:</b>
  * <ul>
  * <li>INNER_JOIN: An ordinary intersection is computed.
@@ -85,7 +89,12 @@ import static java.lang.Math.min;
  * <h1>Assumptions</h1>
  * <p/>
  * Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt>
- * and <tt>rightOrderingFields</tt>.
+ * and <tt>rightOrderingFields</tt>, and ordered according to <tt>ascending</tt>. The order of rows in both
+ * input streams must be consistent with <tt>ascending.</tt>
+ * <p/>
+ * The input row types must correspond to indexes in the same group (as determined by the index's leafmost table).
+ * This constraint may be relaxed in the future, but then the number of fields to compare is likely to be required
+ * as a new constructor argument.
  * <p/>
  * <h1>Performance</h1>
  * <p/>
@@ -104,7 +113,7 @@ class Intersect_Ordered extends Operator
     public String toString()
     {
         return String.format("%s(skip %d from left, skip %d from right, compare %d)",
-                             getClass().getSimpleName(), leftFixedFields, rightFixedFields, ascending.length);
+                             getClass().getSimpleName(), leftFixedFields, rightFixedFields, fieldsToCompare);
     }
 
     // Operator interface
@@ -162,6 +171,8 @@ class Intersect_Ordered extends Operator
         ArgumentValidation.isLTE("ascending.length()", ascending.length, min(leftOrderingFields, rightOrderingFields));
         ArgumentValidation.isNotSame("joinType", joinType, "JoinType.FULL_JOIN", JoinType.FULL_JOIN);
         ArgumentValidation.notNull("options", options);
+        ArgumentValidation.isSame("leftRowType group", leftRowType.index().leafMostTable().getGroup(),
+                                  "rightRowType group", rightRowType.index().leafMostTable().getGroup());
         // scan algorithm
         boolean skipScan = options.contains(IntersectOption.SKIP_SCAN);
         boolean sequentialScan = options.contains(IntersectOption.SEQUENTIAL_SCAN);
@@ -194,7 +205,13 @@ class Intersect_Ordered extends Operator
         // Setup for row comparisons
         this.leftFixedFields = leftRowType.nFields() - leftOrderingFields;
         this.rightFixedFields = rightRowType.nFields() - rightOrderingFields;
+        this.fieldsToCompare = ascending.length;
+        // Setup for jumping
+        leftSkipRowColumnSelector = new IndexRowPrefixSelector(leftFixedFields + fieldsToCompare);
+        rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
     }
+
+    // For use by this class
 
     // Class state
 
@@ -210,11 +227,14 @@ class Intersect_Ordered extends Operator
     private final IndexRowType rightRowType;
     private final int leftFixedFields;
     private final int rightFixedFields;
+    private final int fieldsToCompare;
     private final boolean keepUnmatchedLeft;
     private final boolean keepUnmatchedRight;
     private final boolean outputLeft;
     private final boolean skipScan;
     private final boolean[] ascending;
+    private final ColumnSelector leftSkipRowColumnSelector;
+    private final ColumnSelector rightSkipRowColumnSelector;
 
     // Inner classes
 
@@ -300,20 +320,20 @@ class Intersect_Ordered extends Operator
         }
 
         @Override
-        public void jump(Row row, ColumnSelector columnSelector)
+        public void jump(Row jumpRow, ColumnSelector jumpRowColumnSelector)
         {
             // This operator emits rows from left or right. The row used to specify the jump should be of the matching
             // row type.
             int suffixRowFixedFields;
             if (outputLeft) {
-                assert row.rowType() == leftRowType : row.rowType();
+                assert jumpRow.rowType() == leftRowType : jumpRow.rowType();
                 suffixRowFixedFields = leftFixedFields;
             } else {
-                assert row.rowType() == rightRowType : row.rowType();
+                assert jumpRow.rowType() == rightRowType : jumpRow.rowType();
                 suffixRowFixedFields = rightFixedFields;
             }
-            nextLeftRowSkip(row, suffixRowFixedFields, columnSelector);
-            nextRightRowSkip(row, suffixRowFixedFields, columnSelector);
+            nextLeftRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector);
+            nextRightRowSkip(jumpRow, suffixRowFixedFields, jumpRowColumnSelector);
             if (leftRow.isEmpty() || rightRow.isEmpty()) {
                 close();
             }
@@ -366,26 +386,6 @@ class Intersect_Ordered extends Operator
             super(context);
             leftInput = left.cursor(context);
             rightInput = right.cursor(context);
-            final int leftSkipRowColumns = leftFixedFields + ascending.length;
-            leftSkipRowColumnSelector =
-                new ColumnSelector()
-                {
-                    @Override
-                    public boolean includesColumn(int columnPosition)
-                    {
-                        return columnPosition < leftSkipRowColumns;
-                    }
-                };
-            final int rightSkipRowColumns = rightFixedFields + ascending.length;
-            rightSkipRowColumnSelector =
-                new ColumnSelector()
-                {
-                    @Override
-                    public boolean includesColumn(int columnPosition)
-                    {
-                        return columnPosition < rightSkipRowColumns;
-                    }
-                };
         }
 
         // For use by this class
@@ -408,32 +408,6 @@ class Intersect_Ordered extends Operator
             }
         }
 
-        private void nextLeftRowSkip(Row suffixRow, int suffixRowFixedFields, ColumnSelector suffixRowColumnSelector)
-        {
-            if (leftRow.isHolding()) {
-                addSuffixToSkipRow(leftSkipRow(),
-                                   leftFixedFields,
-                                   suffixRow,
-                                   suffixRowFixedFields,
-                                   ascending.length);
-                leftInput.jump(leftSkipRow, suffixRowColumnSelector);
-                leftRow.hold(leftInput.next());
-            }
-        }
-
-        private void nextRightRowSkip(Row suffixRow, int suffixRowFixedFields, ColumnSelector suffixRowColumnSelector)
-        {
-            if (rightRow.isHolding()) {
-                addSuffixToSkipRow(rightSkipRow(),
-                                   rightFixedFields,
-                                   suffixRow,
-                                   suffixRowFixedFields,
-                                   ascending.length);
-                rightInput.jump(rightSkipRow, suffixRowColumnSelector);
-                rightRow.hold(rightInput.next());
-            }
-        }
-
         private long compareRows()
         {
             long c;
@@ -444,10 +418,11 @@ class Intersect_Ordered extends Operator
             } else if (rightRow.isEmpty()) {
                 c = -1;
             } else {
-                c = leftRow.get().compareTo(rightRow.get(), leftFixedFields, rightFixedFields, ascending.length);
+                c = leftRow.get().compareTo(rightRow.get(), leftFixedFields, rightFixedFields, fieldsToCompare);
                 if (c != 0) {
                     int fieldThatDiffers = (int) abs(c) - 1;
-                    if (fieldThatDiffers < ascending.length && !ascending[fieldThatDiffers]) {
+                    assert fieldThatDiffers < ascending.length;
+                    if (!ascending[fieldThatDiffers]) {
                         c = -c;
                     }
                 }
@@ -455,17 +430,42 @@ class Intersect_Ordered extends Operator
             return c;
         }
 
-        private void addSuffixToSkipRow(ValuesHolderRow skipRow, int skipRowFixedFields,
-                                        Row suffixRow, int suffixRowFixedFields,
-                                        int orderingFields)
+        private void nextLeftRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
         {
-            if (suffixRow == null) {
-                for (int f = 0; f < orderingFields; f++) {
+            if (leftRow.isHolding()) {
+                addSuffixToSkipRow(leftSkipRow(),
+                                   leftFixedFields,
+                                   jumpRow,
+                                   jumpRowFixedFields);
+                leftInput.jump(leftSkipRow, jumpRowColumnSelector);
+                leftRow.hold(leftInput.next());
+            }
+        }
+
+        private void nextRightRowSkip(Row jumpRow, int jumpRowFixedFields, ColumnSelector jumpRowColumnSelector)
+        {
+            if (rightRow.isHolding()) {
+                addSuffixToSkipRow(rightSkipRow(),
+                                   rightFixedFields,
+                                   jumpRow,
+                                   jumpRowFixedFields);
+                rightInput.jump(rightSkipRow, jumpRowColumnSelector);
+                rightRow.hold(rightInput.next());
+            }
+        }
+
+        private void addSuffixToSkipRow(ValuesHolderRow skipRow,
+                                        int skipRowFixedFields,
+                                        Row jumpRow,
+                                        int jumpRowFixedFields)
+        {
+            if (jumpRow == null) {
+                for (int f = 0; f < fieldsToCompare; f++) {
                     skipRow.holderAt(skipRowFixedFields + f).putNull();
                 }
             } else {
-                for (int f = 0; f < orderingFields; f++) {
-                    skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
+                for (int f = 0; f < fieldsToCompare; f++) {
+                    skipRow.holderAt(skipRowFixedFields + f).copyFrom(jumpRow.eval(jumpRowFixedFields + f));
                 }
             }
         }
@@ -514,8 +514,6 @@ class Intersect_Ordered extends Operator
         private final Cursor rightInput;
         private final ShareHolder<Row> leftRow = new ShareHolder<Row>();
         private final ShareHolder<Row> rightRow = new ShareHolder<Row>();
-        private final ColumnSelector leftSkipRowColumnSelector;
-        private final ColumnSelector rightSkipRowColumnSelector;
         private ValuesHolderRow leftSkipRow;
         private ValuesHolderRow rightSkipRow;
     }

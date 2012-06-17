@@ -26,6 +26,8 @@
 
 package com.akiban.ais.model.aisb2;
 
+import com.akiban.ais.model.TableName;
+
 public interface NewAISBuilder extends NewAISProvider {
     /**
      * Sets the default schema
@@ -48,4 +50,6 @@ public interface NewAISBuilder extends NewAISProvider {
      * @return the new table's builder
      */
     NewUserTableBuilder userTable(String schema, String table);
+
+    NewUserTableBuilder userTable(TableName tableName);
 }

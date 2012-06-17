@@ -33,7 +33,6 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.extract.Extractors;
 import java.util.Arrays;
 import org.joda.time.DateTime;

@@ -29,7 +29,6 @@ package com.akiban.sql.pg;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 
-import java.util.List;
 import java.io.IOException;
 
 import com.akiban.server.service.session.Session;

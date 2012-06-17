@@ -28,8 +28,6 @@ package com.akiban.util;
 
 import org.junit.Test;
 
-import java.util.Arrays;
-
 import static junit.framework.Assert.assertEquals;
 
 public final class StringsTest {

@@ -24,11 +24,28 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.server.api.dml;
 
-import com.akiban.ais.model.TableName;
+// For selecting a prefix of an index row
 
-public interface MemoryStore {
-    public void registerTable (TableName name, MemoryTableFactory factory);
-    public MemoryTableFactory getFactory (TableName name);
+public class IndexRowPrefixSelector implements ColumnSelector
+{
+    @Override
+    public String toString()
+    {
+        return String.format("columns(0-%s)", nColumns - 1);
+    }
+
+    @Override
+    public boolean includesColumn(int columnPosition)
+    {
+        return columnPosition < nColumns;
+    }
+
+    public IndexRowPrefixSelector(int nColumns)
+    {
+        this.nColumns = nColumns;
+    }
+
+    private final int nColumns;
 }

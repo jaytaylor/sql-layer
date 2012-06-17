@@ -36,7 +36,6 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
-import static junit.framework.Assert.fail;
 
 // Inspired by bug 885697
 

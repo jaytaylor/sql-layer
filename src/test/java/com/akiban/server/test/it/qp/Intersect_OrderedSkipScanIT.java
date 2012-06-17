@@ -44,7 +44,6 @@ import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
 import static com.akiban.server.expression.std.Expressions.field;
-import static junit.framework.Assert.fail;
 
 public class Intersect_OrderedSkipScanIT extends OperatorITBase
 {
@@ -247,9 +246,7 @@ public class Intersect_OrderedSkipScanIT extends OperatorITBase
             row(parentXIndexRowType, 44L, 44L, 4001L),
             row(parentXIndexRowType, 44L, 44L, 4002L),
         };
-/*
         compareRows(expectedX, cursor(intersectPxPy(44, true, true, false), queryContext));
-*/
         compareRows(expectedX, cursor(intersectPxPy(44, true, true, true), queryContext));
         reverse(expectedX);
         compareRows(expectedX, cursor(intersectPxPy(44, true, false, false), queryContext));

@@ -27,7 +27,6 @@
 package com.akiban.sql.server;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.TableName;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.NoTransactionInProgressException;

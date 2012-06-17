@@ -95,8 +95,14 @@ class SortCursorMixedOrder extends SortCursor
                 if (columnSelector.includesColumn(field)) {
                     ValueSource fieldValue = row.eval(field);
                     if (!scanState.jump(fieldValue)) {
-                        // Row that we're jumping to is incompatible with the constraints of this scan
-                        more = false;
+                        // We've matched as much of the row as we can with tree contents.
+                        if (scanState.field() == scanStates.size() - 1) {
+                            // If we're on the last key segment, then the cursor is already positioned so nothing needs
+                            // to be done.
+                            more = true;
+                        } else {
+                            more = scanState.startScan();
+                        }
                     }
                 } else {
                     more = scanState.startScan();

@@ -28,8 +28,6 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
-import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
-
 import com.akiban.server.error.UnsupportedSQLException;
 
 import org.slf4j.Logger;
