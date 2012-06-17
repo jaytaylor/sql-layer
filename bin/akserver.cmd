@@ -20,7 +20,7 @@ SET SERVICE_NAME=akserver
 SET SERVICE_DNAME=Akiban Server
 SET SERVICE_DESC=Akiban Database Server
 
-IF EXIST "%~dp0..\..\pom.xml" GOTO FROM_BUILD
+IF EXIST "%~dp0..\pom.xml" GOTO FROM_BUILD
 
 REM Installation Configuration
 
@@ -49,13 +49,14 @@ GOTO PARSE_CMD
 
 REM Build Configuration
 
-FOR %%P IN ("%~dp0..\..") DO SET BUILD_HOME=%%~fP
+FOR %%P IN ("%~dp0..") DO SET BUILD_HOME=%%~fP
 
 SET JAR_FILE=%BUILD_HOME%\target\%SERVER_JAR%
-SET AKIBAN_CONF=%BUILD_HOME%\windows
-SET AKIBAN_LOGDIR=%~d0\akiban\log
+SET AKIBAN_CONF=%BUILD_HOME%\conf
+SET AKIBAN_LOGDIR=\tmp\akiban_server
 SET PRUNSRV=prunsrv
 SET PRUNMGR=prunmgr
+SET SERVICE_MODE=manual
 
 :PARSE_CMD
 
@@ -71,19 +72,23 @@ SHIFT
 IF "%1"=="" GOTO END_OPT
 
 IF "%1"=="-j" (
-  SET JAR_FILE=%3
+  SET JAR_FILE=%2
   SHIFT
   SHIFT
 ) ELSE IF "%1"=="-c" (
-  SET AKIBAN_CONF=%3
+  SET AKIBAN_CONF=%2
   SHIFT
   SHIFT
 ) ELSE IF "%1"=="-l" (
-  SET AKIBAN_LOGCONF=%3
+  SET AKIBAN_LOGCONF=%2
   SHIFT
   SHIFT
 ) ELSE IF "%1"=="-g" (
   SET JVM_OPTS=%JVM_OPTS% -Dcom.persistit.showgui=true
+  SHIFT
+) ELSE IF "%1"=="-m" (
+  SET SERVICE_MODE=%2
+  SHIFT
   SHIFT
 ) ELSE (
   GOTO USAGE
@@ -126,7 +131,7 @@ IF EXIST "%AKIBAN_CONF%\config\jvm-options.cmd" CALL "%AKIBAN_CONF%\config\jvm-o
 
 IF "%VERB%"=="run" GOTO RUN_CMD
 
-SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=manual --Classpath="%JAR_FILE%"
+SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%JAR_FILE%"
 REM Each value that might have a space needs a separate ++JvmOptions.
 SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmOptions="%JVM_OPTS: =#%" ++JvmOptions="-Dakiban.admin=%AKIBAN_CONF%" ++JvmOptions="-Dservices.config=%AKIBAN_CONF%\config\services-config.yaml" ++JvmOptions="-Dlog4j.configuration=file:%AKIBAN_LOGCONF%"
 IF DEFINED MAX_HEAP_SIZE SET PRUNSRV_ARGS=%PRUNSRV_ARGS% --JvmMs=%MAX_HEAP_SIZE% --JvmMx=%MAX_HEAP_SIZE%
@@ -137,7 +142,7 @@ IF "%VERB%"=="install" (
 )
 
 :USAGE
-ECHO Usage: {install,uninstall,start,stop,run,monitor,version} [-j jarfile] [-c confdir] [-l log4j.properties] [-g]
+ECHO Usage: {install,uninstall,start,stop,run,monitor,version} [-j jarfile] [-c confdir] [-l log4j.properties] [-g] [-m manual,auto]
 ECHO install   - install as service
 ECHO uninstall - remove installed service
 ECHO start     - start installed service
