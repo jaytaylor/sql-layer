@@ -109,8 +109,8 @@ public interface NewUserTableBuilder extends NewAISBuilder {
     NewUserTableBuilder colBigInt(String name);
     NewUserTableBuilder colBigInt(String name, boolean nullable);
 
-    NewUserTableBuilder colBinary(String name, int length);
-    NewUserTableBuilder colBinary(String name, int length, boolean nullable);
+    NewUserTableBuilder colVarBinary(String name, int length);
+    NewUserTableBuilder colVarBinary(String name, int length, boolean nullable);
     
     /**
      * Adds a PK

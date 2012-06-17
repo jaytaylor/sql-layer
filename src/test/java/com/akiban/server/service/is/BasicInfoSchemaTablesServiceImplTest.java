@@ -53,7 +53,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 public class BasicInfoSchemaTablesServiceImplTest {
-    private static final String I_S = TableName.AKIBAN_INFORMATION_SCHEMA;
+    private static final String I_S = TableName.INFORMATION_SCHEMA;
 
     private AisHolder holder;
     private BasicInfoSchemaTablesServiceImpl bist;
