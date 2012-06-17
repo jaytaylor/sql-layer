@@ -41,13 +41,14 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.AkType;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import org.junit.Test;
 
 import static org.junit.Assert.*;
 
 @RunWith(NamedParameterizedRunner.class)
-public class LeftExpressionTest extends ComposedExpressionTestBase
+public class LeftRightExpressionTest extends ComposedExpressionTestBase
 {
     private static boolean alreadyExc = false;
     
@@ -55,13 +56,15 @@ public class LeftExpressionTest extends ComposedExpressionTestBase
     private Integer len;
     private String expected;
     private Integer argc;
+    private final ExpressionComposer composer;
     
-    public LeftExpressionTest(String str, Integer length, String exp, Integer count)
+    public LeftRightExpressionTest(String str, Integer length, String exp, Integer count, ExpressionComposer com)
     {
         st = str;
         len = length;
         expected = exp;
         argc = count;
+        composer = com;
     }
     
     @TestParameters
@@ -70,30 +73,34 @@ public class LeftExpressionTest extends ComposedExpressionTestBase
         ParameterizationBuilder pb = new ParameterizationBuilder();
         
         String name;
-        param(pb, name = "Test Shorter Length", "abc", 2, "ab", null);
-        param(pb, name, "abc", 0, "", null);
-        param(pb, name, "abc", -4, "", null);
+        testLeft(pb, name = "Test Shorter Length", "abc", 2, "ab", null);
+        testLeft(pb, name, "abc", 0, "", null);
+        testLeft(pb, name, "abc", -4, "", null);
         
-        param(pb, name = "Test Longer Length", "abc", 4, "abc", null);
-        param(pb, name, "abc", 3, "abc", null);
+        testLeft(pb, name = "Test Longer Length", "abc", 4, "abc", null);
+        testLeft(pb, name, "abc", 3, "abc", null);
         
-        param(pb, name = "Test NULL", null, 3, null, null);
-        param(pb, name, "ab", null, null, null);
+        testLeft(pb, name = "Test NULL", null, 3, null, null);
+        testLeft(pb, name, "ab", null, null, null);
         
-        param(pb, name = "Test Wrong Arity", null, null, null, 0);
-        param(pb, name, null, null, null, 1);
-        param(pb, name, null, null, null, 3);
-        param(pb, name, null, null, null, 4);
-        param(pb, name, null, null, null, 5);
+        testLeft(pb, name = "Test Wrong Arity", null, null, null, 0);
+        testLeft(pb, name, null, null, null, 1);
+        testLeft(pb, name, null, null, null, 3);
+        testLeft(pb, name, null, null, null, 4);
+        testLeft(pb, name, null, null, null, 5);
         
         return pb.asList();
     }
     
-    private static void param (ParameterizationBuilder pb, String name, String str, Integer length, String exp, Integer argc)
+    private static void testLeft (ParameterizationBuilder pb, String name, String str, Integer length, String exp, Integer argc)
     {
-        pb.add(name + " LEFT(" + str + ", " + length + "), argc = " + argc, str, length, exp, argc);
+        pb.add(name + " LEFT(" + str + ", " + length + "), argc = " + argc, str, length, exp, argc, LeftRightExpression.LEFT_COMPOSER);
     }
     
+    private static void testRight(ParameterizationBuilder pb, String name, String str, Integer length, String exp, Integer argc)
+    {
+        pb.add(name + " RIGHT(" + str + ", " + length + "), argc = " + argc, str, length, exp, argc, LeftRightExpression.RIGHT_COMPOSER);
+    }
     
     @OnlyIfNot("testArity()")
     @Test
@@ -103,7 +110,7 @@ public class LeftExpressionTest extends ComposedExpressionTestBase
         Expression length = len == null? LiteralExpression.forNull():
                             new LiteralExpression(AkType.LONG,  len.intValue());
         
-        Expression top = new LeftExpression(str, length);
+        Expression top = composer.compose(Arrays.asList(str, length));
         
         assertEquals("LEFT(" + st + ", " + len + ") ", 
                     expected == null? NullValueSource.only() : new ValueHolder(AkType.VARCHAR, expected),
@@ -118,7 +125,7 @@ public class LeftExpressionTest extends ComposedExpressionTestBase
         List<Expression> args = new ArrayList<Expression>();
         for (int n = 0; n < argc; ++n)
             args.add(LiteralExpression.forNull());
-        LeftExpression.COMPOSER.compose(args);
+        composer.compose(args);
         alreadyExc = true;
     }
     
@@ -136,7 +143,7 @@ public class LeftExpressionTest extends ComposedExpressionTestBase
     @Override
     protected ExpressionComposer getComposer()
     {
-        return LeftExpression.COMPOSER;
+        return composer;
     }
 
     @Override
