@@ -26,13 +26,14 @@
 
 package com.akiban.server.types;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import com.akiban.collation.CString;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public interface ValueSource {
     boolean isNull();

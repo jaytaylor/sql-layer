@@ -37,12 +37,11 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.ByteSource;
-import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 
 public final class PersistitKeyValueTarget implements ValueTarget {
 
-    final static Collator COLLATOR = CollatorFactory.getCollator("en_US");
+    private String collationName = null;
 
     // PersistitKeyValueTarget interface
 
@@ -58,9 +57,21 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     }
 
     public PersistitKeyValueTarget expectingType(Column column) {
+        /*
+         * Temporary very kludgey hack to marshal in the collation name
+         * through a special column name syntax such as abc#en_US for
+         * a varchar column to be collated in US English.
+         */
+        final String cname = column.getName();
+        final AkType type = column.getType().akType();
+        if (type == AkType.VARCHAR && cname.indexOf('#') > -1) {
+            collationName = cname.split("#")[1];
+        } else {
+            collationName = null;
+        }
         return expectingType(column.getType().akType());
     }
-    
+
     // ValueTarget interface
 
     @Override
@@ -122,14 +133,18 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     @Override
     public void putString(String value) {
         checkState(AkType.VARCHAR);
-        key.append(new CString(value, COLLATOR));
+        if (collationName != null) {
+            key.append(new CString(value, CollatorFactory.getCollator(collationName)));
+        } else {
+            key.append(value);
+        }
         invalidate();
     }
 
     @Override
     public void putText(String value) {
         checkState(AkType.TEXT);
-        key.append(new CString(value, COLLATOR));
+        key.append(value);
         invalidate();
     }
 
@@ -146,7 +161,7 @@ public final class PersistitKeyValueTarget implements ValueTarget {
         key.append(value);
         invalidate();
     }
-    
+
     @Override
     public void putInterval_Millis(long value) {
         throw new UnsupportedOperationException("interval not supported yet");
@@ -228,7 +243,7 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     protected final Key key() {
         return key;
     }
-    
+
     // private methods
 
     private void checkState(AkType type) {

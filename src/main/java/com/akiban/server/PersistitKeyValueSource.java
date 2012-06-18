@@ -26,6 +26,9 @@
 
 package com.akiban.server;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.server.types.AkType;
@@ -34,9 +37,6 @@ import com.akiban.server.types.util.ValueHolder;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 import com.persistit.Key;
-
-import java.math.BigDecimal;
-import java.math.BigInteger;
 
 public final class PersistitKeyValueSource implements ValueSource {
 
@@ -154,7 +154,7 @@ public final class PersistitKeyValueSource implements ValueSource {
 
     @Override
     public String getString() {
-        return decode().getString();
+        return  decode().getString();
     }
 
     @Override
