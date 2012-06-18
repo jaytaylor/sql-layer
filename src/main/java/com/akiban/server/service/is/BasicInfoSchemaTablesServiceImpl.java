@@ -31,6 +31,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableIndex;
@@ -57,6 +58,7 @@ import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.types.AkType;
 import com.google.inject.Inject;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
@@ -67,6 +69,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
     static final TableName TABLE_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "table_constraints");
     static final TableName REFERENTIAL_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "referential_constraints");
+    static final TableName GROUPING_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "grouping_constraints");
     static final TableName KEY_COLUMN_USAGE = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "key_column_usage");
     static final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_columns");
@@ -405,6 +408,68 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             @Override
             public Row next() {
                 return null;
+            }
+
+            @Override
+            public void close() {
+            }
+        }
+    }
+
+    private class GroupingConstraintsFactory extends BasicFactoryBase {
+        public GroupingConstraintsFactory(UserTable sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            int count = 0;
+            for(UserTable userTable : aisHolder.getAis().getUserTables().values()) {
+                if(userTable.getParentJoin() != null) {
+                    ++count;
+                }
+            }
+            return count;
+        }
+
+        private class Scan implements GroupScan {
+            final RowType rowType;
+            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            int rowCounter;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            private UserTable advance() {
+                while(tableIt.hasNext()) {
+                    UserTable table = tableIt.next();
+                    if(table.getParentJoin() != null) {
+                        return table;
+                    }
+                }
+                return null;
+            }
+
+            @Override
+            public Row next() {
+                UserTable table = advance();
+                if(table == null) {
+                    return null;
+                }
+                Join join = table.getParentJoin();
+                return new ValuesRow(rowType,
+                                     table.getName().getSchemaName(),
+                                     table.getName().getTableName(),
+                                     join.getName(),
+                                     join.getParent().getName().getSchemaName(),
+                                     join.getParent().getName().getTableName(),
+                                     ++rowCounter /* hidden pk */);
             }
 
             @Override
@@ -788,6 +853,14 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             .colString("delete_rule", 32, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
+        builder.userTable(GROUPING_CONSTRAINTS)
+            .colString("constraint_schema_name", 128, false)
+            .colString("constraint_table_name", 128, false)
+            .colString("constraint_name", 128, false)
+            .colString("unique_schema_name", 128, false)
+            .colString("unique_table_name", 128, false);
+        //foreign key (schema_name, table_name, constraint_name)
+        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
             .colString("schema_name", 128, true)
             .colString("table_name", 128, true)
@@ -796,7 +869,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             .colLong("ordinal_position", false)
             .colLong("position_in_unique_constraint", true);
         //primary key  (schema_name, table_name, constraint_name, column_name),
-        //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRATINTS
+        //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
         builder.userTable(INDEXES)
                 .colString("schema_name", 128, false)
                 .colString("table_name", 128, false)
@@ -827,30 +900,26 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         return builder.ais(false);
     }
 
+    private void attach(AkibanInformationSchema ais, TableName name, Class<? extends BasicFactoryBase> clazz) {
+        UserTable table = ais.getUserTable(name);
+        final BasicFactoryBase factory;
+        try {
+            factory = clazz.getConstructor(BasicInfoSchemaTablesServiceImpl.class, UserTable.class).newInstance(this, table);
+        } catch(Exception e) {
+            throw new RuntimeException(e);
+        }
+        table.setMemoryTableFactory(factory);
+    }
+
     void attachFactories(AkibanInformationSchema ais) {
-        // SCHEMAS
-        UserTable schemata = ais.getUserTable(SCHEMATA);
-        schemata.setMemoryTableFactory(new SchemaFactory(schemata));
-        // TABLES
-        UserTable tables = ais.getUserTable(TABLES);
-        tables.setMemoryTableFactory(new TableFactory(tables));
-        // COLUMNS
-        UserTable columns = ais.getUserTable(COLUMNS);
-        columns.setMemoryTableFactory(new ColumnsFactory(columns));
-        // TABLE_CONSTRAINTS
-        UserTable tableConstraints = ais.getUserTable(TABLE_CONSTRAINTS);
-        tableConstraints.setMemoryTableFactory(new TableConstraintsFactory(tableConstraints));
-        // REFERENTIAL_CONSTRAINTS
-        UserTable referentialConstraints = ais.getUserTable(REFERENTIAL_CONSTRAINTS);
-        referentialConstraints.setMemoryTableFactory(new ReferentialConstraintsFactory(referentialConstraints));
-        // KEY_COLUMN_USAGE
-        UserTable keyColumnUsage = ais.getUserTable(KEY_COLUMN_USAGE);
-        keyColumnUsage.setMemoryTableFactory(new KeyColumnUsageFactory(keyColumnUsage));
-        // INDEXES
-        UserTable indexes = ais.getUserTable(INDEXES);
-        indexes.setMemoryTableFactory(new IndexesFactory(indexes));
-        // INDEX_COLUMNS
-        UserTable indexColumns = ais.getUserTable(INDEX_COLUMNS);
-        indexColumns.setMemoryTableFactory(new IndexColumnsFactory(indexColumns));
+        attach(ais, SCHEMATA, SchemaFactory.class);
+        attach(ais, TABLES, TableFactory.class);
+        attach(ais, COLUMNS, ColumnsFactory.class);
+        attach(ais, TABLE_CONSTRAINTS, TableConstraintsFactory.class);
+        attach(ais, REFERENTIAL_CONSTRAINTS, ReferentialConstraintsFactory.class);
+        attach(ais, GROUPING_CONSTRAINTS, GroupingConstraintsFactory.class);
+        attach(ais, KEY_COLUMN_USAGE, KeyColumnUsageFactory.class);
+        attach(ais, INDEXES, IndexesFactory.class);
+        attach(ais, INDEX_COLUMNS, IndexColumnsFactory.class);
     }
 }
