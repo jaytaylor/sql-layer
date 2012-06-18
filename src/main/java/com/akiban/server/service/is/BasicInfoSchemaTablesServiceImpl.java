@@ -57,7 +57,6 @@ import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.google.inject.Inject;
 
-import java.util.Collection;
 import java.util.Iterator;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
