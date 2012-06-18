@@ -28,6 +28,7 @@ package com.akiban.server.service.is;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Schema;
@@ -235,10 +236,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 return new ValuesRow(rowType,
                                      table.getName().getSchemaName(),
                                      table.getName().getTableName(),
-                                     table.getGroup().getName(),
                                      tableType,
-                                     table.getTableId(),
+                                     null, // charset schema
                                      table.getCharsetAndCollation().charset(),
+                                     null, // collation schema
                                      table.getCharsetAndCollation().collation(),
                                      ++rowCounter /* hidden pk */);
             }
@@ -314,7 +315,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      precision,
                                      column.getPrefixSize(),
                                      column.getInitialAutoIncrementValue(),
+                                     null, // charset schema
                                      column.getCharsetAndCollation().charset(),
+                                     null, // collation schema
                                      column.getCharsetAndCollation().collation(),
                                      ++rowCounter /* hidden pk */);
             }
@@ -347,30 +350,40 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         private class Scan implements GroupScan {
             final RowType rowType;
             final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
-            Iterator<TableIndex> indexIt;
+            Iterator<TableIndex> tableIndexIt;
+            Iterator<GroupIndex> groupIndexIt;
+            UserTable curTable;
             int rowCounter;
 
             public Scan(RowType rowType) {
                 this.rowType = rowType;
             }
 
-            private boolean advanceIfNeeded() {
-                while(indexIt == null || !indexIt.hasNext()) {
+            private Index advance() {
+                while(tableIndexIt == null || !tableIndexIt.hasNext()) {
+                    while(groupIndexIt != null && groupIndexIt.hasNext()) {
+                        GroupIndex index = groupIndexIt.next();
+                        if(index.leafMostTable() == curTable) {
+                            return index;
+                        }
+                    }
                     if(tableIt.hasNext()) {
-                        indexIt = tableIt.next().getIndexes().iterator();
+                        curTable = tableIt.next();
+                        tableIndexIt = curTable.getIndexes().iterator();
+                        groupIndexIt = curTable.getGroup().getIndexes().iterator();
                     } else {
-                        return false;
+                        return null;
                     }
                 }
-                return true;
+                return tableIndexIt.next();
             }
 
             @Override
             public Row next() {
-                if(!advanceIfNeeded()) {
+                Index index = advance();
+                if(index == null) {
                     return null;
                 }
-                TableIndex index = indexIt.next();
                 final String indexType;
                 if(index.isPrimaryKey()) {
                     indexType = Index.PRIMARY_KEY_CONSTRAINT;
@@ -380,13 +393,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                     indexType = "INDEX";
                 }
                 return new ValuesRow(rowType,
-                                     index.getIndexName().getSchemaName(),
-                                     index.getIndexName().getTableName(),
+                                     curTable.getName().getSchemaName(),
+                                     curTable.getName().getTableName(),
+                                     null, // constraint_name
                                      index.getIndexName().getName(),
-                                     index.getTable().getGroup().getName(),
-                                     index.getIndexId(),
                                      indexType,
                                      index.isUnique() ? "YES" : "NO",
+                                     index.isGroupIndex() ? index.getJoinType().name() : null,
                                      ++rowCounter /*hidden pk*/);
             }
 
@@ -484,15 +497,15 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         builder.userTable(TABLES)
                 .colString("table_schema", 128, false)
                 .colString("table_name", 128, false)
-                .colString("group_name", 128, false)
                 .colString("table_type", 128, false)
-                .colBigInt("table_id", false)
-                .colString("default_character_set_name", 128, false)
-                .colString("default_collation_name", 128, false);
+                .colString("character_set_schema", 128, true)
+                .colString("character_set_name", 128, true)
+                .colString("collation_schema", 128, true)
+                .colString("collation_name", 128, true);
         //primary key (schema_name, table_name),
-        //unique key (table_id),
-        //foreign_key (schema_name) references schemata,
-        //foreign key (schema_name, group_name) references groups);
+        //foreign_key (schema_name) references SCHEMATA (schema_name),
+        //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS,
+        //foreign key (collations_schema, collation_name) references COLLATIONS;
         builder.userTable(COLUMNS)
                 .colString("schema_name", 128, false)
                 .colString("table_name", 128, false)
@@ -505,23 +518,27 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colBigInt("scale", true)
                 .colBigInt("prefix_size", true)
                 .colBigInt("identity_start", true)
-                .colString("character_set", 128, false)
-                .colString("collation", 128, false);
+                .colString("character_set_schema", 128, true)
+                .colString("character_set_name", 128, true)
+                .colString("collation_schema", 128, true)
+                .colString("collation_name", 128, true);
         //primary key(schema_name, table_name, column_name),
-        //foreign key(schema_name, table_name) references tables(schema_name, table_name),
-        //foreign key (type) references types (type_name));
+        //foreign key(schema_name, table_name) references TABLES (schema_name, table_name),
+        //foreign key (type) references TYPES (type_name),
+        //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS,
+        //foreign key (collation_schema, collation_name) references COLLATIONS
         builder.userTable(INDEXES)
                 .colString("schema_name", 128, false)
                 .colString("table_name", 128, false)
+                .colString("constraint_name", 128, true)
                 .colString("index_name", 128, false)
-                .colString("group_name", 128, false)
-                .colBigInt("index_id", false)
                 .colString("index_type", 128, false)
-                .colString("is_unique", 3, false);
-        //primary key(schema_name, group_name, index_name),
-        //foreign key (schema_name, constraint_table_name, constraint_name)
-        //references constraints (schema_name, table_name, constraint_name)
-        //foreign key(group_name) references group (group_name));
+                .colString("is_unique", 3, false)
+                .colString("join_type", 32, true);
+        //primary key(schema_name, table_name, index_name),
+        //foreign key (schema_name, table_name, constraint_name)
+        //references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name),
+        //foreign key (schema_name, table_name) references TABLES (schema_name, table_name));
         builder.userTable(INDEX_COLUMNS)
                 .colString("schema_name", 128, false)
                 .colString("group_name", 128, false)

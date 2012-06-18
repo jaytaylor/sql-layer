@@ -28,6 +28,7 @@ package com.akiban.server.service.is;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -103,14 +104,30 @@ public class BasicInfoSchemaTablesServiceImplTest {
         table = "bar";
         builder.userTable(schema, table);
         builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
+        builder.column(schema, table, "name", 1, "INT", null, null, false, false, null, null);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
         builder.createGroup(table, schema, "_akiban_"+table);
-        builder.addTableToGroup(table, schema, table);
+
+        schema = "test";
+        String childTable = table + "2";
+        String indexName = "foo_name";
+        builder.userTable(schema, childTable);
+        builder.column(schema, childTable, "foo", 0, "INT", null, null, true, false, null, null);
+        builder.column(schema, childTable, "pid", 1, "INT", null, null, true, false, null, null);
+
+        String joinName = childTable + "/" + table;
+        builder.joinTables(joinName, schema, table, schema, childTable);
+        builder.joinColumns(joinName, schema, table, "col", schema, childTable, "pid");
+        builder.addJoinToGroup(table, joinName, 0);
+
+        builder.groupIndex(table, indexName, false, Index.JoinType.RIGHT);
+        builder.groupIndexColumn(table, indexName, schema, childTable, "foo", 0);
+        builder.groupIndexColumn(table, indexName, schema, table, "name", 1);
 
         schema = "zap";
         table = "pow";
-        String indexName = "name_value";
+        indexName = "name_value";
         builder.userTable(schema, table);
         builder.column(schema, table, "name", 0, "VARCHAR", 32L, null, true, false, null, null);
         builder.column(schema, table, "value", 1, "DECIMAL", 10L, 2L, true, false, null, null);
@@ -128,6 +145,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         for(UserTable userTable : holder.getAis().getUserTables().values()) {
             ordinalMap.put(userTable, 0);
             for(Index index : userTable.getIndexesIncludingInternal()) {
+                index.computeFieldAssociations(ordinalMap);
+            }
+        }
+        for(Group group : holder.getAis().getGroups().values()) {
+            for(Index index : group.getIndexes()) {
                 index.computeFieldAssociations(ordinalMap);
             }
         }
@@ -214,9 +236,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "test", "bar", "bar", "TABLE", LONG, VARCHAR, VARCHAR, LONG },
-                { "test", "foo", "foo", "TABLE", LONG, VARCHAR, VARCHAR, LONG },
-                { "zap", "pow", "pow", "TABLE", LONG, VARCHAR, VARCHAR, LONG },
+                { "test", "bar", "TABLE", null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "bar2", "TABLE", null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "foo", "TABLE", null, VARCHAR, null, VARCHAR, LONG },
+                { "zap", "pow", "TABLE", null, VARCHAR, null, VARCHAR, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -226,22 +249,26 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void columnsScan() {
         final Object[][] expected = {
-                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, VARCHAR, VARCHAR, LONG },
-                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, VARCHAR, VARCHAR, LONG },
-                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, VARCHAR, VARCHAR, LONG },
-                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, VARCHAR, VARCHAR, LONG },
-                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, VARCHAR, VARCHAR, LONG },
+                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "bar", "name", 1L, "int", false, 4L, null, null, 0L, null, null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "bar2", "foo", 0L, "int", true, 4L, null, null, 0L, null, null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "bar2", "pid", 1L, "int", true, 4L, null, null, 0L, null, null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, null, VARCHAR, null, VARCHAR, LONG },
+                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, null, VARCHAR, null, VARCHAR, LONG },
+                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, null, VARCHAR, null, VARCHAR, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 39, skipped);
+        assertEquals("Skipped I_S columns", 41, skipped);
     }
 
     @Test
     public void indexesScan() {
         final Object[][] expected = {
-                { "test", "bar", "PRIMARY", "bar", LONG, "PRIMARY", true, LONG },
-                { "zap", "pow", "name_value", "pow", LONG, "UNIQUE", true, LONG },
+                { "test", "bar", null, "PRIMARY", "PRIMARY", true, null, LONG },
+                { "test", "bar2", null, "foo_name", "INDEX", false, "RIGHT", LONG },
+                { "zap", "pow", null, "name_value", "UNIQUE", true, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
