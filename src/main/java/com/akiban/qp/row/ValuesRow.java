@@ -60,7 +60,7 @@ public class ValuesRow extends AbstractRow
 
     // ValuesRow interface
 
-    public ValuesRow(RowType rowType, Object[] values)
+    public ValuesRow(RowType rowType, Object... values)
     {
         this.rowType = rowType;
         this.valuesHolder = new RowValuesHolder(values);

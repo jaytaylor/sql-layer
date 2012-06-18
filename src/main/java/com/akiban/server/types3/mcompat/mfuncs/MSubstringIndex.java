@@ -25,9 +25,9 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.server.expression.std.Matcher;
+import com.akiban.server.expression.std.Matchers.Index;
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.Matcher;
-import com.akiban.server.types3.common.Matchers.Index;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;

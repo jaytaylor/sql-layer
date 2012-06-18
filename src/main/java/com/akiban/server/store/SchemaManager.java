@@ -34,7 +34,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.operator.memoryadapter.MemoryTableFactory;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.service.session.Session;
 
 public interface SchemaManager {

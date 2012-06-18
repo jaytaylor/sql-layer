@@ -26,52 +26,39 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.List;
 
-public abstract class MSubstringBase extends TOverloadBase {
+public class MStrcmp extends TOverloadBase {
 
-    protected int adjustIndex(String str, int index) {
-        // String operand
-        if (str.equals("")) {
-            return -1;
-        }
-        
-        // if from is negative or zero, start from the end, and adjust
-        // index by 1 since index in sql starts at 1 NOT 0
-        index += (index < 0? str.length() : -1);
-       
-        // if from is still neg, return -1
-        if (index < 0) {
-            return -1;
-        }
-        
-        return index;
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(MString.VARCHAR, 0, 1);
     }
-    
-    protected String getSubstring(int to, int from, String str) {            
-        // if to <= fr => return empty
-        if (to < from || from >= str.length())
-        {
-            return "";    
-        }
+
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        String st1 = (String) inputs.get(0).getObject();
+        String st2 = (String) inputs.get(1).getObject();
         
-        to = (to > str.length() - 1 ? str.length() - 1 : to); 
-        return str.substring(from, to + 1);
+        output.putInt32(st1.compareTo(st2));
     }
 
     @Override
     public String overloadName() {
-        return "SUBSTRING";
+        return "STRCMP";
     }
-    
-    public int calculateCharLength(int stringLength, int offset, int substringLength) {
-        if (stringLength < Math.abs(offset) || substringLength <= 0)
-            return 0;
-        int ret = offset > 0 ? stringLength - offset + 1 : offset * -1;
-        return Math.min(ret, substringLength);
+
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(MNumeric.INT.instance());
     }
+
 }

@@ -101,11 +101,6 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
-    public long getQueryTimeoutSec() {
-        return getConfig().queryTimeoutSec();
-    }
-
-    @Override
     public HKey newHKey(com.akiban.ais.model.HKey hKeyMetadata)
     {
         return new PersistitHKey(this, hKeyMetadata);

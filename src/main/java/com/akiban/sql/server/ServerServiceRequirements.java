@@ -26,7 +26,6 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.qp.operator.memoryadapter.MemoryStore;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
@@ -45,8 +44,7 @@ public final class ServerServiceRequirements {
                                      TreeService treeService,
                                      FunctionsRegistry functionsRegistry,
                                      ConfigurationService config,
-                                     IndexStatisticsService indexStatistics,
-                                     MemoryStore memoryStore) {
+                                     IndexStatisticsService indexStatistics) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
@@ -55,7 +53,6 @@ public final class ServerServiceRequirements {
         this.functionsRegistry = functionsRegistry;
         this.config = config;
         this.indexStatistics = indexStatistics;
-        this.memoryStore = memoryStore;
     }
 
     public InstrumentationService instrumentation() {
@@ -90,10 +87,6 @@ public final class ServerServiceRequirements {
         return indexStatistics;
     }
 
-    public MemoryStore getMemoryStore() {
-        return memoryStore;
-    }
-
     private final InstrumentationService instrumentation;
     private final DXLService dxlService;
     private final SessionService sessionService;
@@ -102,5 +95,4 @@ public final class ServerServiceRequirements {
     private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;
-    private final MemoryStore memoryStore;
 }

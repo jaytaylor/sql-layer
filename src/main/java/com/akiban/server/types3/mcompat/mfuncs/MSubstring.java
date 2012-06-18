@@ -24,25 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
-import com.akiban.ais.model.TableName;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.GroupCursor;
-import com.akiban.qp.operator.IndexScanSelector;
-import com.akiban.server.service.session.Session;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.Substring;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
-public interface MemoryTableFactory {
-    public TableName getName();
-    public Table getTableDefinition();
-    public GroupCursor getGroupCursor(Session session);
-    public Cursor getIndexCursor (Index index, Session session, 
-            IndexKeyRange keyRange,
-            API.Ordering ordering,
-            IndexScanSelector scanSelector);
-    public long rowCount();
+public class MSubstring {
+    public static final TOverload INSTANCES[] = Substring.create(MString.VARCHAR, MNumeric.INT);
 }

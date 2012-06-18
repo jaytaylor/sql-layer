@@ -146,10 +146,12 @@ public final class Matchers
         }
     }
     
-    static class Index extends AbstractMatcher
+    public static class Index extends AbstractMatcher
     {
-        private Token tk;
 
+        private final Token tk;
+        private final String pattern;
+        
         public Index(String st)
         {
             Map<Character, Integer> map = new HashMap<Character, Integer>();
@@ -157,6 +159,8 @@ public final class Matchers
             for ( n = 0; n < st.length(); ++n)
                 map.put(st.charAt(n), n);
             tk = new Token(map, st.toCharArray(), n, false, false);
+
+            pattern = st;
         }
         
         @Override
@@ -174,11 +178,13 @@ public final class Matchers
         }
 
         @Override
-        public boolean sameState(String pattern, char escape) {
-            throw new UnsupportedOperationException("Not supported yet.");
+
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.equals(this.pattern);
         }
-        
     }
+
     /**
      * the pattern starts with percent
      */

@@ -24,21 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-public interface Matcher
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.Reverse;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+
+public class MReverse
 {
-    /**
-     * 
-     * @param str
-     * @param count
-     * @return
-     *      <p> a negative value if the pattern is not in <code>str</code></p>
-     *      <p> a positive number indicating the index at which the pattern/substring is found</p>
-     * 
-     * Note: Dependent upon the implementation, it's not guaranteed that 
-     * the positive number returned by this function is always the index position.
-     * The positive value could simply be used as an indication that a match has been found
-     */
-    int match(String str, int count);
+    public static final TOverload INSTANCE = new Reverse(MString.VARCHAR);
 }
