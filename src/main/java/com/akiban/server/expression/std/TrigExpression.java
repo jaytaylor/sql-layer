@@ -229,6 +229,12 @@ public class TrigExpression extends AbstractCompositeExpression
         }
         this.name = name;
     }
+    
+    @Override
+    protected void describe(StringBuilder sb) 
+    {
+        sb.append(name.name()).append("_EXPRESSION");
+    }
    
     @Override
     public ExpressionEvaluation evaluation() 

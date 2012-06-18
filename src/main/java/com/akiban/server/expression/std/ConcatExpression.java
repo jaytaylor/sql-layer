@@ -94,6 +94,11 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     public static final ExpressionComposer COMPOSER_ALIAS = COMPOSER;
 
     @Override
+    protected void describe(StringBuilder sb) {
+        sb.append("CONCAT");
+    }
+    
+    @Override
     public String name () {
         return "CONCATENATE";
     }

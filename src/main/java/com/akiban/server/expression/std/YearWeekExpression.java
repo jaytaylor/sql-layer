@@ -232,6 +232,12 @@ public class YearWeekExpression extends AbstractCompositeExpression
     {
         return true;
     }
+    
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("YEARWEEK(date[, mode])");
+    }
 
     @Override
     public ExpressionEvaluation evaluation()

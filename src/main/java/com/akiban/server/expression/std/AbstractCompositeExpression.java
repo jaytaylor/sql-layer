@@ -98,7 +98,9 @@ public abstract class AbstractCompositeExpression implements Expression {
         return type;
     }    
 
-    // for use by subclasses   
+    // for use by subclasses
+    
+    protected abstract void describe(StringBuilder sb);
 
     protected final List<? extends Expression> children() {
         return children;

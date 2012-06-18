@@ -85,7 +85,7 @@ public class OctetLengthExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() 
+    public String name() 
     {
         return "LENGTH";
     }

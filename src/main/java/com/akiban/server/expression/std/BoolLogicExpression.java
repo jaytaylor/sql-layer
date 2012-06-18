@@ -48,6 +48,11 @@ import java.util.List;
 public final class BoolLogicExpression extends AbstractBinaryExpression {
 
     // AbstractTwoArgExpression interface
+    
+    @Override
+    protected void describe(StringBuilder sb) {
+        sb.append(logic.name());
+    }
 
     @Override
     public String name () {

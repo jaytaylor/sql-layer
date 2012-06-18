@@ -159,6 +159,12 @@ public class LocateExpression extends AbstractCompositeExpression
     {
         return true;
     }
+    
+    @Override
+    protected void describe(StringBuilder sb) 
+    {
+        sb.append(name());
+    }
 
     @Override
     public ExpressionEvaluation evaluation() 

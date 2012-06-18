@@ -104,7 +104,7 @@ public final class VariableExpression implements Expression {
         return true;
     }
 
-    private static class InnerEvaluation implements ExpressionEvaluation {
+    private static class InnerEvaluation extends ExpressionEvaluation.Base {
 
         @Override
         public void of(Row row) {

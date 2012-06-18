@@ -43,6 +43,11 @@ import java.util.List;
 
 public class IfExpression extends AbstractCompositeExpression
 {
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("IF()");
+    }
 
     @Scalar("if")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer()

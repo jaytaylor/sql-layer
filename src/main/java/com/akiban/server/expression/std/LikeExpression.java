@@ -191,7 +191,7 @@ public class LikeExpression extends AbstractCompositeExpression
     @Override
     public String name ()
     {
-        return (case_insens? "I" : "" ) + "LIKE";
+        return "LIKE_" + (ignore_case? "IN" : "") + "SENSITIVE";
     }
     
     @Override
@@ -203,9 +203,7 @@ public class LikeExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("LIKE_");
-        sb.append(ignore_case? "IN" : "");
-        sb.append("SENSITIVE");
+        sb.append(name());
     }
 
     @Override

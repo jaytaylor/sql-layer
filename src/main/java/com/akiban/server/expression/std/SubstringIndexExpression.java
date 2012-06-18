@@ -76,6 +76,11 @@ public class SubstringIndexExpression extends AbstractTernaryExpression
         }
         
     };
+
+    @Override
+    public String name() {
+        return "SUBSTRING_INDEX";
+    }
     
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
@@ -145,7 +150,7 @@ public class SubstringIndexExpression extends AbstractTernaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("SUBSTRING_INDEX");
+        sb.append(name());
     }
 
     @Override

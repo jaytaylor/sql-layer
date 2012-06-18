@@ -87,7 +87,7 @@ public class RadExpression extends AbstractUnaryExpression
     }
     
     @Override
-    protected String name()
+    public String name()
     {
         return "RADIANS";
     }

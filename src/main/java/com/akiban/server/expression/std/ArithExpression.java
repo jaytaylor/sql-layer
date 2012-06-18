@@ -127,7 +127,7 @@ public class ArithExpression extends AbstractBinaryExpression
     }
     
     @Override
-    protected void describe(StringBuilder sb)
+    public void describe(StringBuilder sb)
     {
         sb.append(op);
     }
@@ -267,6 +267,7 @@ public class ArithExpression extends AbstractBinaryExpression
         return op.toString();
     }
     
+    @Override
     public Explainer getExplainer ()
     {
         return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());

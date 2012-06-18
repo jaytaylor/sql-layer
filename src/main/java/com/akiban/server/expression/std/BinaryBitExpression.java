@@ -188,6 +188,12 @@ public class BinaryBitExpression extends AbstractBinaryExpression
                 , lhs, rhs);
         this.op = op;        
     } 
+    
+    @Override
+    protected void describe(StringBuilder sb) 
+    {
+        sb.append(op);
+    }
 
     @Override
     public ExpressionEvaluation evaluation() 

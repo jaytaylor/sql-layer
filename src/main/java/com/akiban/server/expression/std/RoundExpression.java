@@ -87,6 +87,11 @@ public class RoundExpression extends AbstractCompositeExpression
         }
         
     };
+
+    @Override
+    public String name() {
+        return "ROUND";
+    }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -212,7 +217,7 @@ public class RoundExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("ROUND");
+        sb.append(name());
     }
 
     @Override

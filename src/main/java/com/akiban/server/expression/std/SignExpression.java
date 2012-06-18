@@ -156,7 +156,7 @@ public class SignExpression extends AbstractUnaryExpression
     }
     
     @Override
-    protected String name()
+    public String name()
     {
         return "sign";
     }

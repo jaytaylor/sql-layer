@@ -95,7 +95,7 @@ public class FromDaysExpression extends AbstractUnaryExpression
     }
     
     @Override
-    protected String name()
+    public String name()
     {
         return "FROM_DAYS";
     }

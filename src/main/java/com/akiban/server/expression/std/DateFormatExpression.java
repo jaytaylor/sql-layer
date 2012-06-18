@@ -130,4 +130,10 @@ public class DateFormatExpression extends AbstractBinaryExpression
     {
         return new InnerEvaluation(childrenEvaluations());
     }
+    
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("DATE_FORMAT");
+    }
 }

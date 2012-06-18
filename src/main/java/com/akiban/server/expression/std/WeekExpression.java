@@ -267,6 +267,12 @@ public class WeekExpression extends AbstractCompositeExpression
     {
         return true;
     }
+    
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("WEEK(date,[mode])");
+    }
 
     @Override
     public ExpressionEvaluation evaluation()
