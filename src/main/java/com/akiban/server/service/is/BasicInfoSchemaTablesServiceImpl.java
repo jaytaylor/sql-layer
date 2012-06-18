@@ -80,13 +80,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
     private final AisHolder aisHolder;
     private final SchemaManager schemaManager;
-    private final SessionService sessionService;
 
     @Inject
-    public BasicInfoSchemaTablesServiceImpl(AisHolder aisHolder, SchemaManager schemaManager, SessionService sessionService) {
+    public BasicInfoSchemaTablesServiceImpl(AisHolder aisHolder, SchemaManager schemaManager) {
         this.aisHolder = aisHolder;
         this.schemaManager = schemaManager;
-        this.sessionService = sessionService;
     }
 
     @Override
@@ -102,28 +100,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     @Override
     public void start() {
         AkibanInformationSchema ais = createTablesToRegister();
-
-        Session session = sessionService.createSession();
-
-        // SCHEMAS
-        UserTable schemata = ais.getUserTable(SCHEMATA);
-        schemaManager.registerMemoryInformationSchemaTable(session, schemata, new SchemataFactory(schemata));
-        // TABLES
-        UserTable tables = ais.getUserTable(TABLES);
-        schemaManager.registerMemoryInformationSchemaTable(session, tables, new TablesFactory(tables));
-        // COLUMNS
-        UserTable columns = ais.getUserTable(COLUMNS);
-        schemaManager.registerMemoryInformationSchemaTable(session, columns, new ColumnsFactory(columns));
-        // INDEXES
-        UserTable indexes = ais.getUserTable(INDEXES);
-        schemaManager.registerMemoryInformationSchemaTable(session, indexes, new IndexesFactory(indexes));
-        // INDEX_COLUMNS
-        UserTable index_columns = ais.getUserTable(INDEX_COLUMNS);
-        schemaManager.registerMemoryInformationSchemaTable(session, index_columns, new IndexColumnsFactory(index_columns));
-
-        // update attachFactories() when adding new tables
-
-        session.close();
+        attachFactories(ais, true);
     }
 
     @Override
@@ -916,7 +893,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         return builder.ais(false);
     }
 
-    private void attach(AkibanInformationSchema ais, TableName name, Class<? extends BasicFactoryBase> clazz) {
+    private void attach(AkibanInformationSchema ais, boolean doRegister, TableName name, Class<? extends BasicFactoryBase> clazz) {
         UserTable table = ais.getUserTable(name);
         final BasicFactoryBase factory;
         try {
@@ -924,18 +901,22 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         } catch(Exception e) {
             throw new RuntimeException(e);
         }
-        table.setMemoryTableFactory(factory);
+        if(doRegister) {
+            schemaManager.registerMemoryInformationSchemaTable(table, factory);
+        } else {
+            table.setMemoryTableFactory(factory);
+        }
     }
 
-    void attachFactories(AkibanInformationSchema ais) {
-        attach(ais, SCHEMATA, SchemataFactory.class);
-        attach(ais, TABLES, TablesFactory.class);
-        attach(ais, COLUMNS, ColumnsFactory.class);
-        attach(ais, TABLE_CONSTRAINTS, TableConstraintsFactory.class);
-        attach(ais, REFERENTIAL_CONSTRAINTS, ReferentialConstraintsFactory.class);
-        attach(ais, GROUPING_CONSTRAINTS, GroupingConstraintsFactory.class);
-        attach(ais, KEY_COLUMN_USAGE, KeyColumnUsageFactory.class);
-        attach(ais, INDEXES, IndexesFactory.class);
-        attach(ais, INDEX_COLUMNS, IndexColumnsFactory.class);
+    void attachFactories(AkibanInformationSchema ais, boolean doRegister) {
+        attach(ais, doRegister, SCHEMATA, SchemataFactory.class);
+        attach(ais, doRegister, TABLES, TablesFactory.class);
+        attach(ais, doRegister, COLUMNS, ColumnsFactory.class);
+        attach(ais, doRegister, TABLE_CONSTRAINTS, TableConstraintsFactory.class);
+        attach(ais, doRegister, REFERENTIAL_CONSTRAINTS, ReferentialConstraintsFactory.class);
+        attach(ais, doRegister, GROUPING_CONSTRAINTS, GroupingConstraintsFactory.class);
+        attach(ais, doRegister, KEY_COLUMN_USAGE, KeyColumnUsageFactory.class);
+        attach(ais, doRegister, INDEXES, IndexesFactory.class);
+        attach(ais, doRegister, INDEX_COLUMNS, IndexColumnsFactory.class);
     }
 }

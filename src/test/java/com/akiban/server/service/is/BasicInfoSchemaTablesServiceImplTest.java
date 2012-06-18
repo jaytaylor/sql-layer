@@ -76,8 +76,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
             }
         };
         createTables();
-        bist = new BasicInfoSchemaTablesServiceImpl(holder, null, null);
-        bist.attachFactories(holder.getAis());
+        bist = new BasicInfoSchemaTablesServiceImpl(holder, null);
+        bist.attachFactories(holder.getAis(), false);
         adapter = new MemoryAdapter(new Schema(holder.getAis()), null, null);
     }
 
