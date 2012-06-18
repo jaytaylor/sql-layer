@@ -473,6 +473,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      join.getName(),
                                      join.getParent().getName().getSchemaName(),
                                      join.getParent().getName().getTableName(),
+                                     Index.PRIMARY_KEY_CONSTRAINT,
                                      ++rowCounter /*hidden pk*/);
             }
 
@@ -879,7 +880,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             .colString("constraint_table_name", IDENT_MAX, false)
             .colString("constraint_name", IDENT_MAX, false)
             .colString("unique_schema_name", IDENT_MAX, false)
-            .colString("unique_table_name", IDENT_MAX, false);
+            .colString("unique_table_name", IDENT_MAX, false)
+            .colString("unique_constraint_name", IDENT_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
