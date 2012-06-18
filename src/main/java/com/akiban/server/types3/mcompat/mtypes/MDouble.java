@@ -53,8 +53,8 @@ public class MDouble extends TClass
         // meta data
         Double max = (Double) instance.getMetaData();
 
-        int m = instance.attribute(DoubleAttribute.PRECISION) - instance.attribute(DoubleAttribute.SCALE);
-        int d = instance.attribute(DoubleAttribute.SCALE);
+        int precision = instance.attribute(DoubleAttribute.PRECISION);
+        int scale = instance.attribute(DoubleAttribute.SCALE);
 
         if (max == null)
         {
@@ -62,26 +62,22 @@ public class MDouble extends TClass
             int point = st.indexOf('.');
 
             // check the digits before the decimal point
-            if (point > m)
+            if (point > precision - scale)
             {
-                char ret[] = new char[m + d + 1];
-                Arrays.fill(ret, '9');
-                ret[m] = '.';
-
                 // cache the max value
-                instance.setMetaData(max = Double.parseDouble(new String(ret)));
+                instance.setMetaData(max = Double.parseDouble(MBigDecimal.getNum(scale, precision )));
                 return max;
             }
 
             // check the scale
             if (point >= 0)
             {
-                int lastDigit = d + point;
+                int lastDigit = scale + point;
 
                 // actual length is longer than expected, then trucate/round it
                 if (st.length() > lastDigit)
                 {
-                    double factor = Math.pow(10, d);
+                    double factor = Math.pow(10, scale);
                     return  Math.round(factor * val) / factor;
                 }
             }
@@ -92,7 +88,7 @@ public class MDouble extends TClass
                 return max.doubleValue();
             
             // check the scale
-            double factor = Math.pow(10, d);
+            double factor = Math.pow(10, scale);
             return  Math.round(factor * val) / factor;
         }
         return val;

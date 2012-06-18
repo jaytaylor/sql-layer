@@ -31,10 +31,12 @@ import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import java.util.Arrays;
 
 public class MBigDecimal extends TClass {
 
@@ -46,6 +48,17 @@ public class MBigDecimal extends TClass {
         super(MBundle.INSTANCE.id(), "decimal", Attrs.values(), 1, 1, 8, PUnderlying.INT_64);
     }
 
+    public static String getNum(int scale, int precision)
+    {
+        assert precision >= scale : "precision has to be >= scale";
+        
+        char val[] = new char[precision + 1];
+        Arrays.fill(val, '9');
+        val[precision - scale] = '.';
+        
+        return new String(val);
+    }
+    
     @Override
     public void putSafety(QueryContext context, 
                           TInstance sourceInstance,
@@ -53,9 +66,27 @@ public class MBigDecimal extends TClass {
                           TInstance targetInstance,
                           PValueTarget targetValue)
     {
-        // TODO
-    }
+        MBigDecimalWrapper num = (MBigDecimalWrapper) sourceValue.getObject();
+        int pre = num.getPrecision();
+        int scale = num.getScale();
         
+        int expectedPre = targetInstance.attribute(Attrs.PRECISION);
+        int expectedScale = targetInstance.attribute(Attrs.SCALE);
+
+        MBigDecimalWrapper max = (MBigDecimalWrapper)targetInstance.getMetaData();
+        
+        if (max == null)
+            // compute the max value:
+            targetInstance.setMetaData(max = new MBigDecimalWrapper(getNum(expectedScale, expectedPre)));
+       
+        if (num.compareTo(max) > 0)
+            targetValue.putObject(max);
+        
+        // check the scale
+        if (scale > expectedScale)
+            targetValue.putObject(num.round(expectedPre, expectedScale));
+    }
+
     @Override
     public TFactory factory() {
         return new MNumericFactory(this);
