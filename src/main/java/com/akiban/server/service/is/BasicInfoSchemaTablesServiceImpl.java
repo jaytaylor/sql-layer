@@ -52,13 +52,12 @@ import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.statistics.IndexStatistics;
-import com.akiban.server.types.AkType;
 import com.google.inject.Inject;
 
+import java.util.Collection;
 import java.util.Iterator;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
@@ -75,6 +74,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static final TableName INDEXES = new TableName(SCHEMA_NAME, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(SCHEMA_NAME, "index_columns");
 
+    private static final int IDENT_MAX = 128;
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
 
@@ -111,6 +111,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     @Override
     public void crash() {
         // Nothing
+    }
+
+    private static String boolResult(boolean bool) {
+        return bool ? "YES" : "NO";
     }
 
     private abstract class BasicFactoryBase implements MemoryTableFactory {
@@ -230,7 +234,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      table.getCharsetAndCollation().charset(),
                                      COLLATION_SCHEMA,
                                      table.getCharsetAndCollation().collation(),
-                                     ++rowCounter /* hidden pk */);
+                                     ++rowCounter /*hidden pk*/);
             }
 
             @Override
@@ -277,14 +281,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                         return null;
                     }
                 }
-                Column column = columnIt.next();
 
-                Integer scale = null;
-                Integer precision = null;
-                if(column.getType().akType() == AkType.DECIMAL) {
-                    scale = column.getTypeParameter1().intValue();
-                    precision = column.getTypeParameter2().intValue();
-                }
+                Column column = columnIt.next();
                 final Long length;
                 if(column.getType().fixedSize()) {
                     length = column.getMaxStorageSize();
@@ -293,9 +291,18 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 }
 
                 // TODO: This should come from type attributes when new types go in
+                Integer scale = null;
+                Integer precision = null;
                 CharsetAndCollation charAndColl = null;
-                if(column.getType().akType() == AkType.VARCHAR || column.getType().akType() == AkType.TEXT) {
-                    charAndColl = column.getCharsetAndCollation();
+                switch(column.getType().akType()) {
+                    case DECIMAL:
+                        scale = column.getTypeParameter1().intValue();
+                        precision = column.getTypeParameter2().intValue();
+                    break;
+                    case VARCHAR:
+                    case TEXT:
+                        charAndColl = column.getCharsetAndCollation();
+                    break;
                 }
 
                 return new ValuesRow(rowType,
@@ -304,7 +311,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      column.getName(),
                                      column.getPosition(),
                                      column.getType().name(),
-                                     column.getNullable() ? "YES" : "NO",
+                                     boolResult(column.getNullable()),
                                      length,
                                      scale,
                                      precision,
@@ -314,7 +321,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      charAndColl != null ? charAndColl.charset() : null,
                                      charAndColl != null ? COLLATION_SCHEMA : null,
                                      charAndColl != null ? charAndColl.collation() : null,
-                                     ++rowCounter /* hidden pk */);
+                                     ++rowCounter /*hidden pk*/);
             }
 
             @Override
@@ -328,6 +335,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             super(sourceTable);
         }
 
+        private TableConstraintsIteration newIteration() {
+            return new TableConstraintsIteration(aisHolder.getAis().getUserTables().values().iterator());
+        }
+
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
             return new Scan(getRowType(adapter));
@@ -336,7 +347,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         @Override
         public long rowCount() {
             long count = 0;
-            TableConstraintsIteration it = new TableConstraintsIteration(aisHolder.getAis().getUserTables().values().iterator());
+            TableConstraintsIteration it = newIteration();
             while(it.next()) {
                 ++count;
             }
@@ -345,7 +356,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         private class Scan implements GroupScan {
             final RowType rowType;
-            final TableConstraintsIteration it = new TableConstraintsIteration(aisHolder.getAis().getUserTables().values().iterator());
+            final TableConstraintsIteration it = newIteration();
             int rowCounter;
 
             public Scan(RowType rowType) {
@@ -362,7 +373,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      it.getTable().getName().getTableName(),
                                      it.getName(),
                                      it.getType(),
-                                     ++rowCounter /* hidden pk */);
+                                     ++rowCounter /*hidden pk*/);
             }
 
             @Override
@@ -409,6 +420,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             super(sourceTable);
         }
 
+        private Iterator<UserTable> newIteration() {
+            return aisHolder.getAis().getUserTables().values().iterator();
+        }
+
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
             return new Scan(getRowType(adapter));
@@ -417,8 +432,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         @Override
         public long rowCount() {
             int count = 0;
-            for(UserTable userTable : aisHolder.getAis().getUserTables().values()) {
-                if(userTable.getParentJoin() != null) {
+            Iterator<UserTable> it = newIteration();
+            while(it.hasNext()) {
+                if(it.next().getParentJoin() != null) {
                     ++count;
                 }
             }
@@ -427,7 +443,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         private class Scan implements GroupScan {
             final RowType rowType;
-            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            final Iterator<UserTable> tableIt = newIteration();
             int rowCounter;
 
             public Scan(RowType rowType) {
@@ -457,7 +473,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      join.getName(),
                                      join.getParent().getName().getSchemaName(),
                                      join.getParent().getName().getTableName(),
-                                     ++rowCounter /* hidden pk */);
+                                     ++rowCounter /*hidden pk*/);
             }
 
             @Override
@@ -471,6 +487,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             super(sourceTable);
         }
 
+        private TableConstraintsIteration newIteration() {
+            return new TableConstraintsIteration(aisHolder.getAis().getUserTables().values().iterator());
+        }
+
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
             return new Scan(getRowType(adapter));
@@ -479,7 +499,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         @Override
         public long rowCount() {
             int count = 0;
-            TableConstraintsIteration it = new TableConstraintsIteration(aisHolder.getAis().getUserTables().values().iterator());
+            TableConstraintsIteration it = newIteration();
             while(it.next()) {
                 ++count;
             }
@@ -488,7 +508,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         private class Scan implements GroupScan {
             final RowType rowType;
-            final TableConstraintsIteration it = new TableConstraintsIteration(aisHolder.getAis().getUserTables().values().iterator());
+            final TableConstraintsIteration it = newIteration();
             Iterator<IndexColumn> indexColIt;
             Iterator<JoinColumn> joinColIt;
             String colName;
@@ -549,7 +569,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      colName,
                                      colPos,
                                      posInUnique,
-                                     ++rowCounter /* hidden pk */);
+                                     ++rowCounter /*hidden pk*/);
             }
 
             @Override
@@ -563,6 +583,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             super(sourceTable);
         }
 
+        private IndexIteration newIteration() {
+            return new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
+        }
+
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
             return new Scan(getRowType(adapter));
@@ -571,15 +595,16 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         @Override
         public long rowCount() {
             long count = 0;
-            for(UserTable table : aisHolder.getAis().getUserTables().values()) {
-                count += table.getIndexes().size();
+            IndexIteration it = newIteration();
+            while(it.next() != null) {
+                ++count;
             }
             return count;
         }
 
         private class Scan implements GroupScan {
             final RowType rowType;
-            final IndexIteration indexIt = new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
+            final IndexIteration indexIt = newIteration();
             int rowCounter;
 
             public Scan(RowType rowType) {
@@ -609,7 +634,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      constraintName,
                                      index.getIndexId(),
                                      indexType,
-                                     index.isUnique() ? "YES" : "NO",
+                                     boolResult(index.isUnique()),
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
                                      ++rowCounter /*hidden pk*/);
             }
@@ -625,6 +650,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             super(sourceTable);
         }
 
+        private IndexIteration newIteration() {
+            return new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
+        }
+
         @Override
         public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
             return new Scan(getRowType(adapter));
@@ -632,7 +661,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         @Override
         public long rowCount() {
-            IndexIteration indexIt = new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
+            IndexIteration indexIt = newIteration();
             long count = 0;
             Index index;
             while((index = indexIt.next()) != null) {
@@ -643,7 +672,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         private class Scan implements GroupScan {
             final RowType rowType;
-            final IndexIteration indexIt = new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
+            final IndexIteration indexIt = newIteration();
             Iterator<IndexColumn> indexColumnIt;
             int rowCounter;
 
@@ -675,7 +704,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      indexColumn.getColumn().getTable().getName().getTableName(),
                                      indexColumn.getColumn().getName(),
                                      indexColumn.getPosition(),
-                                     indexColumn.isAscending() ? "YES" : "NO",
+                                     boolResult(indexColumn.isAscending()),
                                      indexColumn.getIndexedLength(),
                                      ++rowCounter /*hidden pk*/);
             }
@@ -788,28 +817,28 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.userTable(SCHEMATA)
-                .colString("schema_name", 128, false)
-                .colString("schema_owner", 128, true)
-                .colString("default_character_set_name", 128, true)
-                .colString("default_collation_name", 128, true);
-        //.pk("schema_name")
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("schema_owner", IDENT_MAX, true)
+                .colString("default_character_set_name", IDENT_MAX, true)
+                .colString("default_collation_name", IDENT_MAX, true);
+        //primary key (schema_name)
         builder.userTable(TABLES)
-                .colString("table_schema", 128, false)
-                .colString("table_name", 128, false)
-                .colString("table_type", 128, false)
+                .colString("table_schema", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("table_type", IDENT_MAX, false)
                 .colBigInt("table_id", false)
-                .colString("character_set_schema", 128, true)
-                .colString("character_set_name", 128, true)
-                .colString("collation_schema", 128, true)
-                .colString("collation_name", 128, true);
+                .colString("character_set_schema", IDENT_MAX, true)
+                .colString("character_set_name", IDENT_MAX, true)
+                .colString("collation_schema", IDENT_MAX, true)
+                .colString("collation_name", IDENT_MAX, true);
         //primary key (schema_name, table_name)
         //foreign_key (schema_name) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collations_schema, collation_name) references COLLATIONS
         builder.userTable(COLUMNS)
-                .colString("schema_name", 128, false)
-                .colString("table_name", 128, false)
-                .colString("column_name", 128, false)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("column_name", IDENT_MAX, false)
                 .colBigInt("position", false)
                 .colString("type", 32, false)
                 .colString("nullable", 3, false)
@@ -818,57 +847,57 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colBigInt("scale", true)
                 .colBigInt("prefix_size", true)
                 .colBigInt("identity_start", true)
-                .colString("character_set_schema", 128, true)
-                .colString("character_set_name", 128, true)
-                .colString("collation_schema", 128, true)
-                .colString("collation_name", 128, true);
+                .colString("character_set_schema", IDENT_MAX, true)
+                .colString("character_set_name", IDENT_MAX, true)
+                .colString("collation_schema", IDENT_MAX, true)
+                .colString("collation_name", IDENT_MAX, true);
         //primary key(schema_name, table_name, column_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
         //foreign key (type) references TYPES (type_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
         builder.userTable(TABLE_CONSTRAINTS)
-                .colString("schema_name", 128, false)
-                .colString("table_name", 128, false)
-                .colString("constraint_name", 128, false)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("constraint_name", IDENT_MAX, false)
                 .colString("constraint_type", 32, false);
         //primary key (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES
         builder.userTable(REFERENTIAL_CONSTRAINTS)
-            .colString("constraint_schema_name", 128, false)
-            .colString("constraint_table_name", 128, false)
-            .colString("constraint_name", 128, false)
-            .colString("unique_schema_name", 128, false)
-            .colString("unique_table_name", 128, false)
-            .colString("unique_constraint_name", 128, false)
+            .colString("constraint_schema_name", IDENT_MAX, false)
+            .colString("constraint_table_name", IDENT_MAX, false)
+            .colString("constraint_name", IDENT_MAX, false)
+            .colString("unique_schema_name", IDENT_MAX, false)
+            .colString("unique_table_name", IDENT_MAX, false)
+            .colString("unique_constraint_name", IDENT_MAX, false)
             .colString("update_rule", 32, false)
             .colString("delete_rule", 32, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(GROUPING_CONSTRAINTS)
-            .colString("constraint_schema_name", 128, false)
-            .colString("constraint_table_name", 128, false)
-            .colString("constraint_name", 128, false)
-            .colString("unique_schema_name", 128, false)
-            .colString("unique_table_name", 128, false);
+            .colString("constraint_schema_name", IDENT_MAX, false)
+            .colString("constraint_table_name", IDENT_MAX, false)
+            .colString("constraint_name", IDENT_MAX, false)
+            .colString("unique_schema_name", IDENT_MAX, false)
+            .colString("unique_table_name", IDENT_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
-            .colString("schema_name", 128, true)
-            .colString("table_name", 128, true)
-            .colString("constraint_name", 128, true)
-            .colString("column_name", 128, true)
+            .colString("schema_name", IDENT_MAX, true)
+            .colString("table_name", IDENT_MAX, true)
+            .colString("constraint_name", IDENT_MAX, true)
+            .colString("column_name", IDENT_MAX, true)
             .colBigInt("ordinal_position", false)
             .colBigInt("position_in_unique_constraint", true);
         //primary key  (schema_name, table_name, constraint_name, column_name),
         //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
         builder.userTable(INDEXES)
-                .colString("schema_name", 128, false)
-                .colString("table_name", 128, false)
-                .colString("index_name", 128, false)
-                .colString("constraint_name", 128, true)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("index_name", IDENT_MAX, false)
+                .colString("constraint_name", IDENT_MAX, true)
                 .colBigInt("index_id", false)
-                .colString("index_type", 128, false)
+                .colString("index_type", IDENT_MAX, false)
                 .colString("is_unique", 3, false)
                 .colString("join_type", 32, true);
         //primary key(schema_name, table_name, index_name)
@@ -876,13 +905,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
         builder.userTable(INDEX_COLUMNS)
-                .colString("schema_name", 128, false)
-                .colString("index_name", 128, false)
-                .colString("index_table_name", 128, false)
-                .colString("column_table_name", 128, false)
-                .colString("column_name", 128, false)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("index_name", IDENT_MAX, false)
+                .colString("index_table_name", IDENT_MAX, false)
+                .colString("column_table_name", IDENT_MAX, false)
+                .colString("column_name", IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
-                .colString("is_ascending", 128, false)
+                .colString("is_ascending", IDENT_MAX, false)
                 .colBigInt("indexed_length", true);
         //primary key(schema_name, index_name, index_table_name, column_table_name, column_name)
         //foreign key(schema_name, index_table_name, index_name)
