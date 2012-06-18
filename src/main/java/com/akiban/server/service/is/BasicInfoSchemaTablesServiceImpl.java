@@ -64,7 +64,7 @@ import java.util.Iterator;
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
 public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
-    private static final String SCHEMA_NAME = TableName.AKIBAN_INFORMATION_SCHEMA;
+    private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
     static final TableName SCHEMATA = new TableName(SCHEMA_NAME, "schemata");
     static final TableName TABLES = new TableName(SCHEMA_NAME, "tables");
     static final TableName COLUMNS = new TableName(SCHEMA_NAME, "columns");

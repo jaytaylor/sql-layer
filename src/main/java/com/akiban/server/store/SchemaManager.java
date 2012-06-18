@@ -40,7 +40,7 @@ import com.akiban.server.service.session.Session;
 public interface SchemaManager {
     /**
      * <p>
-     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated and accessed through the normal
      * {@link Store} methods.
      * </p>
@@ -60,7 +60,7 @@ public interface SchemaManager {
     TableName registerStoredInformationSchemaTable(Session session, UserTable newTable, int version);
 
     /**
-     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated on demand and accessed through
      * the given {@link MemoryTableFactory}.
      *
@@ -147,10 +147,11 @@ public interface SchemaManager {
      * any table in that schema. No other guarantees are given about ordering.
      *
      * @param session The Session to operate under.
+     * @param withGroupTables If true, include 'create table' statements for tables in the I_S.
      * @param withGroupTables If true, include 'create table' statements for every GroupTable.
      * @return List of every create statement request.
      */
-    List<String> schemaStrings(Session session, boolean withGroupTables);
+    List<String> schemaStrings(Session session, boolean withISTables, boolean withGroupTables);
 
     /**
      * Return the last timestamp for the last successful change through the SchemaManager.

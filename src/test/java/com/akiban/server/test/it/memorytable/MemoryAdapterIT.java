@@ -74,7 +74,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
     @Test
     public void insertFactoryTest() throws Exception {
   
-        TableName name = new TableName (TableName.AKIBAN_INFORMATION_SCHEMA, "test");
+        TableName name = new TableName (TableName.INFORMATION_SCHEMA, "test");
         MemoryTableFactory factory = new TestFactory (name);
 
         registerISTable(factory.getTableDefinition(), factory);
@@ -98,7 +98,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         PostgresServerConnection postgresConn = serviceManager().getPostgresService().getServer().getConnection(first.intValue());
         assertNotNull(postgresConn);
         
-        TableName name = new TableName (TableName.AKIBAN_INFORMATION_SCHEMA, "test");
+        TableName name = new TableName (TableName.INFORMATION_SCHEMA, "test");
         MemoryTableFactory factory = new TestFactory (name);
         registerISTable(factory.getTableDefinition(), factory);
         UserTable table = serviceManager().getSchemaManager().getAis(session()).getUserTable(name);

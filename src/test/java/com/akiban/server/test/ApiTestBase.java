@@ -280,11 +280,20 @@ public class ApiTestBase {
         return sm.getSessionService().createSession();
     }
 
+    protected Collection<Property> defaultPropertiesToPreserveOnRestart() {
+        List<Property> properties = new ArrayList<Property>();
+        properties.add(new Property("akserver.datapath", treeService().getDataPath()));
+        return properties;
+    }
+
     public final void safeRestartTestServices() throws Exception {
-        final String datapath = serviceManager().getTreeService().getDataPath();
+        safeRestartTestServices(defaultPropertiesToPreserveOnRestart());
+    }
+
+    public final void safeRestartTestServices(Collection<Property> propertiesToPreserve) throws Exception {
         Thread.sleep(1000);  // Let journal flush
         crashTestServices(); // TODO: WHY doesn't this work with stop?
-        restartTestServices(Collections.singleton(new Property("akserver.datapath", datapath)));
+        restartTestServices(propertiesToPreserve);
     }
     
     protected final DMLFunctions dml() {
@@ -713,7 +722,7 @@ public class ApiTestBase {
         // Can't drop a parent before child. Get all to drop and sort children first (they always have higher id).
         List<Integer> allIds = new ArrayList<Integer>();
         for (Map.Entry<TableName, UserTable> entry : ddl().getAIS(session()).getUserTables().entrySet()) {
-            if (!"akiban_information_schema".equals(entry.getKey().getSchemaName())) {
+            if (!TableName.INFORMATION_SCHEMA.equals(entry.getKey().getSchemaName())) {
                 allIds.add(entry.getValue().getTableId());
             }
         }
@@ -723,7 +732,7 @@ public class ApiTestBase {
         }
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
-            if ("akiban_information_schema".equals(iter.next().getSchemaName())) {
+            if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
             }
         }
@@ -810,7 +819,7 @@ public class ApiTestBase {
     private static <T extends Table> Map<TableName,T> stripAISTables(Map<TableName,T> map) {
         final Map<TableName,T> ret = new HashMap<TableName, T>(map);
         for(Iterator<TableName> iter=ret.keySet().iterator(); iter.hasNext(); ) {
-            if("akiban_information_schema".equals(iter.next().getSchemaName())) {
+            if(TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
             }
         }

@@ -54,7 +54,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 
 public class BasicInfoSchemaTablesServiceImplTest {
-    private static final String I_S = TableName.AKIBAN_INFORMATION_SCHEMA;
+    private static final String I_S = TableName.INFORMATION_SCHEMA;
 
     private AisHolder holder;
     private BasicInfoSchemaTablesServiceImpl bist;
@@ -236,10 +236,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "test", "bar", "TABLE", LONG, "akiban_information_schema", VARCHAR, "akiban_information_schema", VARCHAR, LONG },
-                { "test", "bar2", "TABLE", LONG, "akiban_information_schema", VARCHAR, "akiban_information_schema", VARCHAR, LONG },
-                { "test", "foo", "TABLE", LONG, "akiban_information_schema", VARCHAR, "akiban_information_schema", VARCHAR, LONG },
-                { "zap", "pow", "TABLE", LONG, "akiban_information_schema", VARCHAR, "akiban_information_schema", VARCHAR, LONG },
+                { "test", "bar", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
+                { "test", "foo", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
+                { "zap", "pow", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -255,7 +255,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "test", "bar2", "pid", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
                 { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
                 { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, null, null, null, null, LONG },
-                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, "akiban_information_schema", VARCHAR, "akiban_information_schema", VARCHAR, LONG },
+                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
                 { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
