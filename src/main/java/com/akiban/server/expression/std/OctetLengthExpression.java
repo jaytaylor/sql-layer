@@ -26,7 +26,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
@@ -37,6 +36,8 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.ObjectExtractor;
+import java.io.UnsupportedEncodingException;
+import org.slf4j.LoggerFactory;
 
 /**
  * 
@@ -56,21 +57,23 @@ public class OctetLengthExpression extends AbstractUnaryExpression
         @Override
         protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) 
         {
-            String encoding = "UTF-8";
+            String charset = "UTF-8";
             if ((argType != null) &&
                 (argType.getCharacterAttributes() != null) &&
                 (argType.getCharacterAttributes().getCharacterSet() != null))
-                encoding = argType.getCharacterAttributes().getCharacterSet();
-            return new OctetLengthExpression(encoding, argument);
+                charset = argType.getCharacterAttributes().getCharacterSet();
+            return new OctetLengthExpression(charset, argument);
         }
     };
         
     private static final class InnerEvaluation extends AbstractUnaryExpressionEvaluation
     {
-        public InnerEvaluation (String encoding, ExpressionEvaluation ev)
+        private String charset;
+
+        public InnerEvaluation (String charset, ExpressionEvaluation ev)
         {
             super(ev);
-            this.encoding = encoding;
+            this.charset = charset;
         }
 
         @Override
@@ -83,22 +86,20 @@ public class OctetLengthExpression extends AbstractUnaryExpression
            String st = sExtractor.getObject(source);
            
            try {
-               valueHolder().putLong(st.getBytes(encoding).length);
+               valueHolder().putLong(st.getBytes(charset).length);
            }
-           catch (java.io.UnsupportedEncodingException ex) {
-               // Should have been caught earlier.
-               throw new AkibanInternalException("Illegal encoding", ex);
+           catch (UnsupportedEncodingException ex) {
+               LoggerFactory.getLogger(OctetLengthExpression.class).error("Un-recognised charset", ex);
+               return NullValueSource.only();
            }
            return valueHolder();
         }        
-
-        private String encoding;
     }
     
-    public OctetLengthExpression (String encoding, Expression e)
+    public OctetLengthExpression (String charset, Expression e)
     {
         super(AkType.LONG, e);
-        this.encoding = encoding;
+        this.charset = charset;
     }
 
     @Override
@@ -110,8 +111,8 @@ public class OctetLengthExpression extends AbstractUnaryExpression
     @Override
     public ExpressionEvaluation evaluation() 
     {
-        return new InnerEvaluation(encoding, operandEvaluation());
+        return new InnerEvaluation(charset, operandEvaluation());
     }    
 
-    private String encoding;
+    private final String charset;
 }
