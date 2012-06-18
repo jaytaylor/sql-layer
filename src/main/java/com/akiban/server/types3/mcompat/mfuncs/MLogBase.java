@@ -32,5 +32,5 @@ import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
 public class MLogBase
 {
-    public static final TOverload LOGBASE[] = TLog.create(MDouble.INSTANCE.instance());
+    public static final TOverload INSTANCES[] = TLog.create(MDouble.INSTANCE.instance());
 }

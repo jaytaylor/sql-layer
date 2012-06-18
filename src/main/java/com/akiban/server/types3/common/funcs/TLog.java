@@ -87,9 +87,9 @@ public class TLog extends TOverloadBase
         
         abstract double evaluate(double input);
         
-        boolean isValid(LazyList<? extends PValueSource> inputs)
+        boolean isValid(double input)
         {
-            return inputs.get(0).getDouble() > 0;
+            return input > 0;
         }
     }
 
@@ -111,8 +111,9 @@ public class TLog extends TOverloadBase
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        if (logType.isValid(inputs))
-            output.putDouble(logType.evaluate(inputs.get(0).getDouble()));
+        double input = inputs.get(0).getDouble();
+        if (logType.isValid(input))
+            output.putDouble(logType.evaluate(input));
         else
             output.putNull();
     }
