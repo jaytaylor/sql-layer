@@ -26,7 +26,6 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -76,7 +75,7 @@ public abstract class Rand extends TOverloadBase {
     }
 
     protected boolean hasExectimeObject(TExecutionContext context, PValueTarget output) {
-        boolean hasExectimeObject = context.hasExectimeObject(0).equals(true);
+        boolean hasExectimeObject = context.hasExectimeObject(0);
 
         if (hasExectimeObject) {
             output.putDouble(((Random) context.exectimeObjectAt(0)).nextDouble());
