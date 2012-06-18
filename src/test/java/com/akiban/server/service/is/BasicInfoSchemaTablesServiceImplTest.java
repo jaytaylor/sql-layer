@@ -278,9 +278,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexColumnsScan() {
         final Object[][] expected = {
-                { "test", "bar", "PRIMARY", "bar", "col", 0L, true, null, LONG },
-                { "zap", "pow", "name_value", "pow", "name", 0L, true, null, LONG },
-                { "zap", "pow", "name_value", "pow", "value", 1L, true, null, LONG },
+                { "test", "PRIMARY", "bar", "bar", "col", 0L, true, null, LONG },
+                { "test", "foo_name", "bar2", "bar2", "foo", 0L, true, null, LONG },
+                { "test", "foo_name", "bar2", "bar", "name", 1L, true, null, LONG },
+                { "zap", "name_value", "pow", "pow", "name", 0L, true, null, LONG },
+                { "zap", "name_value", "pow", "pow", "value", 1L, true, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);

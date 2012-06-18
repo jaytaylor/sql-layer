@@ -349,38 +349,16 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         private class Scan implements GroupScan {
             final RowType rowType;
-            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
-            Iterator<TableIndex> tableIndexIt;
-            Iterator<GroupIndex> groupIndexIt;
-            UserTable curTable;
+            final IndexIteration indexIt = new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
             int rowCounter;
 
             public Scan(RowType rowType) {
                 this.rowType = rowType;
             }
 
-            private Index advance() {
-                while(tableIndexIt == null || !tableIndexIt.hasNext()) {
-                    while(groupIndexIt != null && groupIndexIt.hasNext()) {
-                        GroupIndex index = groupIndexIt.next();
-                        if(index.leafMostTable() == curTable) {
-                            return index;
-                        }
-                    }
-                    if(tableIt.hasNext()) {
-                        curTable = tableIt.next();
-                        tableIndexIt = curTable.getIndexes().iterator();
-                        groupIndexIt = curTable.getGroup().getIndexes().iterator();
-                    } else {
-                        return null;
-                    }
-                }
-                return tableIndexIt.next();
-            }
-
             @Override
             public Row next() {
-                Index index = advance();
+                Index index = indexIt.next();
                 if(index == null) {
                     return null;
                 }
@@ -393,8 +371,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                     indexType = "INDEX";
                 }
                 return new ValuesRow(rowType,
-                                     curTable.getName().getSchemaName(),
-                                     curTable.getName().getTableName(),
+                                     indexIt.getUserTable().getName().getSchemaName(),
+                                     indexIt.getUserTable().getName().getTableName(),
                                      null, // constraint_name
                                      index.getIndexName().getName(),
                                      indexType,
@@ -432,8 +410,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         private class Scan implements GroupScan {
             final RowType rowType;
-            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
-            Iterator<TableIndex> indexIt;
+            final IndexIteration indexIt = new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
             Iterator<IndexColumn> indexColumnIt;
             int rowCounter;
 
@@ -441,33 +418,27 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 this.rowType = rowType;
             }
 
-            private boolean advanceIfNeeded() {
+            private IndexColumn advance() {
                 while(indexColumnIt == null || !indexColumnIt.hasNext()) {
-                    while(indexIt == null || !indexIt.hasNext()) {
-                        if(tableIt.hasNext()) {
-                            indexIt = tableIt.next().getIndexes().iterator();
-                        } else {
-                            return false;
-                        }
+                    Index index = indexIt.next();
+                    if(index == null) {
+                        return null;
                     }
-                    if(indexIt.hasNext()) {
-                        indexColumnIt = indexIt.next().getKeyColumns().iterator();
-                        break;
-                    }
+                    indexColumnIt = index.getKeyColumns().iterator(); // Always at least 1
                 }
-                return true;
+                return indexColumnIt.next();
             }
 
             @Override
             public Row next() {
-                if(!advanceIfNeeded()) {
+                IndexColumn indexColumn = advance();
+                if(indexColumn == null) {
                     return null;
                 }
-                IndexColumn indexColumn = indexColumnIt.next();
                 return new ValuesRow(rowType,
-                                     indexColumn.getIndex().getIndexName().getSchemaName(),
-                                     indexColumn.getColumn().getTable().getGroup().getName(),
+                                     indexIt.getUserTable().getName().getSchemaName(),
                                      indexColumn.getIndex().getIndexName().getName(),
+                                     indexIt.getUserTable().getName().getTableName(),
                                      indexColumn.getColumn().getTable().getName().getTableName(),
                                      indexColumn.getColumn().getName(),
                                      indexColumn.getPosition(),
@@ -479,6 +450,40 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             @Override
             public void close() {
             }
+        }
+    }
+
+    private static class IndexIteration {
+        private final Iterator<UserTable> tableIt;
+        Iterator<TableIndex> tableIndexIt;
+        Iterator<GroupIndex> groupIndexIt;
+        UserTable curTable;
+
+        public IndexIteration(Iterator<UserTable> tableIt) {
+            this.tableIt = tableIt;
+        }
+
+        Index next() {
+            while(tableIndexIt == null || !tableIndexIt.hasNext()) {
+                while(groupIndexIt != null && groupIndexIt.hasNext()) {
+                    GroupIndex index = groupIndexIt.next();
+                    if(index.leafMostTable() == curTable) {
+                        return index;
+                    }
+                }
+                if(tableIt.hasNext()) {
+                    curTable = tableIt.next();
+                    tableIndexIt = curTable.getIndexes().iterator();
+                    groupIndexIt = curTable.getGroup().getIndexes().iterator();
+                } else {
+                    return null;
+                }
+            }
+            return tableIndexIt.next();
+        }
+
+        UserTable getUserTable() {
+            return curTable;
         }
     }
 
@@ -502,10 +507,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("character_set_name", 128, true)
                 .colString("collation_schema", 128, true)
                 .colString("collation_name", 128, true);
-        //primary key (schema_name, table_name),
-        //foreign_key (schema_name) references SCHEMATA (schema_name),
-        //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS,
-        //foreign key (collations_schema, collation_name) references COLLATIONS;
+        //primary key (schema_name, table_name)
+        //foreign_key (schema_name) references SCHEMATA (schema_name)
+        //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
+        //foreign key (collations_schema, collation_name) references COLLATIONS
         builder.userTable(COLUMNS)
                 .colString("schema_name", 128, false)
                 .colString("table_name", 128, false)
@@ -522,10 +527,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("character_set_name", 128, true)
                 .colString("collation_schema", 128, true)
                 .colString("collation_name", 128, true);
-        //primary key(schema_name, table_name, column_name),
-        //foreign key(schema_name, table_name) references TABLES (schema_name, table_name),
-        //foreign key (type) references TYPES (type_name),
-        //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS,
+        //primary key(schema_name, table_name, column_name)
+        //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
+        //foreign key (type) references TYPES (type_name)
+        //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
         builder.userTable(INDEXES)
                 .colString("schema_name", 128, false)
@@ -535,24 +540,24 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("index_type", 128, false)
                 .colString("is_unique", 3, false)
                 .colString("join_type", 32, true);
-        //primary key(schema_name, table_name, index_name),
+        //primary key(schema_name, table_name, index_name)
         //foreign key (schema_name, table_name, constraint_name)
-        //references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name),
-        //foreign key (schema_name, table_name) references TABLES (schema_name, table_name));
+        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
+        //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
         builder.userTable(INDEX_COLUMNS)
                 .colString("schema_name", 128, false)
-                .colString("group_name", 128, false)
                 .colString("index_name", 128, false)
-                .colString("table_name", 128, false)
+                .colString("index_table_name", 128, false)
+                .colString("column_table_name", 128, false)
                 .colString("column_name", 128, false)
                 .colBigInt("ordinal_position", false)
                 .colString("is_ascending", 128, false)
                 .colBigInt("indexed_length", true);
-        //primary key(schema_name, group_name, index_name, table_name, column_name),
-        //foreign key(schema_name, group_name, index_name)
-        //references indexes (schema_name, group_name, index_name),
-        //foreign key (schema_name, table_name, column_name)
-        //references columns (schema_name, table_name, column_name));
+        //primary key(schema_name, index_name, index_table_name, column_table_name, column_name)
+        //foreign key(schema_name, index_table_name, index_name)
+        //    references INDEXES (schema_name, table_name, index_name)
+        //foreign key (schema_name, column_table_name, column_name)
+        //    references COLUMNS (schema_name, table_name, column_name)
 
         return builder.ais(false);
     }
