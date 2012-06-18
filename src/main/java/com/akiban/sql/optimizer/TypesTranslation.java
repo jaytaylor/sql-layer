@@ -169,8 +169,13 @@ public final class TypesTranslation {
         case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
             return ExpressionTypes.INTERVAL_MONTH;
         case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            return ExpressionTypes.newType(AkType.valueOf(sqlType.getFullSQLTypeName().toUpperCase()), 
-                                           sqlType.getPrecision(), sqlType.getScale());
+            try {
+                return ExpressionTypes.newType(AkType.valueOf(sqlType.getFullSQLTypeName().toUpperCase()), 
+                                               sqlType.getPrecision(), sqlType.getScale());
+            }
+            catch (IllegalArgumentException ex) {
+                return null;
+            }
         default:
             return null;
         }
