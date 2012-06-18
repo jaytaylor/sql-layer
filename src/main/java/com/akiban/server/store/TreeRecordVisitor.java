@@ -28,6 +28,7 @@ package com.akiban.server.store;
 
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.HKeySegment;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -58,7 +59,7 @@ public abstract class TreeRecordVisitor
         for (RowDef rowDef : store.rowDefCache.getRowDefs()) {
             if (rowDef.isUserTable()) {
                 UserTable table = rowDef.userTable();
-                if (!table.getName().getSchemaName().equals("akiban_information_schema")) {
+                if (!table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
                     ordinalToTable.put(rowDef.getOrdinal(), table);
                 }
             }

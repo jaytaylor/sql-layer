@@ -40,15 +40,49 @@ import com.akiban.sql.StandardException;
 import java.util.List;
 
 
-public class LeftExpression extends AbstractBinaryExpression
+public class LeftRightExpression extends AbstractBinaryExpression
 {
-    @Scalar("getLeft")
-    public static final ExpressionComposer COMPOSER = new BinaryComposer()
+    protected enum Op
     {
+        LEFT
+        {
+            @Override
+            String getSubstring(String st, int length)
+            {
+                 return st.substring(0, length);
+            }
+        },
+        RIGHT
+        {
+            @Override
+            String getSubstring(String st, int length)
+            {
+                 return st.substring(st.length() - length, st.length());
+            }
+        };
+        
+        abstract String getSubstring(String st, int length);
+    }
+    
+    @Scalar("getLeft")
+    public static final ExpressionComposer LEFT_COMPOSER = new InnerComposer(Op.LEFT);
+    
+    @Scalar("getRight")
+    public static final ExpressionComposer RIGHT_COMPOSER = new InnerComposer(Op.RIGHT);
+    
+    private static class InnerComposer extends BinaryComposer
+    {
+        private final Op op;
+        
+        InnerComposer (Op op)
+        {
+            this.op = op;
+        }
+        
         @Override
         protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
-            return new LeftExpression(first, second);
+            return new LeftRightExpression(first, second, op);
         }
 
         @Override
@@ -67,9 +101,11 @@ public class LeftExpression extends AbstractBinaryExpression
     
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
-        public InnerEvaluation (List<? extends ExpressionEvaluation> evals)
+        private final Op op;
+        public InnerEvaluation (List<? extends ExpressionEvaluation> evals, Op op)
         {
             super(evals);
+            this.op = op;
         }
         
         @Override
@@ -82,10 +118,12 @@ public class LeftExpression extends AbstractBinaryExpression
             if (lenSource.isNull()) return NullValueSource.only();
             
             String str = strSource.getString();
-            long len = lenSource.getLong();
-            len = len < 0 ? 0 : len;
-            
-            valueHolder().putString(str.substring(0, (int)(str.length() < len ? str.length() : len)));
+            int len = (int)lenSource.getLong();
+            len = len < 0
+                    ? 0
+                    : len > str.length() ? str.length() : len;
+
+            valueHolder().putString(op.getSubstring(str, len));
             return valueHolder();
         }
     }
@@ -99,17 +137,20 @@ public class LeftExpression extends AbstractBinaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("LEFT");
+        sb.append(op);
     }
 
     @Override
     public ExpressionEvaluation evaluation()
     {
-        return new InnerEvaluation(childrenEvaluations());
+        return new InnerEvaluation(childrenEvaluations(), op);
     }
     
-    protected LeftExpression (Expression str, Expression len)
+    protected LeftRightExpression (Expression str, Expression len, Op op)
     {
         super(AkType.VARCHAR, str, len);
+        this.op = op;
     }
+    
+    private final Op op;
 }

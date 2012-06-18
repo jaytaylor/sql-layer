@@ -337,14 +337,14 @@
                         <exclude>.bzrignore</exclude>
                         <exclude>velocity.log</exclude>
                         <!-- No extension. Manually add header and ignore -->
-                        <exclude>bin/akserver</exclude>
-                        <exclude>bin/akloader</exclude>
+                        <exclude>bin/*</exclude>
                         <exclude>conf/config/jvm.options</exclude>
                         <exclude>packages-common/jvm.options</exclude>
+                        <exclude>conf/config/jvm-options.cmd</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>debian/*</exclude>
                         <exclude>redhat/*</exclude>
-                        <exclude>windows/**</exclude>
+                        <exclude>src/izpack/**</exclude>
                         <exclude>LICENSE.txt</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
@@ -398,4 +398,90 @@
             </plugin>
         </plugins>
     </build>
+    <profiles>
+        <profile>
+            <id>installer-izpack</id>
+            <activation>
+                <property>
+                    <name>installer</name>
+                    <value>izpack</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>izpack-staging</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy todir="${izpack.staging.dir}">
+                                            <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
+                                            <fileset dir="${basedir}/src/izpack" />
+                                        </copy>
+                                        <get src="http://mirrors.ibiblio.org/apache/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${izpack.staging.dir}/procrun.zip" usetimestamp="true" />
+                                        <mkdir dir="${izpack.staging.dir}/procrun" />
+                                        <unzip src="${izpack.staging.dir}/procrun.zip" dest="${izpack.staging.dir}/procrun" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>izpack-staging-2</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy todir="${izpack.staging.dir}/lib">
+                                            <fileset dir="${project.build.directory}" includes="${izpack.jarfile}" />
+                                        </copy>
+                                        <mkdir dir="${izpack.staging.dir}/log" />
+                                        <mkdir dir="${izpack.staging.dir}/data" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.izpack</groupId>
+                        <artifactId>izpack-maven-plugin</artifactId>
+                        <version>1.0-alpha-5</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.codehaus.izpack</groupId>
+                                <artifactId>izpack-standalone-compiler</artifactId>
+                                <version>4.3.1</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                              <izpackBasedir>${izpack.staging.dir}</izpackBasedir>
+                              <customPanelDirectory>${izpack.staging.dir}</customPanelDirectory>
+                              <installerFile>${project.build.directory}/${project.build.finalName}-installer.jar</installerFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>standard-installer</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>izpack</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <properties>
+                <izpack.staging.dir>${project.build.directory}/izpack</izpack.staging.dir>
+                <izpack.appname>${project.name}</izpack.appname>
+                <izpack.appversion>${project.version}</izpack.appversion>
+                <izpack.jarfile>${project.build.finalName}-jar-with-dependencies.jar</izpack.jarfile>
+            </properties>
+        </profile>
+    </profiles>
 </project>
