@@ -64,11 +64,6 @@ public class LeftExpression extends AbstractBinaryExpression
         }
         
     };
-
-    @Override
-    public String name() {
-        return "LEFT";
-    }
     
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
@@ -104,7 +99,7 @@ public class LeftExpression extends AbstractBinaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append(name());
+        sb.append("LEFT");
     }
 
     @Override

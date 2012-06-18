@@ -56,6 +56,8 @@ public final class AISValidations {
     public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
     public static final AISValidation GROUP_INDEX_DEPTH = new GroupIndexDepth();
     public static final AISValidation TREE_NAMES_NOT_NULL = new TreeNamesAreNotNull();
+    public static final AISValidation MEMORY_TABLES_NOT_MIXED = new MemoryTablesNotMixed();
+    public static final AISValidation MEMORY_TABLES_SINGLE = new MemoryTableSingleTableGroup();
 
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
@@ -83,7 +85,9 @@ public final class AISValidations {
                 INDEX_TREE_NAMES_UNIQUE,
                 TYPES_ARE_FROM_STATIC,
                 GROUP_INDEX_DEPTH,
-                TREE_NAMES_NOT_NULL
+                TREE_NAMES_NOT_NULL,
+                MEMORY_TABLES_NOT_MIXED,
+                MEMORY_TABLES_SINGLE
                 //CHARACTER_SET_SUPPORTED
                 ));
     }

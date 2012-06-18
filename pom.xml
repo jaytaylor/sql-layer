@@ -59,23 +59,6 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>org.json</groupId>
-            <artifactId>json</artifactId>
-            <version>20090211</version>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>org.jboss.netty</groupId>
-            <artifactId>netty</artifactId>
-            <version>3.2.0.ALPHA4</version>
-        </dependency>
-        <dependency>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr</artifactId>
-            <version>3.1.3</version>
-            <scope>compile</scope>
-        </dependency>
-        <dependency>
             <groupId>commons-cli</groupId>
             <artifactId>commons-cli</artifactId>
             <version>1.2</version>
@@ -135,11 +118,6 @@
             <artifactId>slf4j-log4j12</artifactId>
             <version>1.6.1</version>
             <scope>runtime</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.thimbleware.jmemcached</groupId>
-            <artifactId>jmemcached-core</artifactId>
-            <version>0.9.1</version>
         </dependency>
         <dependency>
             <groupId>com.google.protobuf</groupId>
@@ -258,193 +236,259 @@
                         <descriptorRef>jar-with-dependencies</descriptorRef>
                     </descriptorRefs>
                     <archive>
-                    <manifest>
-                        <mainClass>com.akiban.server.AkServer</mainClass>
-                    </manifest>
-                </archive>
-            </configuration>
-            <executions>
-                <execution>
-                    <id>make-assembly</id> <!-- This is used for inheritance merges ?? -->
-                    <phase>install</phase> <!-- Append to the install phase -->
-                    <goals>
-                        <goal>single</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.antlr</groupId>
-            <artifactId>antlr3-maven-plugin</artifactId>
-            <version>3.1.3-1</version>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>antlr</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>com.atlassian.maven.plugins</groupId>
-            <artifactId>maven-clover2-plugin</artifactId>
-            <version>3.0.1</version>
-            <configuration>
-                <generateHistorical>true</generateHistorical>
-                <historyDir>/clover/history</historyDir>
-                <license>${clover.license}</license>
-                <generateXml>true</generateXml>
-            </configuration>
-        </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-surefire-plugin</artifactId>
-            <version>2.11</version>
-            <configuration>
-                <systemPropertyVariables>
-                    <akserver.port>${akserver.port}</akserver.port>
-                    <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
-                </systemPropertyVariables>
-                <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
-                <includes>
-                    <include>**/*Test.java</include>
-                    <include>**/*Test?.java</include>
-                </includes>
-                <excludes>
-                    <!-- None -->
-                </excludes>
-            </configuration>
-        </plugin>
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-failsafe-plugin</artifactId>
-            <version>2.11</version>
-            <configuration>
-                <systemPropertyVariables>
-                    <akserver.port>${akserver.port}</akserver.port>
-                    <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
-                </systemPropertyVariables>
-                <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
-            </configuration>
-            <executions>
-                <execution>
-                    <id>integration-test</id>
-                    <goals>
-                        <goal>integration-test</goal>
-                    </goals>
-                </execution>
-                <execution>
-                    <id>verify</id>
-                    <goals>
-                        <goal>verify</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <plugin>
-            <groupId>org.codehaus.mojo</groupId>
-            <artifactId>findbugs-maven-plugin</artifactId>
-            <version>1.2</version>
-            <configuration>
-                <findbugsXmlOutput>true</findbugsXmlOutput>
-                <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
-                <xmlOutput>true</xmlOutput>
-            </configuration>
-        </plugin>
-        <plugin>
-            <groupId>com.mycila.maven-license-plugin</groupId>
-            <artifactId>maven-license-plugin</artifactId>
-            <version>1.10.b1</version>
-            <configuration>
-                <header>src/etc/header.txt</header>
-                <strictCheck>true</strictCheck>
-                <failIfMissing>true</failIfMissing>
-                <excludes>
-                    <!-- General files that can't have or don't need header -->
-                    <exclude>**/*.ddl</exclude>
-                    <exclude>**/*.json</exclude>
-                    <exclude>**/*.sql</exclude>
-                    <exclude>**/*.expected</exclude>
-                    <exclude>**/*.error</exclude>
-                    <exclude>**/*.dat</exclude>
-                    <exclude>**/*.fail</exclude>
-                    <exclude>**/*.params</exclude>
-                    <exclude>**/*.test</exclude>
-                    <exclude>**/*.yaml</exclude>
-                    <exclude>**/*.yml</exclude>
-                    <exclude>**/group.idx</exclude>
-                    <exclude>src/test/bin/*.sh</exclude>
-                    <exclude>src/test/bin/*.cmd</exclude>
-                    <exclude>.idea/**</exclude>
-                    <exclude>**/*.proto</exclude>
-                    <exclude>.bzrignore</exclude>
-                    <exclude>velocity.log</exclude>
-                    <!-- No extension. Manually add header and ignore -->
-                    <exclude>bin/akserver</exclude>
-                    <exclude>bin/akloader</exclude>
-                    <exclude>conf/config/jvm.options</exclude>
-                    <exclude>packages-common/jvm.options</exclude>
-                    <exclude>doc/release_notes.txt</exclude>
-                    <exclude>src/main/antlr3/com/akiban/server/service/memcache/hapi.g</exclude>
-                    <!-- Files requiring a specific format (packaging control, test output, etc) -->
-                    <exclude>debian/*</exclude>
-                    <exclude>redhat/*</exclude>
-                    <exclude>windows/**</exclude>
-                    <exclude>LICENSE.txt</exclude>
-                    <exclude>src/main/resources/version/akserver_version</exclude> 
-                    <exclude>src/test/resources/com/akiban/**/README*</exclude> 
-                    <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
-                    <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
-                    <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
-                    <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
-                    <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
-                </excludes>
-                <mapping>
-                    <g>JAVADOC_STYLE</g>
-                    <yml>SCRIPT_STYLE</yml>
-                </mapping>
-            </configuration>
-            <executions>
-                <execution>
-                    <goals>
-                        <goal>check</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-        <!-- Earlier version of eclipse plugin to avoid resource filtering bug. 
+                        <manifest>
+                            <mainClass>com.akiban.server.AkServer</mainClass>
+                        </manifest>
+                    </archive>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <phase>package</phase>
+                        <goals>
+                            <goal>single</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.atlassian.maven.plugins</groupId>
+                <artifactId>maven-clover2-plugin</artifactId>
+                <version>3.0.1</version>
+                <configuration>
+                    <generateHistorical>true</generateHistorical>
+                    <historyDir>/clover/history</historyDir>
+                    <license>${clover.license}</license>
+                    <generateXml>true</generateXml>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>2.11</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <akserver.port>${akserver.port}</akserver.port>
+                        <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
+                    </systemPropertyVariables>
+                    <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Test?.java</include>
+                    </includes>
+                    <excludes>
+                        <!-- None -->
+                    </excludes>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-failsafe-plugin</artifactId>
+                <version>2.11</version>
+                <configuration>
+                    <systemPropertyVariables>
+                        <akserver.port>${akserver.port}</akserver.port>
+                        <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
+                    </systemPropertyVariables>
+                    <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>integration-test</id>
+                        <goals>
+                            <goal>integration-test</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>verify</id>
+                        <goals>
+                            <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+                <version>1.2</version>
+                <configuration>
+                    <findbugsXmlOutput>true</findbugsXmlOutput>
+                    <findbugsXmlWithMessages>true</findbugsXmlWithMessages>
+                    <xmlOutput>true</xmlOutput>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>com.mycila.maven-license-plugin</groupId>
+                <artifactId>maven-license-plugin</artifactId>
+                <version>1.10.b1</version>
+                <configuration>
+                    <header>src/etc/header.txt</header>
+                    <strictCheck>true</strictCheck>
+                    <failIfMissing>true</failIfMissing>
+                    <excludes>
+                        <!-- General files that can't have or don't need header -->
+                        <exclude>**/*.ddl</exclude>
+                        <exclude>**/*.sql</exclude>
+                        <exclude>**/*.expected</exclude>
+                        <exclude>**/*.error</exclude>
+                        <exclude>**/*.dat</exclude>
+                        <exclude>**/*.fail</exclude>
+                        <exclude>**/*.params</exclude>
+                        <exclude>**/*.test</exclude>
+                        <exclude>**/*.yaml</exclude>
+                        <exclude>**/*.yml</exclude>
+                        <exclude>src/test/bin/*.sh</exclude>
+                        <exclude>src/test/bin/*.cmd</exclude>
+                        <exclude>.idea/**</exclude>
+                        <exclude>**/*.proto</exclude>
+                        <exclude>.bzrignore</exclude>
+                        <exclude>velocity.log</exclude>
+                        <!-- No extension. Manually add header and ignore -->
+                        <exclude>bin/*</exclude>
+                        <exclude>conf/config/jvm.options</exclude>
+                        <exclude>packages-common/jvm.options</exclude>
+                        <exclude>conf/config/jvm-options.cmd</exclude>
+                        <!-- Files requiring a specific format (packaging control, test output, etc) -->
+                        <exclude>debian/*</exclude>
+                        <exclude>redhat/*</exclude>
+                        <exclude>src/izpack/**</exclude>
+                        <exclude>LICENSE.txt</exclude>
+                        <exclude>src/main/resources/version/akserver_version</exclude>
+                        <exclude>src/test/resources/com/akiban/**/README*</exclude>
+                        <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
+                        <exclude>src/test/resources/com/akiban/ais/model/staticgrouping/*</exclude>
+                        <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
+                        <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
+                        <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
+                    </excludes>
+                    <mapping>
+                        <g>JAVADOC_STYLE</g>
+                        <yml>SCRIPT_STYLE</yml>
+                    </mapping>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Earlier version of eclipse plugin to avoid resource filtering bug. 
          (See http://stackoverflow.com/questions/1397903/setting-project-for-eclipse-using-maven)-->
-        <plugin>
-            <groupId>org.apache.maven.plugins</groupId>
-            <artifactId>maven-eclipse-plugin</artifactId>
-            <version>2.6</version>
-        </plugin>
-
-        <plugin>
-            <artifactId>maven-antrun-plugin</artifactId>
-            <executions>
-                <execution>
-                    <id>protobuf-compile</id>
-                    <phase>generate-sources</phase>
-                    <configuration>
-                        <tasks>
-                            <mkdir dir="target/generated-sources/protobuf"/>
-                            <exec executable="protoc" failonerror="true">
-                                <arg value="--java_out=target/generated-sources/protobuf"/>
-                                <arg value="src/main/protobuf/akiban_information_schema.proto"/>
-                            </exec>
-                        </tasks>
-                        <sourceRoot>target/generated-sources</sourceRoot>
-                    </configuration>
-                    <goals>
-                        <goal>run</goal>
-                    </goals>
-                </execution>
-            </executions>
-        </plugin>
-
-
-    </plugins>
-</build>
-
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-eclipse-plugin</artifactId>
+                <version>2.6</version>
+            </plugin>
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <executions>
+                    <execution>
+                        <id>protobuf-compile</id>
+                        <phase>generate-sources</phase>
+                        <configuration>
+                            <tasks>
+                                <mkdir dir="target/generated-sources/protobuf"/>
+                                <exec executable="protoc" failonerror="true">
+                                    <arg value="--java_out=target/generated-sources/protobuf"/>
+                                    <arg value="src/main/protobuf/akiban_information_schema.proto"/>
+                                </exec>
+                            </tasks>
+                            <sourceRoot>target/generated-sources</sourceRoot>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+    <profiles>
+        <profile>
+            <id>installer-izpack</id>
+            <activation>
+                <property>
+                    <name>installer</name>
+                    <value>izpack</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>izpack-staging</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy todir="${izpack.staging.dir}">
+                                            <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
+                                            <fileset dir="${basedir}/src/izpack" />
+                                        </copy>
+                                        <get src="http://mirrors.ibiblio.org/apache/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${izpack.staging.dir}/procrun.zip" usetimestamp="true" />
+                                        <mkdir dir="${izpack.staging.dir}/procrun" />
+                                        <unzip src="${izpack.staging.dir}/procrun.zip" dest="${izpack.staging.dir}/procrun" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>izpack-staging-2</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <copy todir="${izpack.staging.dir}/lib">
+                                            <fileset dir="${project.build.directory}" includes="${izpack.jarfile}" />
+                                        </copy>
+                                        <mkdir dir="${izpack.staging.dir}/log" />
+                                        <mkdir dir="${izpack.staging.dir}/data" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>org.codehaus.izpack</groupId>
+                        <artifactId>izpack-maven-plugin</artifactId>
+                        <version>1.0-alpha-5</version>
+                        <dependencies>
+                            <dependency>
+                                <groupId>org.codehaus.izpack</groupId>
+                                <artifactId>izpack-standalone-compiler</artifactId>
+                                <version>4.3.1</version>
+                            </dependency>
+                        </dependencies>
+                        <configuration>
+                              <izpackBasedir>${izpack.staging.dir}</izpackBasedir>
+                              <customPanelDirectory>${izpack.staging.dir}</customPanelDirectory>
+                              <installerFile>${project.build.directory}/${project.build.finalName}-installer.jar</installerFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>standard-installer</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>izpack</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <properties>
+                <izpack.staging.dir>${project.build.directory}/izpack</izpack.staging.dir>
+                <izpack.appname>${project.name}</izpack.appname>
+                <izpack.appversion>${project.version}</izpack.appversion>
+                <izpack.jarfile>${project.build.finalName}-jar-with-dependencies.jar</izpack.jarfile>
+            </properties>
+        </profile>
+    </profiles>
 </project>

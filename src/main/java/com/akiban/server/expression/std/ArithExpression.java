@@ -481,7 +481,7 @@ public class ArithExpression extends AbstractBinaryExpression
             return extract.getEncoded(ymd_hms);
         }
 
-        private static boolean vallidDayMonth (long y, long m, long d)
+        protected static boolean vallidDayMonth (long y, long m, long d)
         {
             switch ((int)m)
             {

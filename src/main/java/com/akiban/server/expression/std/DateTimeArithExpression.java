@@ -79,7 +79,7 @@ public class DateTimeArithExpression extends ArithExpression
             return ExpressionTypes.TIME;
         }
 
-        private void adjustType (TypesList argumentTypes, int index) throws StandardException
+        protected void adjustType (TypesList argumentTypes, int index) throws StandardException
         {
             ExpressionType dateType = argumentTypes.get(index);
             switch (dateType.getType())

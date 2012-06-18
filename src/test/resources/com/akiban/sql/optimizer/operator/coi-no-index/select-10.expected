@@ -1,4 +1,4 @@
-PhysicalSelect[_SQL_COL_1:VARCHAR(32), _SQL_COL_2:VARCHAR(32), _SQL_COL_3:VARCHAR(32)]
+PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci, _SQL_COL_2:VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci, _SQL_COL_3:VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci]
   project([Field(0), Arith(/ -> Field(1), Field(2) -> LONG), Field(3)])
     Aggregation(without GROUP BY: [minVARCHAR, sumVARCHAR, count, maxVARCHAR])
       Sort_Tree(project([Field(2), Field(2), Field(2), Field(2)]), SUPPRESS_DUPLICATES)

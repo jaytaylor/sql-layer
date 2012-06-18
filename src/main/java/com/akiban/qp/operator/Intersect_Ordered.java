@@ -65,9 +65,11 @@ import static java.lang.Math.min;
  * <li><b>IndexRowType rightRowType:</b> Type of rows from right input stream.
  * <li><b>int leftOrderingFields:</b> Number of trailing fields of left input rows to be used for ordering and matching rows.
  * <li><b>int rightOrderingFields:</b> Number of trailing fields of right input rows to be used for ordering and matching rows.
- * <li><b>boolean[] ascending:</b> The length of this array specifies the number of fields to be compared in the merge,
- * (<= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field is ascending, false
- * if it is descending.
+ * <li><b>boolean[] ascending:</b> The length of this array specifies the number of fields to be compared in the merge
+ * for the purpose of determining whether a left row and right row agree and will result in an output row,
+ * ascending.length <= min(leftOrderingFields, rightOrderingFields). ascending[i] is true if the ith such field
+ * is ascending, false if it is descending. This ordering specification must be consistent with the order of both
+ * input streams.
  * <li><b>JoinType joinType:</b>
  * <ul>
  * <li>INNER_JOIN: An ordinary intersection is computed.
@@ -91,7 +93,8 @@ import static java.lang.Math.min;
  * <h1>Assumptions</h1>
  * <p/>
  * Each input stream is ordered by its ordering columns, as determined by <tt>leftOrderingFields</tt>
- * and <tt>rightOrderingFields</tt>.
+ * and <tt>rightOrderingFields</tt>, and ordered according to <tt>ascending</tt>. The order of rows in both
+ * input streams must be consistent with <tt>ascending.</tt>
  * <p/>
  * The input row types must correspond to indexes in the same group (as determined by the index's leafmost table).
  * This constraint may be relaxed in the future, but then the number of fields to compare is likely to be required
@@ -206,80 +209,13 @@ class Intersect_Ordered extends Operator
         // Setup for row comparisons
         this.leftFixedFields = leftRowType.nFields() - leftOrderingFields;
         this.rightFixedFields = rightRowType.nFields() - rightOrderingFields;
-        this.fieldsToCompare = fieldsToCompare(leftRowType, leftFixedFields, rightRowType, rightFixedFields);
+        this.fieldsToCompare = ascending.length;
         // Setup for jumping
         leftSkipRowColumnSelector = new IndexRowPrefixSelector(leftFixedFields + fieldsToCompare);
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
     }
 
     // For use by this class
-
-    private static int fieldsToCompare(IndexRowType leftRowType,
-                                       int leftFixedFields,
-                                       IndexRowType rightRowType,
-                                       int rightFixedFields)
-    {
-        // Find common ancestor
-        Index leftIndex = leftRowType.index();
-        UserTable leftTable = (UserTable)  leftIndex.leafMostTable();
-        Index rightIndex = rightRowType.index();
-        UserTable rightTable = (UserTable)  rightIndex.leafMostTable();
-        while (leftTable.getDepth() > rightTable.getDepth()) {
-            leftTable = leftTable.parentTable();
-        }
-        while (rightTable.getDepth() > leftTable.getDepth()) {
-            rightTable = rightTable.parentTable();
-        }
-        while (leftTable != rightTable) {
-            leftTable = leftTable.parentTable();
-            rightTable = rightTable.parentTable();
-        }
-        // left table is now the nearest common ancestor.
-        HKey nearestAncestorHKey = leftTable.hKey();
-        // Following the fixed fields are fields to be compared. We want to find how many of these there are.
-        // Walk the two lists of fields as long as:
-        // - The corresponding index columns are the identical Column objects, or
-        // - The corresponding index columns correspond to the same hkey column or equivalent.
-        int lf = leftFixedFields;
-        int rf = rightFixedFields;
-        boolean match;
-        do {
-            match = false;
-            if (lf < leftIndex.getAllColumns().size() && rf < rightIndex.getAllColumns().size()) {
-                Column leftColumn = leftIndex.getAllColumns().get(lf).getColumn();
-                Column rightColumn = rightIndex.getAllColumns().get(rf).getColumn();
-                if (leftColumn == rightColumn) {
-                    match = true;
-                } else {
-                    for (HKeySegment segment : nearestAncestorHKey.segments()) {
-                        for (HKeyColumn hKeyColumn : segment.columns()) {
-                            List<Column> equivalentColumns = hKeyColumn.equivalentColumns();
-                            if (equivalentColumns.contains(leftColumn) && equivalentColumns.contains(rightColumn)) {
-                                match = true;
-                            }
-                        }
-                    }
-                }
-                if (match) {
-                    lf++;
-                    rf++;
-                }
-            }
-        } while (match);
-        int leftFieldsToCompare = lf - leftFixedFields;
-        int rightFieldsToCompare = rf - rightFixedFields;
-        int fieldsToCompare = min(leftFieldsToCompare, rightFieldsToCompare);
-        // TODO: Is this correct? Requires additional checking of inputs. assert fieldsToCompare > 0;
-        //
-        // TODO: Other assertions to check:
-        // TODO: - All common hkey columns are included by the left index among the first
-        // TODO:   (leftFixedFields + fieldsToCompare) columns, and by the right index among the
-        // TODO:   first (rightFixedFields + fieldsToCompare) columns.
-        // TODO: - Following the fixed fields, matching fields from the left and right indexes are either:
-        // TODO:    - The identical column (for non-hkey columns), or
-        // TODO:    - hkey columns from the same index, and at the same position within the segment.
-        return fieldsToCompare;
-    }
 
     // Class state
 
@@ -496,7 +432,8 @@ class Intersect_Ordered extends Operator
                 c = leftRow.get().compareTo(rightRow.get(), leftFixedFields, rightFixedFields, fieldsToCompare);
                 if (c != 0) {
                     int fieldThatDiffers = (int) abs(c) - 1;
-                    if (fieldThatDiffers < ascending.length && !ascending[fieldThatDiffers]) {
+                    assert fieldThatDiffers < ascending.length;
+                    if (!ascending[fieldThatDiffers]) {
                         c = -c;
                     }
                 }
