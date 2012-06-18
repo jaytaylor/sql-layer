@@ -148,7 +148,6 @@ public final class Matchers
     
     public static class Index extends AbstractMatcher
     {
-
         private final Token tk;
         private final String pattern;
         
@@ -159,7 +158,6 @@ public final class Matchers
             for ( n = 0; n < st.length(); ++n)
                 map.put(st.charAt(n), n);
             tk = new Token(map, st.toCharArray(), n, false, false);
-
             pattern = st;
         }
         
@@ -178,7 +176,6 @@ public final class Matchers
         }
 
         @Override
-
         public boolean sameState(String pattern, char escape)
         {
             return pattern.equals(this.pattern);
