@@ -80,6 +80,8 @@ public class CompareExpression extends AbstractBinaryExpression {
         return true;
     }
 
+    /*
+     * Old version
     public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
         super(AkType.BOOL, lhs, rhs);
         this.comparison = comparison;
@@ -89,6 +91,12 @@ public class CompareExpression extends AbstractBinaryExpression {
         if (this.op == null)
             throw new AkibanInternalException("couldn't find internal comparator for " + type);
         //this(AkType.BOOL, lhs, comparison, rhs);
+    }
+    */
+    
+    //copied from trunk
+    public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
+        this(AkType.BOOL, lhs, comparison, rhs);
     }
     
     // For use by RankExpression
