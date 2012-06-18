@@ -26,12 +26,15 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MBigDecimal extends TClass {
 
@@ -43,6 +46,16 @@ public class MBigDecimal extends TClass {
         super(MBundle.INSTANCE.id(), "decimal", Attrs.values(), 1, 1, 8, PUnderlying.INT_64);
     }
 
+    @Override
+    public void putSafety(QueryContext context, 
+                          TInstance sourceInstance,
+                          PValueSource sourceValue,
+                          TInstance targetInstance,
+                          PValueTarget targetValue)
+    {
+        // TODO
+    }
+        
     @Override
     public TFactory factory() {
         return new MNumericFactory(this);

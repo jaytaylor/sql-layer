@@ -49,30 +49,32 @@ public abstract class TString extends TClass
                 PUnderlying.BYTES);
     }
 
-//     @Override
-//    public void putSafety(QueryContext context, 
-//                          TInstance sourceInstance,
-//                          PValueSource sourceValue,
-//                          TInstance targetInstance,
-//                          PValueTarget targetValue)
-//    {
-//        assert sourceInstance.typeClass()  
-//                    && targetInstance.typeClass() instanceof MString 
-//                : "expected instances of mcompat.mtypes.MString";
-//        
-//        String raw = (String) sourceValue.getObject();
-//        int maxLen = targetInstance.attribute(StringAttribute.LENGTH);
-//        
-//        if (raw.length() > maxLen)
-//        {   
-//            String truncated = raw.substring(0, maxLen);
-//            // TODO: check charset and collation, too
-//            context.warnClient(new StringTruncationException(raw, truncated));
-//            targetValue.putObject(truncated);
-//        }
-//        else
-//            targetValue.putObject(raw);
-//    }
+     
+    @Override
+    public void putSafety(QueryContext context, 
+                          TInstance sourceInstance,
+                          PValueSource sourceValue,
+                          TInstance targetInstance,
+                          PValueTarget targetValue)
+    {
+        // check type safety
+        assert getClass().isAssignableFrom(sourceInstance.typeClass().getClass())
+                    && getClass().isAssignableFrom(targetInstance.typeClass().getClass())
+                : "expected instances of TString";
+        
+        String raw = (String) sourceValue.getObject();
+        int maxLen = targetInstance.attribute(StringAttribute.LENGTH);
+        
+        if (raw.length() > maxLen)
+        {   
+            String truncated = raw.substring(0, maxLen);
+            // TODO: check charset and collation, too
+            context.warnClient(new StringTruncationException(raw, truncated));
+            targetValue.putObject(truncated);
+        }
+        else
+            targetValue.putObject(raw);
+    }
      
     @Override
     public TInstance instance()

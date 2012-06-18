@@ -45,44 +45,55 @@ public class MDouble extends TClass
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
-    
+
     public static double round(TInstance instance, double val)
     {
         assert instance.typeClass() instanceof MDouble : "instance has to be of type MDouble";
-        
-        // TODO: each TInstance (particularly those of numeric tclasses), should
-        // have MAX value field (and probably a MIN value, too)
 
-        // needs optimisation 
-        // (ie., with the MAX/MIN fields, we woudln't need to do any of this)
-        String st = Double.toString(val);
-        int point = st.indexOf('.');
-        
+        // meta data
+        Double max = (Double) instance.getMetaData();
+
         int m = instance.attribute(DoubleAttribute.PRECISION) - instance.attribute(DoubleAttribute.SCALE);
         int d = instance.attribute(DoubleAttribute.SCALE);
 
-        // check [M-D] (number of digits before the decimal point)
-        if (point > m)
+        if (max == null)
         {
-            char ret[] = new char[m + d + 1];
-            Arrays.fill(ret, '9');
-            ret[m] = '.';
-            
-            // return the max value
-            return Double.parseDouble(new String(ret));
-        }
+            String st = Double.toString(val);
+            int point = st.indexOf('.');
 
-        // check the scale
-        if (point >= 0)
-        {
-            int lastDigit = d + point;
-            
-            // actual length is longer than expected, then trucate/round it
-            if (st.length() > lastDigit)
+            // check the digits before the decimal point
+            if (point > m)
             {
-                double factor = Math.pow(10, d);
-                return  Math.round(factor * val) / factor;
+                char ret[] = new char[m + d + 1];
+                Arrays.fill(ret, '9');
+                ret[m] = '.';
+
+                // cache the max value
+                instance.setMetaData(max = Double.parseDouble(new String(ret)));
+                return max;
             }
+
+            // check the scale
+            if (point >= 0)
+            {
+                int lastDigit = d + point;
+
+                // actual length is longer than expected, then trucate/round it
+                if (st.length() > lastDigit)
+                {
+                    double factor = Math.pow(10, d);
+                    return  Math.round(factor * val) / factor;
+                }
+            }
+        }
+        else
+        {
+            if (Double.compare(val, max) >= 0)
+                return max.doubleValue();
+            
+            // check the scale
+            double factor = Math.pow(10, d);
+            return  Math.round(factor * val) / factor;
         }
         return val;
     }
