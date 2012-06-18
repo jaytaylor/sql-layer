@@ -42,8 +42,10 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.TableStatusCache;
+import com.akiban.collation.CString;
+import com.akiban.collation.CStringKeyCoder;
 import com.akiban.server.PersistitAccumulatorTableStatusCache;
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistitAdapterException;
@@ -100,6 +102,8 @@ public class TreeServiceImpl
     private final SessionService sessionService;
 
     private TableStatusCache tableStatusCache;
+
+    final static CStringKeyCoder KEY_CODER = new CStringKeyCoder();
 
     @Inject
     public TreeServiceImpl(SessionService sessionService, ConfigurationService configService) {
@@ -170,6 +174,8 @@ public class TreeServiceImpl
         } catch (PersistitException e1) {
             throw new PersistitAdapterException(e1);
         }
+        db.getCoderManager().registerKeyCoder(CString.class, KEY_CODER);
+
         buildSchemaMap();
 
         if (LOG.isDebugEnabled()) {

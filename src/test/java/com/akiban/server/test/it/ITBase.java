@@ -26,6 +26,14 @@
 
 package com.akiban.server.test.it;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+import com.akiban.collation.CString;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
@@ -33,12 +41,6 @@ import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.util.ShareHolder;
-
-import java.util.ArrayList;
-import java.util.List;
-
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertTrue;
 
 public abstract class ITBase extends ApiTestBase {
     public ITBase() {
@@ -49,16 +51,21 @@ public abstract class ITBase extends ApiTestBase {
         super(suffix);
     }
 
-    protected void compareRows(RowBase[] expected, Cursor cursor)
-    {
-        List<ShareHolder<Row>> actualRows = new ArrayList<ShareHolder<Row>>(); // So that result is viewable in debugger
+    protected void compareRows(RowBase[] expected, Cursor cursor) {
+        List<ShareHolder<Row>> actualRows = new ArrayList<ShareHolder<Row>>(); // So
+                                                                               // that
+                                                                               // result
+                                                                               // is
+                                                                               // viewable
+                                                                               // in
+                                                                               // debugger
         try {
             cursor.open();
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
                 assertTrue(String.format("failed test %d < %d", count, expected.length), count < expected.length);
-                if(!equal(expected[count], actualRow)) {
+                if (!equal(expected[count], actualRow)) {
                     String expectedString = expected[count] == null ? "null" : expected[count].toString();
                     String actualString = actualRow == null ? "null" : actualRow.toString();
                     assertEquals("row " + count, expectedString, actualString);
@@ -78,17 +85,56 @@ public abstract class ITBase extends ApiTestBase {
         assertEquals(expected.length, actualRows.size());
     }
 
-    protected boolean equal(RowBase expected, RowBase actual)
-    {
+    protected boolean equal(RowBase expected, RowBase actual) {
         ToObjectValueTarget target = new ToObjectValueTarget();
         boolean equal = expected.rowType().nFields() == actual.rowType().nFields();
         for (int i = 0; equal && i < actual.rowType().nFields(); i++) {
             Object expectedField = target.convertFromSource(expected.eval(i));
             Object actualField = target.convertFromSource(actual.eval(i));
-            equal =
-                expectedField == actualField || // handles case in which both are null
-                expectedField != null && actualField != null && expectedField.equals(actualField);
+            equal = expectedField == actualField || // handles case in which
+                                                    // both are null
+                    expectedField != null && actualField != null && expectedField.equals(actualField);
         }
         return equal;
+    }
+
+    protected void assertEqualsCString(final String message, final List<?> a, final List<?> b) {
+        assertTrue(message, equalLists(a, b));
+    }
+
+    public static boolean equalLists(final List<?> a, final List<?> b) {
+        final Iterator<?> iterA = a.iterator();
+        final Iterator<?> iterB = b.iterator();
+        if (iterA.hasNext()) {
+            if (!iterB.hasNext()) {
+                return false;
+            } else
+                return equals(iterA.next(), iterB.next());
+        } else {
+            return iterB.hasNext() ? false : true;
+        }
+
+    }
+
+    public static boolean equals(Object a, Object b) {
+        if (a instanceof CString) {
+            if (b instanceof CString) {
+                return CString.compare((CString) a, (CString) b) == 0;
+            }
+            if (b instanceof String) {
+                return CString.compare((CString) a, (String) b) == 0;
+            }
+        } else if (b instanceof CString) {
+            if (a instanceof String) {
+                return CString.compare((CString) b, (String) a) == 0;
+            }
+        } else if (a instanceof List<?> && b instanceof List<?>) {
+            return equalLists((List<?>)a, (List<?>)b);
+        }
+        if (a == null) {
+            return b == null ? true : false;
+        } else {
+            return a.equals(b);
+        }
     }
 }

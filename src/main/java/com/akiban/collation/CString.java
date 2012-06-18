@@ -48,6 +48,21 @@ public class CString implements Comparable<CString> {
         this(null, collator);
     }
 
+    public static int compare(CString a, CString b) {
+        return a.compareTo(b);
+    }
+    
+    public static int compare(CString a, String b) {
+        return a.compareTo(new CString(b, a.getCollator()));
+    }
+    
+    public static int compare(String a, CString b) {
+        return -b.compareTo(new CString(a, b.getCollator()));
+    }
+    
+    public static int compare(String a, String b) {
+        return a.compareTo(b);
+    }
     /**
      * Construct an instance that can hold a byte array but has no other useful
      * behavior. This instance will be created only when
@@ -109,6 +124,10 @@ public class CString implements Comparable<CString> {
 
     public String getString() {
         return string;
+    }
+    
+    public void setString(final String string) {
+        this.string = string;
     }
 
     public boolean hasSortKeyBytes() {

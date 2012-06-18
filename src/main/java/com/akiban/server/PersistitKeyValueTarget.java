@@ -26,18 +26,23 @@
 
 package com.akiban.server;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
 import com.akiban.ais.model.Column;
+import com.akiban.collation.CString;
+import com.akiban.collation.CollatorFactory;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.ByteSource;
+import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 public final class PersistitKeyValueTarget implements ValueTarget {
+
+    final static Collator COLLATOR = CollatorFactory.getCollator("en_US");
 
     // PersistitKeyValueTarget interface
 
@@ -117,14 +122,14 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     @Override
     public void putString(String value) {
         checkState(AkType.VARCHAR);
-        key.append(value);
+        key.append(new CString(value, COLLATOR));
         invalidate();
     }
 
     @Override
     public void putText(String value) {
         checkState(AkType.TEXT);
-        key.append(value);
+        key.append(new CString(value, COLLATOR));
         invalidate();
     }
 
