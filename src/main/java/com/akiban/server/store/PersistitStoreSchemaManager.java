@@ -471,6 +471,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             // Success, remaining cleanup
             deleteTableStatuses(tableIDs);
         } catch (PersistitException ex) {
+            ex.printStackTrace();
             throw new PersistitAdapterException(ex);
         }
     }

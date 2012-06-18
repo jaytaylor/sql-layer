@@ -39,7 +39,7 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class TestConfigService extends ConfigurationServiceImpl {
-    private final static File TESTDIR = new File("/tmp/akserver-junit");
+    public final static File TESTDIR = new File("/tmp/akserver-junit");
     private final Collection<Property> extraProperties;
     File tmpDir;
 
@@ -72,6 +72,9 @@ public class TestConfigService extends ConfigurationServiceImpl {
                 ret.put(property.getKey(), property);
             }
         }
+        String journalSizeKey = "persistit.journalsize";
+
+        ret.put(journalSizeKey, new Property(journalSizeKey, Integer.toString(128 * 1024 * 1024)));
         return ret;
     }
 
@@ -96,21 +99,22 @@ public class TestConfigService extends ConfigurationServiceImpl {
             }
             TESTDIR.deleteOnExit();
         }
-
-        File tmpFile;
-        try {
-            tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
-        } catch (IOException e) {
-            throw new ConfigurationPropertiesLoadException ("akserver-unitdata", "it could create the temp file");
-        }
-        if (!tmpFile.delete()) {
-            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be deleted");
-        }
-        if (!tmpFile.mkdir()) {
-            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be created");
-        }
-        tmpFile.deleteOnExit();
-        return tmpFile;
+        return TESTDIR;
+//
+//        File tmpFile;
+//        try {
+//            tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
+//        } catch (IOException e) {
+//            throw new ConfigurationPropertiesLoadException ("akserver-unitdata", "it could create the temp file");
+//        }
+//        if (!tmpFile.delete()) {
+//            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be deleted");
+//        }
+//        if (!tmpFile.mkdir()) {
+//            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be created");
+//        }
+//        tmpFile.deleteOnExit();
+//        return tmpFile;
     }
 
     public static void setOverrides(Collection<Property> startupConfigProperties) {

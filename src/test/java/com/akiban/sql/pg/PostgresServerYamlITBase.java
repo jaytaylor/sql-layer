@@ -1,27 +1,16 @@
 /**
- * END USER LICENSE AGREEMENT (“EULA”)
+ * Copyright (C) 2011 Akiban Technologies Inc.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License, version 3,
+ * as published by the Free Software Foundation.
  *
- * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
- * http://www.akiban.com/licensing/20110913
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Affero General Public License for more details.
  *
- * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
- * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
- * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
- *
- * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
- * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
- * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
- * YOUR INITIAL PURCHASE.
- *
- * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
- * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
- * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
- * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
- * BY SUCH AUTHORIZED PERSONNEL.
- *
- * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
- * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
- * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with this program.  If not, see http://www.gnu.org/licenses.
  */
 
 package com.akiban.sql.pg;
@@ -29,12 +18,12 @@ package com.akiban.sql.pg;
 import com.akiban.server.error.InvalidOperationException;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.InputStreamReader;
+import java.io.FileReader;
 import java.io.IOException;
 import java.io.Reader;
 import java.sql.Connection;
 
+import com.akiban.server.test.it.ITBase;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,46 +35,37 @@ import org.junit.Ignore;
  * should call {@link #testYaml} with the file to use for the test.
  */
 @Ignore
-public class PostgresServerYamlITBase {
+public class PostgresServerYamlITBase extends PostgresServerITBase {
 
     /** Whether to enable debugging output. */
     protected static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
 
-    private static final PostgresServerIT manageServer = new PostgresServerIT();
+//    private static final PostgresServerIT manageServer = new PostgresServerIT();
+
+//    protected static Connection connection;
 
     protected PostgresServerYamlITBase() { }
 
-    @BeforeClass
-    public static void openTheConnection() throws Exception {
-	manageServer.startTestServices();
-        manageServer.ensureConnection();
-    }
 
-    @AfterClass
-    public static void closeTheConnection() throws Exception {
-	manageServer.stopTestServices();
-        manageServer.closeTheConnection();
-    }
 
-    @Before
-    public void dropAllTables() {
-	manageServer.accessDropAllTables();
-    }
-
-    protected static Connection getConnection() throws Exception {
-        return manageServer.ensureConnection();
-    }
-
-    protected static void forgetConnection() {
-	if (DEBUG) {
-	    System.err.println("Closing possibly damaged connection");
-	}
-        try {
-            manageServer.closeTheConnection();
-        }
-        catch (Exception ex) {
-        }
-    }
+//    @BeforeClass
+//    public static void openTheConnection() throws Exception {
+//	manageServer.startTestServices();
+//	manageServer.openTheConnection();
+//	connection = manageServer.getConnection();
+//    }
+//
+//    @AfterClass
+//    public static void closeTheConnection() throws Exception {
+//	manageServer.stopTestServices();
+//	manageServer.closeTheConnection();
+//	connection = null;
+//    }
+//
+//    @Before
+//    public void dropAllTables() {
+//	manageServer.accessDropAllTables();
+//    }
 
     /**
      * Run a test with YAML input from the specified file.
@@ -93,20 +73,22 @@ public class PostgresServerYamlITBase {
      * @param file the file
      * @throws IOException if there is an error accessing the file
      */
-    protected void testYaml(File file) throws Exception {
+    protected void testYaml(File file) throws IOException {
 	if (DEBUG) {
 	    System.err.println("\nFile: " + file);
 	}
-	Connection connection = getConnection();
-        Throwable exception = null;
+	Throwable exception = null;
 	Reader in = null;
 	try {
-	    in = new InputStreamReader(new FileInputStream(file), "UTF-8");
+	    in = new FileReader(file);
 	    new YamlTester(file.toString(), in, connection).test();
 	    if (DEBUG) {
 		System.err.println("Test passed");
 	    }
-	} catch (Exception e) {
+	} catch (RuntimeException e) {
+	    exception = e;
+	    throw e;
+	} catch (IOException e) {
 	    exception = e;
 	    throw e;
 	} catch (Error e) {
@@ -114,8 +96,7 @@ public class PostgresServerYamlITBase {
 	    throw e;
 	} finally {
 	    if (exception != null) {
-                System.err.println("Test failed: " + exception);
-		forgetConnection();
+		System.err.println("Test failed: " + exception);
 	    }
 	    if (in != null) {
 		in.close();
@@ -123,19 +104,17 @@ public class PostgresServerYamlITBase {
 	}
     }
 
-    /**
-     * Subclass of PostgresServerITBase to permit accessing its non-public
-     * methods.
-     */
-    @Ignore
-    private static class PostgresServerIT extends PostgresServerITBase {
-	void accessDropAllTables() throws InvalidOperationException {
-	    dropAllTables();
-	}
-	Connection ensureConnection() throws Exception {
-	    if (connection == null)
-                openTheConnection();
-            return connection;
-	}
-    }
+//    /**
+//     * Subclass of PostgresServerITBase to permit accessing its non-public
+//     * methods.
+//     */
+//    @Ignore
+//    private static class PostgresServerIT extends PostgresServerITBase {
+//	void accessDropAllTables() throws InvalidOperationException {
+//	    dropAllTables();
+//	}
+//	Connection getConnection() {
+//	    return connection;
+//	}
+//    }
 }

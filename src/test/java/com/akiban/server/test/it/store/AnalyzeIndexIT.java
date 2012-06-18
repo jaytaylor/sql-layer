@@ -28,12 +28,14 @@ package com.akiban.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
 
-import com.akiban.ais.model.Index;
-import com.akiban.server.rowdata.RowDef;
+import org.junit.Ignore;
 import org.junit.Test;
 
+import com.akiban.ais.model.Index;
 import com.akiban.server.TableStatistics;
+import com.akiban.server.rowdata.RowDef;
 
+@Ignore("creates tables too quickly; runs out of space on a ramdisk")
 public class AnalyzeIndexIT extends AbstractScanBase {
 
     @Test

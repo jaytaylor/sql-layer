@@ -28,9 +28,11 @@ package com.akiban.server.test;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
+import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,6 +80,7 @@ import com.akiban.util.Undef;
 import com.persistit.Transaction;
 import junit.framework.Assert;
 
+import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
 
@@ -107,7 +110,10 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
 import org.junit.Rule;
+import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
+import org.junit.rules.TestWatchman;
+import org.junit.runners.model.FrameworkMethod;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -162,12 +168,13 @@ public class ApiTestBase {
         }
     }
 
-    private ServiceManager sm;
+    private static ServiceManager sm;
     private Session session;
     private int aisGeneration;
     private int akibanFKCount;
-    private boolean testServicesStarted;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
+    private static Collection<Property> lastStartupConfigProperties = null;
+    private static boolean needServicesRestart = false;
     
     @Rule
     public static final TestName testName = new TestName();
@@ -181,20 +188,44 @@ public class ApiTestBase {
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
-            testServicesStarted = false;
-            sm = createServiceManager( startupConfigProperties() );
-            sm.startServices();
-            ServiceManagerImpl.setServiceManager(sm);
-            session = sm.getSessionService().createSession();
-            testServicesStarted = true;
-            if (TAPS != null) {
-                sm.getStatisticsService().reset(TAPS);
-                sm.getStatisticsService().setEnabled(TAPS, true);
+            Collection<Property> startupConfigProperties = startupConfigProperties();
+            if (needServicesRestart || lastStartupConfigProperties == null ||
+                    !lastStartupConfigProperties.equals(startupConfigProperties))
+            {
+                // we need a shutdown if we needed a restart, or if the lastStartupConfigProperties are not null,
+                // which (because of the condition on the "if" above) implies the last startup config properties
+                // are different from this one's
+                boolean needShutdown = needServicesRestart || lastStartupConfigProperties != null;
+                if (needShutdown) {
+                    needServicesRestart = false; // clear the flag if it was set
+                    stopTestServices();
+                }
+                if (!TestConfigService.TESTDIR.mkdirs() && !TestConfigService.TESTDIR.isDirectory())
+                    throw new RuntimeException("couldn't create dir: " + TestConfigService.TESTDIR);
+                FileUtils.cleanDirectory(TestConfigService.TESTDIR);
+                assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
+                sm = createServiceManager(startupConfigProperties);
+                sm.startServices();
+                ServiceManagerImpl.setServiceManager(sm);
+                if (TAPS != null) {
+                    sm.getStatisticsService().reset(TAPS);
+                    sm.getStatisticsService().setEnabled(TAPS, true);
+                }
+                lastStartupConfigProperties = startupConfigProperties;
             }
+            session = sm.getSessionService().createSession();
         } catch (Exception e) {
             handleStartupFailure(e);
         }
     }
+
+    @Rule
+    public MethodRule exceptionCatchingRule = new TestWatchman() {
+        @Override
+        public void failed(Throwable e, FrameworkMethod method)  {
+            needServicesRestart = true;
+        }
+    };
 
     /**
      * Handle a failure during services startup. The default implementation is to just throw the exception, and
@@ -216,12 +247,20 @@ public class ApiTestBase {
     }
 
     @After
-    public final void stopTestServices() throws Exception {
+    public final void tearDownAllTables() throws Exception {
+        if (lastStartupConfigProperties == null)
+            return; // services never started up
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
         unfinishedRowUpdaters.clear();
-        ServiceManagerImpl.setServiceManager(null);
-        if (!testServicesStarted) {
-            return;
+        dropAllTables();
+        assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
+        String openCursorsMessage = null;
+        if (sm.serviceIsStarted(DXLService.class)) {
+            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
+            // Check for any residual open cursors
+            if (dxlTestHooks.openCursorsExist()) {
+                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
+            }
         }
         if (TAPS != null) {
             TapReport[] reports = sm.getStatisticsService().getReport(TAPS);
@@ -240,39 +279,47 @@ public class ApiTestBase {
                 );
             }
         }
-        String openCursorsMessage = null;
-        if (sm.serviceIsStarted(DXLService.class)) {
-            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
-            // Check for any residual open cursors
-            if (dxlTestHooks.openCursorsExist()) {
-                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
-            }
-        }
-
-        if(session != null) {
-            session.close();
-        }
-        sm.stopServices();
-        sm = null;
-        session = null;
+        session.close();
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
         }
-        testServicesStarted = false;
-        assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
+        
+        needServicesRestart |= runningOutOfSpace();
+    }
+
+    private boolean runningOutOfSpace() {
+        return datadir().getFreeSpace() < 256 * 1024 * 1024;
+    }
+
+    private static File datadir() {
+        String datadir = sm.getConfigurationService().getProperty("akserver.datapath");
+        return new File(datadir);
+    }
+
+    public static void stopTestServices() throws Exception {
+        ServiceManagerImpl.setServiceManager(null);
+        if (lastStartupConfigProperties == null) {
+            return;
+        }
+        lastStartupConfigProperties = null;
+        sm.stopServices();
     }
     
     public final void crashTestServices() throws Exception {
         sm.crashServices();
         sm = null;
         session = null;
+        lastStartupConfigProperties = null;
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
+        ServiceManagerImpl.setServiceManager(null);
         sm = createServiceManager( properties );
         sm.startServices();
         session = sm.getSessionService().createSession();
+        lastStartupConfigProperties = properties;
         ddl(); // loads up the schema manager et al
+        ServiceManagerImpl.setServiceManager(sm);
     }
 
     public final Session createNewSession()

@@ -373,7 +373,7 @@ public final class SchemaManagerIT extends ITBase {
         final int first = schemaManager.getSchemaGeneration();
         schemaManager.forceNewTimestamp();
         final int second = schemaManager.getSchemaGeneration();
-        assertTrue("timestamp changed", first != second);
+        assertTrue("timestamp unchanged: " + first, first != second);
     }
 
     @Test
