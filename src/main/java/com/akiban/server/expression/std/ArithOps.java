@@ -407,10 +407,13 @@ public class ArithOps
         {
             switch(args.size())
             {
-                case 2:   return new ArithExpression(args.get(0), this, args.get(1), typesList.get(2));
-                case 1:   if (ArithExpression.isNumeric(args.get(0).valueType()))      // INT has the lowest precedence
-                              return new ArithExpression(ZERO_INT, this, args.get(0), typesList.get(1)); // as far as ArithExp concerns
-                default:  throw new WrongExpressionArityException(2, args.size());
+            case 2:
+                return new ArithExpression(args.get(0), this, args.get(1), typesList.get(0), typesList.get(1), typesList.get(2));
+            case 1:
+                if (ArithExpression.isNumeric(args.get(0).valueType()))      // INT has the lowest precedence
+                    return new ArithExpression(ZERO_INT, this, args.get(0), ExpressionTypes.INT, typesList.get(0), typesList.get(1)); // as far as ArithExp concerns
+            default:  
+                throw new WrongExpressionArityException(2, args.size());
             }
         }
         

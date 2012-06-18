@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -162,7 +163,7 @@ public class ExpressionAssembler
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
 
-    public Expression assembleFunction(ExpressionNode expressionNode,
+    public Expression assembleFunction(ExpressionNode functionNode,
                                        String functionName,
                                        List<ExpressionNode> argumentNodes,
                                        ColumnExpressionContext columnContext,
@@ -172,9 +173,9 @@ public class ExpressionAssembler
         int nargs = arguments.size();
         List<ExpressionType> types = new ArrayList<ExpressionType>(nargs + 1);
         for (int i = 0; i < nargs; i++) {
-            types.add(ExpressionTypes.UNSUPPORTED);
+            types.add(TypesTranslation.toExpressionType(argumentNodes.get(i).getSQLtype()));
         }
-        types.add(ExpressionTypes.UNSUPPORTED);
+        types.add(TypesTranslation.toExpressionType(functionNode.getSQLtype()));
         return functionsRegistry.composer(functionName).compose(arguments, types);
     }
                                        
