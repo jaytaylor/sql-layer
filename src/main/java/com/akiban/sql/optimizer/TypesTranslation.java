@@ -207,8 +207,13 @@ public final class TypesTranslation {
         case TIMESTAMP:
             return new DataTypeDescriptor(TypeId.TIMESTAMP_ID, isNullable);
         case VARCHAR:
-            return new DataTypeDescriptor(TypeId.VARCHAR_ID, isNullable,
-                                          resultType.getPrecision());
+            {
+                DataTypeDescriptor dtd = new DataTypeDescriptor(TypeId.VARCHAR_ID, isNullable,
+                                                                resultType.getPrecision());
+                if (resultType.getCharacterAttributes() != null)
+                    dtd = new DataTypeDescriptor(dtd, resultType.getCharacterAttributes());
+                return dtd;
+            }
         case DECIMAL:
             {
                 int precision = resultType.getPrecision();
