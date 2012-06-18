@@ -24,23 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.akiban.server.error;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-
-public class AkString extends TString
+public class StringTruncationException extends InvalidOperationException
 {
-    public static final AkString VARCHAR = new AkString("varchar", -1);
-    
-    // TODO: define CHAR, and VARBINARY
-    
-    private AkString (String name, int serialisationSize)
+    public StringTruncationException (String raw, String truncated)
     {
-        super(AkBundle.INSTANCE, name, serialisationSize);
+        super(ErrorCode.STRING_TRUNCATION, raw, truncated);
     }
 }

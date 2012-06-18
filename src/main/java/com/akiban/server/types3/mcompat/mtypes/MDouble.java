@@ -96,12 +96,12 @@ public class MDouble extends TClass
     {
         double raw = sourceValue.getDouble();
         double rounded = round(targetInstance, raw);
-        
+
+        // TODO: in strict (My)SQL mode, this would be an error
+        // NOT a warning
         if (Double.compare(raw, rounded) != 0)
             context.warnClient(new OutOfRangeException(Double.toString(raw)));
-        
-        // TODO: in strict SQL mode, this would be an error
-        // NOT a warning
+
         targetValue.putDouble(rounded);
     }
 

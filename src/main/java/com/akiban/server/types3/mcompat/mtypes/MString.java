@@ -26,8 +26,14 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.StringTruncationException;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MString extends TString
 {
@@ -38,5 +44,30 @@ public class MString extends TString
     private MString(String name, int serialisationSize)
     {       
         super(MBundle.INSTANCE, name, serialisationSize);
+    }
+
+    @Override
+    public void putSafety(QueryContext context, 
+                          TInstance sourceInstance,
+                          PValueSource sourceValue,
+                          TInstance targetInstance,
+                          PValueTarget targetValue)
+    {
+        assert sourceInstance.typeClass() instanceof MString 
+                    && targetInstance.typeClass() instanceof MString 
+                : "expected instances of mcompat.mtypes.MString";
+        
+        String raw = (String) sourceValue.getObject();
+        int maxLen = targetInstance.attribute(StringAttribute.LENGTH);
+        
+        if (raw.length() > maxLen)
+        {   
+            String truncated = raw.substring(0, maxLen);
+            // TODO: check charset and collation, too
+            context.warnClient(new StringTruncationException(raw, truncated));
+            targetValue.putObject(truncated);
+        }
+        else
+            targetValue.putObject(raw);
     }
 }
