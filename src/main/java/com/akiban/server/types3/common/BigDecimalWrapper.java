@@ -35,6 +35,6 @@ public interface BigDecimalWrapper {
      BigDecimalWrapper divide(BigDecimalWrapper augend);
      BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
      int getSign();
-     BigDecimal abs();
+     BigDecimalWrapper abs();
      void reset();
 }

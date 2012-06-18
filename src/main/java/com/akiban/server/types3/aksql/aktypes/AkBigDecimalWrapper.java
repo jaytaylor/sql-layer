@@ -82,7 +82,8 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     }
         
     @Override
-    public BigDecimal abs() {
-        return value.abs();
+    public BigDecimalWrapper abs() {
+        value = value.abs();
+        return this;
     }
 }
