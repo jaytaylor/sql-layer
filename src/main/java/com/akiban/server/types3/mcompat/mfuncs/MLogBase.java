@@ -27,10 +27,10 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.common.funcs.TLogs;
+import com.akiban.server.types3.common.funcs.TLog;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
-public class MLogs
+public class MLogBase
 {
-    public static final TOverload LOGS[] = TLogs.create(MDouble.INSTANCE.instance());
+    public static final TOverload LOGBASE[] = TLog.create(MDouble.INSTANCE.instance());
 }

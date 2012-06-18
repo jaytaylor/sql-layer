@@ -34,18 +34,19 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.server.types3.TOverload;
 
-public class TLogs extends TOverloadBase
+public class TLog extends TOverloadBase
 {
     static final double ln2 = Math.log(2);
     
-    public static TLogs[] create(TInstance ins)
+    public static TOverload[] create(TInstance ins)
     {
         LogType values[] = LogType.values();
-        TLogs ret[] = new TLogs[values.length];
+        TOverload ret[] = new TOverload[values.length];
         
         for (int n = 0; n < ret.length; ++n)
-            ret[n] = new TLogs(values[n], ins);
+            ret[n] = new TLog(values[n], ins);
         return ret;
     }
 
@@ -95,7 +96,7 @@ public class TLogs extends TOverloadBase
     private final LogType logType;
     private final TInstance argType;
     
-    TLogs (LogType logType, TInstance argType)
+    TLog (LogType logType, TInstance argType)
     {
         this.logType = logType;
         this.argType = argType;
