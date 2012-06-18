@@ -115,24 +115,29 @@ public abstract class Trim extends TOverloadBase {
 
     // Helper methods
     protected static String ltrim(String st, String trim) {
-        int n = 0;
+        int n, count;
+        n = count = 0;
         while (n < st.length()) {
-            for (int i = 0; i < trim.length(); ++i, ++n) {
-                if (st.charAt(n) != trim.charAt(i))
-                    return st.substring(n- i);
+            count = 0;
+            for (int i = 0; i < trim.length() && n < st.length(); ++i, ++n) {
+                if (st.charAt(n) != trim.charAt(i)) return st.substring(n-i);
+                else count++;
             }
         }
-        return st;
+        return count == trim.length() ? "" : st.substring(n-count);
     }
 
     protected static String rtrim(String st, String trim) {
         int n = st.length() - 1;
+        int count = 0;
         while (n >= 0) {
-            for (int i = trim.length()-1; i >= 0; --i, --n) {
+            count = 0;
+            for (int i = trim.length()-1; i >= 0 && n >= 0; --i, --n) {
                 if (st.charAt(n) != trim.charAt(i))
                     return st.substring(0, n + trim.length() - i);
+                else count++;
             }
         }
-        return st;
+        return count == trim.length() ? "" : st.substring(0, count);
     }
 }
