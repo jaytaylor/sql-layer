@@ -60,11 +60,12 @@ import java.util.Iterator;
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
 public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
-    static final TableName SCHEMATA = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "schemata");
-    static final TableName TABLES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "tables");
-    static final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
-    static final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
-    static final TableName INDEX_COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_columns");
+    private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
+    static final TableName SCHEMATA = new TableName(SCHEMA_NAME, "schemata");
+    static final TableName TABLES = new TableName(SCHEMA_NAME, "tables");
+    static final TableName COLUMNS = new TableName(SCHEMA_NAME, "columns");
+    static final TableName INDEXES = new TableName(SCHEMA_NAME, "indexes");
+    static final TableName INDEX_COLUMNS = new TableName(SCHEMA_NAME, "index_columns");
 
     private final AisHolder aisHolder;
     private final SchemaManager schemaManager;

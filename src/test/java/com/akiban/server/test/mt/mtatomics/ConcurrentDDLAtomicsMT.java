@@ -309,7 +309,7 @@ public final class ConcurrentDDLAtomicsMT extends ConcurrentAtomicsBase {
 
         Set<TableName> userTableNames = new HashSet<TableName>();
         for (UserTable userTable : ddl().getAIS(session()).getUserTables().values()) {
-            if (!"akiban_information_schema".equals(userTable.getName().getSchemaName())) {
+            if (!TableName.INFORMATION_SCHEMA.equals(userTable.getName().getSchemaName())) {
                 userTableNames.add(userTable.getName());
             }
         }
