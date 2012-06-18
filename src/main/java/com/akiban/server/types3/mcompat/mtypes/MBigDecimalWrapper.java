@@ -33,6 +33,8 @@ import java.math.RoundingMode;
 
 public class MBigDecimalWrapper implements BigDecimalWrapper {
 
+    private BigDecimal value;
+
     @Override
     public void reset() {
         value = BigDecimal.ZERO;
@@ -67,9 +69,9 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
-    public BigDecimal ceil() {
+    public BigDecimalWrapper ceil() {
         value = value.setScale(0, RoundingMode.CEILING);
-        return value;
+        return this;
     }
     
     @Override
@@ -85,7 +87,5 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
                 RoundingMode.HALF_UP);
         return this;
     }
-
-    private BigDecimal value;
 }
 
