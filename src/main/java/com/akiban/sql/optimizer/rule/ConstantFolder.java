@@ -26,14 +26,11 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.expression.ExpressionComposer;
-import com.akiban.server.expression.ExpressionComposer.NullTreating;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
 import com.akiban.server.expression.std.Comparison;
 
-import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 

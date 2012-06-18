@@ -58,7 +58,9 @@ public class PostgresServerManager implements PostgresService, Service<PostgresS
                                  TreeService treeService,
                                  FunctionsRegistry functionsRegistry,
                                  IndexStatisticsService indexStatisticsService) {
-        reqs = new ServerServiceRequirements(dxlService, instrumentation, sessionService, store, treeService, functionsRegistry, config, indexStatisticsService);
+        reqs = new ServerServiceRequirements(dxlService, instrumentation, 
+                sessionService, store, treeService, functionsRegistry, 
+                config, indexStatisticsService);
     }
 
     /*** Service<PostgresService> ***/

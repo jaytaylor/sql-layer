@@ -38,6 +38,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.util.SchemaCache;
+import com.akiban.server.api.dml.scan.PredicateLimit;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
@@ -45,7 +46,6 @@ import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.memcache.hprocessor.PredicateLimit;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
@@ -222,7 +222,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         }
         OperatorBasedRowCollector rowCollector =
             rowDef.isUserTable()
-            // HAPI query root table = predicate table
+            // UserTable, column predicates apply to it alone
             ? new OneTableRowCollector(config,
                                        session,
                                        store,
@@ -233,7 +233,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                                        startColumns,
                                        end,
                                        endColumns)
-            // HAPI query root table != predicate table
+            // GroupTable, column predicates can apply to two distinct tables
             : new TwoTableRowCollector(config,
                                        session,
                                        store,
@@ -261,22 +261,27 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         this.rowCollectorId = idCounter.getAndIncrement();
     }
 
-    protected static ColumnSelector indexSelectorFromTableSelector(final Index index, final ColumnSelector tableSelector) {
+    protected static ColumnSelector indexSelectorFromTableSelector(Index index, final ColumnSelector tableSelector)
+    {
+        assert index.isTableIndex() : index;
         final IndexRowComposition rowComp = index.indexRowComposition();
-        return new ColumnSelector() {
-            @Override
-            public boolean includesColumn(int columnPosition) {
-                int tablePos = rowComp.getFieldPosition(columnPosition);
-                return tableSelector.includesColumn(tablePos);
-            }
-        };
+        return
+            new ColumnSelector()
+            {
+                @Override
+                public boolean includesColumn(int columnPosition)
+                {
+                    int tablePos = rowComp.getFieldPosition(columnPosition);
+                    return tableSelector.includesColumn(tablePos);
+                }
+            };
     }
 
     private void createPlan(ScanLimit scanLimit, boolean singleRow, boolean descending, boolean deep)
     {
         // Plan and query
         Limit limit = new PersistitRowLimit(scanLimit(scanLimit, singleRow));
-        boolean useIndex = predicateIndex != null && !predicateIndex.isHKeyEquivalent();
+        boolean useIndex = predicateIndex != null;
         GroupTable groupTable = queryRootTable.getGroup().getGroupTable();
         Operator plan;
         if (useIndex) {
@@ -287,7 +292,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
                     groupTable,
                     predicateType.indexRowType(predicateIndex),
                     predicateType,
-                    LookupOption.DISCARD_INPUT,
+                    InputPreservationOption.DISCARD_INPUT,
                     limit);
         } else {
             assert !descending;
@@ -304,7 +309,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
         if (queryRootType != predicateType) {
             List<UserTableRowType> ancestorTypes = ancestorTypes();
             if (!ancestorTypes.isEmpty()) {
-                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, LookupOption.KEEP_INPUT);
+                plan = ancestorLookup_Default(plan, groupTable, predicateType, ancestorTypes, InputPreservationOption.KEEP_INPUT);
             }
         }
         // Get rid of everything above query root table.

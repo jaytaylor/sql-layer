@@ -31,10 +31,13 @@ import com.akiban.server.error.InvalidCharToNumException;
 import com.akiban.server.types.AkType;
 import static com.akiban.server.types.AkType.*;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.ObjectExtractor;
+import com.akiban.util.WrappingByteSource;
 import com.google.common.collect.Iterables;
+import java.io.UnsupportedEncodingException;
 import java.math.BigDecimal;
 import java.util.Comparator;
 import java.util.EnumMap;
@@ -48,7 +51,7 @@ public class ValueSources
     
     static
     {
-        map = new EnumMap(AkType.class);
+        map = new EnumMap<AkType, Map<AkType, Comparator<ValueSource>>>(AkType.class);
         
         // date 
         EnumSet<AkType> date = EnumSet.of(DATE, YEAR);
@@ -133,8 +136,8 @@ public class ValueSources
             }                        
         };
 
-        Map<AkType, Comparator<ValueSource>> m2Double = new EnumMap(AkType.class);
-        Map<AkType, Comparator<ValueSource>> m2Decimal = new EnumMap(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m2Double = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m2Decimal = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
         
         //TODO: add BOOL
         for (AkType right : Iterables.concat(floating, exact, date, time, datetime, month, millis, text))
@@ -157,7 +160,7 @@ public class ValueSources
     
         //------------------------------
         // map 3)
-        Map<AkType, Comparator<ValueSource>> m3 = new EnumMap(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m3 = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
         
         Comparator<ValueSource> l_c3 = new Comparator<ValueSource>()
         {
@@ -183,7 +186,7 @@ public class ValueSources
         //------------------------------
         // map 5)
         // interval millis, time
-        Map<AkType, Comparator<ValueSource>> m5 = new EnumMap(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m5 = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
         
         m5.put(AkType.TIME, new Comparator<ValueSource>()
         {
@@ -215,7 +218,7 @@ public class ValueSources
 
         //------------------------------
         // map 8), 9), 10) : left is VARCHAR
-        Map<AkType, Comparator<ValueSource>> m8_9_10 = new EnumMap(AkType.class);
+        Map<AkType, Comparator<ValueSource>> m8_9_10 = new EnumMap<AkType, Comparator<ValueSource>>(AkType.class);
         
         //8) cast both to double
         m8_9_10.put(BOOL, d_c2);
@@ -321,6 +324,16 @@ public class ValueSources
         map.put(TIMESTAMP, m11);
     }
     
+    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric)
+    {
+        return equals(v1, v2, textAsNumeric, Converters.DEFAULT_CS);
+    }
+    
+    public static long compare (ValueSource v1, ValueSource v2)
+    {
+        return compare(v1, v2, Converters.DEFAULT_CS);
+    }
+    
     /**
      * Compare two instances of ValueSource.
      * Equality is defined as:
@@ -381,16 +394,19 @@ public class ValueSources
      * 
      *          12] otherwise, return false
      * 
+     * 
+     * TODO: Support comparison between VARBINARY  and other types (VARCHAR)
+     * 
      * @param v1
      * @param v2
      * @return 
      */
-    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric)
+    public static boolean equals (ValueSource v1, ValueSource v2, boolean textAsNumeric, String charSet)
     {
         if (v1.isNull() || v2.isNull()) return false;
         try
         {
-            boolean ret = compare(v1, v2) == 0;
+            boolean ret = compare(v1, v2, charSet) == 0;
             
             if (!ret && textAsNumeric && isText(v1.getConversionType())
                                       && isText(v2.getConversionType()))
@@ -410,13 +426,34 @@ public class ValueSources
         }
     }
     
-    public static long compare (ValueSource left, ValueSource right)
+    public static long compare (ValueSource left, ValueSource right, String charSet)
     {
         AkType l = left.getConversionType();
         AkType r = right.getConversionType();    
         
-        if (l == r || isText(l) && isText(r))
+        boolean isLeft = true; 
+        if (l == r || (isLeft = isText(l)) && isText(r))
             return compareSameType(left, right);
+        else if (isLeft && r == AkType.VARBINARY) 
+            try
+            {
+                return new WrappingByteSource(Extractors.getStringExtractor().getObject(left).getBytes(charSet))
+                        .compareTo(right.getVarBinary());
+            } 
+            catch (UnsupportedEncodingException ex)
+            {
+                throw new UnsupportedOperationException(ex);
+            }
+        
+        else if (l == AkType.VARBINARY && isText(r))
+            try
+            {
+                return left.getVarBinary().compareTo(
+                        new WrappingByteSource(Extractors.getStringExtractor().getObject(right).getBytes(charSet)));
+            } catch (UnsupportedEncodingException ex)
+            {
+                throw new UnsupportedOperationException(ex);
+            }
         else
         {
             Map<AkType, Comparator<ValueSource>> v;
@@ -469,7 +506,8 @@ public class ValueSources
             case TEXT:      ObjectExtractor<String> ext = Extractors.getStringExtractor();
                             return ext.getObject(l).compareTo(ext.getObject(r));
             case NULL:      return 1;
-            default:        return 0;
+            case VARBINARY: return l.getVarBinary().compareTo(r.getVarBinary());
+            default:        throw new UnsupportedOperationException("Unsupported type: " + l.getConversionType());
     }
 }
     

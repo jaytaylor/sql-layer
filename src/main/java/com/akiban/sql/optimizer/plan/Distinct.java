@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import java.util.List;
-
 /** Make results distinct. */
 public class Distinct extends BasePlanWithInput
 {

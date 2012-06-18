@@ -28,9 +28,10 @@ package com.akiban.sql.server;
 
 import com.akiban.sql.parser.SQLParser;
 
-import com.akiban.sql.optimizer.rule.CostEstimator;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.loadableplan.LoadablePlan;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
@@ -97,6 +98,9 @@ public interface ServerSession
 
     /** Return an adapter for the session's store. */
     public StoreAdapter getStore();
+
+    /** Return an adapter for the session's store. */
+    public StoreAdapter getStore(UserTable table);
 
     /** Return the tree service. */
     public TreeService getTreeService();

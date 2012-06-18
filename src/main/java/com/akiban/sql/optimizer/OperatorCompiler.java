@@ -30,8 +30,8 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PlanContext;
-import com.akiban.sql.optimizer.rule.CostEstimator;
 import com.akiban.sql.optimizer.rule.SchemaRulesContext;
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import static com.akiban.sql.optimizer.rule.DefaultRules.*;
 
 import com.akiban.sql.StandardException;
@@ -48,7 +48,6 @@ import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.ais.model.AkibanInformationSchema;
 
 import java.util.List;
-import java.util.Properties;
 
 /**
  * Compile SQL statements into operator trees.

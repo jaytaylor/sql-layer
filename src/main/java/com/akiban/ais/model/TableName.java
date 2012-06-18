@@ -28,7 +28,7 @@ package com.akiban.ais.model;
 
 public class TableName implements Comparable<TableName>
 {
-    public final static String AKIBAN_INFORMATION_SCHEMA = "akiban_information_schema";
+    public final static String INFORMATION_SCHEMA = "information_schema";
 
     private final String schemaName;
     private final String tableName;

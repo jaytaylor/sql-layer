@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContextBase;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.ErrorCode;
@@ -48,6 +49,11 @@ public class ServerQueryContext<T extends ServerSession> extends QueryContextBas
     @Override
     public StoreAdapter getStore() {
         return server.getStore();
+    }
+
+    @Override
+    public StoreAdapter getStore(UserTable table) {
+        return server.getStore(table);
     }
 
     @Override

@@ -26,6 +26,7 @@
 
 package com.akiban.util;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.google.common.collect.ArrayListMultimap;
 import com.google.common.collect.Multimap;
 import org.slf4j.Logger;
@@ -42,18 +43,8 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.net.JarURLConnection;
 import java.net.URL;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Formatter;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Locale;
-import java.util.Map;
+import java.util.*;
 import java.util.Map.Entry;
-import java.util.TreeMap;
 import java.util.jar.JarEntry;
 
 /**
@@ -62,7 +53,16 @@ import java.util.jar.JarEntry;
 public abstract class Strings {
     
     public static String NL = nl();
-
+    private static final int BASE_CHAR = 10 -'a';
+    private static final Set<Character> LEGAL_HEX = new HashSet<Character>();
+    static
+    {
+       for (char ch = 'a'; ch <= 'f'; ++ch)
+           LEGAL_HEX.add(ch);
+       for (char ch = '0'; ch <= '9'; ++ch)
+           LEGAL_HEX.add(ch); 
+    }
+    
     /**
      * Gets the system <tt>line.separator</tt> newline.
      * @return <tt>System.getProperty("line.separator")</tt>
@@ -242,7 +242,63 @@ public abstract class Strings {
     public static String hex(ByteSource byteSource) {
         return hex(byteSource.byteArray(), byteSource.byteArrayOffset(), byteSource.byteArrayLength());
     }
-
+   
+    /**
+     * @param c: character
+     * @return the HEX value of this char
+     * @throws InvalidParameterValueException if c is not a valid hex digit
+     * 
+     * Eg., 'a' would return 10
+     */
+    private static int getHex (char c)
+    {
+        if (!LEGAL_HEX.contains(c |= 32))
+            throw new InvalidParameterValueException("Invalid HEX digit: " + c);
+        
+        return c > 'a'
+                    ? c + BASE_CHAR
+                    : c - '0';
+    }
+    
+    
+    /**
+     *
+     * @param highChar
+     * @param lowChar
+     * @return a character whose (ASCII) code is equal to the hexadecimal value
+     *         of <highChar><lowChar>
+     * @throws InvalidParameterValue if either of the two char is not a legal
+     *         hex digit
+     *
+     * Eg., parseByte('2', '0') should return ' ' (space character)
+     *
+     */
+    private static byte getByte (char highChar, char lowChar)
+    {
+        return (byte)((getHex(highChar) << 4) + getHex(lowChar));
+    }
+    
+    public static ByteSource parseHexWithout0x (String st) 
+    {
+        double quotient = st.length() / 2.0;
+        byte ret[] = new byte[(int)Math.ceil(quotient)];
+        int stIndex = 0, retIndex = 0;
+        
+        // if all the chars in st can be evenly divided into pairs
+        if (ret.length == (int)quotient)
+            // two first hex digits make a byte
+            ret[retIndex++] = getByte(st.charAt(stIndex), st.charAt(++stIndex));
+        else // if not
+            // only the first one does
+            ret[retIndex++] = (byte)getHex(st.charAt(stIndex));
+        
+        // starting from here, all characters should be evenly divided into pair        
+        for (; retIndex < ret.length; ++retIndex)
+            ret[retIndex] = getByte(st.charAt(++stIndex), st.charAt(++stIndex));
+        
+        return new WrappingByteSource(ret);
+    }
+    
     public static ByteSource parseHex(String string) {
         if (!string.startsWith("0x")) {
             throw new RuntimeException("not a hex string");

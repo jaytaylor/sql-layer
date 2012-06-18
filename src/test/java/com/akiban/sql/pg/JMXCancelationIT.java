@@ -32,11 +32,8 @@ import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 
-import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
-
-import java.util.*;
 
 public class JMXCancelationIT extends PostgresServerITBase
 {

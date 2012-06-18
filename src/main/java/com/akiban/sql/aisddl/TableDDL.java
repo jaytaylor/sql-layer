@@ -157,6 +157,11 @@ public class TableDDL
             typeParameter2 = (long)type.getScale();
         }
         
+        String charset = null, collation = null;
+        if (type.getCharacterAttributes() != null) {
+            charset = type.getCharacterAttributes().getCharacterSet();
+            collation = type.getCharacterAttributes().getCollation();
+        }
         builder.column(schemaName, tableName, 
                 cdn.getColumnName(), 
                 Integer.valueOf(colpos), 
@@ -164,7 +169,7 @@ public class TableDDL
                 typeParameter1, typeParameter2, 
                 type.isNullable(), 
                 cdn.isAutoincrementColumn(),
-                null, null);
+                charset, collation);
         if (cdn.isAutoincrementColumn()) {
             builder.userTableInitialAutoIncrement(schemaName, tableName, 
                     cdn.getAutoincrementStart());

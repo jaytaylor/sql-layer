@@ -382,7 +382,7 @@ class Flatten_HKeyOrdered extends Operator
         {
             super(context);
             this.input = input;
-            this.leftJoinHKey = adapter().newHKey(childType);
+            this.leftJoinHKey = adapter().newHKey(childType.hKey());
         }
 
         // For use by this class
@@ -405,7 +405,7 @@ class Flatten_HKeyOrdered extends Operator
                                       this, parent.hKey()));
                 }
                 // Copy leftJoinHKey to avoid aliasing problems. (leftJoinHKey changes on each parent row.)
-                HKey hKey = adapter().newHKey(childType);
+                HKey hKey = adapter().newHKey(childType.hKey());
                 leftJoinHKey.copyTo(hKey);
                 pending.add(new FlattenedRow(flattenType, parent, null, hKey));
                 // Prevent generation of another left join row for the same parent

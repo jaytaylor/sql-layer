@@ -44,7 +44,6 @@ public final class AISValidations {
     public static final AISValidation JOIN_TO_PARENT_PK = new JoinToParentPK();
     public static final AISValidation JOIN_TO_ONE_PARENT = new JoinToOneParent();
     public static final AISValidation PRIMARY_KEY_IS_NOT_NULL = new PrimaryKeyIsNotNull();
-    public static final AISValidation PROTECTED_TABLES = new ProtectedTables();
     public static final AISValidation REFERENCES_CORRECT = new ReferencesCorrect();
     public static final AISValidation SUPPORTED_COLUMN_TYPES = new SupportedColumnTypes();    
     public static final AISValidation TABLE_COLUMNS_MATCH_GROUP = new TableColumnsMatchGroupColumns();
@@ -56,12 +55,14 @@ public final class AISValidations {
     public static final AISValidation TABLE_TREE_NAMES_UNIQUE = new TableTreeNamesUnique();
     public static final AISValidation TYPES_ARE_FROM_STATIC = new TypesAreFromStatic();
     public static final AISValidation GROUP_INDEX_DEPTH = new GroupIndexDepth();
-    
+    public static final AISValidation TREE_NAMES_NOT_NULL = new TreeNamesAreNotNull();
+    public static final AISValidation MEMORY_TABLES_NOT_MIXED = new MemoryTablesNotMixed();
+    public static final AISValidation MEMORY_TABLES_SINGLE = new MemoryTableSingleTableGroup();
+
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
     static {
         LIVE_AIS_VALIDATIONS = Collections.unmodifiableList(Arrays.asList(
-                PROTECTED_TABLES,
                 TABLE_HAS_PRIMARY_KEY,
                 PRIMARY_KEY_IS_NOT_NULL,
                 SUPPORTED_COLUMN_TYPES,
@@ -83,7 +84,10 @@ public final class AISValidations {
                 TABLE_TREE_NAMES_UNIQUE,
                 INDEX_TREE_NAMES_UNIQUE,
                 TYPES_ARE_FROM_STATIC,
-                GROUP_INDEX_DEPTH
+                GROUP_INDEX_DEPTH,
+                TREE_NAMES_NOT_NULL,
+                MEMORY_TABLES_NOT_MIXED,
+                MEMORY_TABLES_SINGLE
                 //CHARACTER_SET_SUPPORTED
                 ));
     }

@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import com.akiban.sql.optimizer.rule.join_enum.*;
 import com.akiban.sql.optimizer.rule.join_enum.DPhyp.JoinOperator;
 
@@ -33,8 +34,9 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.Sort.OrderByExpression;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
+import com.akiban.server.expression.std.Comparison;
+
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,8 +59,8 @@ public class JoinAndIndexPicker extends BaseRule
     public void apply(PlanContext planContext) {
         BaseQuery query = (BaseQuery)planContext.getPlan();
         List<Picker> pickers = 
-          new JoinsFinder(((SchemaRulesContext)planContext.getRulesContext())
-                          .getCostEstimator()).find(query);
+            new JoinsFinder((SchemaRulesContext)planContext.getRulesContext())
+            .find(query);
         for (Picker picker : pickers) {
             picker.apply();
         }
@@ -66,16 +68,18 @@ public class JoinAndIndexPicker extends BaseRule
 
     static class Picker {
         Map<SubquerySource,Picker> subpickers;
+        SchemaRulesContext rulesContext;
         CostEstimator costEstimator;
         Joinable joinable;
         BaseQuery query;
         QueryIndexGoal queryGoal;
 
         public Picker(Joinable joinable, BaseQuery query,
-                      CostEstimator costEstimator, 
+                      SchemaRulesContext rulesContext,
                       Map<SubquerySource,Picker> subpickers) {
             this.subpickers = subpickers;
-            this.costEstimator = costEstimator;
+            this.rulesContext = rulesContext;
+            this.costEstimator = rulesContext.getCostEstimator();
             this.joinable = joinable;
             this.query = query;
         }
@@ -102,6 +106,7 @@ public class JoinAndIndexPicker extends BaseRule
             Sort ordering = null;
             AggregateSource grouping = null;
             Project projectDistinct = null;
+            Limit limit = null;
             input = input.getOutput();
             if (input instanceof Select) {
                 ConditionList conds = ((Select)input).getConditions();
@@ -112,6 +117,9 @@ public class JoinAndIndexPicker extends BaseRule
             input = input.getOutput();
             if (input instanceof Sort) {
                 ordering = (Sort)input;
+                input = input.getOutput();
+                if (input instanceof Project)
+                    input = input.getOutput();
             }
             else if (input instanceof AggregateSource) {
                 grouping = (AggregateSource)input;
@@ -135,18 +143,30 @@ public class JoinAndIndexPicker extends BaseRule
                             }
                         }
                     }
+                    if (ordering != null) // No limit if sort lost.
+                        input = input.getOutput();
                 }
+                if (input instanceof Project)
+                    input = input.getOutput();
             }
             else if (input instanceof Project) {
                 Project project = (Project)input;
                 input = project.getOutput();
-                if (input instanceof Distinct)
+                if (input instanceof Distinct) {
                     projectDistinct = project;
-                else if (input instanceof Sort)
+                    input = input.getOutput();
+                }
+                else if (input instanceof Sort) {
                     ordering = (Sort)input;
+                    input = input.getOutput();
+                    if (input instanceof Distinct)
+                        input = input.getOutput(); // Not projectDistinct (already marked as explicitly sorted).
+                }
             }
+            if (input instanceof Limit)
+                limit = (Limit)input;
             return new QueryIndexGoal(query, costEstimator, whereConditions, 
-                                      grouping, ordering, projectDistinct);
+                                      grouping, ordering, projectDistinct, limit);
         }
 
         // Only a single group of tables. Don't need to run general
@@ -156,19 +176,19 @@ public class JoinAndIndexPicker extends BaseRule
             GroupIndexGoal groupGoal = new GroupIndexGoal(queryGoal, tables);
             List<JoinOperator> empty = Collections.emptyList(); // No more joins / bound tables.
             groupGoal.updateRequiredColumns(empty, empty);
-            PlanNode scan = groupGoal.pickBestScan();
-            groupGoal.install(scan, null);
+            BaseScan scan = groupGoal.pickBestScan();
+            groupGoal.install(scan, null, true, false);
         }
 
         // General joins: run enumerator.
         protected void pickJoinsAndIndexes(JoinNode joins) {
             Plan rootPlan = new JoinEnumerator(this).run(joins, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
-            installPlan(rootPlan);
+            installPlan(rootPlan, false);
         }
 
         // Put the chosen plan in place.
-        public void installPlan(Plan rootPlan) {
-            joinable.getOutput().replaceInput(joinable, rootPlan.install());
+        public void installPlan(Plan rootPlan, boolean copy) {
+            joinable.getOutput().replaceInput(joinable, rootPlan.install(copy));
         }
 
         // Get the handler for the given subquery so that it can be done in context.
@@ -191,9 +211,9 @@ public class JoinAndIndexPicker extends BaseRule
                 // In this block because we were not a JoinNode, query has no joins itself
                 List<JoinOperator> queryJoins = Collections.emptyList();
                 List<ConditionList> conditionSources = groupGoal.updateContext(subqueryBoundTables, queryJoins, subqueryJoins, subqueryOutsideJoins, true);
-                PlanNode scan = groupGoal.pickBestScan();
-                CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
-                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources);
+                BaseScan scan = groupGoal.pickBestScan();
+                CostEstimate costEstimate = scan.getCostEstimate();
+                return new GroupPlan(groupGoal, JoinableBitSet.of(0), scan, costEstimate, conditionSources, true);
             }
             if (joinable instanceof JoinNode) {
                 return new JoinEnumerator(this, subqueryBoundTables, subqueryJoins, subqueryOutsideJoins).run((JoinNode)joinable, queryGoal.getWhereConditions()).bestPlan(Collections.<JoinOperator>emptyList());
@@ -217,10 +237,25 @@ public class JoinAndIndexPicker extends BaseRule
             return costEstimate.compareTo(other.costEstimate);
         }
 
-        public abstract Joinable install();
+        public abstract Joinable install(boolean copy);
 
         public void addDistinct() {
             throw new UnsupportedOperationException();
+        }
+
+        public boolean semiJoinEquivalent() {
+            return false;
+        }
+
+        public boolean containsColumn(ColumnExpression column) {
+            return false;
+        }
+
+        public double joinSelectivity() {
+            return 1.0;
+        }
+
+        public void redoCostWithLimit(long limit) {
         }
     }
 
@@ -243,18 +278,21 @@ public class JoinAndIndexPicker extends BaseRule
     static class GroupPlan extends Plan {
         GroupIndexGoal groupGoal;
         long outerTables;
-        PlanNode scan;
+        BaseScan scan;
         List<ConditionList> conditionSources;
+        boolean sortAllowed;
 
         public GroupPlan(GroupIndexGoal groupGoal,
-                         long outerTables, PlanNode scan, 
+                         long outerTables, BaseScan scan, 
                          CostEstimate costEstimate,
-                         List<ConditionList> conditionSources) {
+                         List<ConditionList> conditionSources,
+                         boolean sortAllowed) {
             super(costEstimate);
             this.groupGoal = groupGoal;
             this.outerTables = outerTables;
             this.scan = scan;
             this.conditionSources = conditionSources;
+            this.sortAllowed = sortAllowed;
         }
 
         @Override
@@ -263,9 +301,8 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install() {
-            groupGoal.install(scan, conditionSources);
-            return groupGoal.getTables();
+        public Joinable install(boolean copy) {
+            return groupGoal.install(scan, conditionSources, sortAllowed, copy);
         }
 
         public boolean orderedForDistinct(Distinct distinct) {
@@ -274,6 +311,33 @@ public class JoinAndIndexPicker extends BaseRule
                 return false;
             return groupGoal.orderedForDistinct((Project)distinct.getInput(),
                                                 (IndexScan)scan);
+        }
+
+        @Override
+        public boolean semiJoinEquivalent() {
+            return groupGoal.semiJoinEquivalent(scan);
+        }
+
+        @Override
+        public boolean containsColumn(ColumnExpression column) {
+            ColumnSource table = column.getTable();
+            if (!(table instanceof TableSource)) return false;
+            return (groupGoal.getTables().getRoot().findTable((TableSource)table) != null);
+        }
+
+        @Override
+        public double joinSelectivity() {
+            if (scan instanceof IndexScan)
+                return groupGoal.estimateSelectivity((IndexScan)scan);
+            else
+                return super.joinSelectivity();
+        }
+
+        @Override
+        public void redoCostWithLimit(long limit) {
+            if (scan instanceof IndexScan) {
+                costEstimate = groupGoal.estimateCost((IndexScan)scan, limit);
+            }
         }
     }
 
@@ -303,10 +367,11 @@ public class JoinAndIndexPicker extends BaseRule
                     return groupPlan;
                 }
             }
-            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, joins.isEmpty());
-            PlanNode scan = groupGoal.pickBestScan();
-            CostEstimate costEstimate = groupGoal.costEstimateScan(scan);
-            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources);
+            boolean sortAllowed = joins.isEmpty();
+            List<ConditionList> conditionSources = groupGoal.updateContext(enumerator.boundTables(outerTables), joins, joins, outsideJoins, sortAllowed);
+            BaseScan scan = groupGoal.pickBestScan();
+            CostEstimate costEstimate = scan.getCostEstimate();
+            GroupPlan groupPlan = new GroupPlan(groupGoal, outerTables, scan, costEstimate, conditionSources, sortAllowed);
             bestPlans.add(groupPlan);
             return groupPlan;
         }
@@ -335,8 +400,8 @@ public class JoinAndIndexPicker extends BaseRule
 
 
         @Override
-        public Joinable install() {
-            picker.installPlan(rootPlan);
+        public Joinable install(boolean copy) {
+            picker.installPlan(rootPlan, copy);
             return subquery;
         }        
 
@@ -406,7 +471,7 @@ public class JoinAndIndexPicker extends BaseRule
 
 
         @Override
-        public Joinable install() {
+        public Joinable install(boolean copy) {
             return values;
         }
 
@@ -468,11 +533,21 @@ public class JoinAndIndexPicker extends BaseRule
         }
 
         @Override
-        public Joinable install() {
+        public Joinable install(boolean copy) {
             if (needDistinct)
                 left.addDistinct();
-            Joinable leftJoinable = left.install();
-            Joinable rightJoinable = right.install();
+            Joinable leftJoinable = left.install(copy);
+            Joinable rightJoinable = right.install(copy);
+            ConditionList joinConditions = mergeJoinConditions(joins);
+            JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
+            join.setJoinConditions(joinConditions);
+            join.setImplementation(joinImplementation);
+            if (joinType == JoinType.SEMI)
+                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
+            return join;
+        }
+
+        protected ConditionList mergeJoinConditions(Collection<JoinOperator> joins) {
             ConditionList joinConditions = null;
             boolean newJoinConditions = false;
             for (JoinOperator joinOp : joins) {
@@ -490,11 +565,44 @@ public class JoinAndIndexPicker extends BaseRule
                     }
                 }
             }
-            JoinNode join = new JoinNode(leftJoinable, rightJoinable, joinType);
+            return joinConditions;
+        }
+
+        public void redoCostWithLimit(long limit) {
+            left.redoCostWithLimit(limit);
+            costEstimate = left.costEstimate.nest(right.costEstimate);
+        }
+    }
+
+    static class HashJoinPlan extends JoinPlan {
+        Plan loader;
+        BaseHashTable hashTable;
+        List<ExpressionNode> hashColumns, matchColumns;
+        
+        public HashJoinPlan(Plan loader, Plan input, Plan check,
+                            JoinType joinType, JoinNode.Implementation joinImplementation,
+                            Collection<JoinOperator> joins, CostEstimate costEstimate,
+                            BaseHashTable hashTable, List<ExpressionNode> hashColumns, List<ExpressionNode> matchColumns) {
+            super(input, check, joinType, joinImplementation, joins, costEstimate);
+            this.loader = loader;
+            this.hashTable = hashTable;
+            this.hashColumns = hashColumns;
+            this.matchColumns = matchColumns;
+        }
+
+        @Override
+        public Joinable install(boolean copy) {
+            if (needDistinct)
+                left.addDistinct();
+            Joinable loaderJoinable = loader.install(true);
+            Joinable inputJoinable = left.install(copy);
+            Joinable checkJoinable = right.install(copy);
+            ConditionList joinConditions = mergeJoinConditions(joins);
+            HashJoinNode join = new HashJoinNode(loaderJoinable, inputJoinable, checkJoinable, joinType, hashTable, hashColumns, matchColumns);
             join.setJoinConditions(joinConditions);
             join.setImplementation(joinImplementation);
             if (joinType == JoinType.SEMI)
-                InConditionReverser.cleanUpSemiJoin(join, rightJoinable);
+                InConditionReverser.cleanUpSemiJoin(join, checkJoinable);
             return join;
         }
     }
@@ -509,6 +617,20 @@ public class JoinAndIndexPicker extends BaseRule
         @Override
         public Plan bestPlan(Collection<JoinOperator> outsideJoins) {
             return bestPlan;
+        }
+
+        public void consider(JoinPlan joinPlan) {
+            if (bestPlan == null) {
+                logger.debug("Selecting {}, {}", joinPlan, joinPlan.costEstimate);
+                bestPlan = joinPlan;
+            }
+            else if (bestPlan.compareTo(joinPlan) > 0) {
+                logger.debug("Preferring {}, {}", joinPlan, joinPlan.costEstimate);
+                bestPlan = joinPlan;
+            }
+            else {
+                logger.debug("Rejecting {}, {}", joinPlan, joinPlan.costEstimate);
+            }
         }
     }
 
@@ -575,17 +697,13 @@ public class JoinAndIndexPicker extends BaseRule
             JoinPlan joinPlan = new JoinPlan(leftPlan, rightPlan,
                                              joinType, JoinNode.Implementation.NESTED_LOOPS,
                                              joins, costEstimate);
-            if (planClass.bestPlan == null) {
-                logger.debug("Selecting {}, {}", joinPlan, costEstimate);
-                planClass.bestPlan = joinPlan;
+            if (joinType.isSemi() || rightPlan.semiJoinEquivalent()) {
+                Plan loaderPlan = right.bestPlan(outsideJoins);
+                JoinPlan hashPlan = buildBloomFilterSemiJoin(loaderPlan, joinPlan);
+                if (hashPlan != null)
+                    planClass.consider(hashPlan);
             }
-            else if (planClass.bestPlan.compareTo(joinPlan) > 0) {
-                logger.debug("Preferring {}, {}", joinPlan, costEstimate);
-                planClass.bestPlan = joinPlan;
-            }
-            else {
-                logger.debug("Rejecting {}, {}", joinPlan, costEstimate);
-            }
+            planClass.consider(joinPlan);
             return planClass;
         }
 
@@ -618,6 +736,75 @@ public class JoinAndIndexPicker extends BaseRule
             }
             return boundTables;
         }
+
+        double BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT = 0.05;
+
+        public JoinPlan buildBloomFilterSemiJoin(Plan loaderPlan, JoinPlan joinPlan) {
+            Plan inputPlan = joinPlan.left;
+            Plan checkPlan = joinPlan.right;
+            Collection<JoinOperator> joins = joinPlan.joins;
+            if (checkPlan.costEstimate.getRowCount() > 1)
+                return null;    // Join not selective.
+            double maxSelectivity;
+            String prop = picker.rulesContext.getProperty("bloomFilterMaxSelectivity");
+            if (prop != null)
+                maxSelectivity = Double.valueOf(prop);
+            else
+                maxSelectivity = BLOOM_FILTER_MAX_SELECTIVITY_DEFAULT;
+            if (maxSelectivity <= 0.0) return null; // Feature turned off.
+            List<ExpressionNode> hashColumns = new ArrayList<ExpressionNode>();
+            List<ExpressionNode> matchColumns = new ArrayList<ExpressionNode>();
+            for (JoinOperator join : joins) {
+                if (join.getJoinConditions() != null) {
+                    for (ConditionExpression cond : join.getJoinConditions()) {
+                        if (!(cond instanceof ComparisonCondition)) return null;
+                        ComparisonCondition ccond = (ComparisonCondition)cond;
+                        if (ccond.getOperation() != Comparison.EQ) return null;
+                        ExpressionNode left = ccond.getLeft();
+                        ExpressionNode right = ccond.getRight();
+                        // TODO: Could allow somewhat more
+                        // complicated, provided still just use one
+                        // side's tables.
+                        if (!((left instanceof ColumnExpression) &&
+                              (right instanceof ColumnExpression)))
+                            return null;
+                        if (inputPlan.containsColumn((ColumnExpression)left) && 
+                            checkPlan.containsColumn((ColumnExpression)right)) {
+                            matchColumns.add(left);
+                            hashColumns.add(right);
+                        }
+                        else if (inputPlan.containsColumn((ColumnExpression)right) && 
+                                 checkPlan.containsColumn((ColumnExpression)left)) {
+                            matchColumns.add(right);
+                            hashColumns.add(left);
+                        }
+                        else {
+                            return null;
+                        }
+                    }
+                }
+            }
+            double selectivity = checkPlan.joinSelectivity();
+            if (selectivity > maxSelectivity)
+                return null;
+            long limit = picker.queryGoal.getLimit();
+            if (joinPlan.costEstimate.getRowCount() == limit) {
+                // If there was a limit, it was applied too liberally
+                // for the very non-selective join.
+                // TODO: This should have always been the cost of the
+                // join plan, but that would be too disruptive, so
+                // only do it when need to make the comparison with
+                // the Bloom filter accurate.
+                limit = Math.round(limit / selectivity);
+                joinPlan.redoCostWithLimit(limit);
+            }
+            BloomFilter bloomFilter = new BloomFilter(loaderPlan.costEstimate.getRowCount(), 1);
+            CostEstimate costEstimate = picker.costEstimator
+                .costBloomFilter(loaderPlan.costEstimate, inputPlan.costEstimate, checkPlan.costEstimate, selectivity);
+            return new HashJoinPlan(loaderPlan, inputPlan, checkPlan,
+                                    JoinType.SEMI, JoinNode.Implementation.BLOOM_FILTER,
+                                    joins, costEstimate, bloomFilter, hashColumns, matchColumns);
+        }
     }
     
     // Purpose is twofold: 
@@ -633,10 +820,10 @@ public class JoinAndIndexPicker extends BaseRule
         Map<SubquerySource,Picker> subpickers;
         BaseQuery rootQuery;
         Deque<SubqueryState> subqueries = new ArrayDeque<SubqueryState>();
-        CostEstimator costEstimator;
+        SchemaRulesContext rulesContext;
 
-        public JoinsFinder(CostEstimator costEstimator) {
-            this.costEstimator = costEstimator;
+        public JoinsFinder(SchemaRulesContext rulesContext) {
+            this.rulesContext = rulesContext;
         }
 
         public List<Picker> find(BaseQuery query) {
@@ -692,7 +879,7 @@ public class JoinAndIndexPicker extends BaseRule
                         // Already have another set of joins to same root join.
                         return true;
                 }
-                Picker picker = new Picker(j, query, costEstimator, subpickers);
+                Picker picker = new Picker(j, query, rulesContext, subpickers);
                 result.add(picker);
                 if (subquerySource != null)
                     subpickers.put(subquerySource, picker);

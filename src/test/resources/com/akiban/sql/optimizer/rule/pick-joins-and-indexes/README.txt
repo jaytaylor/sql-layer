@@ -1,3 +1,15 @@
+bloom-filter-1: Use a Bloom filter to help with selective semi-join
+
+bloom-filter-1l: LIMIT adjusted when costing
+
+bloom-filter-1n: Extra columns means not semi-join
+
+bloom-filter-1o: Outer join
+
+bloom-filter-1x: Written with EXISTS
+
+bloom-filter-2: Do not use when not selective
+
 choose-condition-1: narrow and wide
 
 choose-condition-2: wide and narrow
@@ -34,6 +46,8 @@ single-subquery: just derived table (should push down condition)
 
 single-table: whole row from indexed table
 
+sort-equals: ORDER BY an equality condition
+
 subquery: join to subquery (with condition pushed down and combined into index)
 
 three-groups: second group dividing two halves
@@ -43,6 +57,8 @@ two-groups: group and non-group joins
 two-groups-indexed: two groups with condition on one
 
 two-groups-not-covering: join condition makes outer index not covering
+
+two-groups-aggregated: ordered index drives aggregate
 
 no-stats: no statistics
 
@@ -63,3 +79,13 @@ outer-index: LEFT using an index
 outer-no-index-extra-conditions: LEFT with extra conditions cannot use index
 
 cross-product: Conditions but no joins
+
+competing-indexes-no-limit: WHERE beats ORDER BY
+
+competing-indexes-with-limit: ORDER BY beats WHERE
+
+group-scan-no-limit: group scan and flatten
+
+group-scan-large-limit: with limit larger than expected
+
+group-scan-small-limit: with much smaller limit

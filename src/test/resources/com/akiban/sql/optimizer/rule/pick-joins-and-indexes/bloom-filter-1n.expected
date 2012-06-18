@@ -1,0 +1,9 @@
+SelectQuery@406c700d
+  ResultSet@f308686[sku, sku]
+    Project@3acfcf34[items.sku, categories.sku]
+      Select@212c7d16[]
+        JoinNode@468bc7dd(INNER/NESTED_LOOPS)
+          TableGroupJoinTree@47f0503a(TableGroup@2eea25a(categories), categories - SingleIndexScan@e4c437(Index(test.categories.cat_sku[IndexColumn(cat), IndexColumn(sku)]), covering/SORTED, =1, rows = 100, cost = 77.9500))
+            TableSource@f227b52(categories - TableGroup@2eea25a(categories))
+          TableGroupJoinTree@722334bb(TableGroup@2b0df756(customers), items - SingleIndexScan@21e9452f(Index(test.items.sku[IndexColumn(sku)]), covering/NONE, =categories.sku, rows = 100, cost = 1727.73))
+            TableSource@386ecc5(items - TableGroup@2b0df756(customers))

@@ -33,9 +33,7 @@ import com.akiban.server.rowdata.SchemaFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.io.File;
 import java.io.FileInputStream;
 
@@ -76,7 +74,7 @@ public class RulesTestHelper
     }
 
     // Make fake row def cache to keep UserTableRowType constructor
-    // and Index.getValueColumns() from getting NPE.
+    // and Index.getAllColumns() from getting NPE.
     public static void ensureRowDefs(AkibanInformationSchema ais) {
         new SchemaFactory().rowDefCache(ais);
     }

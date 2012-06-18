@@ -48,41 +48,71 @@ import com.google.protobuf.MessageLite;
 import java.io.IOException;
 
 public class ProtobufWriter {
+    public static interface TableSelector {
+        boolean isSelected(UserTable table);
+    }
+
+    public static TableSelector ALL_TABLES_SELECTOR = new TableSelector() {
+        @Override
+        public boolean isSelected(UserTable table) {
+            return true;
+        }
+    };
+
+    public static class SchemaSelector implements TableSelector {
+        private final String schemaName;
+
+        public SchemaSelector(String schemaName) {
+            this.schemaName = schemaName;
+        }
+
+        public String getSchemaName() {
+            return schemaName;
+        }
+
+        @Override
+        public boolean isSelected(UserTable table) {
+            return schemaName.equals(table.getName().getSchemaName());
+        }
+    }
+
+
     private static final GrowableByteBuffer NO_BUFFER = new GrowableByteBuffer(0);
     private final GrowableByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
-    private final String restrictSchema;
+    private final TableSelector selector;
 
     public ProtobufWriter() {
         this(NO_BUFFER);
     }
 
     public ProtobufWriter(GrowableByteBuffer buffer) {
-        this(buffer, null);
+        this(buffer, ALL_TABLES_SELECTOR);
     }
 
-    public ProtobufWriter(GrowableByteBuffer buffer, String restrictToSchema) {
+    public ProtobufWriter(GrowableByteBuffer buffer, TableSelector selector) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
-        this.restrictSchema = restrictToSchema;
+        this.selector = selector;
     }
 
     public AISProtobuf.AkibanInformationSchema save(AkibanInformationSchema ais) {
         AISProtobuf.AkibanInformationSchema.Builder aisBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
 
         // Write top level proto messages and recurse down as needed
-        if(restrictSchema == null) {
+        if(selector == ALL_TABLES_SELECTOR) {
             for(Type type : ais.getTypes()) {
                 writeType(aisBuilder, type);
             }
-
-            for(Schema schema : ais.getSchemas().values()) {
-                writeSchema(aisBuilder, schema);
+        }
+        if(selector instanceof SchemaSelector) {
+            Schema schema = ais.getSchema(((SchemaSelector) selector).getSchemaName());
+            if(schema != null) {
+                writeSchema(aisBuilder, schema, selector);
             }
         } else {
-            Schema schema = ais.getSchema(restrictSchema);
-            if(schema != null) {
-                writeSchema(aisBuilder, schema);
+            for(Schema schema : ais.getSchemas().values()) {
+                writeSchema(aisBuilder, schema, selector);
             }
         }
 
@@ -123,22 +153,25 @@ public class ProtobufWriter {
         aisBuilder.addTypes(pbType);
     }
 
-    private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema) {
+    private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema, TableSelector selector) {
         AISProtobuf.Schema.Builder schemaBuilder = AISProtobuf.Schema.newBuilder();
         schemaBuilder.setSchemaName(schema.getName());
+        boolean isEmpty = true;
 
         // Write groups into same schema as root table
         for(UserTable table : schema.getUserTables().values()) {
-            if (table.getParentJoin() == null && table.getGroup() != null) {
-                writeGroup(schemaBuilder, table.getGroup());
+            if(selector.isSelected(table)) {
+                if(table.getParentJoin() == null && table.getGroup() != null) {
+                    writeGroup(schemaBuilder, table.getGroup());
+                }
+                writeTable(schemaBuilder, table);
+                isEmpty = false;
             }
         }
 
-        for(UserTable table : schema.getUserTables().values()) {
-            writeTable(schemaBuilder, table);
+        if(!isEmpty) {
+            aisBuilder.addSchemas(schemaBuilder.build());
         }
-
-        aisBuilder.addSchemas(schemaBuilder.build());
     }
 
     private static void writeGroup(AISProtobuf.Schema.Builder schemaBuilder, Group group) {
@@ -161,6 +194,10 @@ public class ProtobufWriter {
                 setTableId(table.getTableId()).
                 setCharColl(convertCharAndCol(table.getCharsetAndCollation()));
                 // Not yet in AIS: ordinal, description, protected
+
+        if(table.hasVersion()) {
+            tableBuilder.setVersion(table.getVersion());
+        }
 
         for(Column column : table.getColumnsIncludingInternal()) {
             writeColumn(tableBuilder, column);
@@ -220,13 +257,16 @@ public class ProtobufWriter {
         AISProtobuf.Index.Builder indexBuilder = AISProtobuf.Index.newBuilder();
         indexBuilder.
                 setIndexName(indexName.getName()).
-                setTreeName(index.getTreeName()).
                 setIndexId(index.getIndexId()).
                 setIsPK(index.isPrimaryKey()).
                 setIsUnique(index.isUnique()).
                 setIsAkFK(index.isAkibanForeignKey()).
                 setJoinType(convertJoinType(index.getJoinType()));
                 // Not yet in AIS: description
+
+        if(index.getTreeName() != null) {
+            indexBuilder.setTreeName(index.getTreeName());
+        }
 
         for(IndexColumn indexColumn : index.getKeyColumns()) {
             writeIndexColumn(indexBuilder, indexColumn, withTableName);

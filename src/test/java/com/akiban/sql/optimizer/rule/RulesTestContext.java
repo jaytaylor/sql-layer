@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.OptimizerTestBase;
+import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;

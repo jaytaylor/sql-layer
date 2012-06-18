@@ -94,6 +94,11 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
+    public HKey ancestorHKey(UserTable table) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
     public boolean ancestorOf(RowBase that) {
         throw new UnsupportedOperationException();
     }

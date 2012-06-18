@@ -30,21 +30,14 @@ import com.akiban.sql.server.ServerType;
 
 import com.akiban.server.error.UnknownDataTypeException;
 import com.akiban.server.error.UnknownTypeSizeException;
-import com.akiban.server.error.UnsupportedCharsetException;
 import com.akiban.server.types.AkType;
 
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
-
-import java.io.*;
-import java.text.*;
-import java.util.*;
 
 /** A type according to the PostgreSQL regime.
  * Information corresponds more-or-less directly to what's in the 
@@ -322,8 +315,8 @@ public class PostgresType extends ServerType
             akType = AkType.INTERVAL_MONTH;
             break;
         case TypeId.FormatIds.BIT_TYPE_ID:
-            oid = TypeOid.BIT_TYPE_OID.getOid();
-            akType = AkType.INT;
+            oid = TypeOid.BYTEA_TYPE_OID.getOid();
+            akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.BOOLEAN_TYPE_ID:
             oid = TypeOid.BOOL_TYPE_OID.getOid();
@@ -404,7 +397,7 @@ public class PostgresType extends ServerType
             akType = AkType.INT;
             break;
         case TypeId.FormatIds.VARBIT_TYPE_ID:
-            oid = TypeOid.VARBIT_TYPE_OID.getOid();
+            oid = TypeOid.BYTEA_TYPE_OID.getOid();
             akType = AkType.VARBINARY;
             break;
         case TypeId.FormatIds.BLOB_TYPE_ID:

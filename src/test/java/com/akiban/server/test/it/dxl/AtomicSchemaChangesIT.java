@@ -33,13 +33,11 @@ import com.akiban.server.error.UnsupportedIndexSizeException;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
 import com.akiban.server.test.it.ITBase;
-import com.akiban.sql.parser.SQLParserException;
 import com.akiban.util.GrowableByteBuffer;
 import org.junit.Assert;
 import org.junit.Ignore;
 import org.junit.Test;
 
-import java.nio.ByteBuffer;
 import java.util.Map;
 
 import static junit.framework.Assert.*;

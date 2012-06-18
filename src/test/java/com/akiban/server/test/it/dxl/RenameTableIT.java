@@ -28,6 +28,7 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedTableDDLException;
@@ -180,7 +181,7 @@ public class RenameTableIT extends ITBase {
         createCTable();
         int rowCount = writeCRows();
         try {
-            ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(TableName.AKIBAN_INFORMATION_SCHEMA, C_NAME));
+            ddl().renameTable(session(), tableName(SCHEMA, C_NAME), tableName(TableName.INFORMATION_SCHEMA, C_NAME));
             Assert.fail("Expected ProtectedTableDDLException");
         }
         catch(ProtectedTableDDLException e) {
@@ -297,6 +298,43 @@ public class RenameTableIT extends ITBase {
                 expectStatusAndScanCount(tn.getSchemaName(), tn.getTableName(), COUNTS[j]);
             }
 
+        }
+    }
+
+    /**
+     * bug999467, simulate many repeated alters
+     */
+    @Test
+    public void renameSameTablesMultipleTimes() {
+        final int LOOPS = 3;
+        final String COL_DEFS = "c1 INT";
+        final TableName NAME1 = tableName("test", "t1");
+        final TableName NAME2 = tableName("test", "sql#foo-1");
+        final TableName NAME3 = tableName("test", "sql#foo_1");
+
+        int initialTid = createTable(NAME1, COL_DEFS);
+        writeRows(
+                createNewRow(initialTid, 1, -1L),
+                createNewRow(initialTid, 2, -1L),
+                createNewRow(initialTid, 3, -1L)
+        );
+
+        for(int i = 1; i <= LOOPS; ++i) {
+            // Create new table, copy old table from a pk scan
+            int tid2 = createTable(NAME2, COL_DEFS);
+            List<NewRow> pkRows = scanAllIndex(getUserTable(tableId(NAME1)).getPrimaryKeyIncludingInternal().getIndex());
+            assertEquals("Row scanned from original on loop "+i, 3, pkRows.size());
+            for(NewRow row : pkRows) {
+                writeRow(tid2, row.get(0), -1L);
+            }
+            // Rename both
+            ddl().renameTable(session(), NAME1, NAME3);
+            ddl().renameTable(session(), NAME2, NAME1);
+            ddl().dropTable(session(), NAME3);
+            updateAISGeneration();
+            // Confirm
+            List<NewRow> newTableRows = scanAll(scanAllRequest(tableId(NAME1)));
+            assertEquals("Rows scanned after renames and drop on loop "+i, 3, newTableRows.size());
         }
     }
 }

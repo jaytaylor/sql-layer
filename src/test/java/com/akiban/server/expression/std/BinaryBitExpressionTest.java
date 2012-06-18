@@ -36,7 +36,6 @@ import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.std.BinaryBitExpression.BitOperator;
 import com.akiban.server.types.AkType;
 
-import com.akiban.server.types.util.ValueHolder;
 import java.math.BigInteger;
 import java.util.Arrays;
 import java.util.Collection;

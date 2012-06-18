@@ -159,7 +159,7 @@ public final class OperatorTestHelper {
         }
 
         @Override
-        public HKey newHKey(RowType rowType)
+        public <HKEY extends HKey> HKEY newHKey(com.akiban.ais.model.HKey hKeyMetadata)
         {
             throw new UnsupportedOperationException();
         }
@@ -207,7 +207,7 @@ public final class OperatorTestHelper {
 
         public TestAdapter()
         {
-            super(null);
+            super(null, null, null);
         }
     }
 }

@@ -27,7 +27,6 @@
 package com.akiban.server.store;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.error.RowDataCorruptionException;
 import com.akiban.server.rowdata.CorruptRowDataException;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;

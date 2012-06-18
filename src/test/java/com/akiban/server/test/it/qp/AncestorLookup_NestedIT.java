@@ -33,7 +33,6 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
@@ -131,7 +130,7 @@ public class AncestorLookup_NestedIT extends OperatorITBase
     @Test(expected = IllegalArgumentException.class)
     public void testALNAncestorTypesEmpty()
     {
-        ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.<RowType>emptyList(), 0);
+        ancestorLookup_Nested(rabc, aValueIndexRowType, Collections.<UserTableRowType>emptyList(), 0);
     }
 
     @Test(expected = IllegalArgumentException.class)

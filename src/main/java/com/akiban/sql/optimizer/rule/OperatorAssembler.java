@@ -28,7 +28,6 @@ package com.akiban.sql.optimizer.rule;
 
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
-import com.akiban.qp.operator.API.IntersectOutputOption;
 import com.akiban.qp.operator.API.JoinType;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
@@ -90,6 +89,7 @@ public class OperatorAssembler extends BaseRule
     private static final PointTap UPDATE_COUNT = Tap.createCount("sql: update");
     private static final PointTap DELETE_COUNT = Tap.createCount("sql: delete");
 
+    public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
     @Override
     protected Logger getLogger() {
@@ -265,6 +265,8 @@ public class OperatorAssembler extends BaseRule
                 return assembleLimit((Limit) node);
             else if (node instanceof NullIfEmpty)
                 return assembleNullIfEmpty((NullIfEmpty) node);
+            else if (node instanceof OnlyIfEmpty)
+                return assembleOnlyIfEmpty((OnlyIfEmpty) node);
             else if (node instanceof Project)
                 return assembleProject((Project) node);
             else if (node instanceof ExpressionsSource)
@@ -273,25 +275,34 @@ public class OperatorAssembler extends BaseRule
                 return assembleSubquerySource((SubquerySource) node);
             else if (node instanceof NullSource)
                 return assembleNullSource((NullSource) node);
+            else if (node instanceof UsingBloomFilter)
+                return assembleUsingBloomFilter((UsingBloomFilter) node);
+            else if (node instanceof BloomFilterFilter)
+                return assembleBloomFilterFilter((BloomFilterFilter) node);
             else
                 throw new UnsupportedSQLException("Plan node " + node, null);
         }
         
         protected RowStream assembleIndexScan(IndexScan index) {
+            return assembleIndexScan(index, false, useSkipScan(index));
+        }
+
+        protected RowStream assembleIndexScan(IndexScan index, boolean forIntersection, boolean useSkipScan) {
             if (index instanceof SingleIndexScan)
-                return assembleSingleIndexScan((SingleIndexScan) index);
+                return assembleSingleIndexScan((SingleIndexScan) index, forIntersection);
             else if (index instanceof MultiIndexIntersectScan)
-                return assembleIndexIntersection((MultiIndexIntersectScan) index);
+                return assembleIndexIntersection((MultiIndexIntersectScan) index, useSkipScan);
             else
                 throw new UnsupportedSQLException("Plan node " + index, null);
         }
 
-        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index) {
+        private RowStream assembleIndexIntersection(MultiIndexIntersectScan index, boolean useSkipScan) {
             RowStream stream = new RowStream();
-            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan());
-            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan());
-            Operator intersect;
-            intersect = API.intersect_Ordered(
+            RowStream outputScan = assembleIndexScan(index.getOutputIndexScan(), 
+                                                     true, useSkipScan);
+            RowStream selectorScan = assembleIndexScan(index.getSelectorIndexScan(), 
+                                                       true, useSkipScan);
+            stream.operator = API.intersect_Ordered(
                     outputScan.operator,
                     selectorScan.operator,
                     (IndexRowType) outputScan.rowType,
@@ -300,15 +311,17 @@ public class OperatorAssembler extends BaseRule
                     index.getSelectorOrderingFields(),
                     index.getComparisonFieldDirections(),
                     JoinType.INNER_JOIN,
-                    IntersectOutputOption.OUTPUT_LEFT
-            );
-            stream.operator = intersect;
+                    (useSkipScan) ? 
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
+                               API.IntersectOption.SKIP_SCAN) :
+                    EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
+                               API.IntersectOption.SEQUENTIAL_SCAN));
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
             return stream;
         }
 
-        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan) {
+        protected RowStream assembleSingleIndexScan(SingleIndexScan indexScan, boolean forIntersection) {
             RowStream stream = new RowStream();
             Index index = indexScan.getIndex();
             IndexRowType indexRowType = schema.indexRowType(index);
@@ -342,6 +355,18 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 ColumnRanges range = indexScan.getConditionRange();
+                // Non-single-point ranges are ordered by the ranges
+                // themselves as part of merging segments, so that index
+                // column is an ordering column.
+                // Single-point ranges have only one value for the range column,
+                // so they can order by the following columns if we're
+                // willing to do the more expensive ordered union.
+                // Determine whether anything is taking advantage of this:
+                // * Index is being intersected.
+                // * Index is effective for query ordering.
+                // ** See also special case in AggregateSplitter.directIndexMinMax().
+                boolean unionOrdered = (range.isAllSingle() && 
+                     (forIntersection || (indexScan.getOrderEffectiveness() != IndexScan.OrderEffectiveness.NONE)));
                 for (RangeSegment rangeSegment : range.getSegments()) {
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
@@ -351,6 +376,19 @@ public class OperatorAssembler extends BaseRule
                         stream.operator = scan;
                         stream.rowType = indexRowType;
                     }
+                    else if (unionOrdered) {
+                        int nequals = indexScan.getNEquality();
+                        List<OrderByExpression> ordering = indexScan.getOrdering();
+                        int nordering = ordering.size() - nequals;
+                        boolean[] ascending = new boolean[nordering];
+                        for (int i = 0; i < nordering; i++) {
+                            ascending[i] = ordering.get(nequals + i).isAscending();
+                        }
+                        stream.operator = API.union_Ordered(stream.operator, scan,
+                                                            (IndexRowType)stream.rowType, indexRowType,
+                                                            nordering, nordering, 
+                                                            ascending);
+                    }
                     else {
                         stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
                         stream.rowType = stream.operator.rowType();
@@ -359,6 +397,42 @@ public class OperatorAssembler extends BaseRule
             }
             stream.fieldOffsets = new IndexFieldOffsets(indexScan, indexRowType);
             return stream;
+        }
+
+        /** If there are this many or more scans feeding into a tree
+         * of intersection / union, then skip scan is enabled for it.
+         * (3 scans means 2 intersections or intersection with a two-value union.)
+         */
+        public static final int SKIP_SCAN_MIN_COUNT_DEFAULT = 3;
+
+        protected boolean useSkipScan(IndexScan index) {
+            if (!(index instanceof MultiIndexIntersectScan))
+                return false;
+            int count = countScans(index);
+            int minCount;
+            String prop = rulesContext.getProperty("skipScanMinCount");
+            if (prop != null)
+                minCount = Integer.valueOf(prop);
+            else
+                minCount = SKIP_SCAN_MIN_COUNT_DEFAULT;
+            return (count >= minCount);
+        }
+
+        private int countScans(IndexScan index) {
+            if (index instanceof SingleIndexScan) {
+                SingleIndexScan sindex = (SingleIndexScan)index;
+                if (sindex.getConditionRange() == null)
+                    return 1;
+                else
+                    return sindex.getConditionRange().getSegments().size();
+            }
+            else if (index instanceof MultiIndexIntersectScan) {
+                MultiIndexIntersectScan mindex = (MultiIndexIntersectScan)index;
+                return countScans(mindex.getOutputIndexScan()) +
+                       countScans(mindex.getSelectorIndexScan());
+            }
+            else
+                return 0;
         }
 
         protected RowStream assembleGroupScan(GroupScan groupScan) {
@@ -485,11 +559,11 @@ public class OperatorAssembler extends BaseRule
             RowStream stream = assembleStream(ancestorLookup.getInput());
             GroupTable groupTable = ancestorLookup.getDescendant().getGroup().getGroupTable();
             RowType inputRowType = stream.rowType; // The index row type.
-            API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
+            API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
             if (!(inputRowType instanceof IndexRowType)) {
                 // Getting from branch lookup.
                 inputRowType = tableRowType(ancestorLookup.getDescendant());
-                flag = API.LookupOption.KEEP_INPUT;
+                flag = API.InputPreservationOption.KEEP_INPUT;
             }
             List<UserTableRowType> ancestorTypes =
                 new ArrayList<UserTableRowType>(ancestorLookup.getAncestors().size());
@@ -512,11 +586,11 @@ public class OperatorAssembler extends BaseRule
             if (branchLookup.getInput() != null) {
                 stream = assembleStream(branchLookup.getInput());
                 RowType inputRowType = stream.rowType; // The index row type.
-                API.LookupOption flag = API.LookupOption.DISCARD_INPUT;
+                API.InputPreservationOption flag = API.InputPreservationOption.DISCARD_INPUT;
                 if (!(inputRowType instanceof IndexRowType)) {
                     // Getting from ancestor lookup.
                     inputRowType = tableRowType(branchLookup.getSource());
-                    flag = API.LookupOption.KEEP_INPUT;
+                    flag = API.InputPreservationOption.KEEP_INPUT;
                 }
                 stream.operator = API.branchLookup_Default(stream.operator, 
                                                            groupTable, 
@@ -526,7 +600,7 @@ public class OperatorAssembler extends BaseRule
             }
             else {
                 stream = new RowStream();
-                API.LookupOption flag = API.LookupOption.KEEP_INPUT;
+                API.InputPreservationOption flag = API.InputPreservationOption.KEEP_INPUT;
                 stream.operator = API.branchLookup_Nested(groupTable, 
                                                           tableRowType(branchLookup.getSource()),
                                                           tableRowType(branchLookup.getAncestor()),
@@ -689,8 +763,6 @@ public class OperatorAssembler extends BaseRule
             return stream;
         }
 
-        static final int INSERTION_SORT_MAX_LIMIT = 100;
-
         protected RowStream assembleSort(Sort sort) {
             return assembleSort(sort, 
                                 sort.getOutput(), API.SortOption.PRESERVE_DUPLICATES);
@@ -761,11 +833,52 @@ public class OperatorAssembler extends BaseRule
         protected RowStream assembleNullIfEmpty(RowStream stream) {
             Expression[] nulls = new Expression[stream.rowType.nFields()];
             Arrays.fill(nulls, LiteralExpression.forNull());
-            stream.operator = API.ifEmpty_Default(stream.operator,
-                                                  stream.rowType,
-                                                  Arrays.asList(nulls));
+            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.KEEP_INPUT);
             return stream;
         }
+
+        protected RowStream assembleOnlyIfEmpty(OnlyIfEmpty onlyIfEmpty) {
+            RowStream stream = assembleStream(onlyIfEmpty.getInput());
+            stream.operator = API.limit_Default(stream.operator, 0, false, 1, false);
+            // Nulls here have no semantic meaning, but they're easier than trying to
+            // figure out an interesting non-null value for each
+            // AkType in the row. All that really matters is that the
+            // row is there.
+            Expression[] nulls = new Expression[stream.rowType.nFields()];
+            Arrays.fill(nulls, LiteralExpression.forNull());
+            stream.operator = API.ifEmpty_Default(stream.operator, stream.rowType, Arrays.asList(nulls), API.InputPreservationOption.DISCARD_INPUT);
+            return stream;
+        }
+
+        protected RowStream assembleUsingBloomFilter(UsingBloomFilter usingBloomFilter) {
+            BloomFilter bloomFilter = usingBloomFilter.getBloomFilter();
+            int pos = pushHashTable(bloomFilter);
+            RowStream lstream = assembleStream(usingBloomFilter.getLoader());
+            RowStream stream = assembleStream(usingBloomFilter.getInput());
+            stream.operator = API.using_BloomFilter(lstream.operator,
+                                                    lstream.rowType,
+                                                    bloomFilter.getEstimatedSize(),
+                                                    pos,
+                                                    stream.operator);
+            popHashTable(bloomFilter);
+            return stream;
+        }
+
+        protected RowStream assembleBloomFilterFilter(BloomFilterFilter bloomFilterFilter) {
+            BloomFilter bloomFilter = bloomFilterFilter.getBloomFilter();
+            int pos = getHashTablePosition(bloomFilter);
+            RowStream stream = assembleStream(bloomFilterFilter.getInput());
+            boundRows.set(pos, stream.fieldOffsets);
+            RowStream cstream = assembleStream(bloomFilterFilter.getCheck());
+            boundRows.set(pos, null);
+            List<Expression> fields = assembleExpressions(bloomFilterFilter.getLookupExpressions(),
+                                                          stream.fieldOffsets);
+            stream.operator = API.select_BloomFilter(stream.operator,
+                                                     cstream.operator,
+                                                     fields,
+                                                     pos);
+            return stream;
+        }        
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
@@ -817,25 +930,23 @@ public class OperatorAssembler extends BaseRule
             pushBoundRow(fieldOffsets);
             PlanNode subquery = sexpr.getSubquery().getQuery();
             ExpressionNode expression = null;
-            boolean distinct = false;
+            boolean fieldExpression = false;
             if ((sexpr instanceof AnyCondition) ||
                 (sexpr instanceof SubqueryValueExpression)) {
                 if (subquery instanceof ResultSet)
                     subquery = ((ResultSet)subquery).getInput();
-                if (subquery instanceof Distinct) {
-                    distinct = true;
-                }
-                else {
-                    if (!(subquery instanceof Project))
-                        throw new AkibanInternalException("subquery does not have Project");
+                if (subquery instanceof Project) {
                     Project project = (Project)subquery;
                     subquery = project.getInput();
                     expression = project.getFields().get(0);
                 }
+                else {
+                    fieldExpression = true;
+                }
             }
             RowStream stream = assembleQuery(subquery);
             Expression innerExpression = null;
-            if (distinct)
+            if (fieldExpression)
                 innerExpression = Expressions.field(stream.rowType, 0);
             else if (expression != null)
                 innerExpression = assembleExpression(expression, stream.fieldOffsets);
@@ -1092,6 +1203,7 @@ public class OperatorAssembler extends BaseRule
 
         protected int expressionBindingsOffset, loopBindingsOffset;
         protected Stack<ColumnExpressionToIndex> boundRows = new Stack<ColumnExpressionToIndex>(); // Needs to be List<>.
+        protected Map<BaseHashTable,Integer> hashTablePositions = new HashMap<BaseHashTable,Integer>();
 
         protected void computeBindingsOffsets() {
             expressionBindingsOffset = 0;
@@ -1120,6 +1232,22 @@ public class OperatorAssembler extends BaseRule
 
         protected int currentBindingPosition() {
             return loopBindingsOffset + boundRows.size() - 1;
+        }
+
+        protected int pushHashTable(BaseHashTable hashTable) {
+            int position = pushBoundRow(null);
+            hashTablePositions.put(hashTable, position);
+            return position;
+        }
+
+        protected void popHashTable(BaseHashTable hashTable) {
+            popBoundRow();
+            int position = hashTablePositions.remove(hashTable);
+            assert (position == boundRows.size());
+        }
+
+        protected int getHashTablePosition(BaseHashTable hashTable) {
+            return hashTablePositions.get(hashTable);
         }
 
         class ColumnBoundRows implements ColumnExpressionContext {
