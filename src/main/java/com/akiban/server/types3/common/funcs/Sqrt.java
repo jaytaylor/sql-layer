@@ -23,33 +23,40 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
+package com.akiban.server.types3.common.funcs;
+
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.common.funcs.Sqrt;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class MSqrt {
+public abstract class Sqrt extends TOverloadBase {
 
-    public final Sqrt INSTANCE;
-
-    public MSqrt(TClass inputType) {
-        INSTANCE = new Sqrt(inputType, MDouble.INSTANCE) {
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                // TODO: each of the different types will have a different method call
-                double value = inputs.get(0).getDouble();
-                if (value < 0) {
-                    output.putNull();
-                } else {
-                    output.putDouble(Math.sqrt(value));
-                }
-            }
-        };
+    private final TClass inputType; 
+    private final TClass resultType;
+    
+    protected Sqrt(TClass inputType, TClass resultType) {
+        this.inputType = inputType;
+        this.resultType = resultType;
     }
+      
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(inputType, 0);
+    }
+      
+    @Override
+    public String overloadName() {
+        return "SQRT";
+    }
+    
+    
+    @Override
+    public TOverloadResult resultType()
+    {
+        return TOverloadResult.fixed(resultType.instance());
+    }
+
 }

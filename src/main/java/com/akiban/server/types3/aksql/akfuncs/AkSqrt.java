@@ -26,40 +26,30 @@
 package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.common.funcs.Sqrt;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class AkSqrt extends TOverloadBase{
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(AkNumeric.DOUBLE, 0);
-    }
+public class AkSqrt {
 
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        double value = inputs.get(0).getDouble();
-        if (value < 0)
-            output.putNull();
-        else
-            output.putDouble(Math.sqrt(value));
-    }
+    public final Sqrt INSTANCE;
 
-    @Override
-    public String overloadName()
-    {
-        return "SQRT";
-    }
+    public AkSqrt(TClass inputType) {
+        INSTANCE = new Sqrt(inputType, MDouble.INSTANCE) {
 
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                // TODO: each of the different types will have a different method call
+                double value = inputs.get(0).getDouble();
+                if (value < 0) {
+                    output.putNull();
+                } else {
+                    output.putDouble(Math.sqrt(value));
+                }
+            }
+        };
     }
 }

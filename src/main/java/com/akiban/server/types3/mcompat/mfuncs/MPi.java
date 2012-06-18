@@ -27,37 +27,14 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.common.funcs.Pi;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class MPi extends TOverloadBase{
-    
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-    }
+public class MPi extends Pi {
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        output.putDouble(Math.PI);
-    }
-
-    @Override
-    public String overloadName()
-    {
-        return "PI";
-    }
-
-    @Override
-    public TOverloadResult resultType()
-    {
+    public TOverloadResult resultType() {
         return TOverloadResult.fixed(MDouble.INSTANCE.instance());
     }
 }

@@ -32,6 +32,8 @@ import java.math.RoundingMode;
 
 public class MBigDecimalWrapper implements BigDecimalWrapper {
 
+    private BigDecimal value;
+
     @Override
     public void reset() {
         value = BigDecimal.ZERO;
@@ -70,14 +72,18 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         return value.signum();
     }
     
-    private BigDecimal value;
-
     @Override
     public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
     {
         value = value.divide(((MBigDecimalWrapper)augend).value,
                 scale,
                 RoundingMode.HALF_UP);
+        return this;
+    }
+
+    @Override
+    public BigDecimalWrapper abs() {
+        value = value.abs();
         return this;
     }
 }
