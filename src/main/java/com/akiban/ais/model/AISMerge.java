@@ -93,7 +93,7 @@ public class AISMerge {
         LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
 
         final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
-        if(TableName.AKIBAN_INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName())) {
+        if(TableName.INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName())) {
             builder.setTableIdOffset(computeAISTableIdOffset(targetAIS));
         } else {
             builder.setTableIdOffset(computeTableIdOffset(targetAIS));
@@ -237,7 +237,7 @@ public class AISMerge {
     private void dumpGroupStructure(String label, AkibanInformationSchema ais)
     {
         for (Group group : ais.getGroups().values()) {
-            if (!group.getGroupTable().getRoot().getName().getSchemaName().equals("akiban_information_schema")) {
+            if (!group.getGroupTable().getRoot().getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
                 System.out.println(String.format("%s: Group %s", label, group.getName()));
                 System.out.println("    tables:");
                 for (UserTable userTable : ais.getUserTables().values()) {
@@ -267,13 +267,22 @@ public class AISMerge {
 
     private static int computeTableIdOffset(AkibanInformationSchema ais, int offset, boolean includeAIS) {
         for(UserTable table : ais.getUserTables().values()) {
-            if(table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) == includeAIS) {
+            if(table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
+                if(includeAIS) {
+                    offset = Math.max(offset, table.getTableId() + 1);
+                }
+            } else {
                 offset = Math.max(offset, table.getTableId() + 1);
             }
         }
         for (GroupTable table : ais.getGroupTables().values()) {
-            if (table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA) == includeAIS) {
+            if (table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
+                if(includeAIS) {
+                    offset = Math.max(offset, table.getTableId() + 1);
+                }
+            } else {
                 offset = Math.max(offset, table.getTableId() + 1);
+
             }
         }
         return offset;

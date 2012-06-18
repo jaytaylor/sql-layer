@@ -36,6 +36,8 @@ import java.util.TreeMap;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.server.TableStatus;
 import com.akiban.server.TableStatusCache;
 import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
@@ -257,12 +259,18 @@ public class RowDefCache {
         return ordinalMap;
     }
 
-    private RowDef createRowDefCommon(Table table) {
-        return new RowDef(table, tableStatusCache.getTableStatus(table.getTableId()));
+    private RowDef createRowDefCommon(Table table, MemoryTableFactory factory) {
+        final TableStatus status;
+        if(factory == null) {
+            status = tableStatusCache.getTableStatus(table.getTableId());
+        } else {
+            status = tableStatusCache.getMemoryTableStatus(table.getTableId(), factory);
+        }
+        return new RowDef(table, status);
     }
 
     private RowDef createUserTableRowDef(UserTable table) throws PersistitInterruptedException {
-        RowDef rowDef = createRowDefCommon(table);
+        RowDef rowDef = createRowDefCommon(table, table.getMemoryTableFactory());
         // parentRowDef
         int[] parentJoinFields;
         if (table.getParentJoin() != null) {
@@ -318,7 +326,7 @@ public class RowDefCache {
     }
 
     private RowDef createGroupTableRowDef(GroupTable table) {
-        RowDef rowDef = createRowDefCommon(table);
+        RowDef rowDef = createRowDefCommon(table, null);
         List<Integer> userTableRowDefIds = new ArrayList<Integer>();
         for (Column column : table.getColumnsIncludingInternal()) {
             Column userColumn = column.getUserColumn();

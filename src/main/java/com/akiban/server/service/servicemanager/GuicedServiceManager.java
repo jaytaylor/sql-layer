@@ -34,7 +34,6 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.jmx.JmxRegistryService;
-import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.servicemanager.configuration.BindingsConfigurationLoader;
 import com.akiban.server.service.servicemanager.configuration.DefaultServiceConfigurationHandler;
 import com.akiban.server.service.servicemanager.configuration.ServiceBinding;
@@ -97,11 +96,6 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     @Override
     public TreeService getTreeService() {
         return getServiceByClass(TreeService.class);
-    }
-
-    @Override
-    public MemcacheService getMemcacheService() {
-        return getServiceByClass(MemcacheService.class);
     }
 
     @Override

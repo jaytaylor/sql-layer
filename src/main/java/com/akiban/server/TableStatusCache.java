@@ -26,6 +26,7 @@
 
 package com.akiban.server;
 
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.rowdata.RowDef;
 import com.persistit.exception.PersistitInterruptedException;
 
@@ -91,11 +92,14 @@ public interface TableStatusCache {
     TableStatus getTableStatus(int tableID);
 
     /**
-     * Load the saved state of all TableStatuses associated with the given volume.
-     * @param volumeName Name of the volume to load.
-     * @throws Exception For any error encountered during the load.
+     * Retrieve the, read-only, view of the table status for a given memory
+     * table. This method will instantiate a new TableStatus if one does not
+     * exist.
+     * @param tableID ID of the table.
+     * @param factory Factory providing rowCount.
+     * @return Associated TableStatus;
      */
-    void loadAllInVolume(String volumeName) throws Exception;
+    TableStatus getMemoryTableStatus(int tableID, MemoryTableFactory factory);
 
     /**
      * Clean up any AIS associated state stored by this cache or any of its 

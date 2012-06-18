@@ -32,27 +32,26 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.statistics.IndexStatistics;
 
+import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+
 public interface MemoryTableFactory {
-    // Used by MemoryStore to hold this factory
-    public abstract TableName getName();
-    public abstract UserTable getTableDefinition();
+    public TableName getName();
+    public UserTable getTableDefinition();
     
-    // Used by (Memory)StoreAdapter to get cursors 
-    public abstract GroupCursor getGroupCursor(Session session);
-    public abstract Cursor getIndexCursor (Index index, Session session, 
-            IndexKeyRange keyRange,
-            API.Ordering ordering,
-            IndexScanSelector scanSelector);
+    // Used by MemoryAdapter to get cursors
+    public GroupScan getGroupScan(MemoryAdapter adapter);
+
+    public Cursor getIndexCursor(Index index, Session session,  IndexKeyRange keyRange,
+                                 API.Ordering ordering, IndexScanSelector scanSelector);
     
     // Used by IndexStatistics to compute index statistics
-    public abstract long rowCount();
+    public long rowCount();
     
     // This should return null for all indexes
     // TODO: describe index implementation on memory tables. 
-    public abstract IndexStatistics computeIndexStatistics(Session session, Index index);
+    public IndexStatistics computeIndexStatistics(Session session, Index index);
 }
