@@ -24,32 +24,16 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model.aisb2;
+package com.akiban.server.error;
 
 import com.akiban.ais.model.TableName;
 
-public interface NewAISBuilder extends NewAISProvider {
-    /**
-     * Sets the default schema
-     * @param schema the new default schema name; like SQL's {@code USING}.
-     * @return {@code this}
-     */
-    NewAISBuilder defaultSchema(String schema);
+public class GroupMultipleMemoryTables extends InvalidOperationException {
+    
+    public GroupMultipleMemoryTables (TableName parentTable, TableName childTable) {
+        super (ErrorCode.GROUP_MULTIPLE_MEM_TABLES, 
+                parentTable.getSchemaName(), parentTable.getTableName(),
+                childTable.getSchemaName(), childTable.getTableName());
+    }
 
-    /**
-     * Starts creating a new table using the default schema.
-     * @param table the table's name
-     * @return the new table's builder
-     */
-    NewUserTableBuilder userTable(String table);
-
-    /**
-     * Starts creating a new table using the given schema
-     * @param schema the new table's schema
-     * @param table the new table's table name
-     * @return the new table's builder
-     */
-    NewUserTableBuilder userTable(String schema, String table);
-
-    NewUserTableBuilder userTable(TableName tableName);
 }

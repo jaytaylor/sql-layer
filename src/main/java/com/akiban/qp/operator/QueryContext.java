@@ -26,7 +26,7 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.server.service.session.Session;
@@ -126,8 +126,7 @@ public interface QueryContext
      * Get the store associated with this query.
      */
     public StoreAdapter getStore();
-    public StoreAdapter getStore(final TableName table);
-
+    public StoreAdapter getStore(UserTable table);
     /**
      * Get the session associated with this context.
      */

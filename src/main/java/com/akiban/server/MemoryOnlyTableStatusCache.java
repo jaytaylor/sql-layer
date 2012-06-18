@@ -26,6 +26,7 @@
 
 package com.akiban.server;
 
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
 import com.akiban.server.rowdata.RowDef;
 
 import java.util.HashMap;
@@ -76,12 +77,12 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
 
     @Override
     public synchronized TableStatus getTableStatus(int tableID) {
-        return getInternalTableStatus(tableID);
+        return getInternalTableStatus(tableID, null);
     }
 
     @Override
-    public void loadAllInVolume(String volumeName) throws Exception {
-        // Nothing persisted
+    public TableStatus getMemoryTableStatus(int tableID, MemoryTableFactory factory) {
+        return getInternalTableStatus(tableID, factory);
     }
 
     @Override
@@ -91,24 +92,31 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
         }
     }
 
-
     private InternalTableStatus getInternalTableStatus(int tableID) {
+        return getInternalTableStatus(tableID, null);
+    }
+
+    private InternalTableStatus getInternalTableStatus(int tableID, MemoryTableFactory factory) {
         InternalTableStatus ts = tableStatusMap.get(tableID);
         if(ts == null) {
-            ts = new InternalTableStatus();
+            ts = new InternalTableStatus(factory);
             tableStatusMap.put(tableID, ts);
         }
         return ts;
     }
 
     private static class InternalTableStatus implements TableStatus {
+        private final MemoryTableFactory factory;
         private long autoIncrement = 0;
         private int ordinal = 0;
         private long rowCount = 0;
         private long uniqueID = 0;
         private RowDef rowDef = null;
 
-                
+        public InternalTableStatus(MemoryTableFactory factory) {
+            this.factory = factory;
+        }
+
         @Override
         public synchronized long getAutoIncrement() {
             return autoIncrement;
@@ -121,17 +129,23 @@ public class MemoryOnlyTableStatusCache implements TableStatusCache {
 
         @Override
         public synchronized long getRowCount() {
+            if(factory != null) {
+                return factory.rowCount();
+            }
             return rowCount;
         }
 
         @Override
         public synchronized void setRowCount(long rowCount) {
+            if(factory != null) {
+                throw new IllegalArgumentException("Cannot set row count for memory table");
+            }
             this.rowCount = rowCount;
         }
 
         @Override
         public synchronized long getApproximateRowCount() {
-            return rowCount;
+            return getRowCount();
         }
 
         @Override

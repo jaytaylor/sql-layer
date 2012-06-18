@@ -24,32 +24,31 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model.aisb2;
+package com.akiban.ais.model.validation;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Join;
+import com.akiban.server.error.GroupMultipleMemoryTables;
 
-public interface NewAISBuilder extends NewAISProvider {
-    /**
-     * Sets the default schema
-     * @param schema the new default schema name; like SQL's {@code USING}.
-     * @return {@code this}
-     */
-    NewAISBuilder defaultSchema(String schema);
+/**
+ * Validate the current assumption of groups with a memory table contain only one 
+ * table, that is, there is no muti-table groups with the memory tables. 
+ * (The MemoryTablesNotMixed validation ensures Memory tables are not mixed with other 
+ *  types of tables). 
+ *  TODO: It would be nice to remove this limitation of the current system. 
+ * @author tjoneslo
+ *
+ */
+public class MemoryTableSingleTableGroup implements AISValidation {
 
-    /**
-     * Starts creating a new table using the default schema.
-     * @param table the table's name
-     * @return the new table's builder
-     */
-    NewUserTableBuilder userTable(String table);
+    @Override
+    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
+        for (Join join : ais.getJoins().values()) {
+            if (join.getChild().hasMemoryTableFactory()) {
+                output.reportFailure(new AISValidationFailure (
+                        new GroupMultipleMemoryTables(join.getParent().getName(), join.getChild().getName())));
+            }
+        }
+    }
 
-    /**
-     * Starts creating a new table using the given schema
-     * @param schema the new table's schema
-     * @param table the new table's table name
-     * @return the new table's builder
-     */
-    NewUserTableBuilder userTable(String schema, String table);
-
-    NewUserTableBuilder userTable(TableName tableName);
 }

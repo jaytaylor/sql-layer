@@ -24,11 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.operator.memoryadapter;
+package com.akiban.server.service.is;
 
-import com.akiban.ais.model.TableName;
-
-public interface MemoryStore {
-    public void registerTable (TableName name, MemoryTableFactory factory);
-    public MemoryTableFactory getFactory (TableName name);
+public interface BasicInfoSchemaTablesService {
 }
