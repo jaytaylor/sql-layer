@@ -32,6 +32,8 @@ import com.akiban.sql.types.TypeId;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.expression.std.InExpression;
 import com.akiban.server.expression.std.IntervalCastExpression;
 import static com.akiban.server.expression.std.Expressions.*;
@@ -114,7 +116,7 @@ public class ExpressionAssembler
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression) {
             BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
-            return assembleFunction(bexpr.getOperation().getFunctionName(),
+            return assembleFunction(bexpr, bexpr.getOperation().getFunctionName(),
                                     Arrays.<ExpressionNode>asList(bexpr.getLeft(), bexpr.getRight()), 
                                     columnContext, subqueryAssembler);
         }
@@ -131,13 +133,13 @@ public class ExpressionAssembler
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;
-            return assembleFunction(funcNode.getFunction(),
+            return assembleFunction(funcNode, funcNode.getFunction(),
                                     funcNode.getOperands(), 
                                     columnContext, subqueryAssembler);
         }
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
-            return assembleFunction("if",
+            return assembleFunction(ifElse, "if",
                                     Arrays.asList(ifElse.getTestCondition(), 
                                                   ifElse.getThenExpression(), 
                                                   ifElse.getElseExpression()), 
@@ -160,14 +162,20 @@ public class ExpressionAssembler
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
 
-    public Expression assembleFunction(String functionName,
-                                       List<ExpressionNode> arguments,
+    public Expression assembleFunction(ExpressionNode expressionNode,
+                                       String functionName,
+                                       List<ExpressionNode> argumentNodes,
                                        ColumnExpressionContext columnContext,
                                        SubqueryOperatorAssembler subqueryAssembler) {
-        return functionsRegistry
-            .composer(functionName)
-            .compose(assembleExpressions(arguments, columnContext, subqueryAssembler), 
-                     null);
+        List<Expression> arguments = 
+            assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
+        int nargs = arguments.size();
+        List<ExpressionType> types = new ArrayList<ExpressionType>(nargs + 1);
+        for (int i = 0; i < nargs; i++) {
+            types.add(ExpressionTypes.UNSUPPORTED);
+        }
+        types.add(ExpressionTypes.UNSUPPORTED);
+        return functionsRegistry.composer(functionName).compose(arguments, types);
     }
                                        
     public Expression assembleColumnExpression(ColumnExpression column,

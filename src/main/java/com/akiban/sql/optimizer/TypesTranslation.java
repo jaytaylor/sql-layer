@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.optimizer.plan;
+package com.akiban.sql.optimizer;
 
 import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
