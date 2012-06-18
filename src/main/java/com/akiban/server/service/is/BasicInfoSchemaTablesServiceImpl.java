@@ -58,21 +58,21 @@ import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.types.AkType;
 import com.google.inject.Inject;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Iterator;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
 public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
-    static final TableName SCHEMATA = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "schemata");
-    static final TableName TABLES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "tables");
-    static final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
-    static final TableName TABLE_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "table_constraints");
-    static final TableName REFERENTIAL_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "referential_constraints");
-    static final TableName GROUPING_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "grouping_constraints");
-    static final TableName KEY_COLUMN_USAGE = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "key_column_usage");
-    static final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
-    static final TableName INDEX_COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_columns");
+    private static final String SCHEMA_NAME = TableName.AKIBAN_INFORMATION_SCHEMA;
+    static final TableName SCHEMATA = new TableName(SCHEMA_NAME, "schemata");
+    static final TableName TABLES = new TableName(SCHEMA_NAME, "tables");
+    static final TableName COLUMNS = new TableName(SCHEMA_NAME, "columns");
+    static final TableName TABLE_CONSTRAINTS = new TableName(SCHEMA_NAME, "table_constraints");
+    static final TableName REFERENTIAL_CONSTRAINTS = new TableName(SCHEMA_NAME, "referential_constraints");
+    static final TableName GROUPING_CONSTRAINTS = new TableName(SCHEMA_NAME, "grouping_constraints");
+    static final TableName KEY_COLUMN_USAGE = new TableName(SCHEMA_NAME, "key_column_usage");
+    static final TableName INDEXES = new TableName(SCHEMA_NAME, "indexes");
+    static final TableName INDEX_COLUMNS = new TableName(SCHEMA_NAME, "index_columns");
 
     private final AisHolder aisHolder;
     private final SchemaManager schemaManager;
@@ -244,6 +244,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      table.getName().getSchemaName(),
                                      table.getName().getTableName(),
                                      tableType,
+                                     table.getTableId(),
                                      null, // charset schema
                                      table.getCharsetAndCollation().charset(),
                                      null, // collation schema
@@ -605,9 +606,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                     return null;
                 }
                 final String indexType;
+                String constraintName = null;
                 if(index.isPrimaryKey()) {
-                    indexType = Index.PRIMARY_KEY_CONSTRAINT;
+                    indexType = constraintName = Index.PRIMARY_KEY_CONSTRAINT;
                 } else if(index.isUnique()) {
+                    constraintName = index.getIndexName().getName();
                     indexType = Index.UNIQUE_KEY_CONSTRAINT;
                 } else {
                     indexType = "INDEX";
@@ -615,8 +618,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 return new ValuesRow(rowType,
                                      indexIt.getTable().getName().getSchemaName(),
                                      indexIt.getTable().getName().getTableName(),
-                                     null, // constraint_name
                                      index.getIndexName().getName(),
+                                     constraintName,
+                                     index.getIndexId(),
                                      indexType,
                                      index.isUnique() ? "YES" : "NO",
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
@@ -806,6 +810,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("table_schema", 128, false)
                 .colString("table_name", 128, false)
                 .colString("table_type", 128, false)
+                .colBigInt("table_id", false)
                 .colString("character_set_schema", 128, true)
                 .colString("character_set_name", 128, true)
                 .colString("collation_schema", 128, true)
@@ -866,15 +871,16 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             .colString("table_name", 128, true)
             .colString("constraint_name", 128, true)
             .colString("column_name", 128, true)
-            .colLong("ordinal_position", false)
-            .colLong("position_in_unique_constraint", true);
+            .colBigInt("ordinal_position", false)
+            .colBigInt("position_in_unique_constraint", true);
         //primary key  (schema_name, table_name, constraint_name, column_name),
         //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
         builder.userTable(INDEXES)
                 .colString("schema_name", 128, false)
                 .colString("table_name", 128, false)
-                .colString("constraint_name", 128, true)
                 .colString("index_name", 128, false)
+                .colString("constraint_name", 128, true)
+                .colBigInt("index_id", false)
                 .colString("index_type", 128, false)
                 .colString("is_unique", 3, false)
                 .colString("join_type", 32, true);

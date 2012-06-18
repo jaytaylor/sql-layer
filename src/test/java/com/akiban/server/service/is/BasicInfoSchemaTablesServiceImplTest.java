@@ -236,10 +236,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "test", "bar", "TABLE", null, VARCHAR, null, VARCHAR, LONG },
-                { "test", "bar2", "TABLE", null, VARCHAR, null, VARCHAR, LONG },
-                { "test", "foo", "TABLE", null, VARCHAR, null, VARCHAR, LONG },
-                { "zap", "pow", "TABLE", null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "bar", "TABLE", LONG, null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG, null, VARCHAR, null, VARCHAR, LONG },
+                { "test", "foo", "TABLE", LONG, null, VARCHAR, null, VARCHAR, LONG },
+                { "zap", "pow", "TABLE", LONG, null, VARCHAR, null, VARCHAR, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -260,7 +260,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 64, skipped);
+        assertEquals("Skipped I_S columns", 66, skipped);
     }
 
     @Test
@@ -310,9 +310,9 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexesScan() {
         final Object[][] expected = {
-                { "test", "bar", null, "PRIMARY", "PRIMARY", true, null, LONG },
-                { "test", "bar2", null, "foo_name", "INDEX", false, "RIGHT", LONG },
-                { "zap", "pow", null, "name_value", "UNIQUE", true, null, LONG },
+                { "test", "bar", "PRIMARY", "PRIMARY", LONG, "PRIMARY", true, null, LONG },
+                { "test", "bar2", "foo_name", null, LONG, "INDEX", false, "RIGHT", LONG },
+                { "zap", "pow", "name_value", "name_value", LONG, "UNIQUE", true, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
