@@ -23,15 +23,33 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
 package com.akiban.server.types3.common;
 
 public class DateExtractor {
+
+    // consts
+    private static final long DATETIME_DATE_SCALE = 1000000L;
+    private static final long DATETIME_YEAR_SCALE = 10000L * DATETIME_DATE_SCALE;
+    private static final long DATETIME_MONTH_SCALE = 100L * DATETIME_DATE_SCALE;
+    private static final long DATETIME_DAY_SCALE = 1L * DATETIME_DATE_SCALE;
+    private static final long DATETIME_HOUR_SCALE = 10000L;
+    private static final long DATETIME_MIN_SCALE = 100L;
+    private static final long DATETIME_SEC_SCALE = 1L;
     
     public static int[] getDate(int date) {
         int year = date / 512;
         int month = (date / 32) % 16;
         int day = date % 32;
         return new int[]{year, month, day};
+    }
+
+    public static long[] getDatetime(long value) {
+        final long year = (value / DATETIME_YEAR_SCALE);
+        final long month = (value / DATETIME_MONTH_SCALE) % 100;
+        final long day = (value / DATETIME_DAY_SCALE) % 100;
+        long hour = value / DATETIME_HOUR_SCALE % 100;
+        long minute = value / DATETIME_MIN_SCALE % 100;
+        long second = value / DATETIME_SEC_SCALE % 100;
+        return new long[]{year, month, day, hour, minute, second};
     }
 }
