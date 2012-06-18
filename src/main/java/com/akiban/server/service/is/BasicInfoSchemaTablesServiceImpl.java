@@ -64,6 +64,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static final TableName SCHEMATA = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "schemata");
     static final TableName TABLES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "tables");
     static final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
+    static final TableName TABLE_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "table_constraints");
     static final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_columns");
 
@@ -328,6 +329,92 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
     }
 
+    private class TableConstraintsFactory extends BasicFactoryBase {
+        public TableConstraintsFactory(UserTable sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            long count = 0;
+            for(UserTable table : aisHolder.getAis().getUserTables().values()) {
+                for(Index index : table.getIndexes()) {
+                    // Includes PRIMARY
+                    if(index.isUnique()) {
+                        ++count;
+                    }
+                }
+                if(table.getParentJoin() != null) {
+                    ++count;
+                }
+            }
+            return count;
+        }
+
+        private class Scan implements GroupScan {
+            final RowType rowType;
+            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            Iterator<? extends Index> indexIt;
+            UserTable curTable;
+            String name;
+            String type;
+            int rowCounter;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            private boolean advance() {
+                while(indexIt != null || tableIt.hasNext()) {
+                    if(curTable == null) {
+                        curTable = tableIt.next();
+                        if(curTable.getParentJoin() != null) {
+                            name = curTable.getParentJoin().getName(); // TODO: This is less than desirable
+                            type = "GROUPING";
+                            return true;
+                        }
+                    }
+                    if(indexIt == null) {
+                        indexIt = curTable.getIndexes().iterator();
+                    }
+                    while(indexIt.hasNext()) {
+                        Index index = indexIt.next();
+                        if(index.isUnique()) {
+                            name = index.getIndexName().getName();
+                            type = index.isPrimaryKey() ? "PRIMARY KEY" : index.getConstraint();
+                            return true;
+                        }
+                    }
+                    indexIt = null;
+                    curTable = null;
+                }
+                return false;
+            }
+
+            @Override
+            public Row next() {
+                if(!advance()) {
+                    return null;
+                }
+                return new ValuesRow(rowType,
+                                     curTable.getName().getSchemaName(),
+                                     curTable.getName().getTableName(),
+                                     name,
+                                     type,
+                                     ++rowCounter /* hidden pk */);
+            }
+
+            @Override
+            public void close() {
+            }
+        }
+    }
+
     private class IndexesFactory extends BasicFactoryBase {
         public IndexesFactory(UserTable sourceTable) {
             super(sourceTable);
@@ -399,11 +486,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         @Override
         public long rowCount() {
+            IndexIteration indexIt = new IndexIteration(aisHolder.getAis().getUserTables().values().iterator());
             long count = 0;
-            for(UserTable table : aisHolder.getAis().getUserTables().values()) {
-                for(Index index : table.getIndexes()) {
-                    count += index.getKeyColumns().size();
-                }
+            while(indexIt.next() != null) {
+                ++count;
             }
             return count;
         }
@@ -532,6 +618,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         //foreign key (type) references TYPES (type_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
+        builder.userTable(TABLE_CONSTRAINTS)
+                .colString("schema_name", 128, false)
+                .colString("table_name", 128, false)
+                .colString("constraint_name", 128, false)
+                .colString("constraint_type", 32, false);
+        //primary key (schema_name, table_name, constraint_name)
+        //foreign key (schema_name, table_name) references TABLES
         builder.userTable(INDEXES)
                 .colString("schema_name", 128, false)
                 .colString("table_name", 128, false)
@@ -572,11 +665,14 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         // COLUMNS
         UserTable columns = ais.getUserTable(COLUMNS);
         columns.setMemoryTableFactory(new ColumnsFactory(columns));
+        // TABLE_CONSTRAINTS
+        UserTable tableConstraints = ais.getUserTable(TABLE_CONSTRAINTS);
+        tableConstraints.setMemoryTableFactory(new TableConstraintsFactory(tableConstraints));
         // INDEXES
         UserTable indexes = ais.getUserTable(INDEXES);
         indexes.setMemoryTableFactory(new IndexesFactory(indexes));
         // INDEX_COLUMNS
-        UserTable index_columns = ais.getUserTable(INDEX_COLUMNS);
-        index_columns.setMemoryTableFactory(new IndexColumnsFactory(index_columns));
+        UserTable indexColumns = ais.getUserTable(INDEX_COLUMNS);
+        indexColumns.setMemoryTableFactory(new IndexColumnsFactory(indexColumns));
     }
 }
