@@ -38,6 +38,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.encoding.EncoderFactory;
+import com.akiban.server.error.JoinParentNoExplicitPK;
 import com.akiban.server.error.UnsupportedIndexPrefixException;
 import com.akiban.server.error.UnsupportedIndexSizeException;
 
@@ -126,8 +127,8 @@ class IndexSizes implements AISValidation {
         long hkeySize = 0;
         HKey hkey; 
         try {
-        hkey = table.hKey();
-        } catch (NullPointerException ex) {
+            hkey = table.hKey();
+        } catch (JoinParentNoExplicitPK ex) {
             // Bug 931258 : 
             // The HKey Calculations on the join assumes the parent 
             // has an explicit Primary Key. The NPE results when the parent table 

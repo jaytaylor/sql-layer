@@ -42,47 +42,43 @@ class JoinToParentPK implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Join join : ais.getJoins().values()) {
-
-            if (join.getParent().getPrimaryKey() == null) 
-            { 
-                output.reportFailure(new AISValidationFailure (
-                        new JoinParentNoExplicitPK(join.getParent().getName())));
+            TableIndex parentPK; 
+            try {
+                parentPK = join.getParent().getPrimaryKey().getIndex();
+            } catch (JoinParentNoExplicitPK ex) {
+                output.reportFailure(new AISValidationFailure (ex));
                 continue;
             }
-            TableIndex parentPK = join.getParent().getPrimaryKey().getIndex();
-            
-            // bug 931258 : getJoinColumns() asserts if the child specifies more
-            // columns than are in the parent PK. Catch and report as validation failure. 
-            try { 
-                join.getJoinColumns();
+            try {
+                if (parentPK.getKeyColumns().size() != join.getJoinColumns().size()) {
+                    output.reportFailure(new AISValidationFailure(
+                            new JoinColumnMismatchException (join.getJoinColumns().size(),
+                                    join.getChild().getName(),
+                                    join.getParent().getName(), 
+                                    parentPK.getKeyColumns().size())));
+                            
+                    return;
+                }
+                Iterator<JoinColumn>  joinColumns = join.getJoinColumns().iterator();            
+                for (IndexColumn parentPKColumn : parentPK.getKeyColumns()) {
+                    JoinColumn joinColumn = joinColumns.next();
+                    if (parentPKColumn.getColumn() != joinColumn.getParent()) {
+                        output.reportFailure(new AISValidationFailure (
+                                new JoinToWrongColumnsException (
+                                        join.getChild().getName(), 
+                                        joinColumn.getParent().getName(), 
+                                        parentPK.getTable().getName(), parentPKColumn.getColumn().getName())));
+                    }
+                }
             } catch (AssertionError ex) {
+                // bug 931258 : getJoinColumns() asserts if the child specifies more
+                // columns than are in the parent PK. Catch and report as validation failure. 
                 output.reportFailure(new AISValidationFailure(
                         new JoinColumnMismatchException (parentPK.getKeyColumns().size()+1,
                                 join.getChild().getName(),
                                 join.getParent().getName(), 
                                 parentPK.getKeyColumns().size())));
                 return;
-            }
-            
-            if (parentPK.getKeyColumns().size() != join.getJoinColumns().size()) {
-                output.reportFailure(new AISValidationFailure(
-                        new JoinColumnMismatchException (join.getJoinColumns().size(),
-                                join.getChild().getName(),
-                                join.getParent().getName(), 
-                                parentPK.getKeyColumns().size())));
-                        
-                return;
-            }
-            Iterator<JoinColumn>  joinColumns = join.getJoinColumns().iterator();            
-            for (IndexColumn parentPKColumn : parentPK.getKeyColumns()) {
-                JoinColumn joinColumn = joinColumns.next();
-                if (parentPKColumn.getColumn() != joinColumn.getParent()) {
-                    output.reportFailure(new AISValidationFailure (
-                            new JoinToWrongColumnsException (
-                                    join.getChild().getName(), 
-                                    joinColumn.getParent().getName(), 
-                                    parentPK.getTable().getName(), parentPKColumn.getColumn().getName())));
-                }
             }
         }
     }
