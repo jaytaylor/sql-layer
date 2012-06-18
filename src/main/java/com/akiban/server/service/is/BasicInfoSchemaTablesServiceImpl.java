@@ -27,6 +27,7 @@
 package com.akiban.server.service.is;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -74,6 +75,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static final TableName INDEXES = new TableName(SCHEMA_NAME, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(SCHEMA_NAME, "index_columns");
 
+    private static final String CHARSET_SCHEMA = SCHEMA_NAME;
+    private static final String COLLATION_SCHEMA = SCHEMA_NAME;
+
     private final AisHolder aisHolder;
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
@@ -103,10 +107,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         // SCHEMAS
         UserTable schemata = ais.getUserTable(SCHEMATA);
-        schemaManager.registerMemoryInformationSchemaTable(session, schemata, new SchemaFactory(schemata));
+        schemaManager.registerMemoryInformationSchemaTable(session, schemata, new SchemataFactory(schemata));
         // TABLES
         UserTable tables = ais.getUserTable(TABLES);
-        schemaManager.registerMemoryInformationSchemaTable(session, tables, new TableFactory(tables));
+        schemaManager.registerMemoryInformationSchemaTable(session, tables, new TablesFactory(tables));
         // COLUMNS
         UserTable columns = ais.getUserTable(COLUMNS);
         schemaManager.registerMemoryInformationSchemaTable(session, columns, new ColumnsFactory(columns));
@@ -164,8 +168,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
     }
 
-    private class SchemaFactory extends BasicFactoryBase {
-        public SchemaFactory(UserTable sourceTable) {
+    private class SchemataFactory extends BasicFactoryBase {
+        public SchemataFactory(UserTable sourceTable) {
             super(sourceTable);
         }
 
@@ -209,8 +213,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
     }
 
-    private class TableFactory extends BasicFactoryBase {
-        public TableFactory(UserTable sourceTable) {
+    private class TablesFactory extends BasicFactoryBase {
+        public TablesFactory(UserTable sourceTable) {
             super(sourceTable);
         }
 
@@ -245,9 +249,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      table.getName().getTableName(),
                                      tableType,
                                      table.getTableId(),
-                                     null, // charset schema
+                                     CHARSET_SCHEMA,
                                      table.getCharsetAndCollation().charset(),
-                                     null, // collation schema
+                                     COLLATION_SCHEMA,
                                      table.getCharsetAndCollation().collation(),
                                      ++rowCounter /* hidden pk */);
             }
@@ -311,6 +315,12 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                     length = column.getTypeParameter1();
                 }
 
+                // TODO: This should come from type attributes when new types go in
+                CharsetAndCollation charAndColl = null;
+                if(column.getType().akType() == AkType.VARCHAR || column.getType().akType() == AkType.TEXT) {
+                    charAndColl = column.getCharsetAndCollation();
+                }
+
                 return new ValuesRow(rowType,
                                      column.getTable().getName().getSchemaName(),
                                      column.getTable().getName().getTableName(),
@@ -323,10 +333,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      precision,
                                      column.getPrefixSize(),
                                      column.getInitialAutoIncrementValue(),
-                                     null, // charset schema
-                                     column.getCharsetAndCollation().charset(),
-                                     null, // collation schema
-                                     column.getCharsetAndCollation().collation(),
+                                     charAndColl != null ? CHARSET_SCHEMA : null,
+                                     charAndColl != null ? charAndColl.charset() : null,
+                                     charAndColl != null ? COLLATION_SCHEMA : null,
+                                     charAndColl != null ? charAndColl.collation() : null,
                                      ++rowCounter /* hidden pk */);
             }
 
@@ -918,8 +928,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     void attachFactories(AkibanInformationSchema ais) {
-        attach(ais, SCHEMATA, SchemaFactory.class);
-        attach(ais, TABLES, TableFactory.class);
+        attach(ais, SCHEMATA, SchemataFactory.class);
+        attach(ais, TABLES, TablesFactory.class);
         attach(ais, COLUMNS, ColumnsFactory.class);
         attach(ais, TABLE_CONSTRAINTS, TableConstraintsFactory.class);
         attach(ais, REFERENTIAL_CONSTRAINTS, ReferentialConstraintsFactory.class);
