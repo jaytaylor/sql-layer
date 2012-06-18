@@ -321,6 +321,8 @@ public enum ErrorCode {
     DUPLICATE_INDEXID       ("50", "01P", Importance.DEBUG, DuplicateIndexIdException.class),
     TABLE_TREE_NAME_IS_NULL ("50", "01Q", Importance.DEBUG, TableTreeNameIsNullException.class),
     INDEX_TREE_NAME_IS_NULL ("50", "01R", Importance.DEBUG, IndexTreeNameIsNullException.class),
+    GROUP_MIXED_TABLE_TYPES ("50", "01S", Importance.DEBUG, GroupMixedTableTypes.class),
+    GROUP_MULTIPLE_MEM_TABLES ("50", "01T", Importance.DEBUG, GroupMultipleMemoryTables.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
@@ -347,6 +349,7 @@ public enum ErrorCode {
     INVALID_PORT            ("52", "00F", Importance.ERROR, InvalidPortException.class), 
     INVALID_VOLUME          ("52", "010", Importance.ERROR, InvalidVolumeException.class),
     INVALID_OPTIMIZER_PROPERTY ("52", "011", Importance.ERROR, InvalidOptimizerPropertyException.class),
+    IS_TABLE_VERSION_MISMATCH ("52", "012", Importance.ERROR, ISTableVersionMismatchException.class),
 
     // Class 53 - Internal error 
     INTERNAL_ERROR          ("53", "000", Importance.ERROR, null),

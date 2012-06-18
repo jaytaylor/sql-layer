@@ -9,3 +9,4 @@
     - com.akiban.sql.pg.PostgresService                  # Akiban SQL
     - com.akiban.server.service.log4jconfig.Log4JConfigurationService
     - com.akiban.server.service.instrumentation.InstrumentationService
+    - com.akiban.server.service.is.BasicInfoSchemaTablesService

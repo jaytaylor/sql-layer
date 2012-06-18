@@ -40,9 +40,6 @@ import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
 import com.akiban.sql.types.DataTypeDescriptor;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-
 import com.akiban.server.error.SQLParseException;
 import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.service.EventTypes;

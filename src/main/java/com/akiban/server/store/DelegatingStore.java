@@ -123,6 +123,7 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         delegate.removeSavedRowCollector(session, rc);
     }
 
+    @SuppressWarnings("deprecation")
     public RowCollector newRowCollector(Session session, int rowDefId, int indexId, int scanFlags, RowData start, RowData end, byte[] columnBitMap, ScanLimit scanLimit) {
         return delegate.newRowCollector(session, rowDefId, indexId, scanFlags, start, end, columnBitMap, scanLimit);
     }

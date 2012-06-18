@@ -31,6 +31,7 @@ import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.GroupCursor;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.util.ShareHolder;
@@ -105,6 +106,12 @@ class PersistitGroupCursor implements GroupCursor
         } catch (InvalidOperationException e) {
             throw new PersistitAdapterException(e);
         }
+    }
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override

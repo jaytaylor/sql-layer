@@ -158,7 +158,7 @@ class Select_HKeyOrdered extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 input.open();
-                this.evaluation.of(context);
+                evaluation.of(context);
                 idle = false;
             } finally {
                 TAP_OPEN.out();
@@ -207,17 +207,21 @@ class Select_HKeyOrdered extends Operator
         public void close()
         {
             CursorLifecycle.checkIdleOrActive(this);
-            selectedRow.release();
-            input.close();
-            idle = true;
+            if (!isIdle()) {
+                selectedRow.release();
+                input.close();
+                idle = true;
+            }
         }
 
         @Override
         public void destroy()
         {
-            close();
-            input.destroy();
-            evaluation.destroy();
+            if (!isDestroyed()) {
+                close();
+                input.destroy();
+                evaluation.destroy();
+            }
         }
 
         @Override

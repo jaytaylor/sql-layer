@@ -26,14 +26,8 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.AggregatedRowType;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.error.InconvertibleTypesException;
@@ -43,7 +37,6 @@ import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.util.ValueHolder;
-import com.akiban.util.Strings;
 import com.akiban.util.WrappingByteSource;
 import org.junit.Test;
 
@@ -54,8 +47,6 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
-
-import static org.junit.Assert.assertEquals;
 
 public final class Aggregate_PartialTest {
 

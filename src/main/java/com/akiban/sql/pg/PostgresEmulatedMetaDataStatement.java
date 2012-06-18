@@ -26,7 +26,6 @@
 
 package com.akiban.sql.pg;
 
-import com.akiban.server.error.UnsupportedParametersException;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.server.ServerValueEncoder;
 

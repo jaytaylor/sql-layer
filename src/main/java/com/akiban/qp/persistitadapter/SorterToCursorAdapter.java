@@ -33,6 +33,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.sort.Sorter;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.exception.PersistitException;
 
@@ -60,6 +61,12 @@ class SorterToCursorAdapter implements Cursor
     {
         CursorLifecycle.checkIdleOrActive(this);
         return cursor == null ? null : cursor.next();
+    }
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        throw new UnsupportedOperationException(getClass().getName());
     }
 
     @Override

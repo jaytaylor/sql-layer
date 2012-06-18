@@ -28,7 +28,6 @@ package com.akiban.server.types.util;
 
 import com.akiban.qp.operator.Cursor;
 import com.akiban.server.Quote;
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;

@@ -8,5 +8,5 @@ SelectQuery@449fea8a
               TableSource@2a48f675(customers - TableGroup@6ef2ea42(customers))
               TableSource@1c2c9103(addresses - TableGroupJoin@5e628704(Join(test/customers/cid/test/test.addresses/cid: test.addresses -> test.customers, group(customers))))
           Flatten@5ad75c47(customers INNER orders)
-            BranchLookupNew@4a504ec1(customers -> orders)
+            BranchLookup@4a504ec1(customers -> orders)
               TableSource@31e46a68(orders - TableGroupJoin@df1cbf6(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))

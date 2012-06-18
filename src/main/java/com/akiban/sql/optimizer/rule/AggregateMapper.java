@@ -226,8 +226,7 @@ public class AggregateMapper extends BaseRule
         }
 
         protected ExpressionNode addKey(ExpressionNode expr) {
-            int position = source.getGroupBy().size();
-            source.getGroupBy().add(expr);
+            int position = source.addGroupBy(expr);
             ColumnExpression nexpr = new ColumnExpression(source, position,
                                                           expr.getSQLtype(), expr.getAkType(), expr.getSQLsource());
             map.put(expr, nexpr);
