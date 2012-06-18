@@ -44,8 +44,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int date = inputs.get(0).getInt32();
-            output.putInt32(DateExtractor.getDate(date)[0]);
+            doEvaluate(inputs.get(0).getInt32(), output, 0);
         }
 
         @Override
@@ -58,8 +57,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int date = inputs.get(0).getInt32();
-            output.putInt32(DateExtractor.getDate(date)[1]);
+            doEvaluate(inputs.get(0).getInt32(), output, 1);
         }
 
         @Override
@@ -73,8 +71,14 @@ public abstract class MExtractDatetime extends TOverloadBase {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int date = inputs.get(0).getInt32();
-            int month = DateExtractor.getDate(date)[1];
+            int[] dateArr = DateExtractor.getDate(date);
             
+            if (!DateExtractor.validDayMonth(dateArr)) {
+                output.putNull();
+                return;
+            }
+            
+            int month = dateArr[1];
             int result;
             if (month < 4) result = 1;
             else if (month < 7) result = 2;
@@ -94,8 +98,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int date = inputs.get(0).getInt32();
-            output.putInt32(DateExtractor.getDate(date)[2]);
+            doEvaluate(inputs.get(0).getInt32(), output, 2);
         }
 
         @Override
@@ -108,9 +111,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long datetime = inputs.get(0).getInt64();
-            
-            output.putInt64(DateExtractor.getDatetime(datetime)[3]);
+            doEvaluate(inputs.get(0).getInt64(), output, 3);
         }
 
         @Override
@@ -123,9 +124,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long datetime = inputs.get(0).getInt64();
-            
-            output.putInt64(DateExtractor.getDatetime(datetime)[4]);
+            doEvaluate(inputs.get(0).getInt64(), output, 4);
         }
 
         @Override
@@ -138,15 +137,28 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long datetime = inputs.get(0).getInt64();
-            
-            output.putInt64(DateExtractor.getDatetime(datetime)[5]);        }
+            doEvaluate(inputs.get(0).getInt64(), output, 5);
+        }
 
         @Override
         public String overloadName() {
             return "SECOND";
         }
     };
+    
+    protected void doEvaluate(long input, PValueTarget output, int arrayPos) {
+        long[] datetime = DateExtractor.getDatetime(input);
+            
+        if (!DateExtractor.validHrMinSec(datetime) || !DateExtractor.validDayMonth(datetime)) output.putNull();
+        else output.putInt64(datetime[arrayPos]);      
+    }
+    
+    protected void doEvaluate(int input, PValueTarget output, int arrayPos) {
+        int[] date = DateExtractor.getDate(input);
+        
+        if (!DateExtractor.validDayMonth(date)) output.putNull();
+        else output.putInt32(date[arrayPos]);
+    }
 
     private MExtractDatetime(TClass dateType) {
         this.dateType = dateType;

@@ -52,4 +52,16 @@ public class DateExtractor {
         long second = value / DATETIME_SEC_SCALE % 100;
         return new long[]{year, month, day, hour, minute, second};
     }
+    
+    public static boolean validHrMinSec(long[] hms) {
+        return hms[3] >= 0 && hms[3] < 24 && hms[4] >= 0 && hms[4] < 60 && hms[5] >= 0 && hms[5] < 60;
+    }
+    
+    public static boolean validDayMonth(int[] ymd) {
+        return true; //TODO
+    }
+
+    public static boolean validDayMonth(long[] datetime) {
+        return true; //TODO
+    }
 }
