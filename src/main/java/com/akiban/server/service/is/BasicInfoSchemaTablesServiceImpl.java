@@ -65,6 +65,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static final TableName TABLES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "tables");
     static final TableName COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "columns");
     static final TableName TABLE_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "table_constraints");
+    static final TableName REFERENTIAL_CONSTRAINTS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "referential_constraints");
     static final TableName INDEXES = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(TableName.AKIBAN_INFORMATION_SCHEMA, "index_columns");
 
@@ -415,6 +416,39 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
     }
 
+    private class ReferentialConstraintsFactory extends BasicFactoryBase {
+        public ReferentialConstraintsFactory(UserTable sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return 0;
+        }
+
+        private class Scan implements GroupScan {
+            final RowType rowType;
+
+            public Scan(RowType rowType) {
+                this.rowType = rowType;
+            }
+
+            @Override
+            public Row next() {
+                return null;
+            }
+
+            @Override
+            public void close() {
+            }
+        }
+    }
+
     private class IndexesFactory extends BasicFactoryBase {
         public IndexesFactory(UserTable sourceTable) {
             super(sourceTable);
@@ -625,6 +659,17 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("constraint_type", 32, false);
         //primary key (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES
+        builder.userTable(REFERENTIAL_CONSTRAINTS)
+            .colString("constraint_schema_name", 128, false)
+            .colString("constraint_table_name", 128, false)
+            .colString("constraint_name", 128, false)
+            .colString("unique_schema_name", 128, false)
+            .colString("unique_table_name", 128, false)
+            .colString("unique_constraint_name", 128, false)
+            .colString("update_rule", 32, false)
+            .colString("delete_rule", 32, false);
+        //foreign key (schema_name, table_name, constraint_name)
+        //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(INDEXES)
                 .colString("schema_name", 128, false)
                 .colString("table_name", 128, false)
@@ -668,6 +713,9 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         // TABLE_CONSTRAINTS
         UserTable tableConstraints = ais.getUserTable(TABLE_CONSTRAINTS);
         tableConstraints.setMemoryTableFactory(new TableConstraintsFactory(tableConstraints));
+        // REFERENTIAL_CONSTRAINTS
+        UserTable referentialConstraints = ais.getUserTable(REFERENTIAL_CONSTRAINTS);
+        referentialConstraints.setMemoryTableFactory(new ReferentialConstraintsFactory(referentialConstraints));
         // INDEXES
         UserTable indexes = ais.getUserTable(INDEXES);
         indexes.setMemoryTableFactory(new IndexesFactory(indexes));

@@ -243,7 +243,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S tables", 6, skipped);
+        assertEquals("Skip I_S tables", 7, skipped);
     }
 
     @Test
@@ -260,7 +260,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 45, skipped);
+        assertEquals("Skipped I_S columns", 53, skipped);
     }
 
     @Test
@@ -273,6 +273,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S constraints", 0, skipped);
+    }
+
+    @Test
+    public void referentialConstraintsScan() {
+        final Object[][] expected = {
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skipped I_S referential_constraints", 0, skipped);
     }
 
     @Test
