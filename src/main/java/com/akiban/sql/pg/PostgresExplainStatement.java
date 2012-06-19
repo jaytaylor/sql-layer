@@ -37,14 +37,18 @@ import java.io.IOException;
 /** SQL statement to explain another one. */
 public class PostgresExplainStatement implements PostgresStatement
 {
-    private String explanation;
+    private List<String> explanation;
     private String colName;
     private PostgresType colType;
     
-    public PostgresExplainStatement(String explanation) {
+    public PostgresExplainStatement(List<String> explanation) {
         this.explanation = explanation;
 
-        int maxlen = explanation.length();
+        int maxlen = 32;
+        for (String row : explanation) {
+            if (maxlen < row.length())
+                maxlen = row.length();
+        }
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(), (short)-1, maxlen,
                                    AkType.VARCHAR);
@@ -82,19 +86,24 @@ public class PostgresExplainStatement implements PostgresStatement
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-        messenger.writeShort(1);
-        ByteArrayOutputStream bytes = encoder.encodeObject(explanation, colType, false);
-        messenger.writeInt(bytes.size());
-        messenger.writeByteStream(bytes);
-        messenger.sendMessage();
-      
+        int nrows = 0;
+        for (String row : explanation) {
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(1);
+            ByteArrayOutputStream bytes = encoder.encodeObject(row, colType, false);
+            messenger.writeInt(bytes.size());
+            messenger.writeByteStream(bytes);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows))
+                break;
+        }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("EXPLAIN " + 1);
+            messenger.writeString("EXPLAIN " + nrows);
             messenger.sendMessage();
         }
-        return 1;
+        return nrows;
     }
 
 }

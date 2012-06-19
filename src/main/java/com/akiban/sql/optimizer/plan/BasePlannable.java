@@ -69,8 +69,7 @@ public abstract class BasePlannable extends BasePlanNode
         // Do not copy operators.
     }
     
-    public List<String> explainPlan()
-    {
+    public List<String> explainPlan() {
         List<String> result = new ArrayList<String>();
         explainPlan(plannable, result, 0);
         return result;
