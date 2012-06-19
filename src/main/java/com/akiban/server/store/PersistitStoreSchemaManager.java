@@ -175,6 +175,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private final Set<TableName> legacyISTables = new HashSet<TableName>();
     private static volatile Runnable upgradeHook;
 
+    public void reset() {
+//        aish.setAis(null);
+//        updateTimestamp.set(0);
+//        serializationType = SerializationType.NONE;
+//        legacyISTables.clear();
+        stop();
+        start();
+    }
+    
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
         this.aish = aisHolder;

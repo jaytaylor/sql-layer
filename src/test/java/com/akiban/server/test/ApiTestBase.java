@@ -48,72 +48,78 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
-import com.akiban.ais.model.AISBuilder;
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.TableIndex;
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.operator.SimpleQueryContext;
-import com.akiban.qp.persistitadapter.PersistitAdapter;
-import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.AkServerInterface;
-import com.akiban.server.api.dml.scan.ScanFlag;
-import com.akiban.server.rowdata.SchemaFactory;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.service.config.TestConfigService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.dxl.DXLTestHookRegistry;
-import com.akiban.server.service.dxl.DXLTestHooks;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.server.util.GroupIndexCreator;
-import com.akiban.util.AssertUtils;
-import com.akiban.util.Strings;
-import com.akiban.util.tap.TapReport;
-import com.akiban.util.Undef;
-import com.persistit.Transaction;
 import junit.framework.Assert;
 
 import org.apache.commons.io.FileUtils;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.MethodRule;
+import org.junit.rules.TestName;
+import org.junit.rules.TestWatchman;
+import org.junit.runners.model.FrameworkMethod;
 
+import com.akiban.ais.model.AISBuilder;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Group;
+import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
-import com.akiban.server.api.dml.scan.RowDataOutput;
-import com.akiban.server.service.config.Property;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.Store;
-import com.akiban.util.ListUtils;
-
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.AkServerInterface;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
+import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDefCache;
+import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.config.Property;
+import com.akiban.server.service.config.TestConfigService;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.dxl.DXLTestHookRegistry;
+import com.akiban.server.service.dxl.DXLTestHooks;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
-import org.junit.Rule;
-import org.junit.rules.MethodRule;
-import org.junit.rules.TestName;
-import org.junit.rules.TestWatchman;
-import org.junit.runners.model.FrameworkMethod;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.PersistitStoreSchemaManager;
+import com.akiban.server.store.SchemaManager;
+import com.akiban.server.store.Store;
+import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.store.statistics.IndexStatisticsServiceImpl;
+import com.akiban.server.types.extract.ConverterTestUtils;
+import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.util.AssertUtils;
+import com.akiban.util.ListUtils;
+import com.akiban.util.Strings;
+import com.akiban.util.Undef;
+import com.akiban.util.tap.TapReport;
+import com.persistit.Exchange;
+import com.persistit.Persistit;
+import com.persistit.Transaction;
+import com.persistit.Volume;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -253,6 +259,7 @@ public class ApiTestBase {
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
         unfinishedRowUpdaters.clear();
         dropAllTables();
+        deleteAllTrees();
         assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
         String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {
@@ -280,12 +287,42 @@ public class ApiTestBase {
             }
         }
         session.close();
+        
+        /*
+         * Other cleanup found necessary.
+         * TODO: code this more elegantly within the framework
+         * 
+         */
+        SchemaManager schemaManager = sm.getSchemaManager();
+        if (schemaManager instanceof PersistitStoreSchemaManager) {
+            ((PersistitStoreSchemaManager) schemaManager).reset();
+        }
+        IndexStatisticsService iss = sm.getServiceByClass(IndexStatisticsService.class);
+        if (iss instanceof IndexStatisticsServiceImpl) {
+            ((IndexStatisticsServiceImpl) iss).stop();
+            ((IndexStatisticsServiceImpl) iss).start();
+        }
+
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
         }
         
         needServicesRestart |= runningOutOfSpace();
     }
+    
+
+    private void deleteAllTrees() throws Exception {
+        final Persistit db = treeService().getDb();
+        for (final Volume volume : db.getVolumes()) {
+            if (!volume.equals(db.getSystemVolume())) {
+                final String[] treeNames = volume.getTreeNames();
+                for (final String treeName : treeNames) {
+                    Exchange ex = db.getExchange(volume, treeName, false);
+                    ex.removeTree();
+                }
+            }
+        }
+     }
 
     private boolean runningOutOfSpace() {
         return datadir().getFreeSpace() < 256 * 1024 * 1024;
@@ -338,7 +375,13 @@ public class ApiTestBase {
     }
 
     public final void safeRestartTestServices(Collection<Property> propertiesToPreserve) throws Exception {
-        Thread.sleep(1000);  // Let journal flush
+        // Thread.sleep(1000); // Let journal flush
+        /*
+         * Need this because deleting Trees currently is not transactional.  Therefore after
+         * restart we recover the previous trees and forget about the deleteTree operations.
+         * TODO: remove when transaction Tree management is done.
+         */
+        treeService().getDb().checkpoint();
         crashTestServices(); // TODO: WHY doesn't this work with stop?
         restartTestServices(propertiesToPreserve);
     }
