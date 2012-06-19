@@ -56,7 +56,7 @@ public class MLastDay extends TOverloadBase {
 
     @Override
     public String overloadName() {
-        return "LASTDAY";
+        return "LAST_DAY";
     }
 
     @Override
