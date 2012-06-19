@@ -55,7 +55,7 @@ public class MSubstringIndex extends TOverloadBase {
         boolean signed;
 
         if (count == 0 || str.isEmpty() || substr.isEmpty()) {
-            output.putNull();
+            output.putObject("");
             return;
         } else if (signed = count < 0) {
             count = -count;
