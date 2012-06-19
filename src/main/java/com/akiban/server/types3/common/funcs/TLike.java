@@ -33,6 +33,7 @@ import com.akiban.server.expression.std.Matchers;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -48,7 +49,7 @@ public class TLike extends TOverloadBase
      * @return an arrays of all OverLoads available for the LIKE function 
      * with this specifict string type (type: akString vs Mstring, etc)
      */
-    public static TLike[] create(TClass stringType)
+    public static TOverload[] create(TClass stringType)
     {
         TLike ret[] = new TLike[LikeType.values().length * 2];
         
