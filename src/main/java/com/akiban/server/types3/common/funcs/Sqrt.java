@@ -26,8 +26,12 @@
 
 package com.akiban.server.types3.common.funcs;
 
+import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
@@ -46,12 +50,21 @@ public abstract class Sqrt extends TOverloadBase {
     {
         builder.covers(inputType, 0);
     }
+    
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        double value = inputs.get(0).getDouble();
+        if (value < 0) {
+            output.putNull();
+        } else {
+            output.putDouble(Math.sqrt(value));
+        }
+    }
       
     @Override
     public String overloadName() {
         return "SQRT";
     }
-    
     
     @Override
     public TOverloadResult resultType()

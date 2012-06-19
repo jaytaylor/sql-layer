@@ -25,31 +25,16 @@
  */
 package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.common.funcs.Sqrt;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 
 public class AkSqrt {
 
     public final Sqrt INSTANCE;
 
     public AkSqrt(TClass inputType) {
-        INSTANCE = new Sqrt(inputType, MDouble.INSTANCE) {
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                // TODO: each of the different types will have a different method call
-                double value = inputs.get(0).getDouble();
-                if (value < 0) {
-                    output.putNull();
-                } else {
-                    output.putDouble(Math.sqrt(value));
-                }
-            }
+        INSTANCE = new Sqrt(inputType, AkNumeric.DOUBLE) {
         };
     }
 }
