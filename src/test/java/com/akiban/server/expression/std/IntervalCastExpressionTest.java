@@ -96,7 +96,7 @@ public class IntervalCastExpressionTest
         Expression input = new LiteralExpression(AkType.LONG, 1L);
         Expression num = new LiteralExpression(AkType.LONG, 7L);
         Expression week_interval = new IntervalCastExpression(input, DAY);
-        Expression day_interval = ArithOps.MULTIPLY.compose(Arrays.asList(week_interval,num));
+        Expression day_interval = ArithOps.MULTIPLY.compose(Arrays.asList(week_interval,num), Arrays.asList(ExpressionTypes.INTERVAL_MILLIS, ExpressionTypes.LONG, ExpressionTypes.INTERVAL_MILLIS));
 
         assertEquals(AkType.INTERVAL_MILLIS, day_interval.valueType());
         assertEquals(7 * 24 * 3600L * 1000L, day_interval.evaluation().eval().getInterval_Millis());

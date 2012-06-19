@@ -1,1 +1,1 @@
-SELECT MIN(sku), AVG(DISTINCT sku), MAX(sku) FROM items
+SELECT MIN(quan), AVG(DISTINCT quan), MAX(quan) FROM items

@@ -129,11 +129,6 @@ public final class FunctionsRegistryImplTest {
 
     public static final ExpressionComposer GOOD_EXPRESSION_COMPOSER = new ExpressionComposer() {
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             throw new UnsupportedOperationException();

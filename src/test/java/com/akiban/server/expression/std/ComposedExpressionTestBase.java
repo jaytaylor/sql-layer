@@ -32,6 +32,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.test.it.qp.NullsRow;
@@ -83,6 +84,10 @@ public abstract class ComposedExpressionTestBase {
     protected abstract ExpressionComposer getComposer();
     protected abstract boolean alreadyExc ();
 
+    protected static Expression compose(ExpressionComposer composer, List<? extends Expression> arguments) {
+        return composer.compose(arguments, Collections.<ExpressionType>nCopies(arguments.size() + 1, null));
+    }
+
     @OnlyIfNot("alreadyExc()")
     @Test
     public void isNullSpecial() // make sure two two methods in ExpressionComposer and Expression match
@@ -93,7 +98,7 @@ public abstract class ComposedExpressionTestBase {
         for (int i = 1; i < getTestInfo().getChildrenCount(); ++i)
             children.add(new DummyExpression(messages, getTestInfo().getChildrenType(), IS_CONSTANT));
         
-        Expression expression = getComposer().compose(children);
+        Expression expression = compose(getComposer(), children);
         assertTrue ("ExpressionComposer.nullIsContaminating() and Expression.nullIsContaminating() should match",
                     (getComposer().getNullTreating() == NullTreating.RETURN_NULL) == expression.nullIsContaminating());
     }
@@ -240,7 +245,7 @@ public abstract class ComposedExpressionTestBase {
         for (int i=1; i < childrenCount; ++i) {
             children.add(new DummyExpression(messages, getTestInfo().getChildrenType(),IS_CONSTANT));
         }
-        Expression expression = getComposer().compose(children);
+        Expression expression = compose(getComposer(), children);
         Set<ExpressionAttribute> attributeSet = attributesSet(attributes);
         assertEquals("isConstant", attributeSet.contains(IS_CONSTANT) || anyChildIsNull(children) && getTestInfo().nullIsContaminating() , expression.isConstant());
         assertEquals("needsRow", attributeSet.contains(NEEDS_ROW) && !(anyChildIsNull(children) && getTestInfo().nullIsContaminating()) , expression.needsRow());

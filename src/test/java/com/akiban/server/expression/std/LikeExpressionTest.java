@@ -253,7 +253,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         else
             r = new LiteralExpression(AkType.VARCHAR, right);
 
-        Expression top = getComposer().compose(Arrays.asList(l, r, es));
+        Expression top = compose(getComposer(), Arrays.asList(l, r, es));
 
         if (expectNull)
             assertTrue(top.evaluation().eval().isNull());
