@@ -26,45 +26,42 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.*;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.Date;
 
-public class MFromDays extends TOverloadBase {
-
-    private final TClass inputType;
-    public final TOverload INSTANCE;
-
-    private MFromDays(TClass inputType) {
-        this.inputType = inputType;
-        INSTANCE = new MFromDays(inputType);
-    }
+public class MLastDay extends TOverloadBase {
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(inputType, 0);
+        builder.covers(MDatetimes.DATETIME, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         long input = inputs.get(0).getInt64();
         
-        long days = input < 366 ? 0L : DateExtractor.extract(input)[DateExtractor.DAY];
-        output.putInt32(days);
+        long[] date = DateExtractor.extract(input);
+        long day = DateExtractor.getLastDay(date);
+        if (day == -1L) output.putNull();
+        else output.putInt32((int)DateExtractor.toDate(date[DateExtractor.YEAR], date[DateExtractor.MONTH], day));
     }
 
     @Override
     public String overloadName() {
-        return "FROM_DAYS";
+        return "LASTDAY";
     }
-    
+
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MDatetimes.DATE.instance());
     }
+
 }

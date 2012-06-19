@@ -36,6 +36,10 @@ public class DateExtractor {
     private static final long DATETIME_MIN_SCALE = 100L;
     private static final long DATETIME_SEC_SCALE = 1L;
     
+    private static final long DATE_YEAR_SCALE = 1000000L;
+    private static final long DATE_MONTH_SCALE = 100L;
+    private static final long DATE_DAY_SCALE = 1L;
+    
     public static final int YEAR = 0;
     public static final int MONTH = 1; 
     public static final int DAY = 2;
@@ -57,7 +61,7 @@ public class DateExtractor {
         return hms[3] >= 0 && hms[3] < 24 && hms[4] >= 0 && hms[4] < 60 && hms[5] >= 0 && hms[5] < 60;
     }
 
-    private static long getLastDay(long ymd[]) {
+    public static long getLastDay(long ymd[]) {
         switch ((int) ymd[1]) {
             case 2:
                 return ymd[0] % 400 == 0 || ymd[0] % 4 == 0 && ymd[0] % 100 != 0 ? 29L : 28L;
@@ -83,5 +87,14 @@ public class DateExtractor {
     public static boolean validDayMonth(long[] datetime) {
         long last = getLastDay(datetime);
         return last != -1L && datetime[2] <= last;
+    }
+
+    public static long toDate(long year, long month, long day) {
+       return year*DATE_YEAR_SCALE + month*DATE_MONTH_SCALE + day*DATE_DAY_SCALE; 
+    }
+    
+    public static long toDatetime(long year, long month, long day, long hour, long minute, long second) {
+        return year*DATETIME_YEAR_SCALE + month*DATETIME_MONTH_SCALE + day*DATETIME_DAY_SCALE +
+                hour*DATETIME_HOUR_SCALE + minute*DATETIME_MIN_SCALE + second*DATETIME_SEC_SCALE;
     }
 }
