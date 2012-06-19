@@ -54,6 +54,6 @@ public class AkDegrees extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE);
+        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
     }
 }

@@ -23,43 +23,15 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-public class AkSqrt extends TOverloadBase{
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder)
-    {
-        builder.covers(AkNumeric.DOUBLE, 0);
-    }
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.TLog;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
-    {
-        PValueSource source = inputs.get(0);
-        double value = source.getDouble();
-        if (value < 0)
-            output.putNull();
-        else
-            output.putDouble(Math.sqrt(value));
-    }
-
-    @Override
-    public String overloadName()
-    {
-        return "SQRT";
-    }
-
-    @Override
-    public TOverloadResult resultType()
-    {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE);
-    }
+public class MLogBase
+{
+    public static final TOverload INSTANCES[] = TLog.create(MDouble.INSTANCE.instance());
+    public static final TOverload TWO_ARG = new MLog(MDouble.INSTANCE);
 }
