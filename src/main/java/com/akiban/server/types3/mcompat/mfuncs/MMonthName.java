@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -54,7 +55,7 @@ public class MMonthName extends TOverloadBase {
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         long input = inputs.get(0).getInt64();
-        String month = MONTHS[DateExtractor.getDate(input)[DateExtractor.MONTH]];
+        String month = MONTHS[(int)DateExtractor.extract(input)[DateExtractor.MONTH]];
         
         output.putObject(month);
     }

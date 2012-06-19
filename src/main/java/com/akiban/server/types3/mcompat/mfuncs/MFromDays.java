@@ -27,8 +27,8 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -53,7 +53,7 @@ public class MFromDays extends TOverloadBase {
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         long input = inputs.get(0).getInt64();
         
-        long days = input < 366 ? 0L : DateExtractor.getDate(input)[DateExtractor.DAY];
+        long days = input < 366 ? 0L : DateExtractor.extract(input)[DateExtractor.DAY];
         output.putInt32(days);
     }
 
