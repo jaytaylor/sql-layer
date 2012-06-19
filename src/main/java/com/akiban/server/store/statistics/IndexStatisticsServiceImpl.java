@@ -128,14 +128,8 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
 
     private void registerStatsTables() {
         AkibanInformationSchema ais = createStatsTables();
-        Session session = sessionService.createSession();
-        try {
-            schemaManager.registerStoredInformationSchemaTable(session, ais.getUserTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
-            schemaManager.registerStoredInformationSchemaTable(session, ais.getUserTable(
-                    INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
-        } finally {
-            session.close();
-        }
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
     }
 
     @Override

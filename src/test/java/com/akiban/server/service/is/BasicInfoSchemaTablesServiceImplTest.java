@@ -28,6 +28,7 @@ package com.akiban.server.service.is;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -75,8 +76,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
             }
         };
         createTables();
-        bist = new BasicInfoSchemaTablesServiceImpl(holder, null, null);
-        bist.attachFactories(holder.getAis());
+        bist = new BasicInfoSchemaTablesServiceImpl(holder, null);
+        bist.attachFactories(holder.getAis(), false);
         adapter = new MemoryAdapter(new Schema(holder.getAis()), null, null);
     }
 
@@ -103,14 +104,30 @@ public class BasicInfoSchemaTablesServiceImplTest {
         table = "bar";
         builder.userTable(schema, table);
         builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
+        builder.column(schema, table, "name", 1, "INT", null, null, false, false, null, null);
         builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
         builder.createGroup(table, schema, "_akiban_"+table);
-        builder.addTableToGroup(table, schema, table);
+
+        schema = "test";
+        String childTable = table + "2";
+        String indexName = "foo_name";
+        builder.userTable(schema, childTable);
+        builder.column(schema, childTable, "foo", 0, "INT", null, null, true, false, null, null);
+        builder.column(schema, childTable, "pid", 1, "INT", null, null, true, false, null, null);
+
+        String joinName = childTable + "/" + table;
+        builder.joinTables(joinName, schema, table, schema, childTable);
+        builder.joinColumns(joinName, schema, table, "col", schema, childTable, "pid");
+        builder.addJoinToGroup(table, joinName, 0);
+
+        builder.groupIndex(table, indexName, false, Index.JoinType.RIGHT);
+        builder.groupIndexColumn(table, indexName, schema, childTable, "foo", 0);
+        builder.groupIndexColumn(table, indexName, schema, table, "name", 1);
 
         schema = "zap";
         table = "pow";
-        String indexName = "name_value";
+        indexName = "name_value";
         builder.userTable(schema, table);
         builder.column(schema, table, "name", 0, "VARCHAR", 32L, null, true, false, null, null);
         builder.column(schema, table, "value", 1, "DECIMAL", 10L, 2L, true, false, null, null);
@@ -128,6 +145,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
         for(UserTable userTable : holder.getAis().getUserTables().values()) {
             ordinalMap.put(userTable, 0);
             for(Index index : userTable.getIndexesIncludingInternal()) {
+                index.computeFieldAssociations(ordinalMap);
+            }
+        }
+        for(Group group : holder.getAis().getGroups().values()) {
+            for(Index index : group.getIndexes()) {
                 index.computeFieldAssociations(ordinalMap);
             }
         }
@@ -214,34 +236,83 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "test", "bar", "bar", "TABLE", LONG, VARCHAR, VARCHAR, LONG },
-                { "test", "foo", "foo", "TABLE", LONG, VARCHAR, VARCHAR, LONG },
-                { "zap", "pow", "pow", "TABLE", LONG, VARCHAR, VARCHAR, LONG },
+                { "test", "bar", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
+                { "test", "foo", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
+                { "zap", "pow", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S tables", 5, skipped);
+        assertEquals("Skip I_S tables", 9, skipped);
     }
 
     @Test
     public void columnsScan() {
         final Object[][] expected = {
-                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, VARCHAR, VARCHAR, LONG },
-                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, VARCHAR, VARCHAR, LONG },
-                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, VARCHAR, VARCHAR, LONG },
-                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, VARCHAR, VARCHAR, LONG },
-                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, VARCHAR, VARCHAR, LONG },
+                { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "bar", "name", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "bar2", "foo", 0L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "bar2", "pid", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "foo", "c1", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "foo", "c2", 1L, "double", true, 8L, null, null, 0L, null, null, null, null, null, LONG },
+                { "zap", "pow", "name", 0L, "varchar", true, 32L, null, null, 1L, null, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
+                { "zap", "pow", "value", 1L, "decimal", true, 5L, 10L, 2L, 0L, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 39, skipped);
+        assertEquals("Skipped I_S columns", 67, skipped);
+    }
+
+    @Test
+    public void tableConstraintsScan() {
+        final Object[][] expected = {
+                { "test", "bar", "PRIMARY", "PRIMARY KEY", LONG },
+                { "test", "bar2", "bar2/bar", "GROUPING", LONG },
+                { "zap", "pow", "name_value", "UNIQUE", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLE_CONSTRAINTS).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skipped I_S constraints", 0, skipped);
+    }
+
+    @Test
+    public void referentialConstraintsScan() {
+        final Object[][] expected = {
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.REFERENTIAL_CONSTRAINTS).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skipped I_S referential_constraints", 0, skipped);
+    }
+
+    @Test
+    public void groupingConstraintsScan() {
+        final Object[][] expected = {
+                { "test", "bar2", "bar2/bar", "test", "bar", "PRIMARY", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skipped I_S grouping_constraints", 0, skipped);
+    }
+
+    @Test
+    public void keyColumnUsageScan() {
+        final Object[][] expected = {
+                { "test", "bar", "PRIMARY", "col", 0L, null, LONG },
+                { "test", "bar2", "bar2/bar", "pid", 0L, 0L, LONG },
+                { "zap", "pow", "name_value", "name", 0L, null, LONG },
+                { "zap", "pow", "name_value", "value", 1L, null, LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.KEY_COLUMN_USAGE).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skipped I_S key_column_usage", 0, skipped);
     }
 
     @Test
     public void indexesScan() {
         final Object[][] expected = {
-                { "test", "bar", "PRIMARY", "bar", LONG, "PRIMARY", true, LONG },
-                { "zap", "pow", "name_value", "pow", LONG, "UNIQUE", true, LONG },
+                { "test", "bar", "PRIMARY", "PRIMARY", LONG, "PRIMARY", true, null, LONG },
+                { "test", "bar2", "foo_name", null, LONG, "INDEX", false, "RIGHT", LONG },
+                { "zap", "pow", "name_value", "name_value", LONG, "UNIQUE", true, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEXES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -251,9 +322,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexColumnsScan() {
         final Object[][] expected = {
-                { "test", "bar", "PRIMARY", "bar", "col", 0L, true, null, LONG },
-                { "zap", "pow", "name_value", "pow", "name", 0L, true, null, LONG },
-                { "zap", "pow", "name_value", "pow", "value", 1L, true, null, LONG },
+                { "test", "PRIMARY", "bar", "bar", "col", 0L, true, null, LONG },
+                { "test", "foo_name", "bar2", "bar2", "foo", 0L, true, null, LONG },
+                { "test", "foo_name", "bar2", "bar", "name", 1L, true, null, LONG },
+                { "zap", "name_value", "pow", "pow", "name", 0L, true, null, LONG },
+                { "zap", "name_value", "pow", "pow", "value", 1L, true, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.INDEX_COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
