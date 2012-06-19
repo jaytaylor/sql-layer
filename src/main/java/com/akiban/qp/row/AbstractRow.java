@@ -30,6 +30,8 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
@@ -72,6 +74,16 @@ public abstract class AbstractRow implements Row
     public Row subRow(RowType subRowType)
     {
         return rowType() == subRowType ? this : null;
+    }
+
+    @Override
+    public TInstance tinstance(int index) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public PValueSource pvalue(int index) {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     // Shareable interface
