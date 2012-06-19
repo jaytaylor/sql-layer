@@ -37,7 +37,6 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
-import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 public abstract class MWeek extends TOverloadBase {
