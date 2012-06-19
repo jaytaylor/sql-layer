@@ -26,15 +26,19 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import org.joda.time.MutableDateTime;
 
 public abstract class MUnixTimestamp extends TOverloadBase {
 
+    private static final int DATE_INDEX = 0; 
+    
     public static MUnixTimestamp NOARG = new MUnixTimestamp() {
 
             @Override
@@ -43,24 +47,31 @@ public abstract class MUnixTimestamp extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                output.putInt64(System.currentTimeMillis());
+                output.putInt32((int)System.currentTimeMillis());
             }
         };
     
     public static MUnixTimestamp ONEARG = new MUnixTimestamp() {
          @Override
             protected void buildInputSets(TInputSetBuilder builder) {
-                builder.covers(MDatetimes.DATE, 0);
+                builder.covers(MDatetimes.DATETIME, 0);
             }
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                long millis = inputs.get(0).getInt64();
-                output.putInt64(millis <= 0L ? 0L : millis);
+                long input = inputs.get(0).getInt64();
+
+                long[] datetime = DateExtractor.getDatetime(input);
+                MutableDateTime date = (MutableDateTime) context.exectimeObjectAt(DATE_INDEX);
+                if (date == null) {
+                    context.putExectimeObject(DATE_INDEX, date = new MutableDateTime());
+                }
+                date.setDateTime((int)datetime[0], (int)datetime[1], (int)datetime[2], 
+                            (int)datetime[3], (int)datetime[4], (int)datetime[5], 0);
+                int millis = (int) date.getMillis();
+                output.putInt32(millis <= 0 ? 0 : millis);
             }
     };
-
-    protected MUnixTimestamp() {}
 
     @Override
     public String overloadName() {
