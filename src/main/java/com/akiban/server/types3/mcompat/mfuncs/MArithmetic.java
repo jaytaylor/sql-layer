@@ -38,6 +38,7 @@ import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.service.Scalar;
 
 public class MArithmetic {   
 
