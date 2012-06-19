@@ -30,7 +30,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.List;
 
 public abstract class Trim extends TOverloadBase {
 
@@ -42,6 +41,11 @@ public abstract class Trim extends TOverloadBase {
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 String trim = (String) inputs.get(1).getObject();
                 String st = (String) inputs.get(2).getObject();
+                
+                if (!isValidInput(trim.length(), st.length())) {
+                    output.putObject(st);
+                    return;
+                }
                 output.putObject(rtrim(st, trim));
             }
 
@@ -57,6 +61,11 @@ public abstract class Trim extends TOverloadBase {
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 String trim = (String) inputs.get(1).getObject();
                 String st = (String) inputs.get(2).getObject();
+                
+                if (!isValidInput(trim.length(), st.length())) {
+                    output.putObject(st);
+                    return;
+                }
                 output.putObject(ltrim(st, trim));
             }
 
@@ -74,6 +83,11 @@ public abstract class Trim extends TOverloadBase {
                 String trim = (String) inputs.get(1).getObject();
                 String st = (String) inputs.get(2).getObject();
                 
+                if (!isValidInput(trim.length(), st.length())) {
+                    output.putObject(st);
+                    return;
+                }
+
                 if (trimType != RTRIM)
                     st = ltrim(st, trim);
                 if (trimType != LTRIM)
@@ -139,5 +153,9 @@ public abstract class Trim extends TOverloadBase {
             }
         }
         return count == trim.length() ? "" : st.substring(0, count);
+    }
+    
+    protected static boolean isValidInput(int trimLength, int strLength) {
+        return trimLength != 0 && strLength != 0 && trimLength <= strLength;
     }
 }
