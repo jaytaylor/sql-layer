@@ -51,7 +51,7 @@ public class MLog extends TOverloadBase
     {
         double base = inputs.get(0).getDouble();
         double value = inputs.get(1).getDouble();
-        if (Math.min(value, base) > 0 && 1 != base)
+        if (0 < value && 0 < base && 1 != base)
             output.putDouble(Math.log(value)/Math.log(base));
         else
             output.putNull();
