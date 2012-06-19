@@ -56,8 +56,8 @@ public abstract class MWeek extends TOverloadBase {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int input = inputs.get(0).getInt32();
             
-            long[] date = DateExtractor.getDate(input);
-            if (!isDate(date, context, output)) return;
+            long[] date = DateExtractor.extract(input);
+            if (isZero(date, context, output)) return;
         
             output.putInt32(getWeek(0, context, date));
         }
@@ -74,8 +74,8 @@ public abstract class MWeek extends TOverloadBase {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int input = inputs.get(0).getInt32();
             
-            long[] date = DateExtractor.getDate(input);
-            if (!isDate(date, context, output)) return;
+            long[] date = DateExtractor.extract(input);
+            if (isZero(date, context, output)) return;
            
             int mode = inputs.get(1).getInt32();
             if (mode < 0 || mode > 7) {
@@ -181,14 +181,14 @@ public abstract class MWeek extends TOverloadBase {
             else return (dayOfYear - firstD) / 7 +1;
         }   
 
-        private static boolean isDate(long[] date, TExecutionContext context,PValueTarget output) {
-            boolean isDate = date[1] * date[2] == 0L;
-            if (isDate) {
+        private static boolean isZero(long[] date, TExecutionContext context,PValueTarget output) {
+            boolean isZero = date[1] * date[2] == 0L;
+            if (isZero) {
                 if (context != null)
                     context.warnClient(new ZeroDateTimeException());
                 output.putNull();
             }
-            return isDate;
+            return isZero;
         }
         
         private static int getWeek(int mode, TExecutionContext context, long[] date) {

@@ -45,7 +45,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt32(), output, 0, PUnderlying.INT_32);
+            doEvaluate(inputs.get(0).getInt32(), output, DateExtractor.YEAR, PUnderlying.INT_32);
         }
 
         @Override
@@ -58,7 +58,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt32(), output, 1, PUnderlying.INT_32);
+            doEvaluate(inputs.get(0).getInt32(), output, DateExtractor.MONTH, PUnderlying.INT_32);
         }
 
         @Override
@@ -79,7 +79,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
                 return;
             }
             
-            int month = (int)dateArr[1];
+            int month = (int)dateArr[DateExtractor.MONTH];
             int result;
             if (month < 4) result = 1;
             else if (month < 7) result = 2;
@@ -99,7 +99,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt32(), output, 2, PUnderlying.INT_32);
+            doEvaluate(inputs.get(0).getInt32(), output, DateExtractor.DAY, PUnderlying.INT_32);
         }
 
         @Override
@@ -112,7 +112,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt64(), output, 3, PUnderlying.INT_64);
+            doEvaluate(inputs.get(0).getInt64(), output, DateExtractor.HOUR, PUnderlying.INT_64);
         }
 
         @Override
@@ -125,7 +125,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt64(), output, 4, PUnderlying.INT_64);
+            doEvaluate(inputs.get(0).getInt64(), output, DateExtractor.MINUTE, PUnderlying.INT_64);
         }
 
         @Override
@@ -138,7 +138,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt64(), output, 5, PUnderlying.INT_64);
+            doEvaluate(inputs.get(0).getInt64(), output, DateExtractor.SECOND, PUnderlying.INT_64);
         }
 
         @Override
@@ -153,9 +153,13 @@ public abstract class MExtractDatetime extends TOverloadBase {
         if (!DateExtractor.validHrMinSec(datetime) || !DateExtractor.validDayMonth(datetime)) output.putNull();
         else {
             switch(type) {
-                case INT_64: output.putInt64(datetime[arrayPos]);
+                case INT_64: 
+                    output.putInt64(datetime[arrayPos]);
                     break;
-                case INT_32: output.putInt32((int)datetime[arrayPos]);
+                case INT_32: 
+                    output.putInt32((int)datetime[arrayPos]);
+                    break;
+                default: throw new AssertionError(type);
             }
         }    
     }

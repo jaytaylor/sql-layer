@@ -35,6 +35,13 @@ public class DateExtractor {
     private static final long DATETIME_HOUR_SCALE = 10000L;
     private static final long DATETIME_MIN_SCALE = 100L;
     private static final long DATETIME_SEC_SCALE = 1L;
+    
+    public static final int YEAR = 0;
+    public static final int MONTH = 1; 
+    public static final int DAY = 2;
+    public static final int HOUR = 3;
+    public static final int MINUTE = 4;
+    public static final int SECOND = 5;
 
     public static long[] extract(long value) {
         final long year = (value / DATETIME_YEAR_SCALE);
