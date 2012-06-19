@@ -68,9 +68,12 @@ public abstract class BasePlannable extends BasePlanNode
         super.deepCopy(map);
         // Do not copy operators.
     }
-
-    public String explainPlan() {
-        return new TreeFormat().describe(plannable.getExplainer());
+    
+    public List<String> explainPlan()
+    {
+        List<String> result = new ArrayList<String>();
+        explainPlan(plannable, result, 0);
+        return result;
     }
 
     protected static void explainPlan(Plannable operator,
@@ -97,8 +100,10 @@ public abstract class BasePlannable extends BasePlanNode
     }
 
     protected String withIndentedExplain(StringBuilder str) {
-
-        str.append(explainPlan());
+        for (String operator : explainPlan()) {
+            str.append("\n ");
+            str.append(operator);
+        }
         return str.toString();
     }
 
