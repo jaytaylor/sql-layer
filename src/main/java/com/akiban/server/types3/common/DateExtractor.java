@@ -36,14 +36,7 @@ public class DateExtractor {
     private static final long DATETIME_MIN_SCALE = 100L;
     private static final long DATETIME_SEC_SCALE = 1L;
 
-    public static long[] getDate(long date) {
-        long year = date / 512;
-        long month = (date / 32) % 16;
-        long day = date % 32;
-        return new long[]{year, month, day};
-    }
-
-    public static long[] getDatetime(long value) {
+    public static long[] extract(long value) {
         final long year = (value / DATETIME_YEAR_SCALE);
         final long month = (value / DATETIME_MONTH_SCALE) % 100;
         final long day = (value / DATETIME_DAY_SCALE) % 100;
