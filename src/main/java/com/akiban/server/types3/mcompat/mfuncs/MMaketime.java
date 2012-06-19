@@ -35,6 +35,8 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class MMaketime extends TOverloadBase {
 
+    public static final TOverload INSTANCE = new MMaketime() {};
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(MNumeric.BIGINT, 0, 1, 2);
@@ -48,11 +50,7 @@ public class MMaketime extends TOverloadBase {
         long seconds = inputs.get(2).getInt64();
         
         // Check for valid input
-        if (minutes >= 60 || minutes < 0) {
-            output.putNull();
-            return;
-        }
-        if (seconds >= 60 || seconds < 0) {
+        if (minutes < 0 || minutes >= 60 || seconds < 0 || seconds >= 60) {
             output.putNull();
             return;
         }
