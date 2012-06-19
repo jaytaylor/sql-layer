@@ -39,8 +39,7 @@ import java.util.List;
 
 public class MSubstringIndex extends TOverloadBase {
 
-    private Matcher matcher = null;
-    private String oldSubstr;
+    private static final int MATCHER_INDEX = 0;
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
@@ -65,14 +64,12 @@ public class MSubstringIndex extends TOverloadBase {
         }
 
         // try to reuse compiled pattern if possible
-        if (matcher == null || !substr.equals(oldSubstr)) {
-            oldSubstr = substr;
-            matcher = new Index(substr);
+        Index matcher = (Index) context.exectimeObjectAt(MATCHER_INDEX);
+        if (matcher == null || !matcher.sameState(substr, '\\')) {
+            context.putExectimeObject(MATCHER_INDEX, matcher = new Index(substr));
         }
 
         int index = matcher.match(str, count);
-
-
         String ret = index < 0 // no match found
                 ? str
                 : str.substring(0, index);
