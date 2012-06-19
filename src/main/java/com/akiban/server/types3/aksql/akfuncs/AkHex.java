@@ -24,22 +24,14 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.aksql.aktypes.AkString;
+import com.akiban.server.types3.common.funcs.Hex;
 
-public class MString extends TString
-{
-    public static final MString VARCHAR = new MString("varchar", -1);
-    
-    // TODO: revisit VARBAR definition 
-    public static final MString VARBINARY = new MString("varbinary", -1);
-    
-    // TODO: define CHAR
-    
-    private MString(String name, int serialisationSize)
-    {       
-        super(MBundle.INSTANCE, name, serialisationSize);
-    }
+
+public class AkHex {
+  public static final TOverload[] INSTANCES = Hex.create(AkString.VARCHAR, AkNumeric.BIGINT);
 }
