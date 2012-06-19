@@ -40,6 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TestConfigService extends ConfigurationServiceImpl {
     public final static File TESTDIR = new File("/tmp/akserver-junit");
+    public static boolean PRESERVE_DIRECTORY = false;
     private final Collection<Property> extraProperties;
     File tmpDir;
 
@@ -53,8 +54,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    public boolean testing()
-    {
+    public boolean testing() {
         return true;
     }
 
@@ -80,7 +80,9 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     @Override
     protected void unloadProperties() {
-        AkServerUtil.cleanUpDirectory(tmpDir);
+        if (!PRESERVE_DIRECTORY) {
+            AkServerUtil.cleanUpDirectory(tmpDir);
+        }
     }
 
     @Override
@@ -95,31 +97,37 @@ public class TestConfigService extends ConfigurationServiceImpl {
             }
         } else {
             if (!TESTDIR.mkdir()) {
-                throw new ConfigurationPropertiesLoadException (TESTDIR.getName(), " it couldn't be created");
+                throw new ConfigurationPropertiesLoadException(TESTDIR.getName(), " it couldn't be created");
             }
             TESTDIR.deleteOnExit();
         }
         return TESTDIR;
-//
-//        File tmpFile;
-//        try {
-//            tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
-//        } catch (IOException e) {
-//            throw new ConfigurationPropertiesLoadException ("akserver-unitdata", "it could create the temp file");
-//        }
-//        if (!tmpFile.delete()) {
-//            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be deleted");
-//        }
-//        if (!tmpFile.mkdir()) {
-//            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be created");
-//        }
-//        tmpFile.deleteOnExit();
-//        return tmpFile;
+        //
+        // File tmpFile;
+        // try {
+        // tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
+        // } catch (IOException e) {
+        // throw new ConfigurationPropertiesLoadException ("akserver-unitdata",
+        // "it could create the temp file");
+        // }
+        // if (!tmpFile.delete()) {
+        // throw new ConfigurationPropertiesLoadException (tmpFile.getName(),
+        // "it couldn't be deleted");
+        // }
+        // if (!tmpFile.mkdir()) {
+        // throw new ConfigurationPropertiesLoadException (tmpFile.getName(),
+        // "it couldn't be created");
+        // }
+        // tmpFile.deleteOnExit();
+        // return tmpFile;
     }
 
     public static void setOverrides(Collection<Property> startupConfigProperties) {
         if (!startupConfigPropertiesRef.compareAndSet(null, startupConfigProperties)) {
-            throw new IllegalStateException("already set"); // sanity check; feel free to remove if it gets in your way
+            throw new IllegalStateException("already set"); // sanity check;
+                                                            // feel free to
+                                                            // remove if it gets
+                                                            // in your way
         }
     }
 

@@ -29,6 +29,7 @@ package com.akiban.server.test.it.store;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.service.config.Property;
+import com.akiban.server.service.config.TestConfigService;
 import com.akiban.server.store.PSSMTestShim;
 import com.akiban.server.store.PersistitStoreSchemaManager;
 import org.junit.Test;
@@ -71,6 +72,7 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
 
     @Test
     public void testFailure() throws Exception {
+        Collection<Property> props = defaultPropertiesToPreserveOnRestart();
         // Clean start
         transactionally(new Callable<Void>() {
             @Override
@@ -92,18 +94,19 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
                 }
             });
         }
-
         // Inject our hook and restart
         PSSMTestShim.setUpgradeHook(new FailingUpgradeHook());
         try {
+            TestConfigService.PRESERVE_DIRECTORY = true;
             safeRestart();
             fail("Expected failure during upgrade!");
         } catch(Exception e) {
             // expected
+        } finally {
+            TestConfigService.PRESERVE_DIRECTORY = false;
         }
 
         // Try again with upgrading disabled, hook still active
-        Collection<Property> props = defaultPropertiesToPreserveOnRestart();
         props.add(new Property(PersistitStoreSchemaManager.SKIP_AIS_UPGRADE_PROPERTY, "true"));
         safeRestart(props);
         assertEquals("Skipped upgrade serialization", SerializationType.META_MODEL, pssm.getSerializationType());
