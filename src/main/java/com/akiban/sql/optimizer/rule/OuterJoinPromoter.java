@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.error.UnsupportedSQLException;
-
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
@@ -179,6 +177,14 @@ public class OuterJoinPromoter extends BaseRule
                     // These are too complicated to understand.
                     return;
                 }
+            }
+            else if (condition instanceof AnyCondition) {
+                Subquery subquery = ((AnyCondition)condition).getSubquery();
+                if (subquery.getInput() instanceof Project) {
+                    Project project = (Project)subquery.getInput();
+                    gatherRequired((ConditionExpression)project.getFields().get(0));
+                }
+                return;
             }
             // Conditions, functions such as LIKE, etc.
             condition.accept(this);

@@ -38,7 +38,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 class Expected

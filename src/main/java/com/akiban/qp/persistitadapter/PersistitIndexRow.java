@@ -73,11 +73,10 @@ public abstract class PersistitIndexRow extends AbstractRow
      * @param leftStartIndex First field to compare in this row.
      * @param rightStartIndex First field to compare in the other row.
      * @param fieldCount Number of fields to compare.
-     * @return 0 if all fields are equal. A negative value indicates that this row had the first field
-     * that was not equal to the corresponding field in the other row. A positive value indicates that the
-     * other row had the first field that was not equal to the corresponding field in this row. In both non-zero
-     * cases, the absolute value of the return value is the position of the field that differed, starting the numbering
-     * at 1. E.g. a return value of -2 means that the first fields of the rows match, and that in the second field,
+     * @return 0 if all fields are equal. A negative value indicates that this row ranks lower than the other row.
+     * A positive value indicates that the other row ranks lower. In both non-zero cases, the absolute value
+     * of the return value is the position of the field that differed, starting the numbering at 1.
+     * E.g. a return value of -2 means that the first fields of the rows match, and that in the second field,
      * this row had the smaller value.
      */
     @Override
@@ -187,7 +186,7 @@ public abstract class PersistitIndexRow extends AbstractRow
         this.keySources = new PersistitKeyValueSource[indexRowType.nFields()];
         this.indexRow = adapter.persistit().getKey(adapter.getSession());
         this.leafmostTable = (UserTable) indexRowType.index().leafMostTable();
-        this.hKeyCache = new HKeyCache(adapter);
+        this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
     }
 
     // For use by this class

@@ -4,6 +4,8 @@ direct-condition: condition on column of optional table itself
 
 function: condition involving normal function on optional table
 
+in-condition: IN (turned into ANY) condition
+
 inner: inner join unmolested
 
 or-condition: neither side allows NULL

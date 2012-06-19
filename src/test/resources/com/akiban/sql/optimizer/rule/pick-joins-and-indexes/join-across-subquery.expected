@@ -2,7 +2,7 @@ SelectQuery@8424bd
   ResultSet@6387f48e[name, _SQL_COL_1]
     Project@72c8c9ae[customers.name, Subquery@771094c4]
       Select@5c30f961[]
-        TableGroupJoinTree@6c8b4ce9(TableGroup@2df02fde(customers), customers - IndexScan@46d559(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))
+        TableGroupJoinTree@6c8b4ce9(TableGroup@2df02fde(customers), customers - SingleIndexScan@46d559(Index(test.customers.name[IndexColumn(name)]), covering/NONE, rows = 100, cost = 74.1740))
           TableSource@68a7a3a7(customers - TableGroup@2df02fde(customers))
 
 Subquery@771094c4
@@ -11,6 +11,6 @@ Subquery@771094c4
       Select@3d1cda9[]
         AggregateSource@6b681dea(UNGROUPED,[])
           Select@43151434[]
-            TableGroupJoinTree@4d8cc8e9(TableGroup@2df02fde(customers), orders INNER items - IndexScan@6b29ca81(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =customers.cid, rows = 200, cost = 8261.13))
+            TableGroupJoinTree@4d8cc8e9(TableGroup@2df02fde(customers), orders INNER items - SingleIndexScan@6b29ca81(Index(test.orders.__akiban_fk_0[IndexColumn(cid)]), NONE, =customers.cid, rows = 200, cost = 8261.13))
               TableSource@4382d44b(orders - TableGroup@2df02fde(customers))
                 TableSource@423faa8d(items - TableGroupJoin@402771f8(Join(test/orders/oid/test/test.items/oid: test.items -> test.orders, group(customers))))

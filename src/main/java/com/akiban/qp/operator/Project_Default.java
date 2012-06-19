@@ -181,6 +181,7 @@ class Project_Default extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 input.open();
+                idle = false;
             } finally {
                 TAP_OPEN.out();
             }
@@ -201,6 +202,9 @@ class Project_Default extends Operator
                         ? new ProjectedRow(projectType, inputRow, context, projections)
                         : inputRow;
                 }
+                if (projectedRow == null) {
+                    close();
+                }
                 return projectedRow;
             } finally {
                 TAP_NEXT.out();
@@ -211,32 +215,38 @@ class Project_Default extends Operator
         public void close()
         {
             CursorLifecycle.checkIdleOrActive(this);
-            input.close();
+            if (!idle) {
+                input.close();
+                idle = true;
+            }
         }
 
         @Override
         public void destroy()
         {
-            close();
-            input.destroy();
+            if (input != null) {
+                close();
+                input.destroy();
+                input = null;
+            }
         }
 
         @Override
         public boolean isIdle()
         {
-            return input.isIdle();
+            return input != null && idle;
         }
 
         @Override
         public boolean isActive()
         {
-            return input.isActive();
+            return input != null && !idle;
         }
 
         @Override
         public boolean isDestroyed()
         {
-            return input.isDestroyed();
+            return input == null;
         }
 
         // Execution interface
@@ -249,6 +259,7 @@ class Project_Default extends Operator
 
         // Object state
 
-        private final Cursor input;
+        private Cursor input; // input = null indicates destroyed.
+        private boolean idle = true;
     }
 }

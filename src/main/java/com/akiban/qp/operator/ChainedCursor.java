@@ -27,6 +27,7 @@
 package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
+import com.akiban.server.api.dml.ColumnSelector;
 
 public class ChainedCursor extends OperatorExecutionBase implements Cursor
 {
@@ -46,6 +47,12 @@ public class ChainedCursor extends OperatorExecutionBase implements Cursor
     public Row next()
     {
         return input.next();
+    }
+
+    @Override
+    public void jump(Row row, ColumnSelector columnSelector)
+    {
+        input.jump(row, columnSelector);
     }
 
     @Override

@@ -64,8 +64,6 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         value = value.divide(o.value);
         return this;
     }
-    
-    private BigDecimal value;
 
     @Override
     public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
@@ -75,4 +73,11 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
                 RoundingMode.HALF_UP);
         return this;
     }
+
+    @Override
+    public int getSign() {
+        return value.signum();
+    }
+        
+    private BigDecimal value;
 }
