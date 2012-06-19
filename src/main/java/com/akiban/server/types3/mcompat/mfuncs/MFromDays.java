@@ -27,46 +27,43 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.text.DateFormatSymbols;
-import java.util.Locale;
 
-public class MMonthName extends TOverloadBase {
-    
-    private static final String MONTHS[] = new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths();
-    private final TClass dateType;
+public class MFromDays extends TOverloadBase {
+
+    private final TClass inputType;
     public final TOverload INSTANCE;
 
-    private MMonthName(TClass dateType) {
-        this.dateType = dateType;
-        INSTANCE = new MMonthName(dateType){};
+    private MFromDays(TClass inputType) {
+        this.inputType = inputType;
+        INSTANCE = new MFromDays(inputType);
     }
-    
+
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(dateType);
+        builder.covers(inputType, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         long input = inputs.get(0).getInt64();
-        String month = MONTHS[DateExtractor.getDate(input)[DateExtractor.MONTH]];
         
-        output.putObject(month);
+        long days = input < 366 ? 0L : DateExtractor.getDate(input)[DateExtractor.DAY];
+        output.putInt32(days);
     }
 
     @Override
     public String overloadName() {
-        return "MONTHNAME";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MString.VARCHAR.instance());
+        return "FROM_DAYS";
     }
     
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(MDatetimes.DATE.instance());
+    }
 }
