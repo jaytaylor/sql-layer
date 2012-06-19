@@ -36,13 +36,9 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.BasicFactoryBase;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
@@ -51,7 +47,6 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.types.AkType;
 import com.google.inject.Inject;
 
@@ -123,38 +118,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     @Override
     public void crash() {
         // Nothing
-    }
-
-    private abstract class BasicFactoryBase implements MemoryTableFactory {
-        private final UserTable sourceTable;
-
-        public BasicFactoryBase(UserTable sourceTable) {
-            this.sourceTable = sourceTable;
-        }
-
-        @Override
-        public TableName getName() {
-            return sourceTable.getName();
-        }
-
-        @Override
-        public UserTable getTableDefinition() {
-            return sourceTable;
-        }
-
-        @Override
-        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector scanSelector) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public IndexStatistics computeIndexStatistics(Session session, Index index) {
-            throw new UnsupportedOperationException();
-        }
-
-        protected RowType getRowType(MemoryAdapter adapter) {
-            return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable.getName()));
-        }
     }
 
     private class SchemaFactory extends BasicFactoryBase {
