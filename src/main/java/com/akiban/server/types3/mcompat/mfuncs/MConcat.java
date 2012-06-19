@@ -27,6 +27,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -35,7 +36,10 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class MConcat extends TOverloadBase {
-
+    public static final TOverload INSTANCE = new MConcat();
+    
+    private MConcat(){}
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.vararg(MString.VARCHAR, 0);

@@ -39,7 +39,11 @@ import java.util.List;
 
 public class MUnhex extends TOverloadBase {
 
-    private final int VARBINARY_MAX_LENGTH = 65;
+    public static final TOverload INSTANCE = new MUnhex();
+    
+    private static final int VARBINARY_MAX_LENGTH = 65;
+    
+    private MUnhex(){}
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {

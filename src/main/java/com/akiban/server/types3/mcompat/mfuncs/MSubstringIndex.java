@@ -25,7 +25,6 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.expression.std.Matcher;
 import com.akiban.server.expression.std.Matchers.Index;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.types.StringAttribute;
@@ -39,8 +38,12 @@ import java.util.List;
 
 public class MSubstringIndex extends TOverloadBase {
 
+    public static final TOverload INSTANCE = new MSubstringIndex();
+    
     private static final int MATCHER_INDEX = 0;
 
+    private MSubstringIndex(){}
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(MString.VARCHAR, 0, 1);
