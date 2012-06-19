@@ -26,8 +26,12 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.util.SparseArray;
 
 import java.util.List;
@@ -44,6 +48,46 @@ public final class TValidatedOverload {
 
     public TInputSet inputSetAt(int index) {
         return inputSetsByPos.get(index);
+    }
+
+    public TOverloadResult resultStrategy() {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean coversNInputs(int nInputs) {
+        throw new UnsupportedOperationException();
+    }
+
+    public int positionalInputs() {
+        throw new UnsupportedOperationException();
+    }
+
+    List<? extends TInputSet> inputSets() {
+        throw new UnsupportedOperationException();
+    }
+
+    public boolean allowsInputs(List<? extends TPreptimeValue> inputs) {
+        if (!coversNInputs(inputs.size()))
+            return false;
+        for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
+            TInstance inputInstance = inputs.get(i).instance();
+            // allow this input if...
+            // ... input's type it NULL or ?
+            if (inputInstance == null)       // input
+                continue;
+            // ... input set takes ANY
+            TInputSet inputSet = inputSetAt(i);
+            if (inputSet.targetType() == null)
+                continue;
+            // ... input can be strongly cast to input set
+            if (stronglyCastable(inputInstance.typeClass(), inputSet.targetType()))
+                continue;
+
+            // This input precludes the use of the overload
+            return false;
+        }
+        // no inputs have precluded this overload
+        return true;
     }
 
     public TValidatedOverload(TOverload overload) {
@@ -70,8 +114,13 @@ public final class TValidatedOverload {
         this.varargs = localVarargInputs;
     }
 
+    private boolean stronglyCastable(TClass tClass, TClass tClass1) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+    
     private final TOverload overload;
     private final List<TInputSet> inputSetsByPos;
+
     private final TInputSet varargs;
 
     private static class InvalidOverloadException extends RuntimeException {
