@@ -57,7 +57,7 @@ public class DateExtractor {
         return hms[3] >= 0 && hms[3] < 24 && hms[4] >= 0 && hms[4] < 60 && hms[5] >= 0 && hms[5] < 60;
     }
 
-    private static Long getLastDay(long ymd[]) {
+    private static long getLastDay(long ymd[]) {
         switch ((int) ymd[1]) {
             case 2:
                 return ymd[0] % 400 == 0 || ymd[0] % 4 == 0 && ymd[0] % 100 != 0 ? 29L : 28L;
@@ -76,12 +76,12 @@ public class DateExtractor {
             case 12:
                 return 31L;
             default:
-                return null;
+                return -1L;
         }
     }
 
     public static boolean validDayMonth(long[] datetime) {
-        Long last = getLastDay(datetime);
-        return last != null && datetime[2] <= last;
+        long last = getLastDay(datetime);
+        return last != -1L && datetime[2] <= last;
     }
 }
