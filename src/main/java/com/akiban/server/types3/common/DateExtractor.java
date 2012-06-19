@@ -35,12 +35,12 @@ public class DateExtractor {
     private static final long DATETIME_HOUR_SCALE = 10000L;
     private static final long DATETIME_MIN_SCALE = 100L;
     private static final long DATETIME_SEC_SCALE = 1L;
-    
-    public static int[] getDate(int date) {
-        int year = date / 512;
-        int month = (date / 32) % 16;
-        int day = date % 32;
-        return new int[]{year, month, day};
+
+    public static long[] getDate(long date) {
+        long year = date / 512;
+        long month = (date / 32) % 16;
+        long day = date % 32;
+        return new long[]{year, month, day};
     }
 
     public static long[] getDatetime(long value) {
@@ -52,16 +52,36 @@ public class DateExtractor {
         long second = value / DATETIME_SEC_SCALE % 100;
         return new long[]{year, month, day, hour, minute, second};
     }
-    
+
     public static boolean validHrMinSec(long[] hms) {
         return hms[3] >= 0 && hms[3] < 24 && hms[4] >= 0 && hms[4] < 60 && hms[5] >= 0 && hms[5] < 60;
     }
-    
-    public static boolean validDayMonth(int[] ymd) {
-        return true; //TODO
+
+    private static Long getLastDay(long ymd[]) {
+        switch ((int) ymd[1]) {
+            case 2:
+                return ymd[0] % 400 == 0 || ymd[0] % 4 == 0 && ymd[0] % 100 != 0 ? 29L : 28L;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                return 30L;
+            case 3:
+            case 1:
+            case 5:
+            case 7:
+            case 8:
+            case 10:
+            case 0:
+            case 12:
+                return 31L;
+            default:
+                return null;
+        }
     }
 
     public static boolean validDayMonth(long[] datetime) {
-        return true; //TODO
+        Long last = getLastDay(datetime);
+        return last != null && datetime[2] <= last;
     }
 }

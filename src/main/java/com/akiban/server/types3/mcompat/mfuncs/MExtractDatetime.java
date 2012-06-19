@@ -71,14 +71,14 @@ public abstract class MExtractDatetime extends TOverloadBase {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int date = inputs.get(0).getInt32();
-            int[] dateArr = DateExtractor.getDate(date);
+            long[] dateArr = DateExtractor.getDate(date);
             
             if (!DateExtractor.validDayMonth(dateArr)) {
                 output.putNull();
                 return;
             }
             
-            int month = dateArr[1];
+            int month = (int)dateArr[1];
             int result;
             if (month < 4) result = 1;
             else if (month < 7) result = 2;
@@ -154,10 +154,10 @@ public abstract class MExtractDatetime extends TOverloadBase {
     }
     
     protected void doEvaluate(int input, PValueTarget output, int arrayPos) {
-        int[] date = DateExtractor.getDate(input);
+        long[] date = DateExtractor.getDate(input);
         
         if (!DateExtractor.validDayMonth(date)) output.putNull();
-        else output.putInt32(date[arrayPos]);
+        else output.putInt32((int)date[arrayPos]);
     }
 
     private MExtractDatetime(TClass dateType) {
