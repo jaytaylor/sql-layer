@@ -54,10 +54,6 @@ public class JMXCancelationIT extends PostgresServerITBase
     @Test
     public void testCancel() throws Exception {
         test("cancelQuery", false);
-    }
-
-    @Test
-    public void testKillConnection() throws Exception {
         test("killConnection", true);
     }
 
