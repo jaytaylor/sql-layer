@@ -24,40 +24,64 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.util.Strings;
+import java.util.List;
 
-public class AkDegrees extends TOverloadBase {
-    public static final TOverload INSTANCE = new AkDegrees();
+public class MUnhex extends TOverloadBase {
+
+    public static final TOverload INSTANCE = new MUnhex();
     
-    private AkDegrees(){}
+    private static final int VARBINARY_MAX_LENGTH = 65;
+    
+    private MUnhex(){}
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(AkNumeric.DOUBLE, 0);
+        builder.covers(MString.VARCHAR, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        output.putDouble(Math.toDegrees(inputs.get(0).getDouble()));
+        String st = (String) inputs.get(0).getObject();
+        
+        try {
+            output.putBytes(Strings.parseHexWithout0x(st).byteArray());
+        }
+        catch (InvalidOperationException e) {
+            context.warnClient(e);
+            output.putNull();
+        }
     }
 
     @Override
     public String overloadName() {
-        return "DEGREES";
+        return "UNHEX";
     }
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
+        return TOverloadResult.custom(new TCustomOverloadResult() {
+
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                TPreptimeValue preptimeValue = inputs.get(0);
+                int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
+                int varbinLength = stringLength / 2;
+                if (varbinLength > VARBINARY_MAX_LENGTH)
+                    return MString.VARBINARY.instance(VARBINARY_MAX_LENGTH);
+                else
+                    return MString.VARBINARY.instance(varbinLength);
+            }        
+        });
     }
 }

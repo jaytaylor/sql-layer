@@ -28,6 +28,8 @@ package com.akiban.server.types3;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.regex.Pattern;
@@ -35,6 +37,10 @@ import java.util.regex.Pattern;
 public abstract class TClass {
 
     public abstract TFactory factory();
+    
+    public /*abstract*/ void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+        throw new AssertionError("make this abstract and implement in all subclasses"); // TODO
+    }
 
     public TInstance instance()
     {
@@ -59,6 +65,14 @@ public abstract class TClass {
     public TInstance instance(int arg0, int arg1, int arg2, int arg3)
     {
         return createInstance(4, arg0, arg1, arg2, arg3);
+    }
+
+    public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        writeCanonical(inValue, inInstance, out);
+    }
+
+    public void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+        writeCanonical(inValue, typeInstance, out);
     }
     
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {

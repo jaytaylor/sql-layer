@@ -25,7 +25,6 @@
  */
 
 package com.akiban.server.types3.aksql.akfuncs;
-
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.common.funcs.TPow;

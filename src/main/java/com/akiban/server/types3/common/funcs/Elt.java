@@ -24,40 +24,69 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class AkDegrees extends TOverloadBase {
-    public static final TOverload INSTANCE = new AkDegrees();
+public class Elt extends TOverloadBase
+{
+
+    private final TClass type;
+    private final TClass intType;
     
-    private AkDegrees(){}
+    public Elt(TClass type, TClass intType)
+    {
+        this.type = type;
+        this.intType = intType;
+    }
     
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(AkNumeric.DOUBLE, 0);
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        // ELT(<INT>, <T> ....)
+        // argc >= 2
+        builder.covers(intType, 0).pickingVararg(type, 1).pickingVararg(type);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        output.putDouble(Math.toDegrees(inputs.get(0).getDouble()));
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+        int index = inputs.get(0).getInt32();
+        if (index < 1 || index > inputs.size())
+            output.putNull();
+        else
+            output.putValueSource(inputs.get(index));
+    }
+       
+     
+    @Override
+    protected boolean constnessMatters(int inputIndex) 
+    {
+        return false;
+    }
+    
+    @Override
+    protected boolean nullContaminates(int inputIndex) 
+    {
+        return false;
     }
 
     @Override
-    public String overloadName() {
-        return "DEGREES";
+    public String overloadName()
+    {
+        return "ELT";
     }
 
     @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
+    public TOverloadResult resultType()
+    {
+        return TOverloadResult.picking();
     }
 }
