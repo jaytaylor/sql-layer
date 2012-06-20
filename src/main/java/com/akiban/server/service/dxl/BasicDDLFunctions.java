@@ -188,7 +188,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final RowDef rowDef = getRowDef(table.getTableId());
         final TableName tableName = table.getName();
         try {
-            store().truncateGroup(session, rowDef.getRowDefId());
+            store().dropGroup(session, rowDef.getRowDefId());
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
