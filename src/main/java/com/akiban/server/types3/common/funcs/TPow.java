@@ -27,18 +27,16 @@
 package com.akiban.server.types3.common.funcs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.List;
 
-public class Pow extends TOverloadBase {
+public class TPow extends TOverloadBase {
     
     private final TClass inputType;
     
-    protected Pow(TClass inputType) {
+    protected TPow(TClass inputType) {
         this.inputType = inputType;
     }
     
@@ -61,12 +59,6 @@ public class Pow extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.custom(inputType.instance(), new TCustomOverloadResult() {
-
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                return inputType.instance();
-            }
-        });
+        return TOverloadResult.fixed(inputType.instance());
     }
 }

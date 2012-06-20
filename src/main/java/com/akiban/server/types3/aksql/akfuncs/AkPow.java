@@ -28,8 +28,8 @@ package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.Pow;
+import com.akiban.server.types3.common.funcs.TPow;
 
 public class AkPow {
-    private static final TOverload INSTANCE = new Pow(AkNumeric.DOUBLE) {};
+    private static final TOverload INSTANCE = new TPow(AkNumeric.DOUBLE) {};
 }
