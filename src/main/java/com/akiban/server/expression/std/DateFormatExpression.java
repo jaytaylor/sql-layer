@@ -49,7 +49,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
     public static final ExpressionComposer COMPOSER = new BinaryComposer ()
     {
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new DateFormatExpression(first, second);
         }

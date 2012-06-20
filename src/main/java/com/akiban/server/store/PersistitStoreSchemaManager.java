@@ -185,7 +185,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public TableName registerStoredInformationSchemaTable(Session session, final UserTable newTable, final int version) {
+    public TableName registerStoredInformationSchemaTable(final UserTable newTable, final int version) {
         final TableName newName = newTable.getName();
         checkAISSchema(newName, true);
         UserTable curTable = getAis().getUserTable(newName);
@@ -198,7 +198,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             }
         }
 
-        transactionally(session, new ThrowingRunnable() {
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
                 createTableCommon(session, newTable, true, version, null);
@@ -208,11 +208,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
-    public TableName registerMemoryInformationSchemaTable(Session session, final UserTable newTable, final MemoryTableFactory factory) {
+    public TableName registerMemoryInformationSchemaTable(final UserTable newTable, final MemoryTableFactory factory) {
         if(factory == null) {
             throw new IllegalArgumentException("MemoryTableFactory may not be null");
         }
-        transactionally(session, new ThrowingRunnable() {
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
             @Override
             public void run(Session session) throws PersistitException {
                 createTableCommon(session, newTable, true, null, factory);
