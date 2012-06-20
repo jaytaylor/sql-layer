@@ -259,7 +259,6 @@ public class ApiTestBase {
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
         unfinishedRowUpdaters.clear();
         dropAllTables();
-        deleteAllTrees();
         assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
         String openCursorsMessage = null;
         if (sm.serviceIsStarted(DXLService.class)) {
@@ -295,7 +294,8 @@ public class ApiTestBase {
          */
         SchemaManager schemaManager = sm.getSchemaManager();
         if (schemaManager instanceof PersistitStoreSchemaManager) {
-            ((PersistitStoreSchemaManager) schemaManager).reset();
+            ((PersistitStoreSchemaManager) schemaManager).stop();
+            ((PersistitStoreSchemaManager) schemaManager).start();
         }
         IndexStatisticsService iss = sm.getServiceByClass(IndexStatisticsService.class);
         if (iss instanceof IndexStatisticsServiceImpl) {
@@ -310,20 +310,6 @@ public class ApiTestBase {
         needServicesRestart |= runningOutOfSpace();
     }
     
-
-    private void deleteAllTrees() throws Exception {
-        final Persistit db = treeService().getDb();
-        for (final Volume volume : db.getVolumes()) {
-            if (!volume.equals(db.getSystemVolume())) {
-                final String[] treeNames = volume.getTreeNames();
-                for (final String treeName : treeNames) {
-                    Exchange ex = db.getExchange(volume, treeName, false);
-                    ex.removeTree();
-                }
-            }
-        }
-     }
-
     private boolean runningOutOfSpace() {
         return datadir().getFreeSpace() < 256 * 1024 * 1024;
     }
