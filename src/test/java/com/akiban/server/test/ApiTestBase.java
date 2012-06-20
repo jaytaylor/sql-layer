@@ -28,8 +28,8 @@ package com.akiban.server.test;
 
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
-import static junit.framework.Assert.assertNull;
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
 import java.io.File;
@@ -48,83 +48,82 @@ import java.util.Set;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
-import junit.framework.Assert;
-
-import org.apache.commons.io.FileUtils;
-import org.junit.After;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.rules.MethodRule;
-import org.junit.rules.TestName;
-import org.junit.rules.TestWatchman;
-import org.junit.runners.model.FrameworkMethod;
-
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
-import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.Index;
-import com.akiban.ais.model.IndexColumn;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
+import com.akiban.server.AkServerUtil;
+import com.akiban.server.api.dml.scan.ScanFlag;
+import com.akiban.server.rowdata.SchemaFactory;
+import com.akiban.server.service.ServiceManagerImpl;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDefCache;
+import com.akiban.server.service.config.TestConfigService;
+import com.akiban.server.service.dxl.DXLService;
+import com.akiban.server.service.dxl.DXLTestHookRegistry;
+import com.akiban.server.service.dxl.DXLTestHooks;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
+import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.types.extract.ConverterTestUtils;
+import com.akiban.server.util.GroupIndexCreator;
+import com.akiban.util.AssertUtils;
+import com.akiban.util.Strings;
+import com.akiban.util.tap.TapReport;
+import com.akiban.util.Undef;
+import com.persistit.Transaction;
+import junit.framework.Assert;
+
+import org.junit.After;
+import org.junit.Before;
+
+import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.server.api.dml.scan.RowDataOutput;
+import com.akiban.server.service.config.Property;
+import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
+import com.akiban.util.ListUtils;
+
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.api.dml.scan.RowOutput;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
-import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.api.dml.scan.ScanRequest;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.ServiceManager;
-import com.akiban.server.service.ServiceManagerImpl;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.config.Property;
-import com.akiban.server.service.config.TestConfigService;
-import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.dxl.DXLTestHookRegistry;
-import com.akiban.server.service.dxl.DXLTestHooks;
-import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.service.tree.TreeService;
-import com.akiban.server.store.PersistitStore;
-import com.akiban.server.store.PersistitStoreSchemaManager;
-import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.Store;
-import com.akiban.server.store.statistics.IndexStatisticsService;
-import com.akiban.server.store.statistics.IndexStatisticsServiceImpl;
-import com.akiban.server.types.extract.ConverterTestUtils;
-import com.akiban.server.util.GroupIndexCreator;
-import com.akiban.util.AssertUtils;
-import com.akiban.util.ListUtils;
-import com.akiban.util.Strings;
-import com.akiban.util.Undef;
-import com.akiban.util.tap.TapReport;
-import com.persistit.Transaction;
+import org.junit.Rule;
+import org.junit.rules.MethodRule;
+import org.junit.rules.TestName;
+import org.junit.rules.TestWatchman;
+import org.junit.runners.model.FrameworkMethod;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
  * various convenience testing methods.</p>
  */
 public class ApiTestBase {
+    private static final int MIN_FREE_SPACE = 256 * 1024 * 1024;
     private static final String TAPS = System.getProperty("it.taps");
     protected final static Object UNDEF = Undef.only();
+
     private static final Comparator<? super TapReport> TAP_REPORT_COMPARATOR = new Comparator<TapReport>() {
         @Override
         public int compare(TapReport o1, TapReport o2) {
@@ -171,7 +170,7 @@ public class ApiTestBase {
         }
     }
 
-    private static ServiceManager sm;
+    private ServiceManager sm;
     private Session session;
     private int aisGeneration;
     private int akibanFKCount;
@@ -205,7 +204,7 @@ public class ApiTestBase {
                 }
                 if (!TestConfigService.TESTDIR.mkdirs() && !TestConfigService.TESTDIR.isDirectory())
                     throw new RuntimeException("couldn't create dir: " + TestConfigService.TESTDIR);
-                FileUtils.cleanDirectory(TestConfigService.TESTDIR);
+                AkServerUtil.cleanUpDirectory(TestConfigService.TESTDIR);
                 assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
                 sm = createServiceManager(startupConfigProperties);
                 sm.startServices();
@@ -289,6 +288,7 @@ public class ApiTestBase {
          * TODO: code this more elegantly within the framework
          * 
          */
+        /*
         SchemaManager schemaManager = sm.getSchemaManager();
         if (schemaManager instanceof PersistitStoreSchemaManager) {
             ((PersistitStoreSchemaManager) schemaManager).stop();
@@ -299,6 +299,7 @@ public class ApiTestBase {
             ((IndexStatisticsServiceImpl) iss).stop();
             ((IndexStatisticsServiceImpl) iss).start();
         }
+        */
 
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
@@ -307,16 +308,15 @@ public class ApiTestBase {
         needServicesRestart |= runningOutOfSpace();
     }
     
-    private boolean runningOutOfSpace() {
-        return datadir().getFreeSpace() < 256 * 1024 * 1024;
+    private static boolean runningOutOfSpace() {
+        return datadir().getFreeSpace() < MIN_FREE_SPACE;
     }
 
     private static File datadir() {
-        String datadir = sm.getConfigurationService().getProperty("akserver.datapath");
-        return new File(datadir);
+        return TestConfigService.TESTDIR;
     }
 
-    public static void stopTestServices() throws Exception {
+    public void stopTestServices() throws Exception {
         ServiceManagerImpl.setServiceManager(null);
         if (lastStartupConfigProperties == null) {
             return;
@@ -349,7 +349,7 @@ public class ApiTestBase {
 
     protected Collection<Property> defaultPropertiesToPreserveOnRestart() {
         List<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("akserver.datapath", treeService().getDataPath()));
+        properties.add(new Property(TestConfigService.DATA_PATH_KEY, treeService().getDataPath()));
         return properties;
     }
 

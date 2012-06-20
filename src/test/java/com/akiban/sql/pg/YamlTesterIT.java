@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types.extract.ConverterTestUtils;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -38,8 +39,6 @@ import java.sql.Connection;
 
 import org.junit.Ignore;
 import org.junit.Test;
-
-import com.akiban.server.types.extract.ConverterTestUtils;
 
 /** Test the {@code YamlTester} class. */
 public class YamlTesterIT extends PostgresServerYamlITBase {

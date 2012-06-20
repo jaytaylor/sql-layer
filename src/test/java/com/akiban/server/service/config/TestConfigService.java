@@ -53,7 +53,8 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     @Override
-    public boolean testing() {
+    public boolean testing()
+    {
         return true;
     }
 
@@ -93,7 +94,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
             }
         } else {
             if (!TESTDIR.mkdir()) {
-                throw new ConfigurationPropertiesLoadException(TESTDIR.getName(), " it couldn't be created");
+                throw new ConfigurationPropertiesLoadException (TESTDIR.getName(), " it couldn't be created");
             }
             TESTDIR.deleteOnExit();
         }
@@ -102,10 +103,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     public static void setOverrides(Collection<Property> startupConfigProperties) {
         if (!startupConfigPropertiesRef.compareAndSet(null, startupConfigProperties)) {
-            throw new IllegalStateException("already set"); // sanity check;
-                                                            // feel free to
-                                                            // remove if it gets
-                                                            // in your way
+            throw new IllegalStateException("already set"); // sanity check; feel free to remove if it gets in your way
         }
     }
 
@@ -122,7 +120,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     private static final AtomicReference<Collection<Property>> startupConfigPropertiesRef = new AtomicReference<Collection<Property>>();
-    private final static String DATA_PATH_KEY = "akserver.datapath";
+    public final static String DATA_PATH_KEY = "akserver.datapath";
     private final static String BUFFER_SIZE_KEY = "persistit.buffersize";
     private final static String BUFFER_MEMORY_KEY_PREFIX = "persistit.buffer.memory";
     private final static String JOURNAL_SIZE_KEY = "persistit.journalsize";
