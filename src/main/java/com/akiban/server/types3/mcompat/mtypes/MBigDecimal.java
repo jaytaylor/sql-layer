@@ -88,9 +88,10 @@ public class MBigDecimal extends TClass {
             targetInstance.setMetaData(meta);
         }
         
-        // check the precision
-        if (num.abs().compareTo(meta[MAX_INDEX]) > 0)
+        if (num.compareTo(meta[MAX_INDEX]) >= 0)
             targetValue.putObject(meta[MAX_INDEX]);
+        else if (num.compareTo(meta[MIN_INDEX]) <= 0)
+            targetValue.putObject(meta[MIN_INDEX]);
         else if (scale > expectedScale) // check the sacle
             targetValue.putObject(num.round(expectedPre, expectedScale));
         else // else put the original value
