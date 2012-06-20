@@ -17,6 +17,7 @@ package com.akiban.sql.optimizer.explain;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.ArithOps;
 import com.akiban.server.expression.std.FromUnixExpression;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -24,6 +25,7 @@ import com.akiban.server.expression.std.SubStringExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.optimizer.explain.std.TreeFormat;
 import java.util.Arrays;
+import java.util.Collections;
 import org.junit.Test;
 import static org.junit.Assert.*;
 
@@ -57,16 +59,16 @@ public class TreeFormatTest
         Expression lit_varchar = new LiteralExpression(AkType.VARCHAR, "%Y-%m-%d");
         
         // from times exp
-        Expression times = ((ExpressionComposer)ArithOps.MULTIPLY).compose(Arrays.asList(lit_123456, lit_7));
-        Expression add = ((ExpressionComposer)ArithOps.ADD).compose(Arrays.asList(times, lit_8));
+        Expression times = ((ExpressionComposer)ArithOps.MULTIPLY).compose(Arrays.asList(lit_123456, lit_7), Collections.<ExpressionType>nCopies(3, null));
+        Expression add = ((ExpressionComposer)ArithOps.ADD).compose(Arrays.asList(times, lit_8), Collections.<ExpressionType>nCopies(3, null));
         
-        Expression arg2 = ((ExpressionComposer)ArithOps.ADD).compose(Arrays.asList(lit_9, lit_10));
+        Expression arg2 = ((ExpressionComposer)ArithOps.ADD).compose(Arrays.asList(lit_9, lit_10), Collections.<ExpressionType>nCopies(3, null));
         
         // from unix exp
-        Expression arg1 = FromUnixExpression.COMPOSER.compose(Arrays.asList(add, lit_varchar));
+        Expression arg1 = FromUnixExpression.COMPOSER.compose(Arrays.asList(add, lit_varchar), Collections.<ExpressionType>nCopies(3, null));
         
         // substr exp
-        Expression substr = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1, arg2, lit_11));
+        Expression substr = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         
         TreeFormat fm = new TreeFormat();
         
