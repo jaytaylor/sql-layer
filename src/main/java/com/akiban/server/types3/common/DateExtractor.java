@@ -96,8 +96,7 @@ public class DateExtractor {
         return last != -1L && datetime[2] <= last;
     }
 
-    public static MutableDateTime getMutableDateTime(TExecutionContext context, long input, boolean setDateTime) {
-        long[] dateArr = DateExtractor.extract(input);
+    public static MutableDateTime getMutableDateTime(TExecutionContext context, long[] dateArr, boolean setDateTime) {
         MutableDateTime datetime = (MutableDateTime) context.exectimeObjectAt(DATE_INDEX);
         if (context == null) {
             context.putExectimeObject(DATE_INDEX, datetime = new MutableDateTime());
@@ -110,6 +109,10 @@ public class DateExtractor {
         return datetime;
     }
 
+    public static int toTime(long hour, long min, long sec) {
+        return (int) (hour * DATETIME_HOUR_SCALE + min * DATETIME_MIN_SCALE + sec * DATETIME_SEC_SCALE);
+    }
+    
     public static long toDate(long year, long month, long day) {
         return year * DATE_YEAR_SCALE + month * DATE_MONTH_SCALE + day * DATE_DAY_SCALE;
     }

@@ -25,45 +25,49 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class MConcat extends TOverloadBase {
-    public static final TOverload INSTANCE = new MConcat();
-    
-    private MConcat(){}
+public class MMaketime extends TOverloadBase {
+
+    public static final TOverload INSTANCE = new MMaketime() {};
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.vararg(MString.VARCHAR, 0);
+        builder.covers(MNumeric.INT, 0, 1, 2);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < inputs.size(); ++i) {
-            String inputStr = (String) inputs.get(i).getObject();
-            assert inputStr != null;
-            sb.append(inputStr);
+        // Time input format HHMMSS
+        int hours = inputs.get(0).getInt32(); 
+        int minutes = inputs.get(1).getInt32();
+        int seconds = inputs.get(2).getInt32();
+        
+        // Check for valid input
+        if (minutes < 0 || minutes >= 60 || seconds < 0 || seconds >= 60) {
+            output.putNull();
+            return;
         }
-        output.putObject(sb.toString());
+        
+        int time = hours < 0 ? -1 : 1;
+        hours *= time;
+        time *= seconds + minutes * 100 + hours * 10000;
+        output.putInt32(time);     
     }
 
     @Override
     public String overloadName() {
-        return "CONCAT";
+        return "MAKETIME";
     }
 
     @Override
     public TOverloadResult resultType() {
-        assert false : "need to implement this!";
-        return TOverloadResult.custom(null); // todo
+        return TOverloadResult.fixed(MDatetimes.TIME);
     }
 }

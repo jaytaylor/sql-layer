@@ -24,40 +24,41 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class AkDegrees extends TOverloadBase {
-    public static final TOverload INSTANCE = new AkDegrees();
+public class TPow extends TOverloadBase {
     
-    private AkDegrees(){}
+    private final TClass inputType;
+    
+    protected TPow(TClass inputType) {
+        this.inputType = inputType;
+    }
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(AkNumeric.DOUBLE, 0);
+        builder.covers(inputType, 0, 1);
     }
-
+        
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        output.putDouble(Math.toDegrees(inputs.get(0).getDouble()));
+        double a0 = inputs.get(0).getDouble();
+        double a1 = inputs.get(1).getDouble();
+        output.putDouble(Math.pow(a0, a1));
     }
-
+        
     @Override
     public String overloadName() {
-        return "DEGREES";
+        return "POW";
     }
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
+        return TOverloadResult.fixed(inputType.instance());
     }
 }

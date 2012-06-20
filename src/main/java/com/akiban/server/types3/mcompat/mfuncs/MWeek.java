@@ -37,61 +37,75 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
-import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
-public abstract class MWeek extends TOverloadBase {
-
-    private static final int WEEK_INDEX = 0; 
+public abstract class MWeek extends TOverloadBase { 
     
-    public static final MWeek[] INSTANCES = {
+    public static final TOverload[] WEEK = {
         new MWeek() {
 
         @Override
-        protected void buildInputSets(TInputSetBuilder builder) {
-            builder.covers(MDatetimes.DATE, 0);
-        }
-
-        @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int input = inputs.get(0).getInt32();
-            
-            long[] date = DateExtractor.extract(input);
-            if (isZero(date, context, output)) return;
+            doEvaluate(0, inputs.get(0).getInt64(), context, output);
+        }
         
-            output.putInt32(getWeek(0, context, date));
+        @Override
+        public String overloadName() {
+            return "WEEK";
         }
     },
         new MWeek() {
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
-            builder.covers(MDatetimes.DATE, 0);
+            builder.covers(MDatetimes.DATETIME, 0);
             builder.covers(MNumeric.INT, 1);
         }
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            int input = inputs.get(0).getInt32();
-            
-            long[] date = DateExtractor.extract(input);
-            if (isZero(date, context, output)) return;
-           
-            int mode = inputs.get(1).getInt32();
-            if (mode < 0 || mode > 7) {
-                if (context != null)
-                    context.warnClient(new InvalidParameterValueException("MODE out of range [0, 7]: " + mode));
-                output.putNull(); 
-            }
-            else {
-                output.putInt32(getWeek(mode, context, date));
-            }        
+            doEvaluate(inputs.get(1).getInt32(), inputs.get(0).getInt64(), context, output);
+        }
+
+        @Override
+        public String overloadName() {
+            return "WEEK";
         }
     }};
+    
+    public static final TOverload WEEKOFYEAR = new MWeek() {
 
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            doEvaluate(3, inputs.get(0).getInt64(), context, output);
+        }   
+        
+        @Override
+        public String overloadName() {
+            return "WEEKOFYEAR";
+        }
+    };
+    
     @Override
-    public String overloadName() {
-        return "WEEK";
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(MDatetimes.DATETIME, 0);
+    }
+    
+    protected void doEvaluate(int mode, long input, TExecutionContext context, PValueTarget output) {
+        long[] date = DateExtractor.extract(input);
+        if (isZero(date, context, output)) return;
+
+        if (mode < 0 || mode > 7) {
+            if (context != null) {
+                context.warnClient(new InvalidParameterValueException("MODE out of range [0, 7]: " + mode));
+            }
+            output.putNull();
+        } else {
+            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, date, true);
+            int week = modes[mode].getWeek(datetime, 
+                    (int)date[DateExtractor.YEAR], (int)date[DateExtractor.MONTH], (int)date[DateExtractor.DAY]);
+            output.putInt32(week);
+        }
     }
 
     @Override
@@ -182,18 +196,12 @@ public abstract class MWeek extends TOverloadBase {
         }   
 
         private static boolean isZero(long[] date, TExecutionContext context,PValueTarget output) {
-            boolean isZero = date[1] * date[2] == 0L;
+            boolean isZero = date[DateExtractor.MONTH] == 0L || date[DateExtractor.DAY] == 0L;
             if (isZero) {
                 if (context != null)
                     context.warnClient(new ZeroDateTimeException());
                 output.putNull();
             }
             return isZero;
-        }
-        
-        private static int getWeek(int mode, TExecutionContext context, long[] date) {
-            MutableDateTime datetime = (MutableDateTime) context.exectimeObjectAt(WEEK_INDEX);
-            if (datetime == null) context.putExectimeObject(WEEK_INDEX, datetime = new MutableDateTime());
-            return modes[mode].getWeek(datetime, (int)date[0], (int)date[1], (int)date[2]);
         }
 }

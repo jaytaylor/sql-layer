@@ -26,11 +26,15 @@
 
 package com.akiban.server.types3.common.types;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.types3.TBundle;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
 public abstract class TString extends TClass
 {
@@ -44,7 +48,34 @@ public abstract class TString extends TClass
                 serialisationSize,
                 PUnderlying.BYTES);
     }
-    
+
+     
+    @Override
+    public void putSafety(QueryContext context, 
+                          TInstance sourceInstance,
+                          PValueSource sourceValue,
+                          TInstance targetInstance,
+                          PValueTarget targetValue)
+    {
+        // check type safety
+        assert getClass().isAssignableFrom(sourceInstance.typeClass().getClass())
+                    && getClass().isAssignableFrom(targetInstance.typeClass().getClass())
+                : "expected instances of TString";
+        
+        String raw = (String) sourceValue.getObject();
+        int maxLen = targetInstance.attribute(StringAttribute.LENGTH);
+        
+        if (raw.length() > maxLen)
+        {   
+            String truncated = raw.substring(0, maxLen);
+            // TODO: check charset and collation, too
+            context.warnClient(new StringTruncationException(raw, truncated));
+            targetValue.putObject(truncated);
+        }
+        else
+            targetValue.putObject(raw);
+    }
+     
     @Override
     public TInstance instance()
     {

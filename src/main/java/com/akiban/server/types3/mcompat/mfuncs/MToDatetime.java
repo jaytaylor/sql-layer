@@ -45,7 +45,8 @@ public abstract class MToDatetime extends TOverloadBase{
         
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, inputs.get(0).getInt64(), true);
+            long [] dateArr = DateExtractor.extract(inputs.get(0).getInt64());
+            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, dateArr, true);
             long time = (datetime.getMillis() - DateExtractor.BEGINNING) / DateExtractor.DAY_FACTOR;
             output.putInt32((int) time);
         }
@@ -61,7 +62,8 @@ public abstract class MToDatetime extends TOverloadBase{
         
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, inputs.get(0).getInt64(), true);
+            long [] dateArr = DateExtractor.extract(inputs.get(0).getInt64());
+            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, dateArr, true);
             long seconds = datetime.getMillis() / SECONDS_FACTOR;
             output.putInt32((int)seconds);
         }
@@ -77,7 +79,8 @@ public abstract class MToDatetime extends TOverloadBase{
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, inputs.get(0).getInt64(), true);
+            long [] dateArr = DateExtractor.extract(inputs.get(0).getInt64());            
+            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, dateArr, true);
             long seconds = (datetime.getMillis() - DateExtractor.BEGINNING) / SECONDS_FACTOR;
             output.putInt32((int)seconds);
         }
@@ -88,7 +91,6 @@ public abstract class MToDatetime extends TOverloadBase{
         }
         
     }; 
-
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {

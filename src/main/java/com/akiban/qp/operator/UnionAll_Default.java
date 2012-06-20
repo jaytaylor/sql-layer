@@ -35,6 +35,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.Strings;
@@ -366,6 +368,16 @@ final class UnionAll_Default extends Operator {
         @Override
         public ValueSource eval(int index) {
             return delegate.eval(index);
+        }
+
+        @Override
+        public TInstance tinstance(int index) {
+            return delegate.tinstance(index);
+        }
+
+        @Override
+        public PValueSource pvalue(int index) {
+            return delegate.pvalue(index);
         }
 
         /**
