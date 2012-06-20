@@ -56,6 +56,25 @@ public final class TInstance {
         return this;
     }
 
+    public Object getMetaData() {
+        return metaData;
+    }
+    
+    /**
+     * 
+     * @param o additional meta data for this TInstance
+     * @return 
+     * <code>false</code> if this method has already been called on this object.
+     * The new meta data will <e>not</e> override the current one.
+     * <code>true</code> if this object's meta data is still <code>null</code>.
+     */
+    public boolean setMetaData (Object o) {
+        if (metaData != null)
+            return false;
+        metaData = o;
+        return true;
+    }
+    
     public TInstance copy() {
         return new TInstance(tclass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
@@ -76,4 +95,5 @@ public final class TInstance {
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
+    private Object metaData;
 }

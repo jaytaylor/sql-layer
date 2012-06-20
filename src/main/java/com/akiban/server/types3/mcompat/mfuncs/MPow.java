@@ -24,23 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.common.types.TString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.TPow;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
-public class AkString extends TString
-{
-    public static final AkString VARCHAR = new AkString("varchar", -1);
-    
-    // TODO: define CHAR, and VARBINARY
-    
-    private AkString (String name, int serialisationSize)
-    {
-        super(AkBundle.INSTANCE, name, serialisationSize);
-    }
+public class MPow {
+    public static final TOverload INSTANCE = new TPow(MDouble.INSTANCE) {};
 }

@@ -24,49 +24,41 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.common.funcs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.DateExtractor;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import org.joda.time.MutableDateTime;
 
-public class MSecToTime extends TOverloadBase {
-
-    public static final TOverload INSTANCE = new MSecToTime();
+public class TPow extends TOverloadBase {
     
-    private MSecToTime() {}
+    private final TClass inputType;
+    
+    protected TPow(TClass inputType) {
+        this.inputType = inputType;
+    }
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.INT, 0);
+        builder.covers(inputType, 0, 1);
     }
-
+        
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int time = inputs.get(0).getInt32();
-        MutableDateTime datetime = DateExtractor.getMutableDateTime(context, new long[0], false); 
-        datetime.setDate(time);
-        output.putInt32(DateExtractor.toTime(datetime.getHourOfDay(), datetime.getMinuteOfHour(),
-                datetime.getSecondOfMinute()));
+        double a0 = inputs.get(0).getDouble();
+        double a1 = inputs.get(1).getDouble();
+        output.putDouble(Math.pow(a0, a1));
     }
-
+        
     @Override
     public String overloadName() {
-        return "SEC_TO_TIME";
+        return "POW";
     }
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MDatetimes.TIME);
+        return TOverloadResult.fixed(inputType.instance());
     }
-
 }

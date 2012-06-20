@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -41,6 +42,12 @@ public abstract class TClass {
     public /*abstract*/ void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
         throw new AssertionError("make this abstract and implement in all subclasses"); // TODO
     }
+
+    public abstract void putSafety(QueryContext context,
+                        TInstance sourceInstance,
+                        PValueSource sourceValue,
+                        TInstance targetInstance,
+                        PValueTarget targetValue);
 
     public TInstance instance()
     {
