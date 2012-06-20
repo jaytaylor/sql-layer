@@ -86,8 +86,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
                                     putOverload((TOverload)raw, list);
                                 break;
                             }
-                            catch (ClassCastException e){}
-                            // fall thru
+                            catch (ClassCastException e){/* fall thru */}
                         default:
                             complain("Field " + field 
                                     + " must be declared as public static final TOverload "
@@ -117,8 +116,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
                                     putOverload((TOverload)raw,  list);
                                 break;
                             }
-                            catch (ClassCastException e) {}
-                            // fall thru
+                            catch (ClassCastException e) {/* fall thru */}
                         default:
                             complain("Method " + method 
                                     + " must be declared as public static TOverload[] <methodname>() "
