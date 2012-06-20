@@ -30,7 +30,6 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,7 +39,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TestConfigService extends ConfigurationServiceImpl {
     public final static File TESTDIR = new File("/tmp/akserver-junit");
-    public static boolean PRESERVE_DIRECTORY = false;
+    private static volatile boolean doCleanOnUnload = false;
     private final Collection<Property> extraProperties;
     File tmpDir;
 
@@ -80,7 +79,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     @Override
     protected void unloadProperties() {
-        if (!PRESERVE_DIRECTORY) {
+        if (doCleanOnUnload) {
             AkServerUtil.cleanUpDirectory(tmpDir);
         }
     }
@@ -102,24 +101,6 @@ public class TestConfigService extends ConfigurationServiceImpl {
             TESTDIR.deleteOnExit();
         }
         return TESTDIR;
-        //
-        // File tmpFile;
-        // try {
-        // tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
-        // } catch (IOException e) {
-        // throw new ConfigurationPropertiesLoadException ("akserver-unitdata",
-        // "it could create the temp file");
-        // }
-        // if (!tmpFile.delete()) {
-        // throw new ConfigurationPropertiesLoadException (tmpFile.getName(),
-        // "it couldn't be deleted");
-        // }
-        // if (!tmpFile.mkdir()) {
-        // throw new ConfigurationPropertiesLoadException (tmpFile.getName(),
-        // "it couldn't be created");
-        // }
-        // tmpFile.deleteOnExit();
-        // return tmpFile;
     }
 
     public static void setOverrides(Collection<Property> startupConfigProperties) {
@@ -133,6 +114,14 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     private static Collection<Property> getAndClearOverrides() {
         return startupConfigPropertiesRef.getAndSet(null);
+    }
+
+    public static boolean getDoCleanOnUnload() {
+        return doCleanOnUnload;
+    }
+
+    public static void setDoCleanOnUnload(boolean doClean) {
+        doCleanOnUnload = doClean;
     }
 
     private static final AtomicReference<Collection<Property>> startupConfigPropertiesRef = new AtomicReference<Collection<Property>>();

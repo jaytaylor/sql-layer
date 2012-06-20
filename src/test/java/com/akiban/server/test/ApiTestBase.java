@@ -116,10 +116,7 @@ import com.akiban.util.ListUtils;
 import com.akiban.util.Strings;
 import com.akiban.util.Undef;
 import com.akiban.util.tap.TapReport;
-import com.persistit.Exchange;
-import com.persistit.Persistit;
 import com.persistit.Transaction;
-import com.persistit.Volume;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
@@ -356,19 +353,28 @@ public class ApiTestBase {
         return properties;
     }
 
+    protected boolean defaultDoCleanOnUnload() {
+        return true;
+    }
+
     public final void safeRestartTestServices() throws Exception {
         safeRestartTestServices(defaultPropertiesToPreserveOnRestart());
     }
 
     public final void safeRestartTestServices(Collection<Property> propertiesToPreserve) throws Exception {
-        // Thread.sleep(1000); // Let journal flush
         /*
          * Need this because deleting Trees currently is not transactional.  Therefore after
          * restart we recover the previous trees and forget about the deleteTree operations.
          * TODO: remove when transaction Tree management is done.
          */
         treeService().getDb().checkpoint();
-        crashTestServices(); // TODO: WHY doesn't this work with stop?
+        final boolean original = TestConfigService.getDoCleanOnUnload();
+        try {
+            TestConfigService.setDoCleanOnUnload(defaultDoCleanOnUnload());
+            crashTestServices(); // TODO: WHY doesn't this work with stop?
+        } finally {
+            TestConfigService.setDoCleanOnUnload(original);
+        }
         restartTestServices(propertiesToPreserve);
     }
     
