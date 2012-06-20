@@ -90,15 +90,21 @@ public class DateExtractor {
         return last != -1L && datetime[2] <= last;
     }
   
-    public static MutableDateTime getMutableDateTime(TExecutionContext context, long input) {
+    public static MutableDateTime getMutableDateTime(TExecutionContext context, long input, boolean setDateTime) {
         long[] dateArr = DateExtractor.extract(input);
         MutableDateTime datetime = (MutableDateTime) context.exectimeObjectAt(DATE_INDEX);
         if (context == null) {
             context.putExectimeObject(DATE_INDEX, datetime = new MutableDateTime());
         }
 
-        datetime.setDateTime((int) dateArr[DateExtractor.YEAR], (int) dateArr[DateExtractor.MONTH], (int) dateArr[DateExtractor.DAY],
-                (int) dateArr[DateExtractor.HOUR], (int) dateArr[DateExtractor.MINUTE], (int) dateArr[DateExtractor.SECOND], 0);
+        if (setDateTime) {
+            datetime.setDateTime((int) dateArr[DateExtractor.YEAR], (int) dateArr[DateExtractor.MONTH], (int) dateArr[DateExtractor.DAY],
+                    (int) dateArr[DateExtractor.HOUR], (int) dateArr[DateExtractor.MINUTE], (int) dateArr[DateExtractor.SECOND], 0);
+        }
         return datetime;
+    }
+
+    public static int toTime(long hour, long min, long sec) {
+        return (int) (hour * DATETIME_HOUR_SCALE + min * DATETIME_MIN_SCALE + sec * DATETIME_SEC_SCALE);
     }
 }
