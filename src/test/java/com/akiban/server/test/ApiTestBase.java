@@ -170,7 +170,7 @@ public class ApiTestBase {
         }
     }
 
-    private ServiceManager sm;
+    private static ServiceManager sm;
     private Session session;
     private int aisGeneration;
     private int akibanFKCount;
