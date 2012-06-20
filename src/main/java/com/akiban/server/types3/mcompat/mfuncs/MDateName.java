@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.DateExtractor;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -35,34 +36,47 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.text.DateFormatSymbols;
 import java.util.Locale;
+import org.joda.time.MutableDateTime;
 
-public class MMonthName extends TOverloadBase {
+public abstract class MDateName extends TOverloadBase {
     
     private static final String MONTHS[] = new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths();
-    private final TClass dateType;
-    public final TOverload INSTANCE;
+    private static final String DAYS[] = new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getWeekdays();
 
-    private MMonthName(TClass dateType) {
-        this.dateType = dateType;
-        INSTANCE = new MMonthName(dateType){};
-    }
+    public static final TOverload MONTHNAME = new MDateName() {
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            long input = inputs.get(0).getInt64();
+            String month = MONTHS[(int) DateExtractor.extract(input)[DateExtractor.MONTH]];
+            output.putObject(month);
+        }
+
+        @Override
+        public String overloadName() {
+            return "MONTHNAME";
+        }
+    };
+    
+    public static final TOverload DAYNAME = new MDateName() {
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            long[] dateArr = DateExtractor.extract(inputs.get(0).getInt64());
+            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, dateArr, true);
+            String month = DAYS[datetime.getDayOfWeek()%7];
+            output.putObject(month);
+        }
+
+        @Override
+        public String overloadName() {
+            return "DAYNAME";
+        }
+    };
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(dateType);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        long input = inputs.get(0).getInt64();
-        String month = MONTHS[(int)DateExtractor.extract(input)[DateExtractor.MONTH]];
-        
-        output.putObject(month);
-    }
-
-    @Override
-    public String overloadName() {
-        return "MONTHNAME";
+        builder.covers(MDatetimes.DATETIME, 0);
     }
 
     @Override
