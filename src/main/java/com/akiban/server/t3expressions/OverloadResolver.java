@@ -17,49 +17,113 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.EnumSet;
 import java.util.List;
 
 public final class OverloadResolver {
-    TValidatedOverload get(String name, List<? extends TPreptimeValue> inputs) {
+    OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
         Collection<? extends TValidatedOverload> namedOverloads = registry.get(name);
         if (namedOverloads.isEmpty())
             throw new NoSuchFunctionException(name);
-        
-        List<? extends TInputSet> inputSets;
 
-        TClass pickingClass;
-        TValidatedOverload resolvedOverload = null;
+        OverloadResult result = null;
 
-        int nInputs = inputs.size();
         if (namedOverloads.size() == 1) {
-            resolvedOverload = namedOverloads.iterator().next();
-            if (!resolvedOverload.coversNInputs(nInputs))
-                throw new WrongExpressionArityException(resolvedOverload.positionalInputs(), nInputs);
-            pickingClass = pickingClass(resolvedOverload);
+            result = defaultResolution(inputs, namedOverloads);
         }
-        if (resolvedOverload == null) {
-            List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
-            for (TValidatedOverload overload : namedOverloads) {
-                if ( overload.allowsInputs(inputs)) {
-                    candidates.add(overload);
-                }
-            }
-            // need to get picking classes, cull out based on specifics
+        if (result == null) {
+            result = inputBasedResolution(inputs, namedOverloads);
         }
+        return result;
     }
 
-    private TClass pickingClass(TValidatedOverload resolvedOverload) {
-        throw new UnsupportedOperationException();
+    private OverloadResult inputBasedResolution(List<? extends TPreptimeValue> inputs,
+                                                Collection<? extends TValidatedOverload> namedOverloads) {
+        // Input-based resolution
+        List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
+        for (TValidatedOverload overload : namedOverloads) {
+            if ( isCandidate(overload, inputs)) {
+                candidates.add(overload);
+            }
+        }
+        // TODO find the most specific
     }
+
+    private OverloadResult defaultResolution(List<? extends TPreptimeValue> inputs,
+                                                 Collection<? extends TValidatedOverload> namedOverloads) {
+        TValidatedOverload resolvedOverload;TClass pickingClass;
+        int nInputs = inputs.size();
+        resolvedOverload = namedOverloads.iterator().next();
+        // throwing an exception here isn't strictly required, but it gives the user a more specific error
+        if (!resolvedOverload.coversNInputs(nInputs))
+            throw new WrongExpressionArityException(resolvedOverload.positionalInputs(), nInputs);
+        pickingClass = pickingClass(resolvedOverload, inputs);
+        return new OverloadResult(resolvedOverload, pickingClass);
+    }
+
+    public boolean isCandidate(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
+        if (!overload.coversNInputs(inputs.size()))
+            return false;
+        for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
+            TInstance inputInstance = inputs.get(i).instance();
+            // allow this input if...
+            // ... input's type it NULL or ?
+            if (inputInstance == null)       // input
+                continue;
+            // ... input set takes ANY
+            TInputSet inputSet = overload.inputSetAt(i);
+            if (inputSet.targetType() == null)
+                continue;
+            // ... input can be strongly cast to input set
+            TCast cast = registry.cast(inputInstance.typeClass(), inputSet.targetType());
+            if (cast != null && cast.isStrong())
+                continue;
+            // This input precludes the use of the overload
+            return false;
+        }
+        // no inputs have precluded this overload
+        return true;
+    }
+
+    private TClass pickingClass(TValidatedOverload overload,  List<? extends TPreptimeValue> inputs) {
+        TInputSet pickingSet = overload.pickingInputSet();
+        if (pickingSet == null)
+            return null;
+        TClass common = null;
+        for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i)) {
+            common = registry.commonTClass(common, inputs.get(i).instance().typeClass());
+            if (common == T3ScalarsRegistery.NO_COMMON)
+                return common;
+        }
+        if (pickingSet.coversRemaining()) {
+            for (int i = overload.firstVarargInput(), last = inputs.size(); i < last; ++i) {
+                common = registry.commonTClass(common, inputs.get(i).instance().typeClass());
+                if (common == T3ScalarsRegistery.NO_COMMON)
+                    return common;
+            }
+        }
+        return common;
+    }
+
 
     private T3ScalarsRegistery registry;
+
+    public static class OverloadResult {
+        private TValidatedOverload overload;
+        private TClass pickingClass;
+
+        public OverloadResult(TValidatedOverload overload, TClass pickingClass) {
+            this.overload = overload;
+            this.pickingClass = pickingClass;
+        }
+    }
 }

@@ -26,24 +26,70 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.SparseArray;
 
 import java.util.List;
 
-public final class TValidatedOverload {
+public final class TValidatedOverload implements TOverload {
+
+    // TOverload methods (straight delegation)
+
+    @Override
+    public String overloadName() {
+        return overload.overloadName();
+    }
+
+    @Override
+    public TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs) {
+        return overload.evaluateConstant(context, inputs);
+    }
+
+    @Override
+    public void finishPreptimePhase(TPreptimeContext context) {
+        overload.finishPreptimePhase(context);
+    }
+
+    @Override
+    public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        overload.evaluate(context, inputs, output);
+    }
+
+    // TOverload methods (cached)
+
+    @Override
+    public List<TInputSet> inputSets() {
+        return inputSetsCached;
+    }
+
+    @Override
+    public TOverloadResult resultType() {
+        return resultStrategy;
+    }
+
+    // TValidatedOverload methods
+
+    public int firstVarargInput() {
+        if (varargs == null)
+            return -1;
+        return inputSetsByPos.size();
+    }
+
+    public TInputSet pickingInputSet() {
+        return pickingSet;
+    }
 
     public TInputSet varargInputSet() {
         return varargs;
-    }
-
-    public TOverload overload() {
-        return overload;
     }
 
     public TInputSet inputSetAt(int index) {
@@ -62,38 +108,12 @@ public final class TValidatedOverload {
         throw new UnsupportedOperationException();
     }
 
-    List<? extends TInputSet> inputSets() {
-        throw new UnsupportedOperationException();
-    }
-
-    public boolean allowsInputs(List<? extends TPreptimeValue> inputs) {
-        if (!coversNInputs(inputs.size()))
-            return false;
-        for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
-            TInstance inputInstance = inputs.get(i).instance();
-            // allow this input if...
-            // ... input's type it NULL or ?
-            if (inputInstance == null)       // input
-                continue;
-            // ... input set takes ANY
-            TInputSet inputSet = inputSetAt(i);
-            if (inputSet.targetType() == null)
-                continue;
-            // ... input can be strongly cast to input set
-            if (stronglyCastable(inputInstance.typeClass(), inputSet.targetType()))
-                continue;
-
-            // This input precludes the use of the overload
-            return false;
-        }
-        // no inputs have precluded this overload
-        return true;
-    }
-
     public TValidatedOverload(TOverload overload) {
         TInputSet localVarargInputs = null;
+        TInputSet localPickingInputs = null;
         SparseArray<TInputSet> inputSetsArray = new SparseArray<TInputSet>();
-        for (TInputSet inputSet : overload.inputSets()) {
+        this.inputSetsCached = overload.inputSets();
+        for (TInputSet inputSet : inputSetsCached) {
             if (inputSet.coversRemaining()) {
                 if (localVarargInputs != null)
                     throw new InvalidOverloadException("multiple input sets are vararg");
@@ -106,12 +126,19 @@ public final class TValidatedOverload {
                     inputSetsArray.set(i, inputSet);
                 }
             }
+            if (inputSet.isPicking()) {
+                if (localPickingInputs != null)
+                    throw new InvalidOverloadException("overloads can't define multiple picking input sets");
+                localPickingInputs = inputSet;
+            }
         }
         if (!inputSetsArray.isCompactable())
             throw new InvalidOverloadException("not all inputs covered");
         this.overload = overload;
         this.inputSetsByPos = inputSetsArray.toList();
         this.varargs = localVarargInputs;
+        this.resultStrategy = overload.resultType();
+        this.pickingSet = localPickingInputs;
     }
 
     private boolean stronglyCastable(TClass tClass, TClass tClass1) {
@@ -119,9 +146,11 @@ public final class TValidatedOverload {
     }
     
     private final TOverload overload;
+    private final List<TInputSet> inputSetsCached;
     private final List<TInputSet> inputSetsByPos;
-
+    private final TOverloadResult resultStrategy;
     private final TInputSet varargs;
+    private final TInputSet pickingSet;
 
     private static class InvalidOverloadException extends RuntimeException {
         private InvalidOverloadException(String message) {

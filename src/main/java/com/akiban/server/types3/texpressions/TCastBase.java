@@ -30,7 +30,7 @@ import com.akiban.server.types3.TCast;
 
 public abstract class TCastBase implements TCast {
     @Override
-    public boolean isAutomatic() {
+    public boolean isStrong() {
         return false;
     }
 

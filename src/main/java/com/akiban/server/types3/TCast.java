@@ -31,7 +31,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
 public interface TCast {
-    boolean isAutomatic();
+    boolean isStrong();
     Constantness constness();
     public TClass sourceClass();
     public TClass targetClass();

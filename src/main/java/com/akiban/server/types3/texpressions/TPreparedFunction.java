@@ -50,7 +50,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
     @Override
     public TPreptimeValue evaluateConstant() {
-        return overload.overload().evaluateConstant(preptimeContext, new LazyListBase<TPreptimeValue>() {
+        return overload.evaluateConstant(preptimeContext, new LazyListBase<TPreptimeValue>() {
             @Override
             public TPreptimeValue get(int i) {
                 return inputs.get(i).evaluateConstant();
@@ -120,7 +120,7 @@ public final class TPreparedFunction implements TPreparedExpression {
 
         @Override
         public void evaluate() {
-            overload.overload().evaluate(context, evaluations, resultValue);
+            overload.evaluate(context, evaluations, resultValue);
         }
 
         public TEvaluatableFunction(TValidatedOverload overload,
