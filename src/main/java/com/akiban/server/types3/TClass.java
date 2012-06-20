@@ -152,19 +152,16 @@ public abstract class TClass {
     private TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         if (nAttributes() != nAttrs)
             throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
-        EnumSet<? extends Attribute> set = null;
-        if (attributes.length != 0)
-            set = attributes[0].allValues();
         
-        TInstance result = new TInstance(this, set, attr0, attr1, attr2, attr3);
+        TInstance result = new TInstance(this, legalAttributes, attr0, attr1, attr2, attr3);
         validate(result);
         return result;
     }
     
     // state
 
-     protected TClass(TName name,
-            Attribute[] attributes, 
+     protected <A extends Enum<A> & Attribute> TClass(TName name,
+            Class<A> enumClass,
             int internalRepVersion, int serializationVersion, int serializationSize, 
             PUnderlying pUnderlying)
      {
@@ -174,8 +171,10 @@ public abstract class TClass {
          this.internalRepVersion = internalRepVersion;
          this.serializationVersion = serializationVersion;
          this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
-         this.attributes = attributes;
          this.pUnderlying = pUnderlying;
+         legalAttributes = EnumSet.allOf(enumClass);
+         attributes = new Attribute[legalAttributes.size()];
+         legalAttributes.toArray(attributes);
          for (int i = 0; i < attributes.length; ++i)
          {
              String attrValue = attributes[i].name();
@@ -184,20 +183,21 @@ public abstract class TClass {
          }
      }
 
-     protected TClass(TBundleID bundle,
-             String name,
-            Attribute[] attributes,
+     protected <A extends Enum<A> & Attribute> TClass(TBundleID bundle,
+            String name,
+            Class<A> enumClass,
             int internalRepVersion, int serializationVersion, int serializationSize,
             PUnderlying pUnderlying)
      {
         this(new TName(bundle, name),
-                attributes,
+                enumClass,
                 internalRepVersion, serializationVersion, serializationSize,
                 pUnderlying);
     
      }
      
     private final TName name;
+    private final EnumSet<? extends Attribute> legalAttributes;
     private final Attribute[] attributes;
     private final int internalRepVersion;
     private final int serializationVersion;

@@ -32,12 +32,4 @@ import java.util.EnumSet;
 public enum DoubleAttribute implements Attribute
 {
     PRECISION, SCALE;
-    
-    @Override
-    public EnumSet<DoubleAttribute> allValues()
-    {
-        return ALL;
-    }
-
-    private static final EnumSet<DoubleAttribute> ALL = EnumSet.allOf(DoubleAttribute.class);
 }

@@ -27,7 +27,6 @@
 package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.Attribute;
-import java.util.EnumSet;
 
 public enum NumericAttribute implements Attribute
 {
@@ -36,12 +35,4 @@ public enum NumericAttribute implements Attribute
      * (unrelated to the range of its value)
      */
     WIDTH;
-
-    @Override
-    public EnumSet<? extends Attribute> allValues()
-    {
-        return ALL;
-    }
-
-    private static final EnumSet<NumericAttribute> ALL = EnumSet.allOf(NumericAttribute.class);
 }

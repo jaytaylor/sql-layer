@@ -42,7 +42,7 @@ public abstract class TString extends TClass
     {
         super(bundle.id(),
                 name,
-                StringAttribute.values(),
+                StringAttribute.class,
                 1,
                 1,
                 serialisationSize,
