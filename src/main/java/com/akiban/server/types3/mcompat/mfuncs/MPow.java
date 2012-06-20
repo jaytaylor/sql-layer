@@ -24,11 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.TPow;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-public class AkPow {
-    public static final TOverload INSTANCE = new TPow(AkNumeric.DOUBLE) {};
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.TPow;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
+
+public class MPow {
+    public static final TOverload INSTANCE = new TPow(MDouble.INSTANCE) {};
 }
