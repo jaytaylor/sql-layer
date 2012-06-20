@@ -33,6 +33,7 @@ import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 import org.junit.Test;
+import org.junit.After;
 
 import static org.junit.Assert.assertFalse;
 
@@ -41,6 +42,12 @@ public final class FailureOnStartupIT extends ApiTestBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider().bind(Store.class, BadStore.class);
+    }
+
+    @After
+    public void stopFailedServices() throws Exception {
+        // Services we started aren't valid for anybody real.
+        stopTestServices();
     }
 
     @Test
