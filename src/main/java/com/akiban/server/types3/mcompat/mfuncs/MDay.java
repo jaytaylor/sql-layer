@@ -30,45 +30,90 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.common.DateExtractor;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import org.joda.time.MutableDateTime;
 
 
 
 
 public class MDay extends TOverloadBase{
     
-    static enum DayType {
+    private static final int ZERO_INDEX = 0;
+    
+    static enum DateType {
+        DAY {
+            @Override
+            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            {
+                return input[DateExtractor.DAY];
+            }            
+        },
+        DAYOFMONTH {
+            @Override
+            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            {
+                return input[DateExtractor.DAY];
+            }
+        },
+        DAYOFWEEK {
+            @Override
+            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            {
+                return cal.getDayOfWeek();
+            }
+        },
+        DAYOFYEAR {
+            @Override
+            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            {
+                return cal.getDayOfYear();
+            }
+        },
+        WEEKDAY {
+            @Override
+            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            {
+                return (cal.getDayOfWeek() + 5) % 7;
+            }
+        };
         
+        abstract long evaluate(MutableDateTime cal, TExecutionContext context, long[] input);
     }
     
-    private final DayType dayType;
+    private final DateType dateType;
     
-    MDay(DayType dayType) {
-        this.dayType = dayType;
+    MDay(DateType dateType) {
+        this.dateType = dateType;
     }
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MString.VARCHAR, 0);
+        builder.covers(MDatetimes.DATE, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        long[] datetime = DateExtractor.extract(inputs.get(0).getInt64());
+        MutableDateTime cal = (MutableDateTime) context.exectimeObjectAt(ZERO_INDEX);
         
+        if (!DateExtractor.validHrMinSec(datetime) || !DateExtractor.validDayMonth(datetime)) output.putNull();
+        else output.putInt64(dateType.evaluate(cal, context, datetime));
     }
 
     @Override
     public String overloadName() {
-        return dayType.name();
+        return dateType.name();
     }
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.SMALLINT.instance());
+        return TOverloadResult.fixed(MNumeric.BIGINT.instance());
     }
 }
