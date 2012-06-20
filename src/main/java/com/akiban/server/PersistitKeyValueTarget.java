@@ -26,8 +26,12 @@
 
 package com.akiban.server;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ResourceBundle;
 
 import com.akiban.ais.model.Column;
 import com.akiban.collation.CString;
@@ -40,6 +44,20 @@ import com.akiban.util.ByteSource;
 import com.persistit.Key;
 
 public final class PersistitKeyValueTarget implements ValueTarget {
+
+    /*
+     * Very temporary kludge to test collection performance without all the
+     * required support. Following is a map of column name to collation name,
+     * e.g., "email" -> "en_US".
+     */
+    private final static Map<String, String> collationColumns = new HashMap<String, String>();
+
+    static {
+        final ResourceBundle bundle = ResourceBundle.getBundle("com.akiban.server.column_collation_map");
+        for (final String key : bundle.keySet()) {
+            collationColumns.put(key, bundle.getString(key));
+        }
+    }
 
     private String collationName = null;
 
@@ -58,17 +76,10 @@ public final class PersistitKeyValueTarget implements ValueTarget {
 
     public PersistitKeyValueTarget expectingType(Column column) {
         /*
-         * Temporary very kludgey hack to marshal in the collation name
-         * through a special column name syntax such as abc#en_US for
-         * a varchar column to be collated in US English.
+         * Temporary very kludgey hack to marshal in the collation name through
+         * an externally defined map of columnName->collation
          */
-        final String cname = column.getName();
-        final AkType type = column.getType().akType();
-        if (type == AkType.VARCHAR && cname.indexOf('#') > -1) {
-            collationName = cname.split("#")[1];
-        } else {
-            collationName = null;
-        }
+        collationName = collationColumns.get(column.getName());
         return expectingType(column.getType().akType());
     }
 
