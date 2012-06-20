@@ -27,22 +27,29 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import org.joda.time.MutableDateTime;
 
 public abstract class MToDatetime extends TOverloadBase{
-
-    private final TClass inputType;
     
-    public static final TOverload TO_DAYS = new MToDatetime(MDatetimes.DATE) {
-
+    private static final int TIME_INDEX = 0; 
+    private static final long BEGINNING = new MutableDateTime(0,0,1,0,0,0,0).getMillis();
+    private static final long SECONDS_FACTOR = 100L;
+    private static final long DAY_FACTOR = 3600L * 1000 * 24;
+    
+    public static final TOverload TO_DAYS = new MToDatetime() {
+        
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            MutableDateTime datetime = getDateTime(inputs.get(0).getInt64(), context);
+            long time = (datetime.getMillis() - BEGINNING) / DAY_FACTOR;
+            output.putInt32((int) time);
         }
 
         @Override
@@ -52,11 +59,13 @@ public abstract class MToDatetime extends TOverloadBase{
         
     };
     
-    public static final TOverload TIME_TO_SEC = new MToDatetime(MDatetimes.TIME) {
-
+    public static final TOverload TIME_TO_SEC = new MToDatetime() {
+        
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            MutableDateTime datetime = getDateTime(inputs.get(0).getInt64(), context);
+            long seconds = datetime.getMillis() / SECONDS_FACTOR;
+            output.putInt32((int)seconds);
         }
 
         @Override
@@ -66,11 +75,13 @@ public abstract class MToDatetime extends TOverloadBase{
         
     };
     
-    public static final TOverload TO_SECONDS = new MToDatetime(MDatetimes.DATETIME) {
+    public static final TOverload TO_SECONDS = new MToDatetime() {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            throw new UnsupportedOperationException("Not supported yet.");
+            MutableDateTime datetime = getDateTime(inputs.get(0).getInt64(), context);
+            long seconds = (datetime.getMillis() - BEGINNING) / SECONDS_FACTOR;
+            output.putInt32((int)seconds);
         }
 
         @Override
@@ -79,19 +90,24 @@ public abstract class MToDatetime extends TOverloadBase{
         }
         
     };      
-           
-    private MToDatetime(TClass inputType) {
-        this.inputType = inputType;
-    }
-    
+
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(inputType, 0);
+        builder.covers(MDatetimes.DATETIME, 0);
     }
 
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MNumeric.INT.instance());
     }
-
+    
+    public MutableDateTime getDateTime(long input, TExecutionContext context) {
+        long[] dateArr = DateExtractor.extract(input);
+        MutableDateTime datetime = (MutableDateTime) context.exectimeObjectAt(TIME_INDEX);
+        if (context == null) context.putExectimeObject(TIME_INDEX, datetime = new MutableDateTime());
+            
+        datetime.setDateTime((int)dateArr[DateExtractor.YEAR], (int)dateArr[DateExtractor.MONTH], (int)dateArr[DateExtractor.DAY],
+                (int)dateArr[DateExtractor.HOUR], (int)dateArr[DateExtractor.MINUTE], (int)dateArr[DateExtractor.SECOND], 0);
+        return datetime;
+    }
 }
