@@ -38,6 +38,11 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         value = new BigDecimal(num);
     }
 
+    public MBigDecimalWrapper()
+    {
+        value = BigDecimal.ZERO;
+    }
+    
     @Override
     public void reset() {
         value = BigDecimal.ZERO;
@@ -119,6 +124,20 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     public BigDecimalWrapper round(int precision, int scale)
     {
         value = value.round(new MathContext(precision, RoundingMode.HALF_UP));
+        return this;
+    }
+
+    @Override
+    public BigDecimalWrapper negate()
+    {
+        value = value.negate();
+        return this;
+    }
+
+    @Override
+    public BigDecimalWrapper abs()
+    {
+        value = value.abs();
         return this;
     }
 }

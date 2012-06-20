@@ -116,4 +116,18 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
 
         return value.compareTo(((AkBigDecimalWrapper)o).value);
     }
+    
+    @Override
+    public BigDecimalWrapper negate()
+    {
+        value = value.negate();
+        return this;
+    }
+
+    @Override
+    public BigDecimalWrapper abs()
+    {
+        value = value.abs();
+        return this;
+    }
 }

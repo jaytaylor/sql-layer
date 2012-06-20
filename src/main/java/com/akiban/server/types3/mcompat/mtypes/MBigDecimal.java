@@ -44,6 +44,9 @@ public class MBigDecimal extends TClass {
         PRECISION, SCALE
     }
 
+    private static final int MAX_INDEX = 0;
+    private static final int MIN_INDEX = 1;
+    
     public MBigDecimal(){
         super(MBundle.INSTANCE.id(), "decimal", Attrs.values(), 1, 1, 8, PUnderlying.INT_64);
     }
@@ -73,18 +76,25 @@ public class MBigDecimal extends TClass {
         int expectedPre = targetInstance.attribute(Attrs.PRECISION);
         int expectedScale = targetInstance.attribute(Attrs.SCALE);
 
-        MBigDecimalWrapper max = (MBigDecimalWrapper)targetInstance.getMetaData();
+        BigDecimalWrapper meta[] = (BigDecimalWrapper[]) targetInstance.getMetaData();
         
-        if (max == null)
+        if (meta == null)
+        {
             // compute the max value:
-            targetInstance.setMetaData(max = new MBigDecimalWrapper(getNum(expectedScale, expectedPre)));
+            meta = new BigDecimalWrapper[2];
+            meta[MAX_INDEX] = new MBigDecimalWrapper(getNum(expectedScale, expectedPre));
+            meta[MIN_INDEX] = meta[MAX_INDEX].negate();
        
-        if (num.compareTo(max) > 0)
-            targetValue.putObject(max);
+            targetInstance.setMetaData(meta);
+        }
         
-        // check the scale
-        if (scale > expectedScale)
+        // check the precision
+        if (num.abs().compareTo(meta[MAX_INDEX]) > 0)
+            targetValue.putObject(meta[MAX_INDEX]);
+        else if (scale > expectedScale) // check the sacle
             targetValue.putObject(num.round(expectedPre, expectedScale));
+        else // else put the original value
+            targetValue.putValueSource(sourceValue);
     }
 
     @Override
