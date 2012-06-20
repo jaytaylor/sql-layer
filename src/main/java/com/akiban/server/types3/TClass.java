@@ -153,7 +153,7 @@ public abstract class TClass {
         if (nAttributes() != nAttrs)
             throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
         
-        TInstance result = new TInstance(this, legalAttributes, attr0, attr1, attr2, attr3);
+        TInstance result = new TInstance(this, enumClass, attr0, attr1, attr2, attr3);
         validate(result);
         return result;
     }
@@ -172,9 +172,11 @@ public abstract class TClass {
          this.serializationVersion = serializationVersion;
          this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
          this.pUnderlying = pUnderlying;
-         legalAttributes = EnumSet.allOf(enumClass);
+         EnumSet<? extends Attribute> legalAttributes = EnumSet.allOf(enumClass);
          attributes = new Attribute[legalAttributes.size()];
          legalAttributes.toArray(attributes);
+         
+         this.enumClass = enumClass;
          for (int i = 0; i < attributes.length; ++i)
          {
              String attrValue = attributes[i].name();
@@ -197,7 +199,7 @@ public abstract class TClass {
      }
      
     private final TName name;
-    private final EnumSet<? extends Attribute> legalAttributes;
+    private final Class enumClass;
     private final Attribute[] attributes;
     private final int internalRepVersion;
     private final int serializationVersion;

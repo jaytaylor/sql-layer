@@ -26,13 +26,11 @@
 
 package com.akiban.server.types3;
 
-import java.util.EnumSet;
-
 public final class TInstance {
     
     public int attribute(Attribute attribute) {
         
-        if (!legalAtts.contains(attribute))
+        if (enumClass != attribute.getClass())
             throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
         
         int index = attribute.ordinal();
@@ -49,9 +47,10 @@ public final class TInstance {
         return tclass;
     }
 
-    TInstance(TClass tclass, EnumSet<? extends Attribute> attributes, 
+    <A extends Enum<A> & Attribute> TInstance(TClass tclass, 
+            Class<A> enumClass, 
             int attr0, int attr1, int attr2, int attr3) {
-        this(tclass, attributes, 4, attr0, attr1, attr2, attr3);
+        this(tclass, enumClass, 4, attr0, attr1, attr2, attr3);
     }
 
     public Boolean nullability() {
@@ -83,14 +82,15 @@ public final class TInstance {
     }
     
     public TInstance copy() {
-        return new TInstance(tclass, legalAtts, tclass.nAttributes(), attr0, attr1, attr2, attr3);
+        return new TInstance(tclass, enumClass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
 
     // object interface
 
     // TODO
 
-    private TInstance(TClass tclass, EnumSet<? extends Attribute> legalAtts,
+    private <A extends Enum<A> & Attribute> TInstance(TClass tclass, 
+            Class<A> enumClass,
             int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
         this.tclass = tclass;
@@ -98,13 +98,13 @@ public final class TInstance {
         this.attr1 = attr1;
         this.attr2 = attr2;
         this.attr3 = attr3;
-        this.legalAtts = legalAtts;
+        this.enumClass = enumClass;
     }
 
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
     private Object metaData;
-    private final EnumSet<? extends Attribute> legalAtts;
+    private final Class enumClass;
     
 }
