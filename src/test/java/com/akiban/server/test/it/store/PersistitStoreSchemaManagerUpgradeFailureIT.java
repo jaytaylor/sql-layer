@@ -98,6 +98,7 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
                 }
             });
         }
+
         // Inject our hook and restart
         PSSMTestShim.setUpgradeHook(new FailingUpgradeHook());
         try {

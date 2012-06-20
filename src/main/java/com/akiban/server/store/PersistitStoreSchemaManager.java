@@ -175,7 +175,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private final Set<TableName> legacyISTables = new HashSet<TableName>();
     private static volatile Runnable upgradeHook;
 
-    
     @Inject
     public PersistitStoreSchemaManager(AisHolder aisHolder, ConfigurationService config, SessionService sessionService, Store store, TreeService treeService) {
         this.aish = aisHolder;
@@ -472,7 +471,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             // Success, remaining cleanup
             deleteTableStatuses(tableIDs);
         } catch (PersistitException ex) {
-            ex.printStackTrace();
             throw new PersistitAdapterException(ex);
         }
     }

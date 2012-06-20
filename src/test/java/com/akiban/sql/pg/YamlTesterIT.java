@@ -27,8 +27,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types.extract.ConverterTestUtils;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -37,6 +35,8 @@ import java.io.StringReader;
 import java.io.Writer;
 import java.sql.Connection;
 
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Ignore;
 import org.junit.Test;
 

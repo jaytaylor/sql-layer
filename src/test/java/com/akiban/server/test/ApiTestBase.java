@@ -349,7 +349,7 @@ public class ApiTestBase {
 
     protected Collection<Property> defaultPropertiesToPreserveOnRestart() {
         List<Property> properties = new ArrayList<Property>();
-        properties.add(new Property(TestConfigService.DATA_PATH_KEY, treeService().getDataPath()));
+        properties.add(new Property(TestConfigService.DATA_PATH_KEY, TestConfigService.TESTDIR.getAbsolutePath()));
         return properties;
     }
 
