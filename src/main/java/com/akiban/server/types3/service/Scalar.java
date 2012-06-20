@@ -24,15 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.service;
 
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.common.funcs.TLike;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.service.Scalar;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public class MLike
-{
-    @Scalar
-    public static final TOverload[] LIKE_OVERLOADS = TLike.create(MString.VARCHAR);
-}
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.METHOD})
+public @interface Scalar {}

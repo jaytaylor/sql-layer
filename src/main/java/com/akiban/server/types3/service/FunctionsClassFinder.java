@@ -24,15 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.service;
 
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.common.funcs.TLike;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.service.Scalar;
+import java.util.Set;
 
-public class MLike
+public interface FunctionsClassFinder
 {
-    @Scalar
-    public static final TOverload[] LIKE_OVERLOADS = TLike.create(MString.VARCHAR);
+    Set<Class<?>> findClasses();
 }

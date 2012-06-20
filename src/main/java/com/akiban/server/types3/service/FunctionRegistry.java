@@ -24,15 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.service;
 
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.common.funcs.TLike;
-import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.service.Scalar;
-
-public class MLike
+public interface FunctionRegistry extends ExpressionRegistry
 {
-    @Scalar
-    public static final TOverload[] LIKE_OVERLOADS = TLike.create(MString.VARCHAR);
+    public static enum FunctionKind {SCALAR, AGGREGATE}
+    
+    public FunctionKind getFunctionKind(String name);
 }
