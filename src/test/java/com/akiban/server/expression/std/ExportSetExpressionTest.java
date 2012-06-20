@@ -128,7 +128,7 @@ public class ExportSetExpressionTest extends ComposedExpressionTestBase
     @Test
     public void test()
     {
-        Expression top = ExportSetExpression.COMPOSER.compose(args);
+        Expression top = compose(ExportSetExpression.COMPOSER, args);
         if (expected == null)
             assertTrue ("Should be NULL", top.evaluation().eval().isNull());
         else
@@ -142,7 +142,7 @@ public class ExportSetExpressionTest extends ComposedExpressionTestBase
     @Test(expected=WrongExpressionArityException.class)
     public void testArity()
     {
-        ExportSetExpression.COMPOSER.compose(args);
+        compose(ExportSetExpression.COMPOSER, args);
         alreadyExc = true;
     }
     

@@ -42,13 +42,14 @@ class JoinToParentPK implements AISValidation {
     @Override
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for (Join join : ais.getJoins().values()) {
-            TableIndex parentPK; 
-            try {
-                parentPK = join.getParent().getPrimaryKey().getIndex();
-            } catch (JoinParentNoExplicitPK ex) {
-                output.reportFailure(new AISValidationFailure (ex));
+            
+            // bug 931258: If parent has no external PK, flag this as an error. 
+            if (join.getParent().getPrimaryKey() == null) {
+                output.reportFailure(new AISValidationFailure(
+                        new JoinParentNoExplicitPK (join.getParent().getName())));
                 continue;
             }
+            TableIndex parentPK= join.getParent().getPrimaryKey().getIndex();
             try {
                 if (parentPK.getKeyColumns().size() != join.getJoinColumns().size()) {
                     output.reportFailure(new AISValidationFailure(
@@ -57,18 +58,7 @@ class JoinToParentPK implements AISValidation {
                                     join.getParent().getName(), 
                                     parentPK.getKeyColumns().size())));
                             
-                    return;
-                }
-                Iterator<JoinColumn>  joinColumns = join.getJoinColumns().iterator();            
-                for (IndexColumn parentPKColumn : parentPK.getKeyColumns()) {
-                    JoinColumn joinColumn = joinColumns.next();
-                    if (parentPKColumn.getColumn() != joinColumn.getParent()) {
-                        output.reportFailure(new AISValidationFailure (
-                                new JoinToWrongColumnsException (
-                                        join.getChild().getName(), 
-                                        joinColumn.getParent().getName(), 
-                                        parentPK.getTable().getName(), parentPKColumn.getColumn().getName())));
-                    }
+                    continue;
                 }
             } catch (AssertionError ex) {
                 // bug 931258 : getJoinColumns() asserts if the child specifies more
@@ -78,7 +68,19 @@ class JoinToParentPK implements AISValidation {
                                 join.getChild().getName(),
                                 join.getParent().getName(), 
                                 parentPK.getKeyColumns().size())));
-                return;
+                continue;
+            }
+            
+            Iterator<JoinColumn>  joinColumns = join.getJoinColumns().iterator();            
+            for (IndexColumn parentPKColumn : parentPK.getKeyColumns()) {
+                JoinColumn joinColumn = joinColumns.next();
+                if (parentPKColumn.getColumn() != joinColumn.getParent()) {
+                    output.reportFailure(new AISValidationFailure (
+                            new JoinToWrongColumnsException (
+                                    join.getChild().getName(), 
+                                    joinColumn.getParent().getName(), 
+                                    parentPK.getTable().getName(), parentPKColumn.getColumn().getName())));
+                }
             }
         }
     }
