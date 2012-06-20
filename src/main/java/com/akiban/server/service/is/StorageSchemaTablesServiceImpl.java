@@ -26,6 +26,16 @@
 
 package com.akiban.server.service.is;
 
+import java.lang.management.ManagementFactory;
+
+import javax.management.AttributeNotFoundException;
+import javax.management.InstanceNotFoundException;
+import javax.management.MBeanException;
+import javax.management.MBeanServer;
+import javax.management.MalformedObjectNameException;
+import javax.management.ObjectName;
+import javax.management.ReflectionException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,12 +60,19 @@ import com.google.inject.Inject;
 public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTablesService>, StorageSchemaTablesService {
 
     private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
+    private static final String BASE_PERSITIT_JMX_PATH = "com.persistit:type=Persistit,class=";
+
     static final TableName STORAGE_CHECKPOINT_SUMMARY = new TableName (SCHEMA_NAME, "storage_checkpoint_summary");
+    static final TableName STORAGE_IO_METER_SUMMARY = new TableName (SCHEMA_NAME, "storage_io_meter_summary");
+    
+    // Note: This doesn't use the treeService directly, but the internal processing requires
+    // the underlying Persistit engine (which treeService controls) be up and running. 
+    private final TreeService treeService;
     
     private final SchemaManager schemaManager;
-    private final TreeService treeService;
     private final SessionService sessionService;
-
+    private MBeanServer jmxServer;
+    
     private final static Logger logger = LoggerFactory.getLogger(StorageSchemaTablesServiceImpl.class);
     
     @Inject
@@ -78,19 +95,26 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
     @Override
     public void start() {
         logger.debug("Starting Storage Schema Tables Service");
+        jmxServer = ManagementFactory.getPlatformMBeanServer();
+
         AkibanInformationSchema ais = createTablesToRegister();
         Session session = sessionService.createSession();
         //STORAGE_CHECKPOINT_SUMMARY
-        logger.debug("STORAGE_CHECKPOINT_SUMMARY");
         UserTable checkpointSummary = ais.getUserTable(STORAGE_CHECKPOINT_SUMMARY);
         assert checkpointSummary != null;
-        schemaManager.registerMemoryInformationSchemaTable (session, checkpointSummary, new CheckpointSummaryFactory(checkpointSummary));
+        schemaManager.registerMemoryInformationSchemaTable (session, checkpointSummary, new CheckpointSummaryFactory(STORAGE_CHECKPOINT_SUMMARY));
+
+        //STORAGE_IO_METER_SUMMARY
+        UserTable ioMeterSummary = ais.getUserTable(STORAGE_IO_METER_SUMMARY);
+        assert ioMeterSummary != null;
+        schemaManager.registerMemoryInformationSchemaTable(session, ioMeterSummary, new IoSummaryFactory (STORAGE_IO_METER_SUMMARY));
+        
         session.close();
     }
 
     @Override
     public void stop() {
-        // nothing
+        jmxServer = null;
     }
 
     @Override
@@ -98,9 +122,74 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         // nothing
     }
     
+    private ObjectName getBeanName (String name) {
+        ObjectName mbeanName = null;
+        try {
+            mbeanName = new ObjectName (BASE_PERSITIT_JMX_PATH + name);
+        } catch (MalformedObjectNameException e) {
+            logger.error ("Using " + name + " throws MalformedObjectNameException: " + e.getMessage());
+        }
+        return mbeanName;
+    }
+    private Object getJMXAttribute (ObjectName mbeanName,  String attributeName) {
+        Object value = null;
+        try {
+            value = jmxServer.getAttribute(mbeanName, attributeName);
+        } catch (AttributeNotFoundException e) {
+            logger.error (mbeanName.toString() + "#" + attributeName + " not found. This is an unexpected error");
+        } catch (InstanceNotFoundException e) {
+            logger.error(jmxServer.toString() + " JMX instance not found. This is an unexpected error");
+        } catch (MBeanException e) {
+            logger.error("Mbean retrival: " + mbeanName + " generated error: " + e.getMessage());
+        } catch (ReflectionException e) {
+            logger.error("Unexepcted reflection error: " + e.getMessage());
+        }
+        return value;
+    }
     private class CheckpointSummaryFactory extends BasicFactoryBase {
 
-        public CheckpointSummaryFactory(UserTable sourceTable) {
+        public CheckpointSummaryFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return 1;
+        }
+        
+       
+        private class Scan implements GroupScan {
+            final RowType rowType;
+            int rowCounter = 0;
+            private ObjectName mbeanName;
+            
+            public Scan (RowType rowType) {
+                this.rowType = rowType;
+                mbeanName = getBeanName("CheckpointManager");
+             }
+            @Override
+            public Row next() {
+                if (rowCounter != 0) {
+                    return null;
+                }
+                return new ValuesRow (rowType,
+                            getJMXAttribute(mbeanName, "CheckpointInterval"),
+                            ++rowCounter /* Hidden PK */);
+            }
+
+            @Override
+            public void close() {
+            }
+        }
+    }
+    
+    private class IoSummaryFactory extends BasicFactoryBase {
+        public IoSummaryFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -117,24 +206,31 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         private class Scan implements GroupScan {
             final RowType rowType;
             int rowCounter = 0;
+            private ObjectName mbeanName;
             
             public Scan (RowType rowType) {
                 this.rowType = rowType;
+                mbeanName = getBeanName("IOMeter");
             }
+            
             @Override
             public Row next() {
                 if (rowCounter != 0) {
                     return null;
                 }
                 return new ValuesRow (rowType,
-                        new Long(treeService.getDb().getCheckpointIntervalNanos()),
-                        ++rowCounter /* Hidden PK */); 
+                        getJMXAttribute(mbeanName, "IORate"),
+                        getJMXAttribute(mbeanName, "QuiescentIOthreshold"),
+                        getJMXAttribute(mbeanName, "LogFile"),
+                        ++rowCounter);
             }
 
             @Override
             public void close() {
             }
+            
         }
+        
     }
 
     static AkibanInformationSchema createTablesToRegister() {
@@ -142,7 +238,11 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         
         builder.userTable(STORAGE_CHECKPOINT_SUMMARY)
             .colBigInt("checkpoint_interval", false);
-        
+
+        builder.userTable(STORAGE_IO_METER_SUMMARY)
+            .colBigInt("io_rate", false)
+            .colBigInt("quiescent_threshold", false)
+            .colString("log_file", 1024);
         return builder.ais(false); 
     }
 }

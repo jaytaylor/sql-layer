@@ -28,7 +28,6 @@ package com.akiban.qp.memoryadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
@@ -38,19 +37,14 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.store.statistics.IndexStatistics;
 
 public abstract class BasicFactoryBase implements MemoryTableFactory {
-    private final UserTable sourceTable;
+    private final TableName sourceTable;
     
-    public BasicFactoryBase(UserTable sourceTable) {
+    public BasicFactoryBase(TableName sourceTable) {
         this.sourceTable = sourceTable;
     }
 
     @Override
     public TableName getName() {
-        return sourceTable.getName();
-    }
-
-    @Override
-    public UserTable getTableDefinition() {
         return sourceTable;
     }
 
@@ -67,6 +61,6 @@ public abstract class BasicFactoryBase implements MemoryTableFactory {
     }
 
     public RowType getRowType(MemoryAdapter adapter) {
-        return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable.getName()));
+        return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable));
     }
 }
