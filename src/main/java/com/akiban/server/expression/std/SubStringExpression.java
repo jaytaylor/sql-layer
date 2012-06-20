@@ -46,11 +46,6 @@ public class SubStringExpression extends AbstractCompositeExpression
     {
 
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new SubStringExpression(arguments);
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int size = argumentTypes.size();
@@ -65,7 +60,7 @@ public class SubStringExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in SUBSTR yet.");
+            return new SubStringExpression(arguments);
         }
 
         @Override

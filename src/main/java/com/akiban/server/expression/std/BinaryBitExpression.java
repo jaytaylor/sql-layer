@@ -128,7 +128,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         }      
 
         @Override
-        protected Expression compose(Expression first, Expression second) 
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType) 
         {
             return new BinaryBitExpression(first, op,second);
         }

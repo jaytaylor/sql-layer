@@ -55,12 +55,6 @@ public class FromUnixExpression extends AbstractCompositeExpression
     public static final ExpressionComposer COMPOSER = new ExpressionComposer ()
     {
         @Override
-        public Expression compose(List<? extends Expression> args)
-        {
-            return new FromUnixExpression(args);
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int s = argumentTypes.size();
@@ -78,7 +72,7 @@ public class FromUnixExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in FROM_UNIX yet.");
+            return new FromUnixExpression(arguments);
         }
 
         @Override

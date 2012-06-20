@@ -174,7 +174,7 @@ public class CompareExpression extends AbstractBinaryExpression {
     private static final class InnerComposer extends BinaryComposer {
 
         @Override
-        protected Expression compose(Expression first, Expression second) {
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType) {
             return new CompareExpression(first, comparison, second);
         }
 

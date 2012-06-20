@@ -48,10 +48,6 @@ import java.util.List;
 public final class ConcatExpression extends AbstractCompositeExpression {
 
     static class ConcatComposer implements ExpressionComposer {
-        @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new ConcatExpression(arguments);
-        }
 
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
@@ -77,7 +73,7 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in CONCAT yet.");
+            return new ConcatExpression(arguments);
         }
 
         @Override

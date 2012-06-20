@@ -135,7 +135,7 @@ public class BinaryBitExpressionTest
         Expression leftEx = new LiteralExpression(AkType.NULL, null);
         Expression rightEx = new LiteralExpression(AkType.LONG, 2L);
 
-        ValueSource actual = composer.compose(Arrays.asList(leftEx, rightEx)).evaluation().eval();        
+        ValueSource actual = composer.compose(Arrays.asList(leftEx, rightEx), Arrays.asList(ExpressionTypes.NULL, ExpressionTypes.LONG, ExpressionTypes.LONG)).evaluation().eval();        
         assertEquals(NullValueSource.only(), actual);
     }
 
@@ -143,12 +143,12 @@ public class BinaryBitExpressionTest
     public void testNullWithNull()
     {
         Expression nullEx = LiteralExpression.forNull();
-        ValueSource actual = composer.compose(Arrays.asList(nullEx, nullEx)).evaluation().eval();        
+        ValueSource actual = composer.compose(Arrays.asList(nullEx, nullEx), Arrays.asList(ExpressionTypes.NULL, ExpressionTypes.NULL, ExpressionTypes.LONG)).evaluation().eval();        
         assertEquals(NullValueSource.only(), actual);
     }
 
     private BigInteger getActual (Expression left, Expression right)
     {
-        return composer.compose(Arrays.asList(left, right)).evaluation().eval().getUBigInt();
+        return composer.compose(Arrays.asList(left, right), Arrays.asList(ExpressionTypes.LONG, ExpressionTypes.LONG, ExpressionTypes.LONG)).evaluation().eval().getUBigInt();
     } 
 }

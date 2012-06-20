@@ -48,15 +48,9 @@ public class IfNullExpression extends CoalesceExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new IfNullExpression(arguments);
-        }
-
-        @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in IFNULL yet.");
+            return new IfNullExpression(arguments);
         }
 
         @Override

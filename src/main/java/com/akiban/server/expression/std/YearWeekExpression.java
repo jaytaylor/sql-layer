@@ -52,11 +52,6 @@ public class YearWeekExpression extends AbstractCompositeExpression
     @Scalar("yearweek")
     public static final ExpressionComposer WEEK_COMPOSER = new ExpressionComposer()
     {
-        @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new YearWeekExpression(arguments);
-        }
 
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
@@ -89,7 +84,7 @@ public class YearWeekExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in YEAR_WEEK yet.");
+            return new YearWeekExpression(arguments);
         }
 
         @Override

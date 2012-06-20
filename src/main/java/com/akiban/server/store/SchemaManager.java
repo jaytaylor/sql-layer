@@ -57,7 +57,7 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName registerStoredInformationSchemaTable(Session session, UserTable newTable, int version);
+    TableName registerStoredInformationSchemaTable(UserTable newTable, int version);
 
     /**
      * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
@@ -69,7 +69,7 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName registerMemoryInformationSchemaTable(Session session, UserTable newTable, MemoryTableFactory factory);
+    TableName registerMemoryInformationSchemaTable(UserTable newTable, MemoryTableFactory factory);
 
     /**
      * Create a new table in the SchemaManager. Successful completion of this

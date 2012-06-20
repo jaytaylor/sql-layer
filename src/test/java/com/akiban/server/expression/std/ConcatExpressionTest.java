@@ -28,6 +28,7 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import org.junit.Test;
@@ -100,7 +101,7 @@ public final class ConcatExpressionTest  extends ComposedExpressionTestBase {
     protected ExpressionComposer getComposer() {
         return new ConcatExpression.ConcatComposer() {
             @Override
-            public Expression compose(List<? extends Expression> arguments) {
+            public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList) {
                 return new ConcatExpression(arguments);
             }
         };

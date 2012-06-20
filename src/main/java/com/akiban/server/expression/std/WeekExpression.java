@@ -55,7 +55,7 @@ public class WeekExpression extends AbstractCompositeExpression
     public static final ExpressionComposer WEEK_OF_YEAR_COMPOSER = new UnaryComposer ()
     {
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new WeekExpression(Arrays.asList(argument, new LiteralExpression(AkType.INT, 3L)));
         }
@@ -78,12 +78,6 @@ public class WeekExpression extends AbstractCompositeExpression
     
     private static final class InternalComposer implements ExpressionComposer
     {
-        @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new WeekExpression(arguments);
-        }
-
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
@@ -115,7 +109,7 @@ public class WeekExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in WEEK yet.");
+            return new WeekExpression(arguments);
         }
 
         

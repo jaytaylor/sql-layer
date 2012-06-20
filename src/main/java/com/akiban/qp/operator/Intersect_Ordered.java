@@ -116,8 +116,8 @@ class Intersect_Ordered extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(skip %d from left, skip %d from right, compare %d)",
-                             getClass().getSimpleName(), leftFixedFields, rightFixedFields, fieldsToCompare);
+        return String.format("%s(skip %d from left, skip %d from right, compare %d%s)",
+                             getClass().getSimpleName(), leftFixedFields, rightFixedFields, fieldsToCompare, skipScan ? ", SKIP_SCAN" : "");
     }
 
     // Operator interface

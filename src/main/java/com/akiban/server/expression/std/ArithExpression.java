@@ -89,13 +89,18 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.INT, 11);
     }
     
-    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType topT)
+    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType leftType, ExpressionType rightType, ExpressionType resultT)
     {
         super(getTopType(lhs.valueType(), rhs.valueType(), op), lhs, rhs);
         this.op = op;
         this.topT = super.valueType();
-        assert this.topT == topT.getType() : "mismatched top type";
-        top = topT;
+        if ((resultT != null) && (resultT.getType() == topT))
+            top = resultT;
+        else
+            // Cases that don't match: 
+            // * operation on INTs is INT, vs. LONG.
+            // * tests don't supply expression types.
+            top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)

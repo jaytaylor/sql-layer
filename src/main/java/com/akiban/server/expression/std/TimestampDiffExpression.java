@@ -54,7 +54,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
     public static final ExpressionComposer COMPOSER = new TernaryComposer()
     {
         @Override
-        protected Expression doCompose(List<? extends Expression> arguments)
+        protected Expression doCompose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new TimestampDiffExpression(arguments);
         }

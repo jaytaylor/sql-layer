@@ -59,12 +59,6 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new UnixTimestampExpression(arguments);
-        }
-
-        @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new UnixTimestampExpression(arguments);

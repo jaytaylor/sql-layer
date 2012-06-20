@@ -53,12 +53,6 @@ public class IfExpression extends AbstractCompositeExpression
     public static final ExpressionComposer COMPOSER = new ExpressionComposer()
     {
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new IfExpression(arguments);
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int size = argumentTypes.size();
@@ -82,7 +76,7 @@ public class IfExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in IF yet.");
+            return new IfExpression(arguments);
         }
 
         @Override

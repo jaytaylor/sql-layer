@@ -103,7 +103,7 @@ public class UnaryBitExpression extends AbstractUnaryExpression
         }
 
         @Override
-        protected Expression compose(Expression argument) 
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) 
         {
             return new UnaryBitExpression(argument, op);
         }

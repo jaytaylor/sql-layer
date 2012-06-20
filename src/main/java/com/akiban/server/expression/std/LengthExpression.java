@@ -53,7 +53,7 @@ public class LengthExpression  extends AbstractUnaryExpression
     protected static class InternalComposer extends UnaryComposer
     {
         @Override
-        protected Expression compose(Expression argument) 
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) 
         {
             return new LengthExpression(argument);
         }

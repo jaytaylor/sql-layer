@@ -52,6 +52,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.std.BoundFieldExpression;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
@@ -161,15 +162,26 @@ public class AggregatePT extends ApiTestBase {
         ExpressionComposer and = functions.composer("and");
         Expression pred1 = functions.composer("greaterOrEquals")
             .compose(Arrays.asList(Expressions.field(rowType, 1),
-                                   Expressions.literal("M")));
+                                   Expressions.literal("M")),
+                     Arrays.asList(ExpressionTypes.varchar(20),
+                                   ExpressionTypes.varchar(1),
+                                   ExpressionTypes.BOOL));
         Expression pred2 = functions.composer("lessOrEquals")
             .compose(Arrays.asList(Expressions.field(rowType, 1),
-                                   Expressions.literal("Y")));
-        Expression pred = and.compose(Arrays.asList(pred1, pred2));
+                                   Expressions.literal("Y")),
+                     Arrays.asList(ExpressionTypes.varchar(20),
+                                   ExpressionTypes.varchar(1),
+                                   ExpressionTypes.BOOL));
+        Expression pred = and.compose(Arrays.asList(pred1, pred2), 
+                                      Arrays.asList(ExpressionTypes.BOOL, ExpressionTypes.BOOL, ExpressionTypes.BOOL));
         pred2 = functions.composer("notEquals")
             .compose(Arrays.asList(Expressions.field(rowType, 2),
-                                   Expressions.literal(1L)));
-        pred = and.compose(Arrays.asList(pred, pred2));
+                                   Expressions.literal(1L)),
+                     Arrays.asList(ExpressionTypes.LONG,
+                                   ExpressionTypes.LONG,
+                                   ExpressionTypes.BOOL));
+        pred = and.compose(Arrays.asList(pred, pred2),
+                           Arrays.asList(ExpressionTypes.BOOL, ExpressionTypes.BOOL, ExpressionTypes.BOOL));
         
         plan = API.select_HKeyOrdered(plan, rowType, pred);
         plan = API.project_Default(plan, rowType,

@@ -47,7 +47,7 @@ public class PeriodDiffExpression extends AbstractBinaryExpression {
     private static class InternalComposer extends BinaryComposer
     {
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new PeriodDiffExpression(first, second);
         }
