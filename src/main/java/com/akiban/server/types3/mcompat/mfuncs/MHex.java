@@ -25,45 +25,12 @@
  */
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.common.funcs.Hex;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class MConcat extends TOverloadBase {
-    public static final TOverload INSTANCE = new MConcat();
-    
-    private MConcat(){}
-    
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.vararg(MString.VARCHAR, 0);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < inputs.size(); ++i) {
-            String inputStr = (String) inputs.get(i).getObject();
-            assert inputStr != null;
-            sb.append(inputStr);
-        }
-        output.putObject(sb.toString());
-    }
-
-    @Override
-    public String overloadName() {
-        return "CONCAT";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        assert false : "need to implement this!";
-        return TOverloadResult.custom(null); // todo
-    }
+public abstract class MHex extends TOverloadBase {
+  public static final TOverload[] INSTANCES = Hex.create(MString.VARCHAR, MNumeric.BIGINT);
 }

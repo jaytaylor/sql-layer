@@ -61,7 +61,7 @@ public final class Matchers
     }
     
     /**
-     * An emptry pattern should only match empty string
+     * An empty pattern should only match empty string
      */
     static class Empty implements Matcher
     {
@@ -146,7 +146,7 @@ public final class Matchers
         }
     }
     
-    static class Index extends AbstractMatcher
+    public static class Index extends AbstractMatcher
     {
         private final Token tk;
         private final String pattern;

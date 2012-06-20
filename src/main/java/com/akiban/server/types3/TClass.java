@@ -38,6 +38,10 @@ import java.util.regex.Pattern;
 public abstract class TClass {
 
     public abstract TFactory factory();
+    
+    public /*abstract*/ void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+        throw new AssertionError("make this abstract and implement in all subclasses"); // TODO
+    }
 
     public abstract void putSafety(QueryContext context,
                         TInstance sourceInstance,
@@ -68,6 +72,14 @@ public abstract class TClass {
     public TInstance instance(int arg0, int arg1, int arg2, int arg3)
     {
         return createInstance(4, arg0, arg1, arg2, arg3);
+    }
+
+    public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        writeCanonical(inValue, inInstance, out);
+    }
+
+    public void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+        writeCanonical(inValue, typeInstance, out);
     }
     
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {
