@@ -120,88 +120,89 @@ public abstract class MWeek extends TOverloadBase {
     }
     
     private static final class DayOfWeek
+    {
+        public static final int MON = 1;
+        public static final int TUE = 2;
+        public static final int WED = 3;
+        public static final int THU = 4;
+        public static final int FRI = 5;
+        public static final int SAT = 6;
+        public static final int SUN = 7;
+    }
+    
+    private static interface Modes
+    {
+        int getWeek(MutableDateTime cal, int yr, int mo, int da);
+    }
+
+    private static final MWeek.Modes[] modes = new MWeek.Modes[]
+    {
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 8);}}, //0
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SUN,8);}},  //1
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 0);}}, //2
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 1);}}, //3
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SAT, 8);}},//4
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.MON, 8);}}, //5
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SAT,4);}},//6
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.MON,5);}},  //7
+        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return 0;}} // dummy always return 0-lowestval
+    };
+
+    private static int getMode1346(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
+    {
+        cal.setYear(yr);
+        cal.setMonthOfYear(1);
+        cal.setDayOfMonth(1);
+
+        int firstD = 1;
+
+        while (cal.getDayOfWeek() != firstDay) 
+            cal.setDayOfMonth(++firstD);
+
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
+
+        int week = cal.getDayOfYear() - (firstD +1 ); // Sun/Mon
+        if (firstD < 4)
         {
-            public static final int MON = 1;
-            public static final int TUE = 2;
-            public static final int WED = 3;
-            public static final int THU = 4;
-            public static final int FRI = 5;
-            public static final int SAT = 6;
-            public static final int SUN = 7;
+            if (week < 0) return modes[lowestVal].getWeek(cal, yr-1, 12, 31);
+            else return week / 7 + 1;
         }
-        private static interface Modes
+        else
         {
-            int getWeek(MutableDateTime cal, int yr, int mo, int da);
+            if (week < 0) return 1;
+            else return week / 7 + 2;
         }
+    }
 
-        private static final MWeek.Modes[] modes = new MWeek.Modes[]
-        {
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 8);}}, //0
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SUN,8);}},  //1
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 0);}}, //2
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 1);}}, //3
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SAT, 8);}},//4
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.MON, 8);}}, //5
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SAT,4);}},//6
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.MON,5);}},  //7
-          new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return 0;}} // dummy always return 0-lowestval
-        };
+    private static int getMode0257(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
+    {
+        cal.setYear(yr);
+        cal.setMonthOfYear(1);
+        cal.setDayOfMonth(1);
+        int firstD = 1;
 
-        private static int getMode1346(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
-        {
-            cal.setYear(yr);
-            cal.setMonthOfYear(1);
-            cal.setDayOfMonth(1);
+        while (cal.getDayOfWeek() != firstDay)
+            cal.setDayOfMonth(++firstD);
 
-            int firstD = 1;
+        cal.setYear(yr); 
+        cal.setMonthOfYear(mo); 
+        cal.setDayOfMonth(da); 
 
-            while (cal.getDayOfWeek() != firstDay) 
-                cal.setDayOfMonth(++firstD);
+        int dayOfYear = cal.getDayOfYear(); 
 
-            cal.setYear(yr);
-            cal.setMonthOfYear(mo);
-            cal.setDayOfMonth(da);
+        if (dayOfYear < firstD) return modes[lowestVal].getWeek(cal, yr-1, 12, 31);
+        else return (dayOfYear - firstD) / 7 +1;
+    }   
 
-            int week = cal.getDayOfYear() - (firstD +1 ); // Sun/Mon
-            if (firstD < 4)
-            {
-                if (week < 0) return modes[lowestVal].getWeek(cal, yr-1, 12, 31);
-                else return week / 7 + 1;
-            }
-            else
-            {
-                if (week < 0) return 1;
-                else return week / 7 + 2;
-            }
+    private static boolean isZero(long[] date, TExecutionContext context,PValueTarget output) {
+        boolean isZero = date[DateExtractor.MONTH] == 0L || date[DateExtractor.DAY] == 0L;
+        if (isZero) {
+            if (context != null)
+                context.warnClient(new ZeroDateTimeException());
+            output.putNull();
         }
-
-        private static int getMode0257(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
-        {
-            cal.setYear(yr);
-            cal.setMonthOfYear(1);
-            cal.setDayOfMonth(1);
-            int firstD = 1;
-
-            while (cal.getDayOfWeek() != firstDay)
-                cal.setDayOfMonth(++firstD);
-
-            cal.setYear(yr); 
-            cal.setMonthOfYear(mo); 
-            cal.setDayOfMonth(da); 
-
-            int dayOfYear = cal.getDayOfYear(); 
-
-            if (dayOfYear < firstD) return modes[lowestVal].getWeek(cal, yr-1, 12, 31);
-            else return (dayOfYear - firstD) / 7 +1;
-        }   
-
-        private static boolean isZero(long[] date, TExecutionContext context,PValueTarget output) {
-            boolean isZero = date[DateExtractor.MONTH] == 0L || date[DateExtractor.DAY] == 0L;
-            if (isZero) {
-                if (context != null)
-                    context.warnClient(new ZeroDateTimeException());
-                output.putNull();
-            }
-            return isZero;
-        }
+        return isZero;
+    }
 }
