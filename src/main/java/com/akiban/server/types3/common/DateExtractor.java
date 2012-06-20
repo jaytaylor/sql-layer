@@ -25,6 +25,9 @@
  */
 package com.akiban.server.types3.common;
 
+import com.akiban.server.types3.TExecutionContext;
+import org.joda.time.MutableDateTime;
+
 public class DateExtractor {
 
     // consts
@@ -42,6 +45,8 @@ public class DateExtractor {
     public static final int HOUR = 3;
     public static final int MINUTE = 4;
     public static final int SECOND = 5;
+    
+    private static final int DATE_INDEX = 0;
 
     public static long[] extract(long value) {
         final long year = (value / DATETIME_YEAR_SCALE);
@@ -83,5 +88,17 @@ public class DateExtractor {
     public static boolean validDayMonth(long[] datetime) {
         long last = getLastDay(datetime);
         return last != -1L && datetime[2] <= last;
+    }
+  
+    public static MutableDateTime getMutableDateTime(TExecutionContext context, long input) {
+        long[] dateArr = DateExtractor.extract(input);
+        MutableDateTime datetime = (MutableDateTime) context.exectimeObjectAt(DATE_INDEX);
+        if (context == null) {
+            context.putExectimeObject(DATE_INDEX, datetime = new MutableDateTime());
+        }
+
+        datetime.setDateTime((int) dateArr[DateExtractor.YEAR], (int) dateArr[DateExtractor.MONTH], (int) dateArr[DateExtractor.DAY],
+                (int) dateArr[DateExtractor.HOUR], (int) dateArr[DateExtractor.MINUTE], (int) dateArr[DateExtractor.SECOND], 0);
+        return datetime;
     }
 }
