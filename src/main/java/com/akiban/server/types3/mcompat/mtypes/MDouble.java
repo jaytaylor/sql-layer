@@ -37,7 +37,6 @@ import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import java.util.Arrays;
 
 public class MDouble extends TClass
 {
@@ -46,27 +45,35 @@ public class MDouble extends TClass
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
 
+    private static final int MAX_INDEX = 0;
+    private static final int MIN_INDEX = 1;
+    
     public static double round(TInstance instance, double val)
     {
         assert instance.typeClass() instanceof MDouble : "instance has to be of type MDouble";
 
         // meta data
-        Double max = (Double) instance.getMetaData();
-
+        Double meta[] = (Double[])instance.getMetaData();
+        
+        
         int precision = instance.attribute(DoubleAttribute.PRECISION);
         int scale = instance.attribute(DoubleAttribute.SCALE);
 
-        if (max == null)
+        if (meta == null)
         {
-            String st = Double.toString(val);
+            boolean neg;
+            String st = Double.toString((neg = val < 0) ? -val : val);
             int point = st.indexOf('.');
 
             // check the digits before the decimal point
             if (point > precision - scale)
             {
                 // cache the max value
-                instance.setMetaData(max = Double.parseDouble(MBigDecimal.getNum(scale, precision )));
-                return max;
+                meta = new Double[2];
+                meta[MAX_INDEX] = Double.parseDouble(MBigDecimal.getNum(scale, precision));
+                meta[MIN_INDEX] = meta[MAX_INDEX] * -1;
+                instance.setMetaData(meta);
+                return neg ? meta[MIN_INDEX] : meta[MAX_INDEX];
             }
 
             // check the scale
@@ -84,8 +91,10 @@ public class MDouble extends TClass
         }
         else
         {
-            if (Double.compare(val, max) >= 0)
-                return max.doubleValue();
+            assert meta.length == 2 : "MDouble's TInstace's meta data should be Double[2]";
+            
+            if (Double.compare(Math.abs(val), meta[MAX_INDEX]) >= 0)
+                return meta[MAX_INDEX].doubleValue();
             
             // check the scale
             double factor = Math.pow(10, scale);
