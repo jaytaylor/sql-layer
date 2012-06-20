@@ -26,17 +26,13 @@
 
 package com.akiban.server.types3;
 
+import java.util.EnumSet;
+
 public final class TInstance {
     
     public int attribute(Attribute attribute) {
-        if (attNames == Attribute.NONE)
-            throw new IllegalArgumentException("No attributes available for this TIntance");
         
-        boolean matched = false;
-        for (Attribute att : attNames) // TODO: optmised this with Set.contains(...) ?
-            matched |= att == attribute;
-        
-        if (!matched)
+        if (!legalAtts.contains(attribute))
             throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
         
         int index = attribute.ordinal();
@@ -53,8 +49,9 @@ public final class TInstance {
         return tclass;
     }
 
-    TInstance(TClass tclass, Attribute attNames[], int attr0, int attr1, int attr2, int attr3) {
-        this(tclass, attNames, 4, attr0, attr1, attr2, attr3);
+    TInstance(TClass tclass, EnumSet<? extends Attribute> attributes, 
+            int attr0, int attr1, int attr2, int attr3) {
+        this(tclass, attributes, 4, attr0, attr1, attr2, attr3);
     }
 
     public Boolean nullability() {
@@ -86,27 +83,28 @@ public final class TInstance {
     }
     
     public TInstance copy() {
-        return new TInstance(tclass, attNames, tclass.nAttributes(), attr0, attr1, attr2, attr3);
+        return new TInstance(tclass, legalAtts, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
 
     // object interface
 
     // TODO
 
-    private TInstance(TClass tclass, Attribute attNames[], int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+    private TInstance(TClass tclass, EnumSet<? extends Attribute> legalAtts,
+            int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
         this.tclass = tclass;
         this.attr0 = attr0;
         this.attr1 = attr1;
         this.attr2 = attr2;
         this.attr3 = attr3;
-        this.attNames = attNames;
+        this.legalAtts = legalAtts;
     }
 
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
     private Object metaData;
-    private final Attribute attNames[];
+    private final EnumSet<? extends Attribute> legalAtts;
     
 }

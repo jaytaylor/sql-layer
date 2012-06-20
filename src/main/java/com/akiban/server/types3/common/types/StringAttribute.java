@@ -27,6 +27,7 @@
 package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.Attribute;
+import java.util.EnumSet;
 
 public enum StringAttribute implements Attribute
 {
@@ -36,8 +37,15 @@ public enum StringAttribute implements Attribute
      */
     LENGTH,
 
-
     CHARSET,
     
-    COLLATION
+    COLLATION;
+
+    @Override
+    public EnumSet<? extends Attribute> allValues()
+    {
+        return ALL;
+    }
+
+    private static final EnumSet<StringAttribute> ALL = EnumSet.allOf(StringAttribute.class);
 }

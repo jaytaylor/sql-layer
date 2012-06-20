@@ -33,6 +33,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.ArgumentValidation;
 
+import java.util.EnumSet;
 import java.util.regex.Pattern;
 
 public abstract class TClass {
@@ -151,7 +152,11 @@ public abstract class TClass {
     private TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         if (nAttributes() != nAttrs)
             throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
-        TInstance result = new TInstance(this, attributes,attr0, attr1, attr2, attr3);
+        EnumSet<? extends Attribute> set = null;
+        if (attributes.length != 0)
+            set = attributes[0].allValues();
+        
+        TInstance result = new TInstance(this, set, attr0, attr1, attr2, attr3);
         validate(result);
         return result;
     }
