@@ -282,24 +282,6 @@ public class ApiTestBase {
             }
         }
         session.close();
-        
-        /*
-         * Other cleanup found necessary.
-         * TODO: code this more elegantly within the framework
-         * 
-         */
-        /*
-        SchemaManager schemaManager = sm.getSchemaManager();
-        if (schemaManager instanceof PersistitStoreSchemaManager) {
-            ((PersistitStoreSchemaManager) schemaManager).stop();
-            ((PersistitStoreSchemaManager) schemaManager).start();
-        }
-        IndexStatisticsService iss = sm.getServiceByClass(IndexStatisticsService.class);
-        if (iss instanceof IndexStatisticsServiceImpl) {
-            ((IndexStatisticsServiceImpl) iss).stop();
-            ((IndexStatisticsServiceImpl) iss).start();
-        }
-        */
 
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);

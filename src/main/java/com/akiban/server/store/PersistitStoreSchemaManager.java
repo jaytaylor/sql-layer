@@ -222,6 +222,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
+    public void unRegisterMemoryInformationSchemaTable(final TableName tableName) {
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+            @Override
+            public void run(Session session) throws PersistitException {
+                deleteTableCommon(session, tableName, true, true);
+            }
+        });
+    }
+
+    @Override
     public TableName createTableDefinition(Session session, UserTable newTable) {
         return createTableCommon(session, newTable, false, null, null);
     }
@@ -423,20 +433,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         saveAISChangeWithRowDefs(session, newAIS, schemas);
     }
 
-
     @Override
-    public void deleteTableDefinition(final Session session, final String schemaName,
-                                      final String tableName) {
-        if (TableName.INFORMATION_SCHEMA.equals(schemaName)) {
-            return;
-        }
+    public void deleteTableDefinition(Session session, String schemaName, String tableName) {
+        deleteTableCommon(session, new TableName(schemaName, tableName), false, false);
+    }
 
-        final Table table = getAis().getTable(schemaName, tableName);
-        if (table == null) {
-            return;
-        }
+    private void deleteTableCommon(Session session, TableName tableName, boolean isInternal, boolean mustBeMemory) {
+        checkTableName(tableName, true, isInternal);
 
-
+        final Table table = getAis().getTable(tableName);
         final List<TableName> tables = new ArrayList<TableName>();
         if (table.isGroupTable() == true) {
             final Group group = table.getGroup();
@@ -448,6 +453,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             }
         } else if (table.isUserTable() == true) {
             final UserTable userTable = (UserTable) table;
+            if (mustBeMemory && !userTable.hasMemoryTableFactory()) {
+                throw new IllegalArgumentException("Cannot un-register non-memory table");
+            }
             if (userTable.getChildJoins().isEmpty() == false) {
                 throw new ReferencedTableException (table);
             }
@@ -1127,18 +1135,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         return getAis().getUserTable(newName).getName();
     }
 
-    private static void checkAISSchema(TableName tableName, boolean shouldBeAIS) {
-        final boolean isAIS = TableName.INFORMATION_SCHEMA.equals(tableName.getSchemaName());
-        if(shouldBeAIS && !isAIS) {
+    private static void checkAISSchema(TableName tableName, boolean shouldBeIS) {
+        final boolean inIS = TableName.INFORMATION_SCHEMA.equals(tableName.getSchemaName());
+        if(shouldBeIS && !inIS) {
             throw new IllegalArgumentException("Table required to be in "+TableName.INFORMATION_SCHEMA +" schema");
         }
-        if(!shouldBeAIS && isAIS) {
+        if(!shouldBeIS && inIS) {
             throw new ProtectedTableDDLException(tableName);
         }
     }
 
-    private void checkTableName(TableName tableName, boolean shouldExist, boolean aisAllowed) {
-        checkAISSchema(tableName, aisAllowed);
+    private void checkTableName(TableName tableName, boolean shouldExist, boolean inIS) {
+        checkAISSchema(tableName, inIS);
         final boolean tableExists = getAis().getTable(tableName) != null;
         if(shouldExist && !tableExists) {
             throw new NoSuchTableException(tableName);

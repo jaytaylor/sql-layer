@@ -72,6 +72,14 @@ public interface SchemaManager {
     TableName registerMemoryInformationSchemaTable(Session session, UserTable newTable, MemoryTableFactory factory);
 
     /**
+     * Delete the definition of a table in the {@link TableName#INFORMATION_SCHEMA}
+     * schema. The table must exist and be a memory table.
+     *
+     * @param tableName Table to delete.
+     */
+    void unRegisterMemoryInformationSchemaTable(TableName tableName);
+
+    /**
      * Create a new table in the SchemaManager. Successful completion of this
      * method results in a new timestamp and schema generation, see
      * {@link #getUpdateTimestamp()} and {@link #getSchemaGeneration()} respectively.
