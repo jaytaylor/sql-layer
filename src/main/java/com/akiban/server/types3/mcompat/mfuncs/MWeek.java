@@ -36,7 +36,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.List;
+import org.joda.time.DateTimeConstants;
 import org.joda.time.MutableDateTime;
 
 public abstract class MWeek extends TOverloadBase { 
@@ -44,45 +44,101 @@ public abstract class MWeek extends TOverloadBase {
     public static final TOverload[] WEEK = {
         new MWeek() {
 
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(0, inputs.get(0).getInt64(), context, output);
-        }
-        
-        @Override
-        public String overloadName() {
-            return "WEEK";
-        }
-    },
+            private static final int MODE = 0;
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                long[] date = DateExtractor.extract(inputs.get(0).getInt64());
+                if (!isZero(date, context, output) && isModeRange(MODE, context, output)) {
+                    putWeek(MODE, date, context, output);
+                }
+            }
+
+            @Override
+            public String overloadName() {
+                return "WEEK";
+            }
+        },
         new MWeek() {
 
-        @Override
-        protected void buildInputSets(TInputSetBuilder builder) {
-            builder.covers(MDatetimes.DATETIME, 0);
-            builder.covers(MNumeric.INT, 1);
-        }
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+                builder.covers(MDatetimes.DATETIME, 0);
+                builder.covers(MNumeric.INT, 1);
+            }
 
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(1).getInt32(), inputs.get(0).getInt64(), context, output);
-        }
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                long[] date = DateExtractor.extract(inputs.get(0).getInt64());
+                int mode = inputs.get(1).getInt32();
+                if (!isZero(date, context, output) && isModeRange(mode, context, output)) {
+                    putWeek(mode, date, context, output);
+                }
+            }
 
-        @Override
-        public String overloadName() {
-            return "WEEK";
-        }
-    }};
+            @Override
+            public String overloadName() {
+                return "WEEK";
+            }
+        }};
     
     public static final TOverload WEEKOFYEAR = new MWeek() {
 
+        private static final int MODE = 3;
+
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(3, inputs.get(0).getInt64(), context, output);
-        }   
-        
+            long[] date = DateExtractor.extract(inputs.get(0).getInt64());
+            if (!isZero(date, context, output) && isModeRange(MODE, context, output)) {
+                putWeek(MODE, date, context, output);
+            }
+        }
+
         @Override
         public String overloadName() {
             return "WEEKOFYEAR";
+        }
+    };
+    
+    public static final TOverload[] YEARWEEK = {
+        new MWeek() {
+            
+            private static final int MODE = 0;
+            
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                long[] date = DateExtractor.extract(inputs.get(0).getInt64());
+                if (!isZero(date, context, output) && isModeRange(MODE, context, output)) {
+                    putYearWeek(MODE, date, context, output);
+                }
+            }
+
+            @Override
+            public String overloadName() {
+                return "YEARWEEK";
+            }
+        },
+        new MWeek() {
+
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+                builder.covers(MDatetimes.DATETIME, 0);
+                builder.covers(MNumeric.INT, 1);
+            }
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                long[] date = DateExtractor.extract(inputs.get(0).getInt64());
+                int mode = inputs.get(0).getInt32();
+                if (!isZero(date, context, output) && isModeRange(mode, context, output)) {
+                    putYearWeek(mode, date, context, output);
+                }
+            }
+
+            @Override
+            public String overloadName() {
+                return "YEARWEEK";
+            }
         }
     };
     
@@ -91,32 +147,23 @@ public abstract class MWeek extends TOverloadBase {
         builder.covers(MDatetimes.DATETIME, 0);
     }
     
-    protected void doEvaluate(int mode, long input, TExecutionContext context, PValueTarget output) {
-        long[] date = DateExtractor.extract(input);
-        if (isZero(date, context, output)) return;
-
-        if (mode < 0 || mode > 7) {
-            if (context != null) {
-                context.warnClient(new InvalidParameterValueException("MODE out of range [0, 7]: " + mode));
-            }
-            output.putNull();
-        } else {
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, date, true);
-            int week = modes[mode].getWeek(datetime, 
-                    (int)date[DateExtractor.YEAR], (int)date[DateExtractor.MONTH], (int)date[DateExtractor.DAY]);
-            output.putInt32(week);
-        }
+    private static void putWeek(int mode, long[] date, TExecutionContext context, PValueTarget output) {
+        MutableDateTime datetime = DateExtractor.getMutableDateTime(context, date, true);
+        int week = modes[mode].getWeek(datetime,
+                (int)date[DateExtractor.YEAR], (int)date[DateExtractor.MONTH], (int)date[DateExtractor.DAY]);
+        output.putInt32(week);
+    }
+    
+    private static void putYearWeek(int mode, long[] date, TExecutionContext context, PValueTarget output) {
+        MutableDateTime datetime = DateExtractor.getMutableDateTime(context, date, true);    
+        int yearweek = yearModes[mode].getYearWeek(datetime,
+                (int)date[DateExtractor.YEAR], (int)date[DateExtractor.MONTH], (int)date[DateExtractor.DAY]);
+        output.putInt32(yearweek);
     }
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.custom(MDatetimes.DATE.instance(), new TCustomOverloadResult() {
-
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                return MNumeric.INT.instance();
-            }
-        });
+        return TOverloadResult.fixed(MNumeric.INT.instance());
     }
     
     private static final class DayOfWeek
@@ -135,17 +182,17 @@ public abstract class MWeek extends TOverloadBase {
         int getWeek(MutableDateTime cal, int yr, int mo, int da);
     }
 
-    private static final MWeek.Modes[] modes = new MWeek.Modes[]
+    private static final Modes[] modes = new Modes[]
     {
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 8);}}, //0
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SUN,8);}},  //1
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 0);}}, //2
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SUN, 1);}}, //3
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SAT, 8);}},//4
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.MON, 8);}}, //5
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, MWeek.DayOfWeek.SAT,4);}},//6
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, MWeek.DayOfWeek.MON,5);}},  //7
-        new MWeek.Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return 0;}} // dummy always return 0-lowestval
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.SUN, 8);}}, //0
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SUN,8);}},  //1
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.SUN, 0);}}, //2
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SUN, 1);}}, //3
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SAT, 8);}},//4
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.MON, 8);}}, //5
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode1346(cal, yr, mo, da, DayOfWeek.SAT,4);}},//6
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return getMode0257(cal, yr, mo, da, DayOfWeek.MON,5);}},  //7
+        new Modes() {public int getWeek(MutableDateTime cal, int yr, int mo, int da){return 0;}} // dummy always return 0-lowestval
     };
 
     private static int getMode1346(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
@@ -195,6 +242,71 @@ public abstract class MWeek extends TOverloadBase {
         if (dayOfYear < firstD) return modes[lowestVal].getWeek(cal, yr-1, 12, 31);
         else return (dayOfYear - firstD) / 7 +1;
     }   
+    
+    private static interface YearModes 
+    {
+        int getYearWeek(MutableDateTime cal, int yr, int mo, int da);
+    }
+
+    private static final YearModes[] yearModes = new YearModes[] {
+        new YearModes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getYearMode0257(cal, yr, mo, da, DateTimeConstants.SUNDAY, 0);}}, //0
+        new YearModes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getYearMode1346(cal, yr, mo, da, DateTimeConstants.SUNDAY,1);}},  //1
+        new YearModes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getYearMode0257(cal, yr, mo, da, DateTimeConstants.SUNDAY, 0);}}, //2
+        new YearModes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getYearMode1346(cal, yr, mo, da, DateTimeConstants.SUNDAY, 1);}}, //3
+        new YearModes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getYearMode1346(cal, yr, mo, da, DateTimeConstants.SATURDAY,4);}},//4
+        new YearModes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getYearMode0257(cal, yr, mo, da, DateTimeConstants.MONDAY, 5);}}, //5
+        new YearModes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getYearMode1346(cal, yr, mo, da, DateTimeConstants.SATURDAY,4);}},//6
+        new YearModes() {public int getYearWeek(MutableDateTime cal, int yr, int mo, int da){return getYearMode0257(cal, yr, mo, da, DateTimeConstants.MONDAY,5);}},  //7
+
+    };
+
+    private static int getYearMode1346(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
+    {
+        cal.setYear(yr);
+        cal.setMonthOfYear(1);
+        cal.setDayOfMonth(1);
+
+        int firstD = 1;
+
+        while (cal.getDayOfWeek() != firstDay)
+            cal.setDayOfMonth(++firstD);
+
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
+
+        int week = cal.getDayOfYear() - (firstD +1 ); // Sun/Mon
+        if (firstD < 4)
+        {
+            if (week < 0) return  yearModes[lowestVal].getYearWeek(cal, yr - 1, 12, 31);
+            else return yr * 100 + week / 7 + 1;
+        }
+        else
+        {
+            if (week < 0) return yr * 100 + 1;
+            else return yr * 100 + week / 7 + 2;
+        }
+    }
+
+    private static int getYearMode0257(MutableDateTime cal, int yr, int mo, int da, int firstDay, int lowestVal)
+    {
+        cal.setYear(yr);
+        cal.setMonthOfYear(1);
+        cal.setDayOfMonth(1);
+        int firstD = 1;
+
+        while (cal.getDayOfWeek() != firstDay)
+            cal.setDayOfMonth(++firstD);
+
+        cal.setYear(yr);
+        cal.setMonthOfYear(mo);
+        cal.setDayOfMonth(da);
+
+        int dayOfYear = cal.getDayOfYear();
+
+        if (dayOfYear < firstD) return yearModes[lowestVal].getYearWeek(cal, yr - 1, 12, 31);
+        else return yr * 100 + (dayOfYear - firstD) / 7 +1;
+    }    
 
     private static boolean isZero(long[] date, TExecutionContext context,PValueTarget output) {
         boolean isZero = date[DateExtractor.MONTH] == 0L || date[DateExtractor.DAY] == 0L;
@@ -204,5 +316,16 @@ public abstract class MWeek extends TOverloadBase {
             output.putNull();
         }
         return isZero;
+    }
+    
+    private static boolean isModeRange(int mode, TExecutionContext context, PValueTarget output) {
+        boolean inRange = mode >= 0 && mode <8;
+        if (!inRange) {
+            if (context != null) {
+                context.warnClient(new InvalidParameterValueException("MODE out of range [0, 7]: " + mode));
+            }
+            output.putNull();
+        } 
+        return inRange;
     }
 }
