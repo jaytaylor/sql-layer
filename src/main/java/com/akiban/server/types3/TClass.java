@@ -151,7 +151,7 @@ public abstract class TClass {
     private TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         if (nAttributes() != nAttrs)
             throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
-        TInstance result = new TInstance(this, attr0, attr1, attr2, attr3);
+        TInstance result = new TInstance(this, attributes,attr0, attr1, attr2, attr3);
         validate(result);
         return result;
     }

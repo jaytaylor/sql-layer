@@ -29,6 +29,16 @@ package com.akiban.server.types3;
 public final class TInstance {
     
     public int attribute(Attribute attribute) {
+        if (attNames == Attribute.NONE)
+            throw new IllegalArgumentException("No attributes available for this TIntance");
+        
+        boolean matched = false;
+        for (Attribute att : attNames) // TODO: optmised this with Set.contains(...) ?
+            matched |= att == attribute;
+        
+        if (!matched)
+            throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
+        
         int index = attribute.ordinal();
         switch (index) {
         case 0: return attr0;
@@ -43,8 +53,8 @@ public final class TInstance {
         return tclass;
     }
 
-    TInstance(TClass tclass, int attr0, int attr1, int attr2, int attr3) {
-        this(tclass, 4, attr0, attr1, attr2, attr3);
+    TInstance(TClass tclass, Attribute attNames[], int attr0, int attr1, int attr2, int attr3) {
+        this(tclass, attNames, 4, attr0, attr1, attr2, attr3);
     }
 
     public Boolean nullability() {
@@ -76,24 +86,27 @@ public final class TInstance {
     }
     
     public TInstance copy() {
-        return new TInstance(tclass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
+        return new TInstance(tclass, attNames, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
 
     // object interface
 
     // TODO
 
-    private TInstance(TClass tclass, int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+    private TInstance(TClass tclass, Attribute attNames[], int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
         this.tclass = tclass;
         this.attr0 = attr0;
         this.attr1 = attr1;
         this.attr2 = attr2;
         this.attr3 = attr3;
+        this.attNames = attNames;
     }
 
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
     private Object metaData;
+    private final Attribute attNames[];
+    
 }
