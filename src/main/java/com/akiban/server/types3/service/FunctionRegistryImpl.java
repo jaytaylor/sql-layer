@@ -34,37 +34,34 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.Map;
-import java.util.Set;
+import java.util.List;
 
 @Singleton
 public class FunctionRegistryImpl implements FunctionRegistry
 {
     // TODO : define aggregates here
-    private Map<String,Set<TOverload>> scalars;
+    private List<TOverload> scalars;
 
     private static final int INVALID = -1;
     private static final int FIELD = 0;
     private static final int ARRAY = 1;
-    // collections ?
+    private static final int COLLECTION = 2;
 
     FunctionRegistryImpl (FunctionsClassFinder finder) 
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
-        scalars = new HashMap<String, Set<TOverload>>();
-        Set<String> names = new HashSet<String>();
+        scalars = new ArrayList<TOverload>();
         for (Class<?> cls : finder.findClasses())
         {
             if (!Modifier.isPublic(cls.getModifiers()))
                 continue;
-            collectScalars(scalars, names, cls);
+            collectScalars(scalars, cls);
         }
     }
 
-    private static void collectScalars(Map<String, Set<TOverload>> map, Set<String> names, Class<?> cls)
+    private static void collectScalars(List<TOverload> list, Class<?> cls)
     {   
         try
         {
@@ -76,14 +73,26 @@ public class FunctionRegistryImpl implements FunctionRegistry
                     switch (validateScalarField(field))
                     {
                         case FIELD:
-                            putOverload((TOverload) field.get(null), map);
+                            putOverload((TOverload) field.get(null), list);
                             break;
                         case ARRAY:
                             for (TOverload overload : (TOverload[]) field.get(null))
-                                putOverload(overload, map);
+                                putOverload(overload, list);
                             break;
+                        case COLLECTION:
+                            try
+                            {
+                                for (Object raw : (Collection<?>)field.get(null)) 
+                                    putOverload((TOverload)raw, list);
+                                break;
+                            }
+                            catch (ClassCastException e){}
+                            // fall thru
                         default:
-                            complain("Field " + field + " must be declared as public static final TOverload <name>");
+                            complain("Field " + field 
+                                    + " must be declared as public static final TOverload "
+                                    + " or public static final TOverload[]"
+                                    + " or public static final Collection<? extends TOverload>");
                     }
             }
 
@@ -95,15 +104,25 @@ public class FunctionRegistryImpl implements FunctionRegistry
                     switch(validateScalarMethod(method))
                     {
                         case FIELD:
-                            putOverload((TOverload)method.invoke(null), map);
+                            putOverload((TOverload)method.invoke(null), list);
                             break;
                         case ARRAY:
                             for (TOverload overload : (TOverload[])method.invoke(null))
-                                putOverload(overload, map);
+                                putOverload(overload, list);
                             break;
+                        case COLLECTION:
+                            try
+                            {
+                                for (Object raw : (Collection<?>)method.invoke(null))
+                                    putOverload((TOverload)raw,  list);
+                                break;
+                            }
+                            catch (ClassCastException e) {}
+                            // fall thru
                         default:
                             complain("Method " + method 
                                     + " must be declared as public static TOverload[] <methodname>() "
+                                    + " or public satic Collection<TOverload> <method name>() "
                                     + " or public static TOverload <method name>()");
                     }
             }
@@ -127,13 +146,9 @@ public class FunctionRegistryImpl implements FunctionRegistry
         return INVALID;
     }
     
-    private static void putOverload(TOverload overload, Map<String, Set<TOverload>> map)
+    private static void putOverload(TOverload overload, Collection<TOverload> list)
     {
-        String name = normalise(overload.overloadName());
-        Set<TOverload> set = map.get(name);
-        if (set == null)
-            map.put(name, set = new HashSet<TOverload>()); // TOverload is singleton
-        set.add(overload);                                 // so we should be fine with the defualt hashCode()
+        list.add(overload);
     }
 
     private static String normalise(String name)
@@ -156,7 +171,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
             return ARRAY;
         else if (TOverload.class.isAssignableFrom(c))
             return FIELD;
-        else return INVALID;
+        else return COLLECTION;
     }
 
     private static void  complain (String st)
@@ -167,16 +182,12 @@ public class FunctionRegistryImpl implements FunctionRegistry
     @Override
     public FunctionKind getFunctionKind(String name)
     {
-        if (scalars.containsKey(name))
-            return FunctionKind.SCALAR;
-        
-        // TODO: support aggreate function
-        return null;
+        throw new UnsupportedOperationException("not supported yet");
     }
 
     @Override
-    public Collection<TOverload> overloads(String name)
+    public Collection<TOverload> overloads()
     {
-        return scalars.get(name);
+        return scalars;
     }
 }

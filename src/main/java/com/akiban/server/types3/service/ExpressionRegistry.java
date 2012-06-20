@@ -31,5 +31,5 @@ import java.util.Collection;
 
 public interface ExpressionRegistry
 {
-    Collection<TOverload> overloads(String name);
+    Collection<TOverload> overloads();
 }
