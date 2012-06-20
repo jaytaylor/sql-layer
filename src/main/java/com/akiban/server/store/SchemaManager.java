@@ -116,8 +116,8 @@ public interface SchemaManager {
     void dropIndexes(Session session, Collection<Index> indexes);
 
     /**
-     * Delete the definition of the table with the given name. This method does nothing if
-     * the table does not exist.
+     * Delete the definition of the table with the given name. Throws
+     * NoSuchTableException if the table does not exist.
      * @param session The session to operate under.
      * @param schemaName The name of the schema the table is in.
      * @param tableName The name of the table.
@@ -167,12 +167,6 @@ public interface SchemaManager {
      * @return The timestamp at which a change last occurred.
      */
     long getUpdateTimestamp();
-
-    /**
-     * Force a new timestamp as returned by {@link #getUpdateTimestamp()}. Primarily
-     * intended for testing and diagnostics.
-     */
-    void forceNewTimestamp();
 
     /**
      * Get the value associated with the current state of the SchemaManager. This

@@ -156,12 +156,6 @@ public interface DDLFunctions {
      * Get the timestamp of the current AIS. This value increases for each new AIS.
      */
     long getTimestamp();
-
-    /**
-     * Forces an increment to the chunkserver's AIS generation ID. This can be useful for debugging.
-     * @throws InvalidOperationException if an exception occurred
-     */
-    void forceGenerationUpdate();
     
     /**
      * Create new indexes on existing table(s). Both Table and Group indexes are supported. Primary

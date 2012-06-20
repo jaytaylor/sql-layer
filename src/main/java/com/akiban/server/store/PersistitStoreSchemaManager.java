@@ -604,8 +604,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         return (int) ts ^ (int) (ts >>> 32);
     }
     
-    @Override
-    public void forceNewTimestamp() {
+    public void saveCurrentTimestamp() {
         updateTimestamp.set(treeService.getDb().getCurrentTimestamp());
     }
 
@@ -868,7 +867,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         rowDefCache.clear();
         treeService.getTableStatusCache().detachAIS();
         rowDefCache.setAIS(newAis);
-        forceNewTimestamp();
+        saveCurrentTimestamp();
         aish.setAis(newAis);
     }
 

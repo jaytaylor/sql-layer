@@ -32,6 +32,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -202,12 +203,10 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA);
     }
 
-    @Test
+    @Test(expected=NoSuchTableException.class)
     public void deleteUnknownDefinition() throws Exception {
-        deleteTableDef("schema1", "table1");
         assertTablesInSchema(SCHEMA);
         deleteTableDef("schema1", "table1");
-        assertTablesInSchema(SCHEMA);
     }
 
     @Test
@@ -215,8 +214,6 @@ public final class SchemaManagerIT extends ITBase {
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
         
-        deleteTableDef(SCHEMA, T1_NAME);
-        assertTablesInSchema(SCHEMA);
         deleteTableDef(SCHEMA, T1_NAME);
         assertTablesInSchema(SCHEMA);
     }
@@ -358,22 +355,6 @@ public final class SchemaManagerIT extends ITBase {
         deleteTableDef(SCHEMA, T1_NAME);
         final int second = schemaManager.getSchemaGeneration();
         assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void forceNewTimestampChangesTimestamp() throws Exception {
-        final long first = schemaManager.getUpdateTimestamp();
-        schemaManager.forceNewTimestamp();
-        final long second = schemaManager.getUpdateTimestamp();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void forceNewTimestampChangesSchemaGen() throws Exception {
-        final int first = schemaManager.getSchemaGeneration();
-        schemaManager.forceNewTimestamp();
-        final int second = schemaManager.getSchemaGeneration();
-        assertTrue("timestamp unchanged: " + first, first != second);
     }
 
     @Test
@@ -578,7 +559,6 @@ public final class SchemaManagerIT extends ITBase {
         assertTrue("Unique tree names", !originalTreeName.equals(newTreeName));
     }
 
-
     @Test
     public void createRestartAndCreateMore() throws Exception {
         createTable(SCHEMA, T1_NAME, T1_DDL);
@@ -618,13 +598,20 @@ public final class SchemaManagerIT extends ITBase {
         }
     }
 
-    @Test(expected=DuplicateTableNameException.class)
+    @Test
     public void noDuplicateMemoryTables() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName);
         MemoryTableFactory factory = new MemoryTableFactoryMock();
         registerISTable(sourceTable, factory);
-        registerISTable(sourceTable, factory);
+        try {
+            registerISTable(sourceTable, factory);
+            fail("Expected DuplicateTableNameException");
+        } catch(DuplicateTableNameException e) {
+            // expected
+        } finally {
+            schemaManager.unRegisterMemoryInformationSchemaTable(tableName);
+        }
     }
 
     @Test(expected=IllegalArgumentException.class)

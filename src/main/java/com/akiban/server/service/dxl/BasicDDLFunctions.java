@@ -279,13 +279,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     }
 
     @Override
-    // meant to be used from JMX
-    public void forceGenerationUpdate() {
-        logger.trace("forcing schema generation update");
-        schemaManager().forceNewTimestamp();
-    }
-
-    @Override
     public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
         logger.trace("creating indexes {}", indexesToAdd);
         if (indexesToAdd.isEmpty() == true) {
