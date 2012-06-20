@@ -32,7 +32,7 @@ public final class TInstance {
     
     public int attribute(Attribute attribute) {
         
-        if (!legalAtts.contains(attribute))
+        if (legalAtts == null || !legalAtts.contains(attribute))
             throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
         
         int index = attribute.ordinal();
