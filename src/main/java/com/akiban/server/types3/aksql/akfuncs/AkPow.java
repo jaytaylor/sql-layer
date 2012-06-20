@@ -30,5 +30,5 @@ import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.common.funcs.TPow;
 
 public class AkPow {
-    private static final TOverload INSTANCE = new TPow(AkNumeric.DOUBLE) {};
+    public static final TOverload INSTANCE = new TPow(AkNumeric.DOUBLE) {};
 }
