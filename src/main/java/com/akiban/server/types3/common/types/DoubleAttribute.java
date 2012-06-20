@@ -27,7 +27,6 @@
 package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.Attribute;
-import java.util.EnumSet;
 
 public enum DoubleAttribute implements Attribute
 {
