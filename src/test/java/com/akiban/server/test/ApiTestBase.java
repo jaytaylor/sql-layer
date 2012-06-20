@@ -801,16 +801,14 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables() throws InvalidOperationException {
-        // Can't drop a parent before child. Get all to drop and sort children first (they always have higher id).
-        List<Integer> allIds = new ArrayList<Integer>();
-        for (Map.Entry<TableName, UserTable> entry : ddl().getAIS(session()).getUserTables().entrySet()) {
-            if (!TableName.INFORMATION_SCHEMA.equals(entry.getKey().getSchemaName())) {
-                allIds.add(entry.getValue().getTableId());
+        Set<String> groupNames = new HashSet<String>();
+        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+            if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
+                groupNames.add(table.getGroup().getName());
             }
         }
-        Collections.sort(allIds, Collections.reverseOrder());
-        for (Integer id : allIds) {
-            ddl().dropTable(session(), tableName(id));
+        for(String groupName : groupNames) {
+            ddl().dropGroup(session(), groupName);
         }
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
