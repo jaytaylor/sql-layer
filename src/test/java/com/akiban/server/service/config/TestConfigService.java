@@ -61,19 +61,16 @@ public class TestConfigService extends ConfigurationServiceImpl {
     protected Map<String, Property> loadProperties() {
         Map<String, Property> ret = new HashMap<String, Property>(super.loadProperties());
         tmpDir = makeTempDatapathDirectory();
-        String datapathKey = "akserver.datapath";
-        ret.put(datapathKey, new Property(datapathKey, tmpDir.getAbsolutePath()));
-        final int bufferSize = Integer.parseInt(ret.get("persistit.buffersize").getValue());
-        String memoryKey = "persistit.buffer.memory." + bufferSize;
+        ret.put(DATA_PATH_KEY, new Property(DATA_PATH_KEY, tmpDir.getAbsolutePath()));
+        final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY).getValue());
+        String memoryKey = BUFFER_MEMORY_KEY_PREFIX + "." + bufferSize;
         ret.put(memoryKey, new Property(memoryKey, UNIT_TEST_PERSISTIT_MEMORY));
         if (extraProperties != null) {
             for (final Property property : extraProperties) {
                 ret.put(property.getKey(), property);
             }
         }
-        String journalSizeKey = "persistit.journalsize";
-
-        ret.put(journalSizeKey, new Property(journalSizeKey, Integer.toString(128 * 1024 * 1024)));
+        ret.put(JOURNAL_SIZE_KEY, new Property(JOURNAL_SIZE_KEY, Long.toString(UNIT_TEST_PERSISTIT_JOURNAL_SIZE)));
         return ret;
     }
 
@@ -125,5 +122,10 @@ public class TestConfigService extends ConfigurationServiceImpl {
     }
 
     private static final AtomicReference<Collection<Property>> startupConfigPropertiesRef = new AtomicReference<Collection<Property>>();
+    private final static String DATA_PATH_KEY = "akserver.datapath";
+    private final static String BUFFER_SIZE_KEY = "persistit.buffersize";
+    private final static String BUFFER_MEMORY_KEY_PREFIX = "persistit.buffer.memory";
+    private final static String JOURNAL_SIZE_KEY = "persistit.journalsize";
     private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
+    private final static long UNIT_TEST_PERSISTIT_JOURNAL_SIZE = 128 * 1024 * 1024;
 }
