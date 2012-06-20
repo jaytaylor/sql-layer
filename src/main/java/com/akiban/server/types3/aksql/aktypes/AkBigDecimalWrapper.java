@@ -111,7 +111,7 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     @Override
     public int compareTo(Object o)
     {
-         if (o == null || o.getClass() != getClass())
+         if (o == null)
             return 1;
 
         return value.compareTo(((AkBigDecimalWrapper)o).value);

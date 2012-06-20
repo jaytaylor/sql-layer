@@ -87,7 +87,7 @@ public class MBigDecimal extends TClass {
        
             targetInstance.setMetaData(meta);
         }
-        
+
         if (num.compareTo(meta[MAX_INDEX]) >= 0)
             targetValue.putObject(meta[MAX_INDEX]);
         else if (num.compareTo(meta[MIN_INDEX]) <= 0)

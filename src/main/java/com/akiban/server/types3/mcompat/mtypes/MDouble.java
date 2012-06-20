@@ -53,7 +53,7 @@ public class MDouble extends TClass
         assert instance.typeClass() instanceof MDouble : "instance has to be of type MDouble";
 
         // meta data
-        Double meta[] = (Double[])instance.getMetaData();
+        double meta[] = (double[])instance.getMetaData();
         
         
         int precision = instance.attribute(DoubleAttribute.PRECISION);
@@ -69,7 +69,7 @@ public class MDouble extends TClass
             if (point > precision - scale)
             {
                 // cache the max value
-                meta = new Double[2];
+                meta = new double[2];
                 meta[MAX_INDEX] = Double.parseDouble(MBigDecimal.getNum(scale, precision));
                 meta[MIN_INDEX] = meta[MAX_INDEX] * -1;
                 instance.setMetaData(meta);
@@ -94,7 +94,7 @@ public class MDouble extends TClass
             assert meta.length == 2 : "MDouble's TInstace's meta data should be Double[2]";
             
             if (Double.compare(Math.abs(val), meta[MAX_INDEX]) >= 0)
-                return meta[MAX_INDEX].doubleValue();
+                return meta[MAX_INDEX];
             
             // check the scale
             double factor = Math.pow(10, scale);
