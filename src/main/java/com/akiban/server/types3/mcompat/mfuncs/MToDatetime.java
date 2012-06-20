@@ -39,16 +39,14 @@ import org.joda.time.MutableDateTime;
 public abstract class MToDatetime extends TOverloadBase{
     
     private static final int TIME_INDEX = 0; 
-    private static final long BEGINNING = new MutableDateTime(0,0,1,0,0,0,0).getMillis();
     private static final long SECONDS_FACTOR = 100L;
-    private static final long DAY_FACTOR = 3600L * 1000 * 24;
     
     public static final TOverload TO_DAYS = new MToDatetime() {
         
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            MutableDateTime datetime = getDateTime(inputs.get(0).getInt64(), context);
-            long time = (datetime.getMillis() - BEGINNING) / DAY_FACTOR;
+            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, inputs.get(0).getInt64(), true);
+            long time = (datetime.getMillis() - DateExtractor.BEGINNING) / DateExtractor.DAY_FACTOR;
             output.putInt32((int) time);
         }
 
@@ -63,7 +61,7 @@ public abstract class MToDatetime extends TOverloadBase{
         
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            MutableDateTime datetime = getDateTime(inputs.get(0).getInt64(), context);
+            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, inputs.get(0).getInt64(), true);
             long seconds = datetime.getMillis() / SECONDS_FACTOR;
             output.putInt32((int)seconds);
         }
@@ -79,8 +77,8 @@ public abstract class MToDatetime extends TOverloadBase{
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            MutableDateTime datetime = getDateTime(inputs.get(0).getInt64(), context);
-            long seconds = (datetime.getMillis() - BEGINNING) / SECONDS_FACTOR;
+            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, inputs.get(0).getInt64(), true);
+            long seconds = (datetime.getMillis() - DateExtractor.BEGINNING) / SECONDS_FACTOR;
             output.putInt32((int)seconds);
         }
 
@@ -89,7 +87,8 @@ public abstract class MToDatetime extends TOverloadBase{
             return "TO_SECONDS";
         }
         
-    };      
+    }; 
+
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
@@ -99,15 +98,5 @@ public abstract class MToDatetime extends TOverloadBase{
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MNumeric.INT.instance());
-    }
-    
-    public MutableDateTime getDateTime(long input, TExecutionContext context) {
-        long[] dateArr = DateExtractor.extract(input);
-        MutableDateTime datetime = (MutableDateTime) context.exectimeObjectAt(TIME_INDEX);
-        if (context == null) context.putExectimeObject(TIME_INDEX, datetime = new MutableDateTime());
-            
-        datetime.setDateTime((int)dateArr[DateExtractor.YEAR], (int)dateArr[DateExtractor.MONTH], (int)dateArr[DateExtractor.DAY],
-                (int)dateArr[DateExtractor.HOUR], (int)dateArr[DateExtractor.MINUTE], (int)dateArr[DateExtractor.SECOND], 0);
-        return datetime;
     }
 }

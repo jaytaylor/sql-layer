@@ -25,6 +25,9 @@
  */
 package com.akiban.server.types3.common;
 
+import com.akiban.server.types3.TExecutionContext;
+import org.joda.time.MutableDateTime;
+
 public class DateExtractor {
 
     // consts
@@ -46,6 +49,10 @@ public class DateExtractor {
     public static final int HOUR = 3;
     public static final int MINUTE = 4;
     public static final int SECOND = 5;
+    
+    private static final int DATE_INDEX = 0;   
+    public static final long BEGINNING = new MutableDateTime(0,0,1,0,0,0,0).getMillis();
+    public static final long DAY_FACTOR = 3600L * 1000 * 24;
 
     public static long[] extract(long value) {
         final long year = (value / DATETIME_YEAR_SCALE);
@@ -89,10 +96,24 @@ public class DateExtractor {
         return last != -1L && datetime[2] <= last;
     }
 
-    public static long toDate(long year, long month, long day) {
-       return year*DATE_YEAR_SCALE + month*DATE_MONTH_SCALE + day*DATE_DAY_SCALE; 
+    public static MutableDateTime getMutableDateTime(TExecutionContext context, long input, boolean setDateTime) {
+        long[] dateArr = DateExtractor.extract(input);
+        MutableDateTime datetime = (MutableDateTime) context.exectimeObjectAt(DATE_INDEX);
+        if (context == null) {
+            context.putExectimeObject(DATE_INDEX, datetime = new MutableDateTime());
+        }
+
+        if (setDateTime) {
+            datetime.setDateTime((int) dateArr[DateExtractor.YEAR], (int) dateArr[DateExtractor.MONTH], (int) dateArr[DateExtractor.DAY],
+                    (int) dateArr[DateExtractor.HOUR], (int) dateArr[DateExtractor.MINUTE], (int) dateArr[DateExtractor.SECOND], 0);
+        }
+        return datetime;
     }
-    
+
+    public static long toDate(long year, long month, long day) {
+        return year * DATE_YEAR_SCALE + month * DATE_MONTH_SCALE + day * DATE_DAY_SCALE;
+    }
+
     public static long toDatetime(long year, long month, long day, long hour, long minute, long second) {
         return year*DATETIME_YEAR_SCALE + month*DATETIME_MONTH_SCALE + day*DATETIME_DAY_SCALE +
                 hour*DATETIME_HOUR_SCALE + minute*DATETIME_MIN_SCALE + second*DATETIME_SEC_SCALE;
