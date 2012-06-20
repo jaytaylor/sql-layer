@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
@@ -33,6 +34,8 @@ import com.akiban.server.types3.TypeDeclarationException;
 import com.akiban.server.types3.common.types.NumericAttribute;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MNumeric extends TClass {
 
@@ -43,6 +46,19 @@ public class MNumeric extends TClass {
                 pUnderlying);
     }
 
+    @Override
+    public void putSafety(QueryContext context, 
+                          TInstance sourceInstance,
+                          PValueSource sourceValue,
+                          TInstance targetInstance,
+                          PValueTarget targetValue)
+    {
+       assert sourceInstance.typeClass() instanceof MNumeric
+                    && targetInstance.typeClass() instanceof MNumeric
+               : "expected instances of mcompat.types.MNumeric";
+       targetValue.putValueSource(sourceValue);
+    }
+        
     @Override
     protected void validate(TInstance instance) {
         int m = instance.attribute(NumericAttribute.WIDTH);
