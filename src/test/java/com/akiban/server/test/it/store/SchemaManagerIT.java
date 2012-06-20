@@ -102,11 +102,11 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
-        schemaManager.registerMemoryInformationSchemaTable(session(), table, factory);
+        schemaManager.registerMemoryInformationSchemaTable(table, factory);
     }
 
     private void registerISTable(final UserTable table, final int version) throws Exception {
-        schemaManager.registerStoredInformationSchemaTable(session(), table, version);
+        schemaManager.registerStoredInformationSchemaTable(table, version);
     }
 
     private void deleteTableDef(final String schema, final String table) throws Exception {

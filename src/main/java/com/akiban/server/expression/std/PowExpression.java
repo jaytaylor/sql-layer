@@ -41,7 +41,7 @@ public class PowExpression extends AbstractBinaryExpression
     public static final ExpressionComposer POW = new BinaryComposer() 
     {
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new PowExpression(first, second);
         }

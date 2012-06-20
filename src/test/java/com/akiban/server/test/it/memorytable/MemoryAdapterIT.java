@@ -60,7 +60,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         transactionally(new Callable<Void>() {
             @Override
             public Void call() throws Exception {
-                schemaManager.registerMemoryInformationSchemaTable(session(), table, factory);
+                schemaManager.registerMemoryInformationSchemaTable(table, factory);
                 return null;
             }
         });

@@ -110,7 +110,7 @@ public class LeftRightExpressionTest extends ComposedExpressionTestBase
         Expression length = len == null? LiteralExpression.forNull():
                             new LiteralExpression(AkType.LONG,  len.intValue());
         
-        Expression top = composer.compose(Arrays.asList(str, length));
+        Expression top = compose(composer, Arrays.asList(str, length));
         
         assertEquals("LEFT(" + st + ", " + len + ") ", 
                     expected == null? NullValueSource.only() : new ValueHolder(AkType.VARCHAR, expected),
@@ -125,7 +125,7 @@ public class LeftRightExpressionTest extends ComposedExpressionTestBase
         List<Expression> args = new ArrayList<Expression>();
         for (int n = 0; n < argc; ++n)
             args.add(LiteralExpression.forNull());
-        composer.compose(args);
+        compose(composer, args);
         alreadyExc = true;
     }
     
