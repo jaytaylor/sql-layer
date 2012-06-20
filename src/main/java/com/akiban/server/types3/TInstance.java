@@ -47,8 +47,8 @@ public final class TInstance {
         return tclass;
     }
 
-    <A extends Enum<A> & Attribute> TInstance(TClass tclass, 
-            Class<A> enumClass, 
+    TInstance(TClass tclass, 
+            Class<?> enumClass, 
             int attr0, int attr1, int attr2, int attr3) {
         this(tclass, enumClass, 4, attr0, attr1, attr2, attr3);
     }
@@ -89,8 +89,8 @@ public final class TInstance {
 
     // TODO
 
-    private <A extends Enum<A> & Attribute> TInstance(TClass tclass, 
-            Class<A> enumClass,
+    private TInstance(TClass tclass, 
+            Class<?> enumClass,
             int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
         this.tclass = tclass;
@@ -105,6 +105,6 @@ public final class TInstance {
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
     private Object metaData;
-    private final Class enumClass;
+    private final Class<?> enumClass;
     
 }

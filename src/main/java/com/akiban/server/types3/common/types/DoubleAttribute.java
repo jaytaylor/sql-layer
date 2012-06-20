@@ -30,5 +30,5 @@ import com.akiban.server.types3.Attribute;
 
 public enum DoubleAttribute implements Attribute
 {
-    PRECISION, SCALE;
+    PRECISION, SCALE
 }

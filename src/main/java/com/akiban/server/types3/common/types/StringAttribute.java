@@ -38,5 +38,5 @@ public enum StringAttribute implements Attribute
 
     CHARSET,
     
-    COLLATION;
+    COLLATION
 }

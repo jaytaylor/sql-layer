@@ -199,7 +199,7 @@ public abstract class TClass {
      }
      
     private final TName name;
-    private final Class enumClass;
+    private final Class<?> enumClass;
     private final Attribute[] attributes;
     private final int internalRepVersion;
     private final int serializationVersion;

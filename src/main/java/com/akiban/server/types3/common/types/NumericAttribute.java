@@ -34,5 +34,5 @@ public enum NumericAttribute implements Attribute
      * The display width [M] of a number
      * (unrelated to the range of its value)
      */
-    WIDTH;
+    WIDTH
 }
