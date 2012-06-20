@@ -175,7 +175,7 @@ public class ApiTestBase {
     private int aisGeneration;
     private int akibanFKCount;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
-    private static Collection<Property> lastStartupConfigProperties = null;
+    private static Map<String,String> lastStartupConfigProperties = null;
     private static boolean needServicesRestart = false;
     
     @Rule
@@ -191,8 +191,9 @@ public class ApiTestBase {
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
             Collection<Property> startupConfigProperties = startupConfigProperties();
+            Map<String,String> propertiesForEquality = propertiesForEquality(startupConfigProperties);
             if (needServicesRestart || lastStartupConfigProperties == null ||
-                    !lastStartupConfigProperties.equals(startupConfigProperties))
+                    !lastStartupConfigProperties.equals(propertiesForEquality))
             {
                 // we need a shutdown if we needed a restart, or if the lastStartupConfigProperties are not null,
                 // which (because of the condition on the "if" above) implies the last startup config properties
@@ -213,7 +214,7 @@ public class ApiTestBase {
                     sm.getStatisticsService().reset(TAPS);
                     sm.getStatisticsService().setEnabled(TAPS, true);
                 }
-                lastStartupConfigProperties = startupConfigProperties;
+                lastStartupConfigProperties = propertiesForEquality;
             }
             session = sm.getSessionService().createSession();
         } catch (Exception e) {
@@ -319,7 +320,7 @@ public class ApiTestBase {
         sm = createServiceManager( properties );
         sm.startServices();
         session = sm.getSessionService().createSession();
-        lastStartupConfigProperties = properties;
+        lastStartupConfigProperties = propertiesForEquality(properties);
         ddl(); // loads up the schema manager et al
         ServiceManagerImpl.setServiceManager(sm);
     }
@@ -430,6 +431,15 @@ public class ApiTestBase {
 
     protected Collection<Property> startupConfigProperties() {
         return Collections.emptyList();
+    }
+
+    // Property.equals() does not include the value.
+    protected Map<String,String> propertiesForEquality(Collection<Property> properties) {
+        Map<String,String> result = new HashMap<String,String>(properties.size());
+        for (Property p : properties) {
+            result.put(p.getKey(), p.getValue());
+        }
+        return result;
     }
 
     protected AkibanInformationSchema createFromDDL(String schema, String ddl) {
