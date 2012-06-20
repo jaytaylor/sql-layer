@@ -764,8 +764,9 @@ public class PersistitStore implements Store {
         if (!groupRowDef.isGroupTable()) {
             groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
         }
-        // TODO: Abuses GroupTables and the indexes on them
-        removeTrees(session, groupRowDef.table());
+        for(RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
+            removeTrees(session, userRowDef.table());
+        }
         // tableStatusCache entries updated elsewhere
     }
 
