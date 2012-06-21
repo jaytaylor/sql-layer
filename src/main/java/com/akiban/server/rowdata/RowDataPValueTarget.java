@@ -75,52 +75,52 @@ public final class RowDataPValueTarget implements PValueTarget {
     
       @Override
     public PUnderlying getUnderlyingType() {
-        throw new UnsupportedOperationException("Not supported yet.");
+          return fieldDef.getType().pUnderlying();
     }
 
     @Override
     public void putValueSource(PValueSource source) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void putBool(boolean value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        recordEncoded(encodeLong(value ? 1 : 0));
     }
 
     @Override
     public void putInt8(byte value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void putInt16(short value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void putUInt16(char value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void putInt32(int value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        recordEncoded(encodeInt(value));
     }
 
     @Override
     public void putInt64(long value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putBytes(byte[] value) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public void putObject(Object object) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     // private methods

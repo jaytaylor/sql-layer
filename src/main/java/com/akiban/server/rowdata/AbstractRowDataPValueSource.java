@@ -48,77 +48,77 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public boolean hasAnyValue() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean hasRawValue() {
-        throw new UnsupportedOperationException("Not supported yet.");      
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean hasCacheValue() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean isNull() { 
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public boolean getBoolean() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return extractLong(Signage.SIGNED) != 0;
     }
 
     @Override
     public boolean getBoolean(boolean defaultValue) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public byte getInt8() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public short getInt16() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public char getUInt16() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public int getInt32() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return (int) extractLong(Signage.SIGNED);
     }
 
     @Override
     public long getInt64() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return extractLong(Signage.SIGNED);
     }
 
     @Override
     public float getFloat() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return doGetFloat();
     }
 
     @Override
     public double getDouble() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        return doGetDouble();
     }
 
     @Override
     public byte[] getBytes() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
     @Override
     public Object getObject() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        throw new UnsupportedOperationException();
     }
 
 
