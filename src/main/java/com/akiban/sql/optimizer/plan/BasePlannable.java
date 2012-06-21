@@ -100,7 +100,7 @@ public abstract class BasePlannable extends BasePlanNode
 
     protected String withIndentedExplain(StringBuilder str) {
         for (String operator : explainPlan()) {
-            str.append("\n ");
+            str.append("\n  ");
             str.append(operator);
         }
         return str.toString();

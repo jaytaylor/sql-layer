@@ -51,7 +51,7 @@ public class CastExpression extends AbstractUnaryExpression
 
     @Override
     public String name() {
-        return "CAST";
+        return "CAST_" + valueType();
     }
 
     @Override

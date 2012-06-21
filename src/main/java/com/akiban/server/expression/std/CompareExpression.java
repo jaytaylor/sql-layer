@@ -57,7 +57,7 @@ public class CompareExpression extends AbstractBinaryExpression {
     // AbstractTwoArgExpression interface
     @Override
     protected void describe(StringBuilder sb) {
-        sb.append(comparison);
+        sb.append(name());
     }
     
     @Override
