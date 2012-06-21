@@ -73,7 +73,13 @@ public class AISBBasedBuilder
             }
             return aisb.akibanInformationSchema();
         }
-
+        
+        @Override
+        public AkibanInformationSchema unvalidatedAIS() {
+            aisb.basicSchemaIsComplete();
+            aisb.groupingIsComplete();
+            return aisb.akibanInformationSchema();
+        }
         // NewAISBuilder interface
 
         @Override
@@ -202,12 +208,12 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewUserTableBuilder colBinary(String name, int length) {
-            return colBinary(name, length, NULLABLE_DEFAULT);
+        public NewUserTableBuilder colVarBinary(String name, int length) {
+            return colVarBinary(name, length, NULLABLE_DEFAULT);
         }
 
         @Override
-        public NewUserTableBuilder colBinary(String name, int length, boolean nullable) {
+        public NewUserTableBuilder colVarBinary(String name, int length, boolean nullable) {
             aisb.column(schema, userTable, name, uTableColumnPos++, "VARBINARY", (long)length, null, nullable, false, null, null);
             return this;
         }
@@ -231,7 +237,7 @@ public class AISBBasedBuilder
             checkUsable();
             aisb.index(schema, userTable, indexName, unique, constraint);
             for (int i=0; i < columns.length; ++i) {
-                aisb.indexColumn(schema, userTable, indexName, columns[i], i, false, null);
+                aisb.indexColumn(schema, userTable, indexName, columns[i], i, true, null);
             }
             return this;
         }
@@ -258,7 +264,7 @@ public class AISBBasedBuilder
 
             Group oldGroup = aisb.akibanInformationSchema().getUserTable(this.schema, this.userTable).getGroup();
 
-            aisb.index(this.schema, this.userTable, fkIndexName, false, Index.KEY_CONSTRAINT);
+            aisb.index(this.schema, this.userTable, fkIndexName, false, Index.FOREIGN_KEY_CONSTRAINT);
             aisb.joinTables(fkJoinName, schema, table, this.schema, this.userTable);
 
             String fkGroupName = tablesToGroups.get(TableName.create(referencesSchema, referencesTable));
@@ -274,7 +280,7 @@ public class AISBBasedBuilder
         @Override
         public NewAkibanJoinBuilder on(String childColumn, String parentColumn) {
             checkUsable();
-            aisb.indexColumn(schema, userTable, fkIndexName, childColumn, fkIndexPos, false, null);
+            aisb.indexColumn(schema, userTable, fkIndexName, childColumn, fkIndexPos, true, null);
             aisb.joinColumns(fkJoinName, referencesSchema, referencesTable, parentColumn, schema, userTable, childColumn);
             return this;
         }
@@ -344,6 +350,10 @@ public class AISBBasedBuilder
             return aisb.akibanInformationSchema();
         }
 
+        @Override
+        public AkibanInformationSchema unvalidatedAIS() {
+            return aisb.akibanInformationSchema();
+        }
         // NewAISGroupIndexBuilder interface
 
         @Override

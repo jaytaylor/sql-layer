@@ -67,10 +67,7 @@ public interface ExpressionComposer {
      * methods to get the argument values, after checking
      * {@link com.akiban.server.types.ValueSource#isNull} as necessary.
      * Otherwise, it can use one of the {@link com.akiban.server.types.extract.Extractors}.
-     */
-    Expression compose(List<? extends Expression> arguments);
-    
-    /**
+     *
      * typesList.size() should be (arguments.size() + 1), where the last element 
      * in typesList is the return type, and the rest is the arguments' type
      * 

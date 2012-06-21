@@ -295,7 +295,7 @@ class DXLMXBeanImpl implements DXLMXBean {
 
             @Override
             public void visitGroup(Group group, TableName rootTable) {
-                if (rootTable.getSchemaName().equals("akiban_information_schema")) {
+                if (rootTable.getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
                     ret.add(group);
                 }
             }

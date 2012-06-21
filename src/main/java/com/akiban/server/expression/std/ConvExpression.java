@@ -84,7 +84,7 @@ public class ConvExpression extends AbstractTernaryExpression
         }
 
         @Override
-        protected Expression doCompose(List<? extends Expression> arguments)
+        protected Expression doCompose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new ConvExpression(arguments);
         }
