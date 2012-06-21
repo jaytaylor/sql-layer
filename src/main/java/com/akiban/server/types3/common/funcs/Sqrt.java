@@ -37,18 +37,16 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public abstract class Sqrt extends TOverloadBase {
 
-    private final TClass inputType; 
-    private final TClass resultType;
+    private final TClass type; 
     
-    protected Sqrt(TClass inputType, TClass resultType) {
-        this.inputType = inputType;
-        this.resultType = resultType;
+    protected Sqrt(TClass type) {
+        this.type = type;
     }
       
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(inputType, 0);
+        builder.covers(type, 0);
     }
     
     @Override
@@ -69,7 +67,7 @@ public abstract class Sqrt extends TOverloadBase {
     @Override
     public TOverloadResult resultType()
     {
-        return TOverloadResult.fixed(resultType.instance());
+        return TOverloadResult.fixed(type.instance());
     }
 
 }

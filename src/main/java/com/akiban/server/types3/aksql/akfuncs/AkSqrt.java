@@ -34,7 +34,7 @@ public class AkSqrt {
     public final Sqrt INSTANCE;
 
     public AkSqrt(TClass inputType) {
-        INSTANCE = new Sqrt(inputType, AkNumeric.DOUBLE) {
+        INSTANCE = new Sqrt(AkNumeric.DOUBLE) {
         };
     }
 }

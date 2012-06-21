@@ -34,7 +34,7 @@ public class MSqrt {
     public final Sqrt INSTANCE;
 
     public MSqrt(TClass inputType) {
-        INSTANCE = new Sqrt(inputType, MDouble.INSTANCE) {
+        INSTANCE = new Sqrt(MDouble.INSTANCE) {
         };
     }
 }
