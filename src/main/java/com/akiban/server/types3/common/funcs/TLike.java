@@ -105,7 +105,7 @@ public class TLike extends TOverloadBase
                 throw new InvalidParameterValueException("Invalid escape character: " + escapeString); 
             esca = escapeString.charAt(0);
         }
-     
+
         // gret the cached matcher
         Matcher matcher = (Matcher) context.exectimeObjectAt(MATCHER_INDEX);
         
