@@ -104,7 +104,7 @@ public class MDay extends TOverloadBase{
         MutableDateTime cal = (MutableDateTime) context.exectimeObjectAt(ZERO_INDEX);
         
         if (!DateExtractor.validHrMinSec(datetime) || !DateExtractor.validDayMonth(datetime)) output.putNull();
-        else output.putInt64(dateType.evaluate(cal, context, datetime));
+        else output.putInt32((int)(dateType.evaluate(cal, context, datetime)));
     }
 
     @Override
@@ -114,6 +114,6 @@ public class MDay extends TOverloadBase{
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MNumeric.BIGINT.instance());
+        return TOverloadResult.fixed(MNumeric.INT.instance());
     }
 }
