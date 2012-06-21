@@ -43,7 +43,7 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
     {
         
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new PeriodAddExpression(first, second);
         }

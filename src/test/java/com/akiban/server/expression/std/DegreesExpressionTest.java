@@ -46,7 +46,7 @@ public class DegreesExpressionTest extends ComposedExpressionTestBase
         argList.add(new LiteralExpression(AkType.DOUBLE, 123.0));
         argList.add(new LiteralExpression(AkType.DOUBLE, 34.3));
 
-        Expression top = DegreesExpression.COMPOSER.compose(argList);
+        Expression top = compose(DegreesExpression.COMPOSER, argList);
         top.evaluation().eval();
     }
     
@@ -55,7 +55,7 @@ public class DegreesExpressionTest extends ComposedExpressionTestBase
     {
         List<Expression> argList = new ArrayList<Expression>();
         
-        Expression top = DegreesExpression.COMPOSER.compose(argList);
+        Expression top = compose(DegreesExpression.COMPOSER, argList);
         top.evaluation().eval();
     }
 

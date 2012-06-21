@@ -32,7 +32,6 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.jmx.JmxRegistryService;
-import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.tree.TreeService;
@@ -55,8 +54,6 @@ public interface ServiceManager {
     Store getStore();
 
     TreeService getTreeService();
-
-    MemcacheService getMemcacheService();
 
     PostgresService getPostgresService();
 

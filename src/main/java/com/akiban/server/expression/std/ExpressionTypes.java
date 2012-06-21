@@ -31,6 +31,8 @@ import com.akiban.server.expression.ExpressionType;
 
 import com.akiban.server.types.AkType;
 
+import com.akiban.sql.types.CharacterTypeAttributes;
+
 public class ExpressionTypes
 {
     public static final ExpressionType BOOL = newType(AkType.BOOL);
@@ -58,7 +60,11 @@ public class ExpressionTypes
     }
 
     public static ExpressionType varchar(int length) {
-        return newType(AkType.VARCHAR, length);
+        return varchar(length, null);
+    }
+
+    public static ExpressionType varchar(int length, CharacterTypeAttributes characterAttributes) {
+        return newType(AkType.VARCHAR, length, 0, characterAttributes);
     }
 
     public static ExpressionType varbinary(int length) {
@@ -66,15 +72,20 @@ public class ExpressionTypes
     }
 
     private static ExpressionType newType(AkType type) {
-        return new ExpressionTypeImpl(type, 0, 0);
+        return new ExpressionTypeImpl(type, 0, 0, null);
     }
 
     private static ExpressionType newType(AkType type, int precision) {
-        return new ExpressionTypeImpl(type, precision, 0);
+        return new ExpressionTypeImpl(type, precision, 0, null);
     }
 
     public static ExpressionType newType(AkType type, int precision, int scale) {
-        return new ExpressionTypeImpl(type, precision, scale);
+        return new ExpressionTypeImpl(type, precision, scale, null);
+    }
+
+    public static ExpressionType newType(AkType type, int precision, int scale, 
+                                         CharacterTypeAttributes characterAttributes) {
+        return new ExpressionTypeImpl(type, precision, scale, characterAttributes);
     }
 
     static class ExpressionTypeImpl implements ExpressionType {
@@ -94,18 +105,29 @@ public class ExpressionTypes
         }
 
         @Override
+        public CharacterTypeAttributes getCharacterAttributes() {
+            return characterAttributes;
+        }
+
+        @Override
         public String toString() {
-            return type + "(" + precision + "," + scale + ")";
+            StringBuilder str = new StringBuilder(type.toString());
+            str.append("(").append(precision).append(",").append(scale).append(")");
+            if (characterAttributes != null)
+                str.append(" ").append(characterAttributes);
+            return str.toString();
         }
         
-        ExpressionTypeImpl(AkType type, int precision, int scale) {
+        ExpressionTypeImpl(AkType type, int precision, int scale, CharacterTypeAttributes characterAttributes) {
             this.type = type;
             this.precision = precision;
             this.scale = scale;
+            this.characterAttributes = characterAttributes;
         }
 
         private AkType type;
         private int precision, scale;
+        private CharacterTypeAttributes characterAttributes;
     }
     
     private ExpressionTypes() {
