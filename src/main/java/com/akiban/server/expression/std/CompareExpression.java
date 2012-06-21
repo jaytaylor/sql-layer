@@ -111,6 +111,13 @@ public class CompareExpression extends AbstractBinaryExpression {
         super(outputType, lhs, rhs);
         this.comparison = comparison;
     }
+    
+    // overriding protected methods
+
+    @Override
+    protected void buildToString(StringBuilder sb) {//Field(2) < Literal(8888)
+        sb.append(left()).append(' ').append(comparison).append(' ').append(right());
+    }
 
 
     // object state

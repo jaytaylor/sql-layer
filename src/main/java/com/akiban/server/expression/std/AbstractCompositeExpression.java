@@ -188,9 +188,7 @@ public abstract class AbstractCompositeExpression implements Expression {
     // object state
 
     private final List<? extends Expression> children;
-    private final AkType type;    
+    private final AkType type;
     
-    // const
-
     private static final String EXPRESSION_SUFFIX = "Expression";
 }
