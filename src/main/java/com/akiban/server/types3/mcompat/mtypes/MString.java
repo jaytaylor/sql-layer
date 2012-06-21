@@ -33,7 +33,10 @@ public class MString extends TString
 {
     public static final MString VARCHAR = new MString("varchar", -1);
     
-    // TODO: define CHAR, and VARBINARY
+    // TODO: revisit VARBAR definition 
+    public static final MString VARBINARY = new MString("varbinary", -1);
+    
+    // TODO: define CHAR
     
     private MString(String name, int serialisationSize)
     {       

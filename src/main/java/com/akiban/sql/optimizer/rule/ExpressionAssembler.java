@@ -26,12 +26,15 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.expression.std.InExpression;
 import com.akiban.server.expression.std.IntervalCastExpression;
 import static com.akiban.server.expression.std.Expressions.*;
@@ -114,14 +117,9 @@ public class ExpressionAssembler
             return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
         else if (node instanceof BooleanOperationExpression) {
             BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
-            return functionsRegistry
-                .composer(bexpr.getOperation().getFunctionName())
-                .compose(Arrays.asList(assembleExpression(bexpr.getLeft(), 
-                                                          columnContext, 
-                                                          subqueryAssembler),
-                                       assembleExpression(bexpr.getRight(), 
-                                                          columnContext,
-                                                          subqueryAssembler)));
+            return assembleFunction(bexpr, bexpr.getOperation().getFunctionName(),
+                                    Arrays.<ExpressionNode>asList(bexpr.getLeft(), bexpr.getRight()), 
+                                    columnContext, subqueryAssembler);
         }
         else if (node instanceof CastExpression)
             return assembleCastExpression((CastExpression)node,
@@ -136,24 +134,17 @@ public class ExpressionAssembler
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;
-            return functionsRegistry
-                .composer(funcNode.getFunction())
-                .compose(assembleExpressions(funcNode.getOperands(), 
-                                             columnContext, subqueryAssembler));
+            return assembleFunction(funcNode, funcNode.getFunction(),
+                                    funcNode.getOperands(), 
+                                    columnContext, subqueryAssembler);
         }
         else if (node instanceof IfElseExpression) {
             IfElseExpression ifElse = (IfElseExpression)node;
-            return functionsRegistry
-                .composer("if")
-                .compose(Arrays.asList(assembleExpression(ifElse.getTestCondition(), 
-                                                          columnContext, 
-                                                          subqueryAssembler),
-                                       assembleExpression(ifElse.getThenExpression(), 
-                                                          columnContext,
-                                                          subqueryAssembler),
-                                       assembleExpression(ifElse.getElseExpression(), 
-                                                          columnContext, 
-                                                          subqueryAssembler)));
+            return assembleFunction(ifElse, "if",
+                                    Arrays.asList(ifElse.getTestCondition(), 
+                                                  ifElse.getThenExpression(), 
+                                                  ifElse.getElseExpression()), 
+                                    columnContext, subqueryAssembler);
         }
         else if (node instanceof InListCondition) {
             InListCondition inList = (InListCondition)node;
@@ -172,6 +163,22 @@ public class ExpressionAssembler
             throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
     }
 
+    public Expression assembleFunction(ExpressionNode functionNode,
+                                       String functionName,
+                                       List<ExpressionNode> argumentNodes,
+                                       ColumnExpressionContext columnContext,
+                                       SubqueryOperatorAssembler subqueryAssembler) {
+        List<Expression> arguments = 
+            assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
+        int nargs = arguments.size();
+        List<ExpressionType> types = new ArrayList<ExpressionType>(nargs + 1);
+        for (int i = 0; i < nargs; i++) {
+            types.add(TypesTranslation.toExpressionType(argumentNodes.get(i).getSQLtype()));
+        }
+        types.add(TypesTranslation.toExpressionType(functionNode.getSQLtype()));
+        return functionsRegistry.composer(functionName).compose(arguments, types);
+    }
+                                       
     public Expression assembleColumnExpression(ColumnExpression column,
                                                ColumnExpressionContext columnContext) {
         ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();

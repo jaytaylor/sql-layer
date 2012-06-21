@@ -47,11 +47,6 @@ public class CoalesceExpression extends AbstractCompositeExpression {
     @Scalar("coalesce")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
         @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new CoalesceExpression(arguments);
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException 
         {
             // args types don't really need adjusting
@@ -74,7 +69,7 @@ public class CoalesceExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in COALESCE yet.");
+            return new CoalesceExpression(arguments);
         }
 
         @Override

@@ -29,6 +29,10 @@ package com.akiban.server.types3;
 public final class TInstance {
     
     public int attribute(Attribute attribute) {
+        
+        if (enumClass != attribute.getClass())
+            throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
+        
         int index = attribute.ordinal();
         switch (index) {
         case 0: return attr0;
@@ -43,8 +47,10 @@ public final class TInstance {
         return tclass;
     }
 
-    TInstance(TClass tclass, int attr0, int attr1, int attr2, int attr3) {
-        this(tclass, 4, attr0, attr1, attr2, attr3);
+    TInstance(TClass tclass, 
+            Class<?> enumClass, 
+            int attr0, int attr1, int attr2, int attr3) {
+        this(tclass, enumClass, 4, attr0, attr1, attr2, attr3);
     }
 
     public Boolean nullability() {
@@ -56,24 +62,49 @@ public final class TInstance {
         return this;
     }
 
+    public Object getMetaData() {
+        return metaData;
+    }
+    
+    /**
+     * 
+     * @param o additional meta data for this TInstance
+     * @return 
+     * <code>false</code> if this method has already been called on this object.
+     * The new meta data will <e>not</e> override the current one.
+     * <code>true</code> if this object's meta data is still <code>null</code>.
+     */
+    public boolean setMetaData (Object o) {
+        if (metaData != null)
+            return false;
+        metaData = o;
+        return true;
+    }
+    
     public TInstance copy() {
-        return new TInstance(tclass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
+        return new TInstance(tclass, enumClass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
 
     // object interface
 
     // TODO
 
-    private TInstance(TClass tclass, int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+    private TInstance(TClass tclass, 
+            Class<?> enumClass,
+            int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
         this.tclass = tclass;
         this.attr0 = attr0;
         this.attr1 = attr1;
         this.attr2 = attr2;
         this.attr3 = attr3;
+        this.enumClass = enumClass;
     }
 
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;
+    private Object metaData;
+    private final Class<?> enumClass;
+    
 }

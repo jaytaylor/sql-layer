@@ -70,7 +70,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     {        
      
         Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(date));        
-        Expression top = ExtractExpression.QUARTER_COMPOSER.compose(Arrays.asList(in));
+        Expression top = compose(ExtractExpression.QUARTER_COMPOSER, Arrays.asList(in));
         
         assertEquals("QUATER(" + date + "): ", expected, top.evaluation().eval().getInt());        
     }
@@ -80,7 +80,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void testDayOfYearFromDecimal()
     {
         Expression arg = new LiteralExpression(AkType.DECIMAL, BigDecimal.valueOf(20081231.5d));
-        Expression top = ExtractExpression.DAY_YEAR_COMPOSER.compose(Arrays.asList(arg));
+        Expression top = compose(ExtractExpression.DAY_YEAR_COMPOSER, Arrays.asList(arg));
         
         assertTrue("Top should be null: ", top.evaluation().eval().isNull());
     }
@@ -89,7 +89,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void testLastDayNull()
     {
         Expression in = ExprUtil.lit(20091231.6);
-        Expression top = ExtractExpression.LAST_DAY_COMPOSER.compose(Arrays.asList(in));
+        Expression top = compose(ExtractExpression.LAST_DAY_COMPOSER, Arrays.asList(in));
         
         assertTrue("LAST_DAY(20091231.6) should be NULL", top.evaluation().eval().isNull());
     }
@@ -100,7 +100,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
             for (int month = 1; month < 13; ++month)
             {
                 Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong(yr + "-" + month + "-12"));
-                Expression top = ExtractExpression.LAST_DAY_COMPOSER.compose(Arrays.asList(in));
+                Expression top = compose(ExtractExpression.LAST_DAY_COMPOSER, Arrays.asList(in));
                 DateTime datetime = DateTime.parse(Extractors.getStringExtractor().getObject(in.evaluation().eval()));
                 assertEquals("Last day of Month: " + month,
                               Extractors.getLongExtractor(AkType.DATE).getLong( yr + "-" + month + "-" + datetime.dayOfMonth().getMaximumValue()) ,
@@ -114,7 +114,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
         for (int month = 0; month < 12; ++month)
         {
             Expression in = new LiteralExpression(AkType.DATE, Extractors.getLongExtractor(AkType.DATE).getLong("2009-" + (month+1) + "-12"));
-            Expression top = ExtractExpression.MONTH_NAME_COMPOSER.compose(Arrays.asList(in));
+            Expression top = compose(ExtractExpression.MONTH_NAME_COMPOSER, Arrays.asList(in));
 
             assertEquals(new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths()[month],
                           top.evaluation().eval().getString());
@@ -183,7 +183,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getDateFromDate()
     {
         Expression arg = new LiteralExpression(AkType.DATE, 1234L);
-        Expression top = ExtractExpression.DATE_COMPOSER.compose(Arrays.asList(arg));
+        Expression top = compose(ExtractExpression.DATE_COMPOSER, Arrays.asList(arg));
 
         assertEquals(1234L, top.evaluation().eval().getDate());
     }
@@ -271,7 +271,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     {
         Expression timeStamp = new LiteralExpression(AkType.TIMESTAMP,
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("1999-12-31 01:15:33"));
-        Expression top = ExtractExpression.DATETIME_COMPOSER.compose(Arrays.asList(timeStamp));
+        Expression top = compose(ExtractExpression.DATETIME_COMPOSER, Arrays.asList(timeStamp));
 
         String actual = Extractors.getLongExtractor(AkType.DATETIME).asString(top.evaluation().eval().getDateTime());
         assertEquals(actual, "1999-12-31 01:15:33");
@@ -487,7 +487,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getHourFromChar ()
     {
         Expression str = new LiteralExpression(AkType.VARCHAR, "A");
-        Expression top = ExtractExpression.HOUR_COMPOSER.compose(Arrays.asList(str));
+        Expression top = compose(ExtractExpression.HOUR_COMPOSER, Arrays.asList(str));
 
         assertTrue("top should be null", top.evaluation().eval().isNull());
     }
@@ -495,7 +495,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     public void getHourFrom3DigitHrTime ()
     {
         Expression time = new LiteralExpression (AkType.TIME, Extractors.getLongExtractor(AkType.TIME).getLong("-999:12:20"));
-        Expression top = ExtractExpression.HOUR_COMPOSER.compose(Arrays.asList(time));
+        Expression top = compose(ExtractExpression.HOUR_COMPOSER, Arrays.asList(time));
 
         assertEquals("expected 999", 999, top.evaluation().eval().getInt());
     }
@@ -938,7 +938,7 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
     {
         Expression timeStamp = new LiteralExpression(AkType.DATETIME,
                 Extractors.getLongExtractor(AkType.DATETIME).getLong("1999-12-31 01:15:33"));
-        Expression top = ExtractExpression.TIMESTAMP_COMPOSER.compose(Arrays.asList(timeStamp));
+        Expression top = compose(ExtractExpression.TIMESTAMP_COMPOSER, Arrays.asList(timeStamp));
 
         String actual = Extractors.getLongExtractor(AkType.TIMESTAMP).asString(top.evaluation().eval().getTimestamp());
         assertEquals(actual, "1999-12-31 01:15:33");
@@ -1152,14 +1152,14 @@ public class ExtractExpressionTest extends ComposedExpressionTestBase
 
     private Expression getTopExp(ExpressionComposer composer, Expression arg)
     {
-        return composer.compose(Arrays.asList(arg));
+        return compose(composer, Arrays.asList(arg));
     }
 
     private Expression getTop (String input, ExpressionComposer comp)
     {
         Expression date = new LiteralExpression(AkType.DATE,
                 Extractors.getLongExtractor(AkType.DATE).getLong(input));
-        Expression top = comp.compose(Arrays.asList(date));
+        Expression top = compose(comp, Arrays.asList(date));
         return top;
     }
 

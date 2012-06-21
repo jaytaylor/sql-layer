@@ -115,8 +115,10 @@ public enum ErrorCode {
     SUBQUERY_TOO_MANY_ROWS  ("21", "000", Importance.DEBUG, SubqueryTooManyRowsException.class),
     // Class 22 - data exception
         // SubClass 001 - string data, right truncation
+    STRING_TRUNCATION       ("22", "001", Importance.DEBUG, StringTruncationException.class),
         // SubClass 002 - null value, no indicator parameter 
         // SubClass 003 - numeric value out of range
+    VALUE_OUT_OF_RANGE      ("22", "003", Importance.DEBUG, OutOfRangeException.class),
         // SubClass 004 - null value not allowed
         // SubClass 005 - error in assignment
         // SubClass 006 - invalid interval format
@@ -321,6 +323,7 @@ public enum ErrorCode {
     INDEX_TREE_NAME_IS_NULL ("50", "01R", Importance.DEBUG, IndexTreeNameIsNullException.class),
     GROUP_MIXED_TABLE_TYPES ("50", "01S", Importance.DEBUG, GroupMixedTableTypes.class),
     GROUP_MULTIPLE_MEM_TABLES ("50", "01T", Importance.DEBUG, GroupMultipleMemoryTables.class),
+    JOIN_PARENT_NO_PK       ("50", "01U", Importance.DEBUG, JoinParentNoExplicitPK.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),
