@@ -26,15 +26,16 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import java.util.List;
+import org.joda.time.MutableDateTime;
 
 public abstract class MDatetimeArith extends TOverloadBase {
     
@@ -43,47 +44,60 @@ public abstract class MDatetimeArith extends TOverloadBase {
     public static TOverload DATE_ADD = new MDatetimeArith("DATE_ADD") {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        protected long evaluate(long input, MutableDateTime datetime) {
+            datetime.add(input);
         }
     };
     
     public static TOverload DATE_SUB = new MDatetimeArith("DATE_SUB") {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        protected long evaluate(long input, MutableDateTime datetime) {
+            datetime.add(-input);
         }
     };
     
     public static TOverload SUBTIME = new MDatetimeArith("SUBTIME") {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        protected long evaluate(long input, MutableDateTime datetime) {
+            datetime.add(-input);
         }
     };
     
     public static TOverload ADDTIME = new MDatetimeArith("ADDTIME") {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        protected long evaluate(long input, MutableDateTime datetime) {
+            datetime.add(input);
         }
     };
     
     public static TOverload DATEDIFF = new MDatetimeArith("DATEDIFF") {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        protected long evaluate(long input, MutableDateTime datetime) {
+            datetime.add(-input);
+            return datetime.getMillis() / DateExtractor.DAY_FACTOR;
+        }
+
+        @Override
+        public TOverloadResult resultType() {
+            return TOverloadResult.custom(MDatetimes.DATE.instance(), new TCustomOverloadResult() {
+
+                @Override
+                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                    return MNumeric.INT.instance();
+                }
+            });
         }
     };
     
     public static TOverload TIMEDIFF = new MDatetimeArith("TIMEDIFF") {
 
         @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            throw new UnsupportedOperationException("Not supported yet.");
+        protected long evaluate(long input, MutableDateTime datetime) {
+            datetime.add(-input);
         }
     };
     
@@ -91,9 +105,27 @@ public abstract class MDatetimeArith extends TOverloadBase {
         this.name = name;
     }
     
+    protected abstract long evaluate(long input, MutableDateTime datetime);
+    
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        long[] arr1 = DateExtractor.extract(inputs.get(1).getInt64());
+        MutableDateTime datetime = DateExtractor.getMutableDateTime(context, arr1, true);
+        long value = datetime.getMillis();
+
+        // Reuse MutableDateTime object to save additional allocation
+        long[] arr0 = DateExtractor.extract(inputs.get(0).getInt64());
+        datetime.setDateTime((int) arr0[DateExtractor.YEAR], (int) arr0[DateExtractor.MONTH], (int) arr0[DateExtractor.DAY],
+                (int) arr0[DateExtractor.HOUR], (int) arr0[DateExtractor.MINUTE], (int) arr0[DateExtractor.SECOND], 0);
+        
+        //long date = DateExtractor.toDatetime(datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(),
+        //        datetime.getHourOfDay(), datetime.getMinuteOfHour(), datetime.getSecondOfMinute());
+        output.putInt64(evaluate(value, datetime));
+    }
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MDatetimes.DATETIME, 0);
+        builder.covers(MDatetimes.DATETIME, 0, 1);
     }
         
     @Override
@@ -101,8 +133,15 @@ public abstract class MDatetimeArith extends TOverloadBase {
         return name;
     }
     
-        @Override
+    @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MDatetimes.DATETIME); //UNCLEAR
+        return TOverloadResult.custom(MDatetimes.DATETIME.instance(), new TCustomOverloadResult() {
+
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                TClass tClass = inputs.get(0).instance().typeClass();
+                // RETURN LOGIC HERE.
+            }
+        }); 
     }
 }
