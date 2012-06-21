@@ -48,7 +48,7 @@ public class MakeTimeExpressionTest extends ComposedExpressionTestBase
         argList.add(new LiteralExpression(AkType.LONG, 12));
         argList.add(new LiteralExpression(AkType.LONG, 12));
 
-        Expression top = MakeTimeExpression.COMPOSER.compose(argList);
+        Expression top = compose(MakeTimeExpression.COMPOSER, argList);
         top.evaluation().eval();
     }
     
@@ -57,7 +57,7 @@ public class MakeTimeExpressionTest extends ComposedExpressionTestBase
     {
         List<Expression> argList = new ArrayList<Expression>();
         
-        Expression top = MakeTimeExpression.COMPOSER.compose(argList);
+        Expression top = compose(MakeTimeExpression.COMPOSER, argList);
         top.evaluation().eval();
     }
 

@@ -45,7 +45,7 @@ public class ReplaceExpression extends AbstractTernaryExpression
     public static final ExpressionComposer COMPOSER = new TernaryComposer()
     {
         @Override
-        protected Expression doCompose(List<? extends Expression> arguments)
+        protected Expression doCompose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new ReplaceExpression(arguments);
         }
@@ -62,12 +62,6 @@ public class ReplaceExpression extends AbstractTernaryExpression
                 length += argumentTypes.get(n).getPrecision();
             }
             return ExpressionTypes.varchar(length);
-        }
-
-        @Override
-        public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
-        {
-            throw new UnsupportedOperationException("Not supported in REPLACE yet.");
         }
     };
 

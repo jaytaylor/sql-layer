@@ -61,13 +61,13 @@ public class LengthExpressionTest extends ComposedExpressionTestBase
     public void testIllegalArg() 
     {
         // excessive arguments
-        getComposer().compose(getArgList(ExprUtil.lit("String 1"), ExprUtil.lit("String 2")));
+        compose(getComposer(), getArgList(ExprUtil.lit("String 1"), ExprUtil.lit("String 2")));
        
         // insufficent arguments
-        getComposer().compose(getArgList());
+        compose(getComposer(), getArgList());
         
         // null arguments
-        getComposer().compose(getArgList(ExprUtil.constNull(AkType.VARCHAR)));
+        compose(getComposer(), getArgList(ExprUtil.constNull(AkType.VARCHAR)));
     }
     
    
