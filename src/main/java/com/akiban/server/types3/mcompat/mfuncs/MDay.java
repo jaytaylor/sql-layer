@@ -50,41 +50,41 @@ public class MDay extends TOverloadBase{
     static enum DateType {
         DAY {
             @Override
-            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            long evaluate(MutableDateTime cal, long[] input)
             {
                 return input[DateExtractor.DAY];
             }            
         },
         DAYOFMONTH {
             @Override
-            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            long evaluate(MutableDateTime cal, long[] input)
             {
                 return input[DateExtractor.DAY];
             }
         },
         DAYOFWEEK {
             @Override
-            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            long evaluate(MutableDateTime cal, long[] input)
             {
                 return cal.getDayOfWeek();
             }
         },
         DAYOFYEAR {
             @Override
-            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            long evaluate(MutableDateTime cal, long[] input)
             {
                 return cal.getDayOfYear();
             }
         },
         WEEKDAY {
             @Override
-            long evaluate(MutableDateTime cal, TExecutionContext context, long[] input)
+            long evaluate(MutableDateTime cal, long[] input)
             {
                 return (cal.getDayOfWeek() + 5) % 7;
             }
         };
         
-        abstract long evaluate(MutableDateTime cal, TExecutionContext context, long[] input);
+        abstract long evaluate(MutableDateTime cal, long[] input);
     }
     
     private final DateType dateType;
@@ -101,10 +101,10 @@ public class MDay extends TOverloadBase{
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         long[] datetime = DateExtractor.extract(inputs.get(0).getInt64());
-        MutableDateTime cal = (MutableDateTime) context.exectimeObjectAt(ZERO_INDEX);
+        MutableDateTime cal = DateExtractor.getMutableDateTime(context, datetime, false);
         
         if (!DateExtractor.validHrMinSec(datetime) || !DateExtractor.validDayMonth(datetime)) output.putNull();
-        else output.putInt32((int)(dateType.evaluate(cal, context, datetime)));
+        else output.putInt32((int)(dateType.evaluate(cal, datetime)));
     }
 
     @Override
