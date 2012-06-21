@@ -51,8 +51,6 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.session.Session;
-import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
@@ -70,16 +68,14 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
     private final TreeService treeService;
     
     private final SchemaManager schemaManager;
-    private final SessionService sessionService;
     private MBeanServer jmxServer;
     
     private final static Logger logger = LoggerFactory.getLogger(StorageSchemaTablesServiceImpl.class);
     
     @Inject
-    public StorageSchemaTablesServiceImpl (SchemaManager schemaManager, TreeService treeService, SessionService sessionService) {
+    public StorageSchemaTablesServiceImpl (SchemaManager schemaManager, TreeService treeService) {
         this.schemaManager = schemaManager;
         this.treeService = treeService;
-        this.sessionService = sessionService;
     }
 
     @Override
@@ -98,18 +94,15 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         jmxServer = ManagementFactory.getPlatformMBeanServer();
 
         AkibanInformationSchema ais = createTablesToRegister();
-        Session session = sessionService.createSession();
         //STORAGE_CHECKPOINT_SUMMARY
         UserTable checkpointSummary = ais.getUserTable(STORAGE_CHECKPOINT_SUMMARY);
         assert checkpointSummary != null;
-        schemaManager.registerMemoryInformationSchemaTable (session, checkpointSummary, new CheckpointSummaryFactory(STORAGE_CHECKPOINT_SUMMARY));
+        schemaManager.registerMemoryInformationSchemaTable (checkpointSummary, new CheckpointSummaryFactory(STORAGE_CHECKPOINT_SUMMARY));
 
         //STORAGE_IO_METER_SUMMARY
         UserTable ioMeterSummary = ais.getUserTable(STORAGE_IO_METER_SUMMARY);
         assert ioMeterSummary != null;
-        schemaManager.registerMemoryInformationSchemaTable(session, ioMeterSummary, new IoSummaryFactory (STORAGE_IO_METER_SUMMARY));
-        
-        session.close();
+        schemaManager.registerMemoryInformationSchemaTable(ioMeterSummary, new IoSummaryFactory (STORAGE_IO_METER_SUMMARY));
     }
 
     @Override

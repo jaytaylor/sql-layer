@@ -55,7 +55,8 @@ import com.akiban.sql.pg.PostgresServerITBase;
 
 public class MemoryAdapterIT extends PostgresServerITBase {
     private SchemaManager schemaManager;
-
+    private UserTable table;
+    
     private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
         transactionally(new Callable<Void>() {
             @Override
@@ -75,9 +76,10 @@ public class MemoryAdapterIT extends PostgresServerITBase {
     public void insertFactoryTest() throws Exception {
   
         TableName name = new TableName (TableName.INFORMATION_SCHEMA, "test");
+        table = AISBBasedBuilder.create().userTable(name.getSchemaName(),name.getTableName()).colLong("c1").pk("c1").ais().getUserTable(name);
         MemoryTableFactory factory = new TestFactory (name);
 
-        registerISTable(factory.getTableDefinition(), factory);
+        registerISTable(table, factory);
  
         UserTable table = schemaManager.getAis(session()).getUserTable(name);
         assertNotNull (table);
@@ -99,18 +101,21 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         assertNotNull(postgresConn);
         
         TableName name = new TableName (TableName.INFORMATION_SCHEMA, "test");
+        table = AISBBasedBuilder.create().userTable(name.getSchemaName(),name.getTableName()).colLong("c1").pk("c1").ais().getUserTable(name);
         MemoryTableFactory factory = new TestFactory (name);
-        registerISTable(factory.getTableDefinition(), factory);
-        UserTable table = serviceManager().getSchemaManager().getAis(session()).getUserTable(name);
+        registerISTable(table, factory);
+        UserTable newtable = serviceManager().getSchemaManager().getAis(session()).getUserTable(name);
         
-        StoreAdapter adapter = postgresConn.getStore(table);
+        StoreAdapter adapter = postgresConn.getStore(newtable);
         assertNotNull (adapter);
         assertTrue (adapter instanceof MemoryAdapter);
     }
 
     private class TestFactory implements MemoryTableFactory {
+        
+        private TableName name;
         public TestFactory (TableName name) {
-            table = AISBBasedBuilder.create().userTable(name.getSchemaName(),name.getTableName()).colLong("c1").pk("c1").ais().getUserTable(name);
+            this.name = name;
         }
 
         @Override
@@ -127,12 +132,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
 
         @Override
         public TableName getName() {
-            return table.getName();
-        }
-
-        @Override
-        public UserTable getTableDefinition() {
-            return table;
+            return name;
         }
 
         @Override
@@ -144,6 +144,5 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         public IndexStatistics computeIndexStatistics(Session session, Index index) {
             return null;
         }
-        private UserTable table;
     }
 }
