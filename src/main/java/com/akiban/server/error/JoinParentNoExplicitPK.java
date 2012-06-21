@@ -23,12 +23,12 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
 package com.akiban.server.error;
 
-public final class NoSuchIndexException extends InvalidOperationException {
-    //Unknown index: `{0}`
-    public NoSuchIndexException(String indexName) {
-        super(ErrorCode.NO_INDEX, indexName);
-    }
+import com.akiban.ais.model.TableName;
+
+public class JoinParentNoExplicitPK extends InvalidOperationException {
+    public JoinParentNoExplicitPK (TableName parent) {
+        super (ErrorCode.JOIN_PARENT_NO_PK, parent.getSchemaName(), parent.getTableName());
+    } 
 }

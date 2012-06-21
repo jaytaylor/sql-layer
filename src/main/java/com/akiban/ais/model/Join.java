@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Set;
 
 import com.akiban.ais.gwtutils.SerializableEnumSet;
+import com.akiban.server.error.JoinParentNoExplicitPK;
 
 public class Join implements Traversable, HasGroup
 {
@@ -141,6 +142,9 @@ public class Join implements Traversable, HasGroup
     {
         if (joinColumnsStale) {
             // Sort into same order as parent PK columns
+            if (parent.getPrimaryKey() == null) {
+                throw new JoinParentNoExplicitPK (parent.getName());
+            }
             final List<Column> pkColumns = parent.getPrimaryKey().getColumns();
             Collections.sort(joinColumns,
                              new Comparator<JoinColumn>()
