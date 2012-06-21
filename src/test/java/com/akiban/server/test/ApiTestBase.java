@@ -245,6 +245,11 @@ public class ApiTestBase {
         return new GuicedServiceManager(serviceBindingsProvider());
     }
 
+    /** Specify special service bindings.
+     * If you override this, you need to override {@link #startupConfigProperties} 
+     * to return something different so that the special services aren't shared 
+     * with other tests.
+     */
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return GuicedServiceManager.testUrls();
     }

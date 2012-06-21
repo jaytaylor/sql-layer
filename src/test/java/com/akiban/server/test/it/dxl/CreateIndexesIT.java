@@ -28,6 +28,7 @@ package com.akiban.server.test.it.dxl;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -56,6 +57,7 @@ import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.ProtectedIndexException;
 
+import com.akiban.server.service.config.Property;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.dxl.DXLServiceImpl;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
@@ -81,6 +83,15 @@ public final class CreateIndexesIT extends ITBase {
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return super.serviceBindingsProvider().bind(DXLService.class, StartHookDxlService.class);
+    }
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        // This is just something unique so that startTestServices()
+        // does not share with other tests.
+        final Collection<Property> properties = new ArrayList<Property>();
+        properties.add(new Property("test.services", getClass().getName()));
+        return properties;
     }
 
     private AkibanInformationSchema createAISWithTable(Integer... tableIds) {

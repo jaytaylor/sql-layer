@@ -27,6 +27,7 @@
 package com.akiban.server.test;
 
 import com.akiban.qp.persistitadapter.OperatorStore;
+import com.akiban.server.service.config.Property;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.AisHolder;
@@ -34,6 +35,8 @@ import com.akiban.server.store.Store;
 import com.google.inject.Inject;
 import org.junit.Test;
 import org.junit.After;
+import java.util.ArrayList;
+import java.util.Collection;
 
 import static org.junit.Assert.assertFalse;
 
@@ -44,10 +47,13 @@ public final class FailureOnStartupIT extends ApiTestBase {
         return super.serviceBindingsProvider().bind(Store.class, BadStore.class);
     }
 
-    @After
-    public void stopFailedServices() throws Exception {
-        // Services we started aren't valid for anybody real.
-        stopTestServices();
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        // This is just something unique so that startTestServices()
+        // does not share with other tests.
+        final Collection<Property> properties = new ArrayList<Property>();
+        properties.add(new Property("test.services", getClass().getName()));
+        return properties;
     }
 
     @Test
