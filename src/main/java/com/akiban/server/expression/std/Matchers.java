@@ -61,7 +61,7 @@ public final class Matchers
     }
     
     /**
-     * An emptry pattern should only match empty string
+     * An empty pattern should only match empty string
      */
     static class Empty implements Matcher
     {
@@ -69,6 +69,12 @@ public final class Matchers
         public int match(String str, int count)
         {
             return str.isEmpty() ? 0 : -1;
+        }
+
+        @Override
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.isEmpty();
         }
     }
     
@@ -140,10 +146,11 @@ public final class Matchers
         }
     }
     
-    static class Index extends AbstractMatcher
+    public static class Index extends AbstractMatcher
     {
-        private Token tk;
-
+        private final Token tk;
+        private final String pattern;
+        
         public Index(String st)
         {
             Map<Character, Integer> map = new HashMap<Character, Integer>();
@@ -151,6 +158,7 @@ public final class Matchers
             for ( n = 0; n < st.length(); ++n)
                 map.put(st.charAt(n), n);
             tk = new Token(map, st.toCharArray(), n, false, false);
+            pattern = st;
         }
         
         @Override
@@ -166,19 +174,27 @@ public final class Matchers
             while (count != 0);
             return nextStart - tk.length; // return the index at which the pattern starts
         }
-        
+
+        @Override
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.equals(this.pattern);
+        }
     }
+
     /**
      * the pattern starts with percent
      */
     static class Contain extends AbstractMatcher
     {
         private final String pattern;
+        private final char escape;
         private List<Token> tokens;
         
         public Contain (String pt, char escape, boolean ignoreCase)
         {
             pattern = pt;
+            this.escape = escape;
             
             // start at 0, since 0 would've been skipped anyways
             tokens = computePos(escape, pt, 1, ignoreCase);
@@ -194,6 +210,12 @@ public final class Matchers
                     return -1;
             
             return 1; // has no need for the index, thus just return 1 to indicate a 'match'
+        }
+
+        @Override
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.equals(this.pattern) && escape == this.escape;
         }
     }
     
@@ -295,6 +317,12 @@ public final class Matchers
                 else 
                     return -1;
             }
+        }
+
+        @Override
+        public boolean sameState(String pattern, char escape)
+        {
+            return pattern.equals(this.pattern) && escape == this.escape;
         }
     }
     

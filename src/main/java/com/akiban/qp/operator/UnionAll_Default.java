@@ -41,6 +41,8 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.Strings;
@@ -389,6 +391,16 @@ final class UnionAll_Default extends Operator {
         @Override
         public ValueSource eval(int index) {
             return delegate.eval(index);
+        }
+
+        @Override
+        public TInstance tinstance(int index) {
+            return delegate.tinstance(index);
+        }
+
+        @Override
+        public PValueSource pvalue(int index) {
+            return delegate.pvalue(index);
         }
 
         /**
