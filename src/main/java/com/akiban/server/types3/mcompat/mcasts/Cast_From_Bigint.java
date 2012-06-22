@@ -81,13 +81,7 @@ public class Cast_From_Bigint
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            long bigint = source.getInt64();
-            if (bigint > Byte.MAX_VALUE)
-                target.putInt8(Byte.MAX_VALUE);
-            else if (bigint < Byte.MIN_VALUE)
-                target.putInt8(Byte.MIN_VALUE);
-            else
-                target.putInt8((byte)bigint);
+            target.putInt8((byte)getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64()));
         }
 
         @Override
@@ -103,14 +97,7 @@ public class Cast_From_Bigint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TODO: take the two's complement of the negative value?
-            long bigint = source.getInt64();
-            if (bigint > Byte.MAX_VALUE)
-                target.putInt8(Byte.MAX_VALUE);
-            else if (bigint < Byte.MIN_VALUE)
-                target.putInt8(Byte.MIN_VALUE);
-            else
-                target.putInt8((byte)bigint);
-            
+            target.putInt8((byte)getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64()));
         }
 
         @Override
@@ -120,7 +107,31 @@ public class Cast_From_Bigint
         }
     };
 
-        
+    public static final TCast TO_SMALL_INT = new TCastBase(MNumeric.BIGINT, MNumeric.SMALLINT, false, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("not supported yet");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64()));
+        }
+    };
+
+    
+    private static long getInRange (long max, long min, long val)
+    {
+        if (val >= max)
+            return max;
+        else if (val <= min)
+            return min;
+        else
+            return val;
+    }
     //TODO: add more
     private static final BigInteger MAX = new BigInteger("18446744073709551615");
 }
