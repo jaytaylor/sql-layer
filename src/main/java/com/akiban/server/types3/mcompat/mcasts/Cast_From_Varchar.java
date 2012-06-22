@@ -99,9 +99,115 @@ public class Cast_From_Varchar
         
     };
     
+    public static final TCast TO_UNSIGNED_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // TODO: signed vs unsigned
+        }
+    };
+    
+    public static final TCast TO_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)tryParse((String)source.getObject(),
+                                            Short.MAX_VALUE,
+                                            Short.MIN_VALUE,
+                                            context));
+        }
+    };
+    
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // TODO: signed vs unsigned
+        }   
+    };
+    
+    public static final TCast TO_INT = new TCastBase(MString.VARCHAR, MNumeric.INT, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int)tryParse((String)source.getObject(),
+                                           Integer.MAX_VALUE,
+                                           Integer.MIN_VALUE,
+                                           context));
+        }
+    };
+    
+    public static final TCast TO_UNSIGNED_INT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // signed vs unsigned
+        }   
+    };
+    
+    public static final TCast TO_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            String st = CastUtils.truncateNonDigits((String)source.getObject(), context);
+            
+            try
+            {
+                target.putInt64(Long.parseLong(st));
+            }
+            catch (NumberFormatException e) // overflow error
+            {
+                target.putInt64(-1); // MySQL's way!
+            }
+        }   
+    };
+
     private static long tryParse(String st, long max, long min, TExecutionContext context)
     {
         String truncated;
+
         // first attempt
         try
         {
