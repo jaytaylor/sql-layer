@@ -107,6 +107,12 @@ public class MDatetimes {
         };
     }
     
+    public static long toTime(long val[])
+    {
+        return val[HOUR_INDEX] * DATETIME_HOUR_SCALE
+                + val[MIN_INDEX] * DATETIME_MIN_SCALE
+                + val[SEC_INDEX];
+    }
     public static boolean isValidDate (long val[])
     {
         // TODO
