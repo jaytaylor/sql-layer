@@ -30,7 +30,7 @@ import com.akiban.server.error.InvalidParameterValueException;
 
 public enum CastContexts implements CastContext
 {
-    STRICT
+    ERROR
     {
         @Override
         public void reportError(String error, TExecutionContext queryContext)
@@ -38,7 +38,7 @@ public enum CastContexts implements CastContext
             throw new InvalidParameterValueException(error);
         }
     },
-    NON_STRICT
+    WARN
     {
         @Override
         public void reportError(String error, TExecutionContext queryContext)
