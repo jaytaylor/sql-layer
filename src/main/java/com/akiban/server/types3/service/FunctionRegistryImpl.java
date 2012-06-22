@@ -199,4 +199,16 @@ public class FunctionRegistryImpl implements FunctionRegistry
     {
         return scalars;
     }
+    
+    @Override
+    public Collection<TCast> casts()
+    {
+        return casts;
+    }
+    
+    @Override
+    public Collection<TClass> tclasses()
+    {
+        return types;
+    }
 }
