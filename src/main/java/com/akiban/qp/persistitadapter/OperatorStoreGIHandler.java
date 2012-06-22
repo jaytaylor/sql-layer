@@ -65,8 +65,8 @@ class OperatorStoreGIHandler {
             key.clear();
             
             // Temporary until we remove old type system
-            if (Types3Switch.ON) target.attach(key); 
-            else pTarget.attach(key);
+            if (Types3Switch.ON) pTarget.attach(key); 
+            else target.attach(key);
             
             IndexRowComposition irc = groupIndex.indexRowComposition();
 

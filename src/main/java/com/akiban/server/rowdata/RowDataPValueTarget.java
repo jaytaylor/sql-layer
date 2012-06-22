@@ -181,5 +181,5 @@ public final class RowDataPValueTarget implements PValueTarget {
     /**
      * We want to encode BigInteger as long, so we require it to be smaller than (2^64) + 1
      */
-    private static final BigInteger MAX_BIGINT = BigInteger.valueOf(2).pow(Long.SIZE).add(BigInteger.ONE);
+    private static final BigInteger MAX_BIGINT = BigInteger.valueOf(Long.MAX_VALUE);
 }
