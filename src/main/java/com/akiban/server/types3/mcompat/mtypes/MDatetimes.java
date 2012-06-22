@@ -113,12 +113,49 @@ public class MDatetimes {
                 + val[MIN_INDEX] * DATETIME_MIN_SCALE
                 + val[SEC_INDEX];
     }
-    public static boolean isValidDate (long val[])
+    public static boolean isValidDatetime (long ymdhms[])
     {
-        // TODO
-        return true;
+        return isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms);
     }
     
+    public static boolean isValidHrMinSec (long ymdhms[])
+    {
+        return ymdhms[HOUR_INDEX] >= 0 && ymdhms[HOUR_INDEX] < 24 
+                && ymdhms[MIN_INDEX] >= 0 && ymdhms[MIN_INDEX] < 60 
+                && ymdhms[SEC_INDEX] >= 0 && ymdhms[SEC_INDEX] < 60;
+    }
+ 
+    private static boolean isValidDayMonth(long ymd[])
+    {
+        long last = getLastDay(ymd);
+        return last > 0 && ymd[DAY_INDEX] <= last;
+    }
+        
+    protected static long getLastDay(long ymd[])
+    {
+        switch ((int) ymd[1])
+        {
+            case 2:
+                return ymd[0] % 400 == 0 || ymd[0] % 4 == 0 && ymd[0] % 100 != 0 ? 29L : 28L;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                return 30L;
+            case 3:
+            case 1:
+            case 5:
+            case 7:
+            case 8:
+            case 10:
+            case 0:
+            case 12:
+                return 31L;
+            default:
+                return -1;
+        }
+    }
+
     public static final int YEAR_INDEX = 0;
     public static final int MONTH_INDEX = 1;
     public static final int DAY_INDEX = 2;
