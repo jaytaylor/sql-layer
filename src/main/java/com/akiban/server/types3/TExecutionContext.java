@@ -30,6 +30,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContext.NotificationLevel;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.util.SparseArray;
 
 import java.util.List;
@@ -87,18 +88,41 @@ public final class TExecutionContext {
         queryContext.warnClient(exception);
     }
 
+    public void reportError(InvalidOperationException error)
+    {
+        switch(erroModes)
+        {
+            case ERROR:     
+                throw error;
+            case WARN:
+                queryContext.warnClient(error);
+                break;
+            case IGNORE_ALL_ERRORS:
+                // does nothing
+                break;
+            default:
+                assert false : "not supported yet";
+        }
+    }
+
+    public void reportError(String error)
+    {
+        reportError(new InvalidParameterValueException(error));
+    }
 
     // state
 
     TExecutionContext(SparseArray<Object> preptimeCache,
                       List<TInstance> inputTypes,
                       TInstance outputType,
-                      QueryContext queryContext)
+                      QueryContext queryContext,
+                      ErrorHandlingModes errorModes)
     {
         this.preptimeCache = preptimeCache;
         this.inputTypes = inputTypes;
         this.outputType = outputType;
         this.queryContext = queryContext;
+        this.erroModes = errorModes;
     }
 
     private SparseArray<Object> preptimeCache;
@@ -106,4 +130,5 @@ public final class TExecutionContext {
     private List<TInstance> inputTypes;
     private TInstance outputType;
     private QueryContext queryContext;
+    private ErrorHandlingModes erroModes;
 }

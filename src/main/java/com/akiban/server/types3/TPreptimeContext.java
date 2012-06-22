@@ -33,7 +33,7 @@ import java.util.List;
 public final class TPreptimeContext {
     
     public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, null); // TODO pass in
+        return new TExecutionContext(preptimeCache, inputTypes, outputType, null, null); // TODO pass in
     }
     
     public void set(int index, Object value) {

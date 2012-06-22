@@ -47,5 +47,5 @@ public interface TCast {
      */
     public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget);
 
-    public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target);
+    public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target);
 }

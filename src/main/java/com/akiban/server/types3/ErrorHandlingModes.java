@@ -26,7 +26,7 @@
 
 package com.akiban.server.types3;
 
-public interface CastContext
+public enum ErrorHandlingModes
 {
-    void reportError(String error, TExecutionContext queryContext);
+    ERROR, WARN,IGNORE_ALL_ERRORS
 }

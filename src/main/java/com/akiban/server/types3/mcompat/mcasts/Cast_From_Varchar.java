@@ -26,8 +26,6 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.error.StringTruncationException;
-import com.akiban.server.types3.CastContext;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -52,11 +50,11 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt8((byte)tryParse((String)source.getObject(), 
                                          Byte.MAX_VALUE, Byte.MIN_VALUE, 
-                                         context, castContext));
+                                         context));
         }
 
         @Override
@@ -75,28 +73,47 @@ public class Cast_From_Varchar
         }
 
         @Override
-        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // TODO: signed v
+            // TODO: signed vs unsigned
         }   
     };
        
+    public static final TCast TO_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
+    {
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)tryParse((String)source.getObject(),
+                                      Short.MAX_VALUE,
+                                      Short.MIN_VALUE,
+                                      context));
+        }
+        
+    };
     
-    private static long tryParse(String st, long max, long min, TExecutionContext context, CastContext castContext)
+    private static long tryParse(String st, long max, long min, TExecutionContext context)
     {
         String truncated;
         // first attempt
         try
         {
-            return CastUtils.getInRange(Long.parseLong(st), max, min, castContext, context);
+            return CastUtils.getInRange(Long.parseLong(st), max, min, context);
         }
         catch (NumberFormatException e)
         {
-            castContext.reportError("Truncated " + st + " to " + (truncated = CastUtils.truncateNonDigits(st)), context);
+            truncated = CastUtils.truncateNonDigits(st, context);
         }
         
         // second attempt
-        return CastUtils.getInRange(Long.parseLong(truncated), max, min, castContext, context);
+        return CastUtils.getInRange(Long.parseLong(truncated), max, min, context);
     }
     
     // TODO: add more

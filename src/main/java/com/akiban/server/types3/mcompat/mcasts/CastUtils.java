@@ -26,22 +26,21 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.types3.CastContext;
 import com.akiban.server.types3.TExecutionContext;
 
 public final class CastUtils
 {
      
-    static long getInRange (long max, long min, long val, CastContext castContext, TExecutionContext excContext)
+    static long getInRange (long max, long min, long val, TExecutionContext context)
     {
         if (val > max)
         {
-            castContext.reportError("Truncated " + val + " to " + max, excContext);
+            context.reportError("Truncated " + val + " to " + max);
             return max;
         }
         else if (val < min)
         {
-            castContext.reportError("Truncated " + val + " to " + min, excContext);
+            context.reportError("Truncated " + val + " to " + min);
             return min;
         }
         else
@@ -54,7 +53,7 @@ public final class CastUtils
      * @param st
      * @return 
      */
-    static String truncateNonDigits(String st)
+    static String truncateNonDigits(String st, TExecutionContext context)
     {
         int n = 0;
         st = st.trim();
@@ -62,14 +61,21 @@ public final class CastUtils
         // if the string starts with non-digits, return 0
         if (st.isEmpty() || !Character.isDigit(st.charAt(n++)) 
                 && (n == st.length() || n < st.length() && !Character.isDigit(st.charAt(n++))))
+        {
+            context.reportError("Truncated " + st + " to 0");
             return "0";
+        }
         
         char ch;
         boolean sawDot = false;
         for (; n < st.length(); ++n)
             if ((!Character.isDigit(ch = st.charAt(n)))
                     && (sawDot || !(sawDot = ch == '.')))
-                return st.substring(0, n);
+            {
+                context.reportError("Truncated " + st + " to " + (st = st.substring(0, n)));
+                return st;
+            }
+        
         return st;
     }
 }
