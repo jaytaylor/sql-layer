@@ -26,15 +26,29 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.ArgumentValidation;
 
+import java.util.EnumSet;
 import java.util.regex.Pattern;
 
 public abstract class TClass {
 
     public abstract TFactory factory();
+    
+    public /*abstract*/ void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+        throw new AssertionError("make this abstract and implement in all subclasses"); // TODO
+    }
+
+    public abstract void putSafety(QueryContext context,
+                        TInstance sourceInstance,
+                        PValueSource sourceValue,
+                        TInstance targetInstance,
+                        PValueTarget targetValue);
 
     public TInstance instance()
     {
@@ -59,6 +73,14 @@ public abstract class TClass {
     public TInstance instance(int arg0, int arg1, int arg2, int arg3)
     {
         return createInstance(4, arg0, arg1, arg2, arg3);
+    }
+
+    public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        writeCanonical(inValue, inInstance, out);
+    }
+
+    public void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+        writeCanonical(inValue, typeInstance, out);
     }
     
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {
@@ -130,15 +152,16 @@ public abstract class TClass {
     private TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         if (nAttributes() != nAttrs)
             throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
-        TInstance result = new TInstance(this, attr0, attr1, attr2, attr3);
+        
+        TInstance result = new TInstance(this, enumClass, attr0, attr1, attr2, attr3);
         validate(result);
         return result;
     }
     
     // state
 
-     protected TClass(TName name,
-            Attribute[] attributes, 
+     protected <A extends Enum<A> & Attribute> TClass(TName name,
+            Class<A> enumClass,
             int internalRepVersion, int serializationVersion, int serializationSize, 
             PUnderlying pUnderlying)
      {
@@ -148,8 +171,12 @@ public abstract class TClass {
          this.internalRepVersion = internalRepVersion;
          this.serializationVersion = serializationVersion;
          this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
-         this.attributes = attributes;
          this.pUnderlying = pUnderlying;
+         EnumSet<? extends Attribute> legalAttributes = EnumSet.allOf(enumClass);
+         attributes = new Attribute[legalAttributes.size()];
+         legalAttributes.toArray(attributes);
+         
+         this.enumClass = enumClass;
          for (int i = 0; i < attributes.length; ++i)
          {
              String attrValue = attributes[i].name();
@@ -158,20 +185,21 @@ public abstract class TClass {
          }
      }
 
-     protected TClass(TBundleID bundle,
-             String name,
-            Attribute[] attributes,
+     protected <A extends Enum<A> & Attribute> TClass(TBundleID bundle,
+            String name,
+            Class<A> enumClass,
             int internalRepVersion, int serializationVersion, int serializationSize,
             PUnderlying pUnderlying)
      {
         this(new TName(bundle, name),
-                attributes,
+                enumClass,
                 internalRepVersion, serializationVersion, serializationSize,
                 pUnderlying);
     
      }
      
     private final TName name;
+    private final Class<?> enumClass;
     private final Attribute[] attributes;
     private final int internalRepVersion;
     private final int serializationVersion;

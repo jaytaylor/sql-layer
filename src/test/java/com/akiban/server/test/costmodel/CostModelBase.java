@@ -27,18 +27,15 @@
 package com.akiban.server.test.costmodel;
 
 import com.akiban.ais.model.*;
-import com.akiban.qp.operator.Limit;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
-import com.akiban.qp.persistitadapter.PersistitRowLimit;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.api.dml.scan.ScanLimit;
 import com.akiban.server.test.ApiTestBase;
 import com.akiban.server.test.it.qp.TestRow;
 import com.akiban.util.tap.Tap;

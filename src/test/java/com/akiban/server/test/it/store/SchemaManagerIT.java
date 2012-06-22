@@ -29,6 +29,7 @@ package com.akiban.server.test.it.store;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
@@ -46,17 +47,28 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 import java.util.concurrent.Callable;
 
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.MemoryAdapter;
+import com.akiban.qp.memoryadapter.MemoryGroupCursor;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.memoryadapter.MemoryTableFactory;
+import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.ErrorCode;
+import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
-import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.TableDefinition;
+import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.test.it.ITBase;
-import com.google.inject.ProvisionException;
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
@@ -65,20 +77,18 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.service.config.Property;
 
-import static com.akiban.server.store.PersistitStoreSchemaManager.SerializationType;
-
 public final class SchemaManagerIT extends ITBase {
-    private final static String SCHEMA = "my_schema";
-    private final static String VOL2_PREFIX = "foo_schema";
-    private final static String VOL3_PREFIX = "bar_schema";
+    final static String SCHEMA = "my_schema";
+    final static String VOL2_PREFIX = "foo_schema";
+    final static String VOL3_PREFIX = "bar_schema";
 
-    private final static String T1_NAME = "t1";
-    private final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
-    private final static String T2_NAME = "t2";
-    private final static String T2_DDL = "id int NOT NULL, PRIMARY KEY(id)";
-    private final static String T3_CHILD_T1_NAME = "t3";
-    private final static String T3_CHILD_T1_DDL = "id int NOT NULL, t1id int, PRIMARY KEY(id), "+
-                                                  "grouping foreign key(t1id) references t1(id)";
+    final static String T1_NAME = "t1";
+    final static String T1_DDL = "id int NOT NULL, PRIMARY KEY(id)";
+    final static String T2_NAME = "t2";
+    final static String T2_DDL = "id int NOT NULL, PRIMARY KEY(id)";
+    final static String T3_CHILD_T1_NAME = "t3";
+    final static String T3_CHILD_T1_DDL = "id int NOT NULL, t1id int, PRIMARY KEY(id), "+
+                                          "grouping foreign key(t1id) references t1(id)";
 
     private SchemaManager schemaManager;
 
@@ -89,6 +99,14 @@ public final class SchemaManagerIT extends ITBase {
                 return null;
             }
         });
+    }
+
+    private void registerISTable(final UserTable table, final MemoryTableFactory factory) throws Exception {
+        schemaManager.registerMemoryInformationSchemaTable(table, factory);
+    }
+
+    private void registerISTable(final UserTable table, final int version) throws Exception {
+        schemaManager.registerStoredInformationSchemaTable(table, version);
     }
 
     private void deleteTableDef(final String schema, final String table) throws Exception {
@@ -111,15 +129,7 @@ public final class SchemaManagerIT extends ITBase {
     private List<String> getSchemaStringsWithoutAIS(final boolean withGroupTables) throws Exception {
         return transactionally(new Callable<List<String>>() {
             public List<String> call() throws Exception {
-                List<String> statements = schemaManager.schemaStrings(session(), withGroupTables);
-                Iterator<String> it = statements.iterator();
-                while(it.hasNext()) {
-                    String ddl = it.next();
-                    if(ddl.contains("akiban_information_schema")) {
-                        it.remove();
-                    }
-                }
-                return statements;
+                return schemaManager.schemaStrings(session(), false, withGroupTables);
             }
         });
     }
@@ -529,24 +539,23 @@ public final class SchemaManagerIT extends ITBase {
     @Test
     public void changeInAISTableIsUpgradeIssue() throws Exception {
         /*
-         * Simple sanity check. Change as needed but heed the
-         * warnings that are in PSSM#createPrimordialAIS().
+         * Simple sanity check. Change as needed but remember it is an UPGRADE ISSUE.
          */
-        final String SCHEMA = "akiban_information_schema";
-        final String STATS_TABLE = "zindex_statistics";
-        final String ENTRY_TABLE = "zindex_statistics_entry";
-        final String STATS_DDL = "create table `akiban_information_schema`.`zindex_statistics`("+
+        final String SCHEMA = "information_schema";
+        final String STATS_TABLE = "index_statistics";
+        final String ENTRY_TABLE = "index_statistics_entry";
+        final String STATS_DDL = "create table `information_schema`.`index_statistics`("+
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp, "+
             "`row_count` bigint, `sampled_count` bigint, "+
             "PRIMARY KEY(`table_id`, `index_id`)"+
         ") engine=akibandb";
-        final String ENTRY_DDL = "create table `akiban_information_schema`.`zindex_statistics_entry`("+
+        final String ENTRY_DDL = "create table `information_schema`.`index_statistics_entry`("+
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
             "`item_number` int NOT NULL, `key_string` varchar(2048), `key_bytes` varbinary(4096), "+
             "`eq_count` bigint, `lt_count` bigint, `distinct_count` bigint, "+
             "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+
             "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0`(`table_id`, `index_id`) "+
-                "REFERENCES `zindex_statistics`(`table_id`, `index_id`)"+
+                "REFERENCES `index_statistics`(`table_id`, `index_id`)"+
         ") engine=akibandb";
 
         TableDefinition statsDef = getTableDef(SCHEMA, STATS_TABLE);
@@ -581,64 +590,120 @@ public final class SchemaManagerIT extends ITBase {
         createIndex(SCHEMA, T2_NAME, "id_2", "id");
     }
 
+    @Test
+    public void registerMemoryTableBasic() throws Exception {
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
+        MemoryTableFactory factory = new MemoryTableFactoryMock();
+        registerISTable(makeSimpleISTable(tableName), factory);
 
-    /*
-     * Next three tests are confirming that the MetaModel and Protobuf
-     * serialization switch behaves as is claimed.
-     *
-     * TODO: These will need to change when the upgrade code goes in
-     */
-
-    private PersistitStoreSchemaManager castToPSSM() {
-        if(schemaManager instanceof PersistitStoreSchemaManager) {
-            return (PersistitStoreSchemaManager)schemaManager;
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists", testTable);
+            assertEquals("Is memoryTable", true, testTable.hasMemoryTableFactory());
+            assertSame("Exact factory preserved", factory, testTable.getMemoryTableFactory());
         }
-        throw new IllegalStateException("Expected PersistitStoreSchemaManager!");
+
+        createTable(SCHEMA, T1_NAME, T1_DDL);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists after DDL", testTable);
+            assertEquals("Is memoryTable after more DDL", true, testTable.hasMemoryTableFactory());
+            assertSame("Exact factory preserved after more DDL", factory, testTable.getMemoryTableFactory());
+        }
+
+        {
+            safeRestart();
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNull("Table did not survive restart", testTable);
+        }
+    }
+
+    @Test(expected=DuplicateTableNameException.class)
+    public void noDuplicateMemoryTables() throws Exception {
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName);
+        MemoryTableFactory factory = new MemoryTableFactoryMock();
+        registerISTable(sourceTable, factory);
+        registerISTable(sourceTable, factory);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noNullMemoryTableFactory() throws Exception {
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
+        registerISTable(makeSimpleISTable(tableName), null);
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void noMemoryTableOutsideAISSchema() throws Exception {
+        final TableName tableName = new TableName("foo", "test_table");
+        registerISTable(makeSimpleISTable(tableName), null);
     }
 
     @Test
-    public void existingMetaModelReadAndSavedAsIs() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-        pssm.setSerializationType(SerializationType.META_MODEL);
+    public void registerStoredTableBasic() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
+
+        registerISTable(makeSimpleISTable(tableName), VERSION);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists", testTable);
+            assertEquals("Exact version is preserved", VERSION, testTable.getVersion());
+        }
+
         createTable(SCHEMA, T1_NAME, T1_DDL);
-        pssm.setSerializationType(PersistitStoreSchemaManager.DEFAULT_SERIALIZATION);
+        {
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("New table exists after DDL", testTable);
+            assertEquals("Exact version preserved after more DDL", VERSION, testTable.getVersion());
+        }
 
-        safeRestart();
-        pssm = castToPSSM();
-
-        assertEquals("Saw MetaModel on load", SerializationType.META_MODEL, pssm.getSerializationType());
-        createTable(SCHEMA, T2_NAME, T2_DDL);
-        assertEquals("Still MetaModel after save", "[META_MODEL]", pssm.getAllSerializationTypes(session()).toString());
+        {
+            safeRestart();
+            UserTable testTable = ddl().getAIS(session()).getUserTable(tableName);
+            assertNotNull("Table survived restart", testTable);
+            assertEquals("Exact version preserved after more DDL", VERSION, testTable.getVersion());
+        }
     }
 
     @Test
-    public void newDataSetReadAndSavedAsProtobuf() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-        assertEquals("No type on new volume", SerializationType.NONE, pssm.getSerializationType());
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-        assertEquals("Saved as PROTOBUF", SerializationType.PROTOBUF, pssm.getSerializationType());
-
-        safeRestart();
-        pssm = castToPSSM();
-
-        assertEquals("Saw PROTOBUF on load", SerializationType.PROTOBUF, pssm.getSerializationType());
+    public void canRegisterStoredTableWithSameVersion() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName);
+        registerISTable(sourceTable, VERSION);
+        registerISTable(sourceTable, VERSION);
     }
 
-    // Provision = error during startup of PSSM
-    @Test(expected=ProvisionException.class)
-    public void mixedMetaModelAndProtobufIsIllegal() throws Exception {
-        PersistitStoreSchemaManager pssm = castToPSSM();
-
-        // Create a bad volume on purpose to make sure we detect on load
-        pssm.setSerializationType(SerializationType.META_MODEL);
-        createTable(SCHEMA, T1_NAME, T1_DDL);
-
-        pssm.setSerializationType(SerializationType.PROTOBUF);
-        createTable(SCHEMA, T2_NAME, T2_DDL);
-
-        safeRestart();
+    @Test(expected=ISTableVersionMismatchException.class)
+    public void cannotRegisterStoredTableWithDifferentVersion() throws Exception {
+        final Integer VERSION = 5;
+        final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
+        final UserTable sourceTable = makeSimpleISTable(tableName);
+        registerISTable(sourceTable, VERSION);
+        registerISTable(sourceTable, VERSION + 1);
     }
 
+    @Test(expected=IllegalArgumentException.class)
+    public void noStoredTableOutsideAISSchema() throws Exception {
+        final int VERSION = 5;
+        final TableName tableName = new TableName("foo", "test_table");
+        registerISTable(makeSimpleISTable(tableName), VERSION);
+    }
+
+    @Test
+    public void sameRootNameMultipleSchemasAndRestart() throws Exception {
+        final String SCHEMA1 = SCHEMA + "1";
+        final String SCHEMA2 = SCHEMA + "2";
+        createTable(SCHEMA1, T1_NAME, T1_DDL);
+        createTable(SCHEMA2, T1_NAME, T1_DDL);
+        assertTablesInSchema(SCHEMA1, T1_NAME);
+        assertTablesInSchema(SCHEMA2, T1_NAME);
+
+        safeRestart();
+        assertTablesInSchema(SCHEMA1, T1_NAME);
+        assertTablesInSchema(SCHEMA2, T1_NAME);
+    }
 
     /**
      * Assert that the given tables in the given schema has the, and only the, given tables. Also
@@ -668,7 +733,7 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     /**
-     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean)} is correct for
+     * Check that the result of {@link SchemaManager#schemaStrings(Session, boolean, boolean)} is correct for
      * the given tables. The only guarantees are that schemas are created with 'if not exists',
      * a schema statement comes before any table in it, and a create table statement is fully qualified.
      * @param schemaAndTables Map of schema names to table names that should exist
@@ -699,6 +764,44 @@ public final class SchemaManagerIT extends ITBase {
             else {
                 Assert.fail("Unknown statement type: " + statement);
             }
+        }
+    }
+
+    private static UserTable makeSimpleISTable(TableName name) {
+        NewAISBuilder builder = AISBBasedBuilder.create(name.getSchemaName());
+        builder.userTable(name.getTableName()).colLong("id", false).pk("id");
+        return builder.ais().getUserTable(name);
+    }
+
+    private static class MemoryTableFactoryMock implements MemoryTableFactory {
+        @Override
+        public TableName getName() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public UserTable getTableDefinition() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector scanSelector) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public long rowCount() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public IndexStatistics computeIndexStatistics(Session session, Index index) {
+            throw new UnsupportedOperationException();
         }
     }
 }

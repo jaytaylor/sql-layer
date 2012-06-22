@@ -28,8 +28,6 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.sql.optimizer.plan.*;
 
-import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
-
 import com.akiban.server.error.UnsupportedSQLException;
 
 import org.slf4j.Logger;
@@ -116,6 +114,9 @@ public class MapFolder extends BaseRule
             break;
         case SEMI:
             map.setInner(new Limit(map.getInner(), 1));
+            break;
+        case ANTI:
+            map.setInner(new OnlyIfEmpty(map.getInner()));
             break;
         default:
             throw new UnsupportedSQLException("complex join type " + map, null);

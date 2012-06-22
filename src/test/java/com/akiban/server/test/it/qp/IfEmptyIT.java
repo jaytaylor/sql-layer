@@ -47,7 +47,6 @@ import static com.akiban.qp.operator.API.cursor;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.ifEmpty_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.server.expression.std.Expressions.field;
 import static com.akiban.server.expression.std.Expressions.literal;
 
 public class IfEmptyIT extends OperatorITBase

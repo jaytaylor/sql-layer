@@ -26,8 +26,6 @@
 
 package com.akiban.server.service.session;
 
-import com.akiban.server.service.ServiceManager;
-
 public final class TestSessionFactory implements SessionFactory {
 
     private static final TestSessionFactory INSTANCE = new TestSessionFactory();

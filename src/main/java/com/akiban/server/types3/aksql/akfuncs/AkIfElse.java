@@ -28,6 +28,7 @@ package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -37,6 +38,8 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class AkIfElse extends TOverloadBase
 {
+    public static final TOverload INSTANCE = new AkIfElse();
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {

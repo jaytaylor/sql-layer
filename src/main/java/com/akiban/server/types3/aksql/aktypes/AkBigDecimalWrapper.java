@@ -28,10 +28,13 @@ package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 
 public class AkBigDecimalWrapper implements BigDecimalWrapper {
     
+    private BigDecimal value;
+        
     @Override
     public void reset() {
         value = BigDecimal.ZERO;
@@ -85,6 +88,51 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         return value.signum();
     }
         
-    private BigDecimal value;
+    @Override
+    public BigDecimalWrapper abs() {
+        value = value.abs();
+        return this;
+    }
 
+    @Override
+    public int getScale()
+    {
+        return value.scale();
+    }
+
+    @Override
+    public int getPrecision()
+    {
+        return value.precision();
+    }
+
+    @Override
+    public BigDecimalWrapper parseString(String num)
+    {
+        value = new BigDecimal(num);
+        return this;
+    }
+
+    @Override
+    public BigDecimalWrapper round(int precision, int scale)
+    {
+        value = value.round(new MathContext(precision, RoundingMode.HALF_UP));
+        return this;
+    }
+
+    @Override
+    public int compareTo(Object o)
+    {
+         if (o == null)
+            return 1;
+
+        return value.compareTo(((AkBigDecimalWrapper)o).value);
+    }
+    
+    @Override
+    public BigDecimalWrapper negate()
+    {
+        value = value.negate();
+        return this;
+    }
 }

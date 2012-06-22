@@ -79,7 +79,7 @@ public class DateTimeArithExpression extends ArithExpression
             return ExpressionTypes.TIME;
         }
 
-        private void adjustType (TypesList argumentTypes, int index) throws StandardException
+        protected void adjustType (TypesList argumentTypes, int index) throws StandardException
         {
             ExpressionType dateType = argumentTypes.get(index);
             switch (dateType.getType())
@@ -127,7 +127,7 @@ public class DateTimeArithExpression extends ArithExpression
             this.type = type;
         }
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             if (ArithExpression.isNumeric(second.valueType()))
                 second = new NumericToIntervalMillis(second, type);
@@ -189,7 +189,7 @@ public class DateTimeArithExpression extends ArithExpression
         }
 
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new DateTimeArithExpression(first, second, topT);
         }

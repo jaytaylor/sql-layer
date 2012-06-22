@@ -114,13 +114,13 @@ public class CaseConvertExpressionTest extends ComposedExpressionTestBase
      public void illegalArgTest ()
      {
         // excessive arguments
-        getComposer().compose(getArgList(ExprUtil.lit("String 1"), ExprUtil.lit("String 2")));
+         compose(getComposer(), getArgList(ExprUtil.lit("String 1"), ExprUtil.lit("String 2")));
        
         // insufficent arguments
-        getComposer().compose(getArgList());
+         compose(getComposer(), getArgList());
         
         // null argument
-        getComposer().compose(getArgList(ExprUtil.constNull(AkType.VARCHAR)));            
+         compose(getComposer(), getArgList(ExprUtil.constNull(AkType.VARCHAR)));
      }
     
      @OnlyIf("expectNullException()")

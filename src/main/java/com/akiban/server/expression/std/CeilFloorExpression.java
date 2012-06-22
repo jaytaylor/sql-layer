@@ -36,7 +36,6 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
 import java.math.BigDecimal;
-import java.math.MathContext;
 import java.math.RoundingMode;
 
 public class CeilFloorExpression extends AbstractUnaryExpression {
@@ -80,7 +79,7 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
         }
 
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new CeilFloorExpression(argument, name);
         }

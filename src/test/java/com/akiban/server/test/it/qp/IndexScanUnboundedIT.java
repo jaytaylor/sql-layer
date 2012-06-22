@@ -35,7 +35,6 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.store.PersistitStore;
 import org.junit.Before;
 import org.junit.Test;
 

@@ -52,7 +52,7 @@ public class RadExpressionTest extends ComposedExpressionTestBase
     @Test(expected=WrongExpressionArityException.class)
     public void testArity()
     {
-        Expression top = RandExpression.COMPOSER.compose(Arrays.asList(LiteralExpression.forNull(), LiteralExpression.forNull()));
+        Expression top = compose(RandExpression.COMPOSER, Arrays.asList(LiteralExpression.forNull(), LiteralExpression.forNull()));
     }
     
     private static void doTest(Double input, Double expected)

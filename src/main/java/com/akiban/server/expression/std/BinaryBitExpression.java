@@ -44,7 +44,6 @@ import com.akiban.server.expression.TypesList;
 import com.akiban.sql.StandardException;
 import java.math.BigInteger;
 import java.util.List;
-import org.slf4j.LoggerFactory;
 
 public class BinaryBitExpression extends AbstractBinaryExpression
 {
@@ -123,7 +122,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
         }      
 
         @Override
-        protected Expression compose(Expression first, Expression second) 
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType) 
         {
             return new BinaryBitExpression(first, op,second);
         }

@@ -155,7 +155,7 @@ public class LogExpressionTest extends ComposedExpressionTestBase
 
     private void test ()
     {
-        ValueSource top = composer.compose(getArgsList()).evaluation().eval();
+        ValueSource top = compose(composer, getArgsList()).evaluation().eval();
         if (expected == null)
             assertTrue("Top should be null", top.isNull());
         else
@@ -170,7 +170,7 @@ public class LogExpressionTest extends ComposedExpressionTestBase
 
     private  List<Expression> getArgsList ()
     {
-        List<Expression> rst = new ArrayList(args.length);
+        List<Expression> rst = new ArrayList<Expression>(args.length);
         for (Double arg : args)
             rst.add( arg == null ?
                     LiteralExpression.forNull() :

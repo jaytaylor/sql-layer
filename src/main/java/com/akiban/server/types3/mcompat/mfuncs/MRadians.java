@@ -28,15 +28,18 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class MRadians extends TOverloadBase {
+    public static final TOverload INSTANCE = new MRadians();
+    
+    private MRadians(){}
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
@@ -57,5 +60,4 @@ public class MRadians extends TOverloadBase {
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MDouble.INSTANCE.instance());
     }
-
 }
