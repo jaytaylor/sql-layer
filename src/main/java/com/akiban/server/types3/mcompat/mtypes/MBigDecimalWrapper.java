@@ -38,6 +38,11 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         value = new BigDecimal(num);
     }
 
+    public MBigDecimalWrapper(long val)
+    {
+        value = BigDecimal.valueOf(val);
+    }
+
     public MBigDecimalWrapper()
     {
         value = BigDecimal.ZERO;

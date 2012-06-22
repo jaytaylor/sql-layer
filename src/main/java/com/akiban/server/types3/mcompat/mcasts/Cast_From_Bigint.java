@@ -32,6 +32,9 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -122,6 +125,131 @@ public class Cast_From_Bigint
         }
     };
 
+    public static final TCast TO_UNSIGNED_SMALL_INT = new TCastBase(MNumeric.BIGINT, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN)
+    {
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // TODO: take the two's complement of signed ==> unsigned
+            target.putInt16((short)getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64()));
+        }
+    };
+    
+    public static final TCast TO_MEDIUM_INT = new TCastBase(MNumeric.BIGINT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int)getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32()));
+        }
+        
+    };
+    
+    public static final TCast TO_UNSIGNED_MEDIUM_INT = new TCastBase(MNumeric.BIGINT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // TODO: signed vs unsigned
+            target.putInt32((int)getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32()));
+        }
+        
+    };
+    
+    public static final TCast TO_BIGINT = new TCastBase(MNumeric.BIGINT, MNumeric.BIGINT, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putValueSource(source);
+        }   
+    };
+    
+    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // TODO: signed vs unsigned
+            target.putValueSource(source);
+        }
+    };
+    
+    public static final TCast TO_DECIMAL = new TCastBase(MNumeric.BIGINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putObject(new MBigDecimalWrapper(source.getInt64()));
+        }
+    };
+    
+    public static final TCast TO_DOUBLE = new TCastBase(MNumeric.BIGINT, MDouble.INSTANCE, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putDouble(source.getInt64());
+        }   
+    };
+    
+    public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    };
     
     private static long getInRange (long max, long min, long val)
     {
@@ -132,6 +260,7 @@ public class Cast_From_Bigint
         else
             return val;
     }
+
     //TODO: add more
     private static final BigInteger MAX = new BigInteger("18446744073709551615");
 }
