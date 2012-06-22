@@ -27,15 +27,11 @@
 package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
-import com.akiban.server.Quote;
-import com.akiban.server.encoding.EncodingException;
 import com.akiban.server.types.*;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.util.AkibanAppender;
 import com.akiban.util.WrappingByteSource;
 
-import java.nio.ByteBuffer;
 
 abstract class AbstractRowDataPValueSource implements PValueSource {
 
@@ -67,12 +63,12 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public boolean getBoolean() {
-        throw new UnsupportedOperationException();
+        return extractLong(Signage.SIGNED) != 0;
     }
 
     @Override
     public boolean getBoolean(boolean defaultValue) {
-        throw new UnsupportedOperationException();
+        return isNull() ? defaultValue : getBoolean();
     }
 
     @Override
