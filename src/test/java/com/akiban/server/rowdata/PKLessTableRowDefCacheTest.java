@@ -31,7 +31,6 @@ import junit.framework.Assert;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertSame;
-import static junit.framework.Assert.fail;
 
 public class PKLessTableRowDefCacheTest
 {

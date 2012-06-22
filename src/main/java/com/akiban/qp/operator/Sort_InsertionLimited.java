@@ -335,7 +335,7 @@ class Sort_InsertionLimited extends Operator
         private int index;
         private ShareHolder<Row> row;
         private ToObjectValueTarget target = new ToObjectValueTarget();
-        private Comparable[] values;
+        private Comparable<Holder>[] values;
 
         public Holder(int index, Row arow, List<ExpressionEvaluation> evaluations) {
             this.index = index;

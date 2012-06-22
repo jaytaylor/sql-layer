@@ -31,7 +31,6 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.qp.exec.UpdatePlannable;
 
 import java.util.Arrays;
-import java.util.List;
 
 /** Physical INSERT/UPDATE/DELETE statement */
 public class PhysicalUpdate extends BasePlannable

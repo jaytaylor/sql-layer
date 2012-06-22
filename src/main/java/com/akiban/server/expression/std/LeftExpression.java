@@ -42,7 +42,7 @@ import java.util.List;
 
 public class LeftExpression extends AbstractBinaryExpression
 {
-    @Scalar("get_left")
+    @Scalar("getLeft")
     public static final ExpressionComposer COMPOSER = new BinaryComposer()
     {
         @Override

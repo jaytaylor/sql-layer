@@ -30,8 +30,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
-import java.sql.Types;
-
 public final class TypesTranslation {
     public static AkType sqlTypeToAkType(DataTypeDescriptor descriptor) {
         TypeId typeId = descriptor.getTypeId();

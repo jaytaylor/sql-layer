@@ -29,7 +29,6 @@ package com.akiban.server.service.memcache.outputter.jsonoutputter;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.api.HapiOutputter;
 import com.akiban.server.api.HapiProcessedGetRequest;
 import com.akiban.util.AkibanAppender;

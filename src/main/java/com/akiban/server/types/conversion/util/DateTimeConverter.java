@@ -31,7 +31,6 @@ import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
-import java.util.Arrays;
 import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 

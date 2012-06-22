@@ -131,8 +131,5 @@ public abstract class TOverloadBase implements TOverload {
     protected boolean nullContaminates(int inputIndex) {
         return true;
     }
-    
-    protected enum Constantness {
-        CONST, NOT_CONST, UNKNOWN
-    }
+
 }

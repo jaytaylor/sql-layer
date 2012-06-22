@@ -50,6 +50,7 @@ import static com.akiban.ais.AISComparator.compareAndAssert;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 public class ProtobufReaderWriterTest {
@@ -254,7 +255,7 @@ public class ProtobufReaderWriterTest {
         GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
         for(int i = 0; i < COUNT; ++i) {
             bbs[i] = createByteBuffer();
-            new ProtobufWriter(bbs[i], SCHEMA+i).save(inAIS);
+            new ProtobufWriter(bbs[i], new ProtobufWriter.SchemaSelector(SCHEMA+i)).save(inAIS);
         }
 
         AkibanInformationSchema outAIS = new AkibanInformationSchema();
@@ -299,6 +300,31 @@ public class ProtobufReaderWriterTest {
         assertEquals("group index treename", GROUP_INDEX_TREENAME, inParent.getGroup().getIndex("v_cid").getTreeName());
     }
 
+    @Test
+    public void tableVersionNumber() {
+        final String TABLE = "t1";
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(TABLE).colLong("pid", false).pk("pid");
+
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertSame("Table without version", null, outAIS.getUserTable(SCHEMA, TABLE).getVersion());
+
+        final Integer VERSION = 5;
+        inAIS.getUserTable(SCHEMA, TABLE).setVersion(VERSION);
+        outAIS = writeAndRead(inAIS);
+        assertEquals("Table with version", VERSION, outAIS.getUserTable(SCHEMA, TABLE).getVersion());
+    }
+
+    @Test
+    public void sameRootTableNameTwoSchemas() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.userTable(SCHEMA+"1", "t").colLong("id", false).pk("id");
+        builder.userTable(SCHEMA+"2", "t").colLong("id", false).pk("id");
+        AkibanInformationSchema inAIS = builder.ais();
+        writeAndRead(inAIS);
+    }
+
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }
@@ -306,7 +332,12 @@ public class ProtobufReaderWriterTest {
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS, String restrictSchema) {
         GrowableByteBuffer bb = createByteBuffer();
 
-        ProtobufWriter writer = new ProtobufWriter(bb, restrictSchema);
+        final ProtobufWriter writer;
+        if(restrictSchema == null) {
+            writer = new ProtobufWriter(bb);
+        } else {
+            writer = new ProtobufWriter(bb, new ProtobufWriter.SchemaSelector(restrictSchema));
+        }
         writer.save(inAIS);
 
         bb.flip();

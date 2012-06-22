@@ -28,8 +28,6 @@ package com.akiban.server.message;
 
 import static org.junit.Assert.assertEquals;
 
-import java.nio.ByteBuffer;
-
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;

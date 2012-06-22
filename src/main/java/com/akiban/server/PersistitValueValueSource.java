@@ -197,7 +197,7 @@ public final class PersistitValueValueSource implements ValueSource
         // Can we optimize this at all?
         AkType type = getConversionType();
         quote.quote(appender, type);
-        quote.append(appender, getString());
+        quote.append(appender, String.valueOf(decode()));
         quote.quote(appender, type);
     }
 

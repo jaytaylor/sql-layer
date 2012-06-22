@@ -27,14 +27,9 @@
 package com.akiban.server.test.it.store;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
 
 import com.akiban.ais.model.Index;
-import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
-import com.persistit.Transaction;
-import com.persistit.exception.PersistitException;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;

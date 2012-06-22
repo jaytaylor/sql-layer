@@ -170,7 +170,7 @@ public class LogExpressionTest extends ComposedExpressionTestBase
 
     private  List<Expression> getArgsList ()
     {
-        List<Expression> rst = new ArrayList(args.length);
+        List<Expression> rst = new ArrayList<Expression>(args.length);
         for (Double arg : args)
             rst.add( arg == null ?
                     LiteralExpression.forNull() :

@@ -29,13 +29,6 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.JoinNode.JoinType;
 
-import com.akiban.server.expression.std.Comparison;
-
-import com.akiban.ais.model.Group;
-import com.akiban.ais.model.Join;
-import com.akiban.ais.model.JoinColumn;
-import com.akiban.ais.model.UserTable;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

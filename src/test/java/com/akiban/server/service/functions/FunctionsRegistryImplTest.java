@@ -32,7 +32,6 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;

@@ -32,12 +32,7 @@ import com.akiban.ais.model.validation.AISValidationFailure;
 import com.akiban.ais.model.validation.AISValidationOutput;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.server.error.DuplicateIndexTreeNamesException;
-import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.ProtectedTableDDLException;
-import com.akiban.server.rowdata.RowData;
 import com.akiban.server.test.it.ITBase;
-import junit.framework.Assert;
 import org.junit.Test;
 
 import java.util.*;

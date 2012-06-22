@@ -28,6 +28,7 @@ package com.akiban.server.types3.aksql.akfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -36,7 +37,10 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class AkDegrees extends TOverloadBase {
-
+    public static final TOverload INSTANCE = new AkDegrees();
+    
+    private AkDegrees(){}
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(AkNumeric.DOUBLE, 0);
@@ -54,6 +58,6 @@ public class AkDegrees extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE);
+        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
     }
 }

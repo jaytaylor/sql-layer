@@ -34,8 +34,6 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.AkServer;
 import com.akiban.server.service.dxl.DXLService;
-import com.akiban.server.service.jmx.JmxManageable;
-import com.akiban.server.service.jmx.JmxManageable.JmxObjectInfo;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.store.Store;

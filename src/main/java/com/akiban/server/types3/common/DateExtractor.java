@@ -25,6 +25,9 @@
  */
 package com.akiban.server.types3.common;
 
+import com.akiban.server.types3.TExecutionContext;
+import org.joda.time.MutableDateTime;
+
 public class DateExtractor {
 
     // consts
@@ -36,14 +39,22 @@ public class DateExtractor {
     private static final long DATETIME_MIN_SCALE = 100L;
     private static final long DATETIME_SEC_SCALE = 1L;
     
-    public static int[] getDate(int date) {
-        int year = date / 512;
-        int month = (date / 32) % 16;
-        int day = date % 32;
-        return new int[]{year, month, day};
-    }
+    private static final long DATE_YEAR_SCALE = 1000000L;
+    private static final long DATE_MONTH_SCALE = 100L;
+    private static final long DATE_DAY_SCALE = 1L;
+    
+    public static final int YEAR = 0;
+    public static final int MONTH = 1; 
+    public static final int DAY = 2;
+    public static final int HOUR = 3;
+    public static final int MINUTE = 4;
+    public static final int SECOND = 5;
+    
+    private static final int DATE_INDEX = 0;   
+    public static final long BEGINNING = new MutableDateTime(0,0,1,0,0,0,0).getMillis();
+    public static final long DAY_FACTOR = 3600L * 1000 * 24;
 
-    public static long[] getDatetime(long value) {
+    public static long[] extract(long value) {
         final long year = (value / DATETIME_YEAR_SCALE);
         final long month = (value / DATETIME_MONTH_SCALE) % 100;
         final long day = (value / DATETIME_DAY_SCALE) % 100;
@@ -52,16 +63,62 @@ public class DateExtractor {
         long second = value / DATETIME_SEC_SCALE % 100;
         return new long[]{year, month, day, hour, minute, second};
     }
-    
+
     public static boolean validHrMinSec(long[] hms) {
         return hms[3] >= 0 && hms[3] < 24 && hms[4] >= 0 && hms[4] < 60 && hms[5] >= 0 && hms[5] < 60;
     }
-    
-    public static boolean validDayMonth(int[] ymd) {
-        return true; //TODO
+
+    public static long getLastDay(long ymd[]) {
+        switch ((int) ymd[1]) {
+            case 2:
+                return ymd[0] % 400 == 0 || ymd[0] % 4 == 0 && ymd[0] % 100 != 0 ? 29L : 28L;
+            case 4:
+            case 6:
+            case 9:
+            case 11:
+                return 30L;
+            case 3:
+            case 1:
+            case 5:
+            case 7:
+            case 8:
+            case 10:
+            case 0:
+            case 12:
+                return 31L;
+            default:
+                return -1L;
+        }
     }
 
     public static boolean validDayMonth(long[] datetime) {
-        return true; //TODO
+        long last = getLastDay(datetime);
+        return last != -1L && datetime[2] <= last;
+    }
+
+    public static MutableDateTime getMutableDateTime(TExecutionContext context, long[] dateArr, boolean setDateTime) {
+        MutableDateTime datetime = (MutableDateTime) context.exectimeObjectAt(DATE_INDEX);
+        if (context == null) {
+            context.putExectimeObject(DATE_INDEX, datetime = new MutableDateTime());
+        }
+
+        if (setDateTime) {
+            datetime.setDateTime((int) dateArr[DateExtractor.YEAR], (int) dateArr[DateExtractor.MONTH], (int) dateArr[DateExtractor.DAY],
+                    (int) dateArr[DateExtractor.HOUR], (int) dateArr[DateExtractor.MINUTE], (int) dateArr[DateExtractor.SECOND], 0);
+        }
+        return datetime;
+    }
+
+    public static int toTime(long hour, long min, long sec) {
+        return (int) (hour * DATETIME_HOUR_SCALE + min * DATETIME_MIN_SCALE + sec * DATETIME_SEC_SCALE);
+    }
+    
+    public static long toDate(long year, long month, long day) {
+        return year * DATE_YEAR_SCALE + month * DATE_MONTH_SCALE + day * DATE_DAY_SCALE;
+    }
+
+    public static long toDatetime(long year, long month, long day, long hour, long minute, long second) {
+        return year*DATETIME_YEAR_SCALE + month*DATETIME_MONTH_SCALE + day*DATETIME_DAY_SCALE +
+                hour*DATETIME_HOUR_SCALE + minute*DATETIME_MIN_SCALE + second*DATETIME_SEC_SCALE;
     }
 }
