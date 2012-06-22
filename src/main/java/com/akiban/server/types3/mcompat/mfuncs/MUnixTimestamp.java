@@ -39,19 +39,7 @@ public abstract class MUnixTimestamp extends TOverloadBase {
 
     private static final int DATE_INDEX = 0; 
     
-    public static MUnixTimestamp NOARG = new MUnixTimestamp() {
-
-            @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
-            }
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                output.putInt32((int)System.currentTimeMillis());
-            }
-        };
-    
-    public static MUnixTimestamp ONEARG = new MUnixTimestamp() {
+    public static final TOverload INSTANCE = new MUnixTimestamp() {
          @Override
             protected void buildInputSets(TInputSetBuilder builder) {
                 builder.covers(MDatetimes.DATETIME, 0);
