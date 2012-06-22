@@ -66,5 +66,12 @@ public abstract class TCastBase implements TCast
     public TClass targetClass()
     {
         return targetClass;
-    }   
+    }  
+    
+    @Override
+    public final CastContext castContext()
+    {
+        // TODO: how does a cast obtain its context?
+        throw new UnsupportedOperationException("not supported yet");
+    }
 }

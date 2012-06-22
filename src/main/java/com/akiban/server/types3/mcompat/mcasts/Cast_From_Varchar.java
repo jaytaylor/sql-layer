@@ -49,11 +49,6 @@ public class Cast_From_Varchar
 {
     public static final TCast TO_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT, true, Constantness.UNKNOWN)
     {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
 
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
@@ -64,41 +59,26 @@ public class Cast_From_Varchar
             // first attempt
             try
             {
-                target.putInt8(Byte.parseByte(st));
+                target.putInt8((byte)CastUtils.getInRange(Long.parseLong(st), Byte.MAX_VALUE, Byte.MIN_VALUE, castContext(), context));
                 return;
             }
             catch (NumberFormatException e)
             {
-                context.warnClient(new StringTruncationException(st, truncated = truncate(st)));
+                castContext().reportError("Truncated " + st + " to " + (truncated = CastUtils.truncateNonDigits(st)), context);
             }
             
-            // TODO: deal with Overflow? or let it propogate up?
             // second attempt
-            target.putInt8(Byte.parseByte(truncated));
+            target.putInt8((byte)CastUtils.getInRange(Long.parseLong(truncated), Byte.MAX_VALUE, Byte.MIN_VALUE, castContext(), context));
+        }
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     };
     
-        /**
-     * Truncate non-digits part
-     * @param st
-     * @return 
-     */
-    static String truncate(String st)
-    {
-        int n = 0;
-        st = st.trim();
-        
-        // if the string starts with non-digits, return 0
-        if (st.isEmpty() || !Character.isDigit(st.charAt(n++)) 
-                && (n == st.length() || n < st.length() && !Character.isDigit(st.charAt(n++))))
-            return "0";
-        
-        char ch;
-        boolean sawDot = false;
-        for (; n < st.length(); ++n)
-            if ((!Character.isDigit(ch = st.charAt(n)))
-                    && (sawDot || !(sawDot = ch == '.')))
-                return st.substring(0, n);
-        return st;
-    }
+       
+    // TODO: add more
+  
 }

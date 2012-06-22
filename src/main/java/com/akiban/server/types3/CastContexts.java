@@ -26,27 +26,32 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.Constantness;
+import com.akiban.server.error.InvalidParameterValueException;
 
-public interface TCast {
-    boolean isAutomatic();
-    Constantness constness();
-    public TClass sourceClass();
-    public TClass targetClass();
-    
-    /**
-     * 
-     * @param context
-     * @param preptimeInput
-     * @param specifiedTarget each cast expression specifies the exact TInstance that it is casting to
-     * 
-     * TODO: We may not need this method, or have it as a setter (rather than a getter)
-     * @return 
-     */
-    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget);
-    public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target);
-    
-    public CastContext castContext();
+public enum CastContexts implements CastContext
+{
+    STRICT
+    {
+        @Override
+        public void reportError(String error, TExecutionContext queryContext)
+        {
+            throw new InvalidParameterValueException(error);
+        }
+    },
+    NON_STRICT
+    {
+        @Override
+        public void reportError(String error, TExecutionContext queryContext)
+        {
+            queryContext.warnClient(new InvalidParameterValueException(error));
+        }
+    },
+    IGNORE_ALL_ERRORS
+    {
+        @Override
+        public void reportError(String error, TExecutionContext queryContext)
+        {
+            // does nothing
+        }
+    }
 }

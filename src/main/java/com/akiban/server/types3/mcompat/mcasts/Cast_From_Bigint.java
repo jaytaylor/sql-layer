@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.error.InvalidParameterValueException;
+import com.akiban.server.types3.CastContext;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -66,7 +67,7 @@ public class Cast_From_Bigint
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt8((byte)getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64()));
+            target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), castContext(), context));
         }
 
         @Override
@@ -82,7 +83,7 @@ public class Cast_From_Bigint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TODO: take the two's complement of the negative value?
-            target.putInt8((byte)getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64()));
+            target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), castContext(), context));
         }
 
         @Override
@@ -103,7 +104,7 @@ public class Cast_From_Bigint
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt16((short)getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64()));
+            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), castContext(), context));
         }
     };
 
@@ -120,7 +121,7 @@ public class Cast_From_Bigint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TODO: take the two's complement of signed ==> unsigned
-            target.putInt16((short)getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64()));
+            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), castContext(), context));
         }
     };
     
@@ -135,7 +136,7 @@ public class Cast_From_Bigint
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32()));
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32(), castContext(), context));
         }
         
     };
@@ -152,7 +153,7 @@ public class Cast_From_Bigint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TODO: signed vs unsigned
-            target.putInt32((int)getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32()));
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32(), castContext(), context));
         }
         
     };
@@ -232,7 +233,7 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.fromDate(source.getInt64());
             if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
+                castContext().reportError("Invalid datetime values", context);
                 target.putNull();
             }
             else
@@ -256,7 +257,7 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.fromDatetime(raw);
                         if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
+                castContext().reportError("Invalid datetime values", context);
                 target.putNull();
             }
             else
@@ -276,7 +277,7 @@ public class Cast_From_Bigint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TIMESTAMPE is underlied by INT32
-            target.putInt32((int)getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64()));
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64(), castContext(), context));
         }
     };
     
@@ -295,7 +296,7 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.fromTime(raw);
                         if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.warnClient(new InvalidParameterValueException("Invalid TIME values: " + raw));
+                castContext().reportError("Invalid datetime values", context);
                 target.putNull();
             }
             else
@@ -317,14 +318,4 @@ public class Cast_From_Bigint
             target.putObject(Long.toString(source.getInt64()));
         }
     };
-    
-    private static long getInRange (long max, long min, long val)
-    {
-        if (val >= max)
-            return max;
-        else if (val <= min)
-            return min;
-        else
-            return val;
-    }
 }
