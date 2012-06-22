@@ -50,7 +50,7 @@ public class MTimeAndDate extends TOverloadBase{
             @Override
             long evaluate(long[] input)
             {
-                return input[DateExtractor.DAY];
+                return DateExtractor.toDate(input[DateExtractor.YEAR],input[DateExtractor.MONTH],input[DateExtractor.DAY]);
             }
             
             @Override
@@ -62,7 +62,7 @@ public class MTimeAndDate extends TOverloadBase{
             @Override
             long evaluate(long[] input)
             {
-                return input[DateExtractor.DAY];
+                return DateExtractor.toTime(input[DateExtractor.HOUR],input[DateExtractor.MINUTE],input[DateExtractor.SECOND]);
             }
             
             @Override
