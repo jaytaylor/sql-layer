@@ -38,7 +38,9 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
 public class TestConfigService extends ConfigurationServiceImpl {
-    public final static File TESTDIR = new File("/tmp/akserver-junit");
+    private final static File TESTDIR = new File("/tmp/akserver-junit");
+    private static File dataDirectory = null;
+    private static int dataDirectoryCounter = 0;
     private static volatile boolean doCleanOnUnload = false;
     private final Collection<Property> extraProperties;
     File tmpDir;
@@ -61,8 +63,8 @@ public class TestConfigService extends ConfigurationServiceImpl {
     @Override
     protected Map<String, Property> loadProperties() {
         Map<String, Property> ret = new HashMap<String, Property>(super.loadProperties());
-        tmpDir = makeTempDatapathDirectory();
-        ret.put(DATA_PATH_KEY, new Property(DATA_PATH_KEY, tmpDir.getAbsolutePath()));
+        makeDataDirectory();
+        ret.put(DATA_PATH_KEY, new Property(DATA_PATH_KEY, dataDirectory.getAbsolutePath()));
         final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY).getValue());
         String memoryKey = BUFFER_MEMORY_KEY_PREFIX + "." + bufferSize;
         ret.put(memoryKey, new Property(memoryKey, UNIT_TEST_PERSISTIT_MEMORY));
@@ -87,18 +89,33 @@ public class TestConfigService extends ConfigurationServiceImpl {
         return Collections.emptySet();
     }
 
-    private File makeTempDatapathDirectory() {
-        if (TESTDIR.exists()) {
-            if (!TESTDIR.isDirectory()) {
-                throw new ConfigurationPropertiesLoadException(TESTDIR.getName(), " it exists but isn't a directory");
+    public static File dataDirectory() {
+        if (dataDirectory == null)
+            makeDataDirectory();
+        return dataDirectory;
+    }
+
+    public static File newDataDirectory() {
+        dataDirectoryCounter++;
+        makeDataDirectory();
+        return dataDirectory;
+    }
+
+    private static void makeDataDirectory() {
+        String name = "data";
+        if (dataDirectoryCounter > 0)
+            name += dataDirectoryCounter;
+        dataDirectory = new File(TESTDIR, name);
+        if (dataDirectory.exists()) {
+            if (!dataDirectory.isDirectory()) {
+                throw new ConfigurationPropertiesLoadException(dataDirectory.getName(), " it exists but isn't a directory");
             }
         } else {
-            if (!TESTDIR.mkdir()) {
-                throw new ConfigurationPropertiesLoadException (TESTDIR.getName(), " it couldn't be created");
+            if (!dataDirectory.mkdirs()) {
+                throw new ConfigurationPropertiesLoadException(dataDirectory.getName(), " it couldn't be created");
             }
-            TESTDIR.deleteOnExit();
+            dataDirectory.deleteOnExit();
         }
-        return TESTDIR;
     }
 
     public static void setOverrides(Collection<Property> startupConfigProperties) {

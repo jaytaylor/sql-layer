@@ -203,9 +203,9 @@ public class ApiTestBase {
                     needServicesRestart = false; // clear the flag if it was set
                     stopTestServices();
                 }
-                if (!TestConfigService.TESTDIR.mkdirs() && !TestConfigService.TESTDIR.isDirectory())
-                    throw new RuntimeException("couldn't create dir: " + TestConfigService.TESTDIR);
-                AkServerUtil.cleanUpDirectory(TestConfigService.TESTDIR);
+                if (!AkServerUtil.cleanUpDirectory(TestConfigService.dataDirectory())) {
+                    TestConfigService.newDataDirectory();
+                }
                 assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
                 sm = createServiceManager(startupConfigProperties);
                 sm.startServices();
@@ -297,11 +297,7 @@ public class ApiTestBase {
     }
     
     private static boolean runningOutOfSpace() {
-        return datadir().getFreeSpace() < MIN_FREE_SPACE;
-    }
-
-    private static File datadir() {
-        return TestConfigService.TESTDIR;
+        return TestConfigService.dataDirectory().getFreeSpace() < MIN_FREE_SPACE;
     }
 
     public void stopTestServices() throws Exception {
@@ -337,7 +333,7 @@ public class ApiTestBase {
 
     protected Collection<Property> defaultPropertiesToPreserveOnRestart() {
         List<Property> properties = new ArrayList<Property>();
-        properties.add(new Property(TestConfigService.DATA_PATH_KEY, TestConfigService.TESTDIR.getAbsolutePath()));
+        properties.add(new Property(TestConfigService.DATA_PATH_KEY, TestConfigService.dataDirectory().getAbsolutePath()));
         return properties;
     }
 
