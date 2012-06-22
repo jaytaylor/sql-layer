@@ -28,8 +28,11 @@ package com.akiban.server.types3.service;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
 import com.google.inject.Singleton;
+import java.lang.reflect.AccessibleObject;
 import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -43,7 +46,9 @@ public class FunctionRegistryImpl implements FunctionRegistry
 {
     // TODO : define aggregates here
     private List<TOverload> scalars;
-
+    private List<TClass> types;
+    private List<TCast> casts;
+    
     private static final int INVALID = -1;
     private static final int FIELD = 0;
     private static final int ARRAY = 1;
@@ -53,67 +58,71 @@ public class FunctionRegistryImpl implements FunctionRegistry
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
         scalars = new ArrayList<TOverload>();
+        types = new ArrayList<TClass>();
+        casts = new ArrayList<TCast>();
+        
         for (Class<?> cls : finder.findClasses())
         {
             if (!Modifier.isPublic(cls.getModifiers()))
                 continue;
-            collectScalars(scalars, cls);
+            collectInstances(scalars, cls, TOverload.class);
+            collectInstances(types, cls, TClass.class);
+            collectInstances(casts, cls, TCast.class);
         }
     }
 
-    private static void collectScalars(List<TOverload> list, Class<?> cls)
-    {   
+    private static <T> void collectInstances(Collection<T> ret, Class<?> cls, Class<T> target) 
+    {
         try
         {
-            // get the static INSTANCEs
-            for (Field field : cls.getDeclaredFields())
+            // grab the static INSTANCEs fields
+            for (Field field : cls.getFields())
             {
-                Scalar annotation = field.getAnnotation(Scalar.class);
-                if (annotation != null)
-                    switch (validateScalarField(field))
+                if (isRegistered(field))
+                    switch(validateField(field, target))
                     {
                         case FIELD:
-                            putOverload((TOverload) field.get(null), list);
+                            putItem(ret, (T)field.get(null));
                             break;
                         case ARRAY:
-                            for (TOverload overload : (TOverload[]) field.get(null))
-                                putOverload(overload, list);
+                            for (T item : (T[])field.get(null))
+                                putItem(ret, (T)field.get(null));
                             break;
                         case COLLECTION:
                             try
                             {
-                                for (Object raw : (Collection<?>)field.get(null)) 
-                                    putOverload((TOverload)raw, list);
+                                for (Object raw : (Collection<?>)field.get(null))
+                                    putItem(ret, (T)raw);
                                 break;
                             }
-                            catch (ClassCastException e){/* fall thru */}
+                            catch (ClassCastException e) {/* fall thru */}
                         default:
-                            complain("Field " + field 
-                                    + " must be declared as public static final TOverload "
-                                    + " or public static final TOverload[]"
-                                    + " or public static final Collection<? extends TOverload>");
+                                complain("Field " + field 
+                                        + " must be declared as public static final TOverload "
+                                        + " or public static final TOverload[]"
+                                        + " or public static final Collection<? extends TOverload>");
                     }
             }
-
-            // get the static methods
-            for (Method method : cls.getDeclaredMethods())
+            
+            // grab the static methods that create instances
+            for (Method method : cls.getMethods())
             {
-                Scalar annotation = method.getAnnotation(Scalar.class);
-                if (annotation != null)
-                    switch(validateScalarMethod(method))
+                
+                if (isRegistered(method))
+                    switch(validateMethod(method, target))
                     {
                         case FIELD:
-                            putOverload((TOverload)method.invoke(null), list);
+                            putItem(ret, (T)method.invoke(null));
                             break;
                         case ARRAY:
-                            for (TOverload overload : (TOverload[])method.invoke(null))
-                                putOverload(overload, list);
+                            for (T item : (T[])method.invoke(null))
+                                putItem(ret, item);
                             break;
                         case COLLECTION:
                             try
                             {
                                 for (Object raw : (Collection<?>)method.invoke(null))
-                                    putOverload((TOverload)raw,  list);
+                                    putItem(ret, (T)raw);
                                 break;
                             }
                             catch (ClassCastException e) {/* fall thru */}
@@ -124,6 +133,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
                                     + " or public static TOverload <method name>()");
                     }
             }
+           
         }
         catch (IllegalAccessException e)   
         {
@@ -135,43 +145,44 @@ public class FunctionRegistryImpl implements FunctionRegistry
         }
     }
 
-    private static int validateScalarMethod(Method method)
+    private static <T> int validateMethod(Method method, Class<T> target)
     {
         int modifiers = method.getModifiers();
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers)
                 && method.getParameterTypes().length == 0)
-            return assignable(method.getReturnType());
+            return assignable(method.getReturnType(), target);
         return INVALID;
     }
     
-    private static void putOverload(TOverload overload, Collection<TOverload> list)
-    {
-        list.add(overload);
-    }
-
-    private static String normalise(String name)
-    {
-        return name.toLowerCase();
-    }
-
-    private static int validateScalarField(Field field)
+    private static <T> int validateField(Field field, Class<T> target)
     { 
         int modifiers = field.getModifiers();
         
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers))
-            return assignable(field.getType());
+            return assignable(field.getType(), target);
          return INVALID;
     }
 
-    private static int assignable (Class<?> c)
+    private static <T> int assignable (Class<?> c, Class<T> target)
     {
-        if (c.isArray() && TOverload.class.isAssignableFrom(c.getComponentType()))
+        if (c.isArray() && target.isAssignableFrom(c.getComponentType()))
             return ARRAY;
         else if (TOverload.class.isAssignableFrom(c))
             return FIELD;
         else return COLLECTION;
     }
 
+    
+    private static <T> void putItem(Collection<T> list, T item)
+    {
+        list.add(item);
+    }
+    
+    private static boolean isRegistered(AccessibleObject field)
+    {
+        return field.getAnnotation(DontRegister.class) == null;
+    }
+    
     private static void  complain (String st)
     {
         throw new FunctionsRegistryException(st);
