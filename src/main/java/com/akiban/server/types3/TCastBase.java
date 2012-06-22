@@ -26,23 +26,45 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
-public interface TCast {
-    boolean isAutomatic();
-    Constantness constness();
-    public TClass sourceClass();
-    public TClass targetClass();
+public abstract class TCastBase implements TCast
+{
+        
+    private final TClass sourceClass;
+    private final TClass targetClass;
+    private final boolean isAutomatic;
+    private final Constantness constness;
     
-    /**
-     * 
-     * @param context
-     * @param preptimeInput
-     * @param specifiedTarget each cast expression specifies the exact TInstance that it is casting to
-     * @return 
-     */
-    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget);
-    public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target);
+    protected TCastBase (TClass sourceClass, TClass targetClass, boolean isAutomatic, Constantness constness)
+    {
+        this.sourceClass = sourceClass;
+        this.targetClass = targetClass;
+        this.isAutomatic = isAutomatic;
+        this.constness = constness;
+    }
+    
+    @Override
+    public boolean isAutomatic()
+    {
+        return isAutomatic;
+    }
+
+    @Override
+    public Constantness constness()
+    {
+        return constness;
+    }
+
+    @Override
+    public TClass sourceClass()
+    {
+        return sourceClass;
+    }
+
+    @Override
+    public TClass targetClass()
+    {
+        return targetClass;
+    }   
 }

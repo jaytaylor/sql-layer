@@ -27,15 +27,46 @@
 package com.akiban.server.types3.texpressions;
 
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.texpressions.Constantness;
 
-public abstract class TCastBase implements TCast {
+public abstract class TCastBase implements TCast
+{
+        
+    private final TClass sourceClass;
+    private final TClass targetClass;
+    private final boolean isAutomatic;
+    private final Constantness constness;
+    
+    protected TCastBase (TClass sourceClass, TClass targetClass, boolean isAutomatic, Constantness constness)
+    {
+        this.sourceClass = sourceClass;
+        this.targetClass = targetClass;
+        this.isAutomatic = isAutomatic;
+        this.constness = constness;
+    }
+    
     @Override
-    public boolean isAutomatic() {
-        return false;
+    public boolean isAutomatic()
+    {
+        return isAutomatic;
     }
 
     @Override
-    public Constantness constness() {
-        return Constantness.UNKNOWN;
+    public Constantness constness()
+    {
+        return constness;
     }
+
+    @Override
+    public TClass sourceClass()
+    {
+        return sourceClass;
+    }
+
+    @Override
+    public TClass targetClass()
+    {
+        return targetClass;
+    }   
 }
