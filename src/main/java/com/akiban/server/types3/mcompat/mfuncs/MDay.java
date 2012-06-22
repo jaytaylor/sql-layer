@@ -93,7 +93,7 @@ public class MDay extends TOverloadBase{
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MDatetimes.DATE, 0);
+        builder.covers(MDatetimes.DATETIME, 0);
     }
 
     @Override
