@@ -66,7 +66,7 @@ public class MDay extends TOverloadBase{
             @Override
             long evaluate(MutableDateTime cal, long[] input)
             {
-                return cal.getDayOfWeek();
+                return (cal.getDayOfWeek() % 7) + 1;
             }
         },
         DAYOFYEAR {
@@ -80,7 +80,7 @@ public class MDay extends TOverloadBase{
             @Override
             long evaluate(MutableDateTime cal, long[] input)
             {
-                return (cal.getDayOfWeek() + 5) % 7;
+                return cal.getDayOfWeek() - 1;
             }
         };
         
