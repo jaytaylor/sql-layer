@@ -24,29 +24,47 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.server.types3.texpressions.Constantness;
 
-public abstract class TNoAttrCastBase extends TCastBase {
+public abstract class TCastBase implements TCast
+{
+        
+    private final TClass sourceClass;
+    private final TClass targetClass;
+    private final boolean isAutomatic;
+    private final Constantness constness;
+    
+    protected TCastBase (TClass sourceClass, TClass targetClass, boolean isAutomatic, Constantness constness)
+    {
+        this.sourceClass = sourceClass;
+        this.targetClass = targetClass;
+        this.isAutomatic = isAutomatic;
+        this.constness = constness;
+    }
+    
+    @Override
+    public boolean isAutomatic()
+    {
+        return isAutomatic;
+    }
 
     @Override
-    public TClass targetClass() {
-        return tClass;
+    public Constantness constness()
+    {
+        return constness;
     }
 
     @Override
-    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specified) {
-        return tClass.instance();
+    public TClass sourceClass()
+    {
+        return sourceClass;
     }
 
-    protected TNoAttrCastBase(NoAttrTClass tClass) {
-        this.tClass = tClass;
-    }
-
-    private final NoAttrTClass tClass;
+    @Override
+    public TClass targetClass()
+    {
+        return targetClass;
+    }   
 }
