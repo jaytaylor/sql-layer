@@ -90,7 +90,7 @@ public final class TExecutionContext {
 
     public void reportError(InvalidOperationException error)
     {
-        switch(erroModes)
+        switch(errorMode)
         {
             case ERROR:     
                 throw error;
@@ -116,13 +116,13 @@ public final class TExecutionContext {
                       List<TInstance> inputTypes,
                       TInstance outputType,
                       QueryContext queryContext,
-                      ErrorHandlingModes errorModes)
+                      ErrorHandlingMode errorMode)
     {
         this.preptimeCache = preptimeCache;
         this.inputTypes = inputTypes;
         this.outputType = outputType;
         this.queryContext = queryContext;
-        this.erroModes = errorModes;
+        this.errorMode = errorMode;
     }
 
     private SparseArray<Object> preptimeCache;
@@ -130,5 +130,5 @@ public final class TExecutionContext {
     private List<TInstance> inputTypes;
     private TInstance outputType;
     private QueryContext queryContext;
-    private ErrorHandlingModes erroModes;
+    private ErrorHandlingMode errorMode;
 }
