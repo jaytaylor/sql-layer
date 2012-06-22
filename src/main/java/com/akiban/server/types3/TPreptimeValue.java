@@ -31,12 +31,26 @@ import com.akiban.util.ArgumentValidation;
 
 public final class TPreptimeValue {
 
+    public void instance(TInstance tInstance) {
+        assert mutable : "not mutable";
+        this.tInstance = tInstance;
+    }
+
     public TInstance instance() {
         return tInstance;
     }
 
+    public void value(PValueSource value) {
+        assert mutable : "not mutable";
+        this.value = value;
+    }
+
     public PValueSource value() {
         return value;
+    }
+
+    public TPreptimeValue() {
+        this.mutable = true;
     }
 
     public TPreptimeValue(TInstance tInstance) {
@@ -47,8 +61,10 @@ public final class TPreptimeValue {
         ArgumentValidation.notNull("type instance", tInstance);
         this.tInstance = tInstance;
         this.value = value;
+        this.mutable = false;
     }
 
-    private final TInstance tInstance;
-    private final PValueSource value;
+    private TInstance tInstance;
+    private PValueSource value;
+    private boolean mutable; // TODO ugh! should we next this, or create a hierarchy of TPV, MutableTPV?
 }
