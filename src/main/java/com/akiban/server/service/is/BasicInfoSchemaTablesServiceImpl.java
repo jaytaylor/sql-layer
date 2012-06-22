@@ -106,10 +106,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         // Nothing
     }
 
-    private static String boolResult(boolean bool) {
-        return bool ? "YES" : "NO";
-    }
-
     private class SchemataFactory extends BasicFactoryBase {
         public SchemataFactory(TableName sourceTable) {
             super(sourceTable);
