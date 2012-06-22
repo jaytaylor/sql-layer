@@ -42,34 +42,14 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import java.math.BigInteger;
-import org.joda.time.MutableDateTime;
 
 public class Cast_From_Bigint
 {
     
     /**
+     * TODO:
      * BIT
-     * TINYINT
-     * TINYINT_U
-     * SMALLINT
-     * SMALLINT_U
-     * MEDIUMINT
-     * \MEDIUMINT_U
-     * INTEGER
-     * INTEGER_U
-     * BIGINT
-     * BIGINT_U
-     * DECIMAL
-     * FLOAT
-     * DOUBLE
-     * DATE
-     * DATETIME
-     * TIME
-     * TIMESTAMP
-     * TIMESTAMP
-     * YEAR
      * CHAR
-     * VARCHAR
      * BINARY
      * VARBINARY
      * TINYBLOG
@@ -80,8 +60,8 @@ public class Cast_From_Bigint
      * LONGBLOG
      * LONTTEXT
      * 
-     * @return 
      */
+    
     public static final TCast TO_TINYINT = new TCastBase(MNumeric.BIGINT, MNumeric.TINYINT, false, Constantness.UNKNOWN)
     {
         @Override
