@@ -30,6 +30,7 @@ import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -40,64 +41,99 @@ import org.joda.time.MutableDateTime;
 public abstract class MDatetimeArith extends TOverloadBase {
     
     private final String name;
+    public enum UnitValue { OTHER, HOUR, MINUTE, SECOND };
     
     public static TOverload DATE_ADD = new MDatetimeArith("DATE_ADD") {
 
         @Override
-        protected long evaluate(long input, MutableDateTime datetime) {
+        protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(input);
+            long date = DateExtractor.toDatetime(datetime.getYear(), datetime.getMonthOfYear(),
+                    datetime.getDayOfMonth(), datetime.getHourOfDay(), datetime.getMinuteOfHour(),
+                    datetime.getSecondOfMinute());
+            output.putInt64(date);
+        }
+        
+        @Override
+        public TOverloadResult resultType() {
+            return dateResultType();
         }
     };
     
     public static TOverload DATE_SUB = new MDatetimeArith("DATE_SUB") {
 
         @Override
-        protected long evaluate(long input, MutableDateTime datetime) {
+        protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
+            long date = DateExtractor.toDatetime(datetime.getYear(), datetime.getMonthOfYear(), 
+                    datetime.getDayOfMonth(), datetime.getHourOfDay(), datetime.getMinuteOfHour(),
+                    datetime.getSecondOfMinute());
+            output.putInt64(date);
+        }
+
+         @Override
+        public TOverloadResult resultType() {
+            return dateResultType();
         }
     };
     
     public static TOverload SUBTIME = new MDatetimeArith("SUBTIME") {
 
         @Override
-        protected long evaluate(long input, MutableDateTime datetime) {
+        protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
+            output.putInt32((int) (datetime.getMillis() / DateExtractor.DAY_FACTOR));
+        }
+
+        @Override
+        public TOverloadResult resultType() {
+            return intResultType();
         }
     };
     
     public static TOverload ADDTIME = new MDatetimeArith("ADDTIME") {
 
         @Override
-        protected long evaluate(long input, MutableDateTime datetime) {
+        protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(input);
+            int time = DateExtractor.toTime(datetime.getHourOfDay(), datetime.getMinuteOfHour(),
+                    datetime.getSecondOfMinute());
+            output.putInt32(time);
+        }
+        
+        @Override
+        public TOverloadResult resultType() {
+            return timeResultType();
         }
     };
     
     public static TOverload DATEDIFF = new MDatetimeArith("DATEDIFF") {
 
         @Override
-        protected long evaluate(long input, MutableDateTime datetime) {
+        protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
-            return datetime.getMillis() / DateExtractor.DAY_FACTOR;
+            output.putInt32((int) (datetime.getMillis() / DateExtractor.DAY_FACTOR));
         }
 
         @Override
         public TOverloadResult resultType() {
-            return TOverloadResult.custom(MDatetimes.DATE.instance(), new TCustomOverloadResult() {
-
-                @Override
-                public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                    return MNumeric.INT.instance();
-                }
-            });
+            return intResultType();
         }
     };
     
     public static TOverload TIMEDIFF = new MDatetimeArith("TIMEDIFF") {
 
         @Override
-        protected long evaluate(long input, MutableDateTime datetime) {
+        protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
+            int time = DateExtractor.toTime(datetime.getHourOfDay(), datetime.getMinuteOfHour(),
+                    datetime.getSecondOfMinute());
+            output.putInt32(time);
+        }
+        
+        @Override
+        public TOverloadResult resultType() {
+            return timeResultType();
         }
     };
     
@@ -105,7 +141,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         this.name = name;
     }
     
-    protected abstract long evaluate(long input, MutableDateTime datetime);
+    protected abstract void evaluate(long input, MutableDateTime datetime, PValueTarget output);
     
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
@@ -117,10 +153,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         long[] arr0 = DateExtractor.extract(inputs.get(0).getInt64());
         datetime.setDateTime((int) arr0[DateExtractor.YEAR], (int) arr0[DateExtractor.MONTH], (int) arr0[DateExtractor.DAY],
                 (int) arr0[DateExtractor.HOUR], (int) arr0[DateExtractor.MINUTE], (int) arr0[DateExtractor.SECOND], 0);
-        
-        //long date = DateExtractor.toDatetime(datetime.getYear(), datetime.getMonthOfYear(), datetime.getDayOfMonth(),
-        //        datetime.getHourOfDay(), datetime.getMinuteOfHour(), datetime.getSecondOfMinute());
-        output.putInt64(evaluate(value, datetime));
+        evaluate(value, datetime, output);
     }
     
     @Override
@@ -133,15 +166,40 @@ public abstract class MDatetimeArith extends TOverloadBase {
         return name;
     }
     
-    @Override
-    public TOverloadResult resultType() {
+    public TOverloadResult dateResultType() {
         return TOverloadResult.custom(MDatetimes.DATETIME.instance(), new TCustomOverloadResult() {
 
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                TClass tClass = inputs.get(0).instance().typeClass();
-                // RETURN LOGIC HERE.
+                TClass typeClass = inputs.get(0).instance().typeClass();
+                UnitValue val = (UnitValue) inputs.get(2).value().getObject();
+                if (typeClass == MDatetimes.DATETIME || typeClass == MDatetimes.TIMESTAMP
+                        || (typeClass == MDatetimes.DATE && val == UnitValue.HOUR || val == UnitValue.MINUTE 
+                        || val == UnitValue.SECOND)) {
+                    return MDatetimes.DATETIME.instance();
+                }
+                return MString.VARCHAR.instance();
             }
-        }); 
+        });
+    }
+    
+    public TOverloadResult intResultType() {
+        return TOverloadResult.custom(MDatetimes.DATETIME.instance(), new TCustomOverloadResult() {
+
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                return MNumeric.INT.instance();
+            }
+        });
+    }
+
+    public TOverloadResult timeResultType() {
+        return TOverloadResult.custom(MDatetimes.DATETIME.instance(), new TCustomOverloadResult() {
+
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                return MDatetimes.TIME.instance();
+            }
+        });
     }
 }
