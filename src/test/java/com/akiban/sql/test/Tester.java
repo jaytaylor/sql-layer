@@ -51,9 +51,6 @@ import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Index;
-
-import com.akiban.server.service.functions.FunctionsRegistryImpl;
 
 import java.util.*;
 import java.io.*;

@@ -26,12 +26,15 @@
 
 package com.akiban.server.types3.common.types;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class NoAttrTClass extends TClass {
 
@@ -51,6 +54,17 @@ public class NoAttrTClass extends TClass {
 
     public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
                            int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
-        super(bundle, name, Attribute.NONE, internalRepVersion, serializationVersion, serializationSize, pUnderlying);
+        super(bundle, name, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize, pUnderlying);
+    }
+
+    @Override
+    public void putSafety(QueryContext context, 
+                          TInstance sourceInstance,
+                          PValueSource sourceValue,
+                          TInstance targetInstance,
+                          PValueTarget targetValue)
+    {
+        // nothing to check ?
+        targetValue.putValueSource(sourceValue);
     }
 }

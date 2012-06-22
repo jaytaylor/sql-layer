@@ -28,7 +28,7 @@ package com.akiban.server.types3;
 
 public interface Attribute
 {
-    public static final Attribute NONE[] = new Attribute[0];
+    public static enum NONE implements Attribute{};
     
     String name();
     int ordinal();

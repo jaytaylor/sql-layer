@@ -28,6 +28,8 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -36,6 +38,7 @@ import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.service.Scalar;
 
 public class MArithmetic {   
 
@@ -53,7 +56,8 @@ public class MArithmetic {
     }
     
     // Add functions
-    TArithmetic ADD_TINYINT = new TArithmetic("+", MNumeric.TINYINT, MNumeric.MEDIUMINT.instance(5)) {
+    @Scalar
+    public static final TOverload ADD_TINYINT = new TArithmetic("+", MNumeric.TINYINT, MNumeric.MEDIUMINT.instance(5)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt8();
@@ -62,7 +66,7 @@ public class MArithmetic {
         }
     };
     
-     TArithmetic ADD_SMALLINT = new TArithmetic("+", MNumeric.SMALLINT, MNumeric.MEDIUMINT.instance(7)) {
+    public static final TOverload ADD_SMALLINT = new TArithmetic("+", MNumeric.SMALLINT, MNumeric.MEDIUMINT.instance(7)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt16();
@@ -71,7 +75,7 @@ public class MArithmetic {
         }
     };
      
-     TArithmetic ADD_MEDIUMINT = new TArithmetic("+", MNumeric.MEDIUMINT, MNumeric.INT.instance(9)) {
+    public static final TOverload ADD_MEDIUMINT = new TArithmetic("+", MNumeric.MEDIUMINT, MNumeric.INT.instance(9)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt32();
@@ -80,7 +84,7 @@ public class MArithmetic {
         }
     };
      
-    TArithmetic ADD_INT = new TArithmetic("+", MNumeric.INT, MNumeric.BIGINT.instance(12)) {
+    public static final TOverload ADD_INT = new TArithmetic("+", MNumeric.INT, MNumeric.BIGINT.instance(12)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt32();
@@ -89,7 +93,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic ADD_BIGINT = new TArithmetic("+", MNumeric.BIGINT, MNumeric.BIGINT.instance(21)) {
+    public static final TOverload ADD_BIGINT = new TArithmetic("+", MNumeric.BIGINT, MNumeric.BIGINT.instance(21)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();
@@ -98,7 +102,7 @@ public class MArithmetic {
         }
     };
      
-    TArithmetic ADD_DECIMAL = new TArithmetic("+", MNumeric.DECIMAL, null) { // TODO instance
+    public static final TOverload ADD_DECIMAL = new TArithmetic("+", MNumeric.DECIMAL, (TInstance)null) { // TODO instance
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
@@ -108,7 +112,7 @@ public class MArithmetic {
     };
     
     // Subtract functions
-    TArithmetic SUBTRACT_TINYINT = new TArithmetic("-", MNumeric.TINYINT, MNumeric.INT.instance(5)) {
+    public static final TOverload SUBTRACT_TINYINT = new TArithmetic("-", MNumeric.TINYINT, MNumeric.INT.instance(5)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt8();
@@ -117,7 +121,7 @@ public class MArithmetic {
         }
     };
     
-     TArithmetic SUBTRACT_SMALLINT = new TArithmetic("-", MNumeric.SMALLINT, MNumeric.MEDIUMINT.instance(7)) {
+    public static final TOverload SUBTRACT_SMALLINT = new TArithmetic("-", MNumeric.SMALLINT, MNumeric.MEDIUMINT.instance(7)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt16();
@@ -126,7 +130,7 @@ public class MArithmetic {
         }
     };
      
-     TArithmetic SUBTRACT_MEDIUMINT = new TArithmetic("-", MNumeric.MEDIUMINT, MNumeric.INT.instance(9)) {
+    public static final TOverload SUBTRACT_MEDIUMINT = new TArithmetic("-", MNumeric.MEDIUMINT, MNumeric.INT.instance(9)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt32();
@@ -135,7 +139,7 @@ public class MArithmetic {
         }
     };
      
-    TArithmetic SUBTRACT_INT = new TArithmetic("-", MNumeric.INT, MNumeric.BIGINT.instance(12)) {
+   public static final TOverload SUBTRACT_INT = new TArithmetic("-", MNumeric.INT, MNumeric.BIGINT.instance(12)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt32();
@@ -144,7 +148,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic SUBTRACT_BIGINT = new TArithmetic("-", MNumeric.BIGINT, MNumeric.BIGINT.instance(21)) {
+   public static final TOverload SUBTRACT_BIGINT = new TArithmetic("-", MNumeric.BIGINT, MNumeric.BIGINT.instance(21)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();
@@ -153,7 +157,7 @@ public class MArithmetic {
         }
     };
      
-    TArithmetic SUBTRACT_DECIMAL = new TArithmetic("-", MNumeric.DECIMAL, null) { // TODO
+   public static final TOverload SUBTRACT_DECIMAL = new TArithmetic("-", MNumeric.DECIMAL, (TInstance)null) { // TODO
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
@@ -163,7 +167,7 @@ public class MArithmetic {
     };
     
     // (Regular) Divide functions
-    TArithmetic DIVIDE_TINYINT = new TArithmetic("/", MNumeric.TINYINT, MDouble.INSTANCE.instance())
+   public static final TOverload DIVIDE_TINYINT = new TArithmetic("/", MNumeric.TINYINT, MDouble.INSTANCE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -176,7 +180,7 @@ public class MArithmetic {
         }
     };
 
-    TArithmetic DIVIDE_SMALLINT = new TArithmetic("/", MNumeric.SMALLINT, MDouble.INSTANCE.instance())
+   public static final TOverload DIVIDE_SMALLINT = new TArithmetic("/", MNumeric.SMALLINT, MDouble.INSTANCE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -189,7 +193,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic DIVIDE_INT = new TArithmetic("/", MNumeric.INT, MDouble.INSTANCE.instance())
+   public static final TOverload DIVIDE_INT = new TArithmetic("/", MNumeric.INT, MDouble.INSTANCE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -202,7 +206,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic DIVIDE_BIGINT = new TArithmetic("/", MNumeric.BIGINT, MDouble.INSTANCE.instance())
+   public static final TOverload DIVIDE_BIGINT = new TArithmetic("/", MNumeric.BIGINT, MDouble.INSTANCE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -215,7 +219,7 @@ public class MArithmetic {
         }
     };
 
-    TArithmetic DIVIDE_DOUBLE = new TArithmetic("/", MDouble.INSTANCE, MDouble.INSTANCE.instance())
+   public static final TOverload DIVIDE_DOUBLE = new TArithmetic("/", MDouble.INSTANCE, MDouble.INSTANCE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -228,19 +232,19 @@ public class MArithmetic {
         }
     };
 
-    TArithmetic DIVIDE_DECIMAL = new TArithmetic("/", MNumeric.DECIMAL, null) { // TODO
+   public static final TOverload DIVIDE_DECIMAL = new TArithmetic("/", MNumeric.DECIMAL, (TInstance)null) { // TODO
         @Override 
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             output.putObject(getWrapper(context)
                         .add((BigDecimalWrapper)inputs.get(0).getObject())
                         .divide((BigDecimalWrapper)inputs.get(1).getObject(),
                                  context.outputTInstance().attribute(  // get the scale computed
-                                        MBigDecimal.Attrs.SCALE.ordinal()))); // during expr generation time
+                                        MBigDecimal.Attrs.SCALE))); // during expr generation time
         }
     };
     
     // Multiply functions
-    TArithmetic MULTIPLY_TINYINT = new TArithmetic("*", MNumeric.TINYINT, MNumeric.INT.instance(7)) {
+   public static final TOverload MULTIPLY_TINYINT = new TArithmetic("*", MNumeric.TINYINT, MNumeric.INT.instance(7)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt8();
@@ -249,7 +253,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic MULTIPLY_SMALLINT = new TArithmetic("*", MNumeric.SMALLINT, MNumeric.INT.instance(11)) {
+   public static final TOverload MULTIPLY_SMALLINT = new TArithmetic("*", MNumeric.SMALLINT, MNumeric.INT.instance(11)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int a0 = inputs.get(0).getInt16();
@@ -258,7 +262,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic MULTIPLY_MEDIUMINT = new TArithmetic("*", MNumeric.MEDIUMINT, MNumeric.BIGINT.instance(15)) {
+   public static final TOverload MULTIPLY_MEDIUMINT = new TArithmetic("*", MNumeric.MEDIUMINT, MNumeric.BIGINT.instance(15)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt32();
@@ -267,7 +271,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic MULTIPLY_INT = new TArithmetic("*", MNumeric.INT, MNumeric.BIGINT.instance(21)) {
+   public static final TOverload MULTIPLY_INT = new TArithmetic("*", MNumeric.INT, MNumeric.BIGINT.instance(21)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt32();
@@ -276,7 +280,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic MULTIPLY_BIGINT = new TArithmetic("*", MNumeric.BIGINT, MNumeric.BIGINT.instance(39)) {
+   public static final TOverload MULTIPLY_BIGINT = new TArithmetic("*", MNumeric.BIGINT, MNumeric.BIGINT.instance(39)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();
@@ -285,7 +289,7 @@ public class MArithmetic {
         }
     };
     
-    TArithmetic MULTIPLY_DECIMAL = new TArithmetic("*", MNumeric.DECIMAL, null) { // TODO
+   public static final TOverload MULTIPLY_DECIMAL = new TArithmetic("*", MNumeric.DECIMAL, (TInstance)null) { // TODO
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long a0 = inputs.get(0).getInt64();

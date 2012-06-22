@@ -26,6 +26,7 @@
 
 package com.akiban.server.expression.std;
 
+import java.util.Arrays;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -72,7 +73,7 @@ public class ReplaceExpressionTest extends ComposedExpressionTestBase
 
     private static void test (String st1, String st2, String st3, String expected)
     {
-        Expression top = new ReplaceExpression(getExp(st1), getExp(st2), getExp(st3));
+        Expression top = new ReplaceExpression(Arrays.asList(getExp(st1), getExp(st2), getExp(st3)));
         ValueSource source = top.evaluation().eval();
 
         if (expected == null)

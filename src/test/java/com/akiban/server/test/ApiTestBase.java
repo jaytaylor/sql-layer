@@ -86,9 +86,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.server.api.dml.scan.RowDataOutput;
 import com.akiban.server.service.config.Property;
-import com.akiban.server.service.memcache.HapiProcessorFactory;
 import com.akiban.server.store.PersistitStore;
-import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.store.Store;
 import com.akiban.util.ListUtils;
 
@@ -98,7 +96,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.TableStatistics;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.api.DMLFunctions;
-import com.akiban.server.api.HapiProcessor;
 import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
@@ -283,20 +280,20 @@ public class ApiTestBase {
         return sm.getSessionService().createSession();
     }
 
+    protected Collection<Property> defaultPropertiesToPreserveOnRestart() {
+        List<Property> properties = new ArrayList<Property>();
+        properties.add(new Property("akserver.datapath", treeService().getDataPath()));
+        return properties;
+    }
+
     public final void safeRestartTestServices() throws Exception {
-        final String datapath = serviceManager().getTreeService().getDataPath();
+        safeRestartTestServices(defaultPropertiesToPreserveOnRestart());
+    }
+
+    public final void safeRestartTestServices(Collection<Property> propertiesToPreserve) throws Exception {
         Thread.sleep(1000);  // Let journal flush
         crashTestServices(); // TODO: WHY doesn't this work with stop?
-        restartTestServices(Collections.singleton(new Property("akserver.datapath", datapath)));
-    }
-
-    protected final HapiProcessor hapi(HapiProcessorFactory whichHapi) {
-        memcache().setHapiProcessor(whichHapi);
-        return hapi();
-    }
-
-    protected final HapiProcessor hapi() {
-        return sm.getMemcacheService();
+        restartTestServices(propertiesToPreserve);
     }
     
     protected final DMLFunctions dml() {
@@ -336,10 +333,6 @@ public class ApiTestBase {
 
     protected final QueryContext queryContext(PersistitAdapter adapter) {
         return new SimpleQueryContext(adapter);
-    }
-
-    protected final MemcacheService memcache() {
-        return sm.getMemcacheService();
     }
 
     protected final RowDefCache rowDefCache() {
@@ -729,7 +722,7 @@ public class ApiTestBase {
         // Can't drop a parent before child. Get all to drop and sort children first (they always have higher id).
         List<Integer> allIds = new ArrayList<Integer>();
         for (Map.Entry<TableName, UserTable> entry : ddl().getAIS(session()).getUserTables().entrySet()) {
-            if (!"akiban_information_schema".equals(entry.getKey().getSchemaName())) {
+            if (!TableName.INFORMATION_SCHEMA.equals(entry.getKey().getSchemaName())) {
                 allIds.add(entry.getValue().getTableId());
             }
         }
@@ -739,7 +732,7 @@ public class ApiTestBase {
         }
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
-            if ("akiban_information_schema".equals(iter.next().getSchemaName())) {
+            if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
             }
         }
@@ -795,7 +788,11 @@ public class ApiTestBase {
     }
 
     protected final UserTable getUserTable(String schema, String name) {
-        return ddl().getUserTable(session(), tableName(schema, name));
+        return getUserTable(tableName(schema, name));
+    }
+
+    protected final UserTable getUserTable(TableName name) {
+        return ddl().getUserTable(session(), name);
     }
 
     protected final UserTable getUserTable(int tableId) {
@@ -822,7 +819,7 @@ public class ApiTestBase {
     private static <T extends Table> Map<TableName,T> stripAISTables(Map<TableName,T> map) {
         final Map<TableName,T> ret = new HashMap<TableName, T>(map);
         for(Iterator<TableName> iter=ret.keySet().iterator(); iter.hasNext(); ) {
-            if("akiban_information_schema".equals(iter.next().getSchemaName())) {
+            if(TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
             }
         }

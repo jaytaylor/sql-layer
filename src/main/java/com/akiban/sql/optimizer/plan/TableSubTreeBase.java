@@ -26,8 +26,6 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.rowdata.RowDef;
-
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;

@@ -26,12 +26,15 @@
 
 package com.akiban.server.types3.playground;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
 public final class XInt extends TClass {
 
@@ -55,7 +58,7 @@ public final class XInt extends TClass {
     }
 
     private XInt() {
-        super(XBund.ID, "xint", new Attribute[]{}, 1, 1, 4, PUnderlying.INT_32);
+        super(XBund.ID, "xint", Attribute.NONE.class, 1, 1, 4, PUnderlying.INT_32);
     }
 
     public static final XInt TYPE_CLASS = new XInt();
@@ -67,4 +70,10 @@ public final class XInt extends TClass {
             return instance();
         }
     };
+
+    @Override
+    public void putSafety(QueryContext context, TInstance sourceInstance, PValueSource sourceValue, TInstance targetInstance, PValueTarget targetValue)
+    {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 }

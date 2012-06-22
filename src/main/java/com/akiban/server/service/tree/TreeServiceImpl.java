@@ -458,7 +458,6 @@ public class TreeServiceImpl
             if (volume.getAppCache() == null) {
                 volume.setAppCache(Integer.valueOf(volumeOffsetCounter));
                 volumeOffsetCounter += MAX_TABLES_PER_VOLUME;
-                tableStatusCache.loadAllInVolume(volume.getName());
             }
             return volume;
         } catch (InvalidVolumeSpecificationException e) {

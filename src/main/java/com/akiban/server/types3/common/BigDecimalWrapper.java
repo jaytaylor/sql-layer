@@ -34,7 +34,14 @@ public interface BigDecimalWrapper {
      BigDecimalWrapper multiply(BigDecimalWrapper augend);
      BigDecimalWrapper divide(BigDecimalWrapper augend);
      BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
-     int getSign();
+     BigDecimalWrapper parseString(String num);
+     BigDecimalWrapper round (int precision, int scale);
+     BigDecimalWrapper negate();
      BigDecimalWrapper abs();
+     
+     int compareTo (Object o);
+     int getScale();
+     int getPrecision();
+     int getSign();
      void reset();
 }

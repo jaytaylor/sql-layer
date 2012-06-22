@@ -27,6 +27,8 @@
 package com.akiban.server.store.statistics;
 
 import com.akiban.ais.model.*;
+import com.akiban.ais.model.aisb2.AISBBasedBuilder;
+import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
@@ -56,6 +58,8 @@ import java.io.IOException;
 
 public class IndexStatisticsServiceImpl implements IndexStatisticsService, Service<IndexStatisticsService>, JmxManageable
 {
+    private final static int INDEX_STATISTICS_TABLE_VERSION = 1;
+
     private static final Logger log = LoggerFactory.getLogger(IndexStatisticsServiceImpl.class);
 
     private final PersistitStore store;
@@ -93,6 +97,39 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         store.setIndexStatistics(this);
         cache = Collections.synchronizedMap(new WeakHashMap<Index,IndexStatistics>());
         storeStats = new PersistitStoreIndexStatistics(store, treeService, this);
+        registerStatsTables();
+    }
+
+    private static AkibanInformationSchema createStatsTables() {
+        NewAISBuilder builder = AISBBasedBuilder.create(INDEX_STATISTICS_TABLE_NAME.getSchemaName());
+        builder.userTable(INDEX_STATISTICS_TABLE_NAME.getTableName())
+                .colLong("table_id", false)
+                .colLong("index_id", false)
+                .colTimestamp("analysis_timestamp", true)
+                .colBigInt("row_count", true)
+                .colBigInt("sampled_count", true)
+                .pk("table_id", "index_id");
+        builder.userTable(INDEX_STATISTICS_ENTRY_TABLE_NAME.getTableName())
+                .colLong("table_id", false)
+                .colLong("index_id", false)
+                .colLong("column_count", false)
+                .colLong("item_number", false)
+                .colString("key_string", 2048, true, "latin1")
+                .colVarBinary("key_bytes", 4096, true)
+                .colBigInt("eq_count", true)
+                .colBigInt("lt_count", true)
+                .colBigInt("distinct_count", true)
+                .pk("table_id", "index_id", "column_count", "item_number")
+                .joinTo(INDEX_STATISTICS_TABLE_NAME.getSchemaName(), INDEX_STATISTICS_TABLE_NAME.getTableName(), "fk_0")
+                    .on("table_id", "table_id")
+                    .and("index_id", "index_id");
+        return builder.ais(true);
+    }
+
+    private void registerStatsTables() {
+        AkibanInformationSchema ais = createStatsTables();
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
+        schemaManager.registerStoredInformationSchemaTable(ais.getUserTable(INDEX_STATISTICS_ENTRY_TABLE_NAME), INDEX_STATISTICS_TABLE_VERSION);
     }
 
     @Override
@@ -111,7 +148,12 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public long countEntries(Session session, Index index) throws PersistitInterruptedException {
         if (index.isTableIndex()) {
-            return store.getTableStatus(((TableIndex)index).getTable()).getRowCount();
+            final UserTable table = (UserTable)((TableIndex)index).getTable();
+            if (table.hasMemoryTableFactory()) {
+                return table.getMemoryTableFactory().rowCount();
+            } else {
+                return store.getTableStatus(table).getRowCount();
+            }
         }
         final Exchange ex = store.getExchange(session, index);
         try {
@@ -173,7 +215,27 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
-        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics> (indexes.size());
+
+        if (indexes.size() > 0) {
+            final Index first = indexes.iterator().next();
+            final UserTable table =  (UserTable)first.rootMostTable();
+            if (table.hasMemoryTableFactory()) {
+                updates.putAll(updateMemoryTableIndexStatistics (session, indexes));
+            } else {
+                updates.putAll(updatePersistitTableIndexStatistics (session, indexes));
+            }
+        }        
+        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
+            @Override
+            public void run() {
+                cache.putAll(updates);
+            }
+        });
+    }
+    
+    private Map<Index,IndexStatistics> updatePersistitTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
+        Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
             try {
                 IndexStatistics indexStatistics = 
@@ -196,12 +258,23 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
                 throw e;
             }
         }
-        DXLTransactionHook.addCommitSuccessCallback(session, new Runnable() {
-            @Override
-            public void run() {
-                cache.putAll(updates);
+        return updates;
+    }
+    
+    private Map<Index,IndexStatistics> updateMemoryTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
+        Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
+        IndexStatistics indexStatistics;
+        for (Index index : indexes) {
+            // memory store, when it calculates index statistics, and supports group indexes
+            // will work on the root table. 
+            final UserTable table =  (UserTable)index.rootMostTable();
+            indexStatistics = table.getMemoryTableFactory().computeIndexStatistics(session, index);
+
+            if (indexStatistics != null) {
+                updates.put(index, indexStatistics);
             }
-        });
+        }
+        return updates;
     }
 
     @Override

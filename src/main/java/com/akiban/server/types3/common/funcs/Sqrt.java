@@ -35,11 +35,11 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public abstract class Sqrt extends TOverloadBase {
+public class Sqrt extends TOverloadBase {
 
     private final TClass type; 
     
-    protected Sqrt(TClass type) {
+    public Sqrt(TClass type) {
         this.type = type;
     }
       

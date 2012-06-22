@@ -4,5 +4,5 @@ SelectQuery@47d978ea
       Select@6a24eafa[]
         AggregateSource@1dbef987(SORT,[items.quan],[])
           Select@64f01d52[]
-            TableJoins@50152643(TableGroup@1c8321c8(customers) - IndexScan@651ee017(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =$0))
+            TableJoins@50152643(TableGroup@1c8321c8(customers) - SingleIndexScan@651ee017(Index(test.items.__akiban_fk_1[IndexColumn(oid)]), NONE, =$0))
               TableSource@354124d6(items - TableGroup@1c8321c8(customers))

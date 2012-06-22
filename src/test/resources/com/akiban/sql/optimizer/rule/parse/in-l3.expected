@@ -1,7 +1,7 @@
 SelectQuery@6e92b1a1
   ResultSet@68c0890f[cid, name]
     Project@38666d83[customers.cid, customers.name]
-      Select@6f7918f0[ANY(@40b86944)]
+      Select@6f7918f0[ANY(Subquery@40b86944)]
         TableSource@47f08ed8(customers)
 
 Subquery@40b86944

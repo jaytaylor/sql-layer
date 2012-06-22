@@ -28,9 +28,7 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupTable;
-import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.GroupMissingTableColumnException;
 import com.akiban.server.error.TableColumnNotInGroupException;

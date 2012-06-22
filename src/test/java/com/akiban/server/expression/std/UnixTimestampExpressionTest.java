@@ -28,8 +28,6 @@ package com.akiban.server.expression.std;
 
 import org.junit.Before;
 import java.text.ParseException;
-import java.text.SimpleDateFormat;
-import java.text.DateFormat;
 import org.joda.time.DateTime;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;

@@ -26,9 +26,6 @@
 
 package com.akiban.server.test.costmodel;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public abstract class CostModelColumn
 {
     public final String name()

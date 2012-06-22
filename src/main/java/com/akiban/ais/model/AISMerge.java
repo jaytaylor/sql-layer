@@ -47,11 +47,10 @@ import java.util.Set;
  * AISMerge makes a copy of the primaryAIS (from the constructor) before performing the merge process. 
  * The final results is this copies AIS, plus new table, with the full AISValidations suite run, and 
  * frozen. If you pass a frozen AIS into the merge, the copy process unfreeze the copy.
- * 
- * @See UserTable
- * @See AkibanInformationSchema
  */
 public class AISMerge {
+    private static final int AIS_TABLE_ID_OFFSET = 1000000000;
+
     /* state */
     private AkibanInformationSchema targetAIS;
     private UserTable sourceTable;
@@ -63,7 +62,6 @@ public class AISMerge {
      * 
      * @param primaryAIS - where the table will end up
      * @param newTable - UserTable to merge into the primaryAIS
-     * @throws Exception
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
         targetAIS = new AkibanInformationSchema();
@@ -95,7 +93,11 @@ public class AISMerge {
         LOG.info(String.format("Merging table %s into targetAIS", sourceTable.getName().toString()));
 
         final AISBuilder builder = new AISBuilder(targetAIS, nameGenerator);
-        builder.setTableIdOffset(computeTableIdOffset(targetAIS));
+        if(TableName.INFORMATION_SCHEMA.equals(sourceTable.getName().getSchemaName())) {
+            builder.setTableIdOffset(computeAISTableIdOffset(targetAIS));
+        } else {
+            builder.setTableIdOffset(computeTableIdOffset(targetAIS));
+        }
 
         if (sourceTable.getParentJoin() != null) {
             String parentSchemaName = sourceTable.getParentJoin().getParent().getName().getSchemaName();
@@ -235,7 +237,7 @@ public class AISMerge {
     private void dumpGroupStructure(String label, AkibanInformationSchema ais)
     {
         for (Group group : ais.getGroups().values()) {
-            if (!group.getGroupTable().getRoot().getName().getSchemaName().equals("akiban_information_schema")) {
+            if (!group.getGroupTable().getRoot().getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
                 System.out.println(String.format("%s: Group %s", label, group.getName()));
                 System.out.println("    tables:");
                 for (UserTable userTable : ais.getUserTables().values()) {
@@ -254,23 +256,39 @@ public class AISMerge {
     }
 */
 
-    private int computeTableIdOffset(AkibanInformationSchema ais) {
+    private static int computeTableIdOffset(AkibanInformationSchema ais) {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
-        int offset = 1;
+        return computeTableIdOffset(ais, 1, false);
+    }
+
+    private static int computeAISTableIdOffset(AkibanInformationSchema ais) {
+        return computeTableIdOffset(ais, AIS_TABLE_ID_OFFSET, true);
+    }
+
+    private static int computeTableIdOffset(AkibanInformationSchema ais, int offset, boolean includeAIS) {
         for(UserTable table : ais.getUserTables().values()) {
-            if(!table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
+            if(table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
+                if(includeAIS) {
+                    offset = Math.max(offset, table.getTableId() + 1);
+                }
+            } else {
                 offset = Math.max(offset, table.getTableId() + 1);
             }
         }
         for (GroupTable table : ais.getGroupTables().values()) {
-            if (!table.getName().getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA)) {
+            if (table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
+                if(includeAIS) {
+                    offset = Math.max(offset, table.getTableId() + 1);
+                }
+            } else {
                 offset = Math.max(offset, table.getTableId() + 1);
+
             }
         }
         return offset;
     }
 
-    private int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
+    private static int computeIndexIDOffset (AkibanInformationSchema ais, String groupName) {
         int offset = 1;
         Group group = ais.getGroup(groupName);
         for(UserTable table : ais.getUserTables().values()) {

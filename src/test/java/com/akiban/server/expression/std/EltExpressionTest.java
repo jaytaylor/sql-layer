@@ -103,7 +103,7 @@ public class EltExpressionTest extends ComposedExpressionTestBase
     @Test(expected=WrongExpressionArityException.class)
     public void testNegative()
     {
-        EltExpression.COMPOSER.compose(input);
+        compose(EltExpression.COMPOSER, input);
         alreadyExc = true;
     }
     

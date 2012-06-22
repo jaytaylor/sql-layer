@@ -26,14 +26,12 @@
 
 package com.akiban.server.service;
 
-import com.akiban.server.AkServer;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.jmx.JmxRegistryService;
-import com.akiban.server.service.memcache.MemcacheService;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.tree.TreeService;
@@ -54,10 +52,8 @@ public interface ServiceManager {
     AkServerInterface getAkSserver();
 
     Store getStore();
-    
-    TreeService getTreeService();
 
-    MemcacheService getMemcacheService();
+    TreeService getTreeService();
 
     PostgresService getPostgresService();
 

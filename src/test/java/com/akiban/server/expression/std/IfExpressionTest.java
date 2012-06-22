@@ -26,7 +26,6 @@
 
 package com.akiban.server.expression.std;
 
-import java.util.List;
 import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.junit.OnlyIfNot;
 import com.akiban.junit.OnlyIf;
