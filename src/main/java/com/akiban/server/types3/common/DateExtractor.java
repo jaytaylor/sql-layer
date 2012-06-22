@@ -53,7 +53,7 @@ public class DateExtractor {
     private static final int DATE_INDEX = 0;   
     public static final long BEGINNING = new MutableDateTime(0,0,1,0,0,0,0).getMillis();
     public static final long DAY_FACTOR = 3600L * 1000 * 24;
-
+    
     public static long[] extract(long value) {
         final long year = (value / DATETIME_YEAR_SCALE);
         final long month = (value / DATETIME_MONTH_SCALE) % 100;

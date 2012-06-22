@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.DateExtractor;
+import com.akiban.server.types3.common.UnitValue;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -41,10 +42,14 @@ import org.joda.time.MutableDateTime;
 public abstract class MDatetimeArith extends TOverloadBase {
     
     private final String name;
-    public enum UnitValue { OTHER, HOUR, MINUTE, SECOND };
     
     public static TOverload DATE_ADD = new MDatetimeArith("DATE_ADD") {
 
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            buildTwoTypeInputSets(builder);
+        }
+                
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(input);
@@ -63,6 +68,11 @@ public abstract class MDatetimeArith extends TOverloadBase {
     public static TOverload DATE_SUB = new MDatetimeArith("DATE_SUB") {
 
         @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            buildTwoTypeInputSets(builder);
+        }
+                
+        @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
             long date = DateExtractor.toDatetime(datetime.getYear(), datetime.getMonthOfYear(), 
@@ -80,6 +90,11 @@ public abstract class MDatetimeArith extends TOverloadBase {
     public static TOverload SUBTIME = new MDatetimeArith("SUBTIME") {
 
         @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            buildOneTypeInputSets(builder);
+        }
+                
+        @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
             output.putInt32((int) (datetime.getMillis() / DateExtractor.DAY_FACTOR));
@@ -92,7 +107,12 @@ public abstract class MDatetimeArith extends TOverloadBase {
     };
     
     public static TOverload ADDTIME = new MDatetimeArith("ADDTIME") {
-
+       
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            buildOneTypeInputSets(builder);
+        }
+        
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(input);
@@ -110,6 +130,11 @@ public abstract class MDatetimeArith extends TOverloadBase {
     public static TOverload DATEDIFF = new MDatetimeArith("DATEDIFF") {
 
         @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            buildOneTypeInputSets(builder);
+        }
+                
+        @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
             output.putInt32((int) (datetime.getMillis() / DateExtractor.DAY_FACTOR));
@@ -123,6 +148,11 @@ public abstract class MDatetimeArith extends TOverloadBase {
     
     public static TOverload TIMEDIFF = new MDatetimeArith("TIMEDIFF") {
 
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            buildOneTypeInputSets(builder);
+        }
+        
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
@@ -156,8 +186,12 @@ public abstract class MDatetimeArith extends TOverloadBase {
         evaluate(value, datetime, output);
     }
     
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
+    protected void buildTwoTypeInputSets(TInputSetBuilder builder) {
+        builder.covers(MDatetimes.DATETIME, 0, 1);
+        builder.covers(MNumeric.INT, 2);
+    }
+    
+    protected void buildOneTypeInputSets(TInputSetBuilder builder) {
         builder.covers(MDatetimes.DATETIME, 0, 1);
     }
         
@@ -172,10 +206,10 @@ public abstract class MDatetimeArith extends TOverloadBase {
             @Override
             public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
                 TClass typeClass = inputs.get(0).instance().typeClass();
-                UnitValue val = (UnitValue) inputs.get(2).value().getObject();
+                int val =  inputs.get(2).value().getInt32();
                 if (typeClass == MDatetimes.DATETIME || typeClass == MDatetimes.TIMESTAMP
-                        || (typeClass == MDatetimes.DATE && val == UnitValue.HOUR || val == UnitValue.MINUTE 
-                        || val == UnitValue.SECOND)) {
+                        || (typeClass == MDatetimes.DATE && val == UnitValue.HOUR 
+                        || val == UnitValue.MINUTE || val == UnitValue.SECOND)) {
                     return MDatetimes.DATETIME.instance();
                 }
                 return MString.VARCHAR.instance();
