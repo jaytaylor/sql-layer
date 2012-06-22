@@ -36,8 +36,6 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 import org.joda.time.MutableDateTime;
 
 public abstract class MUnixTimestamp extends TOverloadBase {
-
-    private static final int DATE_INDEX = 0; 
     
     public static final TOverload INSTANCE = new MUnixTimestamp() {
          @Override
@@ -49,13 +47,8 @@ public abstract class MUnixTimestamp extends TOverloadBase {
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 long input = inputs.get(0).getInt64();
 
-                long[] datetime = DateExtractor.getDatetime(input);
-                MutableDateTime date = (MutableDateTime) context.exectimeObjectAt(DATE_INDEX);
-                if (date == null) {
-                    context.putExectimeObject(DATE_INDEX, date = new MutableDateTime());
-                }
-                date.setDateTime((int)datetime[0], (int)datetime[1], (int)datetime[2], 
-                            (int)datetime[3], (int)datetime[4], (int)datetime[5], 0);
+                long[] datetime = DateExtractor.extract(input);
+                MutableDateTime date = DateExtractor.getMutableDateTime(context, datetime, true);
                 int millis = (int) date.getMillis();
                 output.putInt32(millis <= 0 ? 0 : millis);
             }
