@@ -119,6 +119,7 @@ public class Cast_From_Bigint
             return specifiedTarget;
         }
     };
+
         
     //TODO: add more
     private static final BigInteger MAX = new BigInteger("18446744073709551615");

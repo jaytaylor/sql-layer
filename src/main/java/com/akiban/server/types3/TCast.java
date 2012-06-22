@@ -41,6 +41,8 @@ public interface TCast {
      * @param context
      * @param preptimeInput
      * @param specifiedTarget each cast expression specifies the exact TInstance that it is casting to
+     * 
+     * TODO: We may not need this method, or have it as a setter (rather than a getter)
      * @return 
      */
     public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget);
