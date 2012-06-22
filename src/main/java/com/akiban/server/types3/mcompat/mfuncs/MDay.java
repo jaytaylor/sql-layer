@@ -101,7 +101,7 @@ public class MDay extends TOverloadBase{
         long[] datetime = DateExtractor.extract(inputs.get(0).getInt64());
         MutableDateTime cal = DateExtractor.getMutableDateTime(context, datetime, true);
         
-        if (!DateExtractor.validHrMinSec(datetime) || !DateExtractor.validDayMonth(datetime)) output.putNull();
+        if (!DateExtractor.validHrMinSec(context, datetime) || !DateExtractor.validDayMonth(context, datetime)) output.putNull();
         else output.putInt32((int)(dateType.evaluate(cal, datetime)));
     }
 
