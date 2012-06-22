@@ -101,7 +101,7 @@ public class MDay extends TOverloadBase{
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         long[] datetime = DateExtractor.extract(inputs.get(0).getInt64());
-        MutableDateTime cal = DateExtractor.getMutableDateTime(context, datetime, false);
+        MutableDateTime cal = DateExtractor.getMutableDateTime(context, datetime, true);
         
         if (!DateExtractor.validHrMinSec(datetime) || !DateExtractor.validDayMonth(datetime)) output.putNull();
         else output.putInt32((int)(dateType.evaluate(cal, datetime)));
