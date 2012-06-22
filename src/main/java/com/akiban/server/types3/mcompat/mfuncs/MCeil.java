@@ -23,26 +23,11 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common;
 
-import java.math.BigDecimal;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-public interface BigDecimalWrapper {
-    
-     BigDecimalWrapper add(BigDecimalWrapper augend);
-     BigDecimalWrapper subtract(BigDecimalWrapper augend);
-     BigDecimalWrapper multiply(BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend);
-     BigDecimalWrapper ceil();
-     BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
-     BigDecimalWrapper parseString(String num);
-     BigDecimalWrapper round (int precision, int scale);
-     BigDecimalWrapper negate();
-     BigDecimalWrapper abs();
-     
-     int compareTo (Object o);
-     int getScale();
-     int getPrecision();
-     int getSign();
-     void reset();
+import com.akiban.server.types3.TOverload;
+
+public class MCeil {
+    public static final TOverload[] INSTANCES = MCeilBase.create();
 }
