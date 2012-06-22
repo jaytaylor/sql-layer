@@ -24,29 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.server.types3.TOverload;
 
-public abstract class TNoAttrCastBase extends TCastBase {
-
-    @Override
-    public TClass targetClass() {
-        return tClass;
-    }
-
-    @Override
-    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specified) {
-        return tClass.instance();
-    }
-
-    protected TNoAttrCastBase(NoAttrTClass tClass) {
-        this.tClass = tClass;
-    }
-
-    private final NoAttrTClass tClass;
+public class MCeil {
+    public static final TOverload[] INSTANCES = MCeilBase.create();
 }
