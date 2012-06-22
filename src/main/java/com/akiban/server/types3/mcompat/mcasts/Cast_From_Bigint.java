@@ -251,7 +251,7 @@ public class Cast_From_Bigint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             long ymd[] = MDatetimes.fromDate(source.getInt64());
-            if (!MDatetimes.isValidDate(ymd))
+            if (!MDatetimes.isValidDatetime(ymd))
             {
                 context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
                 target.putNull();
@@ -275,7 +275,7 @@ public class Cast_From_Bigint
         {
             long raw = source.getInt64();
             long ymd[] = MDatetimes.fromDatetime(raw);
-                        if (!MDatetimes.isValidDate(ymd))
+                        if (!MDatetimes.isValidDatetime(ymd))
             {
                 context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
                 target.putNull();
@@ -314,7 +314,7 @@ public class Cast_From_Bigint
         {
             long raw = source.getInt64();
             long ymd[] = MDatetimes.fromTime(raw);
-                        if (!MDatetimes.isValidDate(ymd))
+                        if (!MDatetimes.isValidDatetime(ymd))
             {
                 context.warnClient(new InvalidParameterValueException("Invalid TIME values: " + raw));
                 target.putNull();

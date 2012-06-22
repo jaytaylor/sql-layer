@@ -101,6 +101,9 @@ public class MDatetimes {
     {
         return new long[]
         {
+            1970,
+            1,
+            1,
             val / DATETIME_HOUR_SCALE,
             val / DATETIME_MIN_SCALE % 100,
             val % 100
