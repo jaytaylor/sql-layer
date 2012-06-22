@@ -45,4 +45,88 @@ public class MDatetimes {
             "year", 1, 1, 1, PUnderlying.INT_8);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
             "timestamp", 1, 1, 4, PUnderlying.INT_32);
+    
+    public static long[] fromEncodedDate(long val)
+    {
+        return new long[]
+        {
+            val / 512,
+            val / 32 % 16,
+            val % 32
+        };
+    }
+    
+    public static int encodeDate (long ymd[])
+    {
+        return (int)(ymd[YEAR_INDEX] * 512 + ymd[MONTH_INDEX] * 32 + ymd[DAY_INDEX]);
+    }
+    
+    public static long[] fromDate(long val)
+    {
+        return new long[]
+        {
+            val / DATE_YEAR,
+            val / DATE_MONTH % DATE_MONTH,
+            val % DATE_MONTH,
+            0,
+            0,
+            0
+        };
+    }
+    
+    public static long[] fromDatetime (long val)
+    {
+        return new long[]
+        {
+            val / DATETIME_YEAR_SCALE,
+            val / DATETIME_MONTH_SCALE % 100,
+            val / DATETIME_DAY_SCALE % 100,
+            val / DATETIME_HOUR_SCALE % 100,
+            val / DATETIME_MIN_SCALE % 100,
+            val % 100
+        };
+    }
+
+    public static long encodeDatetime(long ymd[])
+    {
+        return ymd[YEAR_INDEX] * DATETIME_YEAR_SCALE 
+                + ymd[MONTH_INDEX] * DATETIME_MONTH_SCALE
+                + ymd[DAY_INDEX] * DATETIME_DAY_SCALE
+                + ymd[HOUR_INDEX] * DATETIME_HOUR_SCALE
+                + ymd[MIN_INDEX] * DATETIME_MIN_SCALE
+                + ymd[SEC_INDEX];
+    }
+    
+    public static long[] fromTime(long val)
+    {
+        return new long[]
+        {
+            val / DATETIME_HOUR_SCALE,
+            val / DATETIME_MIN_SCALE % 100,
+            val % 100
+        };
+    }
+    
+    public static boolean isValidDate (long val[])
+    {
+        // TODO
+        return true;
+    }
+    
+    public static final int YEAR_INDEX = 0;
+    public static final int MONTH_INDEX = 1;
+    public static final int DAY_INDEX = 2;
+    public static final int HOUR_INDEX = 3;
+    public static final int MIN_INDEX = 4;
+    public static final int SEC_INDEX = 5;
+    
+    private static final int DATE_YEAR = 10000;
+    private static final int DATE_MONTH = 100;
+
+    private static final long DATETIME_DATE_SCALE = 1000000L;
+    private static final long DATETIME_YEAR_SCALE = 10000L * DATETIME_DATE_SCALE;
+    private static final long DATETIME_MONTH_SCALE = 100L * DATETIME_DATE_SCALE;
+    private static final long DATETIME_DAY_SCALE = 1L * DATETIME_DATE_SCALE;
+    private static final long DATETIME_HOUR_SCALE = 10000L;
+    private static final long DATETIME_MIN_SCALE = 100L;
 }

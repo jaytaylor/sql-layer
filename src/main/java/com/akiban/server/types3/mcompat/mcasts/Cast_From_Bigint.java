@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -36,10 +37,12 @@ import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 import java.math.BigInteger;
+import org.joda.time.MutableDateTime;
 
 public class Cast_From_Bigint
 {
@@ -247,7 +250,92 @@ public class Cast_From_Bigint
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
+            long ymd[] = MDatetimes.fromDate(source.getInt64());
+            if (!MDatetimes.isValidDate(ymd))
+            {
+                context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
+                target.putNull();
+            }
+            else
+                target.putInt32(MDatetimes.encodeDate(ymd));
+        }
+    };
+
+
+    public static final TCast TO_DATETIME = new TCastBase(MNumeric.BIGINT, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
             throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            long raw = source.getInt64();
+            long ymd[] = MDatetimes.fromDatetime(raw);
+                        if (!MDatetimes.isValidDate(ymd))
+            {
+                context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
+                target.putNull();
+            }
+            else
+                target.putInt64(raw);
+        }
+    };
+    
+    public static final TCast TO_TIMESTAMP = new TCastBase(MNumeric.BIGINT, MDatetimes.TIMESTAMP, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // TIMESTAMPE is underlied by INT32
+            target.putInt32((int)getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64()));
+        }
+    };
+    
+    public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDatetimes.TIME, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            long raw = source.getInt64();
+            long ymd[] = MDatetimes.fromTime(raw);
+                        if (!MDatetimes.isValidDate(ymd))
+            {
+                context.warnClient(new InvalidParameterValueException("Invalid TIME values: " + raw));
+                target.putNull();
+            }
+            else
+                target.putInt64(raw);
+        }
+    };
+    
+    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.BIGINT, MString.VARCHAR, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putObject(Long.toString(source.getInt64()));
         }
     };
     
