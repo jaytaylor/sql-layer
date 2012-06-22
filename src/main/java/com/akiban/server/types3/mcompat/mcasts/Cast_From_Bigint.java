@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
-import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.CastContext;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
@@ -65,9 +64,9 @@ public class Cast_From_Bigint
     public static final TCast TO_TINYINT = new TCastBase(MNumeric.BIGINT, MNumeric.TINYINT, false, Constantness.UNKNOWN)
     {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
-            target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), castContext(), context));
+            target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), castContext, context));
         }
 
         @Override
@@ -80,10 +79,10 @@ public class Cast_From_Bigint
     public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MNumeric.BIGINT, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN)
     {
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             // TODO: take the two's complement of the negative value?
-            target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), castContext(), context));
+            target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), castContext, context));
         }
 
         @Override
@@ -102,9 +101,9 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
-            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), castContext(), context));
+            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), castContext, context));
         }
     };
 
@@ -118,10 +117,10 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             // TODO: take the two's complement of signed ==> unsigned
-            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), castContext(), context));
+            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), castContext, context));
         }
     };
     
@@ -134,9 +133,9 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32(), castContext(), context));
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32(), castContext, context));
         }
         
     };
@@ -150,10 +149,10 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             // TODO: signed vs unsigned
-            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32(), castContext(), context));
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32(), castContext, context));
         }
         
     };
@@ -167,7 +166,7 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             target.putValueSource(source);
         }   
@@ -182,7 +181,7 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             // TODO: signed vs unsigned
             target.putValueSource(source);
@@ -198,7 +197,7 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             target.putObject(new MBigDecimalWrapper(source.getInt64()));
         }
@@ -213,7 +212,7 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt64());
         }   
@@ -228,12 +227,12 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             long ymd[] = MDatetimes.fromDate(source.getInt64());
             if (!MDatetimes.isValidDatetime(ymd))
             {
-                castContext().reportError("Invalid datetime values", context);
+                castContext.reportError("Invalid datetime values", context);
                 target.putNull();
             }
             else
@@ -251,13 +250,13 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             long raw = source.getInt64();
             long ymd[] = MDatetimes.fromDatetime(raw);
                         if (!MDatetimes.isValidDatetime(ymd))
             {
-                castContext().reportError("Invalid datetime values", context);
+                castContext.reportError("Invalid datetime values", context);
                 target.putNull();
             }
             else
@@ -274,10 +273,10 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             // TIMESTAMPE is underlied by INT32
-            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64(), castContext(), context));
+            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64(), castContext, context));
         }
     };
     
@@ -290,13 +289,13 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             long raw = source.getInt64();
             long ymd[] = MDatetimes.fromTime(raw);
                         if (!MDatetimes.isValidDatetime(ymd))
             {
-                castContext().reportError("Invalid datetime values", context);
+                castContext.reportError("Invalid datetime values", context);
                 target.putNull();
             }
             else
@@ -313,7 +312,7 @@ public class Cast_From_Bigint
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
             target.putObject(Long.toString(source.getInt64()));
         }

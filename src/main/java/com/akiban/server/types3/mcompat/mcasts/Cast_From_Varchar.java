@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.error.StringTruncationException;
+import com.akiban.server.types3.CastContext;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -42,7 +43,7 @@ import com.akiban.server.types3.texpressions.Constantness;
 /**
  * 
  * This implements a MySQL compatible cast from STRING.
- * ('Compatible' in that it the String is parsed as much as possible.)
+ * ('Compatible' in that the String is parsed as much as possible.)
  * 
  */
 public class Cast_From_Varchar
@@ -51,24 +52,11 @@ public class Cast_From_Varchar
     {
 
         @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
         {
-            String st = (String) source.getObject();
-            String truncated;
-            
-            // first attempt
-            try
-            {
-                target.putInt8((byte)CastUtils.getInRange(Long.parseLong(st), Byte.MAX_VALUE, Byte.MIN_VALUE, castContext(), context));
-                return;
-            }
-            catch (NumberFormatException e)
-            {
-                castContext().reportError("Truncated " + st + " to " + (truncated = CastUtils.truncateNonDigits(st)), context);
-            }
-            
-            // second attempt
-            target.putInt8((byte)CastUtils.getInRange(Long.parseLong(truncated), Byte.MAX_VALUE, Byte.MIN_VALUE, castContext(), context));
+            target.putInt8((byte)tryParse((String)source.getObject(), 
+                                         Byte.MAX_VALUE, Byte.MIN_VALUE, 
+                                         context, castContext));
         }
 
         @Override
@@ -78,7 +66,39 @@ public class Cast_From_Varchar
         }
     };
     
+    public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT_UNSIGNED, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, CastContext castContext, PValueSource source, PValueTarget target)
+        {
+            // TODO: signed v
+        }   
+    };
        
+    
+    private static long tryParse(String st, long max, long min, TExecutionContext context, CastContext castContext)
+    {
+        String truncated;
+        // first attempt
+        try
+        {
+            return CastUtils.getInRange(Long.parseLong(st), max, min, castContext, context);
+        }
+        catch (NumberFormatException e)
+        {
+            castContext.reportError("Truncated " + st + " to " + (truncated = CastUtils.truncateNonDigits(st)), context);
+        }
+        
+        // second attempt
+        return CastUtils.getInRange(Long.parseLong(truncated), max, min, castContext, context);
+    }
+    
     // TODO: add more
   
 }
