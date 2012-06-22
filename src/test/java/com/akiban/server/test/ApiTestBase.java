@@ -203,7 +203,9 @@ public class ApiTestBase {
                     needServicesRestart = false; // clear the flag if it was set
                     stopTestServices();
                 }
-                if (!AkServerUtil.cleanUpDirectory(TestConfigService.dataDirectory())) {
+                int attempt = 1;
+                while (!AkServerUtil.cleanUpDirectory(TestConfigService.dataDirectory())) {
+                    assertTrue("Too many directory failures", (attempt++ < 10));
                     TestConfigService.newDataDirectory();
                 }
                 assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
