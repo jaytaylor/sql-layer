@@ -38,7 +38,6 @@ import org.joda.time.MutableDateTime;
 
 public abstract class MToDatetime extends TOverloadBase{
     
-    private static final int TIME_INDEX = 0; 
     private static final long SECONDS_FACTOR = 100L;
     
     public static final TOverload TO_DAYS = new MToDatetime() {
