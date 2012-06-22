@@ -45,9 +45,7 @@ import org.joda.time.MutableDateTime;
 
 public class MDay extends TOverloadBase{
     
-    private static final int ZERO_INDEX = 0;
-    
-    static enum DateType {
+     static enum DateType {
         DAY {
             @Override
             long evaluate(MutableDateTime cal, long[] input)
