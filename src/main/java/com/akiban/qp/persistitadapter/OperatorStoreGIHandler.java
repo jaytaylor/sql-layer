@@ -81,7 +81,7 @@ class OperatorStoreGIHandler {
                     PValueSource source = row.pvalue(flattenedIndex);
                     TInstance sourceInstance = row.tinstance(flattenedIndex);
                     TClass sourceClass = sourceInstance.typeClass();
-                    sourceClass.writeCanonical(source, sourceInstance, pTarget);
+                    sourceClass.writeCollating(source, sourceInstance, pTarget);
                 }
                 else {
                     ValueSource source = row.eval(flattenedIndex);

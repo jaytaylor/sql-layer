@@ -190,7 +190,7 @@ class PersistitHKey implements HKey
     
     private PersistitKeyPValueSource pSource(int i) 
     {
-      if (pSources == null) {
+        if (pSources == null) {
             assert underlyingTypes == null;
             pSources = new PersistitKeyPValueSource[hKeyMetadata.nColumns()];
             underlyingTypes = new PUnderlying[hKeyMetadata.nColumns()];
@@ -199,7 +199,7 @@ class PersistitHKey implements HKey
             }
         }
         if (pSources[i] == null) {
-            pSources[i] = new PersistitKeyPValueSource();
+            pSources[i] = new PersistitKeyPValueSource(underlyingTypes[i]);
             pSources[i].attach(hKey, keyDepth[i], underlyingTypes[i]);
         } else {
             // TODO: Add state tracking whether hkey has been changed (e.g. by useSegments). Avoid attach calls

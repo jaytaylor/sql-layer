@@ -37,9 +37,14 @@ public class PersistitKeyPValueSource implements PValueSource {
     // object state
     private Key key;
     private int depth;
-    private PUnderlying pUnderlying = null;
-    private PValue output = new PValue(null);
+    private PUnderlying pUnderlying;
+    private PValue output;
     private boolean needsDecoding = true;
+    
+    public PersistitKeyPValueSource(PUnderlying pUnderlying) {
+        this.pUnderlying = pUnderlying;
+        this.output = new PValue(pUnderlying);
+    }
     
     public void attach(Key key, IndexColumn indexColumn) {
         attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().pUnderlying());

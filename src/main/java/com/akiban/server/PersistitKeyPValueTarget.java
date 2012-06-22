@@ -63,66 +63,87 @@ public class PersistitKeyPValueTarget implements PValueTarget {
 
     @Override
     public void putValueSource(PValueSource source) {
-        key.append(source);
-        invalidate();
+        if (source.getUnderlyingType() == null) return;
+        switch (source.getUnderlyingType()) {
+            case BOOL: putBool(source.getBoolean()); break;
+            case INT_8: putInt8(source.getInt8()); break;
+            case INT_16: putInt16(source.getInt16()); break;
+            case UINT_16: putUInt16(source.getUInt16()); break;
+            case INT_32: putInt32(source.getInt32()); break;
+            case INT_64: putInt64(source.getInt64()); break;
+            case FLOAT: putFloat(source.getFloat()); break;
+            case DOUBLE: putDouble(source.getDouble()); break;
+            case BYTES: putBytes(source.getBytes()); break;
+            default: putObject(source.getObject()); break;
+        }
     }
 
     @Override
     public void putNull() {
+        assert type == null : type;
         key.append(null);
         invalidate();
     }
 
     @Override
     public void putBool(boolean value) {
+        assert type == PUnderlying.BOOL : type;
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putInt8(byte value) {
+        assert type == PUnderlying.INT_8 : type;
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putInt16(short value) {
+        assert type == PUnderlying.INT_16: type;
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putUInt16(char value) {
+        assert type == PUnderlying.UINT_16 : type;
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putInt32(int value) {
+        assert type == PUnderlying.INT_32 : type;
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putInt64(long value) {
+        assert type == PUnderlying.INT_64 : type;
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putFloat(float value) {
+        assert type == PUnderlying.FLOAT : type;
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putDouble(double value) {
+        assert type == PUnderlying.DOUBLE : type;
         key.append(value);
         invalidate();
     }
 
     @Override
     public void putBytes(byte[] value) {
+        assert type == PUnderlying.BYTES : type;
         key.append(value);
         invalidate();
     }

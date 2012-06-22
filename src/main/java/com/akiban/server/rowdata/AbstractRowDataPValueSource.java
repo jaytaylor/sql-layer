@@ -61,14 +61,13 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
         throw new UnsupportedOperationException();
     }
 
+
     @Override
-    public boolean isNull() { 
-        throw new UnsupportedOperationException();
-    }
+    public abstract boolean isNull();
 
     @Override
     public boolean getBoolean() {
-        return extractLong(Signage.SIGNED) != 0;
+        throw new UnsupportedOperationException();
     }
 
     @Override
@@ -128,27 +127,6 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     protected abstract FieldDef fieldDef();
 
     // for use within this class
-
-    private void appendStringField(AkibanAppender appender, Quote quote) {
-        try {
-            final long location = getCheckedOffsetAndWidth();
-            if (appender.canAppendBytes()) {
-                ByteBuffer buff = location == 0
-                        ? null
-                        : AkServerUtil.byteBufferForMySQLString(bytes(), (int)location, (int) (location >>> 32), fieldDef());
-                quote.append(appender, buff, fieldDef().column().getCharsetAndCollation().charset());
-            }
-            else {
-                String s = location == 0
-                        ? null
-                        : AkServerUtil.decodeMySQLString(bytes(), (int)location, (int) (location >>> 32), fieldDef());
-                quote.append(appender, s);
-            }
-        } catch (EncodingException e) {
-            quote.append(appender, "<encoding exception! " + e.getMessage() + '>');
-        }
-    }
-
     private double doGetDouble() {
         long asLong = extractLong(Signage.SIGNED);
         return Double.longBitsToDouble(asLong);
