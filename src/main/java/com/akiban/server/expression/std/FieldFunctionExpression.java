@@ -85,7 +85,7 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
         {
             ValueSource first = children().get(0).eval();
             long ret = 0;
-              
+
             if (!first.isNull())
             {
             

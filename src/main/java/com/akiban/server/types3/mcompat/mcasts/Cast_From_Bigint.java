@@ -41,7 +41,6 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
-import java.math.BigInteger;
 
 public class Cast_From_Bigint
 {
@@ -328,7 +327,4 @@ public class Cast_From_Bigint
         else
             return val;
     }
-
-    //TODO: add more
-    private static final BigInteger MAX = new BigInteger("18446744073709551615");
 }
