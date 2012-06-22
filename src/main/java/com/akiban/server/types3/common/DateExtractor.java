@@ -27,6 +27,7 @@ package com.akiban.server.types3.common;
 
 import com.akiban.server.types3.TExecutionContext;
 import org.joda.time.MutableDateTime;
+import com.akiban.server.error.InvalidParameterValueException;
 
 public class DateExtractor {
 
@@ -64,14 +65,16 @@ public class DateExtractor {
         return new long[]{year, month, day, hour, minute, second};
     }
 
-    public static boolean validHrMinSec(long[] hms) {
-        return hms[HOUR] >= 0 && hms[HOUR] < 24 && hms[MINUTE] >= 0 && hms[MINUTE] < 60 && hms[SECOND] >= 0 && hms[SECOND] < 60;
+    public static boolean validHrMinSec(TExecutionContext context, long[] hms) {
+        boolean valid = hms[HOUR] >= 0 && hms[HOUR] < 24 && hms[MINUTE] >= 0 && hms[MINUTE] < 60 && hms[SECOND] >= 0 && hms[SECOND] < 60;
+        if (!valid) context.warnClient(new InvalidParameterValueException("Invalid Time: " + hms[HOUR] + ':' + hms[MINUTE] + ':' + hms[SECOND]));
+        return valid;
     }
 
     public static long getLastDay(long ymd[]) {
         switch ((int) ymd[MONTH]) {
             case 2:
-                 return leapYear(ymd) ? 29L : 28L;
+                 return leapYear(ymd[YEAR]) ? 29L : 28L;
             case 4:
             case 6:
             case 9:
@@ -91,13 +94,15 @@ public class DateExtractor {
         }
     }
     
-    public static boolean leapYear(long[] datetime) {
-        return datetime[YEAR] % 400 == 0 || (datetime[YEAR] % 4 == 0 && datetime[YEAR] % 100 != 0);
+    public static boolean leapYear(long year) {
+        return year % 400 == 0 || (year % 4 == 0 && year % 100 != 0);
     }
 
-    public static boolean validDayMonth(long[] datetime) {
+    public static boolean validDayMonth(TExecutionContext context, long[] datetime) {
         long last = getLastDay(datetime);
-        return last != -1L && datetime[2] <= last;
+        boolean valid = last != -1L && datetime[2] <= last;
+        if (!valid) context.warnClient(new InvalidParameterValueException("Invalid Date: " + datetime[YEAR] + '-' + datetime[MONTH] + '-' + datetime[DAY]));
+        return valid;
     }
 
     public static MutableDateTime getMutableDateTime(TExecutionContext context, long[] dateArr, boolean setDateTime) {
