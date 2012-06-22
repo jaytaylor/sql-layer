@@ -80,6 +80,12 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         return value.signum();
     }
         
+    @Override
+    public BigDecimalWrapper abs() {
+        value = value.abs();
+        return this;
+    }
+    
     private BigDecimal value;
 
     @Override
@@ -124,10 +130,4 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         return this;
     }
 
-    @Override
-    public BigDecimalWrapper abs()
-    {
-        value = value.abs();
-        return this;
-    }
 }

@@ -23,25 +23,33 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.common.funcs;
 
-import java.math.BigDecimal;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public interface BigDecimalWrapper {
-    
-     BigDecimalWrapper add(BigDecimalWrapper augend);
-     BigDecimalWrapper subtract(BigDecimalWrapper augend);
-     BigDecimalWrapper multiply(BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
-     BigDecimalWrapper parseString(String num);
-     BigDecimalWrapper round (int precision, int scale);
-     BigDecimalWrapper negate();
-     BigDecimalWrapper abs();
-     
-     int compareTo (Object o);
-     int getScale();
-     int getPrecision();
-     int getSign();
-     void reset();
+public abstract class Abs extends TOverloadBase {
+
+    protected final TClass inputType;
+
+    public Abs(TClass returnType) {
+        this.inputType = returnType;
+    }
+
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(inputType, 0);
+    }
+
+    @Override
+    public String overloadName() {
+        return "ABS";
+    }
+
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(inputType.instance());
+    }
 }

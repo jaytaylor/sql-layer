@@ -23,25 +23,15 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common;
+package com.akiban.server.types3.aksql.akfuncs;
 
-import java.math.BigDecimal;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.Sqrt;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
-public interface BigDecimalWrapper {
-    
-     BigDecimalWrapper add(BigDecimalWrapper augend);
-     BigDecimalWrapper subtract(BigDecimalWrapper augend);
-     BigDecimalWrapper multiply(BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
-     BigDecimalWrapper parseString(String num);
-     BigDecimalWrapper round (int precision, int scale);
-     BigDecimalWrapper negate();
-     BigDecimalWrapper abs();
-     
-     int compareTo (Object o);
-     int getScale();
-     int getPrecision();
-     int getSign();
-     void reset();
+public class AkSqrt {
+
+    public static final TOverload INSTANCE = new Sqrt(AkNumeric.DOUBLE);
 }

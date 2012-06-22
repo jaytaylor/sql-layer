@@ -33,6 +33,8 @@ import java.math.RoundingMode;
 
 public class MBigDecimalWrapper implements BigDecimalWrapper {
 
+    private BigDecimal value;
+
     public MBigDecimalWrapper(String num)
     {
         value = new BigDecimal(num);
@@ -81,8 +83,6 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         return value.signum();
     }
     
-    private BigDecimal value;
-
     @Override
     public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
     {
@@ -93,6 +93,12 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
+    public BigDecimalWrapper abs()
+    {
+        value = value.abs();
+        return this;
+    }
+    
     public int getScale()
     {
         return value.scale();
@@ -131,13 +137,6 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     public BigDecimalWrapper negate()
     {
         value = value.negate();
-        return this;
-    }
-
-    @Override
-    public BigDecimalWrapper abs()
-    {
-        value = value.abs();
         return this;
     }
 }
