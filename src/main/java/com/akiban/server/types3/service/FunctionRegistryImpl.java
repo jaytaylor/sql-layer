@@ -35,7 +35,6 @@ import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 
 @Singleton
 public class FunctionRegistryImpl implements FunctionRegistry
@@ -74,6 +73,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
                 doCollecting(ret, cls, target);
         return ret;
     }
+
     private static <T> void doCollecting(Collection<T> ret, Class<?> cls, Class<T> target) 
     {
         try
