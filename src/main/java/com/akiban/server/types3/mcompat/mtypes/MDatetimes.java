@@ -58,6 +58,32 @@ public class MDatetimes {
                             DEFAULT_TIMEZONE);
     }
     
+    public static long[] fromJodaDatetime (MutableDateTime date)
+    {
+        return new long[]
+        {
+            date.getYear(),
+            date.getMonthOfYear(),
+            date.getDayOfMonth(),
+            date.getHourOfDay(),
+            date.getMinuteOfHour(),
+            date.getSecondOfMinute()
+        };
+    }
+    
+    public static long[] fromJodaDatetime (DateTime date)
+    {
+        return new long[]
+        {
+            date.getYear(),
+            date.getMonthOfYear(),
+            date.getDayOfMonth(),
+            date.getHourOfDay(),
+            date.getMinuteOfHour(),
+            date.getSecondOfMinute()
+        };
+    }
+
     public static long[] fromEncodedDate(long val)
     {
         return new long[]
@@ -108,7 +134,7 @@ public class MDatetimes {
                 + ymd[MIN_INDEX] * DATETIME_MIN_SCALE
                 + ymd[SEC_INDEX];
     }
-    
+
     public static long[] fromTime(long val)
     {
         return new long[]
