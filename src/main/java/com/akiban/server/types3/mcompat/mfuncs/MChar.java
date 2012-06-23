@@ -61,7 +61,7 @@ public class MChar extends TOverloadBase
         
         int n = 0;
         for(PValueSource num : inputs)
-            length += lengths[n] = (int)(Math.log(num.getInt64()) / DIV + 1);
+            length += lengths[n++] = (int)(Math.log(num.getInt64()) / DIV + 1);
         
         byte ret[] = new byte[length];
         
