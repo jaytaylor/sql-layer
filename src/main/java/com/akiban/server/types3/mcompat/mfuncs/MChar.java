@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -39,6 +40,10 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 public class MChar extends TOverloadBase
 {
 
+    public static final TOverload INSTANCE = new MChar();
+    
+    private MChar(){}
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
@@ -51,10 +56,20 @@ public class MChar extends TOverloadBase
         // length of the varbin string
         int length = 0;
         
-        for(PValueSource num : inputs)
-            length += Math.log(num.getInt64()) / DIV + 1;
+        // legnth of each sub string
+        int lengths[] = new int[inputs.size()];
         
-        byte ret 
+        int n = 0;
+        for(PValueSource num : inputs)
+            length += lengths[n] = (int)(Math.log(num.getInt64()) / DIV + 1);
+        
+        byte ret[] = new byte[length];
+        
+        int pos = 0;
+        for (n = 0; n < lengths.length; ++n)
+            parse(inputs.get(n).getInt64(), ret, pos += lengths[n]);
+        
+        output.putBytes(ret);
     }
 
     @Override
@@ -76,20 +91,16 @@ public class MChar extends TOverloadBase
     /**
      * TODO: byte is too small ==> causes overflow, but this is what underlies VARBINARY
      * @param num
-     * @return 
+     * 
      */
-    static byte[] parse(long num)
+    static void parse(long num, byte[] ret, int limit)
     {
-        byte ret[] = new byte[(int)(Math.log(num) / DIV) + 1];
-        
-        int n = ret.length -1;
+        int n = limit -1;
         
         while (num > 0)
         {
-            ret[n] = (byte)(num & MASK);
-            num = num >> 8;
-            --n;
+            ret[n--] = (byte)(num & MASK);
+            num >>= 8;
         }
-        return ret;
     }
 }
