@@ -37,6 +37,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 public class MFromUnixtimeOneArg extends TOverloadBase
 {
@@ -58,7 +59,7 @@ public class MFromUnixtimeOneArg extends TOverloadBase
         long millis = inputs.get(0).getInt32() * 1000L;
         output.putInt64(MDatetimes.encodeDatetime(
                 MDatetimes.fromJodaDatetime(
-                    new DateTime(millis, MDatetimes.DEFAULT_TIMEZONE))));
+                    new DateTime(millis, DateTimeZone.forID(context.getCurrentTimezone())))));
     }
 
     @Override

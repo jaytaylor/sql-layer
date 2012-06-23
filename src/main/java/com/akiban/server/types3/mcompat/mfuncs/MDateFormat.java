@@ -115,7 +115,8 @@ public abstract class MDateFormat extends TOverloadBase
                 && (ret = (String)context.preptimeObjectAt(RET_INDEX)) == null)
         {
             Object objs[] = computeResult (getYMDHMS(inputs.get(0)),
-                                           (String)inputs.get(1).getObject());
+                                           (String)inputs.get(1).getObject(),
+                                           context.getCurrentTimezone());
             ret = (String) objs[RET_INDEX];
             error = (InvalidOperationException) objs[ERROR_INDEX];
             
@@ -166,7 +167,7 @@ public abstract class MDateFormat extends TOverloadBase
                     if (date != null)
                     {
 
-                        Object prepObjects[] = computeResult(getYMDHMS(date), (String) format.getObject());
+                        Object prepObjects[] = computeResult(getYMDHMS(date), (String) format.getObject(), context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
                         context.set(ERROR_INDEX, prepObjects[ERROR_INDEX]);
                     }
@@ -176,7 +177,7 @@ public abstract class MDateFormat extends TOverloadBase
         });
     }
     
-    private static Object[] computeResult(long ymd[], String format)
+    private static Object[] computeResult(long ymd[], String format, String tz)
     {
         String st = null;
         InvalidOperationException error = null;
@@ -185,7 +186,7 @@ public abstract class MDateFormat extends TOverloadBase
         else
             try
             {
-                st = DateTimeField.getFormatted(MDatetimes.toJodaDatetime(ymd),
+                st = DateTimeField.getFormatted(MDatetimes.toJodaDatetime(ymd, tz),
                                                 format);
             }
             catch (InvalidParameterValueException e)

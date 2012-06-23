@@ -38,7 +38,6 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -46,6 +45,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
+import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 public class MFromUnixtimeTwoArgs extends TOverloadBase
@@ -72,7 +72,9 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
         if ((error = (InvalidOperationException) context.preptimeObjectAt(ERROR_INDEX)) == null
                 && (ret = (String)context.preptimeObjectAt(RET_INDEX)) == null)
         {
-            Object objs[] = computeResult(inputs.get(0).getInt32(), (String)inputs.get(1).getObject());
+            Object objs[] = computeResult(inputs.get(0).getInt32(),
+                                          (String)inputs.get(1).getObject(),
+                                          context.getCurrentTimezone());
             
             ret = (String) objs[RET_INDEX];
             error = (InvalidOperationException) objs[ERROR_INDEX];
@@ -122,7 +124,9 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
                     // if the unix time is available, get the actual length
                     if (unixTime != null)
                     {
-                        Object prepObjects[] = computeResult(unixTime.getInt32(), (String) format.getObject());
+                        Object prepObjects[] = computeResult(unixTime.getInt32(),
+                                                            (String) format.getObject(),
+                                                            context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
                         context.set(ERROR_INDEX, prepObjects[ERROR_INDEX]);
                     }
@@ -132,14 +136,14 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
         });
     }
     
-    private static Object[] computeResult(int unix, String format)
+    private static Object[] computeResult(int unix, String format, String tz)
     {
         String st = null;
         InvalidOperationException error = null;
         
         try
         {
-            st = DateTimeField.getFormatted(new MutableDateTime(unix * 1000L, MDatetimes.DEFAULT_TIMEZONE),
+            st = DateTimeField.getFormatted(new MutableDateTime(unix * 1000L, DateTimeZone.forID(tz)),
                                             format);
         }
         catch (InvalidParameterValueException e)

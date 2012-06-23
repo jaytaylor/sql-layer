@@ -49,13 +49,11 @@ public class MDatetimes {
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
             "timestamp", 1, 1, 4, PUnderlying.INT_32);
     
-    public static final DateTimeZone DEFAULT_TIMEZONE = DateTimeZone.UTC;
-    
-    public static MutableDateTime toJodaDatetime(long ymd_hms[])
+    public static MutableDateTime toJodaDatetime(long ymd_hms[], String tz)
     {
         return new MutableDateTime((int)ymd_hms[YEAR_INDEX], (int)ymd_hms[MONTH_INDEX], (int)ymd_hms[DAY_INDEX],
                             (int)ymd_hms[HOUR_INDEX], (int)ymd_hms[MIN_INDEX], (int)ymd_hms[SEC_INDEX], 0,
-                            DEFAULT_TIMEZONE);
+                            DateTimeZone.forID(tz));
     }
     
     public static long[] fromJodaDatetime (MutableDateTime date)
