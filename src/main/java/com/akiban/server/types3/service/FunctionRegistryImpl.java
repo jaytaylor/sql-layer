@@ -31,46 +31,50 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
 import com.google.inject.Singleton;
-import java.lang.reflect.AccessibleObject;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @Singleton
 public class FunctionRegistryImpl implements FunctionRegistry
 {
     // TODO : define aggregates here
-    private List<TOverload> scalars;
-    private List<TClass> types;
-    private List<TCast> casts;
+    private Collection<TOverload> scalars;
+    private Collection<TClass> types;
+    private Collection<TCast> casts;
     
     private static final int SKIP = -1;
     private static final int FIELD = 0;
     private static final int ARRAY = 1;
     private static final int COLLECTION = 2;
 
-    FunctionRegistryImpl (FunctionsClassFinder finder) 
+    FunctionRegistryImpl (ClassFinder overloadsClassFinder,
+                          ClassFinder typesClassFinder,
+                          ClassFinder castsClassFinder) 
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
-        scalars = new ArrayList<TOverload>();
-        types = new ArrayList<TClass>();
-        casts = new ArrayList<TCast>();
+        // collect all scalar TOverload instances
+        scalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
         
-        for (Class<?> cls : finder.findClasses())
-        {
-            if (!Modifier.isPublic(cls.getModifiers()))
-                continue;
-            collectInstances(scalars, cls, TOverload.class);
-            collectInstances(types, cls, TClass.class);
-            collectInstances(casts, cls, TCast.class);
-        }
+        // collect all TClass instances
+        types = collectInstances(typesClassFinder.findClasses(), TClass.class);
+        
+        casts = collectInstances(castsClassFinder.findClasses(), TCast.class);
     }
 
-    private static <T> void collectInstances(Collection<T> ret, Class<?> cls, Class<T> target) 
+    private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
+    {
+        List<T> ret = new ArrayList<T>();
+        for (Class<?> cls : classes)
+            if (!Modifier.isPublic(cls.getModifiers()))
+                continue;
+            else
+                doCollecting(ret, cls, target);
+        return ret;
+    }
+    private static <T> void doCollecting(Collection<T> ret, Class<?> cls, Class<T> target) 
     {
         try
         {
