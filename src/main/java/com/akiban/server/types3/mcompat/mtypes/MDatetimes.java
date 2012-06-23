@@ -30,6 +30,9 @@ import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.MutableDateTime;
 
 public class MDatetimes {
 
@@ -45,6 +48,15 @@ public class MDatetimes {
             "year", 1, 1, 1, PUnderlying.INT_8);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
             "timestamp", 1, 1, 4, PUnderlying.INT_32);
+    
+    public static final DateTimeZone DEFAULT_TIMEZONE = DateTimeZone.UTC;
+    
+    public static MutableDateTime toJodaDatetime(long ymd_hms[])
+    {
+        return new MutableDateTime((int)ymd_hms[YEAR_INDEX], (int)ymd_hms[MONTH_INDEX], (int)ymd_hms[DAY_INDEX],
+                            (int)ymd_hms[HOUR_INDEX], (int)ymd_hms[MIN_INDEX], (int)ymd_hms[SEC_INDEX], 0,
+                            DEFAULT_TIMEZONE);
+    }
     
     public static long[] fromEncodedDate(long val)
     {
