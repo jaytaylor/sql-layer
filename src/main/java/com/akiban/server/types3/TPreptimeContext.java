@@ -36,6 +36,18 @@ public final class TPreptimeContext {
         return new TExecutionContext(preptimeCache, inputTypes, outputType, null); // TODO pass in
     }
     
+    public String getCurrentTimezone()
+    {
+        //TODO:
+        throw new UnsupportedOperationException("not supported yet");
+    }
+    
+    public String getLocale()
+    {
+        // TODO:
+        throw new UnsupportedOperationException("not supported yet");
+    }
+    
     public void set(int index, Object value) {
         if (preptimeCache == null)
             preptimeCache = new SparseArray<Object>(index);

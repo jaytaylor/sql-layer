@@ -87,6 +87,17 @@ public final class TExecutionContext {
         queryContext.warnClient(exception);
     }
 
+    public String getCurrentTimezone()
+    {
+        // TODO: This should come from the query context or something of the same nature
+        throw new UnsupportedOperationException("not supported yet");
+    }
+
+    public String getLocale()
+    {
+        // TODO:
+        throw new UnsupportedOperationException("not supported yet");
+    }
 
     // state
 
