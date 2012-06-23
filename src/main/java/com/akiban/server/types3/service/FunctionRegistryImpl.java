@@ -26,7 +26,6 @@
 
 package com.akiban.server.types3.service;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
@@ -49,7 +48,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
     private List<TClass> types;
     private List<TCast> casts;
     
-    private static final int INVALID = -1;
+    private static final int SKIP = -1;
     private static final int FIELD = 0;
     private static final int ARRAY = 1;
     private static final int COLLECTION = 2;
@@ -86,7 +85,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
                             break;
                         case ARRAY:
                             for (T item : (T[])field.get(null))
-                                putItem(ret, (T)field.get(null));
+                                putItem(ret, (T)item);
                             break;
                         case COLLECTION:
                             try
@@ -97,10 +96,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
                             }
                             catch (ClassCastException e) {/* fall thru */}
                         default:
-                                complain("Field " + field 
-                                        + " must be declared as public static final TOverload "
-                                        + " or public static final TOverload[]"
-                                        + " or public static final Collection<? extends TOverload>");
+                               // SKIP (does nothing)
                     }
             }
             
@@ -127,21 +123,18 @@ public class FunctionRegistryImpl implements FunctionRegistry
                             }
                             catch (ClassCastException e) {/* fall thru */}
                         default:
-                            complain("Method " + method 
-                                    + " must be declared as public static TOverload[] <methodname>() "
-                                    + " or public satic Collection<TOverload> <method name>() "
-                                    + " or public static TOverload <method name>()");
+                            // SKIP (does nothing)
                     }
             }
            
         }
         catch (IllegalAccessException e)   
         {
-            throw new AkibanInternalException(e.getMessage());
+            throw new FunctionsRegistryException(e.getMessage());
         }
         catch (InvocationTargetException ex)
         {
-            throw new AkibanInternalException(ex.getMessage());
+            throw new FunctionsRegistryException(ex.getMessage());
         }
     }
 
@@ -151,7 +144,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers)
                 && method.getParameterTypes().length == 0)
             return assignable(method.getReturnType(), target);
-        return INVALID;
+        return SKIP;
     }
     
     private static <T> int validateField(Field field, Class<T> target)
@@ -160,7 +153,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
         
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers))
             return assignable(field.getType(), target);
-         return INVALID;
+         return SKIP;
     }
 
     private static <T> int assignable (Class<?> c, Class<T> target)
@@ -183,11 +176,6 @@ public class FunctionRegistryImpl implements FunctionRegistry
         return field.getAnnotation(DontRegister.class) == null;
     }
     
-    private static void  complain (String st)
-    {
-        throw new FunctionsRegistryException(st);
-    }
-
     @Override
     public FunctionKind getFunctionKind(String name)
     {
