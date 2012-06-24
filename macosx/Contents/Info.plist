@@ -41,20 +41,30 @@
           <string>-Xmx1024Mm</string>
           <!--
           <string>-XX:+HeapDumpOnOutOfMemoryError</string>
-          <string>-Djava.net.preferIPv4Stack=true</string>
           -->
           <string>-XX:+UseParNewGC</string>
           <!--
-          <string>-Dcom.sun.management.jmxremote.port=8082</string>
-          <string>-Dcom.sun.management.jmxremote.ssl=false</string>
-          <string>-Dcom.sun.management.jmxremote.authenticate=false</string>
           <string>-Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y</string>
           -->
         </array>
         <key>Properties</key>
         <dict>
-          <key>akiban.admin></key>
+          <key>akiban.admin</key>
           <string>$APP_PACKAGE/Contents/Resources</string>
+          <key>services.config</key>
+          <string>$APP_PACKAGE/Contents/Resources/config/services-config.yaml</string>
+          <key>log4j.configuration</key>
+          <string>file:$APP_PACKAGE/Contents/Resources/config/log4j.properties</string>
+          <!--
+          <key>java.net.preferIPv4Stack</key>
+          <string>true</string>
+          <key>com.sun.management.jmxremote.port=</key>
+          <string>8082</string>
+          <key>com.sun.management.jmxremote.ssl</key>
+          <string>false</string>
+          <key>com.sun.management.jmxremote.authenticate=</key>
+          <string>false</string>
+          -->
         </dict>
     </dict>
 </dict>
