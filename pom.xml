@@ -513,6 +513,7 @@
                                         <copy todir="${mac.app}/Contents/MacOS">
                                             <fileset dir="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS" includes="JavaApplicationStub" />
                                         </copy>
+					<chmod file="${mac.app}/Contents/MacOS/JavaApplicationStub" perm="uog+rx" />
                                     </tasks>
                                 </configuration>
                             </execution>
