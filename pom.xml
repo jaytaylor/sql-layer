@@ -510,7 +510,7 @@
                                         <copy todir="${mac.app}">
                                             <fileset dir="${basedir}/macosx" />
                                         </copy>
-                                        <copy todir="${mac.app}/MacOS">
+                                        <copy todir="${mac.app}/Contents/MacOS">
                                             <fileset dir="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS" includes="JavaApplicationStub" />
                                         </copy>
                                     </tasks>
