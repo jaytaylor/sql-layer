@@ -1,0 +1,8 @@
+SelectQuery@78c1f32c
+  ResultSet@5440ba4[sku, quan]
+    Project@36583eaf[GROUP[0], GROUP[1]]
+      Sort@5b7b6f08[GROUP[1] DESC]
+        Select@4b6a524[]
+          AggregateSource@7313e0e6([items.sku],[SUM(items.quan)])
+            Select@1e125710[]
+              TableSource@5598a320(items)
