@@ -23,7 +23,7 @@
     <key>CFBundleInfoDictionaryVersion</key>
     <string>6.0</string>
     <key>CFBundleIconFile</key>
-    <string>Akiban Server.icns</string>
+    <string>Akiban Server CE.icns</string>
     <key>Java</key>
     <dict>
         <key>JVMVersion</key>
@@ -49,6 +49,8 @@
         </array>
         <key>Properties</key>
         <dict>
+          <key>apple.laf.useScreenMenuBar</key>
+          <string>true</string>
           <key>akiban.admin</key>
           <string>$APP_PACKAGE/Contents/Resources</string>
           <key>services.config</key>
