@@ -66,6 +66,8 @@
           <string>false</string>
           -->
         </dict>
+        <key>WorkingDirectory</key>
+        <string>$USER_HOME/Library/Application Support</string>
     </dict>
 </dict>
 </plist>
