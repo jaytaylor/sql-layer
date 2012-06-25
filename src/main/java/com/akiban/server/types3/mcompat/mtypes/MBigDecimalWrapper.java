@@ -28,9 +28,27 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import java.math.BigDecimal;
+import java.math.MathContext;
 import java.math.RoundingMode;
 
 public class MBigDecimalWrapper implements BigDecimalWrapper {
+
+    private BigDecimal value;
+
+    public MBigDecimalWrapper(String num)
+    {
+        value = new BigDecimal(num);
+    }
+
+    public MBigDecimalWrapper(long val)
+    {
+        value = BigDecimal.valueOf(val);
+    }
+
+    public MBigDecimalWrapper()
+    {
+        value = BigDecimal.ZERO;
+    }
 
     @Override
     public void reset() {
@@ -66,21 +84,21 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
-    public long ceil() {
-        value.setScale(0, RoundingMode.CEILING);
-        return value.longValue();
+    public BigDecimalWrapper ceil() {
+        value = value.setScale(0, RoundingMode.CEILING);
+        return this;
     }
     
     @Override
-    public long floor() {
-        value.setScale(0, RoundingMode.FLOOR);
-        return value.longValue();
+    public BigDecimalWrapper floor() {
+        value = value.setScale(0, RoundingMode.FLOOR);
+        return this;
     }
     
     @Override
-    public long truncate(int scale) {
-        value.setScale(scale, RoundingMode.DOWN);
-        return value.longValue();
+    public BigDecimalWrapper truncate(int scale) {
+        value = value.setScale(scale, RoundingMode.DOWN);
+        return this;
     }
     
     @Override
@@ -88,8 +106,6 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         return value.signum();
     }
     
-    private BigDecimal value;
-
     @Override
     public BigDecimalWrapper divide(BigDecimalWrapper augend, int scale)
     {
@@ -98,4 +114,54 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
                 RoundingMode.HALF_UP);
         return this;
     }
+
+    @Override
+    public BigDecimalWrapper abs()
+    {
+        value = value.abs();
+        return this;
+    }
+    
+    @Override
+    public int getScale()
+    {
+        return value.scale();
+    }
+
+    @Override
+    public int getPrecision()
+    {
+        return value.precision();
+    }
+
+    @Override
+    public BigDecimalWrapper parseString(String num)
+    {
+        value = new BigDecimal (num);
+        return this;
+    }
+
+    @Override
+    public int compareTo(Object o)
+    {
+        if (o == null)
+            return 1;
+        
+        return value.compareTo(((MBigDecimalWrapper)o).value);
+    }
+
+    @Override
+    public BigDecimalWrapper round(int precision, int scale)
+    {
+        value = value.round(new MathContext(precision, RoundingMode.HALF_UP));
+        return this;
+    }
+
+    @Override
+    public BigDecimalWrapper negate()
+    {
+        value = value.negate();
+        return this;
+    }
 }
+

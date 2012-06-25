@@ -1,0 +1,45 @@
+## Test the CONV function
+---
+- Include: all-types-schema.yaml
+---
+- Statement: SELECT CONV(234, 8, 5);
+- output: [['1111']]
+--- # Invalid digit in base 2 => return 0 (not NULL)
+- Statement: SELECT CONV(23, 2, 10);
+- output: [['0']]
+---
+- Statement: SELECT conv('abc', 16, 10);
+- output: [['2748']]
+---
+- Statement: select CONV (1234.2, 10, 10);
+- output: [['1234']]
+---
+- Statement: SELECT CONV(null, 3, 5);
+- output: [[null]]
+--- # test negative
+- Statement: select conv(-2, 10, 2);
+- output: [['1111111111111111111111111111111111111111111111111111111111111110']]
+---
+- Statement: select conv(-2, 10, -10);
+- output: [['-2']]
+---
+- Statement: select conv(-2, 10, 10);
+- output: [['18446744073709551614']]
+---
+- Statement: select conv(2, 10, -10);
+- output: [['2']]
+---
+- Statement: INSERT INTO all_types(bigint_field, varchar_field, double_field) VALUES (0, 'a', null);
+---
+- Statement: SELECT conv(bigint_field, 16, 9) from all_types;
+- output: [['0']]
+---
+- Statement: SELECT bigint_field from all_types where CONV(bigint_field, 2, 2) = '0';
+- output: [[0]]
+---
+- Statement: SELECT conv(double_field, 3, 6) from all_types;
+- output: [[null]]
+---
+- Statement: SELECT CONV();
+- error: [4250C]
+...

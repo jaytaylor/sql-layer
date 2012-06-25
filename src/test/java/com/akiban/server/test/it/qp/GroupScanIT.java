@@ -34,6 +34,8 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.types.ValueSource;
+import com.akiban.util.tap.Tap;
+import com.akiban.util.tap.TapReport;
 import org.junit.Test;
 
 import java.util.Arrays;

@@ -26,7 +26,6 @@
 
 package com.akiban.qp.row;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 
@@ -61,7 +60,7 @@ public class ValuesRow extends AbstractRow
 
     // ValuesRow interface
 
-    public ValuesRow(RowType rowType, Object[] values)
+    public ValuesRow(RowType rowType, Object... values)
     {
         this.rowType = rowType;
         this.valuesHolder = new RowValuesHolder(values);

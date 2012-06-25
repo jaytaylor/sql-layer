@@ -26,9 +26,7 @@
 
 package com.akiban.server.types.extract;
 
-import com.akiban.server.error.InconvertibleTypesException;
 import com.akiban.server.error.OverflowException;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 
 import org.junit.Test;

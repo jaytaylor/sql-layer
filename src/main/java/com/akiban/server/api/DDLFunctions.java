@@ -37,7 +37,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
-import com.akiban.server.error.SchemaDefParseException;
 import com.akiban.server.error.RowDefNotFoundException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.dxl.IndexCheckSummary;
@@ -138,7 +137,7 @@ public interface DDLFunctions {
     RowDef getRowDef(int tableId) throws RowDefNotFoundException;
 
     /**
-     * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>akiban_information_schema</tt>
+     * Retrieves the "CREATE" DDLs for all Akiban tables, including tables in the <tt>information_schema</tt>
      * schema. The DDLs will be arranged such that it should be safe to call them in order, but they will not contain
      * any DROP commands; it is up to the caller to drop all conflicting tables. Schemas will be created with
      * <tt>IF NOT EXISTS</tt>, so the caller does not need to drop conflicting schemas.

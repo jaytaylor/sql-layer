@@ -26,7 +26,6 @@
 
 package com.akiban.server.expression.std;
 
-import com.akiban.server.error.InvalidArgumentTypeException;
 import com.akiban.server.expression.ExpressionComposer;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.extract.Extractors;
@@ -50,13 +49,13 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression left2 = new LiteralExpression(AkType.DATE, extractor.getLong("2009-12-24"));
         
         // top1 is a DATE: ADDDATE('2009-12-12', 12)
-        Expression top1 = DateTimeArithExpression.ADD_DATE_COMPOSER.compose(Arrays.asList(left1, right1));
+        Expression top1 = compose(DateTimeArithExpression.ADD_DATE_COMPOSER, Arrays.asList(left1, right1));
         
         // top2 is an interval
-        Expression top2 = ArithOps.MINUS.compose(Arrays.asList(left2, left1));
+        Expression top2 = compose(ArithOps.MINUS, Arrays.asList(left2, left1));
         
         // top3 is a DATE: ADDDATE("2009-12-12", interval 12 days)
-        Expression top3 = DateTimeArithExpression.ADD_DATE_COMPOSER.compose(Arrays.asList(left1, top2));
+        Expression top3 = compose(DateTimeArithExpression.ADD_DATE_COMPOSER, Arrays.asList(left1, top2));
         
         assertEquals("assert top1 == 2009-12-24", extractor.getLong("2009-12-24"),top1.evaluation().eval().getDate());
         assertEquals("assert top3 == top1", top1.evaluation().eval().getDate(), top3.evaluation().eval().getDate());
@@ -68,7 +67,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression left = new LiteralExpression(AkType.DATE, extractor.getLong("2008-02-29"));
         Expression right = new LiteralExpression(AkType.INTERVAL_MONTH, 12L);
         
-        Expression top = DateTimeArithExpression.ADD_DATE_COMPOSER.compose(Arrays.asList(left, right));
+        Expression top = compose(DateTimeArithExpression.ADD_DATE_COMPOSER, Arrays.asList(left, right));
         assertEquals(extractor.getLong("2009-02-28"), top.evaluation().eval().getDate());
     }
     
@@ -78,7 +77,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression l = new LiteralExpression(AkType.TIME,100915L);
         Expression r = new LiteralExpression(AkType.TIME, 90915L);
 
-        Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l,r));
+        Expression top = compose(DateTimeArithExpression.TIMEDIFF_COMPOSER, Arrays.asList(l,r));
         long actual = top.evaluation().eval().getTime();
 
         assertEquals(10000L, actual);
@@ -90,7 +89,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression l = new LiteralExpression(AkType.DATETIME, 20091010123010L);
         Expression r = new LiteralExpression(AkType.DATETIME, 20091010123001L);
 
-        Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(r,l));
+        Expression top = compose(DateTimeArithExpression.TIMEDIFF_COMPOSER, Arrays.asList(r,l));
         long actual = top.evaluation().eval().getTime();
 
         assertEquals(-9L, actual);
@@ -104,7 +103,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression r = new LiteralExpression(AkType.TIMESTAMP,
                 Extractors.getLongExtractor(AkType.TIMESTAMP).getLong("2009-12-11 10:09:09"));
 
-        Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l,r));
+        Expression top = compose(DateTimeArithExpression.TIMEDIFF_COMPOSER, Arrays.asList(l,r));
         long actual = top.evaluation().eval().getTime();
 
         assertEquals(-235859L, actual);
@@ -116,7 +115,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression l = LiteralExpression.forNull();
         Expression r = new LiteralExpression(AkType.TIME, 1234L);
 
-        Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l,r));
+        Expression top = compose(DateTimeArithExpression.TIMEDIFF_COMPOSER, Arrays.asList(l,r));
         assertTrue ("top is null", top.evaluation().eval().isNull());
     }
 
@@ -135,7 +134,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression l = LiteralExpression.forNull();
         Expression r = new LiteralExpression(AkType.DATE, 1234L);
 
-        Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l, r));
+        Expression top = compose(DateTimeArithExpression.DATEDIFF_COMPOSER, Arrays.asList(l, r));
         assertTrue("top is null", top.evaluation().eval().isNull());
     }
 
@@ -145,7 +144,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression l = new LiteralExpression(AkType.DATE, 1234L);
         Expression r = new LiteralExpression(AkType.DATETIME, 1234L);
 
-        Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l, r));
+        Expression top = compose(DateTimeArithExpression.DATEDIFF_COMPOSER, Arrays.asList(l, r));
         assertTrue("Top should be NULL ", top.evaluation().eval().isNull());
     }
 
@@ -155,7 +154,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression l = new LiteralExpression(AkType.DATE, 1234L);
         Expression r = new LiteralExpression(AkType.DATETIME, 1234L);
 
-        Expression top = DateTimeArithExpression.TIMEDIFF_COMPOSER.compose(Arrays.asList(l, r));
+        Expression top = compose(DateTimeArithExpression.TIMEDIFF_COMPOSER, Arrays.asList(l, r));
         assertTrue("Top should be NULL ", top.evaluation().eval().isNull());
     }
 
@@ -185,7 +184,7 @@ public class DateTimeArithExpressionTest extends ComposedExpressionTestBase
         Expression l = new LiteralExpression(AkType.DATE,ex.getLong(left));
         Expression r = new LiteralExpression(AkType.DATE, ex.getLong(right));
 
-        Expression top = DateTimeArithExpression.DATEDIFF_COMPOSER.compose(Arrays.asList(l,r));
+        Expression top = compose(DateTimeArithExpression.DATEDIFF_COMPOSER, Arrays.asList(l,r));
         long actual = top.evaluation().eval().getLong();
 
         assertEquals(expected, actual);

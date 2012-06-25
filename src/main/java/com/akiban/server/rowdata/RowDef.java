@@ -34,10 +34,8 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.akiban.ais.model.*;
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.TableStatus;
-import com.akiban.server.TableStatusCache;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
-import com.persistit.exception.PersistitInterruptedException;
 
 /**
  * Contain the relevant schema information for one version of a table

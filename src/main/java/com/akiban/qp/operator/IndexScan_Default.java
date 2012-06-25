@@ -27,9 +27,12 @@
 package com.akiban.qp.operator;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import org.slf4j.Logger;
@@ -234,6 +237,12 @@ class IndexScan_Default extends Operator
         }
 
         @Override
+        public void jump(Row row, ColumnSelector columnSelector)
+        {
+            cursor.jump(row, columnSelector);
+        }
+
+        @Override
         public void close()
         {
             cursor.close();
@@ -268,7 +277,9 @@ class IndexScan_Default extends Operator
         Execution(QueryContext context)
         {
             super(context);
-            this.cursor = adapter().newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
+            
+            UserTable table = (UserTable)index.rootMostTable();
+            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
         }
 
         // Object state

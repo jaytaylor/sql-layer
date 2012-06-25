@@ -43,14 +43,12 @@ class GroupTableSingleRoot implements AISValidation {
     private void validateGroup (AkibanInformationSchema ais, Group group, AISValidationOutput output) {
         UserTable root = null;
         for (UserTable userTable : ais.getUserTables().values()) {
-            if (userTable.getGroup() == group) {
-                if (userTable.getParentJoin() == null) {
-                    if (root == null) {
-                        root = userTable;
-                    } else {
-                        output.reportFailure(new AISValidationFailure (
-                                new GroupHasMultipleRootsException (group.getName(), root.getName(),userTable.getName())));
-                    }
+            if (userTable.getGroup() == group && userTable.getParentJoin() == null) {
+                if (root == null) {
+                    root = userTable;
+                } else {
+                    output.reportFailure(new AISValidationFailure (
+                            new GroupHasMultipleRootsException (group.getName(), root.getName(),userTable.getName())));
                 }
             }
         }

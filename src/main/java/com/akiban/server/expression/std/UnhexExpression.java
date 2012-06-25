@@ -28,7 +28,6 @@ package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.expression.*;
 import com.akiban.server.service.functions.Scalar;
@@ -46,7 +45,7 @@ public class UnhexExpression extends AbstractUnaryExpression
     public static final ExpressionComposer COMPOSER = new UnaryComposer()
     {
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new UnhexExpression(argument);
         }
