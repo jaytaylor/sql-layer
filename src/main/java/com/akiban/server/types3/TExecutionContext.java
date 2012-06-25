@@ -89,7 +89,7 @@ public final class TExecutionContext {
     public void warnClient(InvalidOperationException exception) {
         queryContext.warnClient(exception);
     }
-    
+
     public String getCurrentLocale()
     {
         throw new UnsupportedOperationException("getLocale() not supported yet");
