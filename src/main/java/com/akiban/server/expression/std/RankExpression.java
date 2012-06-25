@@ -37,11 +37,7 @@ import java.util.List;
 
 public final class RankExpression extends CompareExpression {
 
-    // AbstractTwoArgExpression interface
-    @Override
-    protected void describe(StringBuilder sb) {
-        sb.append(RANKING_DESCRIPTION);
-    }
+    // AbstractTwoArgExpression interfac
 
     @Override
     public ExpressionEvaluation evaluation() {
@@ -55,13 +51,6 @@ public final class RankExpression extends CompareExpression {
 
     public RankExpression(Expression lhs, Expression rhs) {
         super(lhs, rhs);
-    }
-
-    // overriding protected methods
-
-    @Override
-    protected void buildToString(StringBuilder sb) {
-        sb.append(left()).append(' ').append(RANKING_DESCRIPTION).append(' ').append(right());
     }
 
     // consts

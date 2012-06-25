@@ -32,6 +32,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.CountOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
@@ -124,6 +126,12 @@ class Count_TableStatus extends Operator
 
     private final RowType tableType;
     private final ValuesRowType resultType;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return new CountOperatorExplainer("Count_TableStatus", tableType, resultType, null);
+    }
 
     // Inner classes
 
