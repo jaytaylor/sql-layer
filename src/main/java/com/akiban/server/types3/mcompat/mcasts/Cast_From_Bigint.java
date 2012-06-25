@@ -231,7 +231,7 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.fromDate(source.getInt64());
             if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.reportError("Invalid datetime values");
+                context.reportBadValue("Invalid datetime values");
                 target.putNull();
             }
             else
@@ -255,7 +255,7 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.fromDatetime(raw);
                         if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.reportError("Invalid datetime values");
+                context.reportBadValue("Invalid datetime values");
                 target.putNull();
             }
             else
@@ -294,7 +294,7 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.fromTime(raw);
                         if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.reportError("Invalid datetime values");
+                context.reportBadValue("Invalid datetime values");
                 target.putNull();
             }
             else

@@ -28,5 +28,5 @@ package com.akiban.server.types3;
 
 public enum ErrorHandlingMode
 {
-    ERROR, WARN,IGNORE_ALL_ERRORS
+    ERROR, WARN, IGNORE
 }

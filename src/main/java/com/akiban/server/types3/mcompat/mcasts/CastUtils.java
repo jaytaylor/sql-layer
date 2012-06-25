@@ -44,7 +44,7 @@ public final class CastUtils
             tks = st.split("-");
 
         if (tks.length != 3)
-            context.reportError(new InvalidDateFormatException("bad DATE", st));
+            context.reportBadValue("bad DATE" + st);
         
         try
         {
@@ -54,7 +54,7 @@ public final class CastUtils
         }
         catch (NumberFormatException ex)
         {
-            context.reportError(new InvalidDateFormatException("bad DATE", st));
+            context.reportBadValue("bad DATE" + st);
         }
         return -1;
     }
@@ -63,12 +63,12 @@ public final class CastUtils
     {
         if (val > max)
         {
-            context.reportError("Truncated " + val + " to " + max);
+            context.reportTruncate(Long.toString(val), Long.toString(max));
             return max;
         }
         else if (val < min)
         {
-            context.reportError("Truncated " + val + " to " + min);
+            context.reportTruncate(Long.toString(val), Long.toString(min));
             return min;
         }
         else
@@ -90,7 +90,7 @@ public final class CastUtils
         if (st.isEmpty() || !Character.isDigit(st.charAt(n++)) 
                 && (n == st.length() || n < st.length() && !Character.isDigit(st.charAt(n++))))
         {
-            context.reportError("Truncated " + st + " to 0");
+            context.reportTruncate(st, "0");
             return "0";
         }
         
@@ -100,7 +100,7 @@ public final class CastUtils
             if ((!Character.isDigit(ch = st.charAt(n)))
                     && (sawDot || !(sawDot = ch == '.')))
             {
-                context.reportError("Truncated " + st + " to " + (st = st.substring(0, n)));
+                context.reportTruncate(st ,(st = st.substring(0, n)));
                 return st;
             }
         

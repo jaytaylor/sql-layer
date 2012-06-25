@@ -259,7 +259,7 @@ public class Cast_From_Varchar
             }
             catch (NumberFormatException e)
             {
-                context.reportError(e.getMessage());
+                context.reportBadValue(e.getMessage());
             }
 
             target.putDouble(Double.parseDouble(st));

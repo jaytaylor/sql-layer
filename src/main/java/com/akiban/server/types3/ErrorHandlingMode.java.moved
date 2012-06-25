@@ -24,40 +24,9 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.types3;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueTarget;
-
-public abstract class TQueryContextExpression implements TPreparedExpression {
-    
-    protected abstract void evaluate(QueryContext context, PValueTarget target);
-    
-    @Override
-    public TPreptimeValue evaluateConstant() {
-        return null;
-    }
-
-    @Override
-    public TEvaluatableExpression build() {
-        return new Evaluation();
-    }
-    
-    private class Evaluation extends ContextualEvaluation<QueryContext> {
-
-        @Override
-        protected void evaluate(QueryContext context, PValueTarget target) {
-            TQueryContextExpression.this.evaluate(context, target);
-        }
-
-        @Override
-        public void with(QueryContext context) {
-            setContext(context);
-        }
-
-        private Evaluation() {
-            super(resultType().typeClass().underlyingType());
-        }
-    }
+public enum ErrorHandlingMode
+{
+    ERROR, WARN,IGNORE_ALL_ERRORS
 }
