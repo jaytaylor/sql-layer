@@ -29,6 +29,7 @@ package com.akiban.server;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
+import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.server.collation.AkCollator;
@@ -57,7 +58,17 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     }
 
     public PersistitKeyValueTarget expectingType(Column column) {
-        return expectingType(column.getType().akType());
+        expectingType(column.getType().akType());
+//        if (type == AkType.VARCHAR || type == AkType.TEXT) {
+//            final CharsetAndCollation cac = column.getCharsetAndCollation();
+//            if (cac != null) {
+//                final String collationName = cac.collation();
+//                if ("latin1_swedish_ci".equals(collationName)) {
+//                    collator = AkCollatorFactory.getCollator("en_US");
+//                }
+//            }
+//        }
+        return this;
     }
     
     // ValueTarget interface
