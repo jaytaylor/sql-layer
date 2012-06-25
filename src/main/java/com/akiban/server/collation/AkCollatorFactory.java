@@ -44,7 +44,7 @@ public class AkCollatorFactory {
 
     public final static String UCS_BINARY = "UCS_BINARY";
 
-    private final static AkCollator UCS_BINARY_COLLATOR = new AkCollatorBinary();
+    public final static AkCollator UCS_BINARY_COLLATOR = new AkCollatorBinary();
 
     private final static Map<String, Collator> sourceMap = new HashMap<String, Collator>();
 

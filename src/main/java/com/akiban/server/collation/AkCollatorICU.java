@@ -53,7 +53,6 @@ public class AkCollatorICU implements AkCollator {
         assert verifySortByteZeroes(sortBytes) : "ICU4J is expected to return a zero-terminated sort key";
         System.arraycopy(sortBytes, 0, keyBytes, size, sortBytes.length);
         key.setEncodedSize(size + sortBytes.length);
-
     }
 
     @Override

@@ -28,6 +28,8 @@ package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -39,6 +41,8 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 
 public final class PersistitKeyValueSource implements ValueSource {
+
+    private AkCollator collator = AkCollatorFactory.UCS_BINARY_COLLATOR;
 
     // PersistitKeyValueSource interface
 
@@ -203,13 +207,17 @@ public final class PersistitKeyValueSource implements ValueSource {
             }
             else
             {
-                switch (akType.underlyingType()) {
-                    case BOOLEAN_AKTYPE:valueHolder.putBool(key.decodeBoolean());       break;
-                    case LONG_AKTYPE:   valueHolder.putRaw(akType, key.decodeLong());   break;
-                    case FLOAT_AKTYPE:  valueHolder.putRaw(akType, key.decodeFloat());  break;
-                    case DOUBLE_AKTYPE: valueHolder.putRaw(akType, key.decodeDouble()); break;
-                    case OBJECT_AKTYPE: valueHolder.putRaw(akType, key.decode());       break;
-                    default: throw new UnsupportedOperationException(akType.name());
+                if ((akType == AkType.VARCHAR || akType == AkType.TEXT)) {
+                    valueHolder.putRaw(akType, collator.decode(key));
+                } else {
+                    switch (akType.underlyingType()) {
+                        case BOOLEAN_AKTYPE:valueHolder.putBool(key.decodeBoolean());       break;
+                        case LONG_AKTYPE:   valueHolder.putRaw(akType, key.decodeLong());   break;
+                        case FLOAT_AKTYPE:  valueHolder.putRaw(akType, key.decodeFloat());  break;
+                        case DOUBLE_AKTYPE: valueHolder.putRaw(akType, key.decodeDouble()); break;
+                        case OBJECT_AKTYPE: valueHolder.putRaw(akType, key.decode());       break;
+                        default: throw new UnsupportedOperationException(akType.name());
+                    }
                 }
             }
             needsDecoding = false;
