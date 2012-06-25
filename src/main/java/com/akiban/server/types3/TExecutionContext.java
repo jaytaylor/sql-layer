@@ -35,7 +35,6 @@ import com.akiban.server.error.OverflowException;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.util.SparseArray;
 
-import java.util.Date;
 import java.util.List;
 
 public final class TExecutionContext {
@@ -153,8 +152,10 @@ public final class TExecutionContext {
                 break;
             case ERROR:
                 throw new StringTruncationException(original, truncated);
-            default:
+            case IGNORE:
                 // ignores, does nothing
+            default:
+                assert false : "unexpected mode " + truncateHandling;
         }
     }
     
@@ -167,8 +168,10 @@ public final class TExecutionContext {
                 break;
             case ERROR:
                 throw new InvalidParameterValueException(msg);
-            default:
+            case IGNORE:
                 // ignores, does nothing
+            default:
+                assert false : "unexpected mode: " + invalidFormatHandling;
         }
     }
 
@@ -183,6 +186,8 @@ public final class TExecutionContext {
                 throw e;
             case IGNORE:
                 // ignores, does nothing
+            default:
+                assert false : "unexpected mode: " + defaultMode;
         }
     }
     
