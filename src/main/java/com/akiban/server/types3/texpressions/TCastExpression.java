@@ -47,7 +47,7 @@ public final class TCastExpression implements TPreparedExpression {
         }
         else {
             value = new PValue(cast.targetClass().underlyingType());
-            cast.evaluate(null, inputValue.value(), value); //TODO: add appropriate execution context and cast context
+            cast.evaluate(null, inputValue.value(), value);
         }
         return new TPreptimeValue(targetInstance, value);
     }
@@ -88,7 +88,7 @@ public final class TCastExpression implements TPreparedExpression {
         public void evaluate() {
             inputEval.evaluate();
             PValueSource inputVal = inputEval.resultValue();
-            cast.evaluate(null, inputVal, value); // TODO
+            cast.evaluate(null, inputVal, value);
         }
 
         @Override
