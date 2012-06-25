@@ -57,13 +57,11 @@ import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.server.types.ToObjectValueTarget;
-import com.akiban.server.types.ValueSource;
 import com.google.inject.Inject;
 import com.persistit.Management;
 import com.persistit.Management.BufferPoolInfo;
 import com.persistit.Management.JournalInfo;
-import com.persistit.Management.TransactionInfo;
+import com.persistit.Management.TreeInfo;
 import com.persistit.Management.VolumeInfo;
 import com.persistit.mxbeans.IOMeterMXBean;
 
@@ -75,7 +73,6 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
     static final TableName STORAGE_ALERTS_SUMMARY = new TableName (SCHEMA_NAME, "storage_alert_summary");
     // STORAGE_ALERTS -> parse String
     static final TableName STORAGE_BUFFER_POOLS = new TableName (SCHEMA_NAME, "storage_buffer_pools");
-    // STORAGE_CHECKPOINTS -> parse String 
     static final TableName STORAGE_CHECKPOINT_SUMMARY = new TableName (SCHEMA_NAME, "storage_checkpoint_summary");
     static final TableName STORAGE_CLEANUP_MANAGER_SUMMARY = new TableName (SCHEMA_NAME, "storage_cleanup_manager_summary");
     static final TableName STORAGE_IO_METER_SUMMARY = new TableName (SCHEMA_NAME, "storage_io_meter_summary");
@@ -84,7 +81,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
     static final TableName STORAGE_MANAGEMENT_SUMMARY = new TableName (SCHEMA_NAME, "storage_management_summary");
     static final TableName STORAGE_TRANSACTION_SUMMARY = new TableName (SCHEMA_NAME, "storage_transaction_summary");
     // STORAGE_TREES => Managenemt.TreeInfo->getTreeInfoArray(VolumneName->GetVolumeInfoArray())
-    // STORAGE_VOLUMES => Management.VolumeInfo->GetVolumeInfoArray()
+    static final TableName STORAGE_TREES = new TableName (SCHEMA_NAME, "storage_trees");
     static final TableName STORAGE_VOLUMES = new TableName (SCHEMA_NAME, "storage_volumes");
     
     public final static String[] OPERATION_NAME = { "None", 
@@ -178,7 +175,11 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         UserTable transactionSummary = ais.getUserTable(STORAGE_TRANSACTION_SUMMARY);
         assert transactionSummary != null;
         schemaManager.registerMemoryInformationSchemaTable(transactionSummary, new TransactionSummaryFactory(STORAGE_TRANSACTION_SUMMARY));
-        
+
+        //STORAGE_TREES
+        UserTable trees = ais.getUserTable(STORAGE_TREES);
+        assert trees != null;
+        schemaManager.registerMemoryInformationSchemaTable(trees, new TreesFactory(STORAGE_TREES));
         //STORAGE_VOLUMES
         UserTable volumes = ais.getUserTable(STORAGE_VOLUMES);
         assert volumes != null;
@@ -667,6 +668,90 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         }
     }
     
+    //STORAGE_TREES
+    private class TreesFactory extends BasicFactoryBase {
+
+        public TreesFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new TreeScan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            long rows = 0;
+            VolumeInfo[] volumes;
+            try {
+                volumes = treeService.getDb().getManagement().getVolumeInfoArray();
+                for (VolumeInfo v : volumes) {
+                    rows += treeService.getDb().getManagement().getTreeInfoArray(v.getName()).length;
+                }
+            } catch (RemoteException e) {
+                logger.error("Unable to retrieve volume and tree information: " + e.getMessage());
+            }
+            return rows;
+        }
+        private class TreeScan extends Scan {
+
+            VolumeInfo[] volumes;
+            int volumeIndex = 0;
+            TreeInfo[] trees = null;
+            int treeIndex = 0;
+            
+            public TreeScan(RowType rowType) {
+                super(rowType, "TreeInfo");
+                try {
+                    volumes = treeService.getDb().getManagement().getVolumeInfoArray();
+                    trees = treeService.getDb().getManagement().getTreeInfoArray(volumes[0].getName());
+                } catch (RemoteException e) {
+                    logger.error("Unable to retrieve volumne information: " + e.getMessage());
+                }
+            }
+
+            @Override
+            public Row next() {
+                ValuesRow row;
+                if (volumes == null) {
+                    return null;
+                }
+                if (volumeIndex >= volumes.length) {
+                    return null;
+                }
+                if (trees == null) {
+                    return null;
+                }
+
+                row = new ValuesRow (rowType,
+                        volumes[volumeIndex].getName(),
+                        trees[treeIndex].getName(),
+                        trees[treeIndex].getStatus(),
+                        trees[treeIndex].getDepth(),
+                        trees[treeIndex].getFetchCounter(),
+                        trees[treeIndex].getTraverseCounter(),
+                        trees[treeIndex].getStoreCounter(),
+                        trees[treeIndex].getRemoveCounter(),
+                        ++rowCounter);
+
+                if (++treeIndex >= trees.length) {
+                    if (++volumeIndex >= volumes.length) {
+                        trees = null;
+                    } else {
+                        try {
+                            trees = treeService.getDb().getManagement().getTreeInfoArray(volumes[volumeIndex].getName());
+                            treeIndex = 0;
+                        } catch (RemoteException e) {
+                            logger.error("Unable to retrieve tree information: " + e.getMessage());
+                            trees = null;
+                        }
+                    }
+                }
+                return row;
+            }
+        }
+    }
     //STORAGE_VOLUMES
     private class VolumesFactory extends BasicFactoryBase {
 
@@ -688,7 +773,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
                 return 0;
             }
         }
-        
+
         private class VolumesScan extends Scan {
 
             VolumeInfo[] volumes;
@@ -824,8 +909,8 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             .colString("initialized", 3, false)
             .colString("update_suspended", 3, false)
             .colString("shutdown_suspended", 3, false)
-            .colString("version", 128, false)
-            .colString("copyright", 128, false)
+            .colString("version", BasicFactoryBase.IDENT_MAX, false)
+            .colString("copyright", BasicFactoryBase.IDENT_MAX, false)
             .colTimestamp("start_time", false)
             .colString("default_commit_policy", 64, false);
         
@@ -839,8 +924,18 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             .colBigInt("free_count",false)
             .colBigInt("dropped_count", false);
 
+        builder.userTable(STORAGE_TREES)
+            .colString("volume_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("treeName", BasicFactoryBase.IDENT_MAX, false)
+            .colString("status", 64, false)
+            .colBigInt("depth", false)
+            .colBigInt("fetch_counter", false)
+            .colBigInt("traverse_counter", false)
+            .colBigInt("store_counter", false)
+            .colBigInt("remove_counter", false);
+            
         builder.userTable(STORAGE_VOLUMES)
-            .colString("volume_name", 128, false)
+            .colString("volume_name", BasicFactoryBase.IDENT_MAX, false)
             .colString("path", 1024, false)
             .colString("temporary", 3, false)
             .colBigInt("page_size", false)
