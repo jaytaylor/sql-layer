@@ -34,7 +34,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
-import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
 
 
@@ -43,21 +42,21 @@ public class CollationFactoryTest {
     private final static int NTHREADS = 10;
     
     @Test
-    public void getACollator() throws Exception {
-        final Collator collator = CollatorFactory.getCollator("sw_SW");
-        assertEquals("sw", collator.getLocale(ULocale.VALID_LOCALE).getName());
+    public void getAkCollator() throws Exception {
+        final AkCollator collator = AkCollatorFactory.getCollator("sw_SW");
+        assertEquals("sw", collator.getCollator().getLocale(ULocale.VALID_LOCALE).getName());
     }
     
     @Test
     public void uniquePerThread() throws Exception {
         final AtomicInteger threadIndex = new AtomicInteger();
-        final Collator[] array = new Collator[NTHREADS];
+        final AkCollator[] array = new AkCollator[NTHREADS];
         Thread[] threads = new Thread[NTHREADS];
         for (int i = 0; i < NTHREADS;i++) {
             threads[i] = new Thread(new Runnable() {
                 public void run() {
                     int index = threadIndex.getAndIncrement();
-                    array[index] = CollatorFactory.getCollator("sw_SW");
+                    array[index] = AkCollatorFactory.getCollator("sw_SW");
                 }
             });
         }
