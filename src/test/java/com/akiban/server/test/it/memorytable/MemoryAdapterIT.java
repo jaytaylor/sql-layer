@@ -28,6 +28,7 @@ package com.akiban.server.test.it.memorytable;
 
 import static org.junit.Assert.*;
 
+import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Set;
 import java.util.concurrent.Callable;
@@ -93,8 +94,10 @@ public class MemoryAdapterIT extends PostgresServerITBase {
 
     @Test
     public void testGetAdapter() throws Exception {
-        Statement executeStatement = getConnection().createStatement();
+        Connection connection = openConnection();
+        Statement executeStatement = connection.createStatement();
         executeStatement.execute("select 1");
+        executeStatement.close();
 
         Set<Integer> connections =  serviceManager().getPostgresService().getServer().getCurrentSessions();
         assertTrue (!connections.isEmpty());
@@ -111,6 +114,8 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         StoreAdapter adapter = postgresConn.getStore(table);
         assertNotNull (adapter);
         assertTrue (adapter instanceof MemoryAdapter);
+
+        closeConnection(connection);
     }
 
     private class TestFactory implements MemoryTableFactory {

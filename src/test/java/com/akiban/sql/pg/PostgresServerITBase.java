@@ -54,8 +54,6 @@ public class PostgresServerITBase extends ITBase
     public static final String USER_NAME = "auser";
     public static final String USER_PASSWORD = "apassword";
 
-    private static int ccount = 0;
-
     protected Connection openConnection() throws Exception {
         int port = serviceManager().getPostgresService().getPort();
         if (port <= 0) {
