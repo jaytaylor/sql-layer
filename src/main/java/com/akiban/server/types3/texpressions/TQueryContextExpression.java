@@ -26,38 +26,13 @@
 
 package com.akiban.server.types3.texpressions;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-public abstract class TQueryContextExpression implements TPreparedExpression {
-    
-    protected abstract void evaluate(QueryContext context, PValueTarget target);
-    
-    @Override
-    public TPreptimeValue evaluateConstant() {
-        return null;
-    }
-
-    @Override
-    public TEvaluatableExpression build() {
-        return new Evaluation();
-    }
-    
-    private class Evaluation extends ContextualEvaluation<QueryContext> {
-
-        @Override
-        protected void evaluate(QueryContext context, PValueTarget target) {
-            TQueryContextExpression.this.evaluate(context, target);
-        }
-
-        @Override
-        public void with(QueryContext context) {
-            setContext(context);
-        }
-
-        private Evaluation() {
-            super(resultType().typeClass().underlyingType());
-        }
-    }
+public abstract class TQueryContextExpression extends TOverloadBase
+{
+    public abstract TInstance tInstance(TExecutionContext context);
+    public abstract void evaluate(TExecutionContext context, PValueTarget target);
+    public abstract boolean constantPerPreparation();
 }
