@@ -32,6 +32,8 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -46,9 +48,28 @@ import com.akiban.server.types3.texpressions.Constantness;
  */
 public class Cast_From_Varchar
 {
+    
+    /**
+     * TODO:
+     * DATETIME
+     * TIME
+     * TIMESTAMP
+     * BIT
+     * CHAR
+     * BINARY
+     * VARBINARY
+     * TINYBLOG
+     * TINYTEXT
+     * TEXT
+     * MEDIUMBLOB
+     * MEDIUMTEXT
+     * LONGBLOG
+     * LONTTEXT
+     * 
+     */
+    
     public static final TCast TO_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT, true, Constantness.UNKNOWN)
     {
-
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
@@ -202,6 +223,67 @@ public class Cast_From_Varchar
                 target.putInt64(-1); // MySQL's way!
             }
         }   
+    };
+
+    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            throw new UnsupportedOperationException("not supported yet");
+        }   
+    };
+    
+    public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MDouble.INSTANCE, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            String st = (String)source.getObject();
+            try
+            {
+                target.putDouble(Double.parseDouble(st));
+                return;
+            }
+            catch (NumberFormatException e)
+            {
+                context.reportError(e.getMessage());
+            }
+
+            target.putDouble(Double.parseDouble(st));
+        }    
+    };
+
+    public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, true, Constantness.UNKNOWN)
+    {
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            int ret = CastUtils.parseDate((String)source.getObject(), context);
+            if (ret < 0)
+                target.putNull();
+            else
+                target.putInt32(ret);
+        }
     };
 
     private static long tryParse(String st, long max, long min, TExecutionContext context)

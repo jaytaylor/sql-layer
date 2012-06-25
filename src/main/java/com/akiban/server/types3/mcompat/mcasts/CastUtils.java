@@ -26,12 +26,40 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
+import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.types3.TExecutionContext;
 
 public final class CastUtils
 {
-     
-    static long getInRange (long max, long min, long val, TExecutionContext context)
+
+    public static int parseDate(String st, TExecutionContext context)
+    {
+        String tks[];
+        
+        // date and time tokens
+        String datetime[] = st.split(" ");
+        if (datetime.length == 2)
+            tks = datetime[0].split("-"); // ignore the time part
+        else
+            tks = st.split("-");
+
+        if (tks.length != 3)
+            context.reportError(new InvalidDateFormatException("bad DATE", st));
+        
+        try
+        {
+            return Integer.parseInt(tks[0]) * 512
+                    + Integer.parseInt(tks[1]) * 32
+                    + Integer.parseInt(truncateNonDigits(tks[2], context));
+        }
+        catch (NumberFormatException ex)
+        {
+            context.reportError(new InvalidDateFormatException("bad DATE", st));
+        }
+        return -1;
+    }
+
+    public static long getInRange (long max, long min, long val, TExecutionContext context)
     {
         if (val > max)
         {
@@ -53,7 +81,7 @@ public final class CastUtils
      * @param st
      * @return 
      */
-    static String truncateNonDigits(String st, TExecutionContext context)
+    public static String truncateNonDigits(String st, TExecutionContext context)
     {
         int n = 0;
         st = st.trim();
