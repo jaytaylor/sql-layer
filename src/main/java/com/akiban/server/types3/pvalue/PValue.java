@@ -310,6 +310,12 @@ public final class PValue implements PValueSource, PValueTarget {
         this(underlying, null);
     }
     
+    public PValue(double val)
+    {
+        this(PUnderlying.DOUBLE);
+        putDouble(val);
+    }
+    
     public PValue(PUnderlying underlying, PValueCacher<?> cacher) {
         this.underlying = underlying;
         this.state = State.UNSET;
