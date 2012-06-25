@@ -30,8 +30,12 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.QueryContext.NotificationLevel;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.InvalidParameterValueException;
+import com.akiban.server.error.OverflowException;
+import com.akiban.server.error.StringTruncationException;
 import com.akiban.util.SparseArray;
 
+import java.util.Date;
 import java.util.List;
 
 public final class TExecutionContext {
@@ -87,18 +91,125 @@ public final class TExecutionContext {
         queryContext.warnClient(exception);
     }
 
+    public String getCurrentLocale()
+    {
+        throw new UnsupportedOperationException("getLocale() not supported yet");
+    }
+    
+
+    /**
+     * Some functions need to get the current timezone (session/global), not the JVM's timezone.
+     * @return  the server's timezone.
+     */
+    public String getCurrentTimezone()
+    {
+        throw new UnsupportedOperationException("getCurrentTImezone() not supported yet");
+    }
+
+    /**
+     * 
+     * @return  the time at which the query started
+     */
+    public long getCurrentDate()
+    {
+        return queryContext.getStartTime();
+    }
+    
+    public String getCurrentUser()
+    {
+        return queryContext.getCurrentUser();
+    }
+    
+    public String getSessionUser()
+    {
+        return queryContext.getSessionUser();
+    }
+    
+    public String getSystemUser()
+    {
+        return queryContext.getSystemUser();
+    }
+    
+    public void reportOverflow(String msg)
+    {
+        switch(overflowHandling)
+        {
+            case WARN:
+                warnClient(new OverflowException());
+                break;
+            case ERROR:
+                throw new OverflowException();
+            default:
+                // ignores, does nothing
+        }
+    }
+    
+    public void reportTruncate(String original, String truncated)
+    {
+        switch(truncateHandling)
+        {
+            case WARN:
+                warnClient(new StringTruncationException(original, truncated));
+                break;
+            case ERROR:
+                throw new StringTruncationException(original, truncated);
+            default:
+                // ignores, does nothing
+        }
+    }
+    
+    public void reportBadValue(String msg)
+    {
+        switch(invalidFormatHandling)
+        {
+            case WARN:
+                warnClient(new InvalidParameterValueException(msg));
+                break;
+            case ERROR:
+                throw new InvalidParameterValueException(msg);
+            default:
+                // ignores, does nothing
+        }
+    }
+
+    public void reportError(InvalidOperationException e)
+    {
+        switch(defaultMode)
+        {
+            case WARN:
+                warnClient(e);
+                break;
+            case ERROR:
+                throw e;
+            case IGNORE:
+                // ignores, does nothing
+        }
+    }
+    
+    public void reportError(String msg)
+    {
+        reportError(new InvalidParameterValueException(msg));
+    }
 
     // state
 
     TExecutionContext(SparseArray<Object> preptimeCache,
                       List<TInstance> inputTypes,
                       TInstance outputType,
-                      QueryContext queryContext)
+                      QueryContext queryContext,
+                      ErrorHandlingMode overflow,
+                      ErrorHandlingMode truncate,
+                      ErrorHandlingMode invalid,
+                      ErrorHandlingMode defaultM)
     {
         this.preptimeCache = preptimeCache;
         this.inputTypes = inputTypes;
         this.outputType = outputType;
         this.queryContext = queryContext;
+        overflowHandling = overflow;
+        truncateHandling = truncate;
+        invalidFormatHandling = invalid;
+        defaultMode = defaultM;
     }
 
     private SparseArray<Object> preptimeCache;
@@ -106,4 +217,8 @@ public final class TExecutionContext {
     private List<TInstance> inputTypes;
     private TInstance outputType;
     private QueryContext queryContext;
+    private ErrorHandlingMode overflowHandling;
+    private ErrorHandlingMode truncateHandling;
+    private ErrorHandlingMode invalidFormatHandling;
+    private ErrorHandlingMode defaultMode;
 }
