@@ -36,7 +36,6 @@ import org.joda.time.MutableDateTime;
 
 public class MDatetimes 
 {
-
     private static final TBundleID bundle = MBundle.INSTANCE.id();
     
     public static final NoAttrTClass DATE = new NoAttrTClass(bundle,
