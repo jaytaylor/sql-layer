@@ -24,38 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.t3expressions;
 
-import com.akiban.util.SparseArray;
+import com.akiban.server.types3.TClass;
 
-import java.util.List;
-
-public final class TPreptimeContext {
-
-    public void setOutputType(TInstance outputType) {
-        this.outputType = outputType;
-    }
-
-    public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, null); // TODO pass in
-    }
-    
-    public void set(int index, Object value) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        preptimeCache.set(index, value);
-    }
-
-    public TPreptimeContext(List<TInstance> inputTypes) {
-        this.inputTypes = inputTypes;
-    }
-
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
-        this.inputTypes = inputTypes;
-        this.outputType = outputType;
-    }
-
-    private SparseArray<Object> preptimeCache;
-    private List<TInstance> inputTypes;
-    private TInstance outputType;
+public interface TClassPossibility {
+    boolean isAny();
+    boolean isNone();
+    TClass get();
 }

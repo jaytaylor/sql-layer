@@ -27,8 +27,10 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.types3.TInstance;
 
-public class Column
+public class
+        Column
 {
     public static Column create(Table table, String name, Integer position, Type type, Boolean nullable,
                                 Long typeParameter1, Long typeParameter2, Long initialAutoIncValue,
@@ -46,6 +48,10 @@ public class Column
 
     public static Column create(Table table, String name, Integer position, Type type) {
         return create(table, name, position, type, null, null, null, null, null);
+    }
+
+    public TInstance tInstance() {
+        throw new UnsupportedOperationException();
     }
 
     @Override

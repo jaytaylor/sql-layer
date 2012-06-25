@@ -26,10 +26,20 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.t3expressions.OverladResolutionResult;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.T3ScalarsRegistery;
+import com.akiban.server.t3expressions.TClassPossibility;
+import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AnyCondition;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
@@ -55,6 +65,9 @@ import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.rule.ConstantFolder.Folder;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
 
 public final class OverloadAndTInstanceResolver extends BaseRule {
     private static final Logger logger = LoggerFactory.getLogger(OverloadAndTInstanceResolver.class);
@@ -140,88 +153,188 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 n = handleConstantExpression((ConstantExpression) n);
             else
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
+            
+            n = folder.visit(n);
+            
             return n;
         }
 
         ExpressionNode handleCastExpression(CastExpression expression) {
-            //TODO
+            return expression;
         }
 
         ExpressionNode handleFunctionExpression(FunctionExpression expression) {
-            //TODO
+            List<ExpressionNode> operands = expression.getOperands();
+            List<TClass> operandClasses = new ArrayList<TClass>(operands.size());
+            for (ExpressionNode operand : operands)
+                operandClasses.add(tclass(operand));
+
+            OverladResolutionResult resolutionResult = registry.get(expression.getFunction(), operandClasses);
+
+            // cast operands
+            for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
+                ExpressionNode operand = castTo(operands.get(i), resolutionResult.tClass(i));
+                operands.set(i, operand);
+            }
+
+            TValidatedOverload overload = resolutionResult.overload();
+
+            final List<TPreptimeValue> operandValues = new ArrayList<TPreptimeValue>(operands.size());
+            List<TInstance> operandInstances = new ArrayList<TInstance>(operands.size());
+            for (ExpressionNode operand : operands) {
+                TPreptimeValue preptimeValue = operand.getPreptimeValue();
+                operandValues.add(preptimeValue);
+                operandInstances.add(preptimeValue.instance());
+            }
+
+            TOverloadResult overloadResultStrategy = overload.resultStrategy();
+            TInstance resultInstance;
+
+            TPreptimeContext context = new TPreptimeContext(operandInstances);
+            switch (overloadResultStrategy.category()) {
+            case CUSTOM:
+                resultInstance = overloadResultStrategy.customRule().resultInstance(operandValues, context);
+                break;
+            case FIXED:
+                resultInstance = overloadResultStrategy.fixed();
+                break;
+            case PICKING:
+                resultInstance = resolutionResult.pickingType();
+                break;
+            default:
+                throw new AssertionError(overloadResultStrategy.category());
+            }
+            context.setOutputType(resultInstance);
+            overload.finishPreptimePhase(context);
+
+            // TODO should this be in Folder?
+            // -----------------------------------------------------------
+            TPreptimeValue result = overload.evaluateConstant(context, new LazyListBase<TPreptimeValue>() {
+                @Override
+                public TPreptimeValue get(int i) {
+                    return operandValues.get(i);
+                }
+
+                @Override
+                public int size() {
+                    return operandValues.size();
+                }
+            });
+            if (result.value() != null) {
+                assert false : "create constant expression" ; // TODO
+            }
+            // -----------------------------------------------------------
+
+            expression.setPreptimeValue(new TPreptimeValue(resultInstance));
+            return expression;
         }
 
         ExpressionNode handleIfElseExpression(IfElseExpression expression) {
             ExpressionNode thenExpr = expression.getThenExpression();
             ExpressionNode elseExpr = expression.getElseExpression();
 
-            TInstance thenType = thenExpr.getPreptimeValue().instance();
-            TInstance elseType = elseExpr.getPreptimeValue().instance();
+            // constant-fold if the condition is constant
+            PValueSource conditionVal = pval(expression.getTestCondition());
+            if (conditionVal != null) {
+                boolean conditionMet = conditionVal.getBoolean(false);
+                return conditionMet ? thenExpr : elseExpr;
+            }
 
-            TClass commonClass = registry.commonTClass(thenType.typeClass(), elseType.typeClass());
+            TInstance thenType = tinst(thenExpr);
+            TInstance elseType = tinst(elseExpr);
+
+            TClassPossibility commonPossibility = registry.commonTClass(thenType.typeClass(), elseType.typeClass());
+            if (commonPossibility.isAny() || commonPossibility.isNone())
+                throw error("couldn't determine a type for CASE expression");
+            TClass commonClass = commonPossibility.get();
             thenExpr = castTo(thenExpr, commonClass);
             elseExpr = castTo(elseExpr, commonClass);
+            TInstance resultInstance = commonClass.pickInstance(tinst(thenExpr), tinst(elseExpr));
+            expression.setPreptimeValue(new TPreptimeValue(resultInstance));
+            return expression;
         }
 
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
-            //TODO
+            throw new UnsupportedOperationException(); // TODO
         }
 
         ExpressionNode handleExistsCondition(ExistsCondition expression) {
-            //TODO
+            return boolExpr(expression);
         }
 
         ExpressionNode handleSubqueryValueExpression(SubqueryValueExpression expression) {
-            //TODO
+            throw new UnsupportedOperationException(); // TODO
         }
 
         ExpressionNode handleSubqueryResultSetExpression(SubqueryResultSetExpression expression) {
-            //TODO
+            return boolExpr(expression);
         }
 
         ExpressionNode handleAnyCondition(AnyCondition expression) {
-            //TODO
+            return boolExpr(expression);
         }
 
         ExpressionNode handleComparisonCondition(ComparisonCondition expression) {
-            //TODO
+            return boolExpr(expression);
         }
 
         ExpressionNode handleColumnExpression(ColumnExpression expression) {
-            //TODO
+            expression.setPreptimeValue(new TPreptimeValue(expression.getColumn().tInstance()));
+            return expression;
         }
 
         ExpressionNode handleInListCondition(InListCondition expression) {
-            //TODO
+            return boolExpr(expression);
         }
 
         ExpressionNode handleParameterCondition(ParameterCondition expression) {
-            //TODO
+            return boolExpr(expression);
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
-            //TODO
+            return expression;
         }
 
         ExpressionNode handleBooleanOperationExpression(BooleanOperationExpression expression) {
-            //TODO
+            return boolExpr(expression);
         }
 
         ExpressionNode handleBooleanConstantExpression(BooleanConstantExpression expression) {
-            //TODO
+            return boolExpr(expression);
         }
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
-            //TODO
+            return expression; // TODO Will its TInstance have been set at construction?
         }
 
-        private ExpressionNode castTo(ExpressionNode expression, TClass targetClass) {
-            if (expression.getPreptimeValue().instance().typeClass().equals(targetClass))
+        private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass) {
+            if (targetClass.equals(tclass(expression)))
                 return expression;
             CastExpression result = null; // TODO
             assert result != null : "todo";
             return result;
         }
 
+        private static TClass tclass(ExpressionNode operand) {
+            TInstance tinst = tinst(operand);
+            return tinst == null ? null : tinst.typeClass();
+        }
+
+        private static TInstance tinst(ExpressionNode node) {
+            return node.getPreptimeValue().instance();
+        }
+
+        private static PValueSource pval(ExpressionNode expression) {
+            return expression.getPreptimeValue().value();
+        }
+
+        private RuntimeException error(String message) {
+            throw new RuntimeException(message); // TODO what actual error type?
+        }
+    }
+
+    private static ExpressionNode boolExpr(ExpressionNode expression) {
+        expression.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
+        return expression;
     }
 }

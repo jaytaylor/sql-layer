@@ -21,25 +21,24 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 
-import java.util.Collection;
+import java.util.List;
 import java.util.UUID;
 
 public interface T3ScalarsRegistery {
-    Collection<? extends TValidatedOverload> get(String name);
+    OverladResolutionResult get(String name, List<? extends TClass> inputClasses);
     TCast cast(TClass source, TClass target);
 
     /**
      * Returns the common of the two types, or {@linkplain #NO_COMMON} if the two have no common type. For either
-     * argument, a <tt>null</tt> value is interpreted as any type; this means that if either argument is <tt>null</tt>,
-     * the other is returned (if they're both <tt>null</tt>, the result is also <tt>null</tt>).
-     * @param one
-     * @param two
-     * @return
+     * argument, a <tt>null</tt> value is interpreted as any type.
+     * @param one the first type class
+     * @param two the other type class
+     * @return a wrapper that represents the common class, no common class, or <tt>ANY</tt> (the latter only if both
+     * inputs are <tt>null</tt>)
      */
-    TClass commonTClass(TClass one, TClass two);
+    TClassPossibility commonTClass(TClass one, TClass two);
 
     public static TBundleID NO_COMMON_BUNDLE
             = new TBundleID("<none>", UUID.fromString("AC13A852-BB2E-11E1-A692-133D6188709B"));
