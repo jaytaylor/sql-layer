@@ -29,31 +29,73 @@
  */
 package com.akiban.server.types3.aksql.akfuncs;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.aksql.aktypes.AkString;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.std.NoArgExpression;
 
 public class AkNoArgFuncs
 {
-    public static final TOverload PI = new NoArgExpression("PI", true)
+    public static final TPreparedExpression PI = new TPreparedExpression()
     {
+        private final PValue VAL = new PValue(PUnderlying.DOUBLE, Math.PI);
+        private final TInstance RESULT_TYPE = AkNumeric.DOUBLE.instance();
+        private final TPreptimeValue PREP_VAL = new TPreptimeValue(RESULT_TYPE, VAL);
+        
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TPreptimeValue evaluateConstant()
         {
-            return AkNumeric.DOUBLE.instance();
+            return PREP_VAL;
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public TInstance resultType()
         {
-            target.putDouble(Math.PI);
+            return RESULT_TYPE;
         }
+
+        @Override
+        public TEvaluatableExpression build()
+        {
+            return new TEvaluatableExpression()
+            {
+                @Override
+                public PValueSource resultValue()
+                {
+                    return VAL;
+                }
+
+                @Override
+                public void evaluate()
+                {
+                    // does nothing
+                }
+
+                @Override
+                public void with(Row row)
+                {
+                    // does nothing
+                }
+
+                @Override
+                public void with(QueryContext context)
+                {
+                    // does nothing
+                }
+            };
+        }        
     };
-
     
     public static final TOverload CUR_USER = new NoArgExpression("CUR_USER", true)
     {

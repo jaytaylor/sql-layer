@@ -26,13 +26,21 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.std.NoArgExpression;
 import java.util.Date;
 
@@ -40,21 +48,56 @@ public class MNoArgFuncs
 {
     static final int DEFAULT_LENGTH = 77;
 
-    public static final TOverload PI = new NoArgExpression("PI", true)
+    public static final TPreparedExpression PI = new TPreparedExpression()
     {
+        private final PValue VAL = new PValue(PUnderlying.DOUBLE, Math.PI);
+        private final TPreptimeValue PREP_VAL = new TPreptimeValue(MDouble.INSTANCE.instance(), VAL);
+        private final TInstance RESULT_TYPE = MDouble.INSTANCE.instance();
+        
         @Override
-        public TInstance tInstance(TExecutionContext context)
+        public TPreptimeValue evaluateConstant()
         {
-            return MDouble.INSTANCE.instance();
+            return PREP_VAL;
         }
 
         @Override
-        public void evaluate(TExecutionContext context, PValueTarget target)
+        public TInstance resultType()
         {
-            target.putDouble(Math.PI);
+            return RESULT_TYPE;
         }
+
+        @Override
+        public TEvaluatableExpression build()
+        {
+            return new TEvaluatableExpression()
+            {
+                @Override
+                public PValueSource resultValue()
+                {
+                    return VAL;
+                }
+
+                @Override
+                public void evaluate()
+                {
+                    // does nothing
+                }
+
+                @Override
+                public void with(Row row)
+                {
+                    // does nothing
+                }
+
+                @Override
+                public void with(QueryContext context)
+                {
+                    // does nothing
+                }
+            };
+        }        
     };
-
+ 
     public static final TOverload CUR_DATE = new NoArgExpression("CURRENT_DATE", true)
     {
         @Override
