@@ -28,15 +28,18 @@ package com.akiban.server.types3.texpressions.std;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TQueryContextExpression;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public abstract class NoArgExpression extends TQueryContextExpression
+public abstract class NoArgExpression extends TOverloadBase
 {
-    @Override
+    public abstract TInstance tInstance(TExecutionContext context);
+    public abstract void evaluate(TExecutionContext context, PValueTarget target);
+
     public boolean constantPerPreparation()
     {
         return constPerPrep;

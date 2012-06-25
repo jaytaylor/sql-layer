@@ -309,12 +309,6 @@ public final class PValue implements PValueSource, PValueTarget {
     public PValue(PUnderlying underlying) {
         this(underlying, null);
     }
-
-    public PValue(PUnderlying under, double val)
-    {
-        this(under);
-        putDouble(val);
-    }
     
     public PValue(PUnderlying underlying, PValueCacher<?> cacher) {
         this.underlying = underlying;

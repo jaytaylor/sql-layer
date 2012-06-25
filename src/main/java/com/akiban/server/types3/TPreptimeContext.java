@@ -35,7 +35,7 @@ public final class TPreptimeContext {
     public TExecutionContext createExecutionContext() {
         return new TExecutionContext(preptimeCache, inputTypes, outputType, 
                 null,
-                null, null, null, null); // TODO pass in
+                null, null, null); // TODO pass in
     }
     
     public void set(int index, Object value) {

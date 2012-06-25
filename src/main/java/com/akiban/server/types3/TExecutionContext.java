@@ -138,8 +138,11 @@ public final class TExecutionContext {
                 break;
             case ERROR:
                 throw new OverflowException();
-            default:
+            case IGNORE:
                 // ignores, does nothing
+                break;
+            default:
+                throw new AssertionError(overflowHandling);
         }
     }
     
@@ -154,8 +157,9 @@ public final class TExecutionContext {
                 throw new StringTruncationException(original, truncated);
             case IGNORE:
                 // ignores, does nothing
+                break;
             default:
-                assert false : "unexpected mode " + truncateHandling;
+                throw new AssertionError(truncateHandling);
         }
     }
     
@@ -170,30 +174,10 @@ public final class TExecutionContext {
                 throw new InvalidParameterValueException(msg);
             case IGNORE:
                 // ignores, does nothing
-            default:
-                assert false : "unexpected mode: " + invalidFormatHandling;
-        }
-    }
-
-    public void reportError(InvalidOperationException e)
-    {
-        switch(defaultMode)
-        {
-            case WARN:
-                warnClient(e);
                 break;
-            case ERROR:
-                throw e;
-            case IGNORE:
-                // ignores, does nothing
             default:
-                assert false : "unexpected mode: " + defaultMode;
+                throw new AssertionError(invalidFormatHandling);
         }
-    }
-    
-    public void reportError(String msg)
-    {
-        reportError(new InvalidParameterValueException(msg));
     }
 
     // state
@@ -204,8 +188,7 @@ public final class TExecutionContext {
                       QueryContext queryContext,
                       ErrorHandlingMode overflow,
                       ErrorHandlingMode truncate,
-                      ErrorHandlingMode invalid,
-                      ErrorHandlingMode defaultM)
+                      ErrorHandlingMode invalid)
     {
         this.preptimeCache = preptimeCache;
         this.inputTypes = inputTypes;
@@ -214,7 +197,6 @@ public final class TExecutionContext {
         overflowHandling = overflow;
         truncateHandling = truncate;
         invalidFormatHandling = invalid;
-        defaultMode = defaultM;
     }
 
     private SparseArray<Object> preptimeCache;
@@ -225,5 +207,4 @@ public final class TExecutionContext {
     private ErrorHandlingMode overflowHandling;
     private ErrorHandlingMode truncateHandling;
     private ErrorHandlingMode invalidFormatHandling;
-    private ErrorHandlingMode defaultMode;
 }

@@ -23,11 +23,8 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-/*
- * To change this template, choose Tools | Templates
- * and open the template in the editor.
- */
-package com.akiban.server.types3.aksql.akfuncs;
+
+package com.akiban.server.types3.common.funcs;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
@@ -35,8 +32,9 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.aksql.aktypes.AkString;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -44,14 +42,17 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.std.NoArgExpression;
+import java.util.Date;
 
-public class AkNoArgFuncs
+public class NoArgFuncs
 {
+    static final int MySQL_DEFAULT_LENGTH = 77;
+
     public static final TPreparedExpression PI = new TPreparedExpression()
     {
-        private final PValue VAL = new PValue(PUnderlying.DOUBLE, Math.PI);
-        private final TInstance RESULT_TYPE = AkNumeric.DOUBLE.instance();
-        private final TPreptimeValue PREP_VAL = new TPreptimeValue(RESULT_TYPE, VAL);
+        private final PValue VAL = new PValue(Math.PI);
+        private final TPreptimeValue PREP_VAL = new TPreptimeValue(MDouble.INSTANCE.instance(), VAL);
+        private final TInstance RESULT_TYPE = MDouble.INSTANCE.instance();
         
         @Override
         public TPreptimeValue evaluateConstant()
@@ -95,6 +96,66 @@ public class AkNoArgFuncs
                 }
             };
         }        
+    };
+ 
+    public static final TOverload CUR_DATE = new NoArgExpression("CURRENT_DATE", true)
+    {
+        @Override
+        public TInstance tInstance(TExecutionContext context)
+        {
+            return MDatetimes.DATE.instance();
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putInt32(MDatetimes.encodeDate(context.getCurrentDate())); // TODO: define MDatetimes.encodeDate(long millis)
+        }
+    };
+
+    public static final TOverload CUR_TIME = new NoArgExpression("CURRENT_TIME", true)
+    {
+        @Override
+        public TInstance tInstance(TExecutionContext context)
+        {
+            return MDatetimes.TIME.instance();
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putInt32(MDatetimes.encodeTime(context.getCurrentDate())); // TODO:
+        }   
+    };
+
+    public static final TOverload CUR_TIMESTAMP = new NoArgExpression("CURRENT_TIMESTAMP", true)
+    {
+        @Override
+        public TInstance tInstance(TExecutionContext context)
+        {
+            return MDatetimes.DATETIME.instance();
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putInt64(MDatetimes.encodeDatetime(context.getCurrentDate()));
+        }
+    };
+    
+    public static final TOverload SYSDATE = new NoArgExpression("SYSDATE", false)
+    {
+        @Override
+        public TInstance tInstance(TExecutionContext context)
+        {
+            return MDatetimes.DATETIME.instance();
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueTarget target)
+        {
+            target.putInt64(MDatetimes.encodeDatetime(new Date().getTime()));
+        }
     };
     
     public static final TOverload CUR_USER = new NoArgExpression("CUR_USER", true)
