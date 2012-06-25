@@ -30,6 +30,8 @@ import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 public class MDatetimes {
 
@@ -46,7 +48,26 @@ public class MDatetimes {
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
             "timestamp", 1, 1, 4, PUnderlying.INT_32);
     
-    public static long[] fromEncodedDate(long val)
+    
+    /**
+     * TODO: This function is ised in CUR_DATE/TIME, could speed up the performance
+     * by directly passing the Date(Time) object to this function
+     * so it won't have to create one.
+     * 
+     * @param millis
+     * @param tz
+     * @return the (MySQL) encoded DATE value
+     */
+    public static int encodeDate(long millis, String tz)
+    {
+        DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
+        
+        return dt.getYear() * 512
+                + dt.getMonthOfYear() * 32
+                + dt.getDayOfMonth();
+    }
+    
+    public static long[] decodeDate(long val)
     {
         return new long[]
         {
@@ -74,7 +95,37 @@ public class MDatetimes {
         };
     }
     
-    public static long[] fromDatetime (long val)
+    
+    /**
+     * TODO: Same as encodeDate(long, String)'s
+     * 
+     * @param millis number of millis second from UTC in the specified timezone
+     * @param tz
+     * @return the (MySQL) encoded DATETIME value
+     */
+    public static long encodeDatetime(long millis, String tz)
+    {
+        DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
+        
+        return dt.getYear() * DATETIME_YEAR_SCALE
+                + dt.getMonthOfYear() * DATETIME_MONTH_SCALE
+                + dt.getDayOfMonth() * DATETIME_DAY_SCALE
+                + dt.getHourOfDay() * DATETIME_HOUR_SCALE
+                + dt.getMinuteOfHour() * DATETIME_MIN_SCALE
+                + dt.getSecondOfMinute();
+    }
+        
+    public static long encodeDatetime(long ymd[])
+    {
+        return ymd[YEAR_INDEX] * DATETIME_YEAR_SCALE 
+                + ymd[MONTH_INDEX] * DATETIME_MONTH_SCALE
+                + ymd[DAY_INDEX] * DATETIME_DAY_SCALE
+                + ymd[HOUR_INDEX] * DATETIME_HOUR_SCALE
+                + ymd[MIN_INDEX] * DATETIME_MIN_SCALE
+                + ymd[SEC_INDEX];
+    }
+
+    public static long[] decodeDatetime (long val)
     {
         return new long[]
         {
@@ -86,18 +137,8 @@ public class MDatetimes {
             val % 100
         };
     }
-
-    public static long encodeDatetime(long ymd[])
-    {
-        return ymd[YEAR_INDEX] * DATETIME_YEAR_SCALE 
-                + ymd[MONTH_INDEX] * DATETIME_MONTH_SCALE
-                + ymd[DAY_INDEX] * DATETIME_DAY_SCALE
-                + ymd[HOUR_INDEX] * DATETIME_HOUR_SCALE
-                + ymd[MIN_INDEX] * DATETIME_MIN_SCALE
-                + ymd[SEC_INDEX];
-    }
     
-    public static long[] fromTime(long val)
+    public static long[] decodeTime(long val)
     {
         return new long[]
         {
@@ -110,12 +151,29 @@ public class MDatetimes {
         };
     }
     
-    public static long toTime(long val[])
+    /**
+     * TODO: same as encodeDate(long, String)'s
+     * 
+     * @param millis: number of millis second from UTC in the sepcified timezone
+     * @param tz
+     * @return the (MySQL) encoded TIME value
+     */
+    public static int encodeTime(long millis, String tz)
+    {
+        DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
+        
+        return (int)(dt.getHourOfDay() * DATETIME_HOUR_SCALE  
+                        + dt.getMinuteOfHour() * DATETIME_HOUR_SCALE
+                        + dt.getSecondOfMinute());
+    }
+    
+    public static long encodeTime(long val[])
     {
         return val[HOUR_INDEX] * DATETIME_HOUR_SCALE
                 + val[MIN_INDEX] * DATETIME_MIN_SCALE
                 + val[SEC_INDEX];
     }
+
     public static boolean isValidDatetime (long ymdhms[])
     {
         return isValidDayMonth(ymdhms) && isValidHrMinSec(ymdhms);

@@ -108,7 +108,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeDate(context.getCurrentDate())); // TODO: define MDatetimes.encodeDate(long millis)
+            target.putInt32(MDatetimes.encodeDate(context.getCurrentDate(), context.getCurrentTimezone())); // TODO: define MDatetimes.encodeDate(long millis)
         }
     };
 
@@ -123,7 +123,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeTime(context.getCurrentDate())); // TODO:
+            target.putInt32(MDatetimes.encodeTime(context.getCurrentDate(), context.getCurrentTimezone()));
         }   
     };
 
@@ -138,7 +138,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDatetime(context.getCurrentDate()));
+            target.putInt64(MDatetimes.encodeDatetime(context.getCurrentDate(), context.getCurrentTimezone()));
         }
     };
     
@@ -153,7 +153,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDatetime(new Date().getTime()));
+            target.putInt64(MDatetimes.encodeDatetime(new Date().getTime(), context.getCurrentTimezone()));
         }
     };
     
