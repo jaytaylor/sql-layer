@@ -61,10 +61,10 @@ public class MChar extends TOverloadBase
         
         int n = 0;
         for(PValueSource num : inputs)
-            length += lengths[n++] = (int)(Math.log(num.getInt64()) / DIV + 1);
-        
+            length += lengths[n++] = byteLength(num.getInt64());
+
         byte ret[] = new byte[length];
-        
+
         int pos = 0;
         for (n = 0; n < lengths.length; ++n)
             parse(inputs.get(n).getInt64(), ret, pos += lengths[n]);
@@ -88,6 +88,12 @@ public class MChar extends TOverloadBase
     private static final long MASK = 0xff;
     private static final double DIV = Math.log(256);
     
+    private static int byteLength(long num)
+    {
+        return num < 255 
+                    ? 1
+                    : (int)(Math.log(num) / DIV + 1); 
+    }
     /**
      * TODO: byte is too small ==> causes overflow, but this is what underlies VARBINARY
      * @param num
