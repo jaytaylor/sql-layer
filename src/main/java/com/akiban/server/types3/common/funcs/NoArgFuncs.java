@@ -108,7 +108,7 @@ public class NoArgFuncs
         @Override
         public void evaluate(TExecutionContext context, PValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeDate(context.getCurrentDate(), context.getCurrentTimezone())); // TODO: define MDatetimes.encodeDate(long millis)
+            target.putInt32(MDatetimes.encodeDate(context.getCurrentDate(), context.getCurrentTimezone()));
         }
     };
 
