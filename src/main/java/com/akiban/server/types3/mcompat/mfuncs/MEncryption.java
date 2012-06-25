@@ -24,21 +24,17 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TQueryContextExpression;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.TAesEncryptDecrypt;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
-public final class XIntTime extends TQueryContextExpression {
-    @Override
-    public TInstance resultType() {
-        return XInt.TYPE_CLASS.instance();
-    }
-
-    @Override
-    protected void evaluate(QueryContext context, PValueTarget target) {
-        target.putInt32((int)context.getCurrentDate().getTime());
-    }
+public class MEncryption
+{
+    // MySQL's default key length for aes_encrypt/decrypt
+    public static final int DEFAULT_KEY_LENGTH = 16;
+    
+    public static final TOverload[] AES_CRYPTOS
+            = TAesEncryptDecrypt.create(MString.VARCHAR, MString.VARBINARY, DEFAULT_KEY_LENGTH);
 }
