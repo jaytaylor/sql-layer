@@ -35,12 +35,35 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
 public class Cast_From_Tinyint
 {
+    /**
+     * TODO:
+     * 
+     * DATE
+     * DATETIME
+     * TIME
+     * TIMESTAMP
+     * YEAR
+     * 
+     * BIT
+     * CHAR
+     * BINARY
+     * VARBINARY
+     * TINYBLOG
+     * TINYTEXT
+     * TEXT
+     * MEDIUMBLOB
+     * MEDIUMTEXT
+     * LONGBLOG
+     * LONTTEXT
+     * 
+     */
     public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MNumeric.TINYINT, MNumeric.TINYINT_UNSIGNED, true, Constantness.UNKNOWN)
     {
 
@@ -211,6 +234,21 @@ public class Cast_From_Tinyint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putDouble(source.getInt8());
+        }
+    };
+    
+    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.TINYINT, MString.VARCHAR, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putObject(Byte.toString(source.getInt8()));
         }
     };
 }
