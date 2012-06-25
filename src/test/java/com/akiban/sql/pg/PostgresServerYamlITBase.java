@@ -33,7 +33,6 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.Connection;
 
 import com.akiban.server.test.it.ITBase;
 import org.junit.AfterClass;
@@ -52,32 +51,7 @@ public class PostgresServerYamlITBase extends PostgresServerITBase {
     /** Whether to enable debugging output. */
     protected static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
 
-//    private static final PostgresServerIT manageServer = new PostgresServerIT();
-
-//    protected static Connection connection;
-
     protected PostgresServerYamlITBase() { }
-
-
-
-//    @BeforeClass
-//    public static void openTheConnection() throws Exception {
-//	manageServer.startTestServices();
-//	manageServer.openTheConnection();
-//	connection = manageServer.getConnection();
-//    }
-//
-//    @AfterClass
-//    public static void closeTheConnection() throws Exception {
-//	manageServer.stopTestServices();
-//	manageServer.closeTheConnection();
-//	connection = null;
-//    }
-//
-//    @Before
-//    public void dropAllTables() {
-//	manageServer.accessDropAllTables();
-//    }
 
     /**
      * Run a test with YAML input from the specified file.
@@ -85,30 +59,29 @@ public class PostgresServerYamlITBase extends PostgresServerITBase {
      * @param file the file
      * @throws IOException if there is an error accessing the file
      */
-    protected void testYaml(File file) throws IOException {
+    protected void testYaml(File file) throws Exception {
 	if (DEBUG) {
 	    System.err.println("\nFile: " + file);
 	}
-	Throwable exception = null;
+	Exception exception = null;
 	Reader in = null;
 	try {
 	    in = new InputStreamReader(new FileInputStream(file), "UTF-8");
-	    new YamlTester(file.toString(), in, connection).test();
+	    new YamlTester(file.toString(), in, getConnection()).test();
 	    if (DEBUG) {
 		System.err.println("Test passed");
 	    }
-	} catch (RuntimeException e) {
-	    exception = e;
-	    throw e;
-	} catch (IOException e) {
-	    exception = e;
-	    throw e;
-	} catch (Error e) {
+	} catch (Exception e) {
 	    exception = e;
 	    throw e;
 	} finally {
 	    if (exception != null) {
 		System.err.println("Test failed: " + exception);
+		try {
+                    forgetConnection();
+                }
+                catch (Exception e2) {
+                }
 	    }
 	    if (in != null) {
 		in.close();
@@ -116,17 +89,4 @@ public class PostgresServerYamlITBase extends PostgresServerITBase {
 	}
     }
 
-//    /**
-//     * Subclass of PostgresServerITBase to permit accessing its non-public
-//     * methods.
-//     */
-//    @Ignore
-//    private static class PostgresServerIT extends PostgresServerITBase {
-//	void accessDropAllTables() throws InvalidOperationException {
-//	    dropAllTables();
-//	}
-//	Connection getConnection() {
-//	    return connection;
-//	}
-//    }
 }

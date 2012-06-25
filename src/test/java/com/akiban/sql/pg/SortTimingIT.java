@@ -57,7 +57,7 @@ public class SortTimingIT extends PostgresServerITBase
 
     private void loadDB() throws Exception
     {
-        Statement statement = connection.createStatement();
+        Statement statement = getConnection().createStatement();
         statement.execute(
             String.format("create table t(id integer not null primary key, foobar int, filler varchar(%s))",
                           FILLER_SIZE));
@@ -76,7 +76,7 @@ public class SortTimingIT extends PostgresServerITBase
     {
         long start = System.currentTimeMillis();
         System.setProperty("sorttemp", tempVolume ? "true" : "false");
-        Statement statement = connection.createStatement();
+        Statement statement = getConnection().createStatement();
         statement.execute("select * from t order by foobar");
         ResultSet resultSet = statement.getResultSet();
         resultSet.next();

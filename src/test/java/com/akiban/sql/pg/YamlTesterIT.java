@@ -33,7 +33,6 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.Writer;
-import java.sql.Connection;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -1830,7 +1829,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- warnings: [[!re '[0-9]+', !re \"Can't convert .*\"]]");
     }
 
-    @Ignore("New code in turbo branch sets connection to null")
+    @Ignore("New code in turbo branch sets connection to null on error")
     @Test
     public void testConnectionReuse() throws Exception {
         boolean failed = false;
@@ -2116,9 +2115,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		System.err.println(testMethod + ": ");
 	    }
 	}
-	Connection connection = getConnection();
 	try {
-	    new YamlTester(null, new StringReader(yaml), connection).test();
+	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
 	} catch (Exception e) {
 	    if (DEBUG) {
 		System.err.println("Test failed:");
@@ -2149,9 +2147,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		System.err.println(testMethod + ": ");
 	    }
 	}
-	Connection connection = getConnection();
         try {
-	    new YamlTester(null, new StringReader(yaml), connection).test();
+	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
 	    if (DEBUG) {
 		System.err.println("Test failed: Expected exception");
 	    }

@@ -93,8 +93,7 @@ public class MemoryAdapterIT extends PostgresServerITBase {
 
     @Test
     public void testGetAdapter() throws Exception {
-        assertNotNull (connection);
-        Statement executeStatement = connection.createStatement();
+        Statement executeStatement = getConnection().createStatement();
         executeStatement.execute("select 1");
 
         Set<Integer> connections =  serviceManager().getPostgresService().getServer().getCurrentSessions();

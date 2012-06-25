@@ -67,7 +67,7 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
 
     @Test
     public void testRepeated() throws Exception {
-        Statement stmt = connection.createStatement();
+        Statement stmt = getConnection().createStatement();
         for (int i = 0; i < 1000; i++) {
             query(stmt, i / NROWS);
         }
@@ -78,7 +78,7 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
 
     @Test
     public void testSequential() throws Exception {
-        Statement stmt = connection.createStatement();
+        Statement stmt = getConnection().createStatement();
         for (int i = 0; i < 1000; i++) {
             query(stmt, i % NROWS);
         }

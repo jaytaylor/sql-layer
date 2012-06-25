@@ -48,7 +48,7 @@ public class JMXCancelationIT extends PostgresServerITBase
 
     @Before
     public void loadDB() throws Exception {
-        Statement statement = connection.createStatement();
+        Statement statement = getConnection().createStatement();
         statement.execute("CREATE TABLE t(id INTEGER NOT NULL PRIMARY KEY)");
         for (int id = 0; id < N; id++) {
             statement.execute(String.format("INSERT INTO t VALUES(%s)", id));

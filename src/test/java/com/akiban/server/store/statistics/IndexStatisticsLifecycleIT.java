@@ -36,6 +36,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
 
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
@@ -63,10 +64,16 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
 
     @Before
     public void prepareStatements() throws Exception {
-        executeStatement = connection.createStatement();
-        checkStatement = connection.prepareStatement(CHECK_SQL);
+        executeStatement = getConnection().createStatement();
+        checkStatement = getConnection().prepareStatement(CHECK_SQL);
     }
     
+    @After
+    public void closeStatements() throws Exception {
+        checkStatement.close();
+        executeStatement.close();
+    }
+
     // Check what stats are in the database. Do this using the
     // information_schema instead of any IndexStatistics API so
     // as to detect problems with the loader / caches, etc.
