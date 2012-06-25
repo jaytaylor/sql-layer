@@ -58,7 +58,7 @@ public abstract class MDateFormat extends TOverloadBase
                 @Override
                 protected long[] getYMDHMS(PValueSource source)
                 {
-                    return MDatetimes.fromEncodedDate(source.getInt32());
+                    return MDatetimes.decodeDate(source.getInt32());
                 }
             },
             new MDateFormat(MDatetimes.DATETIME)
@@ -66,7 +66,7 @@ public abstract class MDateFormat extends TOverloadBase
                 @Override
                 protected long[] getYMDHMS(PValueSource source)
                 {
-                    return MDatetimes.fromDatetime(source.getInt64());
+                    return MDatetimes.decodeDatetime(source.getInt64());
                 }
             },
             new MDateFormat(MDatetimes.TIME)
@@ -74,7 +74,7 @@ public abstract class MDateFormat extends TOverloadBase
                 @Override
                 protected long[] getYMDHMS(PValueSource source)
                 {
-                    long ret[] = MDatetimes.fromEncodedDate(source.getInt32());
+                    long ret[] = MDatetimes.decodeTime(source.getInt32());
                     
                     // adjust the date part to 0s
                     ret[MDatetimes.YEAR_INDEX] = 0;

@@ -24,40 +24,17 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.texpressions;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.TAesEncryptDecrypt;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
-public abstract class TQueryContextExpression implements TPreparedExpression {
+public class MEncryption
+{
+    // MySQL's default key length for aes_encrypt/decrypt
+    public static final int DEFAULT_KEY_LENGTH = 16;
     
-    protected abstract void evaluate(QueryContext context, PValueTarget target);
-    
-    @Override
-    public TPreptimeValue evaluateConstant() {
-        return null;
-    }
-
-    @Override
-    public TEvaluatableExpression build() {
-        return new Evaluation();
-    }
-    
-    private class Evaluation extends ContextualEvaluation<QueryContext> {
-
-        @Override
-        protected void evaluate(QueryContext context, PValueTarget target) {
-            TQueryContextExpression.this.evaluate(context, target);
-        }
-
-        @Override
-        public void with(QueryContext context) {
-            setContext(context);
-        }
-
-        private Evaluation() {
-            super(resultType().typeClass().underlyingType());
-        }
-    }
+    public static final TOverload[] AES_CRYPTOS
+            = TAesEncryptDecrypt.create(MString.VARCHAR, MString.VARBINARY, DEFAULT_KEY_LENGTH);
 }
