@@ -97,7 +97,7 @@ public class M2ArgRoundBase extends TOverloadBase {
             }
         });
     }
-    protected final TClass numericType;
+    private final TClass numericType;
     private final RoundType roundType;
 
     @Override
