@@ -24,34 +24,8 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.metamodel;
+package com.akiban.server.types3;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Type;
-
-import java.util.HashMap;
-import java.util.Map;
-
-public class MMType implements ModelNames {
-    public static Type create(AkibanInformationSchema ais, Map<String, Object> map)
-    {
-        return Type.create(ais,
-                           (String) map.get(type_name),
-                           (Integer) map.get(type_parameters),
-                           (Boolean) map.get(type_fixedSize),
-                           (Long) map.get(type_maxSizeBytes),
-                           (String) map.get(type_encoding),
-                           null, null);
-    }
-
-    public static Map<String, Object> map(Type type)
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(type_name, type.name());
-        map.put(type_parameters, type.nTypeParameters());
-        map.put(type_fixedSize, type.fixedSize());
-        map.put(type_maxSizeBytes, type.maxSizeBytes());
-        map.put(type_encoding, type.encoding());
-        return map;
-    }
+public class Types3Switch {
+    public static volatile boolean ON = false;
 }

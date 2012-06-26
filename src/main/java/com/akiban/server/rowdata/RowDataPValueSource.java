@@ -24,34 +24,55 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.metamodel;
+package com.akiban.server.rowdata;
 
-import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Type;
+public final class RowDataPValueSource extends AbstractRowDataPValueSource {
 
-import java.util.HashMap;
-import java.util.Map;
+    // FieldDefConversionBase interface
 
-public class MMType implements ModelNames {
-    public static Type create(AkibanInformationSchema ais, Map<String, Object> map)
-    {
-        return Type.create(ais,
-                           (String) map.get(type_name),
-                           (Integer) map.get(type_parameters),
-                           (Boolean) map.get(type_fixedSize),
-                           (Long) map.get(type_maxSizeBytes),
-                           (String) map.get(type_encoding),
-                           null, null);
+    public void bind(FieldDef fieldDef, RowData rowData) {
+        this.fieldDef = fieldDef;
+        this.rowData = rowData;
     }
 
-    public static Map<String, Object> map(Type type)
-    {
-        Map<String, Object> map = new HashMap<String, Object>();
-        map.put(type_name, type.name());
-        map.put(type_parameters, type.nTypeParameters());
-        map.put(type_fixedSize, type.fixedSize());
-        map.put(type_maxSizeBytes, type.maxSizeBytes());
-        map.put(type_encoding, type.encoding());
-        return map;
+    // AbstractRowDataValueSource interface
+
+    @Override
+    protected long getRawOffsetAndWidth() {
+        return fieldDef().getRowDef().fieldLocation(rowData(), fieldDef().getFieldIndex());
     }
+
+    @Override
+    protected byte[] bytes() {
+        return rowData.getBytes();
+    }
+
+    @Override
+    protected FieldDef fieldDef() {
+        return fieldDef;
+    }
+
+    // ValueSource interface
+
+    @Override
+    public boolean isNull() {
+        return (rowData().isNull(fieldDef().getFieldIndex()));
+    }
+
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("ValueSource( %s -> %s )", fieldDef, rowData.toString(fieldDef.getRowDef()));
+    }
+
+    // private
+    
+    private RowData rowData() {
+        return rowData;
+    }
+
+    // object state
+    private FieldDef fieldDef;
+    private RowData rowData;
 }
