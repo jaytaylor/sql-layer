@@ -51,9 +51,11 @@ public class Cast_From_Varchar
     
     /**
      * TODO:
+     * 
      * DATETIME
      * TIME
      * TIMESTAMP
+     * 
      * BIT
      * CHAR
      * BINARY
@@ -67,15 +69,15 @@ public class Cast_From_Varchar
      * LONTTEXT
      * 
      */
-    
+      
     public static final TCast TO_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT, true, Constantness.UNKNOWN)
     {
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt8((byte)tryParse((String)source.getObject(), 
-                                         Byte.MAX_VALUE, Byte.MIN_VALUE, 
-                                         context));
+            target.putInt8((byte) tryParse((String) source.getObject(),
+                                           Byte.MAX_VALUE, Byte.MIN_VALUE,
+                                           context));
         }
 
         @Override
@@ -84,7 +86,6 @@ public class Cast_From_Varchar
             throw new UnsupportedOperationException("Not supported yet.");
         }
     };
-    
     public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MString.VARCHAR, MNumeric.TINYINT_UNSIGNED, true, Constantness.UNKNOWN)
     {
         @Override
@@ -96,64 +97,12 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // TODO: signed vs unsigned
-        }   
-    };
-       
-    public static final TCast TO_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
             target.putInt16((short)tryParse((String)source.getObject(),
-                                      Short.MAX_VALUE,
-                                      Short.MIN_VALUE,
-                                      context));
-        }
-        
-    };
-    
-    public static final TCast TO_UNSIGNED_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            // TODO: signed vs unsigned
-        }
-    };
-    
-    public static final TCast TO_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt16((short)tryParse((String)source.getObject(),
-                                            Short.MAX_VALUE,
-                                            Short.MIN_VALUE,
+                                            Short.MAX_VALUE, Short.MIN_VALUE,
                                             context));
         }
     };
-    
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN)
+    public static final TCast TO_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -164,11 +113,13 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // TODO: signed vs unsigned
-        }   
+            target.putInt16((short) tryParse((String) source.getObject(),
+                                             Short.MAX_VALUE,
+                                             Short.MIN_VALUE,
+                                             context));
+        }
     };
-    
-    public static final TCast TO_INT = new TCastBase(MString.VARCHAR, MNumeric.INT, true, Constantness.UNKNOWN)
+    public static final TCast TO_UNSIGNED_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -180,12 +131,59 @@ public class Cast_From_Varchar
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)tryParse((String)source.getObject(),
+                                          Integer.MAX_VALUE, Integer.MIN_VALUE,
+                                          context));
+        }
+    };
+    public static final TCast TO_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int) tryParse((String) source.getObject(),
+                                             Integer.MAX_VALUE, Integer.MIN_VALUE,
+                                             context));
+        }
+    };
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt64(tryParse((String)source.getObject(),
+                                     Long.MAX_VALUE, Long.MIN_VALUE,
+                                     context));
+        }
+    };
+    public static final TCast TO_INT = new TCastBase(MString.VARCHAR, MNumeric.INT, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int) tryParse((String) source.getObject(),
                                            Integer.MAX_VALUE,
                                            Integer.MIN_VALUE,
                                            context));
         }
     };
-    
     public static final TCast TO_UNSIGNED_INT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
     {
         @Override
@@ -197,10 +195,11 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // signed vs unsigned
-        }   
+            target.putInt64(tryParse((String)source.getObject(),
+                                     Long.MAX_VALUE, Long.MIN_VALUE,
+                                     context));
+        }
     };
-    
     public static final TCast TO_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
     {
         @Override
@@ -212,19 +211,19 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            String st = CastUtils.truncateNonDigits((String)source.getObject(), context);
-            
+            String st = CastUtils.truncateNonDigits((String) source.getObject(), context);
+
             try
             {
                 target.putInt64(Long.parseLong(st));
             }
             catch (NumberFormatException e) // overflow error
             {
+                context.reportOverflow(e.getMessage());
                 target.putInt64(-1); // MySQL's way!
             }
-        }   
+        }
     };
-
     public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN)
     {
         @Override
@@ -236,10 +235,10 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
+            // BigInteger ?
             throw new UnsupportedOperationException("not supported yet");
-        }   
+        }
     };
-    
     public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MDouble.INSTANCE, true, Constantness.UNKNOWN)
     {
         @Override
@@ -251,7 +250,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            String st = (String)source.getObject();
+            String st = (String) source.getObject();
             try
             {
                 target.putDouble(Double.parseDouble(st));
@@ -263,12 +262,10 @@ public class Cast_From_Varchar
             }
 
             target.putDouble(Double.parseDouble(st));
-        }    
+        }
     };
-
     public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, true, Constantness.UNKNOWN)
     {
-
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
         {
@@ -278,7 +275,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            int ret = MDatetimes.parseDate((String)source.getObject(), context);
+            int ret = MDatetimes.parseDate((String) source.getObject(), context);
             if (ret < 0)
                 target.putNull();
             else
@@ -299,7 +296,7 @@ public class Cast_From_Varchar
         {
             truncated = CastUtils.truncateNonDigits(st, context);
         }
-        
+
         // second attempt
         return CastUtils.getInRange(Long.parseLong(truncated), max, min, context);
     }
