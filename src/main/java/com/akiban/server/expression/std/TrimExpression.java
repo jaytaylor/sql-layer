@@ -157,6 +157,12 @@ public class TrimExpression extends AbstractBinaryExpression
     }
     
     @Override
+    public String name() 
+    {       
+        return "TRIM " + (trimType == null ? "" : trimType.name());
+    }
+
+    @Override
     public ExpressionEvaluation evaluation() 
     {
         return new InnerEvaluation(childrenEvaluations(), trimType);

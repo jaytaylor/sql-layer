@@ -45,8 +45,8 @@ public class ScaleDecimalExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() {
-        return "ScaleDecimal";
+    public String name() {
+        return "SCALE_DECIMAL";
     }
 
     @Override

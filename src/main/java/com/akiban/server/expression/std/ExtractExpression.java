@@ -574,7 +574,7 @@ public class ExtractExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() 
+    public String name() 
     {
         return extractType.name();
     }

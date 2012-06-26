@@ -59,6 +59,7 @@ import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -281,6 +282,11 @@ public class AggregatePT extends ApiTestBase {
         @Override
         public RowType rowType() {
             return outputType;
+        }
+
+        @Override
+        public Explainer getExplainer() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
@@ -637,6 +643,11 @@ public class AggregatePT extends ApiTestBase {
         @Override
         public List<Operator> getInputOperators() {
             return Collections.singletonList(inputOperator);
+        }
+
+        @Override
+        public Explainer getExplainer() {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 

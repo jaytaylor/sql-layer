@@ -278,7 +278,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            int ret = CastUtils.parseDate((String)source.getObject(), context);
+            int ret = MDatetimes.parseDate((String)source.getObject(), context);
             if (ret < 0)
                 target.putNull();
             else
