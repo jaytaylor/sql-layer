@@ -41,7 +41,7 @@ public class MMType implements ModelNames {
                            (Boolean) map.get(type_fixedSize),
                            (Long) map.get(type_maxSizeBytes),
                            (String) map.get(type_encoding),
-                           null);
+                           null, null);
     }
 
     public static Map<String, Object> map(Type type)

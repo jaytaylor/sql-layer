@@ -54,7 +54,7 @@ public class NoAttrTClass extends TClass {
 
     public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
                            int serializationVersion, int serializationSize, PUnderlying pUnderlying) {
-        super(bundle, name, Attribute.NONE, internalRepVersion, serializationVersion, serializationSize, pUnderlying);
+        super(bundle, name, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize, pUnderlying);
     }
 
     @Override

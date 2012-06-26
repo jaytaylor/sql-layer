@@ -47,7 +47,7 @@ public class StrcmpExpression extends AbstractBinaryExpression
      {
 
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new StrcmpExpression(first, second);
         }
@@ -65,6 +65,11 @@ public class StrcmpExpression extends AbstractBinaryExpression
             return ExpressionTypes.INT;
         }
     };
+
+    @Override
+    public String name() {
+        return "STRCMP";
+    }
 
      private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
      {
@@ -93,7 +98,7 @@ public class StrcmpExpression extends AbstractBinaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("STRCMP");
+        sb.append(name());
     }
 
     @Override

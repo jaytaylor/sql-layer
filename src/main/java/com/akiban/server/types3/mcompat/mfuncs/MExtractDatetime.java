@@ -27,7 +27,6 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -45,7 +44,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt32(), output, DateExtractor.YEAR, PUnderlying.INT_32);
+            doEvaluate(inputs.get(0).getInt32(), output, MDatetimes.YEAR_INDEX, PUnderlying.INT_32);
         }
 
         @Override
@@ -58,7 +57,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt32(), output, DateExtractor.MONTH, PUnderlying.INT_32);
+            doEvaluate(inputs.get(0).getInt32(), output, MDatetimes.MONTH_INDEX, PUnderlying.INT_32);
         }
 
         @Override
@@ -72,14 +71,14 @@ public abstract class MExtractDatetime extends TOverloadBase {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int date = inputs.get(0).getInt32();
-            long[] dateArr = DateExtractor.extract(date);
+            long[] dateArr = MDatetimes.decodeDatetime(date);
             
-            if (!DateExtractor.validDayMonth(dateArr)) {
+            if (!MDatetimes.isValidDatetime(dateArr)) {
                 output.putNull();
                 return;
             }
             
-            int month = (int)dateArr[DateExtractor.MONTH];
+            int month = (int)dateArr[MDatetimes.MONTH_INDEX];
             int result;
             if (month < 4) result = 1;
             else if (month < 7) result = 2;
@@ -99,7 +98,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt32(), output, DateExtractor.DAY, PUnderlying.INT_32);
+            doEvaluate(inputs.get(0).getInt32(), output, MDatetimes.DAY_INDEX, PUnderlying.INT_32);
         }
 
         @Override
@@ -112,7 +111,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt64(), output, DateExtractor.HOUR, PUnderlying.INT_64);
+            doEvaluate(inputs.get(0).getInt64(), output, MDatetimes.HOUR_INDEX, PUnderlying.INT_64);
         }
 
         @Override
@@ -125,7 +124,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt64(), output, DateExtractor.MINUTE, PUnderlying.INT_64);
+            doEvaluate(inputs.get(0).getInt64(), output, MDatetimes.MIN_INDEX, PUnderlying.INT_64);
         }
 
         @Override
@@ -138,7 +137,7 @@ public abstract class MExtractDatetime extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            doEvaluate(inputs.get(0).getInt64(), output, DateExtractor.SECOND, PUnderlying.INT_64);
+            doEvaluate(inputs.get(0).getInt64(), output, MDatetimes.SEC_INDEX, PUnderlying.INT_64);
         }
 
         @Override
@@ -148,9 +147,9 @@ public abstract class MExtractDatetime extends TOverloadBase {
     };
     
     protected void doEvaluate(long input, PValueTarget output, int arrayPos, PUnderlying type) {
-        long[] datetime = DateExtractor.extract(input);
+        long[] datetime = MDatetimes.decodeDatetime(input);
             
-        if (!DateExtractor.validHrMinSec(datetime) || !DateExtractor.validDayMonth(datetime)) output.putNull();
+        if (!MDatetimes.isValidDatetime(datetime)) output.putNull();
         else {
             switch(type) {
                 case INT_64: 

@@ -55,7 +55,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
     public static final ExpressionComposer COMPOSER = new BinaryComposer ()
     {
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new StrToDateExpression(first, second);
         }
@@ -71,6 +71,12 @@ public class StrToDateExpression extends AbstractBinaryExpression
             return ExpressionTypes.DATETIME;
         }
     };
+
+    @Override
+    public String name()
+    {
+        return "STR_TO_DATE";
+    }
 
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
@@ -361,7 +367,7 @@ public class StrToDateExpression extends AbstractBinaryExpression
     {
         return true;
     }
-
+    
     @Override
     protected void describe(StringBuilder sb)
     {

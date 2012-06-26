@@ -29,8 +29,10 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.common.funcs.TLike;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.service.Scalar;
 
 public class MLike
 {
+    @Scalar
     public static final TOverload[] LIKE_OVERLOADS = TLike.create(MString.VARCHAR);
 }

@@ -48,6 +48,11 @@ public class ConvExpression extends AbstractTernaryExpression
     
     @Scalar("conv")
     public static final ExpressionComposer COMPOSER = new InternalComposer();
+
+    @Override
+    public String name() {
+        return "CONV";
+    }
     
     private static class InternalComposer extends TernaryComposer
     {
@@ -84,7 +89,7 @@ public class ConvExpression extends AbstractTernaryExpression
         }
 
         @Override
-        protected Expression doCompose(List<? extends Expression> arguments)
+        protected Expression doCompose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new ConvExpression(arguments);
         }
@@ -185,7 +190,7 @@ public class ConvExpression extends AbstractTernaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("CONV");
+        sb.append(name());
     }
 
     @Override
