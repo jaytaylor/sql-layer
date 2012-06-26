@@ -66,7 +66,7 @@ public class PiExpression extends AbstractNoArgExpression
     }
 
     @Override
-    protected String name()
+    public String name()
     {
         return "PI";
     }

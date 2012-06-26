@@ -69,6 +69,12 @@ public class WeekExpression extends AbstractCompositeExpression
            return ExpressionTypes.INT;
         }
     };
+
+    @Override
+    public String name()
+    {
+        return "WEEK";
+    }
     
     private static final class InternalComposer implements ExpressionComposer
     {
@@ -255,7 +261,7 @@ public class WeekExpression extends AbstractCompositeExpression
     {
         return true;
     }
-
+    
     @Override
     protected void describe(StringBuilder sb)
     {

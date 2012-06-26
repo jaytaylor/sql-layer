@@ -47,6 +47,12 @@ import java.util.List;
 
 public class BinaryBitExpression extends AbstractBinaryExpression
 {
+    @Override
+    public String name()
+    {
+        return op.name();
+    }
+    
     public static enum BitOperator
     {
         BITWISE_AND
@@ -182,7 +188,7 @@ public class BinaryBitExpression extends AbstractBinaryExpression
                 , lhs, rhs);
         this.op = op;        
     } 
-
+    
     @Override
     protected void describe(StringBuilder sb) 
     {

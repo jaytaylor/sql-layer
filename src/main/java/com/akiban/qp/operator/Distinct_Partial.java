@@ -29,6 +29,8 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.DistinctExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -140,6 +142,12 @@ class Distinct_Partial extends Operator
 
     private final Operator inputOperator;
     private final RowType distinctType;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return new DistinctExplainer("DISTINCT PARTIAL", distinctType, inputOperator);
+    }
 
     // Inner classes
 

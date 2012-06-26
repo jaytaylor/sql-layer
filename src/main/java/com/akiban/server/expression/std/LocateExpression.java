@@ -93,6 +93,12 @@ public class LocateExpression extends AbstractCompositeExpression
         }
         
     };
+
+    @Override
+    public String name()
+    {
+        return "LOCATE";
+    }
     
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -147,11 +153,11 @@ public class LocateExpression extends AbstractCompositeExpression
     {
         return true;
     }
-
+    
     @Override
     protected void describe(StringBuilder sb) 
     {
-        sb.append("LOCATE");
+        sb.append(name());
     }
 
     @Override

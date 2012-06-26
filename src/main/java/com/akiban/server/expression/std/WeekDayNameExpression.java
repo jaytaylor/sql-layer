@@ -170,7 +170,7 @@ public class WeekDayNameExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name()
+    public String name()
     {
         return field.name();
     }
