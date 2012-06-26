@@ -45,14 +45,15 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
     public void testIllegalArg() 
     {
         // excessive arguments
-        getComposer().compose(getArgList(ExprUtil.lit("String 1"), ExprUtil.lit("String 2")));
+        compose(getComposer(), getArgList(ExprUtil.lit("String 1"), ExprUtil.lit("String 2")));
         
         // insufficent arguments
-        getComposer().compose(getArgList());
+        compose(getComposer(), getArgList());
         
         // null arguments
-        getComposer().compose(getArgList(ExprUtil.constNull(AkType.VARCHAR), 
-                ExprUtil.constNull(AkType.VARCHAR), ExprUtil.constNull(AkType.VARCHAR)));
+        compose(getComposer(),
+                getArgList(ExprUtil.constNull(AkType.VARCHAR), 
+                           ExprUtil.constNull(AkType.VARCHAR), ExprUtil.constNull(AkType.VARCHAR)));
     }
     
     @Test                  //  substr() with 2 args behaves properly in unit tests
@@ -63,11 +64,11 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
         Expression len = new LiteralExpression(AkType.LONG, 6L);
         
         // test 2 args
-        assertEquals("Sakila", SubStringExpression.COMPOSER.compose(Arrays.asList(st, from))
+        assertEquals("Sakila", compose(SubStringExpression.COMPOSER, Arrays.asList(st, from))
                 .evaluation().eval().getString());
         
         // test 3 args
-        assertEquals("Sakila", SubStringExpression.COMPOSER.compose(Arrays.asList(st, from, len))
+        assertEquals("Sakila", compose(SubStringExpression.COMPOSER, Arrays.asList(st, from, len))
                 .evaluation().eval().getString());
         
     }

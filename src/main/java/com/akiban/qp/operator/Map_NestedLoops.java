@@ -28,6 +28,8 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -144,6 +146,12 @@ class Map_NestedLoops extends Operator
     private final Operator outerInputOperator;
     private final Operator innerInputOperator;
     private final int inputBindingPosition;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return new NestedLoopsExplainer("MAP NESTED LOOPS", innerInputOperator, outerInputOperator, null, null);
+    }
 
     // Inner classes
 

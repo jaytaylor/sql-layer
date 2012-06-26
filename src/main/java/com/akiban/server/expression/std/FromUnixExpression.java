@@ -45,15 +45,15 @@ import org.joda.time.MutableDateTime;
 
 public class FromUnixExpression extends AbstractCompositeExpression
 {
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("FROM_UNIXTIME()");
+    }
+    
     @Scalar("from_unixtime")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer ()
     {
-        @Override
-        public Expression compose(List<? extends Expression> args)
-        {
-            return new FromUnixExpression(args);
-        }
-
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
@@ -72,7 +72,7 @@ public class FromUnixExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in FROM_UNIX yet.");
+            return new FromUnixExpression(arguments);
         }
 
         @Override
@@ -89,9 +89,9 @@ public class FromUnixExpression extends AbstractCompositeExpression
     }
 
     @Override
-    protected void describe(StringBuilder sb)
+    public String name()
     {
-        sb.append("FROM_UNIXTIME()");
+        return "FROM_UNIXTIME";
     }
 
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation

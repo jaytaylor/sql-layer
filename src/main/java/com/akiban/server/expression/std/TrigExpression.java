@@ -42,7 +42,13 @@ import com.akiban.server.expression.TypesList;
 import java.util.List;
 
 public class TrigExpression extends AbstractCompositeExpression
-{ 
+{
+    @Override
+    public String name()
+    {
+        return name.name();
+    }
+    
     public static enum TrigName
     {
         SIN, COS, TAN, COT, ASIN, ACOS, ACOT, ATAN, ATAN2, COSH, SINH, TANH, COTH
@@ -99,12 +105,6 @@ public class TrigExpression extends AbstractCompositeExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments) 
-        {
-            return new TrigExpression(arguments, name);
-        }
-
-        @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
         {
             int size = argumentTypes.size();
@@ -125,7 +125,7 @@ public class TrigExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported i TRIG yet.");
+            return new TrigExpression(arguments, name);
         }
 
         @Override
@@ -229,7 +229,7 @@ public class TrigExpression extends AbstractCompositeExpression
     {
         sb.append(name.name()).append("_EXPRESSION");
     }
-
+   
     @Override
     public ExpressionEvaluation evaluation() 
     {

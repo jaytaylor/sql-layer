@@ -79,7 +79,7 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
         }
 
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new CeilFloorExpression(argument, name);
         }
@@ -162,7 +162,7 @@ public class CeilFloorExpression extends AbstractUnaryExpression {
     }
     
     @Override
-    protected String name()
+    public String name()
     {
         return name.name();
     }

@@ -45,7 +45,7 @@ public class UnhexExpression extends AbstractUnaryExpression
     public static final ExpressionComposer COMPOSER = new UnaryComposer()
     {
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new UnhexExpression(argument);
         }
@@ -104,7 +104,7 @@ public class UnhexExpression extends AbstractUnaryExpression
     }
     
     @Override
-    protected String name()
+    public String name()
     {
         return "UNHEX";
     }
