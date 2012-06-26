@@ -65,6 +65,21 @@ public final class CastUtils
     
      
     /**
+     * Parse the st for a double value
+     * MySQL compat in that illegal digits will be truncated and won't cause
+     * NumberFormatException
+     * 
+     * @param st
+     * @param context
+     * @return 
+     */
+    public static double parseDoubleString(String st, TExecutionContext context)
+    {
+        // TODO: use Yuval's sugested regex
+        throw new UnsupportedOperationException();
+    }
+    
+    /**
      * Truncate non-digits part
      * @param st
      * @return 

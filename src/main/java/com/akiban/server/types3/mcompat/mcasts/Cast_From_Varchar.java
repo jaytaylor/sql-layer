@@ -250,18 +250,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            String st = (String) source.getObject();
-            try
-            {
-                target.putDouble(Double.parseDouble(st));
-                return;
-            }
-            catch (NumberFormatException e)
-            {
-                context.reportBadValue(e.getMessage());
-            }
-
-            target.putDouble(Double.parseDouble(CastUtils.truncateNonDigits(st, context)));
+            target.putDouble(CastUtils.parseDoubleString((String)source.getObject(), context));
         }
     };
     public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, true, Constantness.UNKNOWN)
