@@ -37,7 +37,18 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.AkBundle;
+import com.akiban.server.types3.aksql.AkBundle.AkSwitcher;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.aksql.aktypes.AkString;
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.common.types.StringFactory;
+import com.akiban.server.types3.common.types.StringFactory.Charset;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
@@ -63,6 +74,8 @@ import com.akiban.sql.optimizer.plan.PlanVisitor;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
 import com.akiban.sql.optimizer.rule.ConstantFolder.Folder;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -153,7 +166,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 n = handleConstantExpression((ConstantExpression) n);
             else
                 logger.warn("unrecognized ExpressionNode subclass: {}", n.getClass());
-            
             n = folder.visit(n);
             
             return n;
@@ -225,7 +237,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             }
             // -----------------------------------------------------------
 
-            expression.setPreptimeValue(new TPreptimeValue(resultInstance));
+            TPreptimeValue preptimeValue = new TPreptimeValue(resultInstance);
+            expression.setPreptimeValue(preptimeValue);
             return expression;
         }
 
@@ -304,15 +317,45 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
-            return expression; // TODO Will its TInstance have been set at construction?
+            // TODO temporary bridge between AkType world and types3 world
+            TInstance instance = tinst(expression.getSQLtype());
+            Object ovalue = expression.getValue();
+            PValue pvalue = new PValue(instance.typeClass().underlyingType());
+            if (ovalue == null) {
+                pvalue.putNull();
+            }
+            else {
+                switch (expression.getAkType().underlyingType()) {
+                case BOOLEAN_AKTYPE:
+                    pvalue.putBool((Boolean)ovalue);
+                    break;
+                case LONG_AKTYPE:
+                    pvalue.putInt64((Long)ovalue);
+                    break;
+                case FLOAT_AKTYPE:
+                    pvalue.putFloat((Float)ovalue);
+                    break;
+                case DOUBLE_AKTYPE:
+                    pvalue.putDouble((Double)ovalue);
+                    break;
+                case OBJECT_AKTYPE:
+                    if (ovalue instanceof String) {
+                        assert AkString.VARCHAR.equals(instance.typeClass()) : instance;
+                        pvalue.putObject(ovalue);
+                        assert false : "cacher needed";
+                        pvalue.setCacher(null); // TODO
+                    }
+                    break;
+                }
+            }
+            return expression;
         }
 
         private static ExpressionNode castTo(ExpressionNode expression, TClass targetClass) {
             if (targetClass.equals(tclass(expression)))
                 return expression;
-            CastExpression result = null; // TODO
-            assert result != null : "todo";
-            return result;
+            TInstance instance = targetClass.instance();
+            return new CastExpression(expression, instance.dataTypeDescriptor(), expression.getSQLsource());
         }
 
         private static TClass tclass(ExpressionNode operand) {
@@ -328,8 +371,53 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             return expression.getPreptimeValue().value();
         }
 
-        private RuntimeException error(String message) {
+        private static RuntimeException error(String message) {
             throw new RuntimeException(message); // TODO what actual error type?
+        }
+
+        private static TInstance tinst(DataTypeDescriptor descriptor) {
+            
+            switch (descriptor.getTypeId().getTypeFormatId()) {
+            case TypeId.FormatIds.BOOLEAN_TYPE_ID:
+                return AkBool.INSTANCE.instance();
+            case TypeId.FormatIds.VARCHAR_TYPE_ID:
+            case TypeId.FormatIds.CHAR_TYPE_ID:
+                Charset charset = StringFactory.Charset.valueOf(descriptor.getCharacterAttributes().getCharacterSet());
+                return MString.VARCHAR.instance(descriptor.getMaximumWidth(), charset.ordinal());
+            case TypeId.FormatIds.DECIMAL_TYPE_ID:
+            case TypeId.FormatIds.NUMERIC_TYPE_ID:
+                // TODO should be aksql type
+                return MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
+            case TypeId.FormatIds.DOUBLE_TYPE_ID:
+                return AkNumeric.DOUBLE.instance();
+            case TypeId.FormatIds.INT_TYPE_ID:
+                return AkNumeric.INT.instance();
+            case TypeId.FormatIds.TINYINT_TYPE_ID:
+            case TypeId.FormatIds.SMALLINT_TYPE_ID:
+                return AkNumeric.SMALLINT.instance();
+            case TypeId.FormatIds.LONGINT_TYPE_ID:
+                return AkNumeric.BIGINT.instance();
+
+            case TypeId.FormatIds.BIT_TYPE_ID:
+            case TypeId.FormatIds.DATE_TYPE_ID:
+            case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
+            case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
+            case TypeId.FormatIds.REAL_TYPE_ID:
+            case TypeId.FormatIds.REF_TYPE_ID:
+            case TypeId.FormatIds.TIME_TYPE_ID:
+            case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
+            case TypeId.FormatIds.USERDEFINED_TYPE_ID:
+            case TypeId.FormatIds.VARBIT_TYPE_ID:
+            case TypeId.FormatIds.BLOB_TYPE_ID:
+            case TypeId.FormatIds.CLOB_TYPE_ID:
+            case TypeId.FormatIds.XML_TYPE_ID:
+            case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
+            case TypeId.FormatIds.INTERVAL_YEAR_MONTH_ID:
+            case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
+                throw new UnsupportedOperationException("unsupported type: " + descriptor);
+            default:
+                throw new AssertionError("unknown type: " + descriptor);
+            }
         }
     }
 

@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.sql.types.DataTypeDescriptor;
+
 public final class TInstance {
     
     public int attribute(Attribute attribute) {
@@ -56,11 +58,34 @@ public final class TInstance {
         return this;
     }
 
+    /**
+     * Convenience method for <tt>typeClass().dataTypeDescriptor(this)</tt>.
+     * @return this instance's DataTypeDescriptor
+     * @see TClass#dataTypeDescriptor(TInstance)
+     */
+    public DataTypeDescriptor dataTypeDescriptor() {
+        return tclass.dataTypeDescriptor(this);
+    }
+
     public TInstance copy() {
         return new TInstance(tclass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
 
     // object interface
+
+    @Override
+    public String toString() {
+        String className = tclass.name().unqualifiedName();
+        int nargs = tclass.nAttributes();
+        if (nargs == 0)
+            return className;
+        // assume 5 digits per attribute as a wild guess. If it's wrong, no biggie. 2 chars for open/close paren
+        int capacity = className.length() + 2 + (5*nargs);
+        StringBuilder sb = new StringBuilder(capacity);
+        sb.append(className).append('(');
+
+    }
+
 
     // TODO
 

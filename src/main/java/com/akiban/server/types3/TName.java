@@ -46,6 +46,10 @@ public final class TName {
         return sb.toString();
     }
 
+    public String unqualifiedName() {
+        return name;
+    }
+
     // object interface
 
     @Override

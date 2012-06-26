@@ -45,4 +45,8 @@ public enum AkBundle implements TBundle {
     public Map<TClass, TFactory> typeClasses() {
         throw new UnsupportedOperationException(); // TODO
     }
+
+    public enum AkSwitcher {
+        // TODO
+    }
 }

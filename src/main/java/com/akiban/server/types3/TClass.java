@@ -28,6 +28,7 @@ package com.akiban.server.types3;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.regex.Pattern;
@@ -35,6 +36,14 @@ import java.util.regex.Pattern;
 public abstract class TClass {
 
     public abstract TFactory factory();
+
+    public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+        throw new UnsupportedOperationException(); // TODO remove this, make it abstract
+    }
+
+    public void attributeToString(Attribute attribute, int value) {
+        throw new UnsupportedOperationException(); // TODO remove this, make it abstract
+    }
 
     public TInstance instance()
     {
@@ -98,6 +107,10 @@ public abstract class TClass {
     public int fixedSerializationSize() {
         assert hasFixedSerializationSize() : this + " has no fixed serialization size";
         return serializationSize;
+    }
+
+    public Object getSwitcher() {
+        throw new UnsupportedOperationException();
     }
 
     // object interface
