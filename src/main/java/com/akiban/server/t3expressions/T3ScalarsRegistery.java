@@ -21,7 +21,7 @@ import com.akiban.server.types3.TClass;
 import java.util.List;
 
 public interface T3ScalarsRegistery {
-    OverladResolutionResult get(String name, List<? extends TClass> inputClasses);
+    OverloadResolutionResult get(String name, List<? extends TClass> inputClasses);
     TCast cast(TClass source, TClass target);
 
     /**

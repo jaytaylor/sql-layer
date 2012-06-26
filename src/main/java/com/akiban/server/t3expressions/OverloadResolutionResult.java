@@ -30,7 +30,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 
-public interface OverladResolutionResult {
+public interface OverloadResolutionResult {
     TValidatedOverload overload();
     TClass tClass(int index);
     TInstance pickingType();
