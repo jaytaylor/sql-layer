@@ -200,7 +200,7 @@ public class Cast_From_Varchar
                                      context));
         }
     };
-    public static final TCast TO_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
+    public static final TCast TO_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -220,7 +220,7 @@ public class Cast_From_Varchar
             catch (NumberFormatException e) // overflow error
             {
                 context.reportOverflow(e.getMessage());
-                target.putInt64(-1); // MySQL's way!
+                target.putInt64(Long.MAX_VALUE);
             }
         }
     };
@@ -261,7 +261,7 @@ public class Cast_From_Varchar
                 context.reportBadValue(e.getMessage());
             }
 
-            target.putDouble(Double.parseDouble(st));
+            target.putDouble(Double.parseDouble(CastUtils.truncateNonDigits(st, context)));
         }
     };
     public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, true, Constantness.UNKNOWN)
