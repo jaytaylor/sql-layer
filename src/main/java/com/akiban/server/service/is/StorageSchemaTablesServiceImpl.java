@@ -592,7 +592,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
                             db_manage.getStartTime(),
                             db_manage.getDefaultCommitPolicy(),
                             ++rowCounter);
-                    ((FromObjectValueSource)row.eval(4)).setExplicitly(db_manage.getStartTime()/1000, AkType.TIMESTAMP);
+                    ((FromObjectValueSource)row.eval(5)).setExplicitly(db_manage.getStartTime()/1000, AkType.TIMESTAMP);
                 } catch (RemoteException e) {
                     logger.error ("Getting Manager items throws exception: " + e.getMessage());
                     return null;
@@ -908,7 +908,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         builder.userTable(STORAGE_TREES)
             .colString("volume_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("treeName", BasicFactoryBase.IDENT_MAX, false)
+            .colString("tree_name", BasicFactoryBase.IDENT_MAX, false)
             .colString("status", 64, false)
             .colBigInt("depth", false)
             .colBigInt("fetch_counter", false)
