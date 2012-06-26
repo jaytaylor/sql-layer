@@ -205,8 +205,13 @@ public final class MultiIndexIntersectScan extends IndexScan {
     }
 
     @Override
-    protected boolean isAscendingAt(int i) {
+    public boolean isAscendingAt(int i) {
         return outputScan.isAscendingAt(i);
+    }
+
+    @Override
+    public boolean isRecoverableAt(int i) {
+        return outputScan.isRecoverableAt(i);
     }
 
     @Override

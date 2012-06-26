@@ -895,8 +895,10 @@ public class GroupIndexGoal implements Comparator<IndexScan>
         }
 
         // Remove the columns we do have from the index.
-        for (ExpressionNode column : index.getColumns()) {
-            if (column instanceof ColumnExpression) {
+        int ncols = index.getColumns().size();
+        for (int i = 0; i < ncols; i++) {
+            ExpressionNode column = index.getColumns().get(i);
+            if ((column instanceof ColumnExpression) && index.isRecoverableAt(i)) {
                 requiredAfter.have((ColumnExpression)column);
             }
         }
