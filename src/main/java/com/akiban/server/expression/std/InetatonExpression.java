@@ -107,7 +107,7 @@ public class InetatonExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name()
+    public String name()
     {
         return "INET_ATON";
     }

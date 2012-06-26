@@ -31,6 +31,12 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -144,6 +150,17 @@ class Select_HKeyOrdered extends Operator
     private final Operator inputOperator;
     private final RowType predicateRowType;
     private final Expression predicate;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("SELECT HKEY ORDERED"));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        att.put(Label.PREDICATE, predicate.getExplainer());
+        return new OperationExplainer(Type.SELECT_HKEY, att);
+    }
 
     // Inner classes
 

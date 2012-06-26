@@ -30,34 +30,6 @@ import com.akiban.server.types3.TExecutionContext;
 
 public final class CastUtils
 {
-
-    public static int parseDate(String st, TExecutionContext context)
-    {
-        String tks[];
-        
-        // date and time tokens
-        String datetime[] = st.split(" ");
-        if (datetime.length == 2)
-            tks = datetime[0].split("-"); // ignore the time part
-        else
-            tks = st.split("-");
-
-        if (tks.length != 3)
-            context.reportBadValue("bad DATE" + st);
-        
-        try
-        {
-            return Integer.parseInt(tks[0]) * 512
-                    + Integer.parseInt(tks[1]) * 32
-                    + Integer.parseInt(truncateNonDigits(tks[2], context));
-        }
-        catch (NumberFormatException ex)
-        {
-            context.reportBadValue("bad DATE" + st);
-        }
-        return -1;
-    }
-
     public static long getInRange (long max, long min, long val, TExecutionContext context)
     {
         if (val > max)

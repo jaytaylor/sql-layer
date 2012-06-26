@@ -28,6 +28,7 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.server.error.NegativeLimitException;
@@ -35,6 +36,12 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
+import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -170,6 +177,34 @@ final class Limit_Default extends Operator
     private final int skip, limit;
     private final boolean skipIsBinding, limitIsBinding;
     private final Operator inputOperator;
+
+    @Override
+    public Explainer getExplainer()
+    {
+         StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append("(");
+        if (skip > 0) {
+            str.append(String.format("skip=%d", skip));
+        }
+        if ((limit >= 0) && (limit < Integer.MAX_VALUE)) {
+            if (skip > 0) str.append(", ");
+            str.append(String.format("limit=%d", limit));
+        }
+        str.append(": ");
+        str.append(inputOperator);
+        str.append(")");
+        
+        
+        Attributes att = new Attributes();
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("LIMIT DEFAULT"));
+        if (skip > 0)
+            att.put(Label.LIMIT, PrimitiveExplainer.getInstance(String.format("skip = %d", skip)));
+        if (limit >= 0 && limit < Integer.MAX_VALUE)
+            att.put(Label.LIMIT, PrimitiveExplainer.getInstance(String.format("limit = %d", limit)));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        
+        return new OperationExplainer(Type.LIMIT_OPERATOR, att);
+    }
 
     // internal classes
 

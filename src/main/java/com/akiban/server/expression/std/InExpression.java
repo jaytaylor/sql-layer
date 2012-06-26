@@ -75,6 +75,7 @@ public final class InExpression extends AbstractCompositeExpression {
         sb.append("IN");
     }
 
+
     @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(childrenEvaluations());
@@ -96,6 +97,12 @@ public final class InExpression extends AbstractCompositeExpression {
         list.add(head);
         list.addAll(tail);
         return list;
+    }
+
+    @Override
+    public String name()
+    {
+        return "IN";
     }
 
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation {

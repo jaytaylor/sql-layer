@@ -40,6 +40,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
+import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
+
 public class Cast_From_Tinyint
 {
     /**
@@ -64,191 +66,27 @@ public class Cast_From_Tinyint
      * LONTTEXT
      * 
      */
-    public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MNumeric.TINYINT, MNumeric.TINYINT_UNSIGNED, true, Constantness.UNKNOWN)
-    {
+    public static final TCast TO_UNSIGNED_TINYINT = new FromInt8ToInt16(MNumeric.TINYINT, MNumeric.TINYINT_UNSIGNED, true, Constantness.UNKNOWN);
+   
+    public static final TCast TO_SMALLINT = new FromInt8ToInt16(MNumeric.TINYINT, MNumeric.SMALLINT, true, Constantness.UNKNOWN);
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
+    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt8ToInt32(MNumeric.TINYINT, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN);
 
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt16(source.getInt8());
-        }
-    };
-
-    public static final TCast TO_SMALLINT = new TCastBase(MNumeric.TINYINT, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt16(source.getInt8());
-        }
-    };
-
-    public static final TCast TO_UNSIGNED_SMALLINT = new TCastBase(MNumeric.TINYINT, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt32(source.getInt8());
-        }
-    };
-
-    public static final TCast TO_MEDIUMINT = new TCastBase(MNumeric.TINYINT, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt32(source.getInt8());
-        }
-    };
-
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new TCastBase(MNumeric.TINYINT, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt64(source.getInt8());
-        }
-    };
-
-    public static final TCast TO_INT = new TCastBase(MNumeric.TINYINT, MNumeric.INT, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt32(source.getInt8());
-        }
-    };
-
-    public static final TCast TO_UNSIGNED_INT = new TCastBase(MNumeric.TINYINT, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt64(source.getInt8());
-        }
-    };
-
-    public static final TCast TO_BIGINT = new TCastBase(MNumeric.TINYINT, MNumeric.BIGINT, true, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt64(source.getInt8());
-        }
-    };
+    public static final TCast TO_MEDIUMINT = new FromInt8ToInt32(MNumeric.TINYINT, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MNumeric.TINYINT, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt8ToInt64(MNumeric.TINYINT, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
 
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            // TODO: overflow
-            throw new UnsupportedOperationException("Casting to UNSIGNED BIGINT is Not supported yet.");
-        }
-    };
+    public static final TCast TO_INT = new FromInt8ToInt32(MNumeric.TINYINT, MNumeric.INT, true, Constantness.UNKNOWN);
+
+    public static final TCast TO_UNSIGNED_INT = new FromInt8ToInt64(MNumeric.TINYINT, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
+
+    public static final TCast TO_BIGINT = new FromInt8ToInt64(MNumeric.TINYINT, MNumeric.BIGINT, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new TCastBase(MNumeric.TINYINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putObject(new MBigDecimalWrapper(source.getInt8()));
-        }
-    };
+    public static final TCast TO_UNSIGNED_BIGINT = new FromInt8ToInt64(MNumeric.TINYINT, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new TCastBase(MNumeric.TINYINT, MDouble.INSTANCE, true, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putDouble(source.getInt8());
-        }
-    };
+    public static final TCast TO_DECIMAL = new FromInt8ToDecimal(MNumeric.TINYINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.TINYINT, MString.VARCHAR, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putObject(Byte.toString(source.getInt8()));
-        }
-    };
+    public static final TCast TO_DOUBLE = new FromInt8ToDouble(MNumeric.TINYINT, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+    
+    public static final TCast TO_VARCHAR = new FromInt8ToString(MNumeric.TINYINT, MString.VARCHAR, true, Constantness.UNKNOWN);
 }

@@ -31,8 +31,10 @@ import com.akiban.sql.types.DataTypeDescriptor;
 
 import com.akiban.qp.exec.Plannable;
 
+import com.akiban.sql.optimizer.explain.std.TreeFormat;
 import java.util.List;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /** Physical operator plan */
 public abstract class BasePlannable extends BasePlanNode
@@ -66,7 +68,7 @@ public abstract class BasePlannable extends BasePlanNode
         super.deepCopy(map);
         // Do not copy operators.
     }
-
+    
     public List<String> explainPlan() {
         List<String> result = new ArrayList<String>();
         explainPlan(plannable, result, 0);
