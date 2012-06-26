@@ -39,8 +39,8 @@ public class DateExtractor {
     private static final long DATETIME_MIN_SCALE = 100L;
     private static final long DATETIME_SEC_SCALE = 1L;
     
-    private static final long DATE_YEAR_SCALE = 1000000L;
-    private static final long DATE_MONTH_SCALE = 100L;
+    private static final long DATE_YEAR_SCALE = 512L;
+    private static final long DATE_MONTH_SCALE = 32L;
     private static final long DATE_DAY_SCALE = 1L;
     
     public static final int YEAR = 0;
