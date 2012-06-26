@@ -79,7 +79,7 @@ public class AkCollatorFactory {
             /*
              * TODO  - figure out how ICU4J decodes names - this is certainly wrong.
              */
-            String locale = "sv_SV";
+            String locale = "sv_SE"; // Swedish for Sweden.
             int strength = Collator.SECONDARY; // _ci; _cs = TERTIARY.
 
             collator = Collator.getInstance(new ULocale(locale));

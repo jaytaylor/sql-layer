@@ -44,7 +44,7 @@ public class CollationFactoryTest {
     
     @Test
     public void getAkCollator() throws Exception {
-        final AkCollator collator = AkCollatorFactory.getCollator("sw_SW");
+        final AkCollator collator = AkCollatorFactory.getCollator("sv_SE");
         assertEquals("sw", collator.getCollator().getLocale(ULocale.VALID_LOCALE).getName());
     }
     
@@ -57,7 +57,7 @@ public class CollationFactoryTest {
             threads[i] = new Thread(new Runnable() {
                 public void run() {
                     int index = threadIndex.getAndIncrement();
-                    array[index] = AkCollatorFactory.getCollator("sw_SW");
+                    array[index] = AkCollatorFactory.getCollator("sv_SE");
                 }
             });
         }
