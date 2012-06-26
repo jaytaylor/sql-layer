@@ -33,10 +33,11 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
+import org.junit.Ignore;
 
 import com.ibm.icu.util.ULocale;
 
-
+@Ignore
 public class CollationFactoryTest {
 
     private final static int NTHREADS = 10;
