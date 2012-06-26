@@ -29,27 +29,43 @@ package com.akiban.qp.memoryadapter;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.qp.expression.IndexKeyRange;
-import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.IndexScanSelector;
+import com.akiban.qp.operator.API.Ordering;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.statistics.IndexStatistics;
 
-import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
+public abstract class BasicFactoryBase implements MemoryTableFactory {
+    private final TableName sourceTable;
+    
+    public BasicFactoryBase(TableName sourceTable) {
+        this.sourceTable = sourceTable;
+    }
 
-public interface MemoryTableFactory {
-    public TableName getName();
-    
-    // Used by MemoryAdapter to get cursors
-    public GroupScan getGroupScan(MemoryAdapter adapter);
+    @Override
+    public TableName getName() {
+        return sourceTable;
+    }
 
-    public Cursor getIndexCursor(Index index, Session session,  IndexKeyRange keyRange,
-                                 API.Ordering ordering, IndexScanSelector scanSelector);
+    @Override
+    public Cursor getIndexCursor(Index index, Session session,
+            IndexKeyRange keyRange, Ordering ordering,
+            IndexScanSelector scanSelector) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public IndexStatistics computeIndexStatistics(Session session, Index index) {
+        throw new UnsupportedOperationException();
+    }
+
+    public RowType getRowType(MemoryAdapter adapter) {
+        return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable));
+    }
     
-    // Used by IndexStatistics to compute index statistics
-    public long rowCount();
-    
-    // This should return null for all indexes
-    // TODO: describe index implementation on memory tables. 
-    public IndexStatistics computeIndexStatistics(Session session, Index index);
+    public static String boolResult(boolean bool) {
+        return bool ? "YES" : "NO";
+    }
+    public static final int IDENT_MAX = 128;
 }
