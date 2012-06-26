@@ -132,7 +132,7 @@ public class MNumericCastBase
     
     static class FromInt8ToDecimal extends TCastBase
     {
-        public FromInt8ToDecimal(MNumeric source, MNumeric target, boolean auto, Constantness c)
+        public FromInt8ToDecimal(MNumeric source, TClass target, boolean auto, Constantness c)
         {
             super(source, target, auto, c);
         }
@@ -265,7 +265,7 @@ public class MNumericCastBase
     
     static class FromInt16ToDecimal extends TCastBase
     {
-        public FromInt16ToDecimal(MNumeric source, MNumeric target, boolean auto, Constantness c)
+        public FromInt16ToDecimal(MNumeric source, TClass target, boolean auto, Constantness c)
         {
             super(source, target, auto, c);
         }
@@ -398,7 +398,7 @@ public class MNumericCastBase
     
     static class FromInt32ToDecimal extends TCastBase
     {
-        public FromInt32ToDecimal(MNumeric source, MNumeric target, boolean auto, Constantness c)
+        public FromInt32ToDecimal(MNumeric source, TClass target, boolean auto, Constantness c)
         {
             super(source, target, auto, c);
         }
@@ -531,7 +531,7 @@ public class MNumericCastBase
     
     static class FromInt64ToDecimal extends TCastBase
     {
-        public FromInt64ToDecimal(MNumeric source, MNumeric target, boolean auto, Constantness c)
+        public FromInt64ToDecimal(MNumeric source, TClass target, boolean auto, Constantness c)
         {
             super(source, target, auto, c);
         }
