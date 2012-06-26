@@ -43,38 +43,36 @@ public abstract class MCount implements TAggregator {
         new MCount() {
 
             @Override
-            public void input(TInstance instance, PValueSource source) {
+            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+                long count = state.getInt64();
                 ++count;
+                state.putInt64(count);
             }
         }, 
         // COUNT
         new MCount() {
 
             @Override
-            public void input(TInstance instance, PValueSource source) {
-                if (!source.isNull()) ++count;
+            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+                if (!source.isNull()) {
+                    long count = state.getInt64();
+                    ++count;
+                    state.putInt64(count);
+                }
             }
         }
     };
     
-    private static long count;
     private static TClass typeClass;
     private static final PValueSource EMPTY_VALUE = new PValue(PUnderlying.INT_64);
 
     private MCount() {
-        count = 0;
         typeClass = MNumeric.BIGINT;
-    }
-    
-    @Override
-    public void output(TInstance instance, PValueTarget target) {
-        target.putInt64(count);
-        count = 0;
     }
 
     @Override
-    public PValueSource emptyValue() {
-        return EMPTY_VALUE;
+    public void emptyValue(PValueTarget state) {
+        state.putInt64(0L);
     }
 
     @Override

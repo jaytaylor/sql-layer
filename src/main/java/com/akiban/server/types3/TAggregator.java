@@ -26,13 +26,13 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
 public interface TAggregator {
-    void input(TInstance instance, PValueSource source);
-    void output(TInstance instance, PValueTarget target);
-    PValueSource emptyValue();
+    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
+    void emptyValue(PValueTarget state);
     TInstance resultType(TPreptimeValue value);
     TClass getTypeClass();
 }
