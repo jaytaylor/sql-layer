@@ -113,7 +113,7 @@ public class MNumericCastBase
     
     static class FromInt8ToDouble extends TCastBase
     {
-        public FromInt8ToDouble(MNumeric source, MNumeric target, boolean auto, Constantness c)
+        public FromInt8ToDouble(MNumeric source, TClass target, boolean auto, Constantness c)
         {
             super(source, target, auto, c);
         }
@@ -246,7 +246,7 @@ public class MNumericCastBase
     
     static class FromInt16ToDouble extends TCastBase
     {
-        public FromInt16ToDouble(MNumeric source, MNumeric target, boolean auto, Constantness c)
+        public FromInt16ToDouble(MNumeric source, TClass target, boolean auto, Constantness c)
         {
             super(source, target, auto, c);
         }
@@ -379,7 +379,7 @@ public class MNumericCastBase
     
     static class FromInt32ToDouble extends TCastBase
     {
-        public FromInt32ToDouble(MNumeric source, MNumeric target, boolean auto, Constantness c)
+        public FromInt32ToDouble(MNumeric source, TClass target, boolean auto, Constantness c)
         {
             super(source, target, auto, c);
         }
@@ -512,7 +512,7 @@ public class MNumericCastBase
     
     static class FromInt64ToDouble extends TCastBase
     {
-        public FromInt64ToDouble(MNumeric source, MNumeric target, boolean auto, Constantness c)
+        public FromInt64ToDouble(MNumeric source, TClass target, boolean auto, Constantness c)
         {
             super(source, target, auto, c);
         }
