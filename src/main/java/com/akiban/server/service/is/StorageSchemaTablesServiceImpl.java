@@ -80,27 +80,9 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
     static final TableName STORAGE_JOURNAL_MANAGER_SUMMARY = new TableName (SCHEMA_NAME, "storage_journal_manager_summary");
     static final TableName STORAGE_MANAGEMENT_SUMMARY = new TableName (SCHEMA_NAME, "storage_management_summary");
     static final TableName STORAGE_TRANSACTION_SUMMARY = new TableName (SCHEMA_NAME, "storage_transaction_summary");
-    // STORAGE_TREES => Managenemt.TreeInfo->getTreeInfoArray(VolumneName->GetVolumeInfoArray())
     static final TableName STORAGE_TREES = new TableName (SCHEMA_NAME, "storage_trees");
     static final TableName STORAGE_VOLUMES = new TableName (SCHEMA_NAME, "storage_volumes");
-    
-    public final static String[] OPERATION_NAME = { "None", 
-        "Read page from Volume", 
-        "Read page from Journal", 
-        "Page copy from Journal to Volume", 
-        "Write page from Journal", 
-        "Transaction Start", 
-        "Transaction Commit", 
-        "Store Record", 
-        "Delete Record or Range", 
-        "Delete Tree", 
-        "Other", 
-        "Evict page from pool",
-        "Flush journal", 
-        "Get Page" };
 
-    // Note: This doesn't use the treeService directly, but the internal processing requires
-    // the underlying Persistit engine (which treeService controls) be up and running. 
     private final TreeService treeService;
     
     private final SchemaManager schemaManager;
@@ -492,7 +474,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
                 }
                 parameter.set(0, IOMeterMXBean.OPERATIONS[rowCounter+1]);
                 return new ValuesRow (rowType,
-                        OPERATION_NAME[rowCounter+1],
+                        IOMeterMXBean.OPERATION_NAMES[rowCounter+1],
                         getJMXInvoke (mbeanName, "totalBytes", parameter.toArray()),
                         getJMXInvoke (mbeanName, "totalOperations", parameter.toArray()),
                         ++rowCounter);
