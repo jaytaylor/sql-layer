@@ -30,7 +30,6 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -53,10 +52,8 @@ public class MSecToTime extends TOverloadBase {
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         int time = inputs.get(0).getInt32();
-        MutableDateTime datetime = DateExtractor.getMutableDateTime(context, new long[0], false); 
-        datetime.setDate(time);
-        output.putInt32(DateExtractor.toTime(datetime.getHourOfDay(), datetime.getMinuteOfHour(),
-                datetime.getSecondOfMinute()));
+        MutableDateTime datetime = new MutableDateTime(time); 
+        output.putInt32((int)MDatetimes.encodeTime(MDatetimes.fromJodaDatetime(datetime)));
     }
 
     @Override

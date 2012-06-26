@@ -40,7 +40,7 @@ public abstract class TNoAttrCastBase extends TCastBase {
     }
 
     @Override
-    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput) {
+    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specified) {
         return tClass.instance();
     }
 

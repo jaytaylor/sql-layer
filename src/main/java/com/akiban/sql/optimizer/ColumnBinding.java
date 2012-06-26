@@ -30,6 +30,7 @@ import com.akiban.sql.parser.FromTable;
 import com.akiban.sql.parser.ResultColumn;
 
 import com.akiban.sql.StandardException;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
@@ -91,8 +92,19 @@ public class ColumnBinding
             case 0:
                 return new DataTypeDescriptor(typeId, nullable);
             case 1:
-                return new DataTypeDescriptor(typeId, nullable, 
-                                              column.getTypeParameter1().intValue());
+                {
+                    DataTypeDescriptor type = new DataTypeDescriptor(typeId, nullable, 
+                                                                     column.getTypeParameter1().intValue());
+                    if (typeId.isStringTypeId() &&
+                        (column.getCharsetAndCollation() != null)) {
+                        CharacterTypeAttributes cattrs = 
+                            new CharacterTypeAttributes(column.getCharsetAndCollation().charset(),
+                                                        column.getCharsetAndCollation().collation(),
+                                                        CharacterTypeAttributes.CollationDerivation.IMPLICIT);
+                        type = new DataTypeDescriptor(type, cattrs);
+                    }
+                    return type;
+                }
             case 2:
                 {
                     int precision = column.getTypeParameter1().intValue();

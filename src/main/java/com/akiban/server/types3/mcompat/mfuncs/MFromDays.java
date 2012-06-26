@@ -29,7 +29,6 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -40,6 +39,9 @@ import org.joda.time.MutableDateTime;
 
 public class MFromDays extends TOverloadBase {
 
+    private static final long BEGINNING = new MutableDateTime(0,0,1,0,0,0,0).getMillis();
+    private static final long DAY_FACTOR = 3600L * 1000 * 24;
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(MNumeric.INT, 0);
@@ -47,7 +49,7 @@ public class MFromDays extends TOverloadBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int time = (int) (inputs.get(0).getInt32()*DateExtractor.DAY_FACTOR+DateExtractor.BEGINNING);
+        int time = (int) (inputs.get(0).getInt32()*DAY_FACTOR+BEGINNING);
         output.putInt32(time);
     }
 

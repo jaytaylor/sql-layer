@@ -323,6 +323,7 @@ public enum ErrorCode {
     INDEX_TREE_NAME_IS_NULL ("50", "01R", Importance.DEBUG, IndexTreeNameIsNullException.class),
     GROUP_MIXED_TABLE_TYPES ("50", "01S", Importance.DEBUG, GroupMixedTableTypes.class),
     GROUP_MULTIPLE_MEM_TABLES ("50", "01T", Importance.DEBUG, GroupMultipleMemoryTables.class),
+    JOIN_PARENT_NO_PK       ("50", "01U", Importance.DEBUG, JoinParentNoExplicitPK.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

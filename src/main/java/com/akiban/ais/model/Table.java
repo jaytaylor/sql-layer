@@ -173,7 +173,7 @@ public abstract class Table implements Traversable, HasGroup
 
     public boolean isAISTable()
     {
-        return tableName.getSchemaName().equals(TableName.AKIBAN_INFORMATION_SCHEMA);
+        return tableName.getSchemaName().equals(TableName.INFORMATION_SCHEMA);
     }
 
     protected void addColumn(Column column)

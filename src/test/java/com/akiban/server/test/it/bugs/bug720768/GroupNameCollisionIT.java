@@ -62,12 +62,12 @@ public class GroupNameCollisionIT extends ITBase {
         GroupsBuilder expectedBuilder = new GroupsBuilder("foo");
         for(com.akiban.ais.model.Group aisGroup : ais.getGroups().values()) {
             TableName rootTable = aisGroup.getGroupTable().getRoot().getName();
-            if ("akiban_information_schema".equals(rootTable.getSchemaName())) {
+            if (TableName.INFORMATION_SCHEMA.equals(rootTable.getSchemaName())) {
                 expectedBuilder.rootTable(rootTable, aisGroup.getName());
-                if ("zindex_statistics".equals(rootTable.getTableName())) {
+                if ("index_statistics".equals(rootTable.getTableName())) {
                   expectedBuilder.joinTables(rootTable,
                                              new TableName(rootTable.getSchemaName(),
-                                                           "zindex_statistics_entry"))
+                                                           "index_statistics_entry"))
                     .column("table_id", "table_id")
                     .column("index_id", "index_id");
                 }

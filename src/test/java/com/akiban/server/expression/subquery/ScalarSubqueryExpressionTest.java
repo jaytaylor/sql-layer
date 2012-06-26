@@ -28,6 +28,7 @@ package com.akiban.server.expression.subquery;
 
 import com.akiban.server.error.SubqueryTooManyRowsException;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionType;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
@@ -46,6 +47,7 @@ import com.akiban.server.types.AkType;
 import org.junit.Test;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 
 public class ScalarSubqueryExpressionTest {
@@ -73,7 +75,8 @@ public class ScalarSubqueryExpressionTest {
         Expression expression = functionsRegistry
             .composer("plus")
             .compose(Arrays.asList(boundField(outer.rowType(), 1, 0),
-                                   field(inner.rowType(), 0)));
+                                   field(inner.rowType(), 0)),
+                     Collections.<ExpressionType>nCopies(3, null));
         Expression scalar = new ScalarSubqueryExpression(innerPlan, expression,
                                                          outer.rowType(), inner.rowType(), 1);
         Expression outerN = field(outer.rowType(), 0);
@@ -109,7 +112,8 @@ public class ScalarSubqueryExpressionTest {
         Expression expression = functionsRegistry
             .composer("plus")
             .compose(Arrays.asList(boundField(outer.rowType(), 1, 0),
-                                   field(inner.rowType(), 0)));
+                                   field(inner.rowType(), 0)),
+                     Collections.<ExpressionType>nCopies(3, null));
         Expression scalar = new ScalarSubqueryExpression(innerPlan, expression,
                                                          outer.rowType(), inner.rowType(), 1);
         Expression outerN = field(outer.rowType(), 0);
