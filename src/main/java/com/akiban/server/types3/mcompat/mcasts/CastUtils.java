@@ -47,6 +47,23 @@ public final class CastUtils
     }
     
      
+    public static long getInRange (long max, long min, long val, long defaultVal, TExecutionContext context)
+    {
+        if (val > max)
+        {
+            context.reportTruncate(Long.toString(val), Long.toString(defaultVal));
+            return defaultVal;
+        }
+        else if (val < min)
+        {
+            context.reportTruncate(Long.toString(val), Long.toString(defaultVal));
+            return defaultVal;
+        }
+        else
+            return val;
+    }
+    
+     
     /**
      * Truncate non-digits part
      * @param st
