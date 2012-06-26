@@ -41,6 +41,25 @@ import com.akiban.server.types3.texpressions.Constantness;
 
 public class Cast_From_Date
 {
+    /**
+     * TODO:
+     * 
+     * TIME
+     * TIMESTAMP
+     * 
+     * BIT
+     * CHAR
+     * BINARY
+     * VARBINARY
+     * TINYBLOG
+     * TINYTEXT
+     * TEXT
+     * MEDIUMBLOB
+     * MEDIUMTEXT
+     * LONGBLOG
+     * LONTTEXT
+     * 
+     */
     public static final TCast TO_TINYINT = new TCastBase(MDatetimes.DATE, MNumeric.TINYINT, false, Constantness.UNKNOWN)
     {
         @Override
@@ -197,7 +216,7 @@ public class Cast_From_Date
         }
     };
     
-    public static TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, true, Constantness.UNKNOWN)
+    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, true, Constantness.UNKNOWN)
     {
 
         @Override
@@ -209,7 +228,22 @@ public class Cast_From_Date
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(context);
+            target.putObject(MDatetimes.parseDate((String)source.getObject(), context));
+        }
+    };
+    
+    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.DATE, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeDate(source.getInt32())));
         }
     };
 }
