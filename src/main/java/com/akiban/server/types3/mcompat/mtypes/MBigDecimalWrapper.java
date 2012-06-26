@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.error.OverflowException;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import java.math.BigDecimal;
 import java.math.MathContext;
@@ -40,11 +41,16 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         value = new BigDecimal(num);
     }
 
+    public MBigDecimalWrapper(long val)
+    {
+        value = BigDecimal.valueOf(val);
+    }
+
     public MBigDecimalWrapper()
     {
         value = BigDecimal.ZERO;
     }
-    
+
     @Override
     public void reset() {
         value = BigDecimal.ZERO;
@@ -77,6 +83,12 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         value = value.divide(o.value);
         return this;
     }
+
+    @Override
+    public BigDecimalWrapper ceil() {
+        value = value.setScale(0, RoundingMode.CEILING);
+        return this;
+    }
     
     @Override
     public int getSign() {
@@ -99,6 +111,7 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         return this;
     }
     
+    @Override
     public int getScale()
     {
         return value.scale();
@@ -140,3 +153,4 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         return this;
     }
 }
+

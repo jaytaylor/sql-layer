@@ -24,16 +24,8 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.akfuncs;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.common.funcs.Pi;
-
-public class AkPi extends Pi {
-    
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.fixed(AkNumeric.DOUBLE.instance());
-    }
+public class Types3Switch {
+    public static volatile boolean ON = false;
 }

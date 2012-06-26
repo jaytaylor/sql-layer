@@ -24,28 +24,59 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.common.funcs;
+package com.akiban.server.types3.texpressions.std;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public abstract class Pi extends TOverloadBase {
-    
+public abstract class NoArgExpression extends TOverloadBase
+{
+    public abstract TInstance tInstance(TExecutionContext context);
+    public abstract void evaluate(TExecutionContext context, PValueTarget target);
+
+    public boolean constantPerPreparation()
+    {
+        return constPerPrep;
+    }
+
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {}
-    
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        // does nothing. (no input)
+    }
+
+    @Override
+    public String overloadName()
+    {
+        return name;
+    }
+
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
-        output.putDouble(Math.PI);
+        assert inputs.size() == 0 : "unexpected input";
+        evaluate(context, output);
+    }
+
+    @Override
+    public TOverloadResult resultType()
+    {
+        // TODO: where does the contex come from?
+        return TOverloadResult.fixed(tInstance(null));
     }
     
-    @Override
-    public String overloadName() {
-        return "PI";
+    public NoArgExpression(String name, boolean constPerPrep)
+    {
+        this.name = name;
+        this.constPerPrep = constPerPrep;
     }
+    
+    private final String name;
+    private boolean constPerPrep;    
 }

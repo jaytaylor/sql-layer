@@ -33,6 +33,8 @@ import java.math.RoundingMode;
 
 public class AkBigDecimalWrapper implements BigDecimalWrapper {
     
+    private BigDecimal value;
+        
     @Override
     public void reset() {
         value = BigDecimal.ZERO;
@@ -76,6 +78,12 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     }
 
     @Override
+    public BigDecimalWrapper ceil() {
+        value = value.setScale(0, RoundingMode.CEILING);
+        return this;
+    }
+    
+    @Override
     public int getSign() {
         return value.signum();
     }
@@ -85,8 +93,6 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         value = value.abs();
         return this;
     }
-    
-    private BigDecimal value;
 
     @Override
     public int getScale()
@@ -129,5 +135,4 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         value = value.negate();
         return this;
     }
-
 }

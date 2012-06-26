@@ -53,7 +53,7 @@ public final class XMain {
         preparedExpression = new TPreparedFunction(
                 validatedAdd,
                 XInt.TYPE_CLASS.instance(),
-                Arrays.asList(preparedExpression, new XIntTime())
+                Arrays.asList(preparedExpression)
         );
 
         TPreptimeValue preptimeValue = preparedExpression.evaluateConstant();
