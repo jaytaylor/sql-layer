@@ -228,7 +228,8 @@ public abstract class MWeek extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                evaluateYearWeek(context, inputs.get(0).getInt32(), DEFAULT_MODE, output);
+                int mode = inputs.get(1).getInt32();
+                evaluateYearWeek(context, inputs.get(0).getInt32(), mode, output);
             }
         },
         new MWeek(WeekType.YEARWEEK, DateType.DATE) {
@@ -241,8 +242,8 @@ public abstract class MWeek extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                evaluateYearWeek(context, inputs.get(0).getInt32(), DEFAULT_MODE, output);
-
+                int mode = inputs.get(1).getInt32();
+                evaluateYearWeek(context, inputs.get(0).getInt32(), mode, output);
             }
         },
         new MWeek(WeekType.YEARWEEK, DateType.TIMESTAMP) {
@@ -255,8 +256,8 @@ public abstract class MWeek extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                evaluateYearWeek(context, inputs.get(0).getInt32(), DEFAULT_MODE, output);
-
+                int mode = inputs.get(1).getInt32();
+                evaluateYearWeek(context, inputs.get(0).getInt32(), mode, output);
             }
         }
     };
