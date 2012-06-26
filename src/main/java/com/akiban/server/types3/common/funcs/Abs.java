@@ -23,33 +23,33 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.types3.common.funcs;
 
-package com.akiban.server.types3;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-import com.akiban.util.SparseArray;
+public abstract class Abs extends TOverloadBase {
 
-import java.util.List;
+    protected final TClass inputType;
 
-public final class TPreptimeContext {
-    
-    public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, 
-                null,
-                null, null, null); // TODO pass in
-    }
-    
-    public void set(int index, Object value) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        preptimeCache.set(index, value);
+    public Abs(TClass returnType) {
+        this.inputType = returnType;
     }
 
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
-        this.inputTypes = inputTypes;
-        this.outputType = outputType;
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(inputType, 0);
     }
 
-    private SparseArray<Object> preptimeCache;
-    private List<TInstance> inputTypes;
-    private TInstance outputType;
+    @Override
+    public String overloadName() {
+        return "ABS";
+    }
+
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.fixed(inputType.instance());
+    }
 }

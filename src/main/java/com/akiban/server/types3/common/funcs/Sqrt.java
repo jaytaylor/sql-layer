@@ -24,32 +24,50 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.common.funcs;
 
-import com.akiban.util.SparseArray;
+import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.TInputSetBuilder;
+import com.akiban.server.types3.texpressions.TOverloadBase;
 
-import java.util.List;
+public class Sqrt extends TOverloadBase {
 
-public final class TPreptimeContext {
+    private final TClass type; 
     
-    public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, 
-                null,
-                null, null, null); // TODO pass in
+    public Sqrt(TClass type) {
+        this.type = type;
+    }
+      
+    @Override
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(type, 0);
     }
     
-    public void set(int index, Object value) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        preptimeCache.set(index, value);
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        double value = inputs.get(0).getDouble();
+        if (value < 0) {
+            output.putNull();
+        } else {
+            output.putDouble(Math.sqrt(value));
+        }
+    }
+      
+    @Override
+    public String overloadName() {
+        return "SQRT";
+    }
+    
+    @Override
+    public TOverloadResult resultType()
+    {
+        return TOverloadResult.fixed(type.instance());
     }
 
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
-        this.inputTypes = inputTypes;
-        this.outputType = outputType;
-    }
-
-    private SparseArray<Object> preptimeCache;
-    private List<TInstance> inputTypes;
-    private TInstance outputType;
 }

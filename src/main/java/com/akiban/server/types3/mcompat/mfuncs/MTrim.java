@@ -24,32 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.util.SparseArray;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.Trim;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
-import java.util.List;
-
-public final class TPreptimeContext {
-    
-    public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, 
-                null,
-                null, null, null); // TODO pass in
-    }
-    
-    public void set(int index, Object value) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        preptimeCache.set(index, value);
-    }
-
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
-        this.inputTypes = inputTypes;
-        this.outputType = outputType;
-    }
-
-    private SparseArray<Object> preptimeCache;
-    private List<TInstance> inputTypes;
-    private TInstance outputType;
+public class MTrim {
+    public static final TOverload[] INSTANCES = Trim.create(MString.VARCHAR, MNumeric.INT);
 }

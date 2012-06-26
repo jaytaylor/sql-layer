@@ -26,30 +26,45 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.util.SparseArray;
+import com.akiban.server.types3.texpressions.Constantness;
 
-import java.util.List;
-
-public final class TPreptimeContext {
+public abstract class TCastBase implements TCast
+{
+        
+    private final TClass sourceClass;
+    private final TClass targetClass;
+    private final boolean isAutomatic;
+    private final Constantness constness;
     
-    public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, 
-                null,
-                null, null, null); // TODO pass in
+    protected TCastBase (TClass sourceClass, TClass targetClass, boolean isAutomatic, Constantness constness)
+    {
+        this.sourceClass = sourceClass;
+        this.targetClass = targetClass;
+        this.isAutomatic = isAutomatic;
+        this.constness = constness;
     }
     
-    public void set(int index, Object value) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        preptimeCache.set(index, value);
+    @Override
+    public boolean isAutomatic()
+    {
+        return isAutomatic;
     }
 
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
-        this.inputTypes = inputTypes;
-        this.outputType = outputType;
+    @Override
+    public Constantness constness()
+    {
+        return constness;
     }
 
-    private SparseArray<Object> preptimeCache;
-    private List<TInstance> inputTypes;
-    private TInstance outputType;
+    @Override
+    public TClass sourceClass()
+    {
+        return sourceClass;
+    }
+
+    @Override
+    public TClass targetClass()
+    {
+        return targetClass;
+    }   
 }

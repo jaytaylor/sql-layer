@@ -26,30 +26,7 @@
 
 package com.akiban.server.types3;
 
-import com.akiban.util.SparseArray;
-
-import java.util.List;
-
-public final class TPreptimeContext {
-    
-    public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, 
-                null,
-                null, null, null); // TODO pass in
-    }
-    
-    public void set(int index, Object value) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        preptimeCache.set(index, value);
-    }
-
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
-        this.inputTypes = inputTypes;
-        this.outputType = outputType;
-    }
-
-    private SparseArray<Object> preptimeCache;
-    private List<TInstance> inputTypes;
-    private TInstance outputType;
+public enum ErrorHandlingMode
+{
+    ERROR, WARN, IGNORE
 }

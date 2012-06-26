@@ -24,32 +24,55 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.rowdata;
 
-import com.akiban.util.SparseArray;
+public final class RowDataPValueSource extends AbstractRowDataPValueSource {
 
-import java.util.List;
+    // FieldDefConversionBase interface
 
-public final class TPreptimeContext {
+    public void bind(FieldDef fieldDef, RowData rowData) {
+        this.fieldDef = fieldDef;
+        this.rowData = rowData;
+    }
+
+    // AbstractRowDataValueSource interface
+
+    @Override
+    protected long getRawOffsetAndWidth() {
+        return fieldDef().getRowDef().fieldLocation(rowData(), fieldDef().getFieldIndex());
+    }
+
+    @Override
+    protected byte[] bytes() {
+        return rowData.getBytes();
+    }
+
+    @Override
+    protected FieldDef fieldDef() {
+        return fieldDef;
+    }
+
+    // ValueSource interface
+
+    @Override
+    public boolean isNull() {
+        return (rowData().isNull(fieldDef().getFieldIndex()));
+    }
+
+    // Object interface
+
+    @Override
+    public String toString() {
+        return String.format("ValueSource( %s -> %s )", fieldDef, rowData.toString(fieldDef.getRowDef()));
+    }
+
+    // private
     
-    public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, 
-                null,
-                null, null, null); // TODO pass in
-    }
-    
-    public void set(int index, Object value) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        preptimeCache.set(index, value);
+    private RowData rowData() {
+        return rowData;
     }
 
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
-        this.inputTypes = inputTypes;
-        this.outputType = outputType;
-    }
-
-    private SparseArray<Object> preptimeCache;
-    private List<TInstance> inputTypes;
-    private TInstance outputType;
+    // object state
+    private FieldDef fieldDef;
+    private RowData rowData;
 }

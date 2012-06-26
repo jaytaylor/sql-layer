@@ -23,33 +23,14 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.types3.mcompat.mfuncs;
 
-package com.akiban.server.types3;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.common.funcs.Sqrt;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
-import com.akiban.util.SparseArray;
+public class MSqrt {
 
-import java.util.List;
-
-public final class TPreptimeContext {
-    
-    public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, 
-                null,
-                null, null, null); // TODO pass in
-    }
-    
-    public void set(int index, Object value) {
-        if (preptimeCache == null)
-            preptimeCache = new SparseArray<Object>(index);
-        preptimeCache.set(index, value);
-    }
-
-    public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {
-        this.inputTypes = inputTypes;
-        this.outputType = outputType;
-    }
-
-    private SparseArray<Object> preptimeCache;
-    private List<TInstance> inputTypes;
-    private TInstance outputType;
+    public static final TOverload INSTANCE = new Sqrt(MDouble.INSTANCE);
 }

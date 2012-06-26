@@ -24,21 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TQueryContextExpression;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.aksql.aktypes.AkNumeric;
+import com.akiban.server.types3.aksql.aktypes.AkString;
+import com.akiban.server.types3.common.funcs.Trim;
 
-public final class XIntTime extends TQueryContextExpression {
-    @Override
-    public TInstance resultType() {
-        return XInt.TYPE_CLASS.instance();
-    }
-
-    @Override
-    protected void evaluate(QueryContext context, PValueTarget target) {
-        target.putInt32((int)context.getCurrentDate().getTime());
-    }
+public class AkTrim {
+    public static final TOverload[] INSTANCES = Trim.create(AkString.VARCHAR, AkNumeric.INT);
 }
