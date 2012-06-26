@@ -322,6 +322,7 @@ public class MDatetimes
         }; // TODO: fractional seconds
     }
     
+    //TODO: set upper and lower limit on TIMESTAMP value
     public static long encodeTimestamp(long val[], String tz)
     {
         DateTime dt = new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],

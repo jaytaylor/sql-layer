@@ -32,7 +32,9 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -216,6 +218,37 @@ public class Cast_From_Date
         }
     };
     
+    public static final TCast TO_DOUBLE = new TCastBase(MDatetimes.DATE, MDouble.INSTANCE, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putDouble(source.getInt32());
+        }   
+    };
+    
+    public static final TCast TO_DECIMAL = new TCastBase(MDatetimes.DATE, MNumeric.DECIMAL, true, Constantness.UNKNOWN)
+    {
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putObject(new MBigDecimalWrapper(source.getInt32()));
+        }
+    };
+    
     public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, true, Constantness.UNKNOWN)
     {
 
@@ -244,6 +277,39 @@ public class Cast_From_Date
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeDate(source.getInt32())));
+        }
+    };
+    
+    public static final TCast TO_TIME = new TCastBase(MDatetimes.DATE, MDatetimes.TIME, false, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // there is not TIME value in DATE, hence it's 0.
+            target.putInt32(0);
+        }
+    };
+    
+    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.DATE, MDatetimes.TIMESTAMP, true, Constantness.UNKNOWN)
+    {
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int)MDatetimes.encodeTimestamp(MDatetimes.decodeDate(source.getInt32()), 
+                                                            context.getCurrentTimezone()));
         }
     };
 }
