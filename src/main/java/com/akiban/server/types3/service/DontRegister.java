@@ -26,14 +26,11 @@
 
 package com.akiban.server.types3.service;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TOverload;
-import java.util.Collection;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface ExpressionRegistry
-{
-    Collection<TOverload> overloads();
-    Collection<TCast> casts();
-    Collection<TClass> tclasses();
-}
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ElementType.FIELD, ElementType.METHOD})
+public @interface DontRegister{}
