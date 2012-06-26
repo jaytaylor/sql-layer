@@ -29,6 +29,8 @@ package com.akiban.qp.rowtype;
 import com.akiban.server.types.AkType;
 
 import com.akiban.server.aggregation.AggregatorFactory;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
 
 import java.util.List;
 
@@ -44,6 +46,15 @@ public final class AggregatedRowType extends DerivedRowType {
             return base.typeAt(index);
         else
             return aggregatorFactories.get(index - inputsIndex).outputType();
+    }
+    
+    @Override
+    public AkCollator collatorAt(int index) {
+        if (index < inputsIndex)
+            return base.collatorAt(index);
+        else
+            // TODO - this probably isn't right forever
+            return AkCollatorFactory.UCS_BINARY_COLLATOR;
     }
 
     public AggregatedRowType(DerivedTypesSchema schema, int typeId,

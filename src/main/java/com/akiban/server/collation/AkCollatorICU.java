@@ -31,10 +31,16 @@ import com.persistit.Key;
 
 public class AkCollatorICU implements AkCollator {
 
-    Collator collator;
+    private final String collatorName;
+    
+    ThreadLocal<Collator> collator = new ThreadLocal<Collator>() {
+        protected Collator initialValue() {
+            return AkCollatorFactory.forName(collatorName);
+        }
+    };
 
-    AkCollatorICU(final Collator collator) {
-        this.collator = collator;
+    AkCollatorICU(final String name) {
+        collatorName = name;
     }
 
     @Override
@@ -44,7 +50,7 @@ public class AkCollatorICU implements AkCollator {
 
     @Override
     public void append(Key key, String value) {
-        byte[] sortBytes = collator.getCollationKey(value).toByteArray();
+        byte[] sortBytes = collator.get().getCollationKey(value).toByteArray();
         byte[] keyBytes = key.getEncodedBytes();
         int size = key.getEncodedSize();
         if (size + sortBytes.length > key.getMaximumSize()) {
@@ -67,18 +73,18 @@ public class AkCollatorICU implements AkCollator {
 
     @Override
     public int compare(String source, String target) {
-        return collator.compare(source, target);
+        return collator.get().compare(source, target);
     }
 
     @Override
     public Collator getCollator() {
-        return collator;
+        return collator.get();
     }
     
 
     @Override
     public boolean isCaseSensitive() {
-        return collator.getStrength() > Collator.SECONDARY;
+        return collator.get().getStrength() > Collator.SECONDARY;
     }
 
     private boolean verifySortByteZeroes(final byte[] a) {

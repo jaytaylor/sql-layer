@@ -48,13 +48,8 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     public void attach(Key key) {
         this.key = key;
     }
-
-    public PersistitKeyValueTarget expectingType(AkType type) {
-        return expectingType(type, null);
-    }
-
+    
     public PersistitKeyValueTarget expectingType(AkType type, AkCollator collator) {
-
         if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.type = type;

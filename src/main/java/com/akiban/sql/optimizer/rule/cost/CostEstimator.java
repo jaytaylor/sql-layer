@@ -496,7 +496,7 @@ public abstract class CostEstimator implements TableRowCounts
         if (expr == null)
             return false;
         ValueSource valueSource = expr.evaluation().eval();
-        keyTarget.expectingType(index.getAllColumns().get(column).getColumn().getType().akType());
+        keyTarget.expectingType(index.getAllColumns().get(column).getColumn());
         Converters.convert(valueSource, keyTarget);
         return true;
     }

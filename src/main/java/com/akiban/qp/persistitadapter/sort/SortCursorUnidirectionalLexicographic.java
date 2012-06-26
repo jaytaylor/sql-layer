@@ -69,7 +69,7 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
             startKeyTarget.attach(startKey);
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
-                    startKeyTarget.expectingType(types[f]);
+                    startKeyTarget.expectingType(types[f], collators[f]);
                     Converters.convert(startExpressions.eval(f), startKeyTarget);
                 }
             }
@@ -87,7 +87,7 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
                     if (valueSource.isNull() && startExpressions != null && !startExpressions.eval(f).isNull()) {
                         endKey.append(Key.AFTER);
                     } else {
-                        endKeyTarget.expectingType(types[f]);
+                        endKeyTarget.expectingType(types[f], collators[f]);
                         Converters.convert(valueSource, endKeyTarget);
                     }
                 } else {

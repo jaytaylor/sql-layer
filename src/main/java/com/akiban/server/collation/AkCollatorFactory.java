@@ -48,36 +48,48 @@ public class AkCollatorFactory {
 
     private final static Map<String, Collator> sourceMap = new HashMap<String, Collator>();
 
-    private final static ThreadLocal<Map<String, SoftReference<AkCollator>>> cache = new ThreadLocal<Map<String, SoftReference<AkCollator>>>();
+    private final static Map<String, SoftReference<AkCollator>> collatorMap = new HashMap<String, SoftReference<AkCollator>>();
 
     public final static boolean MAP_CI = Boolean.getBoolean("akiban.collation.map_ci");
 
     /**
      * 
      * @param name
-     * @return
+     * @return an AkCollator
      */
-    public static AkCollator getCollator(final String name) {
+    public static AkCollator getAkCollator(final String name) {
         if (UCS_BINARY.equalsIgnoreCase(name) ||
-            // TODO: Temporarily just know this one.
-            !MAP_CI || !"latin1_swedish_ci".equals(name)) {
+        // TODO: Temporarily just know this one.
+                !MAP_CI || !"latin1_swedish_ci".equals(name)) {
             return UCS_BINARY_COLLATOR;
         }
 
-        Map<String, SoftReference<AkCollator>> myMap = cache.get();
-        if (myMap == null) {
-            myMap = new HashMap<String, SoftReference<AkCollator>>();
-            cache.set(myMap);
-        } else {
-            SoftReference<AkCollator> ref = myMap.get(name);
+        synchronized (collatorMap) {
+            SoftReference<AkCollator> ref = collatorMap.get(name);
             if (ref != null) {
-                return ref.get();
+                AkCollator akCollator = ref.get();
+                if (akCollator != null) {
+                    return akCollator;
+                }
             }
+            AkCollator akCollator = new AkCollatorICU(name);
+            collatorMap.put(name, new SoftReference<AkCollator>(akCollator));
+            return akCollator;
         }
+    }
+
+    /**
+     * Construct an actual ICU Collator given a collation scheme name.
+     * The result is a Collator that must be use in a thread-private manner.
+     * @param name
+     * @return
+     */
+    static synchronized Collator forName(final String name) {
         Collator collator = sourceMap.get(name);
         if (collator == null) {
             /*
-             * TODO  - figure out how ICU4J decodes names - this is certainly wrong.
+             * TODO - figure out how ICU4J decodes names - this is certainly
+             * wrong.
              */
             String locale = "sv_SE"; // Swedish for Sweden.
             int strength = Collator.SECONDARY; // _ci; _cs = TERTIARY.
@@ -86,15 +98,13 @@ public class AkCollatorFactory {
             if (collator == null) {
                 throw new IllegalArgumentException("No such Collator named: " + name);
             }
-            
+
             collator.setStrength(strength);
-            
+
             sourceMap.put(name, collator);
         }
         collator = collator.cloneAsThawed();
-        AkCollator akCollator = new AkCollatorICU(collator);
-        myMap.put(name, new SoftReference<AkCollator>(akCollator));
-        return akCollator;
+        return collator;
     }
 
 }

@@ -58,7 +58,7 @@ public class CharsetAndCollation
     // TODO It may be worth caching this here or inside cac,
     // once it is thread-safe.
     public AkCollator getCollator() {
-        return AkCollatorFactory.getCollator(collation);
+        return AkCollatorFactory.getAkCollator(collation);
     }
     
     @Override
