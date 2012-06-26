@@ -9,15 +9,15 @@
  * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
  *
  * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
- * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
- * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
- * YOUR INITIAL PURCHASE.
+ * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A)
+ * DO NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS
+ * OF YOUR INITIAL PURCHASE.
  *
  * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
- * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
- * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
- * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
- * BY SUCH AUTHORIZED PERSONNEL.
+ * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO
+ * SIGN FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT.
+ * THE LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON
+ * ACCEPTANCE BY SUCH AUTHORIZED PERSONNEL.
  *
  * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
@@ -38,103 +38,64 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
 
 public class M2ArgRoundBase extends TOverloadBase {
-    
+
     public M2ArgRoundBase(RoundType roundType, TClass numericType) {
         this.roundType = roundType;
         this.numericType = numericType;
     }
-    
-    static enum RoundType
-    {
+
+    static enum RoundType {
+
         TRUNCATE() {
+
             @Override
             BigDecimalWrapper evaluate(MBigDecimalWrapper result, int scale) {
                 return result.truncate(scale);
             }
-            
-            @Override
-            double evaluate(double result, int scale) {
-                return (double)(int) result;
-            }
         },
         ROUND() {
+
             @Override
             BigDecimalWrapper evaluate(MBigDecimalWrapper result, int scale) {
                 return result.round(scale);
             }
-            
-            @Override
-            double evaluate(double result, int scale) {
-                return Math.round(result);
-            }
         };
-        
-        abstract double evaluate(double result, int scale);
+
         abstract BigDecimalWrapper evaluate(MBigDecimalWrapper result, int scale);
     }
-    
-    public static TOverload create(final RoundType roundType) {
-        TOverload exactType = new M2ArgRoundBase(roundType, MNumeric.DECIMAL) {
 
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
+        int scale = (int) Math.round(inputs.get(1).getDouble());
+        output.putObject(roundType.evaluate(result, scale));
+    }
+
+    @Override
+    public TOverloadResult resultType() {
+        return TOverloadResult.custom(numericType.instance(), new TCustomOverloadResult() {
+            
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
-                output.putObject(roundType.evaluate(result));
-            }
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                TPreptimeValue preptimeValue = inputs.get(0);
+                int precision = preptimeValue.instance().attribute(MBigDecimal.Attrs.PRECISION);
+                int scale = preptimeValue.instance().attribute(MBigDecimal.Attrs.SCALE);
 
-            @Override
-            public TOverloadResult resultType() {
-                return TOverloadResult.custom(numericType.instance(), new TCustomOverloadResult() {
-
-                    private final int ZERO_DEFAULT = 13;
-                    private final int BIGINT_DEFAULT = 17;
-                    private final int DECIMAL_DEFAULT = 16;
-
-                    @Override
-                    public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                        TPreptimeValue preptimeValue = inputs.get(0);
-                        int precision = preptimeValue.instance().attribute(MBigDecimal.Attrs.PRECISION);
-                        int scale = preptimeValue.instance().attribute(MBigDecimal.Attrs.SCALE);
-
-                        // Special case: DECIMAL(0,0)
-                        if (precision + scale == 0) {
-                            return MNumeric.BIGINT.instance(ZERO_DEFAULT);
-                        }
-
-                        int length = precision - scale;
-                        if (length >= 0 && length < 9) {
-                            return MNumeric.INT.instance(length + 3);
-                        }
-                        if (length >= 9 && length < 14) {
-                            return MNumeric.BIGINT.instance(BIGINT_DEFAULT);
-                        }
-                        return MNumeric.DECIMAL.instance(DECIMAL_DEFAULT, 0);
+                PValueSource roundToVal = inputs.get(1).value();
+                if (roundToVal != null) {
+                    int leftOfDecimal = precision - scale;
+                    int roundToInt = roundToVal.getInt32();
+                    if (roundToInt < 0) {
+                        precision = leftOfDecimal;
+                        scale = 0;
+                    } else {
+                        precision = leftOfDecimal + roundToInt;
+                        scale = 0;
                     }
-                });
+                }
+                return MNumeric.DECIMAL.instance(precision, scale);
             }
-        };
-
-        TOverload inexactType = new M2ArgRoundBase(roundType, MDouble.INSTANCE) {
-            private int DEFAULT_DOUBLE = 17;
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                double result = inputs.get(0).getDouble();
-                output.putDouble(roundType.evaluate(result));
-            }
-
-            @Override
-            public TOverloadResult resultType() {
-                return TOverloadResult.custom(numericType.instance(), new TCustomOverloadResult() {
-
-                    @Override
-                    public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                        return numericType.instance(DEFAULT_DOUBLE, 0);
-                    }   
-                });
-            }
-        };
-        
-        return new TOverload[]{exactType, inexactType};
+        });
     }
     protected final TClass numericType;
     private final RoundType roundType;
