@@ -47,8 +47,8 @@ public abstract class MUnixTimestamp extends TOverloadBase {
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 long input = inputs.get(0).getInt64();
 
-                long[] datetime = DateExtractor.extract(input);
-                MutableDateTime date = DateExtractor.getMutableDateTime(context, datetime, true);
+                long[] datetime = MDatetimes.decodeDate(input);
+                MutableDateTime date = MDatetimes.toJodaDatetime(datetime, context.getCurrentTimezone());
                 int millis = (int) date.getMillis();
                 output.putInt32(millis <= 0 ? 0 : millis);
             }
