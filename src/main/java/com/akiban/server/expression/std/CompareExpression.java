@@ -63,7 +63,10 @@ public class CompareExpression extends AbstractBinaryExpression {
 
     @Override
     public ExpressionEvaluation evaluation() {
-        return new CompareEvaluation(childrenEvaluations(), OPS.get(comparison));
+        if (collator != null)
+            return new CollateEvaluation(childrenEvaluations(), OPS.get(comparison), collator);
+        else
+            return new CompareEvaluation(childrenEvaluations(), OPS.get(comparison));
     }
 
     @Override
