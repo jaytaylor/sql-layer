@@ -38,7 +38,6 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
@@ -365,11 +364,12 @@ class SortCursorUnidirectional extends SortCursor
         }
         this.startKey = adapter.newKey();
         this.types = new AkType[startBoundColumns];
+        this.collators = new AkCollator[startBoundColumns];
         List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
         for (int f = 0; f < startBoundColumns; f++) {
             Column column = indexColumns.get(f).getColumn();
             this.types[f] = column.getType().akType();
-            this.collators[f] = AkCollatorFactory.getAkCollator(column.getCharsetAndCollation().collation());
+            this.collators[f] = column.getCollator();
         }
     }
 

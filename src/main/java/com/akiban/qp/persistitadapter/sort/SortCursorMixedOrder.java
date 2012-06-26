@@ -35,7 +35,6 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
@@ -224,7 +223,7 @@ class SortCursorMixedOrder extends SortCursor
         collators = new AkCollator[startBoundColumns];
         for (int f = 0; f < startBoundColumns; f++) {
             Column column = indexColumns.get(f).getColumn();
-            this.collators[f] = AkCollatorFactory.getAkCollator(column.getCharsetAndCollation().collation());
+            this.collators[f] = column.getCollator();
         }
 
     }
