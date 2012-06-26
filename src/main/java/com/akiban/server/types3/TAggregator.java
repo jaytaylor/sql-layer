@@ -33,6 +33,6 @@ public interface TAggregator {
     void input(TInstance instance, PValueSource source);
     void output(TInstance instance, PValueTarget target);
     PValueSource emptyValue();
-    TPreptimeValue resultType(TInstance instance);
+    TInstance resultType(TPreptimeValue value);
     TClass getTypeClass();
 }
