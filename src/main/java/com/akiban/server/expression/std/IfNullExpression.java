@@ -70,10 +70,4 @@ public class IfNullExpression extends CoalesceExpression
         if (children.size() != 2) throw new WrongExpressionArityException(2, children.size());
         else return children;
     }
-
-    @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("IF_NULL");
-    }
 }

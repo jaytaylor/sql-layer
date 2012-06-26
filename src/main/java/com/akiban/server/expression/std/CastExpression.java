@@ -37,6 +37,9 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 
@@ -47,10 +50,17 @@ public class CastExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() {
+    public String name() {
         return "CAST_" + valueType();
     }
 
+    @Override
+    public Explainer getExplainer () {
+        Explainer ex = super.getExplainer();
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(valueType().name()));
+        return ex;
+    }
+    
     @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(valueType(), operandEvaluation());

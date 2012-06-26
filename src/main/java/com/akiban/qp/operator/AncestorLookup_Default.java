@@ -34,13 +34,17 @@ import com.akiban.qp.rowtype.HKeyRowType;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import java.util.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.util.*;
 
 /**
 
@@ -245,6 +249,15 @@ class AncestorLookup_Default extends Operator
     private final RowType rowType;
     private final List<UserTable> ancestors;
     private final boolean keepInput;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Default", groupTable, rowType, keepInput, inputOperator);
+        for (UserTable table : ancestors)
+            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table));
+        return ex;
+    }
 
     // Inner classes
 
