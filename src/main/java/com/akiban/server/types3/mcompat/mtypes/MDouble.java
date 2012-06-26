@@ -137,7 +137,7 @@ public class MDouble extends TClass
     MDouble()
     {
         super(MBundle.INSTANCE.id(), "double", 
-                DoubleAttribute.values(),
+                DoubleAttribute.class,
                 1, 1, 8,
                 PUnderlying.DOUBLE);
     }

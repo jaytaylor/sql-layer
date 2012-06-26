@@ -47,7 +47,7 @@ public class FromDaysExpression extends AbstractUnaryExpression
     public static final ExpressionComposer COMPOSER = new UnaryComposer()
     {
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new FromDaysExpression(argument);
         }
@@ -95,7 +95,7 @@ public class FromDaysExpression extends AbstractUnaryExpression
     }
     
     @Override
-    protected String name()
+    public String name()
     {
         return "FROM_DAYS";
     }

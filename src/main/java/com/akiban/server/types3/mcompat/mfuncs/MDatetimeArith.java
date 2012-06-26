@@ -27,7 +27,6 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.common.UnitValue;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -42,6 +41,7 @@ import org.joda.time.MutableDateTime;
 public abstract class MDatetimeArith extends TOverloadBase {
     
     private final String name;
+    private static final long DAY_FACTOR = 3600L * 1000 * 24;
     
     public static TOverload DATE_ADD = new MDatetimeArith("DATE_ADD") {
 
@@ -53,9 +53,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(input);
-            long date = DateExtractor.toDatetime(datetime.getYear(), datetime.getMonthOfYear(),
-                    datetime.getDayOfMonth(), datetime.getHourOfDay(), datetime.getMinuteOfHour(),
-                    datetime.getSecondOfMinute());
+            long date = MDatetimes.encodeDatetime(MDatetimes.fromJodaDatetime(datetime)); 
             output.putInt64(date);
         }
         
@@ -75,9 +73,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
-            long date = DateExtractor.toDatetime(datetime.getYear(), datetime.getMonthOfYear(), 
-                    datetime.getDayOfMonth(), datetime.getHourOfDay(), datetime.getMinuteOfHour(),
-                    datetime.getSecondOfMinute());
+            long date = MDatetimes.encodeDatetime(MDatetimes.fromJodaDatetime(datetime)); 
             output.putInt64(date);
         }
 
@@ -97,7 +93,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
-            output.putInt32((int) (datetime.getMillis() / DateExtractor.DAY_FACTOR));
+            output.putInt32((int) (datetime.getMillis() / DAY_FACTOR));
         }
 
         @Override
@@ -116,8 +112,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(input);
-            int time = DateExtractor.toTime(datetime.getHourOfDay(), datetime.getMinuteOfHour(),
-                    datetime.getSecondOfMinute());
+            int time = (int) MDatetimes.encodeTime(MDatetimes.fromJodaDatetime(datetime));
             output.putInt32(time);
         }
         
@@ -137,7 +132,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
-            output.putInt32((int) (datetime.getMillis() / DateExtractor.DAY_FACTOR));
+            output.putInt32((int) (datetime.getMillis() / DAY_FACTOR));
         }
 
         @Override
@@ -156,8 +151,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
         @Override
         protected void evaluate(long input, MutableDateTime datetime, PValueTarget output) {
             datetime.add(-input);
-            int time = DateExtractor.toTime(datetime.getHourOfDay(), datetime.getMinuteOfHour(),
-                    datetime.getSecondOfMinute());
+            int time = (int) MDatetimes.encodeTime(MDatetimes.fromJodaDatetime(datetime));
             output.putInt32(time);
         }
         
@@ -175,14 +169,14 @@ public abstract class MDatetimeArith extends TOverloadBase {
     
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        long[] arr1 = DateExtractor.extract(inputs.get(1).getInt64());
-        MutableDateTime datetime = DateExtractor.getMutableDateTime(context, arr1, true);
+        long[] arr1 = MDatetimes.decodeDatetime(inputs.get(1).getInt64());
+        MutableDateTime datetime = MDatetimes.toJodaDatetime(arr1, context.getCurrentTimezone());
         long value = datetime.getMillis();
 
         // Reuse MutableDateTime object to save additional allocation
-        long[] arr0 = DateExtractor.extract(inputs.get(0).getInt64());
-        datetime.setDateTime((int) arr0[DateExtractor.YEAR], (int) arr0[DateExtractor.MONTH], (int) arr0[DateExtractor.DAY],
-                (int) arr0[DateExtractor.HOUR], (int) arr0[DateExtractor.MINUTE], (int) arr0[DateExtractor.SECOND], 0);
+        long[] arr0 = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
+        datetime.setDateTime((int) arr0[MDatetimes.YEAR_INDEX], (int) arr0[MDatetimes.MONTH_INDEX], (int) arr0[MDatetimes.DAY_INDEX],
+                (int) arr0[MDatetimes.HOUR_INDEX], (int) arr0[MDatetimes.MIN_INDEX], (int) arr0[MDatetimes.SEC_INDEX], 0);
         evaluate(value, datetime, output);
     }
     

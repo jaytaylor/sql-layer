@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.pvalue.PUnderlying;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -77,6 +78,12 @@ public class HKey
     {
         ensureDerived();
         return columnTypes[i];
+    }
+    
+    public PUnderlying pType(int i)
+    {
+        ensureDerived();
+        return pTypes[i];
     }
 
     public HKey(Table table)
@@ -129,8 +136,10 @@ public class HKey
                     columnTypes = new AkType[columnList.size()];
                     int c = 0;
                     for (Column column : columnList) {
+                        Type type = column.getType();
                         columns[c] = column;
-                        columnTypes[c] = column.getType().akType();
+                        columnTypes[c] = type.akType();
+                        pTypes[c] = type.pUnderlying();
                         c++;
                     }
                     // keyDepth
@@ -157,4 +166,5 @@ public class HKey
     private int[] keyDepth;
     private Column[] columns;
     private AkType[] columnTypes;
+    private PUnderlying[] pTypes;
 }

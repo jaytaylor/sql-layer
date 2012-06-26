@@ -52,7 +52,7 @@ public final class Cast_MInt_MVarchar extends TCastBase {
     }
 
     @Override
-    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput) {
+    public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance ins) {
         PValueSource val = preptimeInput.value();
         int charLen;
         if (val != null) {

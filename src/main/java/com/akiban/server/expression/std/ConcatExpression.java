@@ -38,6 +38,9 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.AkibanAppender;
 
 import java.util.List;
@@ -45,10 +48,6 @@ import java.util.List;
 public final class ConcatExpression extends AbstractCompositeExpression {
 
     static class ConcatComposer implements ExpressionComposer {
-        @Override
-        public Expression compose(List<? extends Expression> arguments) {
-            return new ConcatExpression(arguments);
-        }
 
         @Override
         public ExpressionType composeType(TypesList argumentTypes) throws StandardException
@@ -74,7 +73,7 @@ public final class ConcatExpression extends AbstractCompositeExpression {
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
-            throw new UnsupportedOperationException("Not supported in CONCAT yet.");
+            return new ConcatExpression(arguments);
         }
 
         @Override
@@ -94,7 +93,12 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     protected void describe(StringBuilder sb) {
         sb.append("CONCAT");
     }
-
+    
+    @Override
+    public String name () {
+        return "CONCATENATE";
+    }
+    
     @Override
     public ExpressionEvaluation evaluation() {
         return new InnerEvaluation(childrenEvaluations());

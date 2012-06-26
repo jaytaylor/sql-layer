@@ -31,7 +31,6 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.common.UnitValue;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -39,7 +38,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import org.joda.time.MutableDateTime;
 
 public class MTimestampDiff extends TOverloadBase {
     
@@ -75,8 +73,8 @@ public class MTimestampDiff extends TOverloadBase {
             case UnitValue.YEAR: 
             case UnitValue.QUARTER:
             case UnitValue.MONTH: 
-                long[] date0 = DateExtractor.extract(datetime0);
-                long[] date1 = DateExtractor.extract(datetime1);
+                long[] date0 = MDatetimes.decodeDatetime(datetime0);
+                long[] date1 = MDatetimes.decodeDatetime(datetime1);
                 
                 output.putInt64(doSubtract(date0, date1) / MONTH_DIV[val - MONTH_BASE]);
                 break;
@@ -101,8 +99,8 @@ public class MTimestampDiff extends TOverloadBase {
     }
     
     private static long doSubtract(long d1[], long d2[]) {
-        if (!DateExtractor.validDayMonth(d1)
-                || !DateExtractor.validDayMonth(d2)) {
+        if (!MDatetimes.isValidDatetime(d1)
+                || !MDatetimes.isValidDatetime(d2)){
             throw new InvalidParameterValueException("Invalid date/time values");
         }
 

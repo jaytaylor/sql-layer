@@ -57,7 +57,9 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
 
     protected Statement executeStatement;
     protected PreparedStatement checkStatement;
-    protected final String CHECK_SQL = "SELECT header.table_id, header.index_id, COUNT(detail.column_count) AS ndetail FROM akiban_information_schema.zindex_statistics header LEFT JOIN akiban_information_schema.zindex_statistics_entry detail USING (table_id, index_id) GROUP BY header.table_id, header.index_id";
+    protected final String CHECK_SQL = "SELECT header.table_id, header.index_id, COUNT(detail.column_count) AS ndetail FROM "+
+            IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME.getDescription() + " header LEFT JOIN " +
+            IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME.getDescription() + " detail USING (table_id, index_id) GROUP BY header.table_id, header.index_id";
 
     @Before
     public void prepareStatements() throws Exception {
@@ -66,7 +68,7 @@ public class IndexStatisticsLifecycleIT extends PostgresServerFilesITBase
     }
     
     // Check what stats are in the database. Do this using the
-    // akiban_information_schema instead of any IndexStatistics API so
+    // information_schema instead of any IndexStatistics API so
     // as to detect problems with the loader / caches, etc.
     protected Map<Index,Integer> check() throws Exception {
         Map<Index,Integer> result = new HashMap<Index,Integer>();

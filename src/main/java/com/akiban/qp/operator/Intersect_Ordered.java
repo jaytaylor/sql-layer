@@ -31,6 +31,10 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
+import com.akiban.server.expression.std.FieldExpression;
+import com.akiban.server.expression.std.RankExpression;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
 import com.akiban.util.ArgumentValidation;
@@ -112,8 +116,8 @@ class Intersect_Ordered extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(skip %d from left, skip %d from right, compare %d)",
-                             getClass().getSimpleName(), leftFixedFields, rightFixedFields, fieldsToCompare);
+        return String.format("%s(skip %d from left, skip %d from right, compare %d%s)",
+                             getClass().getSimpleName(), leftFixedFields, rightFixedFields, fieldsToCompare, skipScan ? ", SKIP_SCAN" : "");
     }
 
     // Operator interface
@@ -235,6 +239,13 @@ class Intersect_Ordered extends Operator
     private final boolean[] ascending;
     private final ColumnSelector leftSkipRowColumnSelector;
     private final ColumnSelector rightSkipRowColumnSelector;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        javax.swing.JOptionPane.showMessageDialog(null, "not implemented");
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

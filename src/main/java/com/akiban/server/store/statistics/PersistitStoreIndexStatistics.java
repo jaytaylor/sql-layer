@@ -29,7 +29,6 @@ package com.akiban.server.store.statistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
 
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.TableName;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
@@ -52,6 +51,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.*;
+
+import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_TABLE_NAME;
+import static com.akiban.server.store.statistics.IndexStatisticsService.INDEX_STATISTICS_ENTRY_TABLE_NAME;
 
 /** Manage index statistics for / stored in Persistit
  */
@@ -100,17 +102,14 @@ public class PersistitStoreIndexStatistics
     }
 
     /* Storage formats.
-     * Keep in sync with akiban_information_schema.
+     * Keep in sync with IndexStatisticsServiceImpl
      */
-
-    private static final TableName INDEX_STATISTICS_TABLE_NAME = new TableName("akiban_information_schema", "zindex_statistics");
     private static final int TABLE_ID_FIELD_INDEX = 0;
     private static final int INDEX_ID_FIELD_INDEX = 1;
     private static final int ANALYSIS_TIMESTAMP_FIELD_INDEX = 2;
     private static final int ROW_COUNT_FIELD_INDEX = 3;
     private static final int SAMPLED_COUNT_FIELD_INDEX = 4;
 
-    private static final TableName INDEX_STATISTICS_ENTRY_TABLE_NAME = new TableName("akiban_information_schema", "zindex_statistics_entry");
     // Parent keys the same.
     private static final int COLUMN_COUNT_FIELD_INDEX = 2;
     private static final int ITEM_NUMBER_FIELD_INDEX = 3;

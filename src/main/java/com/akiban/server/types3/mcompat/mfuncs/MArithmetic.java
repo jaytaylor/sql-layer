@@ -38,6 +38,7 @@ import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.service.Scalar;
 
 public class MArithmetic {   
 
@@ -55,6 +56,7 @@ public class MArithmetic {
     }
     
     // Add functions
+    @Scalar
     public static final TOverload ADD_TINYINT = new TArithmetic("+", MNumeric.TINYINT, MNumeric.MEDIUMINT.instance(5)) {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {

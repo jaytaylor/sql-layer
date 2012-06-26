@@ -40,7 +40,7 @@ import com.akiban.server.service.session.Session;
 public interface SchemaManager {
     /**
      * <p>
-     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated and accessed through the normal
      * {@link Store} methods.
      * </p>
@@ -57,10 +57,10 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName registerStoredInformationSchemaTable(Session session, UserTable newTable, int version);
+    TableName registerStoredInformationSchemaTable(UserTable newTable, int version);
 
     /**
-     * Create a new table in the {@link TableName#AKIBAN_INFORMATION_SCHEMA}
+     * Create a new table in the {@link TableName#INFORMATION_SCHEMA}
      * schema. This table will be be populated on demand and accessed through
      * the given {@link MemoryTableFactory}.
      *
@@ -69,7 +69,7 @@ public interface SchemaManager {
      *
      * @return Name of the table that was created.
      */
-    TableName registerMemoryInformationSchemaTable(Session session, UserTable newTable, MemoryTableFactory factory);
+    TableName registerMemoryInformationSchemaTable(UserTable newTable, MemoryTableFactory factory);
 
     /**
      * Create a new table in the SchemaManager. Successful completion of this
@@ -147,10 +147,11 @@ public interface SchemaManager {
      * any table in that schema. No other guarantees are given about ordering.
      *
      * @param session The Session to operate under.
+     * @param withGroupTables If true, include 'create table' statements for tables in the I_S.
      * @param withGroupTables If true, include 'create table' statements for every GroupTable.
      * @return List of every create statement request.
      */
-    List<String> schemaStrings(Session session, boolean withGroupTables);
+    List<String> schemaStrings(Session session, boolean withISTables, boolean withGroupTables);
 
     /**
      * Return the last timestamp for the last successful change through the SchemaManager.
