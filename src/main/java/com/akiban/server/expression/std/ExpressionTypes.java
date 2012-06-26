@@ -152,7 +152,7 @@ public class ExpressionTypes
         if (att != null) {
             String coll = att.getCollation();
             if (coll != null)
-                return AkCollatorFactory.getCollator(coll);
+                return AkCollatorFactory.getAkCollator(coll);
         }
         return null;
     }
