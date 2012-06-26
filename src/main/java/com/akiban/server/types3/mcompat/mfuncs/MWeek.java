@@ -42,46 +42,69 @@ public abstract class MWeek extends TOverloadBase {
     
     private static final int DEFAULT_MODE = 0;
     private static final int WEEKOFYEAR_MODE = 3;
-    private final TClass typeClass;
-    private final String name;
+    private final WeekType type;
+    private final TClass dateType;
             
-    public static final TOverload[] WEEK = {
-        new MWeek(MDatetimes.DATETIME, "WEEK") {
-
-            @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                evaluateYearWeek(context, inputs.get(0).getInt64(), DEFAULT_MODE, output);
+    protected static enum WeekType {
+        WEEK() {
+            
+            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
+                return modes[mode].getWeek(datetime,
+                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
             }
+        }, 
+        
+        WEEKOFYEAR() {
 
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDatetime(input);
-            }
-
-            @Override
             protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
                 return modes[mode].getWeek(datetime,
                         (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
             }
         },
-        new MWeek(MDatetimes.DATE, "WEEK") {
+        
+        YEARWEEK() {
+
+            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
+                return yearModes[mode].getYearWeek(datetime,
+                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
+            }
+        }
+    };
+    
+    protected static enum DateType {
+        DATETIME() {
+            private final TClass dateType = MDatetimes.DATETIME;
+            
+            protected long[] decode(long input) {
+                return MDatetimes.decodeDatetime(input);
+            }
+        }, 
+        
+        DATE() {
+            private final TClass dateType = MDatetimes.DATE;
+            
+            protected long[] decode(long input) {
+                return MDatetimes.decodeDate(input);
+            }
+        }
+    }
+    
+    public static final TOverload[] WEEK = {
+        new MWeek(WeekType.WEEK, DateType.DATETIME) {
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                evaluateYearWeek(context, inputs.get(0).getInt64(), DEFAULT_MODE, output);
+            }
+        },
+        new MWeek(WeekType.WEEK, DateType.DATE) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 evaluateYearWeek(context, inputs.get(0).getInt32(), DEFAULT_MODE, output);
             }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDate(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return modes[mode].getWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);            }
         },
-        new MWeek("WEEK") {
+        new MWeek(WeekType.WEEK, DateType.DATETIME) {
 
             @Override
             protected void buildInputSets(TInputSetBuilder builder) {
@@ -94,19 +117,8 @@ public abstract class MWeek extends TOverloadBase {
                 int mode = inputs.get(1).getInt32();
                 evaluateYearWeek(context, inputs.get(0).getInt64(), mode, output);
             }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDatetime(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return modes[mode].getWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
-            }
         },
-        new MWeek("WEEK") {
+        new MWeek(WeekType.WEEK, DateType.DATE) {
 
             @Override
             protected void buildInputSets(TInputSetBuilder builder) {
@@ -119,95 +131,40 @@ public abstract class MWeek extends TOverloadBase {
                 int mode = inputs.get(1).getInt32();
                 evaluateYearWeek(context, inputs.get(0).getInt32(), mode, output);
             }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDate(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return modes[mode].getWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
-            }
         }
     };
     public static final TOverload[] WEEKOFYEAR = {
-        new MWeek(MDatetimes.DATETIME, "WEEKOFYEAR") {
+        new MWeek(WeekType.WEEKOFYEAR, DateType.DATETIME) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 evaluateYearWeek(context, inputs.get(0).getInt32(), WEEKOFYEAR_MODE, output);
-            }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDatetime(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return modes[mode].getWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
             }
         },
-        new MWeek(MDatetimes.DATE, "WEEKOFYEAR") {
+        new MWeek(WeekType.WEEKOFYEAR, DateType.DATE) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 evaluateYearWeek(context, inputs.get(0).getInt32(), WEEKOFYEAR_MODE, output);
-            }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDate(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return modes[mode].getWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
             }
         }
     };
     public static final TOverload[] YEARWEEK = {
-        new MWeek(MDatetimes.DATETIME, "YEARWEEK") {
+        new MWeek(WeekType.YEARWEEK, DateType.DATETIME) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 evaluateYearWeek(context, inputs.get(0).getInt32(), DEFAULT_MODE, output);
             }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDatetime(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return yearModes[mode].getYearWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
-            }
         },
-        new MWeek(MDatetimes.DATE, "YEARWEEK") {
+        new MWeek(WeekType.YEARWEEK, DateType.DATE) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 evaluateYearWeek(context, inputs.get(0).getInt32(), DEFAULT_MODE, output);
             }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDate(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return yearModes[mode].getYearWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
-            }
         },
-        new MWeek("YEARWEEK") {
+        new MWeek(WeekType.YEARWEEK, DateType.DATETIME) {
 
             @Override
             protected void buildInputSets(TInputSetBuilder builder) {
@@ -219,19 +176,8 @@ public abstract class MWeek extends TOverloadBase {
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 evaluateYearWeek(context, inputs.get(0).getInt32(), DEFAULT_MODE, output);
             }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDatetime(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return yearModes[mode].getYearWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
-            }
         },
-        new MWeek("YEARWEEK") {
+        new MWeek(WeekType.YEARWEEK, DateType.DATE) {
 
             @Override
             protected void buildInputSets(TInputSetBuilder builder) {
@@ -244,36 +190,20 @@ public abstract class MWeek extends TOverloadBase {
                 evaluateYearWeek(context, inputs.get(0).getInt32(), DEFAULT_MODE, output);
 
             }
-
-            @Override
-            protected long[] decode(long input) {
-                return MDatetimes.decodeDate(input);
-            }
-
-            @Override
-            protected int getYearWeek(int mode, long[] date, MutableDateTime datetime) {
-                return yearModes[mode].getYearWeek(datetime,
-                        (int) date[MDatetimes.YEAR_INDEX], (int) date[MDatetimes.MONTH_INDEX], (int) date[MDatetimes.DAY_INDEX]);
-            }
         }
     };
    
     protected abstract long[] decode(long input);
     protected abstract int getYearWeek(int mode, long[] date, MutableDateTime datetime);
     
-    protected MWeek(TClass typeClass, String name) {
-        this.typeClass = typeClass;
-        this.name = name;
-    }
-    
-    protected MWeek(String name) {
-        this.typeClass = null;
-        this.name = name;
+    protected MWeek(WeekType type, DateType dateType) {
+        this.type = type;
+        this.dateType = dateType;
     }
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(typeClass);
+        builder.covers(this.dateType);
     }
 
     protected void evaluateYearWeek(TExecutionContext context, long input, int mode, PValueTarget output) {
@@ -292,7 +222,7 @@ public abstract class MWeek extends TOverloadBase {
 
     @Override
     public String overloadName() {
-        return name;
+        return type.name();
     }
     
     private static final class DayOfWeek
