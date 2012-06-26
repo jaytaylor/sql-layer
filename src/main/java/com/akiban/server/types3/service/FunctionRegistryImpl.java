@@ -85,17 +85,17 @@ public class FunctionRegistryImpl implements FunctionRegistry
                     switch(validateField(field, target))
                     {
                         case FIELD:
-                            putItem(ret, (T)field.get(null));
+                            putItem(ret, field.get(null), target);
                             break;
                         case ARRAY:
-                            for (T item : (T[])field.get(null))
-                                putItem(ret, (T)item);
+                            for (Object item : (Object[])field.get(null))
+                                putItem(ret, item, target);
                             break;
                         case COLLECTION:
                             try
                             {
                                 for (Object raw : (Collection<?>)field.get(null))
-                                    putItem(ret, (T)raw);
+                                    putItem(ret, raw, target);
                                 break;
                             }
                             catch (ClassCastException e) {/* fall thru */}
@@ -112,17 +112,17 @@ public class FunctionRegistryImpl implements FunctionRegistry
                     switch(validateMethod(method, target))
                     {
                         case FIELD:
-                            putItem(ret, (T)method.invoke(null));
+                            putItem(ret, method.invoke(null), target);
                             break;
                         case ARRAY:
-                            for (T item : (T[])method.invoke(null))
-                                putItem(ret, item);
+                            for (Object item : (Object[])method.invoke(null))
+                                putItem(ret, item, target);
                             break;
                         case COLLECTION:
                             try
                             {
                                 for (Object raw : (Collection<?>)method.invoke(null))
-                                    putItem(ret, (T)raw);
+                                    putItem(ret, raw, target);
                                 break;
                             }
                             catch (ClassCastException e) {/* fall thru */}
@@ -169,12 +169,11 @@ public class FunctionRegistryImpl implements FunctionRegistry
         else return COLLECTION;
     }
 
-    
-    private static <T> void putItem(Collection<T> list, T item)
+    private static <T> void putItem(Collection<T> list, Object item,  Class<T> targetClass)
     {
-        list.add(item);
+        list.add(targetClass.cast(item));
     }
-    
+
     private static boolean isRegistered(AccessibleObject field)
     {
         return field.getAnnotation(DontRegister.class) == null;
