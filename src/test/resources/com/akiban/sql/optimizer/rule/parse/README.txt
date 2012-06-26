@@ -58,6 +58,8 @@ in-l3: IN with three literals
 
 in-2: IN with subquery
 
+in-2l: IN with subquery with LIMIT
+
 in-3: IN with aggregate subquery
 
 insert-1: from VALUES
