@@ -33,6 +33,9 @@ import com.akiban.server.types.AkType;
 
 import com.akiban.sql.types.CharacterTypeAttributes;
 
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
+
 public class ExpressionTypes
 {
     public static final ExpressionType BOOL = newType(AkType.BOOL);
@@ -128,6 +131,11 @@ public class ExpressionTypes
         private AkType type;
         private int precision, scale;
         private CharacterTypeAttributes characterAttributes;
+    }
+
+    static AkCollator operationCollation(ExpressionType firstType, 
+                                         ExpressionType  secondType) {
+        return null;
     }
     
     private ExpressionTypes() {
