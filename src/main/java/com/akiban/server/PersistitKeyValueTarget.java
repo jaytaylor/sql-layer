@@ -50,17 +50,20 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     }
 
     public PersistitKeyValueTarget expectingType(AkType type) {
+        return expectingType(type, null);
+    }
+
+    public PersistitKeyValueTarget expectingType(AkType type, AkCollator collator) {
+
         if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.type = type;
-        this.collator = null;
+        this.collator = collator;
         return this;
     }
 
     public PersistitKeyValueTarget expectingType(Column column) {
-        expectingType(column.getType().akType());
-        this.collator = column.getCollator();
-        return this;
+        return expectingType(column.getType().akType(), column.getCollator());
     }
     
     // ValueTarget interface
