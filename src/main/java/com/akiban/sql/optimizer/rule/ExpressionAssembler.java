@@ -31,6 +31,7 @@ import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
@@ -126,11 +127,22 @@ public class ExpressionAssembler
                                           columnContext, subqueryAssembler);
         else if (node instanceof ComparisonCondition) {
             ComparisonCondition cond = (ComparisonCondition)node;
-            return compare(assembleExpression(cond.getLeft(), 
-                                              columnContext, subqueryAssembler),
-                           cond.getOperation(),
-                           assembleExpression(cond.getRight(), 
-                                              columnContext, subqueryAssembler));
+            AkCollator collator = 
+                ExpressionTypes.operationCollation(TypesTranslation.toExpressionType(cond.getLeft().getSQLtype()),
+                                                   TypesTranslation.toExpressionType(cond.getRight().getSQLtype()));
+            if (collator != null)
+                return collate(assembleExpression(cond.getLeft(), 
+                                                  columnContext, subqueryAssembler),
+                               cond.getOperation(),
+                               assembleExpression(cond.getRight(), 
+                                                  columnContext, subqueryAssembler),
+                               collator);
+            else
+                return compare(assembleExpression(cond.getLeft(), 
+                                                  columnContext, subqueryAssembler),
+                               cond.getOperation(),
+                               assembleExpression(cond.getRight(), 
+                                                  columnContext, subqueryAssembler));
         }
         else if (node instanceof FunctionExpression) {
             FunctionExpression funcNode = (FunctionExpression)node;
