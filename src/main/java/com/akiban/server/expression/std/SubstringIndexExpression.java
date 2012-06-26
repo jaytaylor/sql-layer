@@ -64,18 +64,17 @@ public class SubstringIndexExpression extends AbstractTernaryExpression
         }
 
         @Override
-        public Expression compose(List<? extends Expression> arguments)
-        {
-            return new SubstringIndexExpression(arguments);
-        }
-
-        @Override
         public NullTreating getNullTreating()
         {
             return NullTreating.RETURN_NULL;
         }
         
     };
+
+    @Override
+    public String name() {
+        return "SUBSTRING_INDEX";
+    }
     
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
@@ -145,7 +144,7 @@ public class SubstringIndexExpression extends AbstractTernaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("SUBSTRING_INDEX");
+        sb.append(name());
     }
 
     @Override

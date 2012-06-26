@@ -265,7 +265,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public List<String> getDDLs(final Session session) {
         logger.trace("getting DDLs");
-        return schemaManager().schemaStrings(session, false);
+        return schemaManager().schemaStrings(session, false, false);
     }
 
     @Override

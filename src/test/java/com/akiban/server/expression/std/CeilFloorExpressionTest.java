@@ -76,7 +76,7 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
     // This is meant to work with ExprUtil.lit to quickly yield an expression
     private ValueSource sourceOfComposing(Expression e)
     {
-        return composer.compose(Arrays.asList(e)).evaluation().eval();
+        return compose(composer, Arrays.asList(e)).evaluation().eval();
     }
     
     @Test
@@ -145,14 +145,14 @@ public class CeilFloorExpressionTest extends ComposedExpressionTestBase
     @Test (expected=WrongExpressionArityException.class)
     public void testArity ()
     {
-        composer.compose(Arrays.asList(ExprUtil.lit(1), ExprUtil.lit(2)));
+        compose(composer, Arrays.asList(ExprUtil.lit(1), ExprUtil.lit(2)));
     }
     
     @Test
     public void testNull ()
     {
         AkType testType = AkType.NULL;
-        Expression output = composer.compose(Arrays.asList(new LiteralExpression(AkType.NULL, null)));
+        Expression output = compose(composer, Arrays.asList(new LiteralExpression(AkType.NULL, null)));
         
         ValueSource shouldBeNullValueSource = output.evaluation().eval();
         Assert.assertTrue(funcName.name() + " value source should be NULL", shouldBeNullValueSource.isNull());

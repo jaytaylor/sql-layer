@@ -49,7 +49,7 @@ public class DateFormatExpression extends AbstractBinaryExpression
     public static final ExpressionComposer COMPOSER = new BinaryComposer ()
     {
         @Override
-        protected Expression compose(Expression first, Expression second)
+        protected Expression compose(Expression first, Expression second, ExpressionType firstType, ExpressionType secondType, ExpressionType resultType)
         {
             return new DateFormatExpression(first, second);
         }
@@ -77,6 +77,13 @@ public class DateFormatExpression extends AbstractBinaryExpression
             return ExpressionTypes.varchar(argumentTypes.get(1).getPrecision() * 5);
         }
     };
+
+    @Override
+    public String name()
+    {
+        return "DATE_FORMAT";
+    }
+    
     private static final class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
         public InnerEvaluation (List<? extends ExpressionEvaluation> childrenEvals)
@@ -119,14 +126,14 @@ public class DateFormatExpression extends AbstractBinaryExpression
     }
 
     @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("DATE_FORMAT");
-    }
-
-    @Override
     public ExpressionEvaluation evaluation()
     {
         return new InnerEvaluation(childrenEvaluations());
+    }
+    
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("DATE_FORMAT");
     }
 }

@@ -68,7 +68,7 @@ public abstract class Admin
         return
             akibanAdmin.startsWith("/") || // Unix absolute
             akibanAdmin.startsWith(".") || // relative
-            akibanAdmin.matches("[A-Z]:\\\\.*"); // Windows absolute
+            akibanAdmin.matches("[A-Za-z]:\\\\.*"); // Windows absolute
     }
 
     public abstract boolean real();

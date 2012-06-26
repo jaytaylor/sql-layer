@@ -40,7 +40,7 @@ public class DegreesExpression extends AbstractUnaryExpression {
     public static final ExpressionComposer COMPOSER = new UnaryComposer() {
 
         @Override
-        protected Expression compose(Expression argument) {
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) {
             return new DegreesExpression(argument);
         }
 
@@ -59,7 +59,7 @@ public class DegreesExpression extends AbstractUnaryExpression {
     }
 
     @Override
-    protected String name() {
+    public String name() {
         return "DEGREES";
     }
 

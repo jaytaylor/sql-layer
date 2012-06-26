@@ -38,6 +38,10 @@ import com.akiban.server.types.ValueSourceIsNullException;
 import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.AbstractArithValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigDecimal;
 import java.math.BigInteger;
@@ -85,13 +89,18 @@ public class ArithExpression extends AbstractBinaryExpression
         SUPPORTED_TYPES.put(AkType.INT, 11);
     }
     
-    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType topT)
+    public ArithExpression (Expression lhs, ArithOp op, Expression rhs, ExpressionType leftType, ExpressionType rightType, ExpressionType resultT)
     {
         super(getTopType(lhs.valueType(), rhs.valueType(), op), lhs, rhs);
         this.op = op;
         this.topT = super.valueType();
-        assert this.topT == topT.getType() : "mismatched top type";
-        top = topT;
+        if ((resultT != null) && (resultT.getType() == topT))
+            top = resultT;
+        else
+            // Cases that don't match: 
+            // * operation on INTs is INT, vs. LONG.
+            // * tests don't supply expression types.
+            top = ExpressionTypes.newType(topT, DEFAULT_PRECISION, DEFAULT_SCALE);
     }
 
     public ArithExpression (Expression lhs, ArithOp op, Expression rhs)
@@ -123,7 +132,7 @@ public class ArithExpression extends AbstractBinaryExpression
     }
     
     @Override
-    protected void describe(StringBuilder sb)
+    public void describe(StringBuilder sb)
     {
         sb.append(op);
     }
@@ -256,7 +265,19 @@ public class ArithExpression extends AbstractBinaryExpression
     {
         return true;
     }
-
+    
+    @Override
+    public String name()
+    {
+        return op.toString();
+    }
+    
+    @Override
+    public Explainer getExplainer ()
+    {
+        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+    }
+    
     /**
      * this is to be overridden by sub-classes to return a more appropriate ValueSource
      * @param op
@@ -465,7 +486,7 @@ public class ArithExpression extends AbstractBinaryExpression
             return extract.getEncoded(ymd_hms);
         }
 
-        private static boolean vallidDayMonth (long y, long m, long d)
+        protected static boolean vallidDayMonth (long y, long m, long d)
         {
             switch ((int)m)
             {

@@ -27,7 +27,6 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -39,14 +38,17 @@ import org.joda.time.MutableDateTime;
 public abstract class MToDatetime extends TOverloadBase{
     
     private static final long SECONDS_FACTOR = 100L;
+    private static final long DAY_FACTOR = 3600L * 1000 * 24;
+    private static final long BEGINNING = new MutableDateTime(0,0,1,0,0,0,0).getMillis();
+
     
     public static final TOverload TO_DAYS = new MToDatetime() {
         
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long [] dateArr = DateExtractor.extract(inputs.get(0).getInt64());
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, dateArr, true);
-            long time = (datetime.getMillis() - DateExtractor.BEGINNING) / DateExtractor.DAY_FACTOR;
+            long [] dateArr = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
+            MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
+            long time = (datetime.getMillis() - BEGINNING) / DAY_FACTOR;
             output.putInt32((int) time);
         }
 
@@ -61,8 +63,8 @@ public abstract class MToDatetime extends TOverloadBase{
         
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long [] dateArr = DateExtractor.extract(inputs.get(0).getInt64());
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, dateArr, true);
+            long [] dateArr = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
+            MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
             long seconds = datetime.getMillis() / SECONDS_FACTOR;
             output.putInt32((int)seconds);
         }
@@ -78,9 +80,9 @@ public abstract class MToDatetime extends TOverloadBase{
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long [] dateArr = DateExtractor.extract(inputs.get(0).getInt64());            
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, dateArr, true);
-            long seconds = (datetime.getMillis() - DateExtractor.BEGINNING) / SECONDS_FACTOR;
+            long [] dateArr = MDatetimes.decodeDatetime(inputs.get(0).getInt64());            
+            MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
+            long seconds = (datetime.getMillis() - BEGINNING) / SECONDS_FACTOR;
             output.putInt32((int)seconds);
         }
 

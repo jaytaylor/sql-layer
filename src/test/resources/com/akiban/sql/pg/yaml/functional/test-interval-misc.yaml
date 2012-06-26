@@ -15,10 +15,9 @@
 ---
 - Statement: SELECT time_field + INTERVAL '1-2' MINUTE TO t FROM t
 - error: [42000]
-# Triggers assertion in server -- bug 912343
-# ---
-# - Statement: SELECT datetime_field + INTERVAL '1-2 3' MONTH TO HOUR FROM t
-# - error: [42000]
+---
+- Statement: SELECT datetime_field + INTERVAL '1-2 3' MONTH TO HOUR FROM t
+- error: [42515]
 ---
 - Statement: SELECT time_field + INTERVAL 'abc' SECOND FROM t
 - error: [22006]

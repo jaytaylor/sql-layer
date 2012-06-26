@@ -62,12 +62,17 @@ public class MakeTimeExpression extends AbstractTernaryExpression
         }
 
         @Override
-        protected Expression doCompose(List<? extends Expression> arguments)
+        protected Expression doCompose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
             return new MakeTimeExpression(arguments);
         }
         
     };
+
+    @Override
+    public String name() {
+        return "MAKETIME";
+    }
     
     private static final class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
@@ -116,7 +121,7 @@ public class MakeTimeExpression extends AbstractTernaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("MAKETIME");
+        sb.append(name());
     }
 
     @Override

@@ -551,7 +551,7 @@ public class ExtractExpression extends AbstractUnaryExpression
         
 
         @Override
-        protected Expression compose(Expression argument) 
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType) 
         {
             return new ExtractExpression(argument, type);
         }
@@ -574,7 +574,7 @@ public class ExtractExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() 
+    public String name() 
     {
         return extractType.name();
     }

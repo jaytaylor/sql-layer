@@ -27,7 +27,6 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -48,7 +47,7 @@ public abstract class MDateName extends TOverloadBase {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             long input = inputs.get(0).getInt64();
-            String month = MONTHS[(int) DateExtractor.extract(input)[DateExtractor.MONTH]];
+            String month = MONTHS[(int) MDatetimes.decodeDatetime(input)[MDatetimes.MONTH_INDEX]];
             output.putObject(month);
         }
 
@@ -62,8 +61,8 @@ public abstract class MDateName extends TOverloadBase {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long[] dateArr = DateExtractor.extract(inputs.get(0).getInt64());
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, dateArr, true);
+            long[] dateArr = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
+            MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
             String month = DAYS[datetime.getDayOfWeek()%7];
             output.putObject(month);
         }

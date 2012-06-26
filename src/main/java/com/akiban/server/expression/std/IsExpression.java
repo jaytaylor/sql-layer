@@ -65,7 +65,7 @@ public class IsExpression extends AbstractUnaryExpression
        }
 
         @Override
-        protected Expression compose(Expression argument)
+        protected Expression compose(Expression argument, ExpressionType argType, ExpressionType resultType)
         {
             return new IsExpression(argument, triVal);
         }
@@ -123,7 +123,7 @@ public class IsExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name()
+    public String name()
     {
         return "IS " + triVal;
     }

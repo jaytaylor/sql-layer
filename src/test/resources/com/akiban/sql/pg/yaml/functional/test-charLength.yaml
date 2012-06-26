@@ -14,4 +14,14 @@
 ---
 - Statement: SELECT octet_length('☃');
 - output: [[3]]
+---
+- Statement: SELECT octet_length('cliché');
+- output: [[7]]
+---
+- CreateTable: t (s varchar(16) CHARACTER SET latin1)
+---
+- Statement: INSERT INTO t VALUES('1234'), ('cliché');
+---
+- Statement: SELECT octet_length(s) FROM t;
+- output: [[4],[6]]
 ...

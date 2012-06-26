@@ -29,7 +29,6 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.ZeroDateTimeException;
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -48,6 +47,7 @@ public abstract class MWeek extends TOverloadBase {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             doEvaluate(0, inputs.get(0).getInt64(), context, output);
         }
+
         
         @Override
         public String overloadName() {
@@ -92,7 +92,7 @@ public abstract class MWeek extends TOverloadBase {
     }
     
     protected void doEvaluate(int mode, long input, TExecutionContext context, PValueTarget output) {
-        long[] date = DateExtractor.extract(input);
+        long[] date = MDatetimes.decodeDatetime(input);
         if (isZero(date, context, output)) return;
 
         if (mode < 0 || mode > 7) {
@@ -101,9 +101,9 @@ public abstract class MWeek extends TOverloadBase {
             }
             output.putNull();
         } else {
-            MutableDateTime datetime = DateExtractor.getMutableDateTime(context, date, true);
+            MutableDateTime datetime = MDatetimes.toJodaDatetime(date, context.getCurrentTimezone());
             int week = modes[mode].getWeek(datetime, 
-                    (int)date[DateExtractor.YEAR], (int)date[DateExtractor.MONTH], (int)date[DateExtractor.DAY]);
+                    (int)date[MDatetimes.YEAR_INDEX], (int)date[MDatetimes.MONTH_INDEX], (int)date[MDatetimes.DAY_INDEX]);
             output.putInt32(week);
         }
     }
@@ -196,7 +196,7 @@ public abstract class MWeek extends TOverloadBase {
         }   
 
         private static boolean isZero(long[] date, TExecutionContext context,PValueTarget output) {
-            boolean isZero = date[DateExtractor.MONTH] == 0L || date[DateExtractor.DAY] == 0L;
+            boolean isZero = date[MDatetimes.MONTH_INDEX] == 0L || date[MDatetimes.DAY_INDEX] == 0L;
             if (isZero) {
                 if (context != null)
                     context.warnClient(new ZeroDateTimeException());

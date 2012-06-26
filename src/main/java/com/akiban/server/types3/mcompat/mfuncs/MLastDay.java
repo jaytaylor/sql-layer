@@ -30,7 +30,6 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -48,10 +47,10 @@ public class MLastDay extends TOverloadBase {
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         long input = inputs.get(0).getInt64();
         
-        long[] date = DateExtractor.extract(input);
-        long day = DateExtractor.getLastDay(date);
-        if (day == -1L) output.putNull();
-        else output.putInt32((int)DateExtractor.toDate(date[DateExtractor.YEAR], date[DateExtractor.MONTH], day));
+        long[] date = MDatetimes.decodeDatetime(input);
+        date[MDatetimes.DAY_INDEX] = MDatetimes.getLastDay(date);
+        if (date[MDatetimes.DAY_INDEX] == -1L) output.putNull();
+        else output.putInt32(MDatetimes.encodeDate(date));
     }
 
     @Override

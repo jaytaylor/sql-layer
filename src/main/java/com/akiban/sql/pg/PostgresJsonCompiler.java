@@ -27,10 +27,10 @@
 package com.akiban.sql.pg;
 
 import com.akiban.sql.optimizer.NestedResultSetTypeComputer;
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.PhysicalSelect.PhysicalResultColumn;
 import com.akiban.sql.optimizer.plan.PhysicalSelect;
 import com.akiban.sql.optimizer.plan.ResultSet.ResultField;
-import com.akiban.sql.optimizer.plan.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
