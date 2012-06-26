@@ -102,6 +102,12 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     }
     
     @Override
+    public BigDecimalWrapper round(int scale) {
+        value = value.setScale(scale, RoundingMode.HALF_UP);
+        return this;
+    }
+    
+    @Override
     public int getSign() {
         return value.signum();
     }

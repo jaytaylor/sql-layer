@@ -26,63 +26,11 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.*;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TInputSetBuilder;
-import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.util.List;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
-public class MTruncate extends TOverloadBase {
-
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.DECIMAL, 0).covers(MNumeric.INT, 1);
-    }
-
-    @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
-        output.putInt64(result.truncate(inputs.get(1).getInt32()));
-    }
-
-    @Override
-    public String overloadName() {
-        return "TRUNCATE";
-    }
-
-    @Override
-    public TOverloadResult resultType() {
-        return TOverloadResult.custom(new TCustomOverloadResult() {
-            private final int ZERO_DEFAULT = 13;
-            private final int BIGINT_DEFAULT = 17;
-            private final int DECIMAL_DEFAULT = 16;
-
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                TPreptimeValue preptimeValue = inputs.get(0);
-                int precision = preptimeValue.instance().attribute(MBigDecimal.Attrs.PRECISION);
-                int scale = preptimeValue.instance().attribute(MBigDecimal.Attrs.SCALE);
-                int newScale = inputs.get(1).value().getInt32();
-                
-                // Special case: DECIMAL(0,0)
-                if (precision + scale == 0) 
-                    return MNumeric.BIGINT.instance(ZERO_DEFAULT);
-                
-                if (Math.min(newScale,scale) > 0) {
-                    return MNumeric.DECIMAL.instance(DECIMAL_DEFAULT, 0);
-                }
-                
-                int length = precision - scale;
-                if (length >= 0 && length < 9)
-                    return MNumeric.INT.instance(length+3);
-                if (length >= 9 && length < 14)
-                    return MNumeric.BIGINT.instance(BIGINT_DEFAULT);
-                return MNumeric.DECIMAL.instance(DECIMAL_DEFAULT, 0);
-            }         
-        });
-    }
+public class MTruncate {
+    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.TRUNCATE);
+    
+    public static final TOverload TWO_ARG = new M2ArgRoundBase(M2ArgRoundBase.RoundType.TRUNCATE, MDouble.INSTANCE);
 }
