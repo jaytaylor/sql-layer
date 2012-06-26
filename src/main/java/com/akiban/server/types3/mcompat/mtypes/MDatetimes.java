@@ -327,9 +327,8 @@ public class MDatetimes
         DateTime dt = new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],
                                    (int)val[HOUR_INDEX], (int)val[MIN_INDEX], (int)val[SEC_INDEX], 0,
                                    DateTimeZone.forID(tz));
-        long ret = dt.getMillis() / 1000L;
-        
-        return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, ret, context);
+
+        return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, dt.getMillis() / 1000L, context);
     }
 
     public static long encodeTimetamp(long millis, TExecutionContext context)
