@@ -50,13 +50,17 @@ public class AkCollatorFactory {
 
     private final static ThreadLocal<Map<String, SoftReference<AkCollator>>> cache = new ThreadLocal<Map<String, SoftReference<AkCollator>>>();
 
+    public final static boolean MAP_CI = Boolean.getBoolean("akiban.collation.map_ci");
+
     /**
      * 
      * @param name
      * @return
      */
     public static AkCollator getCollator(final String name) {
-        if (UCS_BINARY.equalsIgnoreCase(name)) {
+        if (UCS_BINARY.equalsIgnoreCase(name) ||
+            // TODO: Temporarily just know this one.
+            !MAP_CI || !"latin1_swedish_ci".equals(name)) {
             return UCS_BINARY_COLLATOR;
         }
 
@@ -72,15 +76,18 @@ public class AkCollatorFactory {
         }
         Collator collator = sourceMap.get(name);
         if (collator == null) {
-            collator = Collator.getInstance(new ULocale(name));
+            /*
+             * TODO  - figure out how ICU4J decodes names - this is certainly wrong.
+             */
+            String locale = "sv_SV";
+            int strength = Collator.SECONDARY; // _ci; _cs = TERTIARY.
+
+            collator = Collator.getInstance(new ULocale(locale));
             if (collator == null) {
                 throw new IllegalArgumentException("No such Collator named: " + name);
             }
             
-            /*
-             * TODO  - figure out how ICU4J decodes names - this is probably wrong.
-             */
-            collator.setStrength(1);
+            collator.setStrength(strength);
             
             sourceMap.put(name, collator);
         }

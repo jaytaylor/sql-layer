@@ -54,20 +54,13 @@ public final class PersistitKeyValueTarget implements ValueTarget {
         if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.type = type;
+        this.collator = null;
         return this;
     }
 
     public PersistitKeyValueTarget expectingType(Column column) {
         expectingType(column.getType().akType());
-//        if (type == AkType.VARCHAR || type == AkType.TEXT) {
-//            final CharsetAndCollation cac = column.getCharsetAndCollation();
-//            if (cac != null) {
-//                final String collationName = cac.collation();
-//                if ("latin1_swedish_ci".equals(collationName)) {
-//                    collator = AkCollatorFactory.getCollator("en_US");
-//                }
-//            }
-//        }
+        this.collator = column.getCollator();
         return this;
     }
     
@@ -132,14 +125,22 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     @Override
     public void putString(String value) {
         checkState(AkType.VARCHAR);
-        collator.append(key, value);
+        // TODO: Can remove this when there is always a collator for a string.
+        if (collator == null)
+            key.append(value);
+        else
+            collator.append(key, value);
         invalidate();
     }
 
     @Override
     public void putText(String value) {
         checkState(AkType.TEXT);
-        collator.append(key, value);
+        // TODO: Can remove this when there is always a collator for a string.
+        if (collator == null)
+            key.append(value);
+        else
+            collator.append(key, value);
         invalidate();
     }
 
