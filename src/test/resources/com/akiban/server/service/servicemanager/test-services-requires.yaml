@@ -2,4 +2,4 @@
     - com.akiban.server.service.stats.StatisticsService
     - com.akiban.sql.pg.PostgresService
     - com.akiban.server.service.jmx.JmxRegistryService
-    - com.akiban.server.AkServerInterface           # loads the AKSERVER jmx bean
+    - com.akiban.server.AkServerInterface               # Loads the AKSERVER JMX bean
