@@ -38,6 +38,11 @@ import java.util.List;
 public class PeriodAddExpression extends AbstractBinaryExpression {
     @Scalar("period_add")
     public static final ExpressionComposer COMPOSER = new InternalComposer();
+
+    @Override
+    public String name() {
+        return "PERIOD_ADD";
+    }
     
     private static class InternalComposer extends BinaryComposer
     {
@@ -135,7 +140,7 @@ public class PeriodAddExpression extends AbstractBinaryExpression {
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("PERIOD_ADD");
+        sb.append(name());
     }
 
     @Override

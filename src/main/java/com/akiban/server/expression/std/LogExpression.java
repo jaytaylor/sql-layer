@@ -176,11 +176,17 @@ public class LogExpression extends AbstractCompositeExpression
     {
         return true;
     }
-
+    
     @Override
     protected void describe(StringBuilder sb)
     {
         sb.append(name);
+    }
+
+    @Override
+    public String name ()
+    {
+        return name;
     }
 
     @Override

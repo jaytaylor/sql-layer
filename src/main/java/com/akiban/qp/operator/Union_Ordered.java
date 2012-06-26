@@ -31,6 +31,7 @@ import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -179,6 +180,11 @@ class Union_Ordered extends Operator
     private final int fixedFields;
     private final int fieldsToCompare;
     private final boolean[] ascending;
+
+    @Override
+    public Explainer getExplainer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

@@ -56,6 +56,11 @@ public final class ScalarSubqueryExpression extends SubqueryExpression {
         return "VALUE(" + subquery() + ")";
     }
 
+    @Override
+    public String name () {
+        return "VALUE";
+    }
+    
     public ScalarSubqueryExpression(Operator subquery, Expression expression,
                                     RowType outerRowType, RowType innerRowType, 
                                     int bindingPosition) {

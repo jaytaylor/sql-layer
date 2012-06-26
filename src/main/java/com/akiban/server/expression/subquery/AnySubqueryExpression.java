@@ -65,6 +65,12 @@ public final class AnySubqueryExpression extends SubqueryExpression {
                                  
     private final Expression expression;
 
+    @Override
+    public String name()
+    {
+        return "ANY";
+    }
+
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {
         @Override
         public ValueSource doEval() {

@@ -58,6 +58,11 @@ public class PowExpression extends AbstractBinaryExpression
             return ExpressionTypes.DOUBLE;
         }
     };
+
+    @Override
+    public String name() {
+        return "POWER";
+    }
     
     private static class InnerEvaluation extends AbstractTwoArgExpressionEvaluation
     {
@@ -86,7 +91,7 @@ public class PowExpression extends AbstractBinaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("POWER");
+        sb.append(name());
     }
 
     @Override
