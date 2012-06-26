@@ -33,7 +33,6 @@ import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
@@ -42,7 +41,7 @@ import com.persistit.Key;
 
 public final class PersistitKeyValueTarget implements ValueTarget {
 
-    private AkCollator collator = AkCollatorFactory.UCS_BINARY_COLLATOR;
+    private AkCollator collator = null;
     
     // PersistitKeyValueTarget interface
 
