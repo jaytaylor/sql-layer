@@ -28,7 +28,6 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.*;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types.AkType;
 
 import java.util.*;
@@ -100,7 +99,7 @@ public class IndexRowType extends AisRowType
         for (int i = 0; i < indexColumns.size(); i++) {
             Column column = indexColumns.get(i).getColumn();
             akTypes[i] = column.getType().akType();
-            akCollators[i] = AkCollatorFactory.getAkCollator(column.getCharsetAndCollation().collation());
+            akCollators[i] = column.getCollator();
         }
     }
 

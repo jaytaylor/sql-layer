@@ -31,7 +31,6 @@ import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.collation.AkCollator;
-import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types.AkType;
 import com.akiban.util.FilteringIterator;
 
@@ -126,7 +125,7 @@ public class UserTableRowType extends AisRowType
         for (int i = 0; i < columns.size(); i++) {
             Column column = columns.get(i);
             akTypes[i] = column.getType().akType();
-            akCollators[i] = AkCollatorFactory.getAkCollator(column.getCharsetAndCollation().collation());
+            akCollators[i] = column.getCollator();
  
         }
     }
