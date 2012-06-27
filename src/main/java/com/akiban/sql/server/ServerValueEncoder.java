@@ -33,6 +33,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -184,6 +185,16 @@ public class ServerValueEncoder
         appendObject(value, type, binary);
         return getByteStream();
     }
+    
+        /** Encode the given direct value. */
+    public ByteArrayOutputStream encodePObject(Object value, ServerType type, 
+                                              boolean binary) throws IOException {
+        if (value == null)
+            return null;
+        reset();
+        appendPObject(value, type, binary);
+        return getByteStream();
+    }
 
     /** Reset the contents of the buffer. */
     public void reset() {
@@ -251,6 +262,21 @@ public class ServerValueEncoder
         appendValue(objectSource, type, binary);
     }
 
+    /** Append the given direct object to the buffer. */
+    public void appendPObject(Object value, ServerType type, boolean binary) 
+            throws IOException {
+        TInstance instance = type.getInstance();
+        if ((instance == MString.VARCHAR.instance()) && (value instanceof String)) {
+            // Optimize the common case of directly encoding a string.
+            printWriter.write((String)value);
+            return;
+        }
+
+        // TODO: fix, specifically put value into source based on its type
+        pSource.putObject(value);
+        appendPValue(pSource, type, binary);
+    }
+    
     public void appendString(String string) throws IOException {
         printWriter.write(string);
     }
