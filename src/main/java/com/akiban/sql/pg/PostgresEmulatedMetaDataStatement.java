@@ -27,6 +27,8 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
@@ -63,9 +65,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     static final PostgresType OID_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG);
+        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG, MNumeric.BIGINT.instance());
     static final PostgresType TYPNAME_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR);
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR, MString.VARCHAR.instance());
 
     @Override
     public PostgresType[] getParameterTypes() {

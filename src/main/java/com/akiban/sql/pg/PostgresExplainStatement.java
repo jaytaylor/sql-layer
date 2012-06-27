@@ -29,6 +29,7 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
 import java.util.List;
 import java.io.ByteArrayOutputStream;
@@ -51,7 +52,7 @@ public class PostgresExplainStatement implements PostgresStatement
         }
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(), (short)-1, maxlen,
-                                   AkType.VARCHAR);
+                                   AkType.VARCHAR, MString.VARCHAR.instance());
     }
 
     @Override
