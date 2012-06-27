@@ -51,4 +51,4 @@ orderByList:
 		columnName: x
 		tableName: null
 		type: null
-		userData: com.akiban.sql.parser.ResultColumn@47570945
+		userData: t1.x from com.akiban.sql.parser.FromBaseTable@293bdd36

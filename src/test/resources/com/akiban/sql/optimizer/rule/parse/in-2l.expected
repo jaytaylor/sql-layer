@@ -1,0 +1,12 @@
+SelectQuery@593bb54e
+  ResultSet@5efc41a6[cid, name]
+    Project@33a2a02[customers.cid, customers.name]
+      Select@5f9beaf5[ANY(Subquery@755eabdc)]
+        TableSource@1a6534b7(customers)
+
+Subquery@755eabdc
+  Project@6a67e7ea[customers.name == parent.name]
+    Limit@41f76afe(LIMIT 2)
+      Sort@5a916b87[parent.name]
+        Select@12a9a85[]
+          TableSource@1406925c(parent)

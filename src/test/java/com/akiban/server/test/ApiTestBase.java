@@ -451,6 +451,17 @@ public class ApiTestBase {
         return result;
     }
 
+    /**
+     * A simple unique (per class) property that can be returned for tests
+     * overriding the {@link #startupConfigProperties()} and/or
+     * {@link #serviceBindingsProvider()} methods.
+     */
+    protected static Collection<Property> uniqueStartupConfigProperties(Class clazz) {
+        final Collection<Property> properties = new ArrayList<Property>();
+        properties.add(new Property("test.services", clazz.getName()));
+        return properties;
+    }
+
     protected AkibanInformationSchema createFromDDL(String schema, String ddl) {
         SchemaFactory schemaFactory = new SchemaFactory(schema);
         return schemaFactory.ais(ddl().getAIS(session()), ddl);

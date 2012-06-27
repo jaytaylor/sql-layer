@@ -767,11 +767,6 @@ public final class SchemaManagerIT extends ITBase {
         }
 
         @Override
-        public UserTable getTableDefinition() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
             throw new UnsupportedOperationException();
         }

@@ -596,33 +596,37 @@ public class AISBinder implements Visitor
                 throw new NoSuchColumnException(columnName, columnReference);
         }
         else {
-            boolean ambiguous = false;
-            outer:
-            for (BindingContext bindingContext : bindingContexts) {
-                ColumnBinding contextBinding = null;
-                for (FromTable fromTable : bindingContext.tables) {
-                    ColumnBinding tableBinding = getColumnBinding(fromTable, columnName);
-                    if (tableBinding != null) {
-                        if (contextBinding != null) {
-                            ambiguous = true;
-                            break outer;
+            if (getBindingContext().resultColumnsAvailable) {
+                ResultColumnList resultColumns = getBindingContext().resultColumns;
+                if (resultColumns != null) {
+                    ResultColumn resultColumn = resultColumns.getResultColumn(columnName);
+                    if (resultColumn != null) {
+                        if (resultColumn.getExpression() instanceof ColumnReference) {
+                            columnBinding = (ColumnBinding)((ColumnReference)resultColumn.getExpression()).getUserData();
                         }
-                        contextBinding = tableBinding;
+                        if (columnBinding == null)
+                            columnBinding = new ColumnBinding(null, resultColumn);
                     }
-                }
-                if (contextBinding != null) {
-                    columnBinding = contextBinding;
-                    break;
                 }
             }
             if (columnBinding == null) {
-                if (getBindingContext().resultColumnsAvailable) {
-                    ResultColumnList resultColumns = getBindingContext().resultColumns;
-                    if (resultColumns != null) {
-                        ResultColumn resultColumn = resultColumns.getResultColumn(columnName);
-                        if (resultColumn != null) {
-                            columnBinding = new ColumnBinding(null, resultColumn);
+                boolean ambiguous = false;
+                outer:
+                for (BindingContext bindingContext : bindingContexts) {
+                    ColumnBinding contextBinding = null;
+                    for (FromTable fromTable : bindingContext.tables) {
+                        ColumnBinding tableBinding = getColumnBinding(fromTable, columnName);
+                        if (tableBinding != null) {
+                            if (contextBinding != null) {
+                                ambiguous = true;
+                                break outer;
+                            }
+                            contextBinding = tableBinding;
                         }
+                    }
+                    if (contextBinding != null) {
+                        columnBinding = contextBinding;
+                        break;
                     }
                 }
                 if (columnBinding == null) {
