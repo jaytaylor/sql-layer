@@ -28,12 +28,9 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -50,14 +47,14 @@ public class MDay extends TOverloadBase{
             @Override
             long evaluate(MutableDateTime cal, long[] input)
             {
-                return input[DateExtractor.DAY];
+                return input[MDatetimes.DAY_INDEX];
             }            
         },
         DAYOFMONTH {
             @Override
             long evaluate(MutableDateTime cal, long[] input)
             {
-                return input[DateExtractor.DAY];
+                return input[MDatetimes.DAY_INDEX];
             }
         },
         DAYOFWEEK {
@@ -98,10 +95,10 @@ public class MDay extends TOverloadBase{
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        long[] datetime = DateExtractor.extract(inputs.get(0).getInt64());
-        MutableDateTime cal = DateExtractor.getMutableDateTime(context, datetime, true);
+        long[] datetime = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
+        MutableDateTime cal = MDatetimes.toJodaDatetime(datetime, context.getCurrentTimezone());
         
-        if (!DateExtractor.validHrMinSec(context, datetime) || !DateExtractor.validDayMonth(context, datetime)) output.putNull();
+        if (!MDatetimes.isValidDatetime(datetime)) output.putNull();
         else output.putInt32((int)(dateType.evaluate(cal, datetime)));
     }
 

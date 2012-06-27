@@ -30,6 +30,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
@@ -148,6 +149,11 @@ class Using_BloomFilter extends Operator
     private final long estimatedRowCount;
     private final int filterBindingPosition;
     private final Operator streamInput;
+
+    @Override
+    public Explainer getExplainer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

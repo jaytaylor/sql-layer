@@ -30,7 +30,6 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
@@ -50,7 +49,7 @@ public class MTimeAndDate extends TOverloadBase{
             @Override
             long evaluate(long[] input)
             {
-                return DateExtractor.toDate(input[DateExtractor.YEAR],input[DateExtractor.MONTH],input[DateExtractor.DAY]);
+                return MDatetimes.encodeDate(new long[]{input[MDatetimes.YEAR_INDEX],input[MDatetimes.MONTH_INDEX],input[MDatetimes.DAY_INDEX]});
             }
             
             @Override
@@ -62,7 +61,7 @@ public class MTimeAndDate extends TOverloadBase{
             @Override
             long evaluate(long[] input)
             {
-                return DateExtractor.toTime(input[DateExtractor.HOUR],input[DateExtractor.MINUTE],input[DateExtractor.SECOND]);
+                return MDatetimes.encodeDate(new long[]{input[MDatetimes.HOUR_INDEX],input[MDatetimes.MIN_INDEX],input[MDatetimes.SEC_INDEX]});
             }
             
             @Override
@@ -88,9 +87,9 @@ public class MTimeAndDate extends TOverloadBase{
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        long[] datetime = DateExtractor.extract(inputs.get(0).getInt64());
+        long[] datetime = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
         
-        if (!DateExtractor.validHrMinSec(context, datetime) || !DateExtractor.validDayMonth(context, datetime)) output.putNull();
+        if (!MDatetimes.isValidDatetime(datetime)) output.putNull();
         else output.putInt32((int)(outputType.evaluate(datetime)));
     }
 
