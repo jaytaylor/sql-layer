@@ -163,13 +163,12 @@ public class ProtobufReader {
 
     private void createGroupTablesAndIndexes(List<NewGroupInfo> newGroups) {
         Set<Integer> currentIDs = new HashSet<Integer>();
+        // Cannot assert ID uniqueness here, no such restriction from proto (e.g. from adapter)
         for(Table table : destAIS.getUserTables().values()) {
-            boolean wasNew = currentIDs.add(table.getTableId());
-            assert wasNew : "Table ID was new: " + table;
+            currentIDs.add(table.getTableId());
         }
         for(Table table : destAIS.getGroupTables().values()) {
-            boolean wasNew = currentIDs.add((table.getTableId()));
-            assert wasNew : "Table ID was new: " + table;
+            currentIDs.add((table.getTableId()));
         }
 
         List<Join> joinsNeedingGroup = new ArrayList<Join>();
@@ -374,10 +373,9 @@ public class ProtobufReader {
     }
 
     private static int computeNewTableID(Set<Integer> currentIDs, int starting) {
-        while(currentIDs.contains(starting)) {
+        while(!currentIDs.add(starting)) {
             ++starting;
         }
-        currentIDs.add(starting);
         return starting;
     }
 
