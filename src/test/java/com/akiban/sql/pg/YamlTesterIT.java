@@ -36,7 +36,6 @@ import java.io.Writer;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import org.junit.Ignore;
 import org.junit.Test;
 
 /** Test the {@code YamlTester} class. */
@@ -1829,7 +1828,6 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
                  "- warnings: [[!re '[0-9]+', !re \"Can't convert .*\"]]");
     }
 
-    @Ignore("New code in turbo branch sets connection to null on error")
     @Test
     public void testConnectionReuse() throws Exception {
         boolean failed = false;
