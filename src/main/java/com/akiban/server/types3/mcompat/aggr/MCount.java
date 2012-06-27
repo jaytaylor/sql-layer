@@ -31,14 +31,15 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
 public abstract class MCount implements TAggregator {
 
-    private static final TAggregator[] INSTANCES = {
+    private static TClass typeClass;
+
+    public static final TAggregator[] INSTANCES = {
         // COUNT(*)
         new MCount() {
 
@@ -63,9 +64,6 @@ public abstract class MCount implements TAggregator {
         }
     };
     
-    private static TClass typeClass;
-    private static final PValueSource EMPTY_VALUE = new PValue(PUnderlying.INT_64);
-
     private MCount() {
         typeClass = MNumeric.BIGINT;
     }
