@@ -26,6 +26,7 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
@@ -36,15 +37,66 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
 
-public abstract class MCeilBase extends TOverloadBase {
-
-    public static TOverload[] create() {
-        TOverload exactType = new MCeilBase(MNumeric.DECIMAL) {
+public abstract class MRoundBase extends TOverloadBase {
+    
+    static enum RoundType
+    {
+        CEIL() {
+            @Override
+            BigDecimalWrapper evaluate(MBigDecimalWrapper result) {
+                return result.ceil();
+            }
+            
+            @Override
+            double evaluate(double result) {
+                return Math.ceil(result);
+            }
+        },
+        FLOOR() {
+            @Override
+            BigDecimalWrapper evaluate(MBigDecimalWrapper result) {
+                return result.floor();
+            }
+            
+            @Override
+            double evaluate(double result) {
+                return Math.floor(result);
+            }
+        },
+        TRUNCATE() {
+            @Override
+            BigDecimalWrapper evaluate(MBigDecimalWrapper result) {
+                return result.truncate(0);
+            }
+            
+            @Override
+            double evaluate(double result) {
+                return (double)(int) result;
+            }
+        },
+        ROUND() {
+            @Override
+            BigDecimalWrapper evaluate(MBigDecimalWrapper result) {
+                return result.round(0);
+            }
+            
+            @Override
+            double evaluate(double result) {
+                return Math.round(result);
+            }
+        };
+        
+        abstract double evaluate(double result);
+        abstract BigDecimalWrapper evaluate(MBigDecimalWrapper result);
+    }
+    
+    public static TOverload[] create(final RoundType roundType) {
+        TOverload exactType = new MRoundBase(roundType, MNumeric.DECIMAL) {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 MBigDecimalWrapper result = (MBigDecimalWrapper) inputs.get(0).getObject();
-                output.putObject(result.ceil());
+                output.putObject(roundType.evaluate(result));
             }
 
             @Override
@@ -79,12 +131,12 @@ public abstract class MCeilBase extends TOverloadBase {
             }
         };
 
-        TOverload inexactType = new MCeilBase(MDouble.INSTANCE) {
+        TOverload inexactType = new MRoundBase(roundType, MDouble.INSTANCE) {
             private int DEFAULT_DOUBLE = 17;
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 double result = inputs.get(0).getDouble();
-                output.putDouble(Math.ceil(result));
+                output.putDouble(roundType.evaluate(result));
             }
 
             @Override
@@ -98,12 +150,14 @@ public abstract class MCeilBase extends TOverloadBase {
                 });
             }
         };
-
+        
         return new TOverload[]{exactType, inexactType};
     }
     protected final TClass numericType;
+    private final RoundType roundType;
 
-    protected MCeilBase(TClass numericType) {
+    MRoundBase(RoundType roundType, TClass numericType) {
+        this.roundType = roundType;
         this.numericType = numericType;
     }
 
@@ -114,6 +168,6 @@ public abstract class MCeilBase extends TOverloadBase {
 
     @Override
     public String overloadName() {
-        return "CEIL";
+        return roundType.name();
     }
 }
