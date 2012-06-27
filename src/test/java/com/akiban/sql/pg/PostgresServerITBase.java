@@ -64,7 +64,7 @@ public class PostgresServerITBase extends ITBase
         return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
     }
 
-    protected void closeConnection(Connection connection) throws Exception {
+    protected static void closeConnection(Connection connection) throws Exception {
         connection.close();
     }
 
@@ -97,18 +97,13 @@ public class PostgresServerITBase extends ITBase
         return connection;
     }
 
-    protected void forgetConnection() throws Exception {
+    public static void forgetConnection() throws Exception {
         if (connection != null) {
             closeConnection(connection);
             connection = null;
         }
     }
 
-    @Override
-    protected void beforeStopServices(boolean crash) throws Exception {
-        forgetConnection();
-    }
-    
     protected PostgresServerITBase() {
     }
 

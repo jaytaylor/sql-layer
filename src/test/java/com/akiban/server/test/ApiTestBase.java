@@ -302,7 +302,8 @@ public class ApiTestBase {
         return TestConfigService.dataDirectory().getFreeSpace() < MIN_FREE_SPACE;
     }
 
-    protected void beforeStopServices(boolean crash) throws Exception {
+    private static void beforeStopServices(boolean crash) throws Exception {
+        com.akiban.sql.pg.PostgresServerITBase.forgetConnection();
     }
 
     public final void stopTestServices() throws Exception {
