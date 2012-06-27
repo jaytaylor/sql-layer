@@ -26,9 +26,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.t3expressions.OverladResolutionResult;
+import com.akiban.server.t3expressions.OverloadResolutionResult;
 import com.akiban.server.t3expressions.OverloadResolver;
-import com.akiban.server.t3expressions.T3ScalarsRegistery;
+import com.akiban.server.t3expressions.T3ScalarsRegistry;
 import com.akiban.server.t3expressions.TClassPossibility;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TClass;
@@ -99,7 +99,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private Folder folder;
         private OverloadResolver resolver;
-        private T3ScalarsRegistery registry;
+        private T3ScalarsRegistry registry;
 
 
         ResolvingVistor(PlanContext context) {
@@ -181,7 +181,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             for (ExpressionNode operand : operands)
                 operandClasses.add(tclass(operand));
 
-            OverladResolutionResult resolutionResult = registry.get(expression.getFunction(), operandClasses);
+            OverloadResolutionResult resolutionResult = registry.get(expression.getFunction(), operandClasses);
 
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {

@@ -31,7 +31,7 @@ import java.util.List;
 
 public final class OverloadResolver {
     OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
-        Collection<? extends TValidatedOverload> namedOverloads = registry.get(name);
+        Collection<? extends TValidatedOverload> namedOverloads = null;//registry.get(name);
         if (namedOverloads.isEmpty())
             throw new NoSuchFunctionException(name);
 
@@ -56,6 +56,7 @@ public final class OverloadResolver {
             }
         }
         // TODO find the most specific
+        return null;
     }
 
     private OverloadResult defaultResolution(List<? extends TPreptimeValue> inputs,
@@ -85,7 +86,7 @@ public final class OverloadResolver {
                 continue;
             // ... input can be strongly cast to input set
             TCast cast = registry.cast(inputInstance.typeClass(), inputSet.targetType());
-            if (cast != null && cast.isStrong())
+            if (cast != null && cast.isAutomatic())
                 continue;
             // This input precludes the use of the overload
             return false;
@@ -100,14 +101,14 @@ public final class OverloadResolver {
             return null;
         TClass common = null;
         for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i)) {
-            common = registry.commonTClass(common, inputs.get(i).instance().typeClass());
-            if (common == T3ScalarsRegistery.NO_COMMON)
+            common = registry.commonTClass(common, inputs.get(i).instance().typeClass()).get();
+            if (common == T3ScalarsRegistry.NO_COMMON)
                 return common;
         }
         if (pickingSet.coversRemaining()) {
             for (int i = overload.firstVarargInput(), last = inputs.size(); i < last; ++i) {
-                common = registry.commonTClass(common, inputs.get(i).instance().typeClass());
-                if (common == T3ScalarsRegistery.NO_COMMON)
+                common = registry.commonTClass(common, inputs.get(i).instance().typeClass()).get();
+                if (common == T3ScalarsRegistry.NO_COMMON)
                     return common;
             }
         }
@@ -115,7 +116,7 @@ public final class OverloadResolver {
     }
 
 
-    private T3ScalarsRegistery registry;
+    private T3ScalarsRegistry registry;
 
     public static class OverloadResult {
         private TValidatedOverload overload;
