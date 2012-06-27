@@ -30,18 +30,16 @@ import static org.junit.Assert.assertEquals;
 
 import com.akiban.ais.model.Index;
 import com.akiban.server.rowdata.RowDef;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import com.akiban.server.TableStatistics;
 
-@Ignore("creates tables too quickly; runs out of space on a ramdisk")
 public class AnalyzeIndexIT extends AbstractScanBase {
 
     @Test
     public void testPopulateTableStatistics() throws Exception {
         final RowDef rowDef = rowDef("aa");
-        final TableStatistics ts = serviceManager.getDXL().dmlFunctions().getTableStatistics(session, rowDef.getRowDefId(), true);
+        final TableStatistics ts = dml().getTableStatistics(session(), rowDef.getRowDefId(), true);
         {
             // Checks a secondary index
             //
