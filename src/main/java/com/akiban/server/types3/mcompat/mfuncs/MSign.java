@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -37,6 +38,9 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class MSign extends TOverloadBase {
+    public static final TOverload INSTANCE = new MSign();
+    
+    private MSign(){}
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {

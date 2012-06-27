@@ -24,21 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TQueryContextExpression;
+import com.akiban.server.types3.TOverload;
 
-public final class XIntTime extends TQueryContextExpression {
-    @Override
-    public TInstance resultType() {
-        return XInt.TYPE_CLASS.instance();
-    }
-
-    @Override
-    protected void evaluate(QueryContext context, PValueTarget target) {
-        target.putInt32((int)context.getCurrentDate().getTime());
-    }
+public class MCeil {
+    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
 }

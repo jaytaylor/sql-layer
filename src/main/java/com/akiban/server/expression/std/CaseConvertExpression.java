@@ -118,7 +118,8 @@ public class CaseConvertExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() {
+    public String name() 
+    {
         return conversionType.name();
     }
 

@@ -31,13 +31,14 @@ import com.akiban.util.SparseArray;
 import java.util.List;
 
 public final class TPreptimeContext {
-
     public void setOutputType(TInstance outputType) {
         this.outputType = outputType;
     }
 
     public TExecutionContext createExecutionContext() {
-        return new TExecutionContext(preptimeCache, inputTypes, outputType, null); // TODO pass in
+        return new TExecutionContext(preptimeCache, inputTypes, outputType, 
+                null,
+                null, null, null); // TODO pass in
     }
     
     public void set(int index, Object value) {

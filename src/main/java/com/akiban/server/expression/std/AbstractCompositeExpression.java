@@ -29,6 +29,9 @@ package com.akiban.server.expression.std;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +43,12 @@ public abstract class AbstractCompositeExpression implements Expression {
 
     // Expression interface
 
+    @Override
+    public Explainer getExplainer ()
+    {
+        return new ExpressionExplainer(Type.FUNCTION, name(), children);
+    }
+    
     @Override
     public boolean isConstant() {
         boolean hasNonConst = false;
@@ -87,8 +96,8 @@ public abstract class AbstractCompositeExpression implements Expression {
     @Override
     public final AkType valueType() {
         return type;
-    }
-
+    }    
+    
     // Object interface
 
     @Override
@@ -99,7 +108,7 @@ public abstract class AbstractCompositeExpression implements Expression {
     }
 
     // for use by subclasses
-
+    
     protected abstract void describe(StringBuilder sb);
 
     protected final List<? extends Expression> children() {
@@ -142,8 +151,8 @@ public abstract class AbstractCompositeExpression implements Expression {
 //            }
         }
         return type;
-    }
-
+    }   
+    
     // for use in this class
 
     /**
@@ -175,13 +184,11 @@ public abstract class AbstractCompositeExpression implements Expression {
         }
         sb.append(" -> ").append(valueType()).append(')');
     }
-
+    
     // object state
 
     private final List<? extends Expression> children;
     private final AkType type;
-
-    // const
-
+    
     private static final String EXPRESSION_SUFFIX = "Expression";
 }

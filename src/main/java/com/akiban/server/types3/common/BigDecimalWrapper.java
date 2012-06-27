@@ -25,13 +25,27 @@
  */
 package com.akiban.server.types3.common;
 
+import java.math.BigDecimal;
+
 public interface BigDecimalWrapper {
     
      BigDecimalWrapper add(BigDecimalWrapper augend);
      BigDecimalWrapper subtract(BigDecimalWrapper augend);
      BigDecimalWrapper multiply(BigDecimalWrapper augend);
      BigDecimalWrapper divide(BigDecimalWrapper augend);
+     BigDecimalWrapper floor();
+     BigDecimalWrapper ceil();
+     BigDecimalWrapper truncate(int scale);
+     BigDecimalWrapper round(int scale);
      BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
+     BigDecimalWrapper parseString(String num);
+     BigDecimalWrapper round (int precision, int scale);
+     BigDecimalWrapper negate();
+     BigDecimalWrapper abs();
+     
+     int compareTo (Object o);
+     int getScale();
+     int getPrecision();
      int getSign();
      void reset();
 }

@@ -55,6 +55,12 @@ public final class ExistsSubqueryExpression extends SubqueryExpression {
                                     RowType innerRowType, int bindingPosition) {
         super(subquery, outerRowType, innerRowType, bindingPosition);
     }
+
+    @Override
+    public String name()
+    {
+        return "EXISTS";
+    }
                                  
     private static final class InnerEvaluation extends SubqueryExpressionEvaluation {
         @Override

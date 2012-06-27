@@ -26,8 +26,12 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
+import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.TString;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class AkString extends TString
 {

@@ -28,6 +28,8 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
@@ -148,6 +150,12 @@ class Sort_Tree extends Operator
     private final RowType sortType;
     private final API.Ordering ordering;
     private final API.SortOption sortOption;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return new SortOperatorExplainer("SORT TREE", sortOption, sortType, inputOperator);
+    }
 
     // Inner classes
 
