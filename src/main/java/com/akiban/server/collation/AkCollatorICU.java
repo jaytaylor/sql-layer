@@ -30,9 +30,13 @@ import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 
 public class AkCollatorICU implements AkCollator {
+    /*
+     * TODO - reserve this in the Persistit Key class.
+     */
+    private final static byte TYPE_COLLATED_STRING = 127;
 
     private final String collatorName;
-    
+
     ThreadLocal<Collator> collator = new ThreadLocal<Collator>() {
         protected Collator initialValue() {
             return AkCollatorFactory.forName(collatorName);
@@ -50,15 +54,20 @@ public class AkCollatorICU implements AkCollator {
 
     @Override
     public void append(Key key, String value) {
-        byte[] sortBytes = collator.get().getCollationKey(value).toByteArray();
-        byte[] keyBytes = key.getEncodedBytes();
-        int size = key.getEncodedSize();
-        if (size + sortBytes.length > key.getMaximumSize()) {
-            throw new IllegalArgumentException("Too long: " + size + sortBytes.length);
+        if (value == null) {
+            key.append(null);
+        } else {
+            byte[] sortBytes = collator.get().getCollationKey(value).toByteArray();
+            byte[] keyBytes = key.getEncodedBytes();
+            int size = key.getEncodedSize();
+            if (size + sortBytes.length > key.getMaximumSize() + 1) {
+                throw new IllegalArgumentException("Too long: " + size + sortBytes.length);
+            }
+            assert verifySortByteZeroes(sortBytes) : "ICU4J is expected to return a zero-terminated sort key";
+            keyBytes[size] = TYPE_COLLATED_STRING;
+            System.arraycopy(sortBytes, 0, keyBytes, size + 1, sortBytes.length);
+            key.setEncodedSize(size + sortBytes.length + 1);
         }
-        assert verifySortByteZeroes(sortBytes) : "ICU4J is expected to return a zero-terminated sort key";
-        System.arraycopy(sortBytes, 0, keyBytes, size, sortBytes.length);
-        key.setEncodedSize(size + sortBytes.length);
     }
 
     @Override
@@ -80,7 +89,6 @@ public class AkCollatorICU implements AkCollator {
     public Collator getCollator() {
         return collator.get();
     }
-    
 
     @Override
     public boolean isCaseSensitive() {

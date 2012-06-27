@@ -29,6 +29,7 @@ package com.akiban.server.collation;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
@@ -48,7 +49,7 @@ public class AkCollatorFactory {
 
     private final static Map<String, Collator> sourceMap = new HashMap<String, Collator>();
 
-    private final static Map<String, SoftReference<AkCollator>> collatorMap = new HashMap<String, SoftReference<AkCollator>>();
+    private final static Map<String, SoftReference<AkCollator>> collatorMap = new ConcurrentHashMap<String, SoftReference<AkCollator>>();
 
     public final static boolean MAP_CI = Boolean.getBoolean("akiban.collation.map_ci");
 
@@ -64,23 +65,27 @@ public class AkCollatorFactory {
             return UCS_BINARY_COLLATOR;
         }
 
-        synchronized (collatorMap) {
-            SoftReference<AkCollator> ref = collatorMap.get(name);
-            if (ref != null) {
-                AkCollator akCollator = ref.get();
-                if (akCollator != null) {
-                    return akCollator;
-                }
+        SoftReference<AkCollator> ref = collatorMap.get(name);
+        if (ref != null) {
+            AkCollator akCollator = ref.get();
+            if (akCollator != null) {
+                return akCollator;
             }
-            AkCollator akCollator = new AkCollatorICU(name);
-            collatorMap.put(name, new SoftReference<AkCollator>(akCollator));
-            return akCollator;
         }
+        /*
+         * Note that another thread may win a race here, but it doesn't
+         * matter. The result is that there will be an AkCollator in
+         * the map which is sufficient.
+         */
+        AkCollator akCollator = new AkCollatorICU(name);
+        collatorMap.put(name, new SoftReference<AkCollator>(akCollator));
+        return akCollator;
     }
 
     /**
-     * Construct an actual ICU Collator given a collation scheme name.
-     * The result is a Collator that must be use in a thread-private manner.
+     * Construct an actual ICU Collator given a collation scheme name. The
+     * result is a Collator that must be use in a thread-private manner.
+     * 
      * @param name
      * @return
      */

@@ -365,6 +365,7 @@ class SortCursorUnidirectional extends SortCursor
         }
         this.startKey = adapter.newKey();
         this.types = new AkType[startBoundColumns];
+        this.collators = new AkCollator[startBoundColumns];
         List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
         for (int f = 0; f < startBoundColumns; f++) {
             Column column = indexColumns.get(f).getColumn();
