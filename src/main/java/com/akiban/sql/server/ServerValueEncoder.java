@@ -33,7 +33,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -69,7 +68,9 @@ public class ServerValueEncoder
 
     public static final String ROUND_ZERO_DATETIME = "0001-01-01 00:00:00";
     public static final String ROUND_ZERO_DATE = "0001-01-01";
-
+    public static final long ROUND_ZERO_DATETIME_VAL = MDatetimes.parseDatetime(ROUND_ZERO_DATETIME);
+    public static final int ROUND_ZERO_DATE_VAL = MDatetimes.parseDate(ROUND_ZERO_DATE, null);
+    
     private String encoding;
     private ZeroDateTimeBehavior zeroDateTimeBehavior;
     private ByteArrayOutputStream byteStream;
@@ -141,9 +142,11 @@ public class ServerValueEncoder
         appendValue(value, type, binary);
         return getByteStream();
     }
-    
-        /** Encode the given value into a stream that can then be passed
-     * to <code>writeByteStream</code>.
+   
+    /**
+     * Encode the given value into a stream that can then be passed
+     * to
+     * <code>writeByteStream</code>.
      */
     public ByteArrayOutputStream encodePValue(PValueSource value, ServerType type, 
                                              boolean binary) throws IOException {
@@ -162,10 +165,11 @@ public class ServerValueEncoder
                     pSource = new PValue(type.getInstance().typeClass().underlyingType());
                 else {
                     if (type.getInstance().typeClass() == MDatetimes.DATETIME)
-                        pSource.putInt64(00010101000000);
+                        pSource.putInt64(ROUND_ZERO_DATETIME_VAL);
                     else
-                        pSource.putInt32(00010101);
-                }   
+                        pSource.putInt32(ROUND_ZERO_DATE_VAL);
+                }  
+                value = pSource;
                 break;
             case CONVERT_TO_NULL:
                 return null;
@@ -223,24 +227,13 @@ public class ServerValueEncoder
         }
     }
     
-        /** Append the given value to the buffer. */
+    /** Append the given value to the buffer. */
     public void appendPValue(PValueSource value, ServerType type, boolean binary) 
             throws IOException {
-        if (type.getInstance().typeClass() == MString.VARBINARY) {
-            ByteSource bs = (ByteSource) value.getObject();
-            byte[] ba = bs.byteArray();
-            int offset = bs.byteArrayOffset();
-            int length = bs.byteArrayLength();
-            if (binary)
-                getByteStream().write(ba, offset, length);
-            else {
-                for (int i = 0; i < length; i++) {
-                    printWriter.format("\\%03o", ba[offset+i]);
-                }
-            }
-        }
+        if (type.getInstance().typeClass() == MString.VARBINARY)
+            getByteStream().write(value.getBytes());
         else {
-            assert !binary;
+            assert !binary : "expecting VARBINARY";
             String input = (String) value.getObject();
             String curr = (String) pSource.getObject();
             pSource.putObject(curr.concat(input));
@@ -265,8 +258,8 @@ public class ServerValueEncoder
     /** Append the given direct object to the buffer. */
     public void appendPObject(Object value, ServerType type, boolean binary) 
             throws IOException {
-        TInstance instance = type.getInstance();
-        if ((instance == MString.VARCHAR.instance()) && (value instanceof String)) {
+        if (type.getInstance().typeClass() == MString.VARCHAR && value instanceof String)
+        {
             // Optimize the common case of directly encoding a string.
             printWriter.write((String)value);
             return;
@@ -280,5 +273,4 @@ public class ServerValueEncoder
     public void appendString(String string) throws IOException {
         printWriter.write(string);
     }
-
 }
