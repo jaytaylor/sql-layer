@@ -166,10 +166,13 @@ public abstract class MDateFormat extends TOverloadBase
                     // if date is literal, get the actual length
                     if (date != null)
                     {
-
                         Object prepObjects[] = computeResult(getYMDHMS(date), (String) format.getObject(), context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
                         context.set(ERROR_INDEX, prepObjects[ERROR_INDEX]);
+                        
+                        // get the real length
+                        if (prepObjects[RET_INDEX] != null)
+                            length = ((String)prepObjects[RET_INDEX]).length();
                     }
                 }
                 return MString.VARCHAR.instance(length);

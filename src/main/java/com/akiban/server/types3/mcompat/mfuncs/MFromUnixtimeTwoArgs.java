@@ -129,6 +129,10 @@ public class MFromUnixtimeTwoArgs extends TOverloadBase
                                                             context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
                         context.set(ERROR_INDEX, prepObjects[ERROR_INDEX]);
+                        
+                        // get the real length
+                        if (prepObjects[RET_INDEX] != null)
+                            length = ((String)prepObjects[RET_INDEX]).length();
                     }
                 }
                 return MString.VARCHAR.instance(length);
