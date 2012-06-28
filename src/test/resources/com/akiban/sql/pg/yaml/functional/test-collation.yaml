@@ -1,0 +1,27 @@
+# Test collation (other than UCS_BINARY)
+---
+- CreateTable: t (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci)
+---
+- Statement: INSERT INTO t(id, s)
+    VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Ångström'), (5, 'Zulu'), (0, null)
+---
+- Statement: SELECT id FROM t WHERE s > 'B'
+- output_ordered: [[2], [3], [4], [5]]
+---
+- Statement: SELECT id FROM t WHERE s = 'Charlie'
+- output_ordered: [[2]]
+#--- Needs collation passed to SortTree's temporary tree.
+#- Statement: SELECT * FROM t ORDER BY s
+#- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, 'Ångström']]
+---
+- Statement: CREATE INDEX t_s ON t(s)
+---
+- Statement: SELECT id FROM t WHERE s > 'B'
+- output_ordered: [[2], [3], [4], [5]]
+---
+- Statement: SELECT id FROM t WHERE s = 'Charlie'
+- output_ordered: [[2]]
+---
+- Statement: SELECT * FROM t ORDER BY s
+- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, 'Ångström']]
+...
