@@ -283,7 +283,7 @@
                         <akserver.port>${akserver.port}</akserver.port>
                         <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx256m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                 </configuration>
                 <executions>
                     <execution>
