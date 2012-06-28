@@ -37,7 +37,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public abstract class MBit implements TAggregator {
 
-    private static final long EMPTY_FOR_AND = Long.MAX_VALUE - 1;
+    private static final long EMPTY_FOR_AND = -1;
     private static final long EMPTY_FOR_OR = 0L;
     
     public static final TAggregator[] INSTANCES = {
