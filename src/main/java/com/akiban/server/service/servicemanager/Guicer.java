@@ -79,7 +79,11 @@ public final class Guicer {
     }
 
     public boolean serviceIsStarted(Class<?> serviceClass) {
-        return services.contains(serviceClass);
+        for (Object service : services) {
+            if (serviceClass.isInstance(service))
+                return true;
+        }
+        return false;
     }
 
     public boolean isRequired(Class<?> interfaceClass) {

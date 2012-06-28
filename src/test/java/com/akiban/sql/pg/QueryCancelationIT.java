@@ -60,8 +60,7 @@ public class QueryCancelationIT extends PostgresServerITBase
 
     private void loadDB() throws Exception
     {
-        Connection connection = openConnection();
-        Statement statement = connection.createStatement();
+        Statement statement = getConnection().createStatement();
         statement.execute("create table t(id integer not null primary key)");
         for (int id = 0; id < N; id++) {
             statement.execute(String.format("insert into t values(%s)", id));
@@ -147,10 +146,21 @@ public class QueryCancelationIT extends PostgresServerITBase
                 }
             } catch (Throwable e) {
                 termination = e;
+            } finally {
+                try {
+                    cleanup();
+                }
+                catch (Exception ex) {
+                    if (termination == null)
+                        termination = ex;
+                }
             }
         }
 
         public abstract void action() throws SQLException, InterruptedException;
+
+        public void cleanup() throws Exception {
+        }
 
         public synchronized final void go() throws InterruptedException
         {
@@ -212,6 +222,11 @@ public class QueryCancelationIT extends PostgresServerITBase
                     throw e;
                 }
             }
+        }
+
+        @Override
+        public void cleanup() throws Exception {
+            closeConnection(connection);
         }
 
         public void resetCounters()
