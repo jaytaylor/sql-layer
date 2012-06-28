@@ -26,7 +26,6 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -37,8 +36,10 @@ import org.joda.time.MutableDateTime;
 
 public abstract class MUnixTimestamp extends TOverloadBase {
     
-    public static final TOverload INSTANCE = new MUnixTimestamp() {
-         @Override
+    public static final TOverload[] INSTANCES = {
+        new MUnixTimestamp() {
+
+            @Override
             protected void buildInputSets(TInputSetBuilder builder) {
                 builder.covers(MDatetimes.DATETIME, 0);
             }
@@ -52,6 +53,18 @@ public abstract class MUnixTimestamp extends TOverloadBase {
                 int millis = (int) date.getMillis();
                 output.putInt32(millis <= 0 ? 0 : millis);
             }
+        },
+        new MUnixTimestamp() {
+
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+            }
+
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                output.putInt32((int) context.getCurrentDate());
+            }
+        }
     };
 
     @Override
