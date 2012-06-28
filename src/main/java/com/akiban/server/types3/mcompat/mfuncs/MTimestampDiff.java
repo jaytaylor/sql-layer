@@ -59,15 +59,15 @@ public class MTimestampDiff extends TOverloadBase {
         
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MDatetimes.DATETIME, 0, 1);
-        builder.covers(MNumeric.INT, 2);
+        builder.covers(MNumeric.INT, 0);
+        builder.covers(MDatetimes.DATETIME, 1, 2);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        long datetime0 = inputs.get(0).getInt64();
-        long datetime1 = inputs.get(1).getInt64();
-        int val = inputs.get(2).getInt32();
+        int val = inputs.get(0).getInt32();
+        long datetime0 = inputs.get(1).getInt64();
+        long datetime1 = inputs.get(2).getInt64();
         
         switch (val) {
             case UnitValue.YEAR: 
