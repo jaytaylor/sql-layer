@@ -26,26 +26,21 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.t3expressions.OverladResolutionResult;
+import com.akiban.server.t3expressions.OverloadResolutionResult;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.T3ScalarsRegistery;
 import com.akiban.server.t3expressions.TClassPossibility;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.aksql.AkBundle.AkSwitcher;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.aksql.aktypes.AkString;
-import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -62,7 +57,6 @@ import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
-import com.akiban.sql.optimizer.plan.ExpressionVisitor;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
@@ -181,7 +175,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             for (ExpressionNode operand : operands)
                 operandClasses.add(tclass(operand));
 
-            OverladResolutionResult resolutionResult = registry.get(expression.getFunction(), operandClasses);
+            OverloadResolutionResult resolutionResult = registry.get(expression.getFunction(), operandClasses);
 
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
@@ -193,10 +187,13 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
             final List<TPreptimeValue> operandValues = new ArrayList<TPreptimeValue>(operands.size());
             List<TInstance> operandInstances = new ArrayList<TInstance>(operands.size());
+            boolean anyOperandsNullable = false;
             for (ExpressionNode operand : operands) {
                 TPreptimeValue preptimeValue = operand.getPreptimeValue();
                 operandValues.add(preptimeValue);
                 operandInstances.add(preptimeValue.instance());
+                if (Boolean.TRUE.equals(preptimeValue.instance().nullability()))
+                    anyOperandsNullable = true;
             }
 
             TOverloadResult overloadResultStrategy = overload.resultStrategy();
@@ -217,6 +214,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 throw new AssertionError(overloadResultStrategy.category());
             }
             context.setOutputType(resultInstance);
+            if (resultInstance.nullability() == null) {
+                resultInstance.setNullable(anyOperandsNullable);
+            }
             overload.finishPreptimePhase(context);
 
             // TODO should this be in Folder?
@@ -355,6 +355,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             if (targetClass.equals(tclass(expression)))
                 return expression;
             TInstance instance = targetClass.instance();
+            instance.setNullable(expression.getSQLtype().isNullable());
             return new CastExpression(expression, instance.dataTypeDescriptor(), expression.getSQLsource());
         }
 
@@ -376,27 +377,33 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         private static TInstance tinst(DataTypeDescriptor descriptor) {
-            
+            final TInstance result;
             switch (descriptor.getTypeId().getTypeFormatId()) {
             case TypeId.FormatIds.BOOLEAN_TYPE_ID:
-                return AkBool.INSTANCE.instance();
+                result = AkBool.INSTANCE.instance();
+                break;
             case TypeId.FormatIds.VARCHAR_TYPE_ID:
             case TypeId.FormatIds.CHAR_TYPE_ID:
                 Charset charset = StringFactory.Charset.valueOf(descriptor.getCharacterAttributes().getCharacterSet());
-                return MString.VARCHAR.instance(descriptor.getMaximumWidth(), charset.ordinal());
+                result = MString.VARCHAR.instance(descriptor.getMaximumWidth(), charset.ordinal());
+                break;
             case TypeId.FormatIds.DECIMAL_TYPE_ID:
             case TypeId.FormatIds.NUMERIC_TYPE_ID:
-                // TODO should be aksql type
-                return MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
+                result = MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
+                break;
             case TypeId.FormatIds.DOUBLE_TYPE_ID:
-                return AkNumeric.DOUBLE.instance();
+                result = AkNumeric.DOUBLE.instance();
+                break;
             case TypeId.FormatIds.INT_TYPE_ID:
-                return AkNumeric.INT.instance();
+                result = AkNumeric.INT.instance();
+                break;
             case TypeId.FormatIds.TINYINT_TYPE_ID:
             case TypeId.FormatIds.SMALLINT_TYPE_ID:
-                return AkNumeric.SMALLINT.instance();
+                result = AkNumeric.SMALLINT.instance();
+                break;
             case TypeId.FormatIds.LONGINT_TYPE_ID:
-                return AkNumeric.BIGINT.instance();
+                result = AkNumeric.BIGINT.instance();
+                break;
 
             case TypeId.FormatIds.BIT_TYPE_ID:
             case TypeId.FormatIds.DATE_TYPE_ID:
@@ -418,6 +425,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             default:
                 throw new AssertionError("unknown type: " + descriptor);
             }
+
+            result.setNullable(descriptor.isNullable());
+            return result;
         }
     }
 
