@@ -1,29 +1,3 @@
-/**
- * END USER LICENSE AGREEMENT (“EULA”)
- *
- * READ THIS AGREEMENT CAREFULLY (date: 9/13/2011):
- * http://www.akiban.com/licensing/20110913
- *
- * BY INSTALLING OR USING ALL OR ANY PORTION OF THE SOFTWARE, YOU ARE ACCEPTING
- * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
- * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
- *
- * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
- * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
- * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
- * YOUR INITIAL PURCHASE.
- *
- * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
- * CORPORATION, PARTNERSHIP OR SIMILAR ENTITY, THEN YOU MUST BE AUTHORIZED TO SIGN
- * FOR AND BIND THE ENTITY IN ORDER TO ACCEPT THE TERMS OF THIS AGREEMENT. THE
- * LICENSES GRANTED UNDER THIS AGREEMENT ARE EXPRESSLY CONDITIONED UPON ACCEPTANCE
- * BY SUCH AUTHORIZED PERSONNEL.
- *
- * IF YOU HAVE ENTERED INTO A SEPARATE WRITTEN LICENSE AGREEMENT WITH AKIBAN FOR
- * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
- * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
- */
-
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.error.InvalidDateFormatException;
@@ -321,13 +295,13 @@ public class MDatetimes
             dt.getSecondOfMinute()
         }; // TODO: fractional seconds
     }
-    
+
     public static long encodeTimestamp(long val[], String tz, TExecutionContext context)
     {
         DateTime dt = new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],
                                    (int)val[HOUR_INDEX], (int)val[MIN_INDEX], (int)val[SEC_INDEX], 0,
                                    DateTimeZone.forID(tz));
-
+        
         return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, dt.getMillis() / 1000L, TS_ERROR_VALUE, context);
     }
 
@@ -417,10 +391,11 @@ public class MDatetimes
     private static final int TIME_TIMEZONE_GROUP = 10;
     private static final Pattern PARSE_PATTERN 
             = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
-    
+
     // upper and lower limit of TIMESTAMP value
     // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
     private static final long TIMESTAMP_MAX = new DateTime("1970-01-01 00:00:01Z").getMillis();
     private static final long TIMESTAMP_MIN = new DateTime("2038-01-19 03:14:07Z").getMillis();
     private static final long TS_ERROR_VALUE = 0L;
 }
+

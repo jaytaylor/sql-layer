@@ -30,7 +30,6 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.expression.std.DateTimeField;
 import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
@@ -39,70 +38,29 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import java.util.List;
+import org.joda.time.DateTimeZone;
+import org.joda.time.MutableDateTime;
 
-public abstract class MDateFormat extends TOverloadBase
+public class MFromUnixtimeTwoArgs extends TOverloadBase
 {
-    public static TOverload[] create()
-    {
-        return new TOverload[]
-        {
-            new MDateFormat(MDatetimes.DATE)
-            {
-                @Override
-                protected long[] getYMDHMS(PValueSource source)
-                {
-                    return MDatetimes.decodeDate(source.getInt32());
-                }
-            },
-            new MDateFormat(MDatetimes.DATETIME)
-            {
-                @Override
-                protected long[] getYMDHMS(PValueSource source)
-                {
-                    return MDatetimes.decodeDatetime(source.getInt64());
-                }
-            },
-            new MDateFormat(MDatetimes.TIME)
-            {
-                @Override
-                protected long[] getYMDHMS(PValueSource source)
-                {
-                    long ret[] = MDatetimes.decodeTime(source.getInt32());
-                    
-                    // adjust the date part to 0s
-                    ret[MDatetimes.YEAR_INDEX] = 0;
-                    ret[MDatetimes.MONTH_INDEX] = 0;
-                    ret[MDatetimes.DAY_INDEX] = 0;
-                    
-                    return ret;
-                }
-            }
-        };
-    }
+    public static final TOverload INSTANCE = new MFromUnixtimeTwoArgs();
     
     private static final int RET_INDEX = 0;
     private static final int ERROR_INDEX = 1;
     
-    protected abstract long[] getYMDHMS(PValueSource source);
-    
-    private final TClass dateType;
-    
-    private MDateFormat(TClass dateType)
-    {
-        this.dateType = dateType;
-    }
+    private MFromUnixtimeTwoArgs() {}
 
     @Override
     protected void buildInputSets(TInputSetBuilder builder)
     {
-        builder.covers(dateType, 0).covers(MString.VARCHAR, 1);
+        builder.covers(MNumeric.INT, 0).covers(MString.VARCHAR, 1);
     }
 
     @Override
@@ -110,31 +68,31 @@ public abstract class MDateFormat extends TOverloadBase
     {
         String ret = null;
         InvalidOperationException error = null;
-        
+            
         if ((error = (InvalidOperationException) context.preptimeObjectAt(ERROR_INDEX)) == null
                 && (ret = (String)context.preptimeObjectAt(RET_INDEX)) == null)
         {
-            Object objs[] = computeResult (getYMDHMS(inputs.get(0)),
-                                           (String)inputs.get(1).getObject(),
-                                           context.getCurrentTimezone());
+            Object objs[] = computeResult(inputs.get(0).getInt32(),
+                                          (String)inputs.get(1).getObject(),
+                                          context.getCurrentTimezone());
+            
             ret = (String) objs[RET_INDEX];
             error = (InvalidOperationException) objs[ERROR_INDEX];
-            
         }
-        
-        if (ret != null)
-            output.putObject(ret);
-        else
+
+        if (ret == null)
         {
             output.putNull();
             context.warnClient(error);
         }
+        else
+            output.putObject(ret);
     }
 
     @Override
     public String overloadName()
     {
-        return "DATE_FORMAT";
+        return "FROM_UNIXTIME";
     }
 
     @Override
@@ -157,16 +115,18 @@ public abstract class MDateFormat extends TOverloadBase
                     length = formatArg.instance().attribute(StringAttribute.LENGTH) * 10;
                 else
                 {
-                    PValueSource date = inputs.get(0).value();
+                    PValueSource unixTime = inputs.get(0).value();
                     
-                    // if the date string is not literal, get the length
+                    // if the unix time value is not literal, get the length
                     // from the format string
                     length = computeLength((String)format.getObject());
                     
-                    // if date is literal, get the actual length
-                    if (date != null)
+                    // if the unix time is available, get the actual length
+                    if (unixTime != null)
                     {
-                        Object prepObjects[] = computeResult(getYMDHMS(date), (String) format.getObject(), context.getCurrentTimezone());
+                        Object prepObjects[] = computeResult(unixTime.getInt32(),
+                                                            (String) format.getObject(),
+                                                            context.getCurrentTimezone());
                         context.set(RET_INDEX, prepObjects[RET_INDEX]);
                         context.set(ERROR_INDEX, prepObjects[ERROR_INDEX]);
                         
@@ -180,23 +140,21 @@ public abstract class MDateFormat extends TOverloadBase
         });
     }
     
-    private static Object[] computeResult(long ymd[], String format, String tz)
+    private static Object[] computeResult(int unix, String format, String tz)
     {
         String st = null;
         InvalidOperationException error = null;
-        if (!MDatetimes.isValidDatetime(ymd))
-            error = new InvalidParameterValueException("Incorrect datetime value");
-        else
-            try
-            {
-                st = DateTimeField.getFormatted(MDatetimes.toJodaDatetime(ymd, tz),
-                                                format);
-            }
-            catch (InvalidParameterValueException e)
-            {
-                st = null;
-                error = e;
-            }
+        
+        try
+        {
+            st = DateTimeField.getFormatted(new MutableDateTime(unix * 1000L, DateTimeZone.forID(tz)),
+                                            format);
+        }
+        catch (InvalidParameterValueException e)
+        {
+            st = null;
+            error = e;
+        }
 
         return new Object[]
         {
