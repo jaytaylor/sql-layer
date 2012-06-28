@@ -32,6 +32,11 @@ import com.persistit.Key;
 public class AkCollatorBinary implements AkCollator {
 
     @Override
+    public String getName() {
+        return AkCollatorFactory.UCS_BINARY;
+    }
+
+    @Override
     public boolean isRecoverable() {
         return true;
     }
@@ -64,5 +69,10 @@ public class AkCollatorBinary implements AkCollator {
     @Override
     public boolean isCaseSensitive() {
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
     }
 }

@@ -51,7 +51,7 @@ public class AkCollatorFactory {
 
     private final static Map<String, SoftReference<AkCollator>> collatorMap = new ConcurrentHashMap<String, SoftReference<AkCollator>>();
 
-    public final static boolean MAP_CI = Boolean.getBoolean("akiban.collation.map_ci");
+    public final static boolean MAP_CI = Boolean.parseBoolean(System.getProperty("akiban.collation.map_ci", "true"));
 
     /**
      * 

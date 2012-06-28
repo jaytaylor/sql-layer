@@ -30,6 +30,9 @@ import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 
 public interface AkCollator {
+    /** Get the name of this collator. */
+    public String getName();
+
     /**
      * @return true if this collator is capable of recovering the key string
      *         from a key segment.

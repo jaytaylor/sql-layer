@@ -48,6 +48,11 @@ public class AkCollatorICU implements AkCollator {
     }
 
     @Override
+    public String getName() {
+        return collatorName;
+    }
+
+    @Override
     public boolean isRecoverable() {
         return false;
     }
@@ -105,5 +110,10 @@ public class AkCollatorICU implements AkCollator {
             return false;
         }
         return true;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
     }
 }
