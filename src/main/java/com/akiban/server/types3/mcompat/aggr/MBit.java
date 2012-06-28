@@ -37,7 +37,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public abstract class MBit implements TAggregator {
 
-    private static final long EMPTY_FOR_AND = 0x7FFFFFFFFFFFFFFFL;
+    private static final long EMPTY_FOR_AND = -1;
     private static final long EMPTY_FOR_OR = 0L;
     
     public static final TAggregator[] INSTANCES = {
@@ -46,7 +46,7 @@ public abstract class MBit implements TAggregator {
 
             @Override
             long process(long i0, long i1) {
-                return i0 & i1 & EMPTY_FOR_AND;
+                return i0 & i1;
             }
 
             @Override
@@ -59,7 +59,7 @@ public abstract class MBit implements TAggregator {
 
             @Override
             long process(long i0, long i1) {
-                return i0 | i1 & EMPTY_FOR_AND;
+                return i0 | i1;
             }
 
             @Override
@@ -72,7 +72,7 @@ public abstract class MBit implements TAggregator {
 
             @Override
             long process(long i0, long i1) {
-                return i0 ^ i1 & EMPTY_FOR_AND;
+                return i0 ^ i1;
             }
 
             @Override
