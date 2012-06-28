@@ -307,8 +307,41 @@ public class MDatetimes
                 + val[SEC_INDEX];
     }
 
-    public static long[] decodeTimestamp(long ts, String tz)
-    {
+    public static int parseTime(String string, TExecutionContext context) {
+        // (-)HH:MM:SS
+        int mul = 1;
+        if (string.length() > 0 && string.charAt(0) == '-') {
+            mul = -1;
+            string = string.substring(1);
+        }
+        int hours = 0;
+        int minutes = 0;
+        int seconds = 0;
+        int offset = 0;
+        final String values[] = string.split(":");
+        try {
+            switch (values.length) {
+                case 3:
+                    hours = Integer.parseInt(values[offset++]); // fall
+                case 2:
+                    minutes = Integer.parseInt(values[offset++]); // fall
+                case 1:
+                    seconds = Integer.parseInt(values[offset]);
+                    break;
+                default:
+                    context.reportBadValue("bad TIME" + string);
+            }
+        } catch (NumberFormatException ex) {
+            context.reportBadValue("bad TIME" + string);
+        }
+        minutes += seconds / 60;
+        seconds %= 60;
+        hours += minutes / 60;
+        minutes %= 60;
+        return mul * (hours * TIME_HOURS_SCALE + minutes * TIME_MINUTES_SCALE + seconds);
+    }
+
+    public static long[] decodeTimestamp(long ts, String tz) {
         DateTime dt = new DateTime(ts * 1000L, DateTimeZone.forID(tz));
         
         return new long[]
@@ -404,6 +437,9 @@ public class MDatetimes
     private static final long DATETIME_DAY_SCALE = 1L * DATETIME_DATE_SCALE;
     private static final long DATETIME_HOUR_SCALE = 10000L;
     private static final long DATETIME_MIN_SCALE = 100L;
+    
+    private static final int TIME_HOURS_SCALE = 10000;
+    private static final int TIME_MINUTES_SCALE = 100;
     
     private static final int DATE_GROUP = 1;
     private static final int DATE_YEAR_GROUP = 2;
