@@ -35,42 +35,41 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import java.math.BigInteger;
 
 public class MBinaryBit extends TOverloadBase {
 
     static enum BitOperator {
         BITWISE_AND {
             @Override
-            BigInteger evaluate(BigInteger a0, BigInteger a1) {
-                return a0.and(a1);
+            long evaluate(long a0, long a1) {
+                return a0 & a1;
             }
         }, 
         BITWISE_OR {
             @Override
-            BigInteger evaluate(BigInteger a0, BigInteger a1) {
-                return a0.or(a1);
+            long evaluate(long a0, long a1) {
+                return a0 | a1;
             }            
         }, 
         BITWISE_XOR {
             @Override
-            BigInteger evaluate(BigInteger a0, BigInteger a1) {
-                return a0.xor(a1);
+            long evaluate(long a0, long a1) {
+                return a0 ^ a1;
             }            
         }, 
         LEFT_SHIFT {
             @Override
-            BigInteger evaluate(BigInteger a0, BigInteger a1) {
-                return a0.shiftLeft(a1.intValue());
+            long evaluate(long a0, long a1) {
+                return a0 << a1;
             }            
         }, 
         RIGHT_SHIFT {
             @Override
-            BigInteger evaluate(BigInteger a0, BigInteger a1) {
-                return a0.shiftRight(a1.intValue());
+            long evaluate(long a0, long a1) {
+                return a0 >> a1;
             }            
         };
-        abstract BigInteger evaluate(BigInteger a0, BigInteger a1);
+        abstract long evaluate(long a0, long a1);
     }
     
     public static final TOverload[] INSTANCES = {
@@ -82,8 +81,8 @@ public class MBinaryBit extends TOverloadBase {
     };
     
     private final BitOperator bitOp;
-    private static final BigInteger n64 = new BigInteger("FFFFFFFFFFFFFFFF", 16);        
-    
+    private static final long n64 = 0x7FFFFFFFFFFFFFFFL;        
+   
     private MBinaryBit(BitOperator bitOp) {
         this.bitOp = bitOp;
     }
@@ -95,10 +94,10 @@ public class MBinaryBit extends TOverloadBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        BigInteger a0 = (BigInteger) inputs.get(0).getObject();
-        BigInteger a1 = (BigInteger) inputs.get(1).getObject();
-        BigInteger ret = bitOp.evaluate(a0, a1);
-        output.putObject(ret.and(n64));
+        long a0 = inputs.get(0).getInt64();
+        long a1 = inputs.get(1).getInt64();
+        long ret = bitOp.evaluate(a0, a1);
+        output.putInt64(ret & n64);
     }
 
     @Override
