@@ -53,7 +53,7 @@ public class MDatetimes
             "year", 1, 1, 1, PUnderlying.INT_8);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
             "timestamp", 1, 1, 4, PUnderlying.INT_32);
-    
+
     public static long[] fromJodaDatetime (MutableDateTime date)
     {
         return new long[]
@@ -79,14 +79,14 @@ public class MDatetimes
             date.getSecondOfMinute()
         };
     }
-    
+
     public static MutableDateTime toJodaDatetime(long ymd_hms[], String tz)
     {
         return new MutableDateTime((int)ymd_hms[YEAR_INDEX], (int)ymd_hms[MONTH_INDEX], (int)ymd_hms[DAY_INDEX],
                                    (int)ymd_hms[HOUR_INDEX], (int)ymd_hms[MIN_INDEX], (int)ymd_hms[SEC_INDEX], 0,
                                    DateTimeZone.forID(tz));
     }
-    
+
     public static String dateToString (int date)
     {
         int yr = date / 512;
@@ -122,7 +122,7 @@ public class MDatetimes
         }
         return -1;
     }
-        
+
     /**
      * TODO: This function is ised in CUR_DATE/TIME, could speed up the performance
      * by directly passing the Date(Time) object to this function

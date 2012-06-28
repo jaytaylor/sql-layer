@@ -94,7 +94,6 @@ public final class TExecutionContext {
     {
         throw new UnsupportedOperationException("getLocale() not supported yet");
     }
-    
 
     /**
      * Some functions need to get the current timezone (session/global), not the JVM's timezone.
@@ -102,7 +101,8 @@ public final class TExecutionContext {
      */
     public String getCurrentTimezone()
     {
-        throw new UnsupportedOperationException("getCurrentTImezone() not supported yet");
+        // TODO: This should come from the query context or something of the same nature
+        throw new UnsupportedOperationException("not supported yet");
     }
 
     /**
