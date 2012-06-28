@@ -33,6 +33,8 @@ import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import java.text.DateFormatSymbols;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.joda.time.DateTime;
@@ -54,6 +56,74 @@ public class MDatetimes
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
             "timestamp", 1, 1, 4, PUnderlying.INT_32);
 
+    public static final List<String> SUPPORTED_LOCALES = new LinkedList<String>();
+    
+    public static final Map<String, String[]> MONTHS = new HashMap<String, String[]>();
+    public static final Map<String, String[]> SHORT_MONTHS = new HashMap<String, String[]>();
+    
+    public static final Map<String, String[]> WEEKDAYS = new HashMap<String, String[]>();
+    public static final Map<String, String[]> SHORT_WEEKDAYS = new HashMap<String, String[]>();
+    
+    static
+    {
+        // TODO: add all supported LOCALES here
+        SUPPORTED_LOCALES.add("en");
+        
+       for (String locale : SUPPORTED_LOCALES)
+       {
+           DateFormatSymbols fm = new DateFormatSymbols(new Locale(System.getProperty(locale)));
+           
+           MONTHS.put(locale, fm.getMonths());
+           SHORT_MONTHS.put(locale, fm.getShortMonths());
+           
+           WEEKDAYS.put(locale, fm.getWeekdays());
+           SHORT_WEEKDAYS.put(locale, fm.getShortWeekdays());
+       }
+    }
+
+    public static String getMonthName(int numericRep, String locale, TExecutionContext context)
+    {
+        return getVal(numericRep - 1, locale, context, MONTHS, "month", 11, 0);
+    }
+    
+    public static String getShortMontName(int numericRep, String locale, TExecutionContext context)
+    {
+        return getVal(numericRep -1, locale, context, SHORT_MONTHS, "month", 11, 0);
+    }
+    
+    public static String getWeekDayName(int numericRep, String locale, TExecutionContext context)
+    {
+        return getVal(numericRep, locale, context, WEEKDAYS, "weekday", 6, 0);
+    }
+    
+    public static String getShortWeekDayName(int numericRep, String locale, TExecutionContext context)
+    {
+        return getVal(numericRep, locale, context, SHORT_WEEKDAYS, "weekdays", 6, 0);
+    }
+    
+    static String getVal (int numericRep, 
+                          String locale,
+                          TExecutionContext context,
+                          Map<String, String[]> map,
+                          String name,
+                          int max, int min)
+    {
+        if (numericRep > max || numericRep < min)
+        {
+            context.reportBadValue(name + " out of range: " + numericRep);
+            return null;
+        }
+        
+        String ret[] = map.get(locale);
+        if (ret == null)
+        {
+            context.reportBadValue("Unsupported locale: " + locale);
+            return null;
+        }
+        
+        return ret[numericRep];
+    }
+    
     public static long[] fromJodaDatetime (MutableDateTime date)
     {
         return new long[]
