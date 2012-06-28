@@ -27,16 +27,15 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TCast;
+import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
 import com.akiban.server.types3.mcompat.mtypes.MDouble;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.Constantness;
 
-import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
-
-public class Cast_From_Unsigned_Tinyint
+public class Cast_From_Int
 {
-    
+
     /**
      * TODO:
      * 
@@ -60,23 +59,29 @@ public class Cast_From_Unsigned_Tinyint
      * 
      */
     
-    public static final TCast TO_TINYINT = new FromInt16ToInt8(MNumeric.TINYINT_UNSIGNED, MNumeric.TINYINT, false, Constantness.UNKNOWN);
+    public static final TCast TO_TINYINT = new FromInt32ToInt8(MNumeric.INT, MNumeric.TINYINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_SMALLINT = new FromInt16ToInt16(MNumeric.TINYINT_UNSIGNED, MNumeric.SMALLINT, true, Constantness.UNKNOWN);
- 
-    public static final TCast TO_UNSGINED_SMALLINT = new FromInt16ToInt32(MNumeric.TINYINT_UNSIGNED, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_TINYINT = new FromInt32ToInt16(MNumeric.INT, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
 
-    public static final TCast TO_MEDIUMINT = new FromInt16ToInt32(MNumeric.TINYINT_UNSIGNED, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN);
- 
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt16ToInt64(MNumeric.TINYINT_UNSIGNED, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_SMALLINT = new FromInt32ToInt16(MNumeric.INT, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_INT = new FromInt16ToInt32(MNumeric.TINYINT_UNSIGNED, MNumeric.INT, true, Constantness.UNKNOWN);
-   
-    public static final TCast TO_UNSIGNED_INT = new FromInt16ToInt64(MNumeric.TINYINT_UNSIGNED, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt32ToInt32(MNumeric.INT, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new FromInt16ToDecimal(MNumeric.TINYINT_UNSIGNED, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MNumeric.INT, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUGLE = new FromInt16ToDouble(MNumeric.TINYINT_UNSIGNED, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MNumeric.INT, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_VARCHAR = new FromInt16ToString(MNumeric.TINYINT_UNSIGNED, MString.VARCHAR, true, Constantness.UNKNOWN);
+    public static final TCast TO_INT = new FromInt32ToInt32(MNumeric.INT, MNumeric.INT, true, Constantness.UNKNOWN);
+    
+    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MNumeric.INT, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
+    
+    public static final TCast TO_BIGINT = new FromInt32ToInt64(MNumeric.INT, MNumeric.BIGINT, true, Constantness.UNKNOWN);
+
+    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MNumeric.INT, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
+
+    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MNumeric.INT, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+
+    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MNumeric.INT, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    
+    public static final TCast TO_VARCHAR = new FromInt32ToString(MNumeric.INT, MString.VARCHAR, true, Constantness.UNKNOWN);
 }
