@@ -139,7 +139,7 @@ public class HKey
                         Type type = column.getType();
                         columns[c] = column;
                         columnTypes[c] = type.akType();
-                        pTypes[c] = type.pUnderlying();
+                        pTypes[c] = type.instance().typeClass().underlyingType();
                         c++;
                     }
                     // keyDepth

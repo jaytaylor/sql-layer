@@ -33,6 +33,11 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -71,6 +76,7 @@ public class ServerValueEncoder
     private PrintWriter printWriter;
     private AkibanAppender appender;
     private FromObjectValueSource objectSource;
+    private PValue pSource;
 
     public ServerValueEncoder(String encoding) {
         this.encoding = encoding;
@@ -135,6 +141,40 @@ public class ServerValueEncoder
         appendValue(value, type, binary);
         return getByteStream();
     }
+    
+        /** Encode the given value into a stream that can then be passed
+     * to <code>writeByteStream</code>.
+     */
+    public ByteArrayOutputStream encodePValue(PValueSource value, ServerType type, 
+                                             boolean binary) throws IOException {
+        if (value.isNull())
+            return null;
+        if ((zeroDateTimeBehavior != ZeroDateTimeBehavior.NONE) &&
+            (((type.getInstance().typeClass() == MDatetimes.DATE) &&
+              (value.getInt32() == 0)) ||
+             ((type.getInstance().typeClass() == MDatetimes.DATETIME) &&
+              (value.getInt64() == 0)))) {
+            switch (zeroDateTimeBehavior) {
+            case EXCEPTION:
+                throw new ZeroDateTimeException();
+            case ROUND:
+                if (pSource == null)
+                    pSource = new PValue(type.getInstance().typeClass().underlyingType());
+                else {
+                    if (type.getInstance().typeClass() == MDatetimes.DATETIME)
+                        pSource.putInt64(00010101000000);
+                    else
+                        pSource.putInt32(00010101);
+                }   
+                break;
+            case CONVERT_TO_NULL:
+                return null;
+            }
+        }
+        reset();
+        appendPValue(value, type, binary);
+        return getByteStream();
+    }
 
     /** Encode the given direct value. */
     public ByteArrayOutputStream encodeObject(Object value, ServerType type, 
@@ -143,6 +183,16 @@ public class ServerValueEncoder
             return null;
         reset();
         appendObject(value, type, binary);
+        return getByteStream();
+    }
+    
+        /** Encode the given direct value. */
+    public ByteArrayOutputStream encodePObject(Object value, ServerType type, 
+                                              boolean binary) throws IOException {
+        if (value == null)
+            return null;
+        reset();
+        appendPObject(value, type, binary);
         return getByteStream();
     }
 
@@ -173,6 +223,30 @@ public class ServerValueEncoder
         }
     }
     
+        /** Append the given value to the buffer. */
+    public void appendPValue(PValueSource value, ServerType type, boolean binary) 
+            throws IOException {
+        if (type.getInstance().typeClass() == MString.VARBINARY) {
+            ByteSource bs = (ByteSource) value.getObject();
+            byte[] ba = bs.byteArray();
+            int offset = bs.byteArrayOffset();
+            int length = bs.byteArrayLength();
+            if (binary)
+                getByteStream().write(ba, offset, length);
+            else {
+                for (int i = 0; i < length; i++) {
+                    printWriter.format("\\%03o", ba[offset+i]);
+                }
+            }
+        }
+        else {
+            assert !binary;
+            String input = (String) value.getObject();
+            String curr = (String) pSource.getObject();
+            pSource.putObject(curr.concat(input));
+        }
+    }
+    
     /** Append the given direct object to the buffer. */
     public void appendObject(Object value, ServerType type, boolean binary) 
             throws IOException {
@@ -188,6 +262,21 @@ public class ServerValueEncoder
         appendValue(objectSource, type, binary);
     }
 
+    /** Append the given direct object to the buffer. */
+    public void appendPObject(Object value, ServerType type, boolean binary) 
+            throws IOException {
+        TInstance instance = type.getInstance();
+        if ((instance == MString.VARCHAR.instance()) && (value instanceof String)) {
+            // Optimize the common case of directly encoding a string.
+            printWriter.write((String)value);
+            return;
+        }
+
+        // TODO: fix, specifically put value into source based on its type
+        pSource.putObject(value);
+        appendPValue(pSource, type, binary);
+    }
+    
     public void appendString(String string) throws IOException {
         printWriter.write(string);
     }
