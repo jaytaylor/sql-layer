@@ -42,12 +42,23 @@ import com.akiban.ais.model.validation.AISValidationResults;
 
 public class AkibanInformationSchema implements Traversable
 {
+    public static String getDefaultCharset() {
+        return defaultCharset;
+    }
+    public static String getDefaultCollation() {
+        return defaultCollation;
+    }
+    public static void setDefaultCharsetAndCollation(String charset, String collation) {
+        defaultCharset = charset;
+        defaultCollation = collation;
+    }
+
     public AkibanInformationSchema()
     {
         for (Type type : Types.types()) {
             addType(type);
         }
-        charsetAndCollation = CharsetAndCollation.intern(DEFAULT_CHARSET, DEFAULT_COLLATION);
+        charsetAndCollation = CharsetAndCollation.intern(defaultCharset, defaultCollation);
     }
 
 
@@ -568,8 +579,8 @@ public class AkibanInformationSchema implements Traversable
 
     // State
 
-    public static final String DEFAULT_CHARSET = "latin1";
-    public static final String DEFAULT_COLLATION = "latin1_swedish_ci";
+    private static String defaultCharset = "utf8";
+    private static String defaultCollation = "utf8_bin";
 
     private final Map<String, Group> groups = new TreeMap<String, Group>();
     private final Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();

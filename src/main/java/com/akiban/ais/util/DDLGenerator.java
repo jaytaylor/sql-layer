@@ -225,12 +225,12 @@ public class DDLGenerator
         tableOptions.append(" engine=");
         tableOptions.append(engine);
         final CharsetAndCollation charAndCol = table.getCharsetAndCollation();
-        if (charAndCol.charset().equals(AkibanInformationSchema.DEFAULT_CHARSET) == false) {
+        if (!charAndCol.charset().equals(AkibanInformationSchema.getDefaultCharset())) {
             tableOptions.append(" DEFAULT CHARSET=");
             tableOptions.append(charAndCol.charset());
         }
         if (charAndCol.collation() != null &&
-            charAndCol.collation().equals(AkibanInformationSchema.DEFAULT_COLLATION) == false) {
+            !charAndCol.collation().equals(AkibanInformationSchema.getDefaultCollation())) {
             tableOptions.append(" COLLATE=");
             tableOptions.append(charAndCol.collation());
         }
