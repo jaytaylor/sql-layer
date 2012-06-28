@@ -24,10 +24,8 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.TOverload;
-
-public class MCeil {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
+public class Types3Switch {
+    public static volatile boolean ON = false;
 }

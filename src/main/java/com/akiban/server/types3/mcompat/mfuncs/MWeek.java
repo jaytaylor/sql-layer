@@ -29,7 +29,6 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.ZeroDateTimeException;
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.DateExtractor;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -55,7 +54,7 @@ public abstract class MWeek extends TOverloadBase {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int input = inputs.get(0).getInt32();
             
-            long[] date = DateExtractor.extract(input);
+            long[] date = MDatetimes.decodeDatetime(input);
             if (isZero(date, context, output)) return;
         
             output.putInt32(getWeek(0, context, date));
@@ -73,7 +72,7 @@ public abstract class MWeek extends TOverloadBase {
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
             int input = inputs.get(0).getInt32();
             
-            long[] date = DateExtractor.extract(input);
+            long[] date = MDatetimes.decodeDatetime(input);
             if (isZero(date, context, output)) return;
            
             int mode = inputs.get(1).getInt32();

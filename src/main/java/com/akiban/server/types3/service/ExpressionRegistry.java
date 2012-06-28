@@ -26,10 +26,14 @@
 
 package com.akiban.server.types3.service;
 
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
 import java.util.Collection;
 
 public interface ExpressionRegistry
 {
     Collection<TOverload> overloads();
+    Collection<TCast> casts();
+    Collection<TClass> tclasses();
 }
