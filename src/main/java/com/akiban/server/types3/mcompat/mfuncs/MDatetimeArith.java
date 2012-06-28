@@ -27,10 +27,8 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.*;
-import com.akiban.server.types3.common.UnitValue;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -195,20 +193,7 @@ public abstract class MDatetimeArith extends TOverloadBase {
     }
     
     public TOverloadResult dateResultType() {
-        return TOverloadResult.custom(MDatetimes.DATETIME.instance(), new TCustomOverloadResult() {
-
-            @Override
-            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
-                TClass typeClass = inputs.get(0).instance().typeClass();
-                int val =  inputs.get(2).value().getInt32();
-                if (typeClass == MDatetimes.DATETIME || typeClass == MDatetimes.TIMESTAMP
-                        || (typeClass == MDatetimes.DATE && val == UnitValue.HOUR 
-                        || val == UnitValue.MINUTE || val == UnitValue.SECOND)) {
-                    return MDatetimes.DATETIME.instance();
-                }
-                return MString.VARCHAR.instance();
-            }
-        });
+        return TOverloadResult.fixed(MDatetimes.DATETIME);
     }
     
     public TOverloadResult intResultType() {
