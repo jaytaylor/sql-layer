@@ -36,7 +36,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import org.joda.time.MutableDateTime;
 
 public class MFromDays extends TOverloadBase {
     
@@ -49,7 +48,8 @@ public class MFromDays extends TOverloadBase {
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int date = MDatetimes.encodeDate(inputs.get(0).getInt32(), context.getCurrentTimezone());
+        long to_millis = inputs.get(0).getInt32() * 24 * 3600 * 1000L;
+        int date = MDatetimes.encodeDate(to_millis, context.getCurrentTimezone());
         output.putInt32(date);
     }
 
