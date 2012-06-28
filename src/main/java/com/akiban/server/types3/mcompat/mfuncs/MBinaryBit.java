@@ -8,9 +8,9 @@
  * ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT. YOU AGREE THAT THIS
  * AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
  *
- * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO NOT AGREE TO
+ * IF YOU HAVE PAID A LICENSE FEE FOR USE OF THE SOFTWARE AND DO INVERT_BITS AGREE TO
  * THESE TERMS, YOU MAY RETURN THE SOFTWARE FOR A FULL REFUND PROVIDED YOU (A) DO
- * NOT USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
+ * INVERT_BITS USE THE SOFTWARE AND (B) RETURN THE SOFTWARE WITHIN THIRTY (30) DAYS OF
  * YOUR INITIAL PURCHASE.
  *
  * IF YOU WISH TO USE THE SOFTWARE AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A
@@ -69,7 +69,7 @@ public class MBinaryBit extends TOverloadBase {
                 return a0 >> a1;
             }            
         },
-        NOT {
+        INVERT_BITS {
             @Override
             long evaluate(long a0, long a1) {
                 // doEvaluate method overrides this
@@ -85,7 +85,7 @@ public class MBinaryBit extends TOverloadBase {
         new MBinaryBit(BitOperator.BITWISE_XOR),
         new MBinaryBit(BitOperator.LEFT_SHIFT),
         new MBinaryBit(BitOperator.RIGHT_SHIFT),
-        new MBinaryBit(BitOperator.NOT) {           
+        new MBinaryBit(BitOperator.INVERT_BITS) {           
             @Override
             protected void buildInputSets(TInputSetBuilder builder) {
                 builder.covers(MNumeric.BIGINT_UNSIGNED, 0);
