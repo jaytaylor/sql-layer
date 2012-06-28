@@ -36,13 +36,10 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import org.joda.time.MutableDateTime;
 
 public class MSecToTime extends TOverloadBase {
 
     public static final TOverload INSTANCE = new MSecToTime();
-    
-    private MSecToTime() {}
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
@@ -52,8 +49,13 @@ public class MSecToTime extends TOverloadBase {
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         int time = inputs.get(0).getInt32();
-        MutableDateTime datetime = new MutableDateTime(time); 
-        output.putInt32((int)MDatetimes.encodeTime(MDatetimes.fromJodaDatetime(datetime)));
+        
+        int hour = time / 3600;
+        int min = time / 60;
+        int sec = time % 60;
+        
+        int result = hour * 10000 + min * 100 + sec;
+        output.putInt32(result);
     }
 
     @Override
