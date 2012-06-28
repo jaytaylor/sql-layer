@@ -156,6 +156,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "akserver.skip_ais_upgrade";
     public static final SerializationType DEFAULT_SERIALIZATION = SerializationType.PROTOBUF;
 
+    public static final String DEFAULT_CHARSET = "akserver.default_charset";
+    public static final String DEFAULT_COLLATION = "akserver.default_collation";
+
     private static final String METAMODEL_PARENT_KEY = "byAIS";
     private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
     private static final int PROTOBUF_PSSM_VERSION = 1;
@@ -628,6 +631,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
             maxAISBufferSize = 0;
         }
+        AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
+                                                              config.getProperty(DEFAULT_COLLATION));
 
         try {
             final AkibanInformationSchema newAIS = loadAISFromStorage();

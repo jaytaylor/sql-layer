@@ -227,7 +227,7 @@ public class Column
         long maxStorageSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
             long maxCharacters = paramCheck(typeParameter1);
-            final long charWidthMultiplier = characterWidth();
+            final long charWidthMultiplier = maxCharacterWidth();
             long maxBytes = maxCharacters * charWidthMultiplier;
             maxStorageSize = maxBytes + prefixSize(maxBytes);
         } else if (type.equals(Types.VARBINARY)) {
@@ -267,12 +267,28 @@ public class Column
         return maxStorageSize;
     }
 
+    /** Same, but assume that characters take a common number of
+     * bytes, not the encoding's max.
+     */
+    public long getAverageStorageSize()
+    {
+        if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
+            long maxCharacters = paramCheck(typeParameter1);
+            final long charWidthMultiplier = averageCharacterWidth();
+            long maxBytes = maxCharacters * charWidthMultiplier;
+            return maxBytes + prefixSize(maxBytes);
+        }
+        else {
+            return getMaxStorageSize();
+        }
+    }
+
     public Integer getPrefixSize()
     {
         int prefixSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
             final long maxCharacters = paramCheck(typeParameter1);
-            final long charWidthMultiplier = characterWidth();
+            final long charWidthMultiplier = maxCharacterWidth();
             final long maxBytes = maxCharacters * charWidthMultiplier;
             prefixSize = prefixSize(maxBytes);
         } else if (type.equals(Types.VARBINARY)) {
@@ -298,13 +314,17 @@ public class Column
      * problem.
      * @return
      */
-    private int characterWidth() {
+    private int maxCharacterWidth() {
         // See bug687205
         if (charsetAndCollation != null && "utf8".equalsIgnoreCase(charsetAndCollation.charset())) {
             return 3;
         } else {
             return 1;
         }
+    }
+
+    private int averageCharacterWidth() {
+        return 1;
     }
 
     /**

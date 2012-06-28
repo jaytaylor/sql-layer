@@ -165,17 +165,17 @@ public class TableDDLIT extends PostgresServerITBase {
         
         assertNotNull (table);
         assertEquals (table.getColumn(0).getType(), Types.CHAR);
-        assertEquals (table.getColumn(0).getMaxStorageSize().longValue(), 2L);
+        assertEquals (table.getColumn(0).getMaxStorageSize().longValue(), 4L);
         assertEquals (table.getColumn(0).getTypeParameter1().longValue(), 1L);
         assertEquals (table.getColumn(1).getType(), Types.CHAR);
-        assertEquals (table.getColumn(1).getMaxStorageSize().longValue(), 2L);
+        assertEquals (table.getColumn(1).getMaxStorageSize().longValue(), 4L);
         assertEquals (table.getColumn(2).getType(), Types.VARCHAR);
-        assertEquals (table.getColumn(2).getMaxStorageSize().longValue(), 2L);
+        assertEquals (table.getColumn(2).getMaxStorageSize().longValue(), 4L);
         assertEquals (table.getColumn(3).getType(), Types.VARCHAR);
-        assertEquals (table.getColumn(3).getMaxStorageSize().longValue(), 2L);
+        assertEquals (table.getColumn(3).getMaxStorageSize().longValue(), 4L);
         assertEquals (table.getColumn(4).getType(), Types.VARCHAR);
         assertFalse   (table.getColumn(4).getNullable());
-        assertEquals (table.getColumn(4).getMaxStorageSize().longValue(), 32702L);
+        assertEquals (table.getColumn(4).getMaxStorageSize().longValue(), 98103L);
         assertEquals (table.getColumn(5).getType(), Types.VARCHAR);
     }
 

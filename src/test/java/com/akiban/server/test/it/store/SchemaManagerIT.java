@@ -383,7 +383,7 @@ public final class SchemaManagerIT extends ITBase {
         // Check 1) basic ordering 2) that the statements are 'canonicalized'
         final String TABLE_DDL =  "id int not null primary key";
         final String SCHEMA_DDL = "create schema if not exists `foo`;";
-        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb";
+        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
         createTableDef("foo", "bar", TABLE_DDL);
         final List<String> ddls = getSchemaStringsWithoutAIS(false);
         assertEquals("ddl count", 2, ddls.size()); // schema and table
@@ -529,15 +529,15 @@ public final class SchemaManagerIT extends ITBase {
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp, "+
             "`row_count` bigint, `sampled_count` bigint, "+
             "PRIMARY KEY(`table_id`, `index_id`)"+
-        ") engine=akibandb";
+        ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
         final String ENTRY_DDL = "create table `information_schema`.`index_statistics_entry`("+
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
-            "`item_number` int NOT NULL, `key_string` varchar(2048), `key_bytes` varbinary(4096), "+
+            "`item_number` int NOT NULL, `key_string` varchar(2048) CHARACTER SET latin1, `key_bytes` varbinary(4096), "+
             "`eq_count` bigint, `lt_count` bigint, `distinct_count` bigint, "+
             "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+
             "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0`(`table_id`, `index_id`) "+
                 "REFERENCES `index_statistics`(`table_id`, `index_id`)"+
-        ") engine=akibandb";
+        ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
 
         TableDefinition statsDef = getTableDef(SCHEMA, STATS_TABLE);
         assertNotNull("Stats table present", statsDef);
