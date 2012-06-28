@@ -84,6 +84,24 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
     }
     
     @Override
+    public BigDecimalWrapper floor() {
+        value = value.setScale(0, RoundingMode.FLOOR);
+        return this;
+    }
+    
+    @Override
+    public BigDecimalWrapper truncate(int scale) {
+        value = value.setScale(scale, RoundingMode.DOWN);
+        return this;
+    }
+    
+    @Override
+    public BigDecimalWrapper round(int scale) {
+        value = value.setScale(scale, RoundingMode.HALF_UP);
+        return this;
+    }
+    
+    @Override
     public int getSign() {
         return value.signum();
     }

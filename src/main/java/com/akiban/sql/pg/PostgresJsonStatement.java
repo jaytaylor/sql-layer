@@ -32,6 +32,7 @@ import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
 import java.util.*;
 
@@ -46,7 +47,7 @@ public class PostgresJsonStatement extends PostgresOperatorStatement
               // Looks like just one unlimited VARCHAR to the client.
               Collections.singletonList("JSON"),
               Collections.singletonList(new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(),
-                                                         (short)-1, -1, AkType.VARCHAR)),
+                                                         (short)-1, -1, AkType.VARCHAR, MString.VARCHAR.instance())),
               parameterTypes);
         this.resultColumns = resultColumns;
     }

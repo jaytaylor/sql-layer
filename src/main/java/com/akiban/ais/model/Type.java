@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
 public class Type
@@ -66,8 +67,8 @@ public class Type
         return akType;
     }
     
-    public PUnderlying pUnderlying() {
-        return pUnderlying;
+    public TInstance instance() {
+        return instance;
     }
 
     @Override
@@ -100,7 +101,7 @@ public class Type
         return result;
     }
     
-    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType, PUnderlying pUnderlying)
+    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType, TInstance instance)
     {
         this.name = name;
         this.typeParameters = typeParameters;
@@ -108,12 +109,12 @@ public class Type
         this.maxStorageSizeBytes = maxStorageSizeBytes;
         this.encoding = encoding;
         this.akType = akType;
-        this.pUnderlying = pUnderlying;
+        this.instance = instance;
     }
 
     public static Type create(AkibanInformationSchema ais, String name, Integer typeParameters, Boolean fixedSize, 
-                              Long maxStorageSizeBytes, String encoding, AkType akType, PUnderlying pUnderlying) {
-        Type type = new Type(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, akType, pUnderlying);
+                              Long maxStorageSizeBytes, String encoding, AkType akType, TInstance instance) {
+        Type type = new Type(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, akType, instance);
         ais.addType(type);
         return type;
     }
@@ -124,5 +125,5 @@ public class Type
     private final Long maxStorageSizeBytes;
     private final String encoding;
     private final AkType akType;
-    private final PUnderlying pUnderlying;
+    private final TInstance instance;
 }
