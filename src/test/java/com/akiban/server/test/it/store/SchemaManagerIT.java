@@ -532,7 +532,7 @@ public final class SchemaManagerIT extends ITBase {
         ") engine=akibandb";
         final String ENTRY_DDL = "create table `information_schema`.`index_statistics_entry`("+
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
-            "`item_number` int NOT NULL, `key_string` varchar(2048), `key_bytes` varbinary(4096), "+
+            "`item_number` int NOT NULL, `key_string` varchar(2048) CHARACTER SET latin1, `key_bytes` varbinary(4096), "+
             "`eq_count` bigint, `lt_count` bigint, `distinct_count` bigint, "+
             "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+
             "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0`(`table_id`, `index_id`) "+
