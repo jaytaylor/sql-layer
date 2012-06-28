@@ -27,6 +27,10 @@
 package com.akiban.ais.model;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
 import java.util.ArrayList;
@@ -80,60 +84,60 @@ public class Types {
 	// The basic numeric types, fixed length, implemented
 	// (except bigint unsigned fails for numbers larger than Long.MAX_VALUE).
 	//
-	public static Type BIGINT =       new Type("bigint", 0, true, 8L, "INT", AkType.LONG, PUnderlying.INT_64);
-	public static Type U_BIGINT = 	  new Type("bigint unsigned", 0, true, 8L, "U_BIGINT", AkType.U_BIGINT, PUnderlying.INT_64);
-	public static Type DOUBLE =       new Type("double", 0, true, 8L, "DOUBLE", AkType.DOUBLE, PUnderlying.DOUBLE);
-	public static Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_DOUBLE", AkType.U_DOUBLE, PUnderlying.DOUBLE);
-	public static Type FLOAT =        new Type("float", 0, true, 4L, "FLOAT", AkType.FLOAT, PUnderlying.FLOAT);
-	public static Type U_FLOAT =      new Type("float unsigned", 0, true, 4L, "U_FLOAT", AkType.U_FLOAT, PUnderlying.FLOAT);
-	public static Type INT =          new Type("int", 0, true, 4L, "INT", AkType.INT, PUnderlying.INT_32);
-	public static Type U_INT =        new Type("int unsigned", 0, true, 4L, "U_INT", AkType.U_INT, PUnderlying.INT_64);
-	public static Type MEDIUMINT =    new Type("mediumint", 0, true, 3L, "INT", AkType.INT, PUnderlying.INT_32);
-	public static Type U_MEDIUMINT =  new Type("mediumint unsigned", 0, true, 3L, "U_INT", AkType.U_INT, PUnderlying.INT_64);
-	public static Type SMALLINT =     new Type("smallint", 0, true, 2L, "INT", AkType.INT, PUnderlying.INT_16);
-	public static Type U_SMALLINT =   new Type("smallint unsigned", 0, true, 2L, "U_INT", AkType.U_INT, PUnderlying.INT_32);
-	public static Type TINYINT =      new Type("tinyint", 0, true, 1L, "INT", AkType.INT, PUnderlying.INT_8);
-	public static Type U_TINYINT =    new Type("tinyint unsigned", 0, true, 1L, "U_INT", AkType.U_INT, PUnderlying.INT_16);
+	public static Type BIGINT =       new Type("bigint", 0, true, 8L, "INT", AkType.LONG, MNumeric.BIGINT.instance());
+	public static Type U_BIGINT = 	  new Type("bigint unsigned", 0, true, 8L, "U_BIGINT", AkType.U_BIGINT, MNumeric.BIGINT_UNSIGNED.instance());
+	public static Type DOUBLE =       new Type("double", 0, true, 8L, "DOUBLE", AkType.DOUBLE, MDouble.INSTANCE.instance());
+	public static Type U_DOUBLE =     new Type("double unsigned", 0, true, 8L, "U_DOUBLE", AkType.U_DOUBLE, MDouble.INSTANCE.instance());
+	public static Type FLOAT =        new Type("float", 0, true, 4L, "FLOAT", AkType.FLOAT, MNumeric.BIGINT.instance());
+	public static Type U_FLOAT =      new Type("float unsigned", 0, true, 4L, "U_FLOAT", AkType.U_FLOAT, MNumeric.BIGINT.instance());
+	public static Type INT =          new Type("int", 0, true, 4L, "INT", AkType.INT, MNumeric.INT.instance());
+	public static Type U_INT =        new Type("int unsigned", 0, true, 4L, "U_INT", AkType.U_INT, MNumeric.INT_UNSIGNED.instance());
+	public static Type MEDIUMINT =    new Type("mediumint", 0, true, 3L, "INT", AkType.INT, MNumeric.MEDIUMINT.instance());
+	public static Type U_MEDIUMINT =  new Type("mediumint unsigned", 0, true, 3L, "U_INT", AkType.U_INT, MNumeric.MEDIUMINT_UNSIGNED.instance());
+	public static Type SMALLINT =     new Type("smallint", 0, true, 2L, "INT", AkType.INT, MNumeric.SMALLINT.instance());
+	public static Type U_SMALLINT =   new Type("smallint unsigned", 0, true, 2L, "U_INT", AkType.U_INT, MNumeric.SMALLINT_UNSIGNED.instance());
+	public static Type TINYINT =      new Type("tinyint", 0, true, 1L, "INT", AkType.INT, MNumeric.TINYINT.instance());
+	public static Type U_TINYINT =    new Type("tinyint unsigned", 0, true, 1L, "U_INT", AkType.U_INT, MNumeric.TINYINT_UNSIGNED.instance());
 	//
 	// Date & Time types, fixed length, implemented.
 	//
-	public static Type DATE =         new Type("date", 0, true, 3L, "DATE", AkType.DATE, PUnderlying.INT_32);
-	public static Type DATETIME =     new Type("datetime", 0, true, 8L,	"DATETIME", AkType.DATETIME, PUnderlying.INT_64);
-	public static Type YEAR =         new Type("year", 0, true, 1L, "YEAR", AkType.YEAR, PUnderlying.INT_8);
-	public static Type TIME =         new Type("time", 0, true, 3L, "TIME", AkType.TIME, PUnderlying.INT_32);
-	public static Type TIMESTAMP =    new Type("timestamp", 0, true, 4L, "TIMESTAMP", AkType.TIMESTAMP, PUnderlying.INT_32);
+	public static Type DATE =         new Type("date", 0, true, 3L, "DATE", AkType.DATE, MDatetimes.DATE.instance());
+	public static Type DATETIME =     new Type("datetime", 0, true, 8L,	"DATETIME", AkType.DATETIME, MDatetimes.DATETIME.instance());
+	public static Type YEAR =         new Type("year", 0, true, 1L, "YEAR", AkType.YEAR, MDatetimes.YEAR.instance());
+	public static Type TIME =         new Type("time", 0, true, 3L, "TIME", AkType.TIME, MDatetimes.TIME.instance());
+	public static Type TIMESTAMP =    new Type("timestamp", 0, true, 4L, "TIMESTAMP", AkType.TIMESTAMP, MDatetimes.TIMESTAMP.instance());
         //
 	// VARCHAR and TEXT types. Maximum storage size is computed in Column, numbers
 	// here are not used. MaxByteSize numbers here are not used.
 	//
-	public static Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY", AkType.VARBINARY, PUnderlying.BYTES);
-	public static Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY", AkType.VARBINARY, PUnderlying.BYTES);
-        public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.VARCHAR, PUnderlying.BYTES);
-	public static Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR", AkType.VARCHAR, PUnderlying.BYTES);
+	public static Type VARBINARY =    new Type("varbinary", 1, false, 65535L, "VARBINARY", AkType.VARBINARY, MString.VARBINARY.instance());
+	public static Type BINARY =       new Type("binary", 1, false, 255L, "VARBINARY", AkType.VARBINARY, MString.VARBINARY.instance());
+        public static Type VARCHAR =      new Type("varchar", 1, false, 65535L, "VARCHAR", AkType.VARCHAR, MString.VARCHAR.instance());
+	public static Type CHAR =         new Type("char", 1, false, 767L, "VARCHAR", AkType.VARCHAR, MString.VARCHAR.instance());
         //
 	// BLOB and TEXT types.  Currently handled identically. The maxByteSize values
 	// here are used in computing the correct prefix size.  The maximum allow size
 	// is constrained in Column.
 	//
-	public static Type TINYBLOB =     new Type("tinyblob", 0, false, 0xFFl, "BLOB", AkType.TEXT, PUnderlying.BYTES);
-	public static Type TINYTEXT =     new Type("tinytext", 0, false, 0xFFl, "TEXT", AkType.TEXT, PUnderlying.BYTES);
-	public static Type BLOB =         new Type("blob", 0, false, 0xFFFFl, "BLOB", AkType.TEXT, PUnderlying.BYTES);
-	public static Type TEXT =         new Type("text", 0, false, 0xFFFFl, "TEXT", AkType.TEXT, PUnderlying.BYTES);
-	public static Type MEDIUMBLOB =   new Type("mediumblob", 0, false, 0xFFFFFFL, "BLOB", AkType.TEXT, PUnderlying.BYTES);
-	public static Type MEDIUMTEXT =   new Type("mediumtext", 0, false, 0xFFFFFFL, "TEXT", AkType.TEXT, PUnderlying.BYTES);
-	public static Type LONGBLOB =     new Type("longblob", 0, false, 0xFFFFFFFFL, "BLOB", AkType.TEXT, PUnderlying.BYTES);
-	public static Type LONGTEXT =     new Type("longtext", 0, false, 0xFFFFFFFFL, "TEXT", AkType.TEXT, PUnderlying.BYTES);
+	public static Type TINYBLOB =     new Type("tinyblob", 0, false, 0xFFl, "BLOB", AkType.TEXT, MString.VARCHAR.instance());
+	public static Type TINYTEXT =     new Type("tinytext", 0, false, 0xFFl, "TEXT", AkType.TEXT, MString.VARCHAR.instance());
+	public static Type BLOB =         new Type("blob", 0, false, 0xFFFFl, "BLOB", AkType.TEXT, MString.VARCHAR.instance());
+	public static Type TEXT =         new Type("text", 0, false, 0xFFFFl, "TEXT", AkType.TEXT, MString.VARCHAR.instance());
+	public static Type MEDIUMBLOB =   new Type("mediumblob", 0, false, 0xFFFFFFL, "BLOB", AkType.TEXT, MString.VARCHAR.instance());
+	public static Type MEDIUMTEXT =   new Type("mediumtext", 0, false, 0xFFFFFFL, "TEXT", AkType.TEXT, MString.VARCHAR.instance());
+	public static Type LONGBLOB =     new Type("longblob", 0, false, 0xFFFFFFFFL, "BLOB", AkType.TEXT, MString.VARCHAR.instance());
+	public static Type LONGTEXT =     new Type("longtext", 0, false, 0xFFFFFFFFL, "TEXT", AkType.TEXT, MString.VARCHAR.instance());
 	//
 	// DECIMAL types. The maxByteSize values are computed in Column as they are fixed for
 	// a given instance. Numbers are a maximum possible (ie, decimal(65,30));
 	//
-    public static Type DECIMAL =      new Type("decimal", 2, true, 30L, "DECIMAL", AkType.DECIMAL, PUnderlying.INT_64);
-    public static Type U_DECIMAL =    new Type("decimal unsigned", 2, true, 30L, "U_DECIMAL", AkType.DECIMAL, PUnderlying.INT_64);
+    public static Type DECIMAL =      new Type("decimal", 2, true, 30L, "DECIMAL", AkType.DECIMAL, MNumeric.BIGINT.instance());
+    public static Type U_DECIMAL =    new Type("decimal unsigned", 2, true, 30L, "U_DECIMAL", AkType.DECIMAL, MNumeric.BIGINT.instance());
 	//
 	// Halo unsupported
 	//
-	public static Type ENUM =         new Type("enum", 1, true, 2L, "U_INT", AkType.U_INT, PUnderlying.INT_64);
-	public static Type SET =          new Type("set", 1, true, 8L, "U_INT", AkType.U_INT, PUnderlying.INT_64);
+	public static Type ENUM =         new Type("enum", 1, true, 2L, "U_INT", AkType.U_INT, MNumeric.BIGINT.instance());
+	public static Type SET =          new Type("set", 1, true, 8L, "U_INT", AkType.U_INT, MNumeric.BIGINT.instance());
 	public static Type BIT =          new Type("bit", 1, true, 9L, "BIT", AkType.UNSUPPORTED, null);
 	public static Type GEOMETRY =           new Type("geometry", 0, false, 0L, "GEOMETRY", AkType.UNSUPPORTED, null);
 	public static Type GEOMETRYCOLLECTION = new Type("geometrycollection", 0, false, 0L, "GEOMETRYCOLLECTION", AkType.UNSUPPORTED, null);

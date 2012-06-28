@@ -27,7 +27,10 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
 
-public class MCeil {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
+public class MRound {
+    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.ROUND);
+    
+    public static final TOverload TWO_ARG = new M2ArgRoundBase(M2ArgRoundBase.RoundType.ROUND, MDouble.INSTANCE);
 }

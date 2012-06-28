@@ -24,11 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.server.types3.mcompat.mfuncs;
 
-import java.util.Set;
+import com.akiban.server.types3.TOverload;
 
-public interface FunctionsClassFinder
-{
-    Set<Class<?>> findClasses();
+public class MFloor {
+    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.FLOOR);
 }
