@@ -216,16 +216,14 @@ class SortCursorMixedOrder extends SortCursor
         } else {
             keyColumns = keyRange.indexRowType().index().indexRowComposition().getLength();
             boundColumns = keyRange.boundColumns();
-        }
-        
-        List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
-        int startBoundColumns = keyRange.boundColumns();
-        collators = new AkCollator[startBoundColumns];
-        for (int f = 0; f < startBoundColumns; f++) {
-            Column column = indexColumns.get(f).getColumn();
-            this.collators[f] = column.getCollator();
-        }
 
+            collators = new AkCollator[boundColumns];
+            List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
+            for (int f = 0; f < boundColumns; f++) {
+                Column column = indexColumns.get(f).getColumn();
+                this.collators[f] = column.getCollator();
+            }
+        }
     }
 
     // For use by this package
