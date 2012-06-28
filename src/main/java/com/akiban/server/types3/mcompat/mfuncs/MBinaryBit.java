@@ -68,6 +68,13 @@ public class MBinaryBit extends TOverloadBase {
             long evaluate(long a0, long a1) {
                 return a0 >> a1;
             }            
+        },
+        NOT {
+            @Override
+            long evaluate(long a0, long a1) {
+                // doEvaluate method overrides this
+                return -1;
+            }
         };
         abstract long evaluate(long a0, long a1);
     }
@@ -77,11 +84,21 @@ public class MBinaryBit extends TOverloadBase {
         new MBinaryBit(BitOperator.BITWISE_OR),
         new MBinaryBit(BitOperator.BITWISE_XOR),
         new MBinaryBit(BitOperator.LEFT_SHIFT),
-        new MBinaryBit(BitOperator.RIGHT_SHIFT)
+        new MBinaryBit(BitOperator.RIGHT_SHIFT),
+        new MBinaryBit(BitOperator.NOT) {           
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+                builder.covers(MNumeric.BIGINT_UNSIGNED, 0);
+            }
+            
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                output.putInt64(~inputs.get(0).getInt64());
+            }
+        }
     };
     
     private final BitOperator bitOp;
-    private static final long n64 = 0x7FFFFFFFFFFFFFFFL;        
    
     private MBinaryBit(BitOperator bitOp) {
         this.bitOp = bitOp;
@@ -97,7 +114,7 @@ public class MBinaryBit extends TOverloadBase {
         long a0 = inputs.get(0).getInt64();
         long a1 = inputs.get(1).getInt64();
         long ret = bitOp.evaluate(a0, a1);
-        output.putInt64(ret & n64);
+        output.putInt64(ret);
     }
 
     @Override
