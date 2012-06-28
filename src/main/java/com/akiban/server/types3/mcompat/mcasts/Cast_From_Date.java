@@ -309,7 +309,8 @@ public class Cast_From_Date
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             target.putInt32((int)MDatetimes.encodeTimestamp(MDatetimes.decodeDate(source.getInt32()), 
-                                                            context.getCurrentTimezone()));
+                                                            context.getCurrentTimezone(),
+                                                            context));
         }
     };
 }
