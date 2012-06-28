@@ -27,19 +27,26 @@
 package com.akiban.sql.server;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 /** A type according to the server's regime.
  */
 public abstract class ServerType
 {
     private AkType akType;
+    private TInstance instance;
 
-    protected ServerType(AkType akType) {
+    protected ServerType(AkType akType, TInstance instance) {
         this.akType = akType;
+        this.instance = instance;
     }
 
     public AkType getAkType() {
         return akType;
+    }
+    
+    public TInstance getInstance() {
+        return instance;
     }
 
     @Override

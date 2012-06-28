@@ -33,7 +33,10 @@ public interface BigDecimalWrapper {
      BigDecimalWrapper subtract(BigDecimalWrapper augend);
      BigDecimalWrapper multiply(BigDecimalWrapper augend);
      BigDecimalWrapper divide(BigDecimalWrapper augend);
+     BigDecimalWrapper floor();
      BigDecimalWrapper ceil();
+     BigDecimalWrapper truncate(int scale);
+     BigDecimalWrapper round(int scale);
      BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
      BigDecimalWrapper parseString(String num);
      BigDecimalWrapper round (int precision, int scale);

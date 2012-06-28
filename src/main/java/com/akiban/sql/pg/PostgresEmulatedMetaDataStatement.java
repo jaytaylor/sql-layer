@@ -27,6 +27,9 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
@@ -63,9 +66,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     static final PostgresType OID_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG);
+        new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG, MNumeric.BIGINT.instance());
     static final PostgresType TYPNAME_PG_TYPE = 
-        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR);
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR, MString.VARCHAR.instance());
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -147,14 +150,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (pgtype.getType() == PostgresType.TypeOid.TypType.BASE) {
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(2); // 2 columns for this query
-                ByteArrayOutputStream bytes = encoder.encodeObject(pgtype.getOid(), OID_PG_TYPE, false);
+                ByteArrayOutputStream bytes;
+                if (Types3Switch.ON) bytes = encoder.encodePObject(pgtype.getOid(), OID_PG_TYPE, false);
+                else bytes = encoder.encodeObject(pgtype.getOid(), OID_PG_TYPE, false);
                 if (bytes == null) {
                     messenger.writeInt(-1);
                 } else {
                     messenger.writeInt(bytes.size());
                     messenger.writeByteStream(bytes);
                 }
-                bytes = encoder.encodeObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
+                if (Types3Switch.ON) bytes = encoder.encodePObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
+                else bytes = encoder.encodeObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
                 if (bytes == null) {
                     messenger.writeInt(-1);
                 } else {

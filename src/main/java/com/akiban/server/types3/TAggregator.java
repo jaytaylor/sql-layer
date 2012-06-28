@@ -24,10 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3;
 
-import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-public class MCeil {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
+public interface TAggregator {
+    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
+    void emptyValue(PValueTarget state);
+    TInstance resultType(TPreptimeValue value);
+    TClass getTypeClass();
 }
