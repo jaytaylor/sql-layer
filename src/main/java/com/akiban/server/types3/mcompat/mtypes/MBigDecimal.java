@@ -48,7 +48,7 @@ public class MBigDecimal extends TClass {
     private static final int MIN_INDEX = 1;
     
     public MBigDecimal(){
-        super(MBundle.INSTANCE.id(), "decimal", Attrs.class, 1, 1, 8, PUnderlying.INT_64);
+        super(MBundle.INSTANCE.id(), "decimal", Attrs.class, 1, 1, 8, PUnderlying.BYTES);
     }
 
     public static String getNum(int scale, int precision)
