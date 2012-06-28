@@ -47,12 +47,6 @@ public final class TInstance {
         return tclass;
     }
 
-    TInstance(TClass tclass, 
-            Class<?> enumClass, 
-            int attr0, int attr1, int attr2, int attr3) {
-        this(tclass, enumClass, 4, attr0, attr1, attr2, attr3);
-    }
-
     public Boolean nullability() {
         return isNullable;
     }
@@ -146,9 +140,7 @@ public final class TInstance {
 
     // state
 
-    private TInstance(TClass tclass, 
-            Class<?> enumClass,
-            int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+    TInstance(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
         // normalize inputs past nattrs
         switch (nAttrs) {
