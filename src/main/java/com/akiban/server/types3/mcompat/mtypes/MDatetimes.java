@@ -53,7 +53,7 @@ public class MDatetimes
             "year", 1, 1, 1, PUnderlying.INT_8);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
             "timestamp", 1, 1, 4, PUnderlying.INT_32);
-    
+
     public static long[] fromJodaDatetime (MutableDateTime date)
     {
         return new long[]
@@ -79,14 +79,14 @@ public class MDatetimes
             date.getSecondOfMinute()
         };
     }
-    
+
     public static MutableDateTime toJodaDatetime(long ymd_hms[], String tz)
     {
         return new MutableDateTime((int)ymd_hms[YEAR_INDEX], (int)ymd_hms[MONTH_INDEX], (int)ymd_hms[DAY_INDEX],
                                    (int)ymd_hms[HOUR_INDEX], (int)ymd_hms[MIN_INDEX], (int)ymd_hms[SEC_INDEX], 0,
                                    DateTimeZone.forID(tz));
     }
-    
+
     public static String dateToString (int date)
     {
         int yr = date / 512;
@@ -122,7 +122,7 @@ public class MDatetimes
         }
         return -1;
     }
-        
+
     /**
      * TODO: This function is ised in CUR_DATE/TIME, could speed up the performance
      * by directly passing the Date(Time) object to this function
@@ -294,7 +294,7 @@ public class MDatetimes
     public static int encodeTime(long millis, String tz)
     {
         DateTime dt = new DateTime(millis, DateTimeZone.forID(tz));
-        
+
         return (int)(dt.getHourOfDay() * DATETIME_HOUR_SCALE  
                         + dt.getMinuteOfHour() * DATETIME_HOUR_SCALE
                         + dt.getSecondOfMinute());
@@ -321,19 +321,19 @@ public class MDatetimes
             dt.getSecondOfMinute()
         }; // TODO: fractional seconds
     }
-    
-    public static long encodeTimestamp(long val[], String tz)
+
+    public static long encodeTimestamp(long val[], String tz, TExecutionContext context)
     {
         DateTime dt = new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],
                                    (int)val[HOUR_INDEX], (int)val[MIN_INDEX], (int)val[SEC_INDEX], 0,
                                    DateTimeZone.forID(tz));
         
-        return dt.getMillis() / 1000L;
+        return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, dt.getMillis() / 1000L, TS_ERROR_VALUE, context);
     }
 
-    public static long encodeTimetamp(long millis, String tz)
+    public static long encodeTimetamp(long millis, TExecutionContext context)
     {
-        return millis / 1000L;
+        return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
     }
 
     public static String timestampToString(long ts, String tz)
@@ -417,4 +417,11 @@ public class MDatetimes
     private static final int TIME_TIMEZONE_GROUP = 10;
     private static final Pattern PARSE_PATTERN 
             = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
+
+    // upper and lower limit of TIMESTAMP value
+    // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
+    private static final long TIMESTAMP_MAX = new DateTime("1970-01-01 00:00:01Z").getMillis();
+    private static final long TIMESTAMP_MIN = new DateTime("2038-01-19 03:14:07Z").getMillis();
+    private static final long TS_ERROR_VALUE = 0L;
 }
+

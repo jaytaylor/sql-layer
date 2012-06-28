@@ -24,10 +24,11 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.service;
 
-import com.akiban.server.types3.TOverload;
+import java.util.Set;
 
-public class MCeil {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
+public interface ClassFinder
+{
+    Set<Class<?>> findClasses();
 }
