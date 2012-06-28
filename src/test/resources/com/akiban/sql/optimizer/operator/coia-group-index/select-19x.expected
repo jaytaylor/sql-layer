@@ -1,4 +1,4 @@
-PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci]
+PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin]
   project([Field(0)])
     IfEmpty_Default(Literal(NULL), KEEP_INPUT)
       Limit_Default(limit=1: project([Field(1)]))

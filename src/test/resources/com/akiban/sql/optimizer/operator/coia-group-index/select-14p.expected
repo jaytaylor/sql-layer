@@ -1,4 +1,4 @@
-PhysicalSelect[VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci, VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci, VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci][order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
+PhysicalSelect[VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin, VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin][order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
   Map_NestedLoops
     Sort_InsertionLimited(values([VARCHAR]), 4, SUPPRESS_DUPLICATES)
       ValuesScan_Default[ImmutableRow[1234], Bindable[Variable(pos=0)], Bindable[Variable(pos=1)], Bindable[Variable(pos=2)]]
