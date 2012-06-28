@@ -69,8 +69,14 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
         }
     }
 
+    @Override
+    protected boolean defaultDoCleanOnUnload() {
+        return false;
+    }
+
     @Test
     public void testFailure() throws Exception {
+        final Collection<Property> props = defaultPropertiesToPreserveOnRestart();
         // Clean start
         transactionally(new Callable<Void>() {
             @Override
@@ -103,7 +109,6 @@ public class PersistitStoreSchemaManagerUpgradeFailureIT extends PersistitStoreS
         }
 
         // Try again with upgrading disabled, hook still active
-        Collection<Property> props = defaultPropertiesToPreserveOnRestart();
         props.add(new Property(PersistitStoreSchemaManager.SKIP_AIS_UPGRADE_PROPERTY, "true"));
         safeRestart(props);
         assertEquals("Skipped upgrade serialization", SerializationType.META_MODEL, pssm.getSerializationType());

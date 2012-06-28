@@ -188,7 +188,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
         final RowDef rowDef = getRowDef(table.getTableId());
         final TableName tableName = table.getName();
         try {
-            store().truncateGroup(session, rowDef.getRowDefId());
+            store().dropGroup(session, rowDef.getRowDefId());
         } catch (PersistitException ex) {
             throw new PersistitAdapterException(ex);
         }
@@ -276,13 +276,6 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
     @Override
     public long getTimestamp() {
         return schemaManager().getUpdateTimestamp();
-    }
-
-    @Override
-    // meant to be used from JMX
-    public void forceGenerationUpdate() {
-        logger.trace("forcing schema generation update");
-        schemaManager().forceNewTimestamp();
     }
 
     @Override

@@ -72,7 +72,7 @@ public class PostgresServerUpdateIT extends PostgresServerFilesITBase
 
     @Override
     public String generateResult() throws Exception {
-        PreparedStatement stmt = connection.prepareStatement(sql);
+        PreparedStatement stmt = getConnection().prepareStatement(sql);
         if (params != null) {
             for (int i = 0; i < params.length; i++) {
                 String param = params[i];
@@ -82,7 +82,14 @@ public class PostgresServerUpdateIT extends PostgresServerFilesITBase
                     stmt.setString(i + 1, param);
             }
         }
-        int count = stmt.executeUpdate();
+        try {
+            int count = stmt.executeUpdate();
+        }
+        catch (Exception ex) {
+            if (error == null)
+                forgetConnection();
+            throw ex;
+        }
         stmt.close();
         return dumpData();
     }

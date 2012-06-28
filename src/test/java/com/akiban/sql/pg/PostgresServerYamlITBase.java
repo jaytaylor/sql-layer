@@ -33,8 +33,8 @@ import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.io.IOException;
 import java.io.Reader;
-import java.sql.Connection;
 
+import com.akiban.server.test.it.ITBase;
 import org.junit.AfterClass;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -46,46 +46,12 @@ import org.junit.Ignore;
  * should call {@link #testYaml} with the file to use for the test.
  */
 @Ignore
-public class PostgresServerYamlITBase {
+public class PostgresServerYamlITBase extends PostgresServerITBase {
 
     /** Whether to enable debugging output. */
     protected static final boolean DEBUG = Boolean.getBoolean("test.DEBUG");
 
-    private static final PostgresServerIT manageServer = new PostgresServerIT();
-
     protected PostgresServerYamlITBase() { }
-
-    @BeforeClass
-    public static void openTheConnection() throws Exception {
-	manageServer.startTestServices();
-        manageServer.ensureConnection();
-    }
-
-    @AfterClass
-    public static void closeTheConnection() throws Exception {
-	manageServer.stopTestServices();
-        manageServer.closeTheConnection();
-    }
-
-    @Before
-    public void dropAllTables() {
-	manageServer.accessDropAllTables();
-    }
-
-    protected static Connection getConnection() throws Exception {
-        return manageServer.ensureConnection();
-    }
-
-    protected static void forgetConnection() {
-	if (DEBUG) {
-	    System.err.println("Closing possibly damaged connection");
-	}
-        try {
-            manageServer.closeTheConnection();
-        }
-        catch (Exception ex) {
-        }
-    }
 
     /**
      * Run a test with YAML input from the specified file.
@@ -97,25 +63,25 @@ public class PostgresServerYamlITBase {
 	if (DEBUG) {
 	    System.err.println("\nFile: " + file);
 	}
-	Connection connection = getConnection();
-        Throwable exception = null;
+	Exception exception = null;
 	Reader in = null;
 	try {
 	    in = new InputStreamReader(new FileInputStream(file), "UTF-8");
-	    new YamlTester(file.toString(), in, connection).test();
+	    new YamlTester(file.toString(), in, getConnection()).test();
 	    if (DEBUG) {
 		System.err.println("Test passed");
 	    }
 	} catch (Exception e) {
 	    exception = e;
 	    throw e;
-	} catch (Error e) {
-	    exception = e;
-	    throw e;
 	} finally {
 	    if (exception != null) {
-                System.err.println("Test failed: " + exception);
-		forgetConnection();
+		System.err.println("Test failed: " + exception);
+		try {
+                    forgetConnection();
+                }
+                catch (Exception e2) {
+                }
 	    }
 	    if (in != null) {
 		in.close();
@@ -123,19 +89,4 @@ public class PostgresServerYamlITBase {
 	}
     }
 
-    /**
-     * Subclass of PostgresServerITBase to permit accessing its non-public
-     * methods.
-     */
-    @Ignore
-    private static class PostgresServerIT extends PostgresServerITBase {
-	void accessDropAllTables() throws InvalidOperationException {
-	    dropAllTables();
-	}
-	Connection ensureConnection() throws Exception {
-	    if (connection == null)
-                openTheConnection();
-            return connection;
-	}
-    }
 }

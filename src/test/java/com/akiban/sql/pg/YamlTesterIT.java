@@ -27,12 +27,12 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.types.extract.ConverterTestUtils;
+
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.io.Writer;
-import java.sql.Connection;
 
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -2113,9 +2113,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		System.err.println(testMethod + ": ");
 	    }
 	}
-	Connection connection = getConnection();
 	try {
-	    new YamlTester(null, new StringReader(yaml), connection).test();
+	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
 	} catch (Exception e) {
 	    if (DEBUG) {
 		System.err.println("Test failed:");
@@ -2146,9 +2145,8 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 		System.err.println(testMethod + ": ");
 	    }
 	}
-	Connection connection = getConnection();
         try {
-	    new YamlTester(null, new StringReader(yaml), connection).test();
+	    new YamlTester(null, new StringReader(yaml), getConnection()).test();
 	    if (DEBUG) {
 		System.err.println("Test failed: Expected exception");
 	    }

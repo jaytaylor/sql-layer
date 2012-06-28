@@ -203,6 +203,10 @@ public class GroupIndex extends Index
         return indexToHKeys[tableDepth];
     }
 
+    public void disassociate() {
+        GroupIndexHelper.actOnGroupIndexTables(this, GroupIndexHelper.REMOVE);
+    }
+
     // For use by this class
 
     private void computeFieldAssociations(Map<Table, Integer> ordinalMap,

@@ -94,22 +94,32 @@ public class GroupIndexCreator {
 
         int pos = 0;
         final GroupIndex tmpIndex = new GroupIndex(group, indexName, 0, unique, Index.KEY_CONSTRAINT, joinType);
-        for(String tableCol : tableColPairs) {
-            int period = tableCol.indexOf('.');
-            if(period == -1) {
-                throw new WrongNameFormatException (tableCol);
+        boolean complete = false;
+        try {
+            for(String tableCol : tableColPairs) {
+                int period = tableCol.indexOf('.');
+                if(period == -1) {
+                    throw new WrongNameFormatException (tableCol);
+                }
+                final String tableName = tableCol.substring(0, period).trim();
+                final String columnName = tableCol.substring(period+1).trim();
+                final UserTable table = findTableInGroup(ais, group, tableName);
+                if(table == null) {
+                    throw new NoSuchTableException ("", tableName);
+                }
+                final Column column = table.getColumn(columnName);
+                if(column == null) {
+                    throw new NoSuchColumnException (columnName);
+                }
+                tmpIndex.addColumn(new IndexColumn(tmpIndex, column, pos++, true, null));
             }
-            final String tableName = tableCol.substring(0, period).trim();
-            final String columnName = tableCol.substring(period+1).trim();
-            final UserTable table = findTableInGroup(ais, group, tableName);
-            if(table == null) {
-                throw new NoSuchTableException ("", tableName);
-            }
-            final Column column = table.getColumn(columnName);
-            if(column == null) {
-                throw new NoSuchColumnException (columnName);
-            }
-            tmpIndex.addColumn(new IndexColumn(tmpIndex, column, pos++, true, null));
+            complete = true;
+        }
+        finally {
+            // Some ITs create broken indexes directly rather than on a copy of the AIS.
+            // Do enough cleanup to keep tables from pointing to half-done index.
+            if (!complete)
+                tmpIndex.disassociate();
         }
 
         return tmpIndex;

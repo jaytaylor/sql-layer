@@ -30,7 +30,6 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -40,6 +39,9 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class TestConfigService extends ConfigurationServiceImpl {
     private final static File TESTDIR = new File("/tmp/akserver-junit");
+    private static File dataDirectory = null;
+    private static int dataDirectoryCounter = 0;
+    private static volatile boolean doCleanOnUnload = false;
     private final Collection<Property> extraProperties;
     File tmpDir;
 
@@ -61,23 +63,25 @@ public class TestConfigService extends ConfigurationServiceImpl {
     @Override
     protected Map<String, Property> loadProperties() {
         Map<String, Property> ret = new HashMap<String, Property>(super.loadProperties());
-        tmpDir = makeTempDatapathDirectory();
-        String datapathKey = "akserver.datapath";
-        ret.put(datapathKey, new Property(datapathKey, tmpDir.getAbsolutePath()));
-        final int bufferSize = Integer.parseInt(ret.get("persistit.buffersize").getValue());
-        String memoryKey = "persistit.buffer.memory." + bufferSize;
+        makeDataDirectory();
+        ret.put(DATA_PATH_KEY, new Property(DATA_PATH_KEY, dataDirectory.getAbsolutePath()));
+        final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY).getValue());
+        String memoryKey = BUFFER_MEMORY_KEY_PREFIX + "." + bufferSize;
         ret.put(memoryKey, new Property(memoryKey, UNIT_TEST_PERSISTIT_MEMORY));
         if (extraProperties != null) {
             for (final Property property : extraProperties) {
                 ret.put(property.getKey(), property);
             }
         }
+        ret.put(JOURNAL_SIZE_KEY, new Property(JOURNAL_SIZE_KEY, Long.toString(UNIT_TEST_PERSISTIT_JOURNAL_SIZE)));
         return ret;
     }
 
     @Override
     protected void unloadProperties() {
-        AkServerUtil.cleanUpDirectory(tmpDir);
+        if (doCleanOnUnload) {
+            AkServerUtil.cleanUpDirectory(tmpDir);
+        }
     }
 
     @Override
@@ -85,32 +89,33 @@ public class TestConfigService extends ConfigurationServiceImpl {
         return Collections.emptySet();
     }
 
-    private File makeTempDatapathDirectory() {
-        if (TESTDIR.exists()) {
-            if (!TESTDIR.isDirectory()) {
-                throw new ConfigurationPropertiesLoadException(TESTDIR.getName(), " it exists but isn't a directory");
+    public static File dataDirectory() {
+        if (dataDirectory == null)
+            makeDataDirectory();
+        return dataDirectory;
+    }
+
+    public static File newDataDirectory() {
+        dataDirectoryCounter++;
+        makeDataDirectory();
+        return dataDirectory;
+    }
+
+    private static void makeDataDirectory() {
+        String name = "data";
+        if (dataDirectoryCounter > 0)
+            name += dataDirectoryCounter;
+        dataDirectory = new File(TESTDIR, name);
+        if (dataDirectory.exists()) {
+            if (!dataDirectory.isDirectory()) {
+                throw new ConfigurationPropertiesLoadException(dataDirectory.getName(), " it exists but isn't a directory");
             }
         } else {
-            if (!TESTDIR.mkdir()) {
-                throw new ConfigurationPropertiesLoadException (TESTDIR.getName(), " it couldn't be created");
+            if (!dataDirectory.mkdirs()) {
+                throw new ConfigurationPropertiesLoadException(dataDirectory.getName(), " it couldn't be created");
             }
-            TESTDIR.deleteOnExit();
+            dataDirectory.deleteOnExit();
         }
-
-        File tmpFile;
-        try {
-            tmpFile = File.createTempFile("akserver-unitdata", "", TESTDIR);
-        } catch (IOException e) {
-            throw new ConfigurationPropertiesLoadException ("akserver-unitdata", "it could create the temp file");
-        }
-        if (!tmpFile.delete()) {
-            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be deleted");
-        }
-        if (!tmpFile.mkdir()) {
-            throw new ConfigurationPropertiesLoadException (tmpFile.getName(), "it couldn't be created");
-        }
-        tmpFile.deleteOnExit();
-        return tmpFile;
     }
 
     public static void setOverrides(Collection<Property> startupConfigProperties) {
@@ -123,6 +128,19 @@ public class TestConfigService extends ConfigurationServiceImpl {
         return startupConfigPropertiesRef.getAndSet(null);
     }
 
+    public static boolean getDoCleanOnUnload() {
+        return doCleanOnUnload;
+    }
+
+    public static void setDoCleanOnUnload(boolean doClean) {
+        doCleanOnUnload = doClean;
+    }
+
     private static final AtomicReference<Collection<Property>> startupConfigPropertiesRef = new AtomicReference<Collection<Property>>();
+    public final static String DATA_PATH_KEY = "akserver.datapath";
+    private final static String BUFFER_SIZE_KEY = "persistit.buffersize";
+    private final static String BUFFER_MEMORY_KEY_PREFIX = "persistit.buffer.memory";
+    private final static String JOURNAL_SIZE_KEY = "persistit.journalsize";
     private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
+    private final static long UNIT_TEST_PERSISTIT_JOURNAL_SIZE = 128 * 1024 * 1024;
 }
