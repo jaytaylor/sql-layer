@@ -101,7 +101,7 @@ public final class TValidatedOverload implements TOverload {
     }
 
     public boolean coversNInputs(int nInputs) {
-        return (nInputs < inputSetsByPos.size()) || (varargs != null);
+        return (nInputs <= inputSetsByPos.size()) || (varargs != null);
     }
 
     public int positionalInputs() {
