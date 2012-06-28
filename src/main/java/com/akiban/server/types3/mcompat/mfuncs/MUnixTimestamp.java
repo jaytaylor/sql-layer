@@ -46,12 +46,8 @@ public abstract class MUnixTimestamp extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                long input = inputs.get(0).getInt64();
-
-                long[] datetime = MDatetimes.decodeDate(input);
-                MutableDateTime date = MDatetimes.toJodaDatetime(datetime, context.getCurrentTimezone());
-                int millis = (int) date.getMillis();
-                output.putInt32(millis <= 0 ? 0 : millis);
+                long[] datetime = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
+                output.putInt32((int) MDatetimes.encodeTimestamp(datetime, context.getCurrentTimezone(), context));
             }
         },
         new MUnixTimestamp() {
@@ -62,7 +58,7 @@ public abstract class MUnixTimestamp extends TOverloadBase {
 
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                output.putInt32((int) context.getCurrentDate());
+                output.putInt32((int) context.getCurrentDate() / 1000);
             }
         }
     };
