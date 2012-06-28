@@ -26,10 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -38,6 +35,8 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class MLastDay extends TOverloadBase {
 
+    public static final TOverload INSTANCE = new MLastDay();
+    
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(MDatetimes.DATETIME, 0);
