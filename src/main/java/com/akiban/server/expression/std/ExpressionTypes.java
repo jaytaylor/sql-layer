@@ -140,14 +140,15 @@ public class ExpressionTypes
      * @return that collation or <code>null</code>
      */
     public static AkCollator operationCollation(ExpressionType type1, ExpressionType type2) {
-        if (!((type1.getType() == AkType.VARCHAR) || (type1.getType() == AkType.TEXT)) &&
-            ((type2.getType() == AkType.VARCHAR) || (type2.getType() == AkType.TEXT)))
+        if (!((type1 != null) &&
+              ((type1.getType() == AkType.VARCHAR) || (type1.getType() == AkType.TEXT)) &&
+              (type2 != null) &&
+              ((type2.getType() == AkType.VARCHAR) || (type2.getType() == AkType.TEXT))))
             return null;
-        CharacterTypeAttributes att1 = (type1 == null) ? null : type1.getCharacterAttributes();
-        CharacterTypeAttributes att2 = (type2 == null) ? null : type2.getCharacterAttributes();
         CharacterTypeAttributes att;
         try {
-            att = CharacterTypeAttributes.mergeCollations(att1, att2);
+            att = CharacterTypeAttributes.mergeCollations(type1.getCharacterAttributes(), 
+                                                          type2.getCharacterAttributes());
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
