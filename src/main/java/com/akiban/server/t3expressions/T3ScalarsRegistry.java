@@ -17,21 +17,64 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.List;
 
 public interface T3ScalarsRegistry {
-    public final static TClass NO_COMMON = null; // TODO: FIXME
+    List<TValidatedOverload> getOverloads(String name);
 
     OverloadResolutionResult get(String name, List<? extends TClass> inputClasses);
+
     TCast cast(TClass source, TClass target);
 
     /**
      * Returns the common of the two types. For either argument, a <tt>null</tt> value is interpreted as any type.
      * @param one the first type class
      * @param two the other type class
-     * @return a wrapper that represents the common class, no common class, or <tt>ANY</tt> (the latter only if both
+     * @return a wrapper that represents the common class, {@link #NO_COMMON} or {@link #ANY} (the latter only if both
      * inputs are <tt>null</tt>)
      */
     TClassPossibility commonTClass(TClass one, TClass two);
+
+
+    /**
+     * Represents the result that there is <i>no</i> common class.
+     */
+    public static final TClassPossibility NO_COMMON = new TClassPossibility() {
+        @Override
+        public boolean isAny() {
+            return false;
+        }
+
+        @Override
+        public boolean isNone() {
+            return true;
+        }
+
+        @Override
+        public TClass get() {
+            return null;
+        }
+    };
+
+    /**
+     * Represents the result that <i>any</i> class is a common class.
+     */
+    public static final TClassPossibility ANY = new TClassPossibility() {
+        @Override
+        public boolean isAny() {
+            return true;
+        }
+
+        @Override
+        public boolean isNone() {
+            return false;
+        }
+
+        @Override
+        public TClass get() {
+            return null;
+        }
+    };
 }

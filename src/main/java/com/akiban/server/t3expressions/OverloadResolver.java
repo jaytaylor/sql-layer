@@ -26,17 +26,39 @@ import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.EnumSet;
 import java.util.List;
 
 public final class OverloadResolver {
+    public static class OverloadResult {
+        private TValidatedOverload overload;
+        private TClass pickingClass;
+
+        public OverloadResult(TValidatedOverload overload, TClass pickingClass) {
+            this.overload = overload;
+            this.pickingClass = pickingClass;
+        }
+
+        public TValidatedOverload getOverload() {
+            return overload;
+        }
+
+        public TClass getPickingClass() {
+            return pickingClass;
+        }
+    }
+
+    private final T3ScalarsRegistry registry;
+
+    public OverloadResolver(T3ScalarsRegistry registry) {
+        this.registry = registry;
+    }
+
     OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
-        Collection<? extends TValidatedOverload> namedOverloads = null;//registry.get(name);
-        if (namedOverloads.isEmpty())
+        Collection<? extends TValidatedOverload> namedOverloads = registry.getOverloads(name);
+        if (namedOverloads.isEmpty()) {
             throw new NoSuchFunctionException(name);
-
+        }
         OverloadResult result = null;
-
         if (namedOverloads.size() == 1) {
             result = defaultResolution(inputs, namedOverloads);
         }
@@ -48,10 +70,9 @@ public final class OverloadResolver {
 
     private OverloadResult inputBasedResolution(List<? extends TPreptimeValue> inputs,
                                                 Collection<? extends TValidatedOverload> namedOverloads) {
-        // Input-based resolution
         List<TValidatedOverload> candidates = new ArrayList<TValidatedOverload>(namedOverloads.size());
         for (TValidatedOverload overload : namedOverloads) {
-            if ( isCandidate(overload, inputs)) {
+            if (isCandidate(overload, inputs)) {
                 candidates.add(overload);
             }
         }
@@ -60,8 +81,9 @@ public final class OverloadResolver {
     }
 
     private OverloadResult defaultResolution(List<? extends TPreptimeValue> inputs,
-                                                 Collection<? extends TValidatedOverload> namedOverloads) {
-        TValidatedOverload resolvedOverload;TClass pickingClass;
+                                             Collection<? extends TValidatedOverload> namedOverloads) {
+        TValidatedOverload resolvedOverload;
+        TClass pickingClass;
         int nInputs = inputs.size();
         resolvedOverload = namedOverloads.iterator().next();
         // throwing an exception here isn't strictly required, but it gives the user a more specific error
@@ -71,7 +93,7 @@ public final class OverloadResolver {
         return new OverloadResult(resolvedOverload, pickingClass);
     }
 
-    public boolean isCandidate(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
+    private boolean isCandidate(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
         if (!overload.coversNInputs(inputs.size()))
             return false;
         for (int i = 0, inputsSize = inputs.size(); i < inputsSize; i++) {
@@ -95,10 +117,11 @@ public final class OverloadResolver {
         return true;
     }
 
-    private TClass pickingClass(TValidatedOverload overload,  List<? extends TPreptimeValue> inputs) {
+    private TClass pickingClass(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
         TInputSet pickingSet = overload.pickingInputSet();
-        if (pickingSet == null)
+        if (pickingSet == null) {
             return null;
+        }
         TClass common = null;
         for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i)) {
             common = registry.commonTClass(common, inputs.get(i).instance().typeClass()).get();
@@ -113,18 +136,5 @@ public final class OverloadResolver {
             }
         }
         return common;
-    }
-
-
-    private T3ScalarsRegistry registry;
-
-    public static class OverloadResult {
-        private TValidatedOverload overload;
-        private TClass pickingClass;
-
-        public OverloadResult(TValidatedOverload overload, TClass pickingClass) {
-            this.overload = overload;
-            this.pickingClass = pickingClass;
-        }
     }
 }
