@@ -262,27 +262,39 @@ public class AkServerUtil {
         System.out.println();
     }
 
-    public final static void cleanUpDirectory(final File file) {
+    public final static boolean cleanUpDirectory(final File file) {
         if (!file.exists()) {
-            file.mkdirs();
-            return;
+            return file.mkdirs();
         } else if (file.isFile()) {
-            throw new IllegalStateException(file + " must be a directory");
+            return false;
         } else {
+            boolean success = true;
             final File[] files = file.listFiles();
             if (files != null) {
-                cleanUpFiles(files);
+                if (!cleanUpFiles(files)) {
+                    success = false;
+                }
             }
+            return success;
         }
     }
 
-    public final static void cleanUpFiles(final File[] files) {
+    public final static boolean cleanUpFiles(final File[] files) {
+        boolean success = true;
         for (final File file : files) {
+            boolean success1 = true;
             if (file.isDirectory()) {
-                cleanUpDirectory(file);
+                success1 = cleanUpDirectory(file);
             }
-            file.delete();
+            if (success1) {
+                success1 = file.delete();
+            }
+            if (!success1) {
+                file.deleteOnExit();
+                success = false;
+            }
         }
+        return success;
     }
 
     /**

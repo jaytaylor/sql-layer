@@ -269,7 +269,7 @@
                         <akserver.port>${akserver.port}</akserver.port>
                         <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -288,7 +288,7 @@
                         <akserver.port>${akserver.port}</akserver.port>
                         <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                 </configuration>
                 <executions>
                     <execution>
@@ -350,6 +350,7 @@
                         <exclude>debian/*</exclude>
                         <exclude>redhat/*</exclude>
                         <exclude>src/izpack/**</exclude>
+                        <exclude>macosx/**</exclude>
                         <exclude>LICENSE.txt</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
@@ -486,6 +487,66 @@
                 <izpack.appname>${project.name}</izpack.appname>
                 <izpack.appversion>${project.version}</izpack.appversion>
                 <izpack.jarfile>${project.build.finalName}-jar-with-dependencies.jar</izpack.jarfile>
+            </properties>
+        </profile>
+        <profile>
+            <id>installer-mac-bundle</id>
+            <activation>
+                <property>
+                    <name>installer</name>
+                    <value>mac-bundle</value>
+                </property>
+            </activation>
+            <build>
+                <plugins>
+                    <plugin>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <executions>
+                            <execution>
+                                <id>mac-bundle-setup</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                        <delete dir="${mac.app}" />
+                                        <mkdir dir="${mac.app}" />
+                                        <copy todir="${mac.app}">
+                                            <fileset dir="${basedir}/macosx" />
+                                        </copy>
+                                        <copy todir="${mac.app}/Contents/MacOS">
+                                            <fileset dir="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS" includes="JavaApplicationStub" />
+                                        </copy>
+					<chmod file="${mac.app}/Contents/MacOS/JavaApplicationStub" perm="uog+rx" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>mac-bundle-create</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+                                      <copy todir="${mac.app}/Contents/Resources/Java">
+                                            <fileset dir="${project.build.directory}" includes="${mac.jarfile}" />
+                                      </copy>
+                                      <exec executable="SetFile" failonerror="true">
+                                        <arg line="-a B"/>
+                                        <arg file="${mac.app}"/>
+                                      </exec>
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                </plugins>
+            </build>
+            <properties>
+                <mac.app>${project.build.directory}/Akiban Server.app</mac.app>
+                <mac.jarfile>${project.build.finalName}-jar-with-dependencies.jar</mac.jarfile>
             </properties>
         </profile>
     </profiles>

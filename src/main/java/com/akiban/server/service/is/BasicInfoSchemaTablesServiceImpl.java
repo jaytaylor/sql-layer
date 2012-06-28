@@ -40,21 +40,15 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.BasicFactoryBase;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.statistics.IndexStatistics;
 import com.google.inject.Inject;
 
 import java.util.Iterator;
@@ -73,7 +67,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static final TableName INDEXES = new TableName(SCHEMA_NAME, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(SCHEMA_NAME, "index_columns");
 
-    private static final int IDENT_MAX = 128;
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
 
@@ -112,44 +105,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         // Nothing
     }
 
-    private static String boolResult(boolean bool) {
-        return bool ? "YES" : "NO";
-    }
-
-    private abstract class BasicFactoryBase implements MemoryTableFactory {
-        private final UserTable sourceTable;
-
-        public BasicFactoryBase(UserTable sourceTable) {
-            this.sourceTable = sourceTable;
-        }
-
-        @Override
-        public TableName getName() {
-            return sourceTable.getName();
-        }
-
-        @Override
-        public UserTable getTableDefinition() {
-            return sourceTable;
-        }
-
-        @Override
-        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector scanSelector) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public IndexStatistics computeIndexStatistics(Session session, Index index) {
-            throw new UnsupportedOperationException();
-        }
-
-        protected RowType getRowType(MemoryAdapter adapter) {
-            return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable.getName()));
-        }
-    }
-
     private class SchemataFactory extends BasicFactoryBase {
-        public SchemataFactory(UserTable sourceTable) {
+        public SchemataFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -194,7 +151,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     private class TablesFactory extends BasicFactoryBase {
-        public TablesFactory(UserTable sourceTable) {
+        public TablesFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -243,7 +200,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     private class ColumnsFactory extends BasicFactoryBase {
-        public ColumnsFactory(UserTable sourceTable) {
+        public ColumnsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -330,7 +287,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     private class TableConstraintsFactory extends BasicFactoryBase {
-        public TableConstraintsFactory(UserTable sourceTable) {
+        public TableConstraintsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -382,7 +339,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     private class ReferentialConstraintsFactory extends BasicFactoryBase {
-        public ReferentialConstraintsFactory(UserTable sourceTable) {
+        public ReferentialConstraintsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -415,7 +372,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     private class GroupingConstraintsFactory extends BasicFactoryBase {
-        public GroupingConstraintsFactory(UserTable sourceTable) {
+        public GroupingConstraintsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -483,7 +440,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     private class KeyColumnUsageFactory extends BasicFactoryBase {
-        public KeyColumnUsageFactory(UserTable sourceTable) {
+        public KeyColumnUsageFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -579,7 +536,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     private class IndexesFactory extends BasicFactoryBase {
-        public IndexesFactory(UserTable sourceTable) {
+        public IndexesFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -646,7 +603,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     }
 
     private class IndexColumnsFactory extends BasicFactoryBase {
-        public IndexColumnsFactory(UserTable sourceTable) {
+        public IndexColumnsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -817,28 +774,28 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.userTable(SCHEMATA)
-                .colString("schema_name", IDENT_MAX, false)
-                .colString("schema_owner", IDENT_MAX, true)
-                .colString("default_character_set_name", IDENT_MAX, true)
-                .colString("default_collation_name", IDENT_MAX, true);
+                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("schema_owner", BasicFactoryBase.IDENT_MAX, true)
+                .colString("default_character_set_name", BasicFactoryBase.IDENT_MAX, true)
+                .colString("default_collation_name", BasicFactoryBase.IDENT_MAX, true);
         //primary key (schema_name)
         builder.userTable(TABLES)
-                .colString("table_schema", IDENT_MAX, false)
-                .colString("table_name", IDENT_MAX, false)
-                .colString("table_type", IDENT_MAX, false)
+                .colString("table_schema", BasicFactoryBase.IDENT_MAX, false)
+                .colString("table_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("table_type", BasicFactoryBase.IDENT_MAX, false)
                 .colBigInt("table_id", false)
-                .colString("character_set_schema", IDENT_MAX, true)
-                .colString("character_set_name", IDENT_MAX, true)
-                .colString("collation_schema", IDENT_MAX, true)
-                .colString("collation_name", IDENT_MAX, true);
+                .colString("character_set_schema", BasicFactoryBase.IDENT_MAX, true)
+                .colString("character_set_name", BasicFactoryBase.IDENT_MAX, true)
+                .colString("collation_schema", BasicFactoryBase.IDENT_MAX, true)
+                .colString("collation_name", BasicFactoryBase.IDENT_MAX, true);
         //primary key (schema_name, table_name)
         //foreign_key (schema_name) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collations_schema, collation_name) references COLLATIONS
         builder.userTable(COLUMNS)
-                .colString("schema_name", IDENT_MAX, false)
-                .colString("table_name", IDENT_MAX, false)
-                .colString("column_name", IDENT_MAX, false)
+                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("table_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("column_name", BasicFactoryBase.IDENT_MAX, false)
                 .colBigInt("position", false)
                 .colString("type", 32, false)
                 .colString("nullable", 3, false)
@@ -847,58 +804,58 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colBigInt("scale", true)
                 .colBigInt("prefix_size", true)
                 .colBigInt("identity_start", true)
-                .colString("character_set_schema", IDENT_MAX, true)
-                .colString("character_set_name", IDENT_MAX, true)
-                .colString("collation_schema", IDENT_MAX, true)
-                .colString("collation_name", IDENT_MAX, true);
+                .colString("character_set_schema", BasicFactoryBase.IDENT_MAX, true)
+                .colString("character_set_name", BasicFactoryBase.IDENT_MAX, true)
+                .colString("collation_schema", BasicFactoryBase.IDENT_MAX, true)
+                .colString("collation_name", BasicFactoryBase.IDENT_MAX, true);
         //primary key(schema_name, table_name, column_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
         //foreign key (type) references TYPES (type_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
         builder.userTable(TABLE_CONSTRAINTS)
-                .colString("schema_name", IDENT_MAX, false)
-                .colString("table_name", IDENT_MAX, false)
-                .colString("constraint_name", IDENT_MAX, false)
+                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("table_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("constraint_name", BasicFactoryBase.IDENT_MAX, false)
                 .colString("constraint_type", 32, false);
         //primary key (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES
         builder.userTable(REFERENTIAL_CONSTRAINTS)
-            .colString("constraint_schema_name", IDENT_MAX, false)
-            .colString("constraint_table_name", IDENT_MAX, false)
-            .colString("constraint_name", IDENT_MAX, false)
-            .colString("unique_schema_name", IDENT_MAX, false)
-            .colString("unique_table_name", IDENT_MAX, false)
-            .colString("unique_constraint_name", IDENT_MAX, false)
+            .colString("constraint_schema_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("constraint_table_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("constraint_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("unique_schema_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("unique_table_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("unique_constraint_name", BasicFactoryBase.IDENT_MAX, false)
             .colString("update_rule", 32, false)
             .colString("delete_rule", 32, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(GROUPING_CONSTRAINTS)
-            .colString("constraint_schema_name", IDENT_MAX, false)
-            .colString("constraint_table_name", IDENT_MAX, false)
-            .colString("constraint_name", IDENT_MAX, false)
-            .colString("unique_schema_name", IDENT_MAX, false)
-            .colString("unique_table_name", IDENT_MAX, false)
-            .colString("unique_constraint_name", IDENT_MAX, false);
+            .colString("constraint_schema_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("constraint_table_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("constraint_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("unique_schema_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("unique_table_name", BasicFactoryBase.IDENT_MAX, false)
+            .colString("unique_constraint_name", BasicFactoryBase.IDENT_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
-            .colString("schema_name", IDENT_MAX, true)
-            .colString("table_name", IDENT_MAX, true)
-            .colString("constraint_name", IDENT_MAX, true)
-            .colString("column_name", IDENT_MAX, true)
+            .colString("schema_name", BasicFactoryBase.IDENT_MAX, true)
+            .colString("table_name", BasicFactoryBase.IDENT_MAX, true)
+            .colString("constraint_name", BasicFactoryBase.IDENT_MAX, true)
+            .colString("column_name", BasicFactoryBase.IDENT_MAX, true)
             .colBigInt("ordinal_position", false)
             .colBigInt("position_in_unique_constraint", true);
         //primary key  (schema_name, table_name, constraint_name, column_name),
         //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
         builder.userTable(INDEXES)
-                .colString("schema_name", IDENT_MAX, false)
-                .colString("table_name", IDENT_MAX, false)
-                .colString("index_name", IDENT_MAX, false)
-                .colString("constraint_name", IDENT_MAX, true)
+                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("table_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("index_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("constraint_name", BasicFactoryBase.IDENT_MAX, true)
                 .colBigInt("index_id", false)
-                .colString("index_type", IDENT_MAX, false)
+                .colString("index_type", BasicFactoryBase.IDENT_MAX, false)
                 .colString("is_unique", 3, false)
                 .colString("join_type", 32, true);
         //primary key(schema_name, table_name, index_name)
@@ -906,13 +863,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
         builder.userTable(INDEX_COLUMNS)
-                .colString("schema_name", IDENT_MAX, false)
-                .colString("index_name", IDENT_MAX, false)
-                .colString("index_table_name", IDENT_MAX, false)
-                .colString("column_table_name", IDENT_MAX, false)
-                .colString("column_name", IDENT_MAX, false)
+                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("index_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("index_table_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("column_table_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("column_name", BasicFactoryBase.IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
-                .colString("is_ascending", IDENT_MAX, false)
+                .colString("is_ascending", BasicFactoryBase.IDENT_MAX, false)
                 .colBigInt("indexed_length", true);
         //primary key(schema_name, index_name, index_table_name, column_table_name, column_name)
         //foreign key(schema_name, index_table_name, index_name)
@@ -927,7 +884,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         UserTable table = ais.getUserTable(name);
         final BasicFactoryBase factory;
         try {
-            factory = clazz.getConstructor(BasicInfoSchemaTablesServiceImpl.class, UserTable.class).newInstance(this, table);
+            factory = clazz.getConstructor(BasicInfoSchemaTablesServiceImpl.class, TableName.class).newInstance(this, name);
         } catch(Exception e) {
             throw new RuntimeException(e);
         }

@@ -662,6 +662,8 @@ public class ASTStatementLoader extends BaseRule
                                                  subqueryNode.getOrderByList(),
                                                  subqueryNode.getOffset(),
                                                  subqueryNode.getFetchFirst());
+            if (subquery instanceof ResultSet)
+                subquery = ((ResultSet)subquery).getInput();
             boolean negate = false;
             Comparison comp = Comparison.EQ;
             ExpressionNode operand = null;
@@ -756,7 +758,7 @@ public class ASTStatementLoader extends BaseRule
                     if (plan instanceof Distinct) {
                         distinct = true;
                     }
-                    else if (!(plan instanceof ResultSet)) { // Also remove ResultSet.
+                    else {
                         prev = (PlanWithInput)plan;
                     }
                     plan = next;

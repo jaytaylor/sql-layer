@@ -359,7 +359,9 @@ public class BitAggregatorsTest
 
     private void testNull ()
     {
+        holder.clear();
         aggregator.input(NullValueSource.only());
+        holder.expectType(AkType.U_BIGINT);
         aggregator.output(holder);
 
         assertEquals(expected1, holder.getUBigInt());

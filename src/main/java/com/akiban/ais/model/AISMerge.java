@@ -258,31 +258,38 @@ public class AISMerge {
 
     private static int computeTableIdOffset(AkibanInformationSchema ais) {
         // Use 1 as default offset because the AAM uses tableID 0 as a marker value.
-        return computeTableIdOffset(ais, 1, false);
+        int offset = computeTableIdOffset(ais, 1, false);
+        assert offset < AIS_TABLE_ID_OFFSET : "Offset too large for user table: " + offset;
+        return offset;
     }
 
     private static int computeAISTableIdOffset(AkibanInformationSchema ais) {
-        return computeTableIdOffset(ais, AIS_TABLE_ID_OFFSET, true);
+        int offset = computeTableIdOffset(ais, AIS_TABLE_ID_OFFSET, true);
+        assert offset >= AIS_TABLE_ID_OFFSET : "Offset too small for IS table: " + offset;
+        return offset;
     }
 
-    private static int computeTableIdOffset(AkibanInformationSchema ais, int offset, boolean includeAIS) {
-        for(UserTable table : ais.getUserTables().values()) {
-            if(table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
-                if(includeAIS) {
-                    offset = Math.max(offset, table.getTableId() + 1);
+    private static int computeTableIdOffset(AkibanInformationSchema ais, int offset, boolean includeIS) {
+        if(includeIS) {
+            offset = computeTableIdOffsetForSchema(ais.getSchema(TableName.INFORMATION_SCHEMA), offset);
+        } else {
+            for(Schema schema : ais.getSchemas().values()) {
+                if(!TableName.INFORMATION_SCHEMA.equals(schema.getName())) {
+                    offset = computeTableIdOffsetForSchema(schema, offset);
                 }
-            } else {
-                offset = Math.max(offset, table.getTableId() + 1);
             }
         }
-        for (GroupTable table : ais.getGroupTables().values()) {
-            if (table.getName().getSchemaName().equals(TableName.INFORMATION_SCHEMA)) {
-                if(includeAIS) {
-                    offset = Math.max(offset, table.getTableId() + 1);
-                }
-            } else {
-                offset = Math.max(offset, table.getTableId() + 1);
+        return offset;
+    }
 
+    private static int computeTableIdOffsetForSchema(Schema schema, int offset) {
+        if(schema != null) {
+            for(UserTable table : schema.getUserTables().values()) {
+                offset = Math.max(offset, table.getTableId() + 1);
+                Group group = table.getGroup();
+                if(group != null && group.getGroupTable() != null) {
+                    offset = Math.max(offset, group.getGroupTable().getTableId() + 1);
+                }
             }
         }
         return offset;

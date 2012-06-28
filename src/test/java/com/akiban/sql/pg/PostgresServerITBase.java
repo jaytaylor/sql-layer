@@ -64,7 +64,7 @@ public class PostgresServerITBase extends ITBase
         return DriverManager.getConnection(url, USER_NAME, USER_PASSWORD);
     }
 
-    protected void closeConnection(Connection Connection) throws Exception {
+    protected static void closeConnection(Connection connection) throws Exception {
         connection.close();
     }
 
@@ -72,30 +72,32 @@ public class PostgresServerITBase extends ITBase
         return serviceManager().getPostgresService().getServer();
     }
 
-    protected Connection connection;
+    // One element connection pool.
+    private static Connection connection = null;
 
-    @Before
-    public void openTheConnection() throws Exception {
-        for (int i = 0; i < 6; i++) {
-            if (server().isListening())
-                break;
-            if (i == 1)
-                LOG.warn("Postgres server not listening. Waiting...");
-            else if (i == 5)
-                fail("Postgres server still not listening. Giving up.");
-            try {
-                Thread.sleep(200);
+    protected Connection getConnection() throws Exception {
+        if (connection == null) {
+            for (int i = 0; i < 6; i++) {
+                if (server().isListening())
+                    break;
+                if (i == 1)
+                    LOG.warn("Postgres server not listening. Waiting...");
+                else if (i == 5)
+                    fail("Postgres server still not listening. Giving up.");
+                try {
+                    Thread.sleep(200);
+                }
+                catch (InterruptedException ex) {
+                    LOG.warn("caught an interrupted exception; re-interrupting", ex);
+                    Thread.currentThread().interrupt();
+                }
             }
-            catch (InterruptedException ex) {
-                LOG.warn("caught an interrupted exception; re-interrupting", ex);
-                Thread.currentThread().interrupt();
-            }
+            connection = openConnection();
         }
-        connection = openConnection();
+        return connection;
     }
 
-    @After
-    public void closeTheConnection() throws Exception {
+    public static void forgetConnection() throws Exception {
         if (connection != null) {
             closeConnection(connection);
             connection = null;

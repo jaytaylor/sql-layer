@@ -268,10 +268,6 @@ public class TableDDLTest {
                 Collection<String> indexesToDrop) {}
 
         @Override
-        public void forceGenerationUpdate() {}
-
-
-        @Override
         public List<String> getDDLs(Session session)
                 throws InvalidOperationException {
             return null;
