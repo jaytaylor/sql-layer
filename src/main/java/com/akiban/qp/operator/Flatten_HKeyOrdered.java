@@ -451,6 +451,8 @@ class Flatten_HKeyOrdered extends Operator
             if (leftJoin && childlessParent && parent.isHolding()) {
                 if (inputRow == null) {
                     readyForLeftJoinRow = true;
+                } else if (inputRow.rowType() == parentType) {
+                    readyForLeftJoinRow = true;
                 } else if (!parent.get().ancestorOf(inputRow)) {
                     readyForLeftJoinRow = true;
                 } else if (inputRow.rowType() == childType) {

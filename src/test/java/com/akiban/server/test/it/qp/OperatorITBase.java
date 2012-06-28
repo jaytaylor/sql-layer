@@ -111,6 +111,7 @@ public class OperatorITBase extends ITBase
             "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "address", "cid", "cid");
         createIndex("schema", "address", "address", "address");
+        createGroupIndex("customer", "cname_ioid", "customer.name,item.oid", Index.JoinType.LEFT);
         schema = new Schema(rowDefCache().ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
@@ -126,6 +127,7 @@ public class OperatorITBase extends ITBase
         customerCidIndexRowType = indexType(customer, "cid");
         addressCidIndexRowType = indexType(address, "cid");
         addressAddressIndexRowType = indexType(address, "address");
+        customerNameItemOidIndexRowType = groupIndexType(Index.JoinType.LEFT, "customer.name", "item.oid");
         coi = groupTable(customer);
         customerOrdinal =  ddl().getTable(session(),  customer).rowDef().getOrdinal();
         orderOrdinal =  ddl().getTable(session(),  order).rowDef().getOrdinal();
@@ -445,6 +447,7 @@ public class OperatorITBase extends ITBase
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressCidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
+    protected IndexRowType customerNameItemOidIndexRowType;
     protected GroupTable coi;
     protected Schema schema;
     protected NewRow[] db;

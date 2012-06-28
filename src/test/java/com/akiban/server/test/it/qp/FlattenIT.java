@@ -26,10 +26,15 @@
 
 package com.akiban.server.test.it.qp;
 
+import com.akiban.qp.expression.IndexBound;
+import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.api.dml.SetColumnSelector;
 import com.akiban.server.api.dml.scan.NewRow;
 import org.junit.Before;
 import org.junit.Test;
@@ -38,7 +43,8 @@ import java.util.Arrays;
 import java.util.EnumSet;
 
 import static com.akiban.qp.operator.API.*;
-import static com.akiban.qp.operator.API.FlattenOption.*;
+import static com.akiban.qp.operator.API.FlattenOption.KEEP_CHILD;
+import static com.akiban.qp.operator.API.FlattenOption.KEEP_PARENT;
 import static com.akiban.qp.operator.API.JoinType.*;
 import static org.junit.Assert.assertTrue;
 
@@ -72,6 +78,11 @@ public class FlattenIT extends OperatorITBase
             createNewRow(item, 312L, 31L),
             // Bug 837706
             createNewRow(address, 41L, 4L, "560 Harrison"),
+            // Bug 1018206
+            createNewRow(customer, 6L, "nea"),
+            createNewRow(order, 61L, 6L, "mike"),
+            createNewRow(order, 62L, 6L, "padraig"),
+            createNewRow(item, 621L, 62L),
         };
         use(dbWithOrphans);
     }
@@ -221,6 +232,9 @@ public class FlattenIT extends OperatorITBase
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
             row(coRowType, 5L, "matrix", 51L, 5L, "yuval"),
+            row(coRowType, 6L, "nea", 61L, 6L, "mike"),
+            row(coRowType, 6L, "nea", 62L, 6L, "padraig"),
+            row(itemRowType, 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -252,7 +266,9 @@ public class FlattenIT extends OperatorITBase
             row(oiRowType, 31L, 3L, "peter", 311L, 31L),
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
             row(customerRowType, 4L, "highland"),
-            row(customerRowType, 5L, "matrix")
+            row(customerRowType, 5L, "matrix"),
+            row(customerRowType, 6L, "nea"),
+            row(oiRowType, 62L, 6L, "padraig", 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -286,7 +302,10 @@ public class FlattenIT extends OperatorITBase
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
             row(oKey(4L, null), coRowType, 4L, "highland", null, null, null),
-            row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval"),
+            row(coRowType, 6L, "nea", 61L, 6L, "mike"),
+            row(coRowType, 6L, "nea", 62L, 6L, "padraig"),
+            row(itemRowType, 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -319,7 +338,10 @@ public class FlattenIT extends OperatorITBase
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
-            row(oiRowType, 51L, 5L, "yuval", null, null)
+            row(oiRowType, 51L, 5L, "yuval", null, null),
+            row(customerRowType, 6L, "nea"),
+            row(oiRowType, 61L, 6L, "mike", null, null),
+            row(oiRowType, 62L, 6L, "padraig", 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -353,7 +375,10 @@ public class FlattenIT extends OperatorITBase
             row(coRowType, null, null, 31L, 3L, "peter"),
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
-            row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval"),
+            row(coRowType, 6L, "nea", 61L, 6L, "mike"),
+            row(coRowType, 6L, "nea", 62L, 6L, "padraig"),
+            row(itemRowType, 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -385,7 +410,9 @@ public class FlattenIT extends OperatorITBase
             row(oiRowType, 31L, 3L, "peter", 311L, 31L),
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
             row(customerRowType, 4L, "highland"),
-            row(customerRowType, 5L, "matrix")
+            row(customerRowType, 5L, "matrix"),
+            row(customerRowType, 6L, "nea"),
+            row(oiRowType, 62L, 6L, "padraig", 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -420,7 +447,10 @@ public class FlattenIT extends OperatorITBase
             row(itemRowType, 311L, 31L),
             row(itemRowType, 312L, 31L),
             row(coRowType, 4L, "highland", null, null, null),
-            row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval"),
+            row(coRowType, 6L, "nea", 61L, 6L, "mike"),
+            row(coRowType, 6L, "nea", 62L, 6L, "padraig"),
+            row(itemRowType, 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -453,7 +483,10 @@ public class FlattenIT extends OperatorITBase
             row(oiRowType, 31L, 3L, "peter", 312L, 31L),
             row(customerRowType, 4L, "highland"),
             row(customerRowType, 5L, "matrix"),
-            row(oiRowType, 51L, 5L, "yuval", null, null)
+            row(oiRowType, 51L, 5L, "yuval", null, null),
+            row(customerRowType, 6L, "nea"),
+            row(oiRowType, 61L, 6L, "mike", null, null),
+            row(oiRowType, 62L, 6L, "padraig", 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -502,7 +535,13 @@ public class FlattenIT extends OperatorITBase
             row(coRowType, 4L, "highland", null, null, null),
             row(customerRowType, 5L, "matrix"),
             row(orderRowType, 51L, 5L, "yuval"),
-            row(coRowType, 5L, "matrix", 51L, 5L, "yuval")
+            row(coRowType, 5L, "matrix", 51L, 5L, "yuval"),
+            row(customerRowType, 6L, "nea"),
+            row(orderRowType, 61L, 6L, "mike"),
+            row(coRowType, 6L, "nea", 61L, 6L, "mike"),
+            row(orderRowType, 62L, 6L, "padraig"),
+            row(coRowType, 6L, "nea", 62L, 6L, "padraig"),
+            row(itemRowType, 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -552,6 +591,12 @@ public class FlattenIT extends OperatorITBase
             row(customerRowType, 5L, "matrix"),
             row(orderRowType, 51L, 5L, "yuval"),
             row(oiRowType, 51L, 5L, "yuval", null, null),
+            row(customerRowType, 6L, "nea"),
+            row(orderRowType, 61L, 6L, "mike"),
+            row(oiRowType, 61L, 6L, "mike", null, null),
+            row(orderRowType, 62L, 6L, "padraig"),
+            row(itemRowType, 621L, 62L),
+            row(oiRowType, 62L, 6L, "padraig", 621L, 62L),
         };
         compareRows(expected, cursor);
     }
@@ -587,8 +632,35 @@ public class FlattenIT extends OperatorITBase
             row(flattenCO.rowType(), 4L, "highland", null, null, null),
             row(flattenCA.rowType(), 4L, "highland", 41L, 4L, "560 Harrison"),
             row(flattenCO.rowType(), 5L, "matrix", 51L, 5L, "yuval"),
+            row(flattenCO.rowType(), 6L, "nea", 61L, 6L, "mike"),
+            row(flattenCO.rowType(), 6L, "nea", 62L, 6L, "padraig"),
         };
         compareRows(expected, cursor);
+    }
+
+    @Test
+    public void testBug1018206()
+    {
+        IndexBound cnameBound = new IndexBound(row(customerNameItemOidIndexRowType, "nea"), new SetColumnSelector(0));
+        IndexKeyRange cnameRange = IndexKeyRange.bounded(customerNameItemOidIndexRowType, cnameBound, true, cnameBound, true);
+        IndexScanSelector indexScanSelector = IndexScanSelector.leftJoinAfter(customerNameItemOidIndexRowType.index(),
+                                                                              customerRowType.userTable());
+        Operator flatten =
+            flatten_HKeyOrdered(
+                ancestorLookup_Default(
+                    indexScan_Default(customerNameItemOidIndexRowType, cnameRange, ordering(), indexScanSelector),
+                    coi,
+                    customerNameItemOidIndexRowType,
+                    Arrays.asList(customerRowType, itemRowType),
+                    InputPreservationOption.DISCARD_INPUT),
+                customerRowType,
+                itemRowType,
+                LEFT_JOIN);
+        RowBase[] expected = new RowBase[] {
+            row(flatten.rowType(), 6L, "nea", null, null),
+            row(flatten.rowType(), 6L, "nea", 621L, 62L),
+        };
+        compareRows(expected, cursor(flatten, queryContext));
     }
 
     @Test
@@ -623,7 +695,10 @@ public class FlattenIT extends OperatorITBase
                     row(oiRowType, 31L, 3L, "peter", 312L, 31L),
                     row(customerRowType, 4L, "highland"),
                     row(customerRowType, 5L, "matrix"),
-                    row(oiRowType, 51L, 5L, "yuval", null, null)
+                    row(oiRowType, 51L, 5L, "yuval", null, null),
+                    row(customerRowType, 6L, "nea"),
+                    row(oiRowType, 61L, 6L, "mike", null, null),
+                    row(oiRowType, 62L, 6L, "padraig", 621L, 62L),
                 };
             }
         };
@@ -644,4 +719,6 @@ public class FlattenIT extends OperatorITBase
     {
         return String.format("{%d,%s,%d,%s,%d,%s}", customerOrdinal, hKeyValue(cid), orderOrdinal, hKeyValue(oid), itemOrdinal, hKeyValue(iid));
     }
+
+    private IndexRowType giRowType;
 }
