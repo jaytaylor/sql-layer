@@ -57,10 +57,10 @@ public final class DDLGeneratorTest {
     public void testColumnCharset() throws Exception {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "table");
-        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf8", null);
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "euckr", null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET utf8) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET euckr) engine=akibandb",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 
@@ -68,10 +68,10 @@ public final class DDLGeneratorTest {
     public void testColumnCollation() throws Exception {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "table");
-        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "utf8_bin");
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "euckr_korean_ci");
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE utf8_bin) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE euckr_korean_ci) engine=akibandb",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 
