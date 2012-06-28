@@ -79,7 +79,7 @@ class OperatorStoreGIHandler {
 
                 if (Types3Switch.ON) {
                     PValueSource source = row.pvalue(flattenedIndex);
-                    TInstance sourceInstance = row.tinstance(flattenedIndex);
+                    TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
                     TClass sourceClass = sourceInstance.typeClass();
                     sourceClass.writeCollating(source, sourceInstance, pTarget);
                 }

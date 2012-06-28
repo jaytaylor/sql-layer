@@ -32,11 +32,49 @@ public final class PValue implements PValueSource, PValueTarget {
 
     @Override
     public void putValueSource(PValueSource source) {
-        PValue sourceRaw = (PValue) source; // assumes only one PValueSource implementation
-        if (sourceRaw.underlying != this.underlying)
-            throw new IllegalArgumentException("mismatched types: " + sourceRaw.underlying + " != " + underlying);
-        setRawValues(sourceRaw.state, sourceRaw.iVal, sourceRaw.bVal, sourceRaw.oCache);
-        setCacher(sourceRaw.cacher);
+        if (source.isNull()) {
+            putNull();
+            return;
+        }
+        if (source instanceof PValue) {
+            PValue sourceRaw = (PValue) source;
+            if (sourceRaw.underlying != this.underlying)
+                throw new IllegalArgumentException("mismatched types: " + sourceRaw.underlying + " != " + underlying);
+            setRawValues(sourceRaw.state, sourceRaw.iVal, sourceRaw.bVal, sourceRaw.oCache);
+        }
+        else {
+            switch (source.getUnderlyingType()) {
+            case BOOL:
+                putBool(source.getBoolean());
+                break;
+            case INT_8:
+                putInt8(source.getInt8());
+                break;
+            case INT_16:
+                putInt16(source.getInt16());
+                break;
+            case UINT_16:
+                putUInt16(source.getUInt16());
+                break;
+            case INT_32:
+                putInt32(source.getInt32());
+                break;
+            case INT_64:
+                putInt64(source.getInt64());
+                break;
+            case FLOAT:
+                putFloat(source.getFloat());
+                break;
+            case DOUBLE:
+                putDouble(source.getDouble());
+                break;
+            case BYTES:
+                putBytes(source.getBytes());
+                break;
+            default:
+                throw new AssertionError(source.getUnderlyingType());
+            }
+        }
     }
 
     @Override

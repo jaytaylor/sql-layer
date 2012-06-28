@@ -30,6 +30,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -57,6 +59,14 @@ class AbstractValuesHolderRow extends AbstractRow {
     }
 
     @Override
+    public PValueSource pvalue(int i) {
+        PValue value = pValues.get(i);
+        if (!value.hasAnyValue())
+            throw new IllegalStateException("value at index " + i + " was never set");
+        return value;
+    }
+
+    @Override
     public void acquire() {
         if (isMutable)
             super.acquire();
@@ -75,17 +85,31 @@ class AbstractValuesHolderRow extends AbstractRow {
 
     // for use by subclasses
 
-    AbstractValuesHolderRow(RowType rowType, boolean isMutable) {
+    AbstractValuesHolderRow(RowType rowType, boolean isMutable, boolean usePValues) {
         this.isMutable = isMutable;
         this.rowType = rowType;
-        values = new ArrayList<ValueHolder>();
-        for (int i=0; i < rowType.nFields(); ++i) {
-            values.add(new ValueHolder());
+        int nfields = rowType.nFields();
+        if (!usePValues) {
+            values = new ArrayList<ValueHolder>();
+            for (int i=0; i < nfields; ++i) {
+                values.add(new ValueHolder());
+            }
+            pValues = null;
+        }
+        else {
+            values = null;
+            pValues = new ArrayList<PValue>(nfields);
+            for (int i = 0; i < nfields; ++i)
+                pValues.add(new PValue(rowType.typeInstanceAt(i).typeClass().underlyingType()));
         }
     }
 
+    /**
+     * @deprecated implies usePValues == false, which is going away
+     */
+    @Deprecated
     AbstractValuesHolderRow(RowType rowType, boolean isMutable, Iterator<? extends ValueSource> initialValues) {
-        this(rowType, isMutable);
+        this(rowType, isMutable, false);
         int i = 0;
         while(initialValues.hasNext()) {
             if (i >= values.size())
@@ -114,6 +138,11 @@ class AbstractValuesHolderRow extends AbstractRow {
         return values.get(index);
     }
 
+    PValue pvalueAt(int index) {
+        checkMutable();
+        return pValues.get(index);
+    }
+
     private void checkMutable() {
         if (!isMutable)
             throw new IllegalStateException("can't invoke method on an immutable AbstractValuesHolderRow");
@@ -121,5 +150,6 @@ class AbstractValuesHolderRow extends AbstractRow {
 
     private final RowType rowType;
     private final List<ValueHolder> values;
+    private final List<PValue> pValues;
     private final boolean isMutable;
 }

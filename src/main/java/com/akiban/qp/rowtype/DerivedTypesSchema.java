@@ -30,6 +30,7 @@ import com.akiban.ais.model.HKey;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TAggregator;
 
 import java.util.HashSet;
 import java.util.List;
@@ -48,9 +49,9 @@ public class DerivedTypesSchema {
         return descendentTypes;
     }
 
-    public synchronized AggregatedRowType newAggregateType(RowType parent, int inputsIndex, List<AggregatorFactory> aggregatorFactories)
+    public synchronized AggregatedRowType newAggregateType(RowType parent, int inputsIndex, List<AggregatorFactory> aggregatorFactories, List<? extends TAggregator> pAggrs)
     {
-        return new AggregatedRowType(this, nextTypeId(), parent, inputsIndex, aggregatorFactories);
+        return new AggregatedRowType(this, nextTypeId(), parent, inputsIndex, aggregatorFactories, pAggrs);
     }
 
     public synchronized FlattenedRowType newFlattenType(RowType parent, RowType child)
