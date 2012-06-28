@@ -37,8 +37,6 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public abstract class MCount implements TAggregator {
 
-    private static TClass typeClass;
-
     public static final TAggregator[] INSTANCES = {
         // COUNT(*)
         new MCount() {
@@ -63,10 +61,6 @@ public abstract class MCount implements TAggregator {
             }
         }
     };
-    
-    private MCount() {
-        typeClass = MNumeric.BIGINT;
-    }
 
     @Override
     public void emptyValue(PValueTarget state) {
@@ -80,6 +74,6 @@ public abstract class MCount implements TAggregator {
 
     @Override
     public TClass getTypeClass() {
-        return typeClass;
+        return MNumeric.BIGINT;
     }
 }

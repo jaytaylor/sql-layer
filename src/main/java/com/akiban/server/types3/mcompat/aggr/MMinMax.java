@@ -41,7 +41,7 @@ import java.math.BigInteger;
 
 public class MMinMax implements TAggregator {
 
-    private static TType tType;
+    private static  TType tType;
     private static MType mType;
     
     private enum MType {
@@ -77,6 +77,7 @@ public class MMinMax implements TAggregator {
                 state.putDouble(mType.condition(oldState - input) ? oldState : input);
             }
         }, 
+        /* TODO: define MDouble.FLOAT
         FLOAT(MNumeric.BIGINT) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
@@ -84,7 +85,7 @@ public class MMinMax implements TAggregator {
                 float input = state.getFloat();
                 state.putFloat(mType.condition(oldState - input) ? oldState : input);
             }
-        }, 
+        },*/ 
         BIGDECIMAL(MNumeric.DECIMAL) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
@@ -110,6 +111,12 @@ public class MMinMax implements TAggregator {
                 String input = (String) state.getObject();
                 state.putObject(mType.condition(oldState.compareTo(input)) ? oldState : input);
             }            
+        }, 
+        BOOLEAN(MNumeric.TINYINT) {
+             @Override
+            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+                 state.putInt8((byte) 1);
+             }
         };
         abstract void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
         private final TClass typeClass;
@@ -121,17 +128,19 @@ public class MMinMax implements TAggregator {
     
     public static final TAggregator[] INSTANCES = {
         new MMinMax(MType.MAX, TType.LONG),
-        new MMinMax(MType.MAX, TType.FLOAT),
+        //new MMinMax(MType.MAX, TType.FLOAT),
         new MMinMax(MType.MAX, TType.BIGINTEGER),
         new MMinMax(MType.MAX, TType.BIGDECIMAL),
         new MMinMax(MType.MAX, TType.DOUBLE),
         new MMinMax(MType.MAX, TType.STRING),
+        new MMinMax(MType.MAX, TType.BOOLEAN),
         new MMinMax(MType.MIN, TType.LONG),
-        new MMinMax(MType.MIN, TType.FLOAT),
+        //new MMinMax(MType.MIN, TType.FLOAT),
         new MMinMax(MType.MIN, TType.BIGINTEGER),
         new MMinMax(MType.MIN, TType.BIGDECIMAL),
         new MMinMax(MType.MIN, TType.DOUBLE),
-        new MMinMax(MType.MIN, TType.STRING)
+        new MMinMax(MType.MIN, TType.STRING),
+        new MMinMax(MType.MIN, TType.BOOLEAN)
     };
     
     private MMinMax(MType mType, TType tType) {

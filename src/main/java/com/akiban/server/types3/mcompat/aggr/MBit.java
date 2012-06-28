@@ -26,9 +26,6 @@
 
 package com.akiban.server.types3.mcompat.aggr;
 
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.extract.Extractors;
-import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
@@ -37,21 +34,19 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import java.math.BigInteger;
 
 public abstract class MBit implements TAggregator {
 
-    private static final BigInteger EMPTY_FOR_AND = new BigInteger("FFFFFFFFFFFFFFFF", 16);
-    private static final BigInteger EMPTY_FOR_OR = BigInteger.ZERO;
-    private TClass typeClass;
+    private static final long EMPTY_FOR_AND = 0x7FFFFFFFFFFFFFFFL;
+    private static final long EMPTY_FOR_OR = 0L;
     
     public static final TAggregator[] INSTANCES = {
         // BIT_AND
         new MBit() {
 
             @Override
-            BigInteger process(BigInteger i0, BigInteger i1) {
-                return i0.and(i1).and(EMPTY_FOR_AND);
+            long process(long i0, long i1) {
+                return i0 & i1 & EMPTY_FOR_AND;
             }
 
             @Override
@@ -63,8 +58,8 @@ public abstract class MBit implements TAggregator {
         new MBit() {
 
             @Override
-            BigInteger process(BigInteger i0, BigInteger i1) {
-                return i0.or(i1).and(EMPTY_FOR_AND);
+            long process(long i0, long i1) {
+                return i0 | i1 & EMPTY_FOR_AND;
             }
 
             @Override
@@ -76,8 +71,8 @@ public abstract class MBit implements TAggregator {
         new MBit() {
 
             @Override
-            BigInteger process(BigInteger i0, BigInteger i1) {
-                return i0.xor(i1).and(EMPTY_FOR_AND);
+            long process(long i0, long i1) {
+                return i0 ^ i1 & EMPTY_FOR_AND;
             }
 
             @Override
@@ -87,17 +82,13 @@ public abstract class MBit implements TAggregator {
         }
     };
     
-    abstract BigInteger process(BigInteger i0, BigInteger i1);
-    
-    private MBit() {
-        typeClass = MNumeric.BIGINT;
-    }
-    
+    abstract long process(long i0, long i1);
+
     @Override
     public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
         if (!source.isNull()) {
-            BigInteger oldState = (BigInteger) source.getObject();
-            BigInteger currState = (BigInteger) state.getObject();
+            long oldState = source.getInt64();
+            long currState = state.getInt64();
             state.putObject(process(oldState, currState));
         }    
     }
@@ -109,6 +100,6 @@ public abstract class MBit implements TAggregator {
 
     @Override
     public TClass getTypeClass() {
-        return typeClass;
+        return MNumeric.BIGINT;
     }
 }
