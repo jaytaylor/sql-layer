@@ -263,6 +263,15 @@ final class Aggregate_Partial extends Operator
 
 
     // package-private (for testing)
+    @Deprecated
+    Aggregate_Partial(Operator inputOperator,
+                      RowType inputRowType,
+                      int inputsIndex,
+                      List<AggregatorFactory> aggregatorFactories,
+                      AggregatedRowType outputType)
+    {
+        this(inputOperator, inputRowType, inputsIndex, aggregatorFactories, null, null, outputType);
+    }
 
     Aggregate_Partial(Operator inputOperator,
                       RowType inputRowType,

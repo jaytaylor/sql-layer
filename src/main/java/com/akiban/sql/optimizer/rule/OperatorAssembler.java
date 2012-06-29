@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -198,8 +199,9 @@ public class OperatorAssembler extends BaseRule
                 row[column.getPosition()] = inserts.get(i);
             }
             inserts = Arrays.asList(row);
+            assert ! usePValues : "inserts not supported with pvalues";
             stream.operator = API.project_Table(stream.operator, stream.rowType,
-                                                targetRowType, inserts);
+                                                targetRowType, inserts, null);
             UpdatePlannable plan = API.insert_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -893,10 +895,20 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
+            List<Expression> oldProjections; ;
+            List<? extends TPreparedExpression> pExpressions;
+            if (usePValues) {
+                pExpressions = null; assert false;
+                oldProjections = null;
+            }
+            else {
+                pExpressions = null;
+                oldProjections = assembleExpressions(project.getFields(), stream.fieldOffsets);
+            }
             stream.operator = API.project_Default(stream.operator,
                                                   stream.rowType,
-                                                  assembleExpressions(project.getFields(),
-                                                                      stream.fieldOffsets));
+                                                  oldProjections,
+                                                  pExpressions);
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(project,
                                                                stream.rowType);

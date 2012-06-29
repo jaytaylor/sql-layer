@@ -57,6 +57,11 @@ public final class AggregatedRowType extends DerivedRowType {
     }
 
     public AggregatedRowType(DerivedTypesSchema schema, int typeId,
+                             RowType base, int inputsIndex, List<AggregatorFactory> aggregatorFactories) {
+        this(schema, typeId, base, inputsIndex, aggregatorFactories, null);
+    }
+
+    public AggregatedRowType(DerivedTypesSchema schema, int typeId,
                              RowType base, int inputsIndex, List<AggregatorFactory> aggregatorFactories,
                              List<? extends TInstance> pAggrTypes) {
         super(schema, typeId);

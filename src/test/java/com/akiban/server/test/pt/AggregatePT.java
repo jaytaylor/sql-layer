@@ -59,6 +59,8 @@ import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.sql.optimizer.explain.Explainer;
 
 import com.persistit.Exchange;
@@ -362,6 +364,10 @@ public class AggregatePT extends ApiTestBase {
         AkType.LONG, AkType.LONG, AkType.LONG, AkType.LONG
     };
 
+    static final TInstance[] TINSTANCES = {
+        MNumeric.INT.instance(),MNumeric.INT.instance() ,MNumeric.INT.instance() ,MNumeric.INT.instance()
+    };
+
     static class BespokeRowType extends RowType {
         public BespokeRowType() {
             super(-1);
@@ -375,9 +381,15 @@ public class AggregatePT extends ApiTestBase {
         public int nFields() {
             return TYPES.length;
         }
-        
+
+        @Override
         public AkType typeAt(int index) {
             return TYPES[index];
+        }
+
+        @Override
+        public TInstance typeInstanceAt(int index) {
+            return TINSTANCES[index];
         }
     }
 
