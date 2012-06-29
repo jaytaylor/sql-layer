@@ -52,7 +52,9 @@ public class SparseArray<T> {
 
     @SuppressWarnings("unchecked") // T[] is just erased to Object[] anyway, which is what we have
     public List<T> toList() {
-        T[] arrayCopy = Arrays.copyOf((T[])internalArray, internalArray.length);
+        if (!isCompactable())
+            throw new IllegalArgumentException("Not compactable");
+        T[] arrayCopy = Arrays.copyOf((T[])internalArray, definedElements.length());
         return Arrays.asList(arrayCopy);
     }
 

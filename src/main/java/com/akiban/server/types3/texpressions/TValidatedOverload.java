@@ -93,6 +93,12 @@ public final class TValidatedOverload implements TOverload {
     }
 
     public TInputSet inputSetAt(int index) {
+        if(index >= inputSetsByPos.size()) {
+            if(varargs == null) {
+                throw new IllegalArgumentException("No such input set: " + index);
+            }
+            return varargs;
+        }
         return inputSetsByPos.get(index);
     }
 
@@ -101,11 +107,17 @@ public final class TValidatedOverload implements TOverload {
     }
 
     public boolean coversNInputs(int nInputs) {
-        throw new UnsupportedOperationException();
+        /* no pos           : nInputs = 0
+         * POS(N)           : nInputs = N+1
+         * REMAINING        : nInputs >= 0
+         * POS(N),REMAINING : nInputs >= N+1
+         */
+        int minSize = inputSetsByPos.size();
+        return (varargs == null) ? (nInputs == minSize) : (nInputs >= minSize);
     }
 
     public int positionalInputs() {
-        throw new UnsupportedOperationException();
+        return inputSetsByPos.size();
     }
 
     public TValidatedOverload(TOverload overload) {
@@ -139,6 +151,11 @@ public final class TValidatedOverload implements TOverload {
         this.varargs = localVarargInputs;
         this.resultStrategy = overload.resultType();
         this.pickingSet = localPickingInputs;
+    }
+
+    @Override
+    public String toString() {
+        return overload.toString();
     }
 
     private boolean stronglyCastable(TClass tClass, TClass tClass1) {

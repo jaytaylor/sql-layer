@@ -28,7 +28,7 @@ package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.t3expressions.OverloadResolutionResult;
 import com.akiban.server.t3expressions.OverloadResolver;
-import com.akiban.server.t3expressions.T3ScalarsRegistery;
+import com.akiban.server.t3expressions.T3ScalarsRegistry;
 import com.akiban.server.t3expressions.TClassPossibility;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TClass;
@@ -93,7 +93,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private Folder folder;
         private OverloadResolver resolver;
-        private T3ScalarsRegistery registry;
+        private T3ScalarsRegistry registry;
 
 
         ResolvingVistor(PlanContext context) {
