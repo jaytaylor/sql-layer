@@ -16,21 +16,17 @@
 package com.akiban.server.t3expressions;
 
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.Attribute;
+import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TName;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.common.funcs.TArithmetic;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -98,26 +94,6 @@ public class OverloadResolverTest {
         public TestClassBase(String name, PUnderlying pUnderlying) {
             super(TEST_BUNDLE_ID, name, 1, 1, 1, pUnderlying);
         }
-
-        @Override
-        public TFactory factory() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public void putSafety(QueryContext context, TInstance sourceInstance, PValueSource sourceValue,
-                              TInstance targetInstance, PValueTarget targetValue) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected TInstance doPickInstance(TInstance instance0, TInstance instance1) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        protected void validate(TInstance instance) {
-        }
     }
 
     private static final String MUL_NAME = "*";
@@ -156,14 +132,41 @@ public class OverloadResolverTest {
     private final static MulOverloadBase MUL_BIGINT = new MulOverloadBase(TEST_BIGINT);
     private final static MulOverloadBase MUL_DOUBLE = new MulOverloadBase(TEST_DOUBLE);
 
+    private static TPreptimeValue prepVal(TClass tClass) {
+        return new TPreptimeValue(tClass.instance());
+    }
+
+    @Test(expected=NoSuchFunctionException.class)
+    public void noSuchOverload() {
+        SimpleRegistry registry = new SimpleRegistry();
+        OverloadResolver resolver = new OverloadResolver(registry);
+        resolver.get("foo", Arrays.asList(prepVal(TEST_INT)));
+    }
+
+    // default resolution (single overload), exact match
     @Test
-    public void basic() {
+    public void defaultMulIntWithInts() {
         SimpleRegistry registry = new SimpleRegistry(MUL_INT);
         OverloadResolver resolver = new OverloadResolver(registry);
+        assertSame(registry.getValidated(MUL_INT),
+                   resolver.get(MUL_NAME, Arrays.asList(prepVal(TEST_INT), prepVal(TEST_INT))).getOverload());
+    }
 
-        TPreptimeValue i = new TPreptimeValue(TEST_INT.instance());
-        TPreptimeValue bi = new TPreptimeValue(TEST_INT.instance());
+    // default resolution (single overload), requires strong cast (int -> bigint)
+    @Test
+    public void defaultMulBigIntWithInts() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_BIGINT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        assertSame(registry.getValidated(MUL_BIGINT),
+                   resolver.get(MUL_NAME, Arrays.asList(prepVal(TEST_INT), prepVal(TEST_INT))).getOverload());
+    }
 
-        assertSame(registry.getValidated(MUL_INT), resolver.get(MUL_NAME, Arrays.asList(i, bi)).getOverload());
+    // default resolution (single overload), requires weak cast (bigint -> int)
+    @Test
+    public void defaultMulIntWithBigInts() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_INT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        assertSame(registry.getValidated(MUL_INT),
+                   resolver.get(MUL_NAME, Arrays.asList(prepVal(TEST_INT), prepVal(TEST_INT))).getOverload());
     }
 }

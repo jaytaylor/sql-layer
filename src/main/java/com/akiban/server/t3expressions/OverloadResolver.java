@@ -55,17 +55,15 @@ public final class OverloadResolver {
 
     OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
         Collection<? extends TValidatedOverload> namedOverloads = registry.getOverloads(name);
-        if (namedOverloads.isEmpty()) {
+        if (namedOverloads == null || namedOverloads.isEmpty()) {
             throw new NoSuchFunctionException(name);
         }
         OverloadResult result = null;
         if (namedOverloads.size() == 1) {
-            result = defaultResolution(inputs, namedOverloads);
+            return defaultResolution(inputs, namedOverloads);
+        } else {
+            return inputBasedResolution(inputs, namedOverloads);
         }
-        if (result == null) {
-            result = inputBasedResolution(inputs, namedOverloads);
-        }
-        return result;
     }
 
     private OverloadResult inputBasedResolution(List<? extends TPreptimeValue> inputs,

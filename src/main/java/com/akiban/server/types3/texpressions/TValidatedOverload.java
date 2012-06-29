@@ -101,7 +101,14 @@ public final class TValidatedOverload implements TOverload {
     }
 
     public boolean coversNInputs(int nInputs) {
-        return (nInputs <= inputSetsByPos.size()) || (varargs != null);
+        /* no pos           : nInputs = 0
+         * POS(N)           : nInputs = N+1
+         * REMAINING        : nInputs >= 0
+         * POS(N),REMAINING : nInputs >= N+1
+         */
+        if (varargs == null)
+            return nInputs == inputSetsByPos.size();
+        return nInputs >= varargs.positionsLength();
     }
 
     public int positionalInputs() {
@@ -134,6 +141,8 @@ public final class TValidatedOverload implements TOverload {
         }
         if (!inputSetsArray.isCompactable())
             throw new InvalidOverloadException("not all inputs covered");
+        if ((localVarargInputs != null) && (localVarargInputs.positionsLength() < inputSetsArray.lastDefinedIndex()))
+            throw new InvalidOverloadException("REMAINING cannot overlap any POS");
         this.overload = overload;
         this.inputSetsByPos = inputSetsArray.toList();
         this.varargs = localVarargInputs;
