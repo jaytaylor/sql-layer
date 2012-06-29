@@ -26,6 +26,7 @@ import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 public final class OverloadResolver {
@@ -73,15 +74,20 @@ public final class OverloadResolver {
                 candidates.add(overload);
             }
         }
-        // TODO find the most specific
         TValidatedOverload mostSpecific = null;
+        if (candidates.size() == 0)
+            return null;
         if (candidates.size() == 1) {
             mostSpecific = candidates.get(0);
         } else {
-
+            List<List<TValidatedOverload>> groups = groupAndEliminate(candidates);
+            if(groups.size() == 1) {
+                if(groups.get(0).size() == 1)
+                    mostSpecific = groups.get(0).get(0);
+            }
         }
         if (mostSpecific == null)
-            throw new NoSuchFunctionException("No overload found"); // TODO: Specific exception
+            return null;
         TClass pickingClass = pickingClass(mostSpecific, inputs);
         return new OverloadResult(mostSpecific, pickingClass);
     }
@@ -142,5 +148,64 @@ public final class OverloadResolver {
             }
         }
         return common;
+    }
+
+    /*
+     * Two overloads have SIMILAR INPUT SETS if they
+     * 1) have the same number of input sets
+     * 2) each input set from one overload covers the same columns as an input set from the other function
+     *
+     * For any two overloads A and B, if A and B have SIMILAR INPUT SETS, and the target type of each input
+     * set Ai can be strongly cast to the target type of Bi, then A is said to be MORE SPECIFIC than A, and B
+     * is discarded as a possible overload.
+     */
+    private List<List<TValidatedOverload>> groupAndEliminate(List<TValidatedOverload> candidates) {
+        List<List<TValidatedOverload>> groups = new ArrayList<List<TValidatedOverload>>();
+        for(TValidatedOverload overload : candidates) {
+            final int nInputSets = overload.inputSets().size();
+            for(List<TValidatedOverload> group : groups) {
+                Iterator<TValidatedOverload> similarIt = group.iterator();
+                OUTER:
+                while(similarIt.hasNext()) {
+                    TValidatedOverload cur = similarIt.next();
+                    if(overload == null || (cur.inputSets().size() != nInputSets))
+                        break;
+                    boolean aToB = true;
+                    boolean bToA = true;
+                    for(int i = 0; i < nInputSets; ++i) {
+                        TInputSet aSet = cur.inputSetAt(i);
+                        TInputSet bSet = overload.inputSetAt(i);
+                        if(aSet.positionsLength() != bSet.positionsLength())
+                            break OUTER;
+                        aToB &= isStrong(registry.cast(aSet.targetType(), bSet.targetType()));
+                        bToA &= isStrong(registry.cast(bSet.targetType(), aSet.targetType()));
+                    }
+                    // This group is matching
+                    // Is current more specific and new?
+                    if(aToB) {
+                        // current more specific
+                        overload = null;
+                    } else if(bToA) {
+                        // new more specific
+                        similarIt.remove();
+                        if(!similarIt.hasNext()) {
+                            group.add(overload);
+                            overload = null;
+                        }
+                    }
+                }
+            }
+            // Not eliminated and no matching group, new group
+            if(overload != null) {
+                List<TValidatedOverload> group = new ArrayList<TValidatedOverload>();
+                group.add(overload);
+                groups.add(group);
+            }
+        }
+        return groups;
+    }
+
+    private static boolean isStrong(TCast cast) {
+        return (cast != null) && cast.isAutomatic();
     }
 }

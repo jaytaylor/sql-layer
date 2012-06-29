@@ -37,6 +37,7 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import org.junit.Test;
+import sun.security.util.BigInt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -108,9 +109,9 @@ public class OverloadResolverTest {
         }
     }
 
-    private static TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
-
     private static class TestClassBase extends NoAttrTClass {
+        private static final TBundleID TEST_BUNDLE_ID = new TBundleID("test", new UUID(0,0));
+
         public TestClassBase(String name, PUnderlying pUnderlying) {
             super(TEST_BUNDLE_ID, name, 1, 1, 1, pUnderlying);
         }
@@ -172,7 +173,9 @@ public class OverloadResolverTest {
     private final static TClass TDOUBLE = new TestClassBase("double",  PUnderlying.DOUBLE);
 
     private final static TCast C_INT_INT = new TestCastBase(TINT);
+    private final static TCast C_INT_BIGINT = new TestCastBase(TINT, TBIGINT, true);
     private final static TCast C_BIGINT_BIGINT = new TestCastBase(TBIGINT);
+    private final static TCast C_BIGINT_INT = new TestCastBase(TBIGINT, TINT, false);
 
     private final static TestMulBase MUL_INT = new TestMulBase(TINT);
     private final static TestMulBase MUL_BIGINT = new TestMulBase(TBIGINT);
@@ -240,12 +243,12 @@ public class OverloadResolverTest {
     }
 
     // input resolution, no casts
-    @Test(expected=NoSuchFunctionException.class)
+    @Test
     public void mulIntMulBigIntWithIntsNoCasts() {
         SimpleRegistry registry = new SimpleRegistry(MUL_INT, MUL_BIGINT);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(registry.validated(MUL_INT),
-                   resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
+        assertSame(null,
+                   resolver.get(MUL_NAME, prepVals(TINT, TINT)));
     }
 
     // input resolution, type only casts, only one candidate
@@ -256,5 +259,24 @@ public class OverloadResolverTest {
         OverloadResolver resolver = new OverloadResolver(registry);
         assertSame(registry.validated(MUL_INT),
                    resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
+        assertSame(registry.validated(MUL_INT),
+                   resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
+    }
+
+    // input resolution, more casts, only one candidate for each
+    @Test
+    public void mulIntMulBigIntWithIntsAndIntBigintStrongAndWeakCasts() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_INT, MUL_BIGINT);
+        registry.setCasts(C_INT_INT, C_INT_BIGINT, C_BIGINT_BIGINT, C_BIGINT_INT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        // 2 candidates, 1 more specific
+        assertSame("INT*INT", registry.validated(MUL_INT),
+                   resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
+        // 1 candidate
+        assertSame("INT*BIGINT", registry.validated(MUL_BIGINT),
+                   resolver.get(MUL_NAME, prepVals(TINT, TBIGINT)).getOverload());
+        // 1 candidate
+        assertSame("BIGINT*BIGINT", registry.validated(MUL_BIGINT),
+                   resolver.get(MUL_NAME, prepVals(TBIGINT, TBIGINT)).getOverload());
     }
 }
