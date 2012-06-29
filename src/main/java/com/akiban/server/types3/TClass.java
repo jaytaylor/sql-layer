@@ -149,7 +149,7 @@ public abstract class TClass {
     
     // for use by this class
     
-    private TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+    protected TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         if (nAttributes() != nAttrs)
             throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
         

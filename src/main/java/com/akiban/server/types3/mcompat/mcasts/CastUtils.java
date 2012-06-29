@@ -27,9 +27,20 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TExecutionContext;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public final class CastUtils
 {
+    public static long round (long max, long min, double val, TExecutionContext context)
+    {
+        long rounded = Math.round(val);
+        
+        if (Double.compare(rounded, val) != 0)
+            context.reportTruncate(Double.toString(val), Long.toString(rounded));
+        return getInRange(max, min, rounded, context);
+    }
+
     public static long getInRange (long max, long min, long val, TExecutionContext context)
     {
         if (val > max)
@@ -62,7 +73,6 @@ public final class CastUtils
         else
             return val;
     }
-    
      
     /**
      * Parse the st for a double value
@@ -74,9 +84,28 @@ public final class CastUtils
      * @return 
      */
     public static double parseDoubleString(String st, TExecutionContext context)
-    {
-        // TODO: use Yuval's sugested regex
-        throw new UnsupportedOperationException();
+    {      
+        Matcher m = DOUBLE_PATTERN.matcher(st);
+
+        m.lookingAt();
+        String truncated = st.substring(0, m.end());
+
+        if (!truncated.equals(st))
+        {
+            context.reportTruncate(st, truncated);
+        }
+
+        double ret = 0;
+        try
+        {
+            ret = Double.parseDouble(truncated);
+        }
+        catch (NumberFormatException e)
+        {
+            context.reportBadValue(e.getMessage());
+        }
+
+       return ret;
     }
     
     /**
@@ -109,4 +138,6 @@ public final class CastUtils
         
         return st;
     }
+    
+    private static final Pattern DOUBLE_PATTERN = Pattern.compile("([-+]?\\d*)(\\.?\\d*)?(e[-+]?\\d+)?");
 }

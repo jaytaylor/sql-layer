@@ -75,6 +75,13 @@ public class MBinaryBit extends TOverloadBase {
                 // doEvaluate method overrides this
                 return -1;
             }
+        }, 
+        BIT_COUNT {
+            @Override
+            long evaluate(long a0, long a1) {
+                // doEvaluate method overrides this
+                return -1;
+            }
         };
         abstract long evaluate(long a0, long a1);
     }
@@ -94,6 +101,18 @@ public class MBinaryBit extends TOverloadBase {
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
                 output.putInt64(~inputs.get(0).getInt64());
+            }
+        },
+        new MBinaryBit(BitOperator.BIT_COUNT) {
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder) {
+                builder.covers(MNumeric.BIGINT_UNSIGNED, 0);
+            }
+            
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+                long input = inputs.get(0).getInt64();
+                output.putInt64(Long.bitCount(input));
             }
         }
     };

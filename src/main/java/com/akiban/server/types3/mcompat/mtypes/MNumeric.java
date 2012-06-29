@@ -39,7 +39,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MNumeric extends TClass {
 
-    private MNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
+    protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
         super(MBundle.INSTANCE.id(), name, 
                 NumericAttribute.class,
                 1, 1, serializationSize, 
@@ -79,11 +79,6 @@ public class MNumeric extends TClass {
             case CHOOSE:
         }*/
         throw new UnsupportedOperationException("Not supported yet.");
-    }
-
-    @Override
-    public TInstance instance(int m) {
-        return factory().create(null); //TODO need to turn M into an arg
     }
     
     // numeric types
