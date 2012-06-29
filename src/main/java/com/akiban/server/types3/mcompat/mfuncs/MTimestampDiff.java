@@ -26,92 +26,147 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.error.InvalidParameterValueException;
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.common.UnitValue;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import com.akiban.sql.parser.TernaryOperatorNode;
 
-public class MTimestampDiff extends TOverloadBase {
-    
-    public static final TOverload INSTANCE = new MTimestampDiff();
+public abstract class MTimestampDiff extends TOverloadBase
+{
+    public static TOverload[] create()
+    {
+        return new TOverload[]
+        {
+            new MTimestampDiff(MDatetimes.DATE)
+            {
+                @Override
+                protected long[] getYMD(PValueSource source, TExecutionContext context)
+                {
+                    return MDatetimes.decodeDate(source.getInt32());
+                }
+                
+                @Override
+                protected long tryGetUnix(PValueSource source, TExecutionContext context)
+                {
+                    return MDatetimes.getTimestamp(MDatetimes.decodeDate(source.getInt32()),
+                                                   context.getCurrentTimezone());
+                }
+            },
+            new MTimestampDiff(MDatetimes.DATETIME)
+            {
+                @Override
+                protected long[] getYMD(PValueSource source, TExecutionContext context)
+                {
+                    return MDatetimes.decodeDatetime(source.getInt64());
+                }
+
+                @Override
+                protected long tryGetUnix(PValueSource source, TExecutionContext context)
+                {
+                    return MDatetimes.getTimestamp(MDatetimes.decodeDatetime(source.getInt64()),
+                                                   context.getCurrentTimezone());
+                }
+            },
+            new MTimestampDiff(MDatetimes.TIMESTAMP)
+            {
+                @Override
+                protected long[] getYMD(PValueSource source, TExecutionContext context)
+                {
+                    return MDatetimes.decodeTimestamp(source.getInt32(), context.getCurrentTimezone());
+                }
+
+                @Override
+                protected long tryGetUnix(PValueSource source, TExecutionContext context)
+                {
+                    return source.getInt32();
+                }
+            }
+        };
+    }
 
     private static final long[] MILLIS_DIV = new long[6];
-    private static final long[] MONTH_DIV = {12L, 4L, 1L};
-    private static final int MILLIS_BASE = UnitValue.WEEK;
-    private static final int MONTH_BASE = UnitValue.YEAR;
+    private static final int[] MONTH_DIV = {12, 4, 1};
 
-    private MTimestampDiff() {
-        int mul[] = {7, 24, 60, 60, 1000};
+    private static final int MILLIS_BASE = TernaryOperatorNode.WEEK_INTERVAL;
+    private static final int MONTH_BASE = TernaryOperatorNode.YEAR_INTERVAL;
+    static
+    {
+        int mul[] ={7, 24, 60, 60, 1000};
 
         MILLIS_DIV[5] = 1;
-        for (int n = 4; n >= 0; --n) {
+        for (int n = 4; n >= 0; --n)
             MILLIS_DIV[n] = MILLIS_DIV[n + 1] * mul[n];
-        }
     }
-        
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.INT, 0);
-        builder.covers(MDatetimes.DATETIME, 1, 2);
+
+    private final TClass dateType;
+
+    protected abstract long[] getYMD(PValueSource source, TExecutionContext context);
+    protected abstract long tryGetUnix(PValueSource source, TExecutionContext context);
+
+    private MTimestampDiff(TClass dtType)
+    {
+        dateType = dtType;
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int val = inputs.get(0).getInt32();
-        long datetime0 = inputs.get(1).getInt64();
-        long datetime1 = inputs.get(2).getInt64();
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(MNumeric.INT, 0).covers(dateType, 1, 2);
+    }
+
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
+        int type = inputs.get(0).getInt32();
         
-        switch (val) {
-            case UnitValue.YEAR: 
-            case UnitValue.QUARTER:
-            case UnitValue.MONTH: 
-                long[] date0 = MDatetimes.decodeDatetime(datetime0);
-                long[] date1 = MDatetimes.decodeDatetime(datetime1);
-                
-                output.putInt64(doSubtract(date0, date1) / MONTH_DIV[val - MONTH_BASE]);
+        PValueSource date1 = inputs.get(1);
+        PValueSource date2 = inputs.get(2);
+
+        switch(type)
+        {
+            case TernaryOperatorNode.YEAR_INTERVAL:
+            case TernaryOperatorNode.QUARTER_INTERVAL:
+            case TernaryOperatorNode.MONTH_INTERVAL:
+                output.putInt64(doMonthSubtraction(getYMD(date2, context), getYMD(date1, context))
+                                / MONTH_DIV[type - MONTH_BASE]);
                 break;
-            case UnitValue.WEEK:
-            case UnitValue.DAY:
-            case UnitValue.HOUR:
-            case UnitValue.MINUTE:
-            case UnitValue.SECOND:
-                output.putInt64((datetime0 - datetime1) / MILLIS_DIV[val - MILLIS_BASE]);
+            case TernaryOperatorNode.WEEK_INTERVAL:
+            case TernaryOperatorNode.DAY_INTERVAL:
+            case TernaryOperatorNode.HOUR_INTERVAL:
+            case TernaryOperatorNode.MINUTE_INTERVAL:
+            case TernaryOperatorNode.SECOND_INTERVAL:
+            case TernaryOperatorNode.FRAC_SECOND_INTERVAL:
+                output.putInt64((tryGetUnix(date2, context) - tryGetUnix(date1, context))
+                                / MILLIS_DIV[type - MILLIS_BASE]);
                 break;
+            default:
+                        throw new UnsupportedOperationException("Unknown INTERVAL_TYPE: " + type);
         }
     }
 
     @Override
-    public String overloadName() {
+    public String overloadName()
+    {
         return "TIMESTAMPDIFF";
     }
-
+    
     @Override
-    public TOverloadResult resultType() {
+    public TOverloadResult resultType()
+    {
         return TOverloadResult.fixed(MNumeric.BIGINT.instance());
     }
-    
-    private static long doSubtract(long d1[], long d2[]) {
-        if (!MDatetimes.isValidDatetime(d1)
-                || !MDatetimes.isValidDatetime(d2)){
-            throw new InvalidParameterValueException("Invalid date/time values");
-        }
 
+    private static long doMonthSubtraction (long d1[], long d2[])
+    {
         long ret = (d1[0] - d2[0]) * 12 + d1[1] - d2[1];
 
         // adjust the day difference
-        if (ret > 0 && d1[2] < d2[2]) {
-            --ret;
-        } else if (ret < 0 && d1[2] > d2[2]) {
-            ++ret;
-        }
+        if (ret > 0 && d1[2] < d2[2]) --ret;
+        else if (ret < 0 && d1[2] > d2[2]) ++ret;
 
         return ret;
     }

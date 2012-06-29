@@ -37,25 +37,34 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
-public class MSecToTime extends TOverloadBase {
-
+public class MSecToTime extends TOverloadBase 
+{
     public static final TOverload INSTANCE = new MSecToTime();
     
+    private MSecToTime() {}
+
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.INT, 0);
+    protected void buildInputSets(TInputSetBuilder builder) 
+    {
+        builder.covers(MNumeric.BIGINT, 0);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        int time = inputs.get(0).getInt32();
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) 
+    {
+        long time = inputs.get(0).getInt64();
+        int mul;
         
-        int hour = time / 3600;
-        int min = time / 60;
-        int sec = time % 60;
-        
-        int result = hour * 10000 + min * 100 + sec;
-        output.putInt32(result);
+        if (time < 0)
+            time *= mul = -1;
+        else
+            mul = 1;
+
+        long hour = time / 3600 * mul;
+        long min = time / 60;
+        long sec = time % 60;
+
+        output.putInt32(MDatetimes.encodeTime(hour, min, sec, context));
     }
 
     @Override
@@ -67,5 +76,4 @@ public class MSecToTime extends TOverloadBase {
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MDatetimes.TIME);
     }
-
 }

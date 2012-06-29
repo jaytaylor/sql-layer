@@ -32,13 +32,25 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import org.joda.time.MutableDateTime;
 
 public abstract class MUnixTimestamp extends TOverloadBase {
     
-    public static final TOverload[] INSTANCES = {
+    public static final TOverload[] INSTANCES =
+    {
+        new MUnixTimestamp()
+        {
+            @Override
+            protected void buildInputSets(TInputSetBuilder builder)
+            {
+                builder.covers(MDatetimes.TIMESTAMP, 0);
+            }
+            @Override
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+            {
+                output.putInt32(inputs.get(0).getInt32());
+            }            
+        },
         new MUnixTimestamp() {
-
             @Override
             protected void buildInputSets(TInputSetBuilder builder) {
                 builder.covers(MDatetimes.DATETIME, 0);
@@ -53,19 +65,23 @@ public abstract class MUnixTimestamp extends TOverloadBase {
         new MUnixTimestamp() {
 
             @Override
-            protected void buildInputSets(TInputSetBuilder builder) {
+            protected void buildInputSets(TInputSetBuilder builder) 
+            {
+                // Does nothing (takes 0 input)
             }
 
             @Override
-            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-                output.putInt32((int) context.getCurrentDate() / 1000);
+            protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+            {
+                output.putInt32((int) MDatetimes.encodeTime(context.getCurrentDate(), context.getCurrentTimezone()));
             }
         }
     };
 
     @Override
-    public String overloadName() {
-        return "TIMESTAMP";
+    public String overloadName() 
+    {
+        return "UNIX_TIMESTAMP";
     }
 
     @Override

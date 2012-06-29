@@ -261,7 +261,7 @@ public class Cast_From_Date
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(MDatetimes.parseDate((String)source.getObject(), context));
+            target.putObject(MDatetimes.dateToString(source.getInt32()));
         }
     };
     
