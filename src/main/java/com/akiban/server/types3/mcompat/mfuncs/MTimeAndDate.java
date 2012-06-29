@@ -26,71 +26,108 @@
 
 package com.akiban.server.types3.mcompat.mfuncs;
 
-import com.akiban.server.types3.LazyList;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TOverload;
-import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
-import org.joda.time.MutableDateTime;
-
-
-
 
 public class MTimeAndDate extends TOverloadBase{
-    
-     static enum OutputType {
-        DATE {
+   
+    static enum DateType {
+        DATETIME(MDatetimes.DATETIME) {
             @Override
-            long evaluate(long[] input)
-            {
-                return MDatetimes.encodeDate(new long[]{input[MDatetimes.YEAR_INDEX],input[MDatetimes.MONTH_INDEX],input[MDatetimes.DAY_INDEX]});
+            boolean isValid(long[] datetime) {
+                return MDatetimes.isValidDatetime(datetime);
             }
             
             @Override
-            public TOverloadResult resultType() {
-                return TOverloadResult.fixed(MDatetimes.DATE.instance());
+            long[] decode(long input) {
+                return MDatetimes.decodeDatetime(input);
             }
         },
-        TIME {
+        DATE(MDatetimes.DATE) {
             @Override
-            long evaluate(long[] input)
-            {
-                return MDatetimes.encodeDate(new long[]{0,0,0,input[MDatetimes.HOUR_INDEX],input[MDatetimes.MIN_INDEX],input[MDatetimes.SEC_INDEX]});
-            }
+            boolean isValid(long[] datetime) {
+                return MDatetimes.isValidDayMonth(datetime);
+            }      
             
             @Override
-            public TOverloadResult resultType() {
-                return TOverloadResult.fixed(MDatetimes.TIME.instance());
+            long[] decode(long input) {
+                return MDatetimes.decodeDate(input);
+            }
+        },
+        TIME(MDatetimes.TIME) {
+            @Override
+            boolean isValid(long[] datetime) {
+                return MDatetimes.isValidHrMinSec(datetime);
+            }            
+            
+            @Override
+            long[] decode(long input) {
+                return MDatetimes.decodeTime(input);
             }
         };
         
-        abstract public TOverloadResult resultType();
-        abstract long evaluate(long[] input);
+        final TClass type;
+        abstract boolean isValid(long[] datetime);
+        abstract long[] decode(long input);
+        
+        private DateType(TClass type) {
+            this.type = type;
+        }
     }
+ 
+    static enum FuncType {
+        DATE(MDatetimes.DATE) {
+
+            @Override
+            long encode(long[] input) {
+                return MDatetimes.encodeDate(input);
+            }
+        },
+        TIME(MDatetimes.TIME) {
+
+            @Override
+            long encode(long[] input) {
+                return MDatetimes.encodeTime(input);
+            }
+        };
+        abstract long encode(long[] input);
+        final TClass resultType;
+        
+        private FuncType(TClass resultType) {
+            this.resultType = resultType;
+        }
+    }
+
+    private final FuncType outputType;
+    private final DateType dateType;
     
-    private final OutputType outputType;
+    public static final TOverload[] INSTANCES = {
+        new MTimeAndDate(FuncType.DATE, DateType.DATETIME),
+        new MTimeAndDate(FuncType.DATE, DateType.DATE),
+        new MTimeAndDate(FuncType.TIME, DateType.TIME),
+        new MTimeAndDate(FuncType.TIME, DateType.TIME)
+    };
     
-    MTimeAndDate(OutputType outputType) {
+    MTimeAndDate(FuncType outputType, DateType dateType) {
         this.outputType = outputType;
+        this.dateType = dateType;
     }
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MDatetimes.DATETIME, 0);
+        builder.covers(dateType.type, 0);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-        long[] datetime = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
+        long[] datetime = dateType.decode(inputs.get(0).getInt64());
         
-        if (!MDatetimes.isValidDatetime(datetime)) output.putNull();
-        else output.putInt32((int)(outputType.evaluate(datetime)));
+        if (!dateType.isValid(datetime)) output.putNull();
+        else output.putInt32((int)(outputType.encode(datetime)));
     }
 
     @Override
@@ -100,6 +137,6 @@ public class MTimeAndDate extends TOverloadBase{
 
     @Override
     public TOverloadResult resultType() {
-        return outputType.resultType();
+        return TOverloadResult.fixed(outputType.resultType.instance());
     }
 }
