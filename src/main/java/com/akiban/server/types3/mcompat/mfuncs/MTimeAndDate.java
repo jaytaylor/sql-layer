@@ -108,7 +108,7 @@ public class MTimeAndDate extends TOverloadBase{
     public static final TOverload[] INSTANCES = {
         new MTimeAndDate(FuncType.DATE, DateType.DATETIME),
         new MTimeAndDate(FuncType.DATE, DateType.DATE),
-        new MTimeAndDate(FuncType.TIME, DateType.TIME),
+        new MTimeAndDate(FuncType.TIME, DateType.DATETIME),
         new MTimeAndDate(FuncType.TIME, DateType.TIME)
     };
     
