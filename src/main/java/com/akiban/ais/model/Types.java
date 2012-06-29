@@ -33,6 +33,7 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PUnderlying;
 
+import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -148,17 +149,16 @@ public class Types {
 	public static Type POLYGON =            new Type("polygon", 0, false, 0L, "POLYGON", AkType.UNSUPPORTED, null);
 	public static Type MULTIPOLYGON =       new Type("multipolygon", 0, false, 0L, "MULTIPOLYGON", AkType.UNSUPPORTED, null);
 
-
     private final static List<Type> types = listOfTypes();
     private final static Set<Type> unsupported = setOfUnsupportedTypes();
     private final static Set<Type> unsupportedInIndex = setOfUnsupportedIndexTypes();
     private final static Map<Type,Long[]> defaultParams = mapOfDefaults();
-    
+    private final static Map<Type,TypesEnum> asEnums = mapToEnumTypes();
 
-	private static List<Type> listOfTypes() {
+    private static List<Type> listOfTypes() {
 	    List<Type> types = new ArrayList<Type>();
 		types.add(BIGINT);
-                types.add(U_BIGINT);
+        types.add(U_BIGINT);
 		types.add(BINARY);
 		types.add(BIT);
 		types.add(BLOB);
@@ -204,6 +204,70 @@ public class Types {
 		return Collections.unmodifiableList(types);
 	}
 
+    private static Map<Type,TypesEnum> mapToEnumTypes() {
+        Map<Type,TypesEnum> result = new HashMap<Type, TypesEnum>(TypesEnum.values().length);
+        for (TypesEnum asEnum : TypesEnum.values()) {
+            String fieldName = asEnum.name().substring(2);
+            try {
+                Field field = Types.class.getField(fieldName);
+                Type asType = (Type) field.get(null);
+                result.put(asType, asEnum);
+            } catch (NoSuchFieldException e) {
+                throw new RuntimeException(e);
+            } catch (IllegalAccessException e) {
+                throw new RuntimeException(e);
+            }
+        }
+        return Collections.unmodifiableMap(result);
+    }
+
+    public enum TypesEnum {
+        T_BIGINT,
+        T_U_BIGINT,
+        T_BINARY,
+        T_BIT,
+        T_BLOB,
+        T_CHAR,
+        T_DATE,
+        T_DATETIME,
+        T_DECIMAL,
+        T_U_DECIMAL,
+        T_DOUBLE,
+        T_U_DOUBLE,
+        T_ENUM,
+        T_FLOAT,
+        T_U_FLOAT,
+        T_GEOMETRY,
+        T_GEOMETRYCOLLECTION,
+        T_INT,
+        T_U_INT,
+        T_LINESTRING,
+        T_LONGBLOB,
+        T_LONGTEXT,
+        T_MEDIUMBLOB,
+        T_MEDIUMINT,
+        T_U_MEDIUMINT,
+        T_MEDIUMTEXT,
+        T_MULTILINESTRING,
+        T_MULTIPOINT,
+        T_MULTIPOLYGON,
+        T_POINT,
+        T_POLYGON,
+        T_SET,
+        T_SMALLINT,
+        T_U_SMALLINT,
+        T_TEXT,
+        T_TIME,
+        T_TIMESTAMP,
+        T_TINYBLOB,
+        T_TINYINT,
+        T_U_TINYINT,
+        T_TINYTEXT,
+        T_VARBINARY,
+        T_VARCHAR,
+        T_YEAR
+    }
+
     private static Set<Type> setOfUnsupportedTypes() {
         Set<Type> unsupported = new HashSet<Type>();
         unsupported.add(null);
@@ -242,6 +306,16 @@ public class Types {
         map.put(DECIMAL, new Long[]{10L,0L});
         map.put(U_DECIMAL, new Long[]{10L,0L});
         return Collections.unmodifiableMap(map);
+    }
+
+    /**
+     * Get the type's enum, for using in switches.
+     */
+    public static TypesEnum asEnum(Type type) {
+        TypesEnum result = asEnums.get(type);
+        if (result == null)
+            throw new IllegalArgumentException("no enum value for " + type);
+        return result;
     }
 
     /**

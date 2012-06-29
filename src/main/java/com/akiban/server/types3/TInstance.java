@@ -26,13 +26,13 @@
 
 package com.akiban.server.types3;
 
+import com.akiban.sql.types.DataTypeDescriptor;
+
 public final class TInstance {
     
     public int attribute(Attribute attribute) {
-        
         if (enumClass != attribute.getClass())
             throw new IllegalArgumentException("Illegal attribute: " + attribute.name());
-        
         int index = attribute.ordinal();
         switch (index) {
         case 0: return attr0;
@@ -47,12 +47,6 @@ public final class TInstance {
         return tclass;
     }
 
-    TInstance(TClass tclass, 
-            Class<?> enumClass, 
-            int attr0, int attr1, int attr2, int attr3) {
-        this(tclass, enumClass, 4, attr0, attr1, attr2, attr3);
-    }
-
     public Boolean nullability() {
         return isNullable;
     }
@@ -65,11 +59,18 @@ public final class TInstance {
     public Object getMetaData() {
         return metaData;
     }
-    
+
     /**
-     * 
+     * Convenience method for <tt>typeClass().dataTypeDescriptor(this)</tt>.
+     * @return this instance's DataTypeDescriptor
+     * @see TClass#dataTypeDescriptor(TInstance)
+     */
+    public DataTypeDescriptor dataTypeDescriptor() {
+        return tclass.dataTypeDescriptor(this);
+    }
+    /**
      * @param o additional meta data for this TInstance
-     * @return 
+     * @return
      * <code>false</code> if this method has already been called on this object.
      * The new meta data will <e>not</e> override the current one.
      * <code>true</code> if this object's meta data is still <code>null</code>.
@@ -80,19 +81,82 @@ public final class TInstance {
         metaData = o;
         return true;
     }
-    
+
     public TInstance copy() {
         return new TInstance(tclass, enumClass, tclass.nAttributes(), attr0, attr1, attr2, attr3);
     }
 
     // object interface
 
-    // TODO
+    @Override
+    public String toString() {
+        String className = tclass.name().unqualifiedName();
+        int nattrs = tclass.nAttributes();
+        // assume 5 digits per attribute as a wild guess. If it's wrong, no biggie. 2 chars for open/close paren
+        int capacity = className.length() + 2 + (5*nattrs);
+        StringBuilder sb = new StringBuilder(capacity);
+        sb.append(className).append('(');
+        int[] attrs = new int[] { attr0, attr1, attr2, attr3 };
+        for (int i = 0; i < nattrs; ++i) {
+            tclass.attributeToString(i, attrs[i], sb);
+            if (i+1 < nattrs)
+                sb.append(", ");
+        }
+        sb.append(')');
+        if (Boolean.TRUE.equals(isNullable))
+            sb.append(" NULL");
+        else if (Boolean.FALSE.equals(isNullable))
+            sb.append(" NOT NULL");
+        // else, nullability is not known
+        return sb.toString();
+    }
 
-    private TInstance(TClass tclass, 
-            Class<?> enumClass,
-            int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (!(o instanceof TInstance)) return false;
+
+        TInstance other = (TInstance) o;
+
+        return attr0 == other.attr0
+                && attr1 == other.attr1
+                && attr2 == other.attr2
+                && attr3 == other.attr3
+                && (isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable)
+                && tclass.equals(other.tclass);
+
+    }
+
+    @Override
+    public int hashCode() {
+        int result = tclass.hashCode();
+        result = 31 * result + attr0;
+        result = 31 * result + attr1;
+        result = 31 * result + attr2;
+        result = 31 * result + attr3;
+        result = 31 * result + (isNullable != null ? isNullable.hashCode() : 0);
+        return result;
+    }
+
+    // state
+
+    TInstance(TClass tclass, Class<?> enumClass, int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         assert nAttrs == tclass.nAttributes() : "expected " + tclass.nAttributes() + " attributes but got " + nAttrs;
+        // normalize inputs past nattrs
+        switch (nAttrs) {
+        case 0:
+            attr0 = -1;
+        case 1:
+            attr1 = -1;
+        case 2:
+            attr2 = -1;
+        case 3:
+            attr3 = -1;
+        case 4:
+            break;
+        default:
+            throw new IllegalArgumentException("too many nattrs: " + nAttrs + " (" + enumClass.getSimpleName() + ')');
+        }
         this.tclass = tclass;
         this.attr0 = attr0;
         this.attr1 = attr1;
@@ -106,5 +170,4 @@ public final class TInstance {
     private Boolean isNullable;
     private Object metaData;
     private final Class<?> enumClass;
-    
 }

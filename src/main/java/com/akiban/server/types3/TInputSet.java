@@ -50,11 +50,24 @@ public final class TInputSet {
         return coversRemaining;
     }
 
+    public int firstPosition() {
+        return covering.nextSetBit(0);
+    }
+
+    public int nextPosition(int from) {
+        return covering.nextSetBit(from);
+    }
+
     public TInputSet(TClass targetType, BitSet covering, boolean coversRemaining, boolean isPicking) {
         this.targetType = targetType;
         this.covering = covering.get(0, covering.length());
         this.coversRemaining = coversRemaining;
         this.isPicking = isPicking;
+    }
+
+    @Override
+    public String toString() {
+        return "{" + covering + (coversRemaining ? "REMAINING" : "") + "->" + targetType + "}";
     }
 
     private final TClass targetType;

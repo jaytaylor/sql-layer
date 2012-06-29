@@ -24,29 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat;
+package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TBundle;
-import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
 
-import java.util.Map;
-
-public enum  MBundle implements TBundle {
-    INSTANCE;
-
-    @Override
-    public TBundleID id() {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
-    @Override
-    public Map<TClass, TFactory> typeClasses() {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
-    public enum MSwitcher {
-        // TODO
-    }
+public interface TClassPossibility {
+    boolean isAny();
+    boolean isNone();
+    TClass get();
 }

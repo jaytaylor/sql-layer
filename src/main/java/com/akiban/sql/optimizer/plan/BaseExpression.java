@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.server.types.AkType;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -39,6 +40,7 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
     private DataTypeDescriptor sqlType;
     private AkType akType;
     private ValueNode sqlSource;
+    private TPreptimeValue preptimeValue;
 
     protected BaseExpression(DataTypeDescriptor sqlType, AkType akType, ValueNode sqlSource) {
         this.sqlType = sqlType;
@@ -85,4 +87,13 @@ public abstract class BaseExpression extends BasePlanElement implements Expressi
         // Don't clone AST or type.
     }
 
+    @Override
+    public TPreptimeValue getPreptimeValue() {
+        return preptimeValue;
+    }
+
+    @Override
+    public void setPreptimeValue(TPreptimeValue value) {
+        this.preptimeValue = value;
+    }
 }
