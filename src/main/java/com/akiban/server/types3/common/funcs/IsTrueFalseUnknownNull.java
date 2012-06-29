@@ -47,10 +47,7 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
                 @Override
                 protected void evaluate(PValueSource source, PValueTarget target)
                 {
-                    if (source.isNull())
-                        target.putBool(false);
-                    else
-                        target.putBool(source.getBoolean());
+                    target.putBool(source.getBoolean(true));
                 }
             },
             new IsTrueFalseUnknownNull(boolType, "IS FALSE")
@@ -58,10 +55,7 @@ public abstract class IsTrueFalseUnknownNull extends TOverloadBase
                 @Override
                 protected void evaluate(PValueSource source, PValueTarget target)
                 {
-                    if (source.isNull())
-                        target.putBool(false);
-                    else
-                        target.putBool(!source.getBoolean());
+                    target.putBool(source.getBoolean(false));
                 }
             },
             new IsTrueFalseUnknownNull(boolType, "IS UNKNOWN")

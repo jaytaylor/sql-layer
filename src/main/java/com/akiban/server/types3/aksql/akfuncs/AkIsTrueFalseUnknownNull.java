@@ -24,48 +24,13 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mtypes;
+package com.akiban.server.types3.aksql.akfuncs;
 
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TypeDeclarationException;
-import com.akiban.server.types3.common.types.NumericAttribute;
-import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.common.funcs.IsTrueFalseUnknownNull;
 
-public class MBool extends MNumeric
+public class AkIsTrueFalseUnknownNull
 {
-    public MBool()
-    {
-        super("tinyint", 1, PUnderlying.INT_8);
-    }
-    
-    @Override
-    protected void validate(TInstance instance)
-    {
-        if (instance.attribute(NumericAttribute.WIDTH) != 1)
-            throw new TypeDeclarationException("BOOL is synonym of TINYINT(1)");
-    }
-    
-    @Override
-    public TInstance instance()
-    {
-        return instance(1);
-    }
-    
-    @Override
-    public TInstance instance(int m)
-    {
-        if (m != 1)
-            throw new TypeDeclarationException("BOOL is synonym of TINYINT(1)");
-
-        return super.createInstance(1, m, 0, 0, 0);
-    }
-    
-    @Override
-    public TFactory factory() 
-    {
-        return new MNumericFactory(this);
-    }
+    public static final TOverload INSTANCES[] = IsTrueFalseUnknownNull.create(AkBool.INSTANCE);
 }
-
-
