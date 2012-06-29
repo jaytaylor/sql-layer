@@ -39,6 +39,10 @@ import java.util.List;
 
 class AbstractValuesHolderRow extends AbstractRow {
 
+    public boolean usingPValues() {
+        return pValues != null;
+    }
+
     @Override
     public RowType rowType() {
         return rowType;
@@ -51,6 +55,7 @@ class AbstractValuesHolderRow extends AbstractRow {
 
     @Override
     public ValueSource eval(int i) {
+        assert !usingPValues() : "using pvalues";
         ValueHolder value = values.get(i);
         if (!value.hasSourceState()) {
             throw new IllegalStateException("value at index " + i + " was never set");
@@ -60,6 +65,7 @@ class AbstractValuesHolderRow extends AbstractRow {
 
     @Override
     public PValueSource pvalue(int i) {
+        assert usingPValues() : "using old values";
         PValue value = pValues.get(i);
         if (!value.hasAnyValue())
             throw new IllegalStateException("value at index " + i + " was never set");

@@ -61,6 +61,44 @@ public final class PValueSources {
             throw new AssertionError(underlyingType);
         }
     }
-    
+
+    public static int hash(PValueSource source) {
+        if (source.isNull())
+            return 0;
+        final long hash;
+        switch (source.getUnderlyingType()) {
+        case BOOL:
+            hash = source.getBoolean() ? 1 : 0;
+            break;
+        case INT_8:
+            hash = source.getInt8();
+            break;
+        case INT_16:
+            hash = source.getInt16();
+            break;
+        case UINT_16:
+            hash = source.getUInt16();
+            break;
+        case INT_32:
+            hash = source.getInt32();
+            break;
+        case INT_64:
+            hash = source.getInt64();
+            break;
+        case FLOAT:
+            hash = Float.floatToRawIntBits(source.getFloat());
+            break;
+        case DOUBLE:
+            hash = Double.doubleToRawLongBits(source.getDouble());
+            break;
+        case BYTES:
+            hash = Arrays.hashCode(source.getBytes());
+            break;
+        default:
+            throw new AssertionError(source.getUnderlyingType());
+        }
+        return ((int) (hash >> 32)) ^ (int) hash;
+    }
+
     private PValueSources() {}
 }

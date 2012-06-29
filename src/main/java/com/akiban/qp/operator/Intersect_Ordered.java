@@ -160,7 +160,8 @@ class Intersect_Ordered extends Operator
                              int rightOrderingFields,
                              boolean[] ascending,
                              JoinType joinType,
-                             EnumSet<IntersectOption> options)
+                             EnumSet<IntersectOption> options,
+                             boolean usePValues)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -213,6 +214,7 @@ class Intersect_Ordered extends Operator
         // Setup for jumping
         leftSkipRowColumnSelector = new IndexRowPrefixSelector(leftFixedFields + fieldsToCompare);
         rightSkipRowColumnSelector = new IndexRowPrefixSelector(rightFixedFields + fieldsToCompare);
+        this.usePValues = usePValues;
     }
 
     // For use by this class
@@ -239,6 +241,7 @@ class Intersect_Ordered extends Operator
     private final boolean[] ascending;
     private final ColumnSelector leftSkipRowColumnSelector;
     private final ColumnSelector rightSkipRowColumnSelector;
+    private final boolean usePValues;
 
     @Override
     public Explainer getExplainer()
@@ -470,13 +473,21 @@ class Intersect_Ordered extends Operator
                                         Row jumpRow,
                                         int jumpRowFixedFields)
         {
+            boolean usingPValues = skipRow.usingPValues();
+            assert Intersect_Ordered.this.usePValues == usingPValues : "unexpected skiprow: " + usingPValues;
             if (jumpRow == null) {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    skipRow.holderAt(skipRowFixedFields + f).putNull();
+                    if (usingPValues)
+                        skipRow.pvalueAt(skipRowFixedFields + f).putNull();
+                    else
+                        skipRow.holderAt(skipRowFixedFields + f).putNull();
                 }
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    skipRow.holderAt(skipRowFixedFields + f).copyFrom(jumpRow.eval(jumpRowFixedFields + f));
+                    if (usingPValues)
+                        skipRow.pvalueAt(skipRowFixedFields + f).putValueSource(jumpRow.pvalue(jumpRowFixedFields + f));
+                    else
+                        skipRow.holderAt(skipRowFixedFields + f).copyFrom(jumpRow.eval(jumpRowFixedFields + f));
                 }
             }
         }
@@ -485,14 +496,21 @@ class Intersect_Ordered extends Operator
         {
             if (leftSkipRow == null) {
                 assert leftRow.isHolding();
-                leftSkipRow = new ValuesHolderRow(leftRowType);
+                boolean usingPValues = Intersect_Ordered.this.usePValues;
+                leftSkipRow = new ValuesHolderRow(leftRowType, usingPValues);
                 int f = 0;
                 while (f < leftFixedFields) {
-                    leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
+                    if (usingPValues)
+                        leftSkipRow.pvalueAt(f).putValueSource(leftRow.get().pvalue(f));
+                    else
+                        leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
                     f++;
                 }
                 while (f < leftRowType.nFields()) {
-                    leftSkipRow.holderAt(f++).putNull();
+                    if (usingPValues)
+                        leftSkipRow.pvalueAt(f++).putNull();
+                    else
+                        leftSkipRow.holderAt(f++).putNull();
                 }
             }
             return leftSkipRow;
@@ -502,14 +520,21 @@ class Intersect_Ordered extends Operator
         {
             if (rightSkipRow == null) {
                 assert rightRow.isHolding();
-                rightSkipRow = new ValuesHolderRow(rightRowType);
+                boolean usingPValues = Intersect_Ordered.this.usePValues;
+                rightSkipRow = new ValuesHolderRow(rightRowType, usingPValues);
                 int f = 0;
                 while (f < rightFixedFields) {
-                    rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
+                    if (usingPValues)
+                        rightSkipRow.pvalueAt(f).putValueSource(rightRow.get().pvalue(f));
+                    else
+                        rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
                     f++;
                 }
                 while (f < rightRowType.nFields()) {
-                    rightSkipRow.holderAt(f++).putNull();
+                    if (usingPValues)
+                        rightSkipRow.pvalueAt(f++).putNull();
+                    else
+                        rightSkipRow.holderAt(f++).putNull();
                 }
             }
             return rightSkipRow;
