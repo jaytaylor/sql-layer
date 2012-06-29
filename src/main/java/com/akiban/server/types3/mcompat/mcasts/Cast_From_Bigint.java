@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mcasts;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TExecutionContext;
@@ -40,6 +41,8 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
+
+import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
 
 public class Cast_From_Bigint
 {
@@ -60,162 +63,25 @@ public class Cast_From_Bigint
      * 
      */
     
-    public static final TCast TO_TINYINT = new TCastBase(MNumeric.BIGINT, MNumeric.TINYINT, false, Constantness.UNKNOWN)
-    {
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), context));
-        }
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            return specifiedTarget;
-        }
-    };
+    public static final TCast TO_TINYINT = new FromInt64ToInt8(MNumeric.BIGINT, MNumeric.TINYINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_TINYINT = new TCastBase(MNumeric.BIGINT, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN)
-    {
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            // TODO: take the two's complement of the negative value?
-            target.putInt8((byte)CastUtils.getInRange(Byte.MAX_VALUE, Byte.MIN_VALUE, source.getInt64(), context));
-        }
+    public static final TCast TO_UNSIGNED_TINYINT = new FromInt64ToInt16(MNumeric.BIGINT, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
 
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            return specifiedTarget;
-        }
-    };
+    public static final TCast TO_SMALLINT = new FromInt64ToInt16(MNumeric.BIGINT, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
 
-    public static final TCast TO_SMALL_INT = new TCastBase(MNumeric.BIGINT, MNumeric.SMALLINT, false, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("not supported yet");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), context));
-        }
-    };
-
-    public static final TCast TO_UNSIGNED_SMALL_INT = new TCastBase(MNumeric.BIGINT, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            // TODO: take the two's complement of signed ==> unsigned
-            target.putInt16((short)CastUtils.getInRange(Short.MAX_VALUE, Short.MIN_VALUE, source.getInt64(), context));
-        }
-    };
+    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt64ToInt32(MNumeric.BIGINT, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_MEDIUM_INT = new TCastBase(MNumeric.BIGINT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32(), context));
-        }
-        
-    };
+    public static final TCast TO_MEDIUM_INT = new FromInt64ToInt32(MNumeric.BIGINT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUM_INT = new TCastBase(MNumeric.BIGINT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            // TODO: signed vs unsigned
-            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt32(), context));
-        }
-        
-    };
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_BIGINT = new TCastBase(MNumeric.BIGINT, MNumeric.BIGINT, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putValueSource(source);
-        }   
-    };
+    public static final TCast TO_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            // TODO: signed vs unsigned
-            target.putValueSource(source);
-        }
-    };
+    public static final TCast TO_UNSIGNED_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new TCastBase(MNumeric.BIGINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putObject(new MBigDecimalWrapper(source.getInt64()));
-        }
-    };
+    public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.BIGINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new TCastBase(MNumeric.BIGINT, MDouble.INSTANCE, true, Constantness.UNKNOWN)
-    {
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            target.putDouble(source.getInt64());
-        }   
-    };
+    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.BIGINT, MDouble.INSTANCE, true, Constantness.UNKNOWN);
     
     public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, true, Constantness.UNKNOWN)
     {
@@ -231,7 +97,7 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.fromDate(source.getInt64());
             if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.reportBadValue("Invalid datetime values");
+                context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
                 target.putNull();
             }
             else
@@ -255,7 +121,7 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.decodeDatetime(raw);
                         if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.reportBadValue("Invalid datetime values");
+                context.warnClient(new InvalidParameterValueException("Invalid datetime values"));
                 target.putNull();
             }
             else
@@ -275,10 +141,10 @@ public class Cast_From_Bigint
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
             // TIMESTAMPE is underlied by INT32
-            target.putInt32((int)CastUtils.getInRange(Integer.MAX_VALUE, Integer.MIN_VALUE, source.getInt64(), context));
+            target.putInt32((int)MDatetimes.encodeTimetamp(source.getInt64(), context));
         }
     };
-    
+
     public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDatetimes.TIME, true, Constantness.UNKNOWN)
     {
         @Override
@@ -294,11 +160,11 @@ public class Cast_From_Bigint
             long ymd[] = MDatetimes.decodeTime(raw);
                         if (!MDatetimes.isValidDatetime(ymd))
             {
-                context.reportBadValue("Invalid datetime values");
+                context.warnClient(new InvalidParameterValueException("Invalid TIME values: " + raw));
                 target.putNull();
             }
             else
-                target.putInt64(raw);
+                target.putInt32((int)CastUtils.getInRange(MDatetimes.TIME_MAX, MDatetimes.TIME_MIN, raw, context));
         }
     };
     

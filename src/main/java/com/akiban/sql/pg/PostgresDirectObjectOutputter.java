@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types3.Types3Switch;
 import java.util.List;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -45,7 +46,9 @@ public class PostgresDirectObjectOutputter extends PostgresOutputter<List<?>>
             Object field = row.get(i);
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
-            ByteArrayOutputStream bytes = encoder.encodeObject(field, type, binary);
+            ByteArrayOutputStream bytes;
+            if (Types3Switch.ON) bytes = encoder.encodePObject(field, type, binary);
+            else bytes = encoder.encodeObject(field, type, binary);
             if (field == null) {
                 messenger.writeInt(-1);
             }

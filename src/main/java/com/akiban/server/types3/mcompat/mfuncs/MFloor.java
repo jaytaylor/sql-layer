@@ -28,6 +28,6 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
 
-public class MCeil {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
+public class MFloor {
+    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.FLOOR);
 }
