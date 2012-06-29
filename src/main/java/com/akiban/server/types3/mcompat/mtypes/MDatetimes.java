@@ -492,13 +492,13 @@ public class MDatetimes
 
     // upper and lower limit of TIMESTAMP value
     // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
-    private static final long TIMESTAMP_MAX = new DateTime("1970-01-01 00:00:01Z").getMillis();
-    private static final long TIMESTAMP_MIN = new DateTime("2038-01-19 03:14:07Z").getMillis();
-    private static final long TS_ERROR_VALUE = 0L;
+    public static final long TIMESTAMP_MAX = new DateTime("1970-01-01 00:00:01Z").getMillis();
+    public static final long TIMESTAMP_MIN = new DateTime("2038-01-19 03:14:07Z").getMillis();
+    public static final long TS_ERROR_VALUE = 0L;
     
     // upper and lower limti of TIME value
     // as per http://dev.mysql.com/doc/refman/5.5/en/time.html
-    private static final int TIME_MAX = 8385959;
-    private static final int TIME_MIN = -8385959;
+    public static final int TIME_MAX = 8385959;
+    public static final int TIME_MIN = -8385959;
 }
 
