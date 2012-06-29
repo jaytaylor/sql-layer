@@ -61,7 +61,7 @@ public class MTimeAndDate extends TOverloadBase{
             @Override
             long evaluate(long[] input)
             {
-                return MDatetimes.encodeDate(new long[]{input[MDatetimes.HOUR_INDEX],input[MDatetimes.MIN_INDEX],input[MDatetimes.SEC_INDEX]});
+                return MDatetimes.encodeDate(new long[]{0,0,0,input[MDatetimes.HOUR_INDEX],input[MDatetimes.MIN_INDEX],input[MDatetimes.SEC_INDEX]});
             }
             
             @Override

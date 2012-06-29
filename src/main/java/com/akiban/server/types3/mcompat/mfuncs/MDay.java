@@ -42,7 +42,7 @@ import org.joda.time.MutableDateTime;
 
 public class MDay extends TOverloadBase{
     
-     static enum DateType {
+     protected static enum DateType {
         DAY {
             @Override
             long evaluate(MutableDateTime cal, long[] input)
@@ -97,7 +97,6 @@ public class MDay extends TOverloadBase{
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         long[] datetime = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
         MutableDateTime cal = MDatetimes.toJodaDatetime(datetime, context.getCurrentTimezone());
-        
         if (!MDatetimes.isValidDatetime(datetime)) output.putNull();
         else output.putInt32((int)(dateType.evaluate(cal, datetime)));
     }
