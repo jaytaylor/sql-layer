@@ -92,9 +92,11 @@ public class MToDatetime extends TOverloadBase{
         TIME_TO_SEC() {
             @Override
             void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
-                MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
-                long seconds = datetime.getMillis() / SECONDS_FACTOR;
-                output.putInt32((int) seconds);
+                int hoursToSec = (int) dateArr[MDatetimes.HOUR_INDEX] * 3600;
+                int minutesToSec = (int) dateArr[MDatetimes.MIN_INDEX] * 60;
+                int seconds = (int) dateArr[MDatetimes.SEC_INDEX] + hoursToSec + minutesToSec;
+                int result = MDatetimes.encodeTime(seconds*1000, context.getCurrentTimezone());
+                output.putInt32(result);
             }
         };
         abstract void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output);
