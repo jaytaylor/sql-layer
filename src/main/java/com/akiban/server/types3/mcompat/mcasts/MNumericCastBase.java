@@ -37,6 +37,138 @@ import com.akiban.server.types3.texpressions.Constantness;
 
 public class MNumericCastBase
 {
+    static class FromDoubleToInt8 extends TCastBase
+    {
+        public FromDoubleToInt8(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(target, PUnderlying.INT_8), auto, c);
+        }
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt8((byte)CastUtils.round(Byte.MAX_VALUE, Byte.MIN_VALUE, 
+                                                 source.getDouble(), context));
+        }
+    }
+    
+    static class FromDoubleToInt16 extends TCastBase
+    {
+        public FromDoubleToInt16(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(target, PUnderlying.INT_16), auto, c);
+        }
+        
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt16((short)CastUtils.round(Short.MAX_VALUE, Short.MIN_VALUE, 
+                                                        source.getDouble(), context));
+        }
+    }
+    
+    static class FromDoubleToInt32 extends TCastBase
+    {
+        public FromDoubleToInt32(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(source, PUnderlying.INT_32), auto, c);
+        }
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32((int)CastUtils.round(Integer.MAX_VALUE, Integer.MIN_VALUE,
+                                                 source.getDouble(), context));
+        }
+    }
+    
+    static class FromDoubleToInt64 extends TCastBase
+    {
+        public FromDoubleToInt64(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(target, PUnderlying.INT_64), auto, c);
+        }
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt64((long)CastUtils.round(Long.MAX_VALUE, Long.MIN_VALUE,
+                                                  source.getDouble(), context));
+        }
+    }
+    
+    static class FromDoubleToDecimal extends TCastBase
+    {
+        public FromDoubleToDecimal(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(source, PUnderlying.BYTES), auto, c);
+        }
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            // TODO: determine the target precision and scale then correctly round 
+            // the source to that type
+            throw new UnsupportedOperationException();
+        }
+    }
+
+    static class FromDoubleToString extends TCastBase
+    {
+        public FromDoubleToString(TClass source, TClass target, boolean auto, Constantness c)
+        {
+            super(checkType(source, PUnderlying.DOUBLE),
+                  checkType(target, PUnderlying.BYTES), auto, c);
+        }
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putObject(Double.toString(source.getDouble()));
+        }
+    }
+
     static class FromInt8ToString extends TCastBase
     {
         public FromInt8ToString(TClass source, TClass target, boolean auto, Constantness c)
@@ -56,7 +188,7 @@ public class MNumericCastBase
             target.putObject(Byte.toString(source.getInt8()));
         }
     }
-    
+
     static class FromInt8ToInt16 extends TCastBase
     {
         public FromInt8ToInt16(TClass source, MNumeric target, boolean auto, Constantness c)
@@ -76,7 +208,7 @@ public class MNumericCastBase
             target.putInt16(source.getInt8());
         }
     }
-    
+
     static class FromInt8ToInt32 extends TCastBase
     {
         public FromInt8ToInt32(TClass source, MNumeric target, boolean auto, Constantness c)
