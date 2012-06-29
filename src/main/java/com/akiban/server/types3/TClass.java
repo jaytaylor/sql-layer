@@ -216,6 +216,6 @@ public abstract class TClass {
     private final int serializationVersion;
     private final int serializationSize;
     private final PUnderlying pUnderlying;
-    private static final Pattern ALL_ALPHAS = Pattern.compile("[a-z][A-Z]+");
+    private static final Pattern ALL_ALPHAS = Pattern.compile("[a-zA-Z]+");
     private static final int EMPTY = -1;
 }

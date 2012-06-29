@@ -248,10 +248,12 @@ public class PostgresType extends ServerType
                 throw new UnknownTypeSizeException (aisType);
             }
         }
-        else if ("U_BIGINT".equals(encoding))
+        else if ("U_BIGINT".equals(encoding)) {
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
+            assert false;
             return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
-                                    aisType.akType(), aisType.instance());
+                                    aisType.akType(), null);
+        }
         else if ("DATE".equals(encoding))
             oid = TypeOid.DATE_TYPE_OID.getOid();
         else if ("TIME".equals(encoding))
@@ -295,7 +297,8 @@ public class PostgresType extends ServerType
             }
         }
 
-        return new PostgresType(oid, length, modifier, aisType.akType(), aisType.instance());
+        assert false;
+        return new PostgresType(oid, length, modifier, aisType.akType(), null);
     }
 
     public static PostgresType fromDerby(DataTypeDescriptor type)  {

@@ -75,7 +75,7 @@ public final class RowDataPValueTarget implements PValueTarget {
     
     @Override
     public PUnderlying getUnderlyingType() {
-        return fieldDef.getType().instance().typeClass().underlyingType();
+        return fieldDef.column().tInstance().typeClass().underlyingType();
     }
 
     @Override

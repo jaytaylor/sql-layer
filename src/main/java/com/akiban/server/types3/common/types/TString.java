@@ -109,6 +109,6 @@ public abstract class TString extends TClass
         int length = instance.attribute(StringAttribute.LENGTH);
         int charsetId = instance.attribute(StringAttribute.CHARSET);
         int collaitonid = instance.attribute(StringAttribute.COLLATION);
-        throw new UnsupportedOperationException(); // TODO
+        // TODO
     }
 }

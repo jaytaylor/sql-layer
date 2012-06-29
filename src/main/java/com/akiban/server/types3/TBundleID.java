@@ -64,6 +64,10 @@ public final class TBundleID {
         return name;
     }
 
+    public TBundleID(String name, String uuid) {
+        this(name, UUID.fromString(uuid));
+    }
+
     public TBundleID(String name, UUID uuid) {
         ArgumentValidation.notNull("name", name);
         ArgumentValidation.notNull("uuid", uuid);

@@ -93,10 +93,14 @@ public class Column
          ***/
     }
 
+    public void finishCreating() {
+        fillInDefaultParams();
+        tInstance(false).setNullable(nullable);
+    }
+
     public void setNullable(Boolean nullable)
     {
         this.nullable = nullable;
-        tInstance(false).setNullable(nullable);
     }
     
     public void setAutoIncrement(Boolean autoIncrement)
@@ -108,7 +112,6 @@ public class Column
     {
         if(typeParameter1 != null) {
             this.typeParameter1 = typeParameter1;
-            tInstance(true);
         }
     }
 
@@ -116,21 +119,18 @@ public class Column
     {
         if (typeParameter2 != null) {
             this.typeParameter2 = typeParameter2;
-            tInstance(true);
         }
     }
 
     public void setCharsetAndCollation(CharsetAndCollation charsetAndCollation)
     {
         this.charsetAndCollation = charsetAndCollation;
-        tInstance(true);
     }
 
     public void setCharset(String charset)
     {
         if (charset != null) {
             this.charsetAndCollation = CharsetAndCollation.intern(charset, getCharsetAndCollation().collation());
-            tInstance(true);
         }
     }
 
@@ -138,7 +138,6 @@ public class Column
     {
         if (collation != null) {
             this.charsetAndCollation = CharsetAndCollation.intern(getCharsetAndCollation().charset(), collation);
-            tInstance(true);
         }
     }
 
@@ -373,7 +372,11 @@ public class Column
         this.initialAutoIncrementValue = initialAutoIncValue;
         this.charsetAndCollation = charsetAndCollation;
 
-        Long[] defaults = Types.defaultParams().get(type);
+        fillInDefaultParams();
+    }
+
+    private void fillInDefaultParams() {
+        Long[] defaults = Types.defaultParams().get(getType());
         if(defaults != null) {
             if(this.typeParameter1 == null) {
                 this.typeParameter1 = defaults[0];
@@ -461,10 +464,10 @@ public class Column
             tinst = null; // TODO
             break;
         case T_INT:
-            tinst = MNumeric.INT.instance(typeParameter1.intValue());
+            tinst = MNumeric.INT.instance(11);
             break;
         case T_U_INT:
-            tinst = MNumeric.INT_UNSIGNED.instance(typeParameter1.intValue());
+            tinst = MNumeric.INT_UNSIGNED.instance(10);
             break;
         case T_LONGBLOB:
             tinst = null; // TODO
@@ -476,19 +479,19 @@ public class Column
             tinst = null; // TODO
             break;
         case T_MEDIUMINT:
-            tinst = MNumeric.MEDIUMINT.instance(typeParameter1.intValue());
+            tinst = MNumeric.MEDIUMINT.instance(9);
             break;
         case T_U_MEDIUMINT:
-            tinst = MNumeric.MEDIUMINT_UNSIGNED.instance(typeParameter1.intValue());
+            tinst = MNumeric.MEDIUMINT_UNSIGNED.instance(8);
             break;
         case T_MEDIUMTEXT:
             tinst = null; // TODO
             break;
         case T_SMALLINT:
-            tinst = MNumeric.SMALLINT.instance(typeParameter1.intValue());
+            tinst = MNumeric.SMALLINT.instance(6);
             break;
         case T_U_SMALLINT:
-            tinst = MNumeric.SMALLINT_UNSIGNED.instance(typeParameter1.intValue());
+            tinst = MNumeric.SMALLINT_UNSIGNED.instance(5);
             break;
         case T_TEXT:
             tinst = null; // TODO
@@ -503,10 +506,10 @@ public class Column
             tinst = null; // TODO
             break;
         case T_TINYINT:
-            tinst = MNumeric.TINYINT.instance(typeParameter1.intValue());
+            tinst = MNumeric.TINYINT.instance(4);
             break;
         case T_U_TINYINT:
-            tinst = MNumeric.TINYINT_UNSIGNED.instance(typeParameter1.intValue());
+            tinst = MNumeric.TINYINT_UNSIGNED.instance(3);
             break;
         case T_TINYTEXT:
             tinst = null; // TODO
@@ -533,6 +536,8 @@ public class Column
     }
 
     private TInstance charString(TClass tClass) {
+        if (charsetAndCollation == null)
+            return tClass.instance();
         StringFactory.Charset charset = StringFactory.Charset.valueOf(charsetAndCollation.charset().toUpperCase());
         return tClass.instance(typeParameter1.intValue(), charset.ordinal(), -1); // TODO collation
     }
