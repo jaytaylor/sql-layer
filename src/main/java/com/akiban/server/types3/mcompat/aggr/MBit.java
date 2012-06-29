@@ -35,36 +35,62 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-public abstract class MCount implements TAggregator {
+public abstract class MBit implements TAggregator {
 
+    private static final long EMPTY_FOR_AND = -1;
+    private static final long EMPTY_FOR_OR = 0L;
+    
     public static final TAggregator[] INSTANCES = {
-        // COUNT(*)
-        new MCount() {
+        // BIT_AND
+        new MBit() {
 
             @Override
-            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
-                long count = state.getInt64();
-                ++count;
-                state.putInt64(count);
+            long process(long i0, long i1) {
+                return i0 & i1;
+            }
+
+            @Override
+            public void emptyValue(PValueTarget state) {
+                state.putObject(EMPTY_FOR_AND);
             }
         }, 
-        // COUNT
-        new MCount() {
+        // BIT_OR
+        new MBit() {
 
             @Override
-            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
-                if (!source.isNull()) {
-                    long count = state.getInt64();
-                    ++count;
-                    state.putInt64(count);
-                }
+            long process(long i0, long i1) {
+                return i0 | i1;
+            }
+
+            @Override
+            public void emptyValue(PValueTarget state) {
+                state.putObject(EMPTY_FOR_OR);
+            }   
+        }, 
+        // BIT_XOR
+        new MBit() {
+
+            @Override
+            long process(long i0, long i1) {
+                return i0 ^ i1;
+            }
+
+            @Override
+            public void emptyValue(PValueTarget state) {
+                state.putObject(EMPTY_FOR_OR);
             }
         }
     };
+    
+    abstract long process(long i0, long i1);
 
     @Override
-    public void emptyValue(PValueTarget state) {
-        state.putInt64(0L);
+    public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+        if (!source.isNull()) {
+            long oldState = source.getInt64();
+            long currState = state.getInt64();
+            state.putObject(process(oldState, currState));
+        }    
     }
 
     @Override

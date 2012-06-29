@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.error.InvalidDateFormatException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.common.types.NoAttrTClass;
@@ -41,17 +42,17 @@ import org.joda.time.MutableDateTime;
 
 public class MDatetimes 
 {
-    private static final TBundleID bundle = MBundle.INSTANCE.id();
+    private static final TBundleID MBundleID = MBundle.INSTANCE.id();
     
-    public static final NoAttrTClass DATE = new NoAttrTClass(bundle,
+    public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
             "date", 1, 1, 4, PUnderlying.INT_32);
-    public static final NoAttrTClass DATETIME = new NoAttrTClass(bundle,
+    public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
             "datetime", 1, 1, 8, PUnderlying.INT_64);
-    public static final NoAttrTClass TIME = new NoAttrTClass(bundle,
+    public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
             "time", 1, 1, 4, PUnderlying.INT_32);
-    public static final NoAttrTClass YEAR = new NoAttrTClass(bundle,
+    public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
             "year", 1, 1, 1, PUnderlying.INT_8);
-    public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(bundle,
+    public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
             "timestamp", 1, 1, 4, PUnderlying.INT_32);
 
     public static long[] fromJodaDatetime (MutableDateTime date)
@@ -108,7 +109,7 @@ public class MDatetimes
             tks = st.split("-");
 
         if (tks.length != 3)
-            context.reportBadValue("bad DATE" + st);
+            throw new InvalidDateFormatException("date", st);
         
         try
         {
@@ -118,9 +119,8 @@ public class MDatetimes
         }
         catch (NumberFormatException ex)
         {
-            context.reportBadValue("bad DATE" + st);
+            throw new InvalidDateFormatException("date", st);
         }
-        return -1;
     }
 
     /**
@@ -140,7 +140,7 @@ public class MDatetimes
                 + dt.getMonthOfYear() * 32
                 + dt.getDayOfMonth();
     }
-    
+
     public static long[] decodeDate(long val)
     {
         return new long[]
@@ -173,13 +173,13 @@ public class MDatetimes
     {
         long dt[] = decodeDatetime(datetime);
         
-        return String.format("%04d-%02d-%02d %02d:%02d:%02d", 
-                                dt[YEAR_INDEX],
-                                dt[MONTH_INDEX],
-                                dt[DAY_INDEX],
-                                dt[HOUR_INDEX],
-                                dt[MIN_INDEX],
-                                dt[SEC_INDEX]);
+        return String.format("%04d-%02d-%02d %02d:%02d:%02d",
+                             dt[YEAR_INDEX],
+                             dt[MONTH_INDEX],
+                             dt[DAY_INDEX],
+                             dt[HOUR_INDEX],
+                             dt[MIN_INDEX],
+                             dt[SEC_INDEX]);
     }
     
         
@@ -270,7 +270,51 @@ public class MDatetimes
         return String.format("%d:%02:%02d", h, m, s);
         
     };
-    
+
+    public static int parseTime (String string, TExecutionContext context)
+    {
+          // (-)HH:MM:SS
+        int mul = 1;
+        if (string.length() > 0 && string.charAt(0) == '-')
+        {
+            mul = -1;
+            string = string.substring(1);
+        }
+        
+        int hours = 0;
+        int minutes = 0;
+        int seconds = 0;
+        int offset = 0;
+        final String values[] = string.split(":");
+        try
+        {
+            switch (values.length)
+            {
+                case 3:
+                    hours = Integer.parseInt(values[offset++]); // fall
+                case 2:
+                    minutes = Integer.parseInt(values[offset++]); // fall
+                case 1:
+                    seconds = Integer.parseInt(values[offset]);
+                    break;
+                default:
+                    throw new InvalidDateFormatException("time", string);
+            }
+        }
+        catch (NumberFormatException ex)
+        {
+            throw new InvalidDateFormatException("time", string);
+        }
+        
+        minutes += seconds / 60;
+        seconds %= 60;
+        hours += minutes / 60;
+        minutes %= 60;
+
+        long ret = mul * (hours* DATETIME_HOUR_SCALE + minutes* DATETIME_MIN_SCALE + seconds);
+        
+        return (int)CastUtils.getInRange(TIME_MAX, TIME_MIN, ret, context);
+    }
     public static long[] decodeTime(long val)
     {
         return new long[]
@@ -306,42 +350,25 @@ public class MDatetimes
                 + val[MIN_INDEX] * DATETIME_MIN_SCALE
                 + val[SEC_INDEX];
     }
-
-    public static int parseTime(String string, TExecutionContext context) {
-        // (-)HH:MM:SS
-        int mul = 1;
-        if (string.length() > 0 && string.charAt(0) == '-') {
-            mul = -1;
-            string = string.substring(1);
-        }
-        int hours = 0;
-        int minutes = 0;
-        int seconds = 0;
-        int offset = 0;
-        final String values[] = string.split(":");
-        try {
-            switch (values.length) {
-                case 3:
-                    hours = Integer.parseInt(values[offset++]); // fall
-                case 2:
-                    minutes = Integer.parseInt(values[offset++]); // fall
-                case 1:
-                    seconds = Integer.parseInt(values[offset]);
-                    break;
-                default:
-                    context.reportBadValue("bad TIME" + string);
-            }
-        } catch (NumberFormatException ex) {
-            context.reportBadValue("bad TIME" + string);
-        }
-        minutes += seconds / 60;
-        seconds %= 60;
-        hours += minutes / 60;
-        minutes %= 60;
-        return mul * (hours * TIME_HOURS_SCALE + minutes * TIME_MINUTES_SCALE + seconds);
+    
+    public static int encodeTime(long hr, long min, long sec, TExecutionContext context)
+    {
+        if (min < 0 || sec < 0)
+            throw new InvalidParameterValueException("Invalid time value");
+      
+        int mul;
+        
+        if (hr < 0)
+            hr *= mul = -1;
+        else
+            mul = 1;
+        
+        long ret = mul * (hr * DATETIME_HOUR_SCALE + min * DATETIME_MIN_SCALE + sec);
+        return (int)CastUtils.getInRange(TIME_MAX, TIME_MIN, ret, context);
     }
 
-    public static long[] decodeTimestamp(long ts, String tz) {
+    public static long[] decodeTimestamp(long ts, String tz) 
+    {
         DateTime dt = new DateTime(ts * 1000L, DateTimeZone.forID(tz));
         
         return new long[]
@@ -369,6 +396,18 @@ public class MDatetimes
         return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, millis / 1000L, TS_ERROR_VALUE, context);
     }
 
+    /**
+     * @param val[] array encoding year, month, day, hour, min, sec
+     * @param tz
+     * @return a unix timestamp (w/o range-checking)
+     */
+    public static long getTimestamp(long val[], String tz)
+    {
+        return new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],
+                            (int)val[HOUR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX], 0,
+                            DateTimeZone.forID(tz)).getMillis() / 1000L;
+    }
+
     public static String timestampToString(long ts, String tz)
     {
         long ymd[] = decodeTimestamp(ts, tz);
@@ -390,13 +429,13 @@ public class MDatetimes
                 && ymdhms[SEC_INDEX] >= 0 && ymdhms[SEC_INDEX] < 60;
     }
  
-    private static boolean isValidDayMonth(long ymd[])
+    public static boolean isValidDayMonth(long ymd[])
     {
         long last = getLastDay(ymd);
         return last > 0 && ymd[DAY_INDEX] <= last;
     }
         
-    protected static long getLastDay(long ymd[])
+    public static long getLastDay(long ymd[])
     {
         switch ((int) ymd[1])
         {
@@ -452,12 +491,17 @@ public class MDatetimes
     private static final int TIME_FRAC_GROUP = 9;
     private static final int TIME_TIMEZONE_GROUP = 10;
     private static final Pattern PARSE_PATTERN 
-            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
+            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+ (\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
 
     // upper and lower limit of TIMESTAMP value
     // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
-    private static final long TIMESTAMP_MAX = new DateTime("1970-01-01 00:00:01Z").getMillis();
-    private static final long TIMESTAMP_MIN = new DateTime("2038-01-19 03:14:07Z").getMillis();
-    private static final long TS_ERROR_VALUE = 0L;
+    public static final long TIMESTAMP_MAX = new DateTime("1970-01-01 00:00:01Z").getMillis();
+    public static final long TIMESTAMP_MIN = new DateTime("2038-01-19 03:14:07Z").getMillis();
+    public static final long TS_ERROR_VALUE = 0L;
+    
+    // upper and lower limti of TIME value
+    // as per http://dev.mysql.com/doc/refman/5.5/en/time.html
+    public static final int TIME_MAX = 8385959;
+    public static final int TIME_MIN = -8385959;
 }
 
