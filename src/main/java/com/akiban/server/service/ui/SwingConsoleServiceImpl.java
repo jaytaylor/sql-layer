@@ -31,14 +31,23 @@ import com.akiban.server.service.Service;
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
+import java.io.PrintStream;
+
 public class SwingConsoleServiceImpl implements SwingConsoleService, Service<SwingConsoleService> 
 {
     private SwingConsole console;
+    private final PrintStream origOut = System.out;
+    private final PrintStream origErr = System.err;
 
     @Override
     public final void start() {
         final SwingConsole console = new SwingConsole();
         this.console = console;
+        PrintStream ps = new PrintStream(console.textOutputStream(), true);
+        System.setOut(ps);
+        System.setErr(ps);
+        System.out.println("WTF??");
+        System.out.println("Hello??");
         show();
     }
 
@@ -46,6 +55,8 @@ public class SwingConsoleServiceImpl implements SwingConsoleService, Service<Swi
     public final void stop() {
         final JFrame console = this.console;
         this.console = null;
+        System.setOut(origOut);
+        System.setErr(origErr);
         if (console != null) {
             SwingUtilities.invokeLater(new Runnable() {
                     public void run() {

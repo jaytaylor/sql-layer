@@ -31,9 +31,13 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
+import java.io.OutputStream;
+
 public class SwingConsole extends JFrame implements WindowListener 
 {
     public static final String TITLE = "Akiban Server";
+
+    private JTextArea textArea;
 
     public SwingConsole() {
         super(TITLE);
@@ -80,8 +84,10 @@ public class SwingConsole extends JFrame implements WindowListener
 
             setJMenuBar(menuBar);
         }
-        JTextArea textArea = new JTextArea("now is the time\nfor all good men\nto come the aid\nof the party");
-        textArea.setPreferredSize(new Dimension(100, 100));
+        textArea = new JTextArea();
+        DefaultCaret caret = (DefaultCaret)textArea.getCaret();
+        caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        textArea.setPreferredSize(new Dimension(500, 500));
         JScrollPane scrollPane = new JScrollPane(textArea, 
                                                  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                                                  JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -89,6 +95,7 @@ public class SwingConsole extends JFrame implements WindowListener
         add(scrollPane);
 
         pack();
+        setLocation(200, 200);
     }
 
     @Override
@@ -115,6 +122,10 @@ public class SwingConsole extends JFrame implements WindowListener
     public void windowOpened(WindowEvent arg0) {
     }            
     
+    public OutputStream textOutputStream() {
+        return new TextAreaOutputStream(textArea);
+    }
+
     protected void quit() {
         // TODO: There isn't any way for a service to rendezvous with
         // the service manager. Should there be?
