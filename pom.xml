@@ -508,7 +508,7 @@
                                         <delete dir="${mac.app}" />
                                         <mkdir dir="${mac.app}" />
                                         <copy todir="${mac.app}">
-                                            <fileset dir="${basedir}/macosx" />
+                                            <fileset dir="${basedir}/macosx" includes="Contents/**/*" />
                                         </copy>
                                         <copy todir="${mac.app}/Contents/MacOS">
                                             <fileset dir="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS" includes="JavaApplicationStub" />
