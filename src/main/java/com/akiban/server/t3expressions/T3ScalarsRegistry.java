@@ -26,6 +26,12 @@ public interface T3ScalarsRegistry {
 
     OverloadResolutionResult get(String name, List<? extends TClass> inputClasses);
 
+    /**
+     * Find the registered cast going from source to taret.
+     * @param source Type to cast from
+     * @param target Type to cast to
+     * @return Return matching cast or <tt>null</tt> if none
+     */
     TCast cast(TClass source, TClass target);
 
     /**

@@ -112,7 +112,7 @@ public final class TValidatedOverload implements TOverload {
     }
 
     public int positionalInputs() {
-        throw new UnsupportedOperationException();
+        return inputSetsByPos.size();
     }
 
     public TValidatedOverload(TOverload overload) {
@@ -148,6 +148,11 @@ public final class TValidatedOverload implements TOverload {
         this.varargs = localVarargInputs;
         this.resultStrategy = overload.resultType();
         this.pickingSet = localPickingInputs;
+    }
+
+    @Override
+    public String toString() {
+        return overload.toString();
     }
 
     private boolean stronglyCastable(TClass tClass, TClass tClass1) {

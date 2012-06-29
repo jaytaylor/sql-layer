@@ -58,7 +58,6 @@ public final class OverloadResolver {
         if (namedOverloads == null || namedOverloads.isEmpty()) {
             throw new NoSuchFunctionException(name);
         }
-        OverloadResult result = null;
         if (namedOverloads.size() == 1) {
             return defaultResolution(inputs, namedOverloads);
         } else {
@@ -75,7 +74,16 @@ public final class OverloadResolver {
             }
         }
         // TODO find the most specific
-        return null;
+        TValidatedOverload mostSpecific = null;
+        if (candidates.size() == 1) {
+            mostSpecific = candidates.get(0);
+        } else {
+
+        }
+        if (mostSpecific == null)
+            throw new NoSuchFunctionException("No overload found"); // TODO: Specific exception
+        TClass pickingClass = pickingClass(mostSpecific, inputs);
+        return new OverloadResult(mostSpecific, pickingClass);
     }
 
     private OverloadResult defaultResolution(List<? extends TPreptimeValue> inputs,

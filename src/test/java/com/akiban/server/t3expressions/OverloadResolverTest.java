@@ -15,22 +15,24 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.NoSuchFunctionException;
+import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TCastBase;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
@@ -49,6 +51,8 @@ public class OverloadResolverTest {
     private static class SimpleRegistry implements T3ScalarsRegistry {
         private final Map<String,List<TValidatedOverload>> validatedMap = new HashMap<String, List<TValidatedOverload>>();
         private final Map<TOverload,TValidatedOverload> originalMap = new HashMap<TOverload, TValidatedOverload>();
+        private final Map<TClass, Map<TClass, TCast>> castMap = new HashMap<TClass, Map<TClass, TCast>>();
+
 
         public SimpleRegistry(TOverload... overloads) {
             for(TOverload overload : overloads) {
@@ -60,6 +64,18 @@ public class OverloadResolverTest {
                     validatedMap.put(overload.overloadName(), list);
                 }
                 list.add(validated);
+            }
+        }
+
+        public void setCasts(TCast... casts) {
+            castMap.clear();
+            for(TCast cast : casts) {
+                Map<TClass,TCast> map = castMap.get(cast.sourceClass());
+                if(map == null) {
+                    map = new HashMap<TClass, TCast>();
+                    castMap.put(cast.sourceClass(), map);
+                }
+                map.put(cast.targetClass(), cast);
             }
         }
 
@@ -75,7 +91,11 @@ public class OverloadResolverTest {
 
         @Override
         public TCast cast(TClass source, TClass target) {
-            throw new UnsupportedOperationException();
+            Map<TClass,TCast> map = castMap.get(source);
+            if(map != null) {
+                return map.get(target);
+            }
+            return null;
         }
 
         @Override
@@ -83,7 +103,7 @@ public class OverloadResolverTest {
             throw new UnsupportedOperationException();
         }
 
-        public TValidatedOverload getValidated(TOverload overload) {
+        public TValidatedOverload validated(TOverload overload) {
             return originalMap.get(overload);
         }
     }
@@ -96,11 +116,32 @@ public class OverloadResolverTest {
         }
     }
 
+    private static class TestCastBase extends TCastBase {
+        public TestCastBase(TClass sourceAndTarget) {
+            this(sourceAndTarget, sourceAndTarget, true);
+        }
+
+        public TestCastBase(TClass source, TClass target, boolean isAutomatic) {
+            super(source, target, isAutomatic, Constantness.UNKNOWN);
+        }
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            throw new UnsupportedOperationException();
+        }
+    }
+
+
     private static final String MUL_NAME = "*";
-    private static class MulOverloadBase extends TOverloadBase {
+    private static class TestMulBase extends TOverloadBase {
         private final TClass tClass;
 
-        public MulOverloadBase(TClass tClass) {
+        public TestMulBase(TClass tClass) {
             this.tClass = tClass;
         }
 
@@ -125,48 +166,95 @@ public class OverloadResolverTest {
         }
     }
 
-    private final static TClass TEST_INT = new TestClassBase("int", PUnderlying.INT_32);
-    private final static TClass TEST_BIGINT = new TestClassBase("bigint", PUnderlying.INT_64);
-    private final static TClass TEST_DOUBLE = new TestClassBase("double",  PUnderlying.DOUBLE);
-    private final static MulOverloadBase MUL_INT = new MulOverloadBase(TEST_INT);
-    private final static MulOverloadBase MUL_BIGINT = new MulOverloadBase(TEST_BIGINT);
-    private final static MulOverloadBase MUL_DOUBLE = new MulOverloadBase(TEST_DOUBLE);
+    private final static TClass TINT = new TestClassBase("int", PUnderlying.INT_32);
+    private final static TClass TBIGINT = new TestClassBase("bigint", PUnderlying.INT_64);
+    private final static TClass TINTERVAL = new TestClassBase("interval", PUnderlying.INT_32);
+    private final static TClass TDOUBLE = new TestClassBase("double",  PUnderlying.DOUBLE);
+
+    private final static TCast C_INT_INT = new TestCastBase(TINT);
+    private final static TCast C_BIGINT_BIGINT = new TestCastBase(TBIGINT);
+
+    private final static TestMulBase MUL_INT = new TestMulBase(TINT);
+    private final static TestMulBase MUL_BIGINT = new TestMulBase(TBIGINT);
+    private final static TestMulBase MUL_DOUBLE = new TestMulBase(TDOUBLE);
+
 
     private static TPreptimeValue prepVal(TClass tClass) {
         return new TPreptimeValue(tClass.instance());
+    }
+
+    private static List<TPreptimeValue> prepVals(TClass... tClasses) {
+        TPreptimeValue[] prepVals = new TPreptimeValue[tClasses.length];
+        for(int i = 0; i < tClasses.length; ++i) {
+            prepVals[i] = prepVal(tClasses[i]);
+        }
+        return Arrays.asList(prepVals);
     }
 
     @Test(expected=NoSuchFunctionException.class)
     public void noSuchOverload() {
         SimpleRegistry registry = new SimpleRegistry();
         OverloadResolver resolver = new OverloadResolver(registry);
-        resolver.get("foo", Arrays.asList(prepVal(TEST_INT)));
+        resolver.get("foo", Arrays.asList(prepVal(TINT)));
     }
 
-    // default resolution (single overload), exact match
-    @Test
-    public void defaultMulIntWithInts() {
+    @Test(expected=WrongExpressionArityException.class)
+    public void knownOverloadTooFewParams() {
         SimpleRegistry registry = new SimpleRegistry(MUL_INT);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(registry.getValidated(MUL_INT),
-                   resolver.get(MUL_NAME, Arrays.asList(prepVal(TEST_INT), prepVal(TEST_INT))).getOverload());
+        resolver.get(MUL_NAME, prepVals(TINT));
     }
 
-    // default resolution (single overload), requires strong cast (int -> bigint)
+    @Test(expected=WrongExpressionArityException.class)
+    public void knownOverloadTooManyParams() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_INT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        resolver.get(MUL_NAME, prepVals(TINT, TINT, TINT));
+    }
+
+    // default resolution, exact match
     @Test
-    public void defaultMulBigIntWithInts() {
+    public void mulIntWithInts() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_INT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        assertSame(registry.validated(MUL_INT),
+                   resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
+    }
+
+    // default resolution, requires strong cast (int -> bigint)
+    @Test
+    public void mulBigIntWithInts() {
         SimpleRegistry registry = new SimpleRegistry(MUL_BIGINT);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(registry.getValidated(MUL_BIGINT),
-                   resolver.get(MUL_NAME, Arrays.asList(prepVal(TEST_INT), prepVal(TEST_INT))).getOverload());
+        assertSame(registry.validated(MUL_BIGINT),
+                   resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
     }
 
-    // default resolution (single overload), requires weak cast (bigint -> int)
+    // default resolution, requires weak cast (bigint -> int)
     @Test
-    public void defaultMulIntWithBigInts() {
+    public void mulIntWithBigInts() {
         SimpleRegistry registry = new SimpleRegistry(MUL_INT);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(registry.getValidated(MUL_INT),
-                   resolver.get(MUL_NAME, Arrays.asList(prepVal(TEST_INT), prepVal(TEST_INT))).getOverload());
+        assertSame(registry.validated(MUL_INT),
+                   resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
+    }
+
+    // input resolution, no casts
+    @Test(expected=NoSuchFunctionException.class)
+    public void mulIntMulBigIntWithIntsNoCasts() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_INT, MUL_BIGINT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        assertSame(registry.validated(MUL_INT),
+                   resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
+    }
+
+    // input resolution, type only casts, only one candidate
+    @Test
+    public void mulIntMulBigIntWithIntsTypeOnlyCasts() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_INT, MUL_BIGINT);
+        registry.setCasts(C_INT_INT, C_BIGINT_BIGINT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        assertSame(registry.validated(MUL_INT),
+                   resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
     }
 }

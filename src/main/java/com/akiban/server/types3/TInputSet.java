@@ -65,6 +65,11 @@ public final class TInputSet {
         this.isPicking = isPicking;
     }
 
+    @Override
+    public String toString() {
+        return "{" + covering + (coversRemaining ? "REMAINING" : "") + "->" + targetType + "}";
+    }
+
     private final TClass targetType;
     private final BitSet covering;
     private final boolean coversRemaining;
