@@ -29,37 +29,69 @@ package com.akiban.server.service.ui;
 import java.awt.*;
 import javax.swing.*;
 
+import java.io.IOException;
 import java.io.OutputStream;
 
 public class TextAreaOutputStream extends OutputStream
 {
     private JTextArea textArea;
-    private StringBuilder buffer = new StringBuilder();
+    private final StringBuilder buffer = new StringBuilder();
+    private final OutputStream oldStream;
     
-    public TextAreaOutputStream(JTextArea textArea) {
-        this.textArea = textArea;
+    // Initialize in deferred mode.
+    public TextAreaOutputStream() {
+        this.oldStream = System.out;
     }
 
-    public void write(int b) {
+    public TextAreaOutputStream(JTextArea textArea) {
+        this.textArea = textArea;
+        this.oldStream = null;
+    }
+
+    public synchronized void write(int b) {
         buffer.append((char)b);
     }
 
-    public void write(byte[] b) {
+    public synchronized void write(byte[] b) {
         buffer.append(new String(b));
     }
 
-    public void write(byte[] b, int off, int len) {
+    public synchronized void write(byte[] b, int off, int len) {
         buffer.append(new String(b, off, len));
     }
 
-    public void flush() {
+    public synchronized void flush() throws IOException {
+        final JTextArea textArea = this.textArea;
         final String string = buffer.toString();
-        SwingUtilities.invokeLater(new Runnable() {
-                public void run() {
-                    textArea.append(string);
-                }
-            });
         buffer.setLength(0);
+        if (textArea != null) {
+            SwingUtilities.invokeLater(new Runnable() {
+                    public void run() {
+                        textArea.append(string);
+                    }
+                });
+        }
+        else if (oldStream != null) {
+            oldStream.write(string.getBytes());
+        }
+    }
+
+    // Change stream to outputting to text area.
+    public synchronized boolean setTextAreaIfUnbound(JTextArea textArea) {
+        if ((this.textArea == null) && (oldStream != null)) {
+            this.textArea = textArea;
+            return true;
+        }
+        return false;
+    }
+
+    // Change stream back to original output for any messages after frame is closed.
+    public synchronized boolean clearTextAreaIfBound(JTextArea textArea) {
+        if (this.textArea == textArea) {
+            this.textArea = null;
+            return true;
+        }
+        return false;
     }
 
 }

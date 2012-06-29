@@ -109,6 +109,7 @@ public class Log4JConfigurationMXBeanSingleton implements Log4JConfigurationMXBe
     }
 
     protected void configure(String configFile) {
+        new Throwable(configFile).printStackTrace();
         org.apache.log4j.PropertyConfigurator.configure(configFile);
     }
 

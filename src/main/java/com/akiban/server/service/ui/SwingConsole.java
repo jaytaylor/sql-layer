@@ -32,12 +32,14 @@ import javax.swing.*;
 import javax.swing.text.*;
 
 import java.io.OutputStream;
+import java.io.PrintStream;
 
 public class SwingConsole extends JFrame implements WindowListener 
 {
     public static final String TITLE = "Akiban Server";
 
     private JTextArea textArea;
+    private PrintStream printStream;
 
     public SwingConsole() {
         super(TITLE);
@@ -55,11 +57,12 @@ public class SwingConsole extends JFrame implements WindowListener
                         quit();
                     }
                 });
+            quitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_MASK));
             fileMenu.add(quitMenuItem);
             menuBar.add(fileMenu);
 
             JMenu editMenu = new JMenu("Edit");
-            fileMenu.setMnemonic(KeyEvent.VK_E);
+            editMenu.setMnemonic(KeyEvent.VK_E);
             Action action = new DefaultEditorKit.CutAction();
             action.putValue(Action.NAME, "Cut");
             action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK));
@@ -87,7 +90,7 @@ public class SwingConsole extends JFrame implements WindowListener
         textArea = new JTextArea();
         DefaultCaret caret = (DefaultCaret)textArea.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-        textArea.setPreferredSize(new Dimension(500, 500));
+        textArea.setPreferredSize(new Dimension(800, 400));
         JScrollPane scrollPane = new JScrollPane(textArea, 
                                                  JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
                                                  JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
@@ -122,8 +125,41 @@ public class SwingConsole extends JFrame implements WindowListener
     public void windowOpened(WindowEvent arg0) {
     }            
     
-    public OutputStream textOutputStream() {
-        return new TextAreaOutputStream(textArea);
+    public PrintStream getPrintStream() {
+        return printStream;
+    }
+
+    static class TextAreaPrintStream extends PrintStream {
+        public TextAreaPrintStream() {
+            this(new TextAreaOutputStream());
+        }
+        
+        public TextAreaPrintStream(TextAreaOutputStream out) {
+            super(out, true);
+        }
+        
+        public TextAreaOutputStream getOut() {
+            return (TextAreaOutputStream)out;
+        }
+    }
+
+    public PrintStream openPrintStream(boolean reuseSystem) {
+        if (reuseSystem &&
+            (System.out instanceof TextAreaPrintStream) &&
+            ((TextAreaPrintStream)System.out).getOut().setTextAreaIfUnbound(textArea)) {
+            printStream = System.out;
+        }
+        else {
+            printStream = new PrintStream(new TextAreaOutputStream(textArea));
+        }
+        return printStream;
+    }
+
+    public void closePrintStream() {
+        if (printStream == System.out) {
+            ((TextAreaPrintStream)System.out).getOut().clearTextAreaIfBound(textArea);
+        }
+        printStream = null;
     }
 
     protected void quit() {
