@@ -29,19 +29,31 @@ package com.akiban.server.types3;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.ArgumentValidation;
-
 import java.util.EnumSet;
 import java.util.regex.Pattern;
 
 public abstract class TClass {
 
     public abstract TFactory factory();
+
+    public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+        throw new UnsupportedOperationException(); // TODO remove this, make it abstract
+    }
+
+    public void attributeToString(int attributeIndex, int value, StringBuilder output) {
+        throw new UnsupportedOperationException(); // TODO remove this, make it abstract
+    }
     
     public /*abstract*/ void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
         throw new AssertionError("make this abstract and implement in all subclasses"); // TODO
+    }
+
+    public Object getSwitcher() {
+        throw new UnsupportedOperationException(); // TODO get this from bundle
     }
 
     public abstract void putSafety(QueryContext context,
@@ -149,11 +161,10 @@ public abstract class TClass {
     
     // for use by this class
     
-    private TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
+    protected TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         if (nAttributes() != nAttrs)
             throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
-        
-        TInstance result = new TInstance(this, enumClass, attr0, attr1, attr2, attr3);
+        TInstance result = new TInstance(this, enumClass, nAttrs, attr0, attr1, attr2, attr3);
         validate(result);
         return result;
     }

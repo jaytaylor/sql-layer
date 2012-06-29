@@ -39,7 +39,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MNumeric extends TClass {
 
-    private MNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
+    protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
         super(MBundle.INSTANCE.id(), name, 
                 NumericAttribute.class,
                 1, 1, serializationSize, 
@@ -80,14 +80,8 @@ public class MNumeric extends TClass {
         }*/
         throw new UnsupportedOperationException("Not supported yet.");
     }
-
-    @Override
-    public TInstance instance(int m) {
-        return factory().create(null); //TODO need to turn M into an arg
-    }
     
     // numeric types
-    public static final MNumeric BIT = new MNumeric("bit", 8, PUnderlying.INT_64);
     public static final MNumeric TINYINT = new MNumeric("tinyint", 1, PUnderlying.INT_8);
     public static final MNumeric TINYINT_UNSIGNED = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16);
     public static final MNumeric SMALLINT = new MNumeric("smallint", 2, PUnderlying.INT_16);
@@ -100,4 +94,5 @@ public class MNumeric extends TClass {
     public static final MNumeric BIGINT_UNSIGNED = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64);
     
     public static final TClass DECIMAL = new MBigDecimal();
+    public static final TClass DECIMAL_UNSIGNED = new MBigDecimal();
 }

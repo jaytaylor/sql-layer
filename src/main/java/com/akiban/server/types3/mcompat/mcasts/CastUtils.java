@@ -30,6 +30,15 @@ import com.akiban.server.types3.TExecutionContext;
 
 public final class CastUtils
 {
+    public static long round (long max, long min, double val, TExecutionContext context)
+    {
+        long rounded = Math.round(val);
+        
+        if (Double.compare(rounded, val) != 0)
+            context.reportTruncate(Double.toString(val), Long.toString(rounded));
+        return getInRange(max, min, rounded, context);
+    }
+
     public static long getInRange (long max, long min, long val, TExecutionContext context)
     {
         if (val > max)
@@ -62,7 +71,6 @@ public final class CastUtils
         else
             return val;
     }
-    
      
     /**
      * Truncate non-digits part

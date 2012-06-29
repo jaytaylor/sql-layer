@@ -45,4 +45,8 @@ public enum  MBundle implements TBundle {
     public Map<TClass, TFactory> typeClasses() {
         throw new UnsupportedOperationException(); // TODO
     }
+
+    public enum MSwitcher {
+        // TODO
+    }
 }

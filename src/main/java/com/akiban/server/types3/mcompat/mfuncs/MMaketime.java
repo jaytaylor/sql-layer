@@ -37,28 +37,35 @@ public class MMaketime extends TOverloadBase {
 
     public static final TOverload INSTANCE = new MMaketime() {};
     
+    private MMaketime() {}
+
     @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MNumeric.INT, 0, 1, 2);
+    protected void buildInputSets(TInputSetBuilder builder)
+    {
+        builder.covers(MNumeric.BIGINT, 0, 1, 2);
     }
 
     @Override
-    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
+    {
         // Time input format HHMMSS
         int hours = inputs.get(0).getInt32(); 
         int minutes = inputs.get(1).getInt32();
         int seconds = inputs.get(2).getInt32();
         
-        // Check for valid input
+        // Check for invalid input
         if (minutes < 0 || minutes >= 60 || seconds < 0 || seconds >= 60) {
             output.putNull();
             return;
         }
         
-        int time = hours < 0 ? -1 : 1;
-        hours *= time;
-        time *= seconds + minutes * 100 + hours * 10000;
-        output.putInt32(time);     
+        int mul;
+        if (hours < 0)
+            hours *= mul = -1;
+        else
+            mul = 1;
+
+        output.putInt32(MDatetimes.encodeTime(hours, minutes, seconds, context));
     }
 
     @Override

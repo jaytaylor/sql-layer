@@ -132,4 +132,8 @@ public abstract class TOverloadBase implements TOverload {
         return true;
     }
 
+    @Override
+    public String toString() {
+        return overloadName() + ": " + inputSets();
+    }
 }
