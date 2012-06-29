@@ -93,6 +93,12 @@ public final class TValidatedOverload implements TOverload {
     }
 
     public TInputSet inputSetAt(int index) {
+        if(index >= inputSetsByPos.size()) {
+            if(varargs == null) {
+                throw new IllegalArgumentException("No such input set: " + index);
+            }
+            return varargs;
+        }
         return inputSetsByPos.get(index);
     }
 
@@ -106,9 +112,8 @@ public final class TValidatedOverload implements TOverload {
          * REMAINING        : nInputs >= 0
          * POS(N),REMAINING : nInputs >= N+1
          */
-        if (varargs == null)
-            return nInputs == inputSetsByPos.size();
-        return nInputs >= varargs.positionsLength();
+        int minSize = inputSetsByPos.size();
+        return (varargs == null) ? (nInputs == minSize) : (nInputs >= minSize);
     }
 
     public int positionalInputs() {
@@ -141,8 +146,6 @@ public final class TValidatedOverload implements TOverload {
         }
         if (!inputSetsArray.isCompactable())
             throw new InvalidOverloadException("not all inputs covered");
-        if ((localVarargInputs != null) && (localVarargInputs.positionsLength() < inputSetsArray.lastDefinedIndex()))
-            throw new InvalidOverloadException("REMAINING cannot overlap any POS");
         this.overload = overload;
         this.inputSetsByPos = inputSetsArray.toList();
         this.varargs = localVarargInputs;

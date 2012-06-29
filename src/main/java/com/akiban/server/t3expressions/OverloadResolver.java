@@ -84,6 +84,7 @@ public final class OverloadResolver {
             if (groups.size() == 1 && groups.get(0).size() == 1)
                 mostSpecific = groups.get(0).get(0);
             // else: 0 or >1 candidates
+            // TODO: Throw or let registry handle it?
         }
         if (mostSpecific == null)
             return null;
@@ -124,6 +125,11 @@ public final class OverloadResolver {
         return true;
     }
 
+    private OverloadResult buildResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
+        TClass pickingClass = pickingClass(overload, inputs);
+        return new OverloadResult(overload, pickingClass);
+    }
+
     private TClass pickingClass(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
         TInputSet pickingSet = overload.pickingInputSet();
         if (pickingSet == null) {
@@ -131,23 +137,20 @@ public final class OverloadResolver {
         }
         TClass common = null;
         for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i)) {
-            common = registry.commonTClass(common, inputs.get(i).instance().typeClass()).get();
+            TInstance instance = inputs.get(i).instance();
+            common = registry.commonTClass(common, instance != null ? instance.typeClass() : null).get();
             if (common == T3ScalarsRegistry.NO_COMMON)
                 return common;
         }
         if (pickingSet.coversRemaining()) {
             for (int i = overload.firstVarargInput(), last = inputs.size(); i < last; ++i) {
-                common = registry.commonTClass(common, inputs.get(i).instance().typeClass()).get();
+                TInstance instance = inputs.get(i).instance();
+                common = registry.commonTClass(common, instance != null ? instance.typeClass() : null).get();
                 if (common == T3ScalarsRegistry.NO_COMMON)
                     return common;
             }
         }
         return common;
-    }
-
-    private OverloadResult buildResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
-        TClass pickingClass = pickingClass(overload, inputs);
-        return new OverloadResult(overload, pickingClass);
     }
 
     /*
@@ -204,8 +207,8 @@ public final class OverloadResolver {
                         it.remove();
                     }
                 }
-                // None in current group was more specific or B was most specific
                 if(B != null) {
+                    // No more specific existed or B was most specific
                     castGroup.add(B);
                 }
             } else {

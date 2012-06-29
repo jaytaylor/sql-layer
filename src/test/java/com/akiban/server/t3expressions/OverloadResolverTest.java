@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.UUID;
 
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 public class OverloadResolverTest {
     private static class SimpleRegistry implements T3ScalarsRegistry {
@@ -100,7 +101,7 @@ public class OverloadResolverTest {
 
         @Override
         public TClassPossibility commonTClass(TClass one, TClass two) {
-            throw new UnsupportedOperationException();
+            return T3ScalarsRegistry.NO_COMMON;
         }
 
         public TValidatedOverload validated(TOverload overload) {
@@ -179,9 +180,45 @@ public class OverloadResolverTest {
         }
     }
 
+    private static class TestGetBase extends TOverloadBase {
+        private final String name;
+        private final TClass tResult;
+        private final TInputSetBuilder builder = new TInputSetBuilder();
+
+        public TestGetBase(String name, TClass tResult) {
+            this.name = name;
+            this.tResult = tResult;
+        }
+
+        public TInputSetBuilder builder() {
+            return builder;
+        }
+
+        @Override
+        protected void buildInputSets(TInputSetBuilder builder) {
+            builder.reset(this.builder);
+        }
+
+        @Override
+        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public String overloadName() {
+            return name;
+        }
+
+        @Override
+        public TOverloadResult resultType() {
+            return (tResult == null) ? TOverloadResult.picking() : TOverloadResult.fixed(tResult.instance());
+        }
+    }
+
     private final static TClass TINT = new TestClassBase("int", PUnderlying.INT_32);
     private final static TClass TBIGINT = new TestClassBase("bigint", PUnderlying.INT_64);
     private final static TClass TDATE = new TestClassBase("date",  PUnderlying.DOUBLE);
+    private final static TClass TVARCHAR = new TestClassBase("varchar",  PUnderlying.BYTES);
 
     private final static TCast C_INT_INT = new TestCastBase(TINT);
     private final static TCast C_INT_BIGINT = new TestCastBase(TINT, TBIGINT, true);
@@ -321,5 +358,71 @@ public class OverloadResolverTest {
         assertSame("?*INT",
                    null,
                    resolver.get(MUL_NAME, prepVals(null, TINT)));
+    }
+
+    @Test
+    public void conflictingOverloads() {
+        final String NAME = "foo";
+        // Overloads aren't valid and should(?) be rejected by real registry,
+        // but make sure resolver doesn't choke
+        TestGetBase posPos = new TestGetBase(NAME, TINT);
+        posPos.builder().covers(TINT, 0, 1);
+        TestGetBase posRem = new TestGetBase(NAME, TINT);
+        posRem.builder().covers(TINT, 0).vararg(TINT);
+
+        SimpleRegistry registry = new SimpleRegistry(posPos, posRem);
+        registry.setCasts(C_INT_INT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+
+        assertSame(NAME + "(INT,INT)",
+                   null,
+                   resolver.get(NAME, prepVals(TINT, TINT)));
+    }
+
+    @Test
+    public void noArg() {
+        final String NAME = "foo";
+        TestGetBase noArg = new TestGetBase(NAME, TINT);
+        SimpleRegistry registry = new SimpleRegistry(noArg);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        assertSame(NAME + "()",
+                   registry.validated(noArg),
+                   resolver.get(NAME, prepVals()).getOverload());
+    }
+
+    @Test
+    public void onePosAndRemainingWithPickingSet() {
+        final String NAME = "coalesce";
+        TestGetBase coalesce = new TestGetBase(NAME, TVARCHAR);
+        coalesce.builder().covers(null, 0).pickingVararg(null);
+        SimpleRegistry registry = new SimpleRegistry(coalesce);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        TValidatedOverload validated = registry.validated(coalesce);
+
+        try {
+            OverloadResolver.OverloadResult result = resolver.get(NAME, prepVals());
+            fail("WrongArity expected but got: " + result);
+        } catch(WrongExpressionArityException e) {
+            // Expected
+        }
+
+        assertSame(NAME + "(INT)", validated, resolver.get(NAME, prepVals(TINT)).getOverload());
+        assertSame(NAME + "(INT,BIGINT)", validated, resolver.get(NAME, prepVals(TINT, TBIGINT)).getOverload());
+        assertSame(NAME + "(null,DATE,INT)", validated, resolver.get(NAME, prepVals(null, TDATE, TINT)).getOverload());
+    }
+
+    @Test
+    public void onlyPickingRemaining() {
+        final String NAME = "first";
+        TestGetBase first = new TestGetBase(NAME, null);
+        first.builder.pickingVararg(null);
+        SimpleRegistry registry = new SimpleRegistry(first);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        TValidatedOverload validated = registry.validated(first);
+
+        assertSame(NAME + "()", validated, resolver.get(NAME, prepVals()).getOverload());
+        assertSame(NAME + "(INT)", validated, resolver.get(NAME, prepVals(TINT)).getOverload());
+        assertSame(NAME + "(null)", validated, resolver.get(NAME, Arrays.asList(prepVal(null))).getOverload());
+        assertSame(NAME + "(BIGINT,DATE)", validated, resolver.get(NAME, prepVals(TBIGINT,TDATE)).getOverload());
     }
 }
