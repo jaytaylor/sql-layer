@@ -35,71 +35,102 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import org.joda.time.MutableDateTime;
 
-public abstract class MToDatetime extends TOverloadBase{
+public class MToDatetime extends TOverloadBase{
     
     private static final long SECONDS_FACTOR = 100L;
     private static final long DAY_FACTOR = 3600L * 1000 * 24;
     private static final long BEGINNING = new MutableDateTime(0,0,1,0,0,0,0).getMillis();
 
+    private final DateType dateType;
+    private final FuncType funcType;
     
-    public static final TOverload TO_DAYS = new MToDatetime() {
+    static enum DateType {
+        DATETIME(MDatetimes.DATETIME) {
+            @Override
+            long[] decode(long input) {
+                return MDatetimes.decodeDatetime(input);
+            }
+        },
+        DATE(MDatetimes.DATE) {
+            @Override
+            long[] decode(long input) {
+                return MDatetimes.decodeDate(input);
+            }
+        }, 
+        TIME(MDatetimes.TIME) {
+            @Override
+            long[] decode(long input) {
+                return MDatetimes.decodeTime(input);
+            }
+        };
+        abstract long[] decode(long input);
+        final TClass type;
         
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long [] dateArr = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
-            MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
-            long time = (datetime.getMillis() - BEGINNING) / DAY_FACTOR;
-            output.putInt32((int) time);
+        private DateType(TClass type) {
+            this.type = type;
         }
-
-        @Override
-        public String overloadName() {
-            return "TO_DAYS";
-        }
-        
+    }
+    
+    static enum FuncType {
+        TO_DAYS() {
+            @Override
+            void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
+                MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
+                long time = (datetime.getMillis() - BEGINNING) / DAY_FACTOR;
+                output.putInt32((int) time);
+                 
+            }
+        }, 
+        TO_SECONDS() {
+            @Override
+            void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
+                MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
+                long seconds = (datetime.getMillis() - BEGINNING) / SECONDS_FACTOR;
+                output.putInt32((int) seconds);
+            }
+        }, 
+        TIME_TO_SEC() {
+            @Override
+            void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
+                MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
+                long seconds = datetime.getMillis() / SECONDS_FACTOR;
+                output.putInt32((int) seconds);
+            }
+        };
+        abstract void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output);
+    }
+    
+    public static final TOverload[] INSTANCES = {
+        new MToDatetime(FuncType.TO_DAYS, DateType.DATETIME),
+        new MToDatetime(FuncType.TO_DAYS, DateType.DATE),
+        new MToDatetime(FuncType.TIME_TO_SEC, DateType.DATETIME),
+        new MToDatetime(FuncType.TIME_TO_SEC, DateType.TIME),
+        new MToDatetime(FuncType.TO_SECONDS, DateType.DATETIME),
+        new MToDatetime(FuncType.TO_SECONDS, DateType.TIME)
     };
     
-    public static final TOverload TIME_TO_SEC = new MToDatetime() {
-        
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long [] dateArr = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
-            MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
-            long seconds = datetime.getMillis() / SECONDS_FACTOR;
-            output.putInt32((int)seconds);
-        }
-
-        @Override
-        public String overloadName() {
-            return "TIME_TO_SEC";
-        }
-        
-    };
-    
-    public static final TOverload TO_SECONDS = new MToDatetime() {
-
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long [] dateArr = MDatetimes.decodeDatetime(inputs.get(0).getInt64());            
-            MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
-            long seconds = (datetime.getMillis() - BEGINNING) / SECONDS_FACTOR;
-            output.putInt32((int)seconds);
-        }
-
-        @Override
-        public String overloadName() {
-            return "TO_SECONDS";
-        }
-        
-    }; 
-
-    @Override
-    protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MDatetimes.DATETIME, 0);
+    private MToDatetime(FuncType funcType, DateType dateType) {
+        this.funcType = funcType;
+        this.dateType = dateType;
     }
 
     @Override
+    protected void buildInputSets(TInputSetBuilder builder) {
+        builder.covers(dateType.type, 0);
+    }
+
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        funcType.evaluate(context, dateType.decode(inputs.get(0).getInt64()), output);
+    }
+    
+    @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MNumeric.INT.instance());
+    }
+
+    @Override
+    public String overloadName() {
+        return funcType.name();
     }
 }

@@ -37,50 +37,59 @@ import java.text.DateFormatSymbols;
 import java.util.Locale;
 import org.joda.time.MutableDateTime;
 
-public abstract class MDateName extends TOverloadBase {
+public class MDateName extends TOverloadBase {
     
     private static final String MONTHS[] = new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getMonths();
     private static final String DAYS[] = new DateFormatSymbols(new Locale(System.getProperty("user.language"))).getWeekdays();
 
-    public static final TOverload MONTHNAME = new MDateName() {
-
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long input = inputs.get(0).getInt64();
-            String month = MONTHS[(int) MDatetimes.decodeDatetime(input)[MDatetimes.MONTH_INDEX]];
-            output.putObject(month);
-        }
-
-        @Override
-        public String overloadName() {
-            return "MONTHNAME";
-        }
+    private final FuncType funcType;
+    
+    static enum FuncType {
+        MONTHNAME() {
+            @Override
+            void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
+                // TODO: update with new method that gets locale
+                String month = MONTHS[(int)dateArr[MDatetimes.MONTH_INDEX]];
+                output.putObject(month);
+            }
+        }, 
+        DAYNAME() {
+            @Override
+            void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output) {
+                MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
+                String day = DAYS[datetime.getDayOfWeek()%7];
+                output.putObject(day);
+            }
+        };
+        abstract void evaluate(TExecutionContext context, long[] dateArr, PValueTarget output);
+    }
+    
+    public static final TOverload[] INSTANCES = {
+        new MDateName(FuncType.MONTHNAME),
+        new MDateName(FuncType.DAYNAME)
     };
     
-    public static final TOverload DAYNAME = new MDateName() {
-
-        @Override
-        protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
-            long[] dateArr = MDatetimes.decodeDatetime(inputs.get(0).getInt64());
-            MutableDateTime datetime = MDatetimes.toJodaDatetime(dateArr, context.getCurrentTimezone());
-            String month = DAYS[datetime.getDayOfWeek()%7];
-            output.putObject(month);
-        }
-
-        @Override
-        public String overloadName() {
-            return "DAYNAME";
-        }
-    };
+    private MDateName(FuncType funcType) {
+        this.funcType = funcType;
+    }
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
         builder.covers(MDatetimes.DATETIME, 0);
     }
-
+    
+    @Override
+    protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
+        funcType.evaluate(context, MDatetimes.decodeDatetime(inputs.get(0).getInt64()), output);
+    }
+    
     @Override
     public TOverloadResult resultType() {
         return TOverloadResult.fixed(MString.VARCHAR.instance());
     }
-    
+
+    @Override
+    public String overloadName() {
+        return funcType.name();
+    }
 }
