@@ -31,7 +31,10 @@ import com.akiban.util.SparseArray;
 import java.util.List;
 
 public final class TPreptimeContext {
-    
+    public void setOutputType(TInstance outputType) {
+        this.outputType = outputType;
+    }
+
     public TExecutionContext createExecutionContext() {
         return new TExecutionContext(preptimeCache, inputTypes, outputType, 
                 null,
@@ -54,6 +57,10 @@ public final class TPreptimeContext {
         if (preptimeCache == null)
             preptimeCache = new SparseArray<Object>(index);
         preptimeCache.set(index, value);
+    }
+
+    public TPreptimeContext(List<TInstance> inputTypes) {
+        this.inputTypes = inputTypes;
     }
 
     public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {

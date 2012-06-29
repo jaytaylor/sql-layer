@@ -66,5 +66,10 @@ public abstract class TCastBase implements TCast
     public TClass targetClass()
     {
         return targetClass;
-    }  
+    }
+
+    @Override
+    public String toString() {
+        return sourceClass + "->" + targetClass + " [" + (isAutomatic ? "STRONG" : "WEAK") + "]";
+    }
 }

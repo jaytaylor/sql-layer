@@ -27,6 +27,15 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.StringFactory;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 public class Column
 {
@@ -46,6 +55,10 @@ public class Column
 
     public static Column create(Table table, String name, Integer position, Type type) {
         return create(table, name, position, type, null, null, null, null, null);
+    }
+
+    public TInstance tInstance() {
+        return tInstance(false);
     }
 
     @Override
@@ -83,6 +96,7 @@ public class Column
     public void setNullable(Boolean nullable)
     {
         this.nullable = nullable;
+        tInstance(false).setNullable(nullable);
     }
     
     public void setAutoIncrement(Boolean autoIncrement)
@@ -94,6 +108,7 @@ public class Column
     {
         if(typeParameter1 != null) {
             this.typeParameter1 = typeParameter1;
+            tInstance(true);
         }
     }
 
@@ -101,18 +116,21 @@ public class Column
     {
         if (typeParameter2 != null) {
             this.typeParameter2 = typeParameter2;
+            tInstance(true);
         }
     }
 
     public void setCharsetAndCollation(CharsetAndCollation charsetAndCollation)
     {
         this.charsetAndCollation = charsetAndCollation;
+        tInstance(true);
     }
 
     public void setCharset(String charset)
     {
         if (charset != null) {
             this.charsetAndCollation = CharsetAndCollation.intern(charset, getCharsetAndCollation().collation());
+            tInstance(true);
         }
     }
 
@@ -120,6 +138,7 @@ public class Column
     {
         if (collation != null) {
             this.charsetAndCollation = CharsetAndCollation.intern(getCharsetAndCollation().charset(), collation);
+            tInstance(true);
         }
     }
 
@@ -381,6 +400,143 @@ public class Column
             byteCount < 16777216 ? 3 : 4;
     }
 
+    private TInstance tInstance(boolean force) {
+        final TInstance old = tInstanceRef.get();
+        if (old != null && !force)
+            return old;
+        final TInstance tinst;
+
+        switch (Types.asEnum(type)) {
+        case T_ENUM:
+        case T_BIT:
+        case T_GEOMETRY:
+        case T_GEOMETRYCOLLECTION:
+        case T_POINT:
+        case T_POLYGON:
+        case T_SET:
+        case T_LINESTRING:
+        case T_MULTILINESTRING:
+        case T_MULTIPOLYGON:
+        case T_MULTIPOINT:
+            throw new UnsupportedOperationException("unsupported type: " + type);
+
+        case T_BLOB:
+            tinst = null; // TODO
+            break;
+        case T_BIGINT:
+            tinst = MNumeric.BIGINT.instance(typeParameter1.intValue());
+            break;
+        case T_U_BIGINT:
+            tinst = MNumeric.BIGINT_UNSIGNED.instance(typeParameter1.intValue());
+            break;
+        case T_BINARY:
+            tinst = MString.VARBINARY.instance(typeParameter1.intValue());
+            break;
+        case T_CHAR:
+            assert false : "need a separate varchar type";
+            tinst = charString(MString.VARCHAR);
+            break;
+        case T_DATE:
+            tinst = MDatetimes.DATE.instance();
+            break;
+        case T_DATETIME:
+            tinst = MDatetimes.DATETIME.instance();
+            break;
+        case T_DECIMAL:
+            tinst = MNumeric.BIGINT.instance(typeParameter1.intValue(), typeParameter2.intValue());
+            break;
+        case T_U_DECIMAL:
+            tinst = MNumeric.BIGINT_UNSIGNED.instance(typeParameter1.intValue(), typeParameter2.intValue());
+            break;
+        case T_DOUBLE:
+            tinst = MDouble.INSTANCE.instance();
+            break;
+        case T_U_DOUBLE:
+            tinst = null; // TODO
+            break;
+        case T_FLOAT:
+            tinst = null; // TODO
+            break;
+        case T_U_FLOAT:
+            tinst = null; // TODO
+            break;
+        case T_INT:
+            tinst = MNumeric.INT.instance(typeParameter1.intValue());
+            break;
+        case T_U_INT:
+            tinst = MNumeric.INT_UNSIGNED.instance(typeParameter1.intValue());
+            break;
+        case T_LONGBLOB:
+            tinst = null; // TODO
+            break;
+        case T_LONGTEXT:
+            tinst = null; // TODO
+            break;
+        case T_MEDIUMBLOB:
+            tinst = null; // TODO
+            break;
+        case T_MEDIUMINT:
+            tinst = MNumeric.MEDIUMINT.instance(typeParameter1.intValue());
+            break;
+        case T_U_MEDIUMINT:
+            tinst = MNumeric.MEDIUMINT_UNSIGNED.instance(typeParameter1.intValue());
+            break;
+        case T_MEDIUMTEXT:
+            tinst = null; // TODO
+            break;
+        case T_SMALLINT:
+            tinst = MNumeric.SMALLINT.instance(typeParameter1.intValue());
+            break;
+        case T_U_SMALLINT:
+            tinst = MNumeric.SMALLINT_UNSIGNED.instance(typeParameter1.intValue());
+            break;
+        case T_TEXT:
+            tinst = null; // TODO
+            break;
+        case T_TIME:
+            tinst = MDatetimes.TIME.instance();
+            break;
+        case T_TIMESTAMP:
+            tinst = MDatetimes.TIMESTAMP.instance();
+            break;
+        case T_TINYBLOB:
+            tinst = null; // TODO
+            break;
+        case T_TINYINT:
+            tinst = MNumeric.TINYINT.instance(typeParameter1.intValue());
+            break;
+        case T_U_TINYINT:
+            tinst = MNumeric.TINYINT_UNSIGNED.instance(typeParameter1.intValue());
+            break;
+        case T_TINYTEXT:
+            tinst = null; // TODO
+            break;
+        case T_VARBINARY:
+            tinst = MString.VARBINARY.instance(typeParameter1.intValue());
+            break;
+        case T_VARCHAR:
+            tinst = charString(MString.VARCHAR);
+            break;
+        case T_YEAR:
+            tinst = MDatetimes.YEAR.instance();
+            break;
+        default:
+            throw new UnsupportedOperationException("unknown type: " + type);
+        }
+
+        assert tinst != null : type;
+        
+        if (!tInstanceRef.compareAndSet(old, tinst))
+            assert false : "CAS failed; Column is not thread-safe, so mutating it from multiple threads is bad!";
+
+        return tinst;
+    }
+
+    private TInstance charString(TClass tClass) {
+        StringFactory.Charset charset = StringFactory.Charset.valueOf(charsetAndCollation.charset().toUpperCase());
+        return tClass.instance(typeParameter1.intValue(), charset.ordinal(), -1); // TODO collation
+    }
+
     // State
 
     public static final String AKIBAN_PK_NAME = "__akiban_pk";
@@ -394,6 +550,7 @@ public class Column
     private Long typeParameter2;
     private Long initialAutoIncrementValue;
     private CharsetAndCollation charsetAndCollation;
+    private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<TInstance>();
 
     private Column groupColumn; // Non-null iff this is a user table column
     private Column userColumn; // Non-null iff this is a group table column

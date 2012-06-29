@@ -35,7 +35,6 @@ public interface TCast {
     Constantness constness();
     public TClass sourceClass();
     public TClass targetClass();
-    
     /**
      * 
      * @param context
