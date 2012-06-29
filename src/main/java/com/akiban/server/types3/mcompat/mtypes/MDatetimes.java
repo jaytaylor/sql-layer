@@ -344,11 +344,11 @@ public class MDatetimes
                         + dt.getSecondOfMinute());
     }
     
-    public static long encodeTime(long val[])
+    public static int encodeTime(long val[])
     {
-        return val[HOUR_INDEX] * DATETIME_HOUR_SCALE
-                + val[MIN_INDEX] * DATETIME_MIN_SCALE
-                + val[SEC_INDEX];
+        return (int)(val[HOUR_INDEX] * DATETIME_HOUR_SCALE
+                    + val[MIN_INDEX] * DATETIME_MIN_SCALE
+                    + val[SEC_INDEX]);
     }
 
     public static int encodeTime(long hr, long min, long sec, TExecutionContext context)
