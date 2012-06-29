@@ -26,14 +26,12 @@
 
 package com.akiban.server.types3.service;
 
-import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
 import com.google.inject.Singleton;
-import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
-import java.lang.reflect.Modifier;
+import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
@@ -42,141 +40,145 @@ import java.util.List;
 public class FunctionRegistryImpl implements FunctionRegistry
 {
     // TODO : define aggregates here
-    private List<TOverload> scalars;
-
-    private static final int INVALID = -1;
+    private Collection<TOverload> scalars;
+    private Collection<TClass> types;
+    private Collection<TCast> casts;
+    
+    private static final int SKIP = -1;
     private static final int FIELD = 0;
     private static final int ARRAY = 1;
     private static final int COLLECTION = 2;
 
-    FunctionRegistryImpl (FunctionsClassFinder finder) 
+    FunctionRegistryImpl (ClassFinder overloadsClassFinder,
+                          ClassFinder typesClassFinder,
+                          ClassFinder castsClassFinder) 
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
-        scalars = new ArrayList<TOverload>();
-        for (Class<?> cls : finder.findClasses())
-        {
-            if (!Modifier.isPublic(cls.getModifiers()))
-                continue;
-            collectScalars(scalars, cls);
-        }
+        // collect all scalar TOverload instances
+        scalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
+        
+        // collect all TClass instances
+        types = collectInstances(typesClassFinder.findClasses(), TClass.class);
+        
+        casts = collectInstances(castsClassFinder.findClasses(), TCast.class);
     }
 
-    private static void collectScalars(List<TOverload> list, Class<?> cls)
-    {   
+    private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
+    {
+        List<T> ret = new ArrayList<T>();
+        for (Class<?> cls : classes)
+            if (!Modifier.isPublic(cls.getModifiers()))
+                continue;
+            else
+                doCollecting(ret, cls, target);
+        return ret;
+    }
+
+    private static <T> void doCollecting(Collection<T> ret, Class<?> cls, Class<T> target) 
+    {
         try
         {
-            // get the static INSTANCEs
-            for (Field field : cls.getDeclaredFields())
+            // grab the static INSTANCEs fields
+            for (Field field : cls.getFields())
             {
-                Scalar annotation = field.getAnnotation(Scalar.class);
-                if (annotation != null)
-                    switch (validateScalarField(field))
+                if (isRegistered(field))
+                    switch(validateField(field, target))
                     {
                         case FIELD:
-                            putOverload((TOverload) field.get(null), list);
+                            putItem(ret, field.get(null), target);
                             break;
                         case ARRAY:
-                            for (TOverload overload : (TOverload[]) field.get(null))
-                                putOverload(overload, list);
+                            for (Object item : (Object[])field.get(null))
+                                putItem(ret, item, target);
                             break;
                         case COLLECTION:
                             try
                             {
-                                for (Object raw : (Collection<?>)field.get(null)) 
-                                    putOverload((TOverload)raw, list);
+                                for (Object raw : (Collection<?>)field.get(null))
+                                    putItem(ret, raw, target);
                                 break;
                             }
-                            catch (ClassCastException e){/* fall thru */}
+                            catch (ClassCastException e) {/* fall thru */}
                         default:
-                            complain("Field " + field 
-                                    + " must be declared as public static final TOverload "
-                                    + " or public static final TOverload[]"
-                                    + " or public static final Collection<? extends TOverload>");
+                               // SKIP (does nothing)
                     }
             }
-
-            // get the static methods
-            for (Method method : cls.getDeclaredMethods())
+            
+            // grab the static methods that create instances
+            for (Method method : cls.getMethods())
             {
-                Scalar annotation = method.getAnnotation(Scalar.class);
-                if (annotation != null)
-                    switch(validateScalarMethod(method))
+                
+                if (isRegistered(method))
+                    switch(validateMethod(method, target))
                     {
                         case FIELD:
-                            putOverload((TOverload)method.invoke(null), list);
+                            putItem(ret, method.invoke(null), target);
                             break;
                         case ARRAY:
-                            for (TOverload overload : (TOverload[])method.invoke(null))
-                                putOverload(overload, list);
+                            for (Object item : (Object[])method.invoke(null))
+                                putItem(ret, item, target);
                             break;
                         case COLLECTION:
                             try
                             {
                                 for (Object raw : (Collection<?>)method.invoke(null))
-                                    putOverload((TOverload)raw,  list);
+                                    putItem(ret, raw, target);
                                 break;
                             }
                             catch (ClassCastException e) {/* fall thru */}
                         default:
-                            complain("Method " + method 
-                                    + " must be declared as public static TOverload[] <methodname>() "
-                                    + " or public satic Collection<TOverload> <method name>() "
-                                    + " or public static TOverload <method name>()");
+                            // SKIP (does nothing)
                     }
             }
+           
         }
         catch (IllegalAccessException e)   
         {
-            throw new AkibanInternalException(e.getMessage());
+            throw new FunctionsRegistryException(e.getMessage());
         }
         catch (InvocationTargetException ex)
         {
-            throw new AkibanInternalException(ex.getMessage());
+            throw new FunctionsRegistryException(ex.getMessage());
         }
     }
 
-    private static int validateScalarMethod(Method method)
+    private static <T> int validateMethod(Method method, Class<T> target)
     {
         int modifiers = method.getModifiers();
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers)
                 && method.getParameterTypes().length == 0)
-            return assignable(method.getReturnType());
-        return INVALID;
+            return assignable(method.getReturnType(), target);
+        return SKIP;
     }
     
-    private static void putOverload(TOverload overload, Collection<TOverload> list)
-    {
-        list.add(overload);
-    }
-
-    private static String normalise(String name)
-    {
-        return name.toLowerCase();
-    }
-
-    private static int validateScalarField(Field field)
+    private static <T> int validateField(Field field, Class<T> target)
     { 
         int modifiers = field.getModifiers();
         
         if (Modifier.isPublic(modifiers) && Modifier.isStatic(modifiers) && Modifier.isFinal(modifiers))
-            return assignable(field.getType());
-         return INVALID;
+            return assignable(field.getType(), target);
+         return SKIP;
     }
 
-    private static int assignable (Class<?> c)
+    private static <T> int assignable (Class<?> c, Class<T> target)
     {
-        if (c.isArray() && TOverload.class.isAssignableFrom(c.getComponentType()))
+        if (c.isArray() && target.isAssignableFrom(c.getComponentType()))
             return ARRAY;
         else if (TOverload.class.isAssignableFrom(c))
             return FIELD;
         else return COLLECTION;
     }
 
-    private static void  complain (String st)
+    private static <T> void putItem(Collection<T> list, Object item,  Class<T> targetClass)
     {
-        throw new FunctionsRegistryException(st);
+        list.add(targetClass.cast(item));
     }
 
+    private static boolean isRegistered(AccessibleObject field)
+    {
+        return field.getAnnotation(DontRegister.class) == null;
+    }
+    
     @Override
     public FunctionKind getFunctionKind(String name)
     {
@@ -187,5 +189,17 @@ public class FunctionRegistryImpl implements FunctionRegistry
     public Collection<TOverload> overloads()
     {
         return scalars;
+    }
+    
+    @Override
+    public Collection<TCast> casts()
+    {
+        return casts;
+    }
+    
+    @Override
+    public Collection<TClass> tclasses()
+    {
+        return types;
     }
 }

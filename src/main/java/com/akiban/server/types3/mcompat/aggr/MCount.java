@@ -24,15 +24,56 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.mcompat.aggr;
 
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-public interface TAggregator {
-    void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
-    void emptyValue(PValueTarget state);
-    TInstance resultType(TPreptimeValue value);
-    TClass getTypeClass();
+public abstract class MCount implements TAggregator {
+
+    public static final TAggregator[] INSTANCES = {
+        // COUNT(*)
+        new MCount() {
+
+            @Override
+            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+                long count = state.getInt64();
+                ++count;
+                state.putInt64(count);
+            }
+        }, 
+        // COUNT
+        new MCount() {
+
+            @Override
+            public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
+                if (!source.isNull()) {
+                    long count = state.getInt64();
+                    ++count;
+                    state.putInt64(count);
+                }
+            }
+        }
+    };
+
+    @Override
+    public void emptyValue(PValueTarget state) {
+        state.putInt64(0L);
+    }
+
+    @Override
+    public TInstance resultType(TPreptimeValue value) {
+        return value.instance();
+    }
+
+    @Override
+    public TClass getTypeClass() {
+        return MNumeric.BIGINT;
+    }
 }

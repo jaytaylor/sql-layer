@@ -24,10 +24,16 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.mcompat.mfuncs;
+package com.akiban.server.types3.common;
 
-import com.akiban.server.types3.TOverload;
-
-public class MCeil {
-    public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.CEIL);
+public class UnitValue {
+    public static final int YEAR = 0;
+    public static final int QUARTER = 1;
+    public static final int MONTH = 2;
+    public static final int WEEK = 3;
+    public static final int DAY = 4;
+    public static final int HOUR = 5;
+    public static final int MINUTE = 6;
+    public static final int SECOND = 7;
+    public static final int MICROSECOND = 8;
 }
