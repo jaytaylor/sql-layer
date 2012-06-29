@@ -180,7 +180,6 @@ final class Aggregate_Partial extends Operator
     @Override
     protected Cursor cursor(QueryContext context) {
         final List<Aggregator> aggregators;
-        final List<? extends TAggregator> pAggrs;
         if (aggregatorFactories != null) {
             aggregators = new ArrayList<Aggregator>();
             for (AggregatorFactory factory : aggregatorFactories) {
@@ -189,7 +188,6 @@ final class Aggregate_Partial extends Operator
         }
         else {
             aggregators = null;
-            pAggrs = this.pAggrs;
         }
         return new AggregateCursor(
                 context,

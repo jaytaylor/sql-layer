@@ -50,6 +50,11 @@ public class ValuesHolderRow extends AbstractValuesHolderRow {
         return super.pvalueAt(index);
     }
 
+    @Deprecated
+    public ValuesHolderRow(RowType rowType) {
+        this(rowType, false);
+    }
+
     public ValuesHolderRow(RowType rowType, boolean usePValues) {
         super(rowType, true, usePValues);
     }
