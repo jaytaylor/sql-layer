@@ -43,37 +43,41 @@ public class SwingConsole extends JFrame implements WindowListener
 
     public SwingConsole() {
         super(TITLE);
-        
+
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         addWindowListener(this);
         {
+            boolean macOSX = "Mac OS X".equals(System.getProperty("os.name"));
+            int shift = (macOSX) ? InputEvent.ALT_MASK : InputEvent.CTRL_MASK;
+
             JMenuBar menuBar = new JMenuBar();
 
-            JMenu fileMenu = new JMenu("File");
-            fileMenu.setMnemonic(KeyEvent.VK_F);
-            JMenuItem quitMenuItem = new JMenuItem("Quit", KeyEvent.VK_Q);
-            quitMenuItem.addActionListener(new ActionListener() {
-                    public void actionPerformed(ActionEvent e) {
-                        quit();
-                    }
-                });
-            quitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, InputEvent.CTRL_MASK));
-            fileMenu.add(quitMenuItem);
-            menuBar.add(fileMenu);
-
+            if (!macOSX || !Boolean.getBoolean("apple.laf.useScreenMenuBar")) {
+                JMenu fileMenu = new JMenu("File");
+                fileMenu.setMnemonic(KeyEvent.VK_F);
+                JMenuItem quitMenuItem = new JMenuItem("Quit", KeyEvent.VK_Q);
+                quitMenuItem.addActionListener(new ActionListener() {
+                        public void actionPerformed(ActionEvent e) {
+                            quit();
+                        }
+                    });
+                quitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, shift));
+                fileMenu.add(quitMenuItem);
+                menuBar.add(fileMenu);
+            }
             JMenu editMenu = new JMenu("Edit");
             editMenu.setMnemonic(KeyEvent.VK_E);
             Action action = new DefaultEditorKit.CutAction();
             action.putValue(Action.NAME, "Cut");
-            action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_X, InputEvent.CTRL_MASK));
+            action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_X, shift));
             editMenu.add(action);
             action = new DefaultEditorKit.CopyAction();
             action.putValue(Action.NAME, "Copy");
-            action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_C, InputEvent.CTRL_MASK));
+            action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_C, shift));
             editMenu.add(action);
             action = new DefaultEditorKit.PasteAction();
             action.putValue(Action.NAME, "Paste");
-            action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_V, InputEvent.CTRL_MASK));
+            action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_V, shift));
             editMenu.add(action);    
             action = new TextAction(DefaultEditorKit.selectAllAction) {
                     public void actionPerformed(ActionEvent e) {
@@ -81,20 +85,17 @@ public class SwingConsole extends JFrame implements WindowListener
                     }
                 };
             action.putValue(Action.NAME, "Select All");
-            action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, InputEvent.CTRL_MASK));
+            action.putValue(Action.ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_A, shift));
             editMenu.add(action);    
             menuBar.add(editMenu);
 
             setJMenuBar(menuBar);
         }
-        textArea = new JTextArea();
+        textArea = new JTextArea(50, 100);
+        textArea.setLineWrap(true);
         DefaultCaret caret = (DefaultCaret)textArea.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
-        textArea.setPreferredSize(new Dimension(800, 400));
-        JScrollPane scrollPane = new JScrollPane(textArea, 
-                                                 JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
-                                                 JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED);
-        textArea.setLineWrap(true);
+        JScrollPane scrollPane = new JScrollPane(textArea);
         add(scrollPane);
 
         pack();
