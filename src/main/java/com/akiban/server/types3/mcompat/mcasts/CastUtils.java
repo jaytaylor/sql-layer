@@ -139,5 +139,5 @@ public final class CastUtils
         return st;
     }
     
-    private static final Pattern DOUBLE_PATTERN = Pattern.compile("([-+]?\\d*)(\\.?\\d*)?(e[-+]?\\d+)?");
+    private static final Pattern DOUBLE_PATTERN = Pattern.compile("([-+]?\\d*)(\\.?\\d+)?(e[-+]?\\d+)?");
 }
