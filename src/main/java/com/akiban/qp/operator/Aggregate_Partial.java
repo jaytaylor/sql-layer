@@ -236,7 +236,7 @@ final class Aggregate_Partial extends Operator
                              RowType inputRowType,
                              int inputsIndex,
                              List<? extends TAggregator> aggregatorFactories,
-                             List<TInstance> pAggrTypes) {
+                             List<? extends TInstance> pAggrTypes) {
         this(
                 inputOperator,
                 inputRowType,
@@ -244,7 +244,7 @@ final class Aggregate_Partial extends Operator
                 null,
                 aggregatorFactories,
                 pAggrTypes,
-                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, null, aggregatorFactories)
+                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, null, pAggrTypes)
         );
     }
 
@@ -269,7 +269,7 @@ final class Aggregate_Partial extends Operator
                       int inputsIndex,
                       List<AggregatorFactory> aggregatorFactories,
                       List<? extends TAggregator> pAggrs,
-                      List<TInstance> pAggrTypes,
+                      List<? extends TInstance> pAggrTypes,
                       AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputRowType = inputRowType;
@@ -311,7 +311,7 @@ final class Aggregate_Partial extends Operator
     private final AggregatedRowType outputType;
     private final int inputsIndex;
     private final List<AggregatorFactory> aggregatorFactories;
-    private final List<TInstance> pAggrTypes;
+    private final List<? extends TInstance> pAggrTypes;
     private final List<? extends TAggregator> pAggrs;
 
     @Override

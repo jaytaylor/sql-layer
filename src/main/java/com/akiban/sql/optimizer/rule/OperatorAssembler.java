@@ -91,6 +91,12 @@ public class OperatorAssembler extends BaseRule
 
     public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
+    private final boolean usePValues;
+
+    public OperatorAssembler(boolean usePValues) {
+        this.usePValues = usePValues;
+    }
+
     @Override
     protected Logger getLogger() {
         return logger;
@@ -98,16 +104,18 @@ public class OperatorAssembler extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        new Assembler(plan).apply();
+        new Assembler(plan, usePValues).apply();
     }
 
     static class Assembler implements SubqueryOperatorAssembler {
         private PlanContext planContext;
         private SchemaRulesContext rulesContext;
         private Schema schema;
+        private boolean usePValues;
         private final ExpressionAssembler expressionAssembler;
 
-        public Assembler(PlanContext planContext) {
+        public Assembler(PlanContext planContext, boolean usePValues) {
+            this.usePValues = usePValues;
             this.planContext = planContext;
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
@@ -315,7 +323,8 @@ public class OperatorAssembler extends BaseRule
                     EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
                                API.IntersectOption.SKIP_SCAN) :
                     EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
-                               API.IntersectOption.SEQUENTIAL_SCAN));
+                               API.IntersectOption.SEQUENTIAL_SCAN),
+                    usePValues);
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
             return stream;
@@ -387,7 +396,8 @@ public class OperatorAssembler extends BaseRule
                         stream.operator = API.union_Ordered(stream.operator, scan,
                                                             (IndexRowType)stream.rowType, indexRowType,
                                                             nordering, nordering, 
-                                                            ascending);
+                                                            ascending,
+                                                            usePValues);
                     }
                     else {
                         stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
@@ -753,7 +763,7 @@ public class OperatorAssembler extends BaseRule
               impl = Distinct.Implementation.SORT;
             switch (impl) {
             case PRESORTED:
-                stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
+                stream.operator = API.distinct_Partial(stream.operator, stream.rowType, usePValues);
                 break;
             default:
                 assembleSort(stream, stream.rowType.nFields(), distinct.getInput(),
@@ -859,7 +869,8 @@ public class OperatorAssembler extends BaseRule
                                                     lstream.rowType,
                                                     bloomFilter.getEstimatedSize(),
                                                     pos,
-                                                    stream.operator);
+                                                    stream.operator,
+                                                    usePValues);
             popHashTable(bloomFilter);
             return stream;
         }

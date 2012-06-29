@@ -426,9 +426,9 @@ public class API
 
     // Distinct
 
-    public static Operator distinct_Partial(Operator input, RowType distinctType)
+    public static Operator distinct_Partial(Operator input, RowType distinctType, boolean usePValues)
     {
-        return new Distinct_Partial(input, distinctType);
+        return new Distinct_Partial(input, distinctType, usePValues);
     }
 
     // Map
@@ -465,7 +465,8 @@ public class API
                                             int rightOrderingFields,
                                             int comparisonFields,
                                             JoinType joinType,
-                                            IntersectOption intersectOutput)
+                                            IntersectOption intersectOutput,
+                                            boolean usePValues)
     {
         if (comparisonFields < 0) {
             throw new IllegalArgumentException();
@@ -478,7 +479,8 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     EnumSet.of(intersectOutput));
+                                     EnumSet.of(intersectOutput),
+                                     usePValues);
     }
     
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -487,7 +489,8 @@ public class API
                                             int rightOrderingFields,
                                             boolean[] ascending,
                                             JoinType joinType,
-                                            EnumSet<IntersectOption> intersectOptions)
+                                            EnumSet<IntersectOption> intersectOptions,
+                                            boolean usePValues)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
@@ -495,7 +498,8 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     intersectOptions);
+                                     intersectOptions,
+                                     usePValues);
     }
     
     // Union
@@ -504,13 +508,15 @@ public class API
                                           IndexRowType leftRowType, IndexRowType rightRowType,
                                           int leftOrderingFields,
                                           int rightOrderingFields,
-                                          boolean[] ascending)
+                                          boolean[] ascending,
+                                          boolean usePValues)
     {
         return new Union_Ordered(leftInput, rightInput,
                                  leftRowType, rightRowType,
                                  leftOrderingFields,
                                  rightOrderingFields,
-                                 ascending);
+                                 ascending,
+                                 usePValues);
     }
 
     // HKeyUnion
@@ -534,13 +540,15 @@ public class API
                                              RowType filterRowType,
                                              long estimatedRowCount,
                                              int filterBindingPosition,
-                                             Operator streamInput)
+                                             Operator streamInput,
+                                             boolean usePValues)
     {
         return new Using_BloomFilter(filterInput,
                                      filterRowType,
                                      estimatedRowCount,
                                      filterBindingPosition,
-                                     streamInput);
+                                     streamInput,
+                                     usePValues);
     }
 
     // Select_BloomFilter

@@ -49,7 +49,7 @@ public class DefaultRules
             new SortSplitter(),
             new MapFolder(),
             new ExpressionCompactor(),
-            new OperatorAssembler()
+            new OperatorAssembler(true)
     );
 
     /** These are the rules that get run for CBO compilation. */
@@ -71,7 +71,7 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
-        new OperatorAssembler()
+        new OperatorAssembler(false)
      );
 
     /** These are the rules that get run for non-CBO compilation. */
@@ -93,7 +93,7 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
-        new OperatorAssembler()
+        new OperatorAssembler(false)
      );
 
     private DefaultRules() {

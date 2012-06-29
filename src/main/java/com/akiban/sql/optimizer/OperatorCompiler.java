@@ -30,6 +30,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.sql.optimizer.plan.AST;
 import com.akiban.sql.optimizer.plan.BasePlannable;
 import com.akiban.sql.optimizer.plan.PlanContext;
+import com.akiban.sql.optimizer.rule.BaseRule;
 import com.akiban.sql.optimizer.rule.SchemaRulesContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 import static com.akiban.sql.optimizer.rule.DefaultRules.*;
@@ -87,9 +88,17 @@ public class OperatorCompiler extends SchemaRulesContext
     }
 
     @Override
-    protected void initCostEstimator(CostEstimator costEstimator) {
-        super.initCostEstimator(costEstimator);
-        initRules((costEstimator != null) ? DEFAULT_RULES_CBO : DEFAULT_RULES_OLD);
+    protected void initCostEstimator(CostEstimator costEstimator, boolean usePValues) {
+        super.initCostEstimator(costEstimator, usePValues);
+
+        List<BaseRule> rules;
+        if (costEstimator != null) {
+            rules = usePValues ? DEFAULT_RULES_NEWTYPES : DEFAULT_RULES_CBO;
+        }
+        else {
+            rules = DEFAULT_RULES_OLD;
+        }
+        initRules(rules);
     }
 
     @Override
