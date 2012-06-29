@@ -52,7 +52,9 @@ import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 public class ProtobufReader {
     private final AkibanInformationSchema destAIS;
@@ -160,12 +162,13 @@ public class ProtobufReader {
     }
 
     private void createGroupTablesAndIndexes(List<NewGroupInfo> newGroups) {
-        int maxTableId = 1;
+        Set<Integer> currentIDs = new HashSet<Integer>();
+        // Cannot assert ID uniqueness here, no such restriction from proto (e.g. from adapter)
         for(Table table : destAIS.getUserTables().values()) {
-            maxTableId = Math.max(maxTableId, table.getTableId());
+            currentIDs.add(table.getTableId());
         }
         for(Table table : destAIS.getGroupTables().values()) {
-            maxTableId = Math.max(maxTableId, table.getTableId());
+            currentIDs.add((table.getTableId()));
         }
 
         List<Join> joinsNeedingGroup = new ArrayList<Join>();
@@ -181,7 +184,7 @@ public class ProtobufReader {
                     destAIS,
                     newGroupInfo.schema,
                     nameGenerator.generateGroupTableName(rootTableName),
-                    ++maxTableId
+                    computeNewTableID(currentIDs, rootUserTable.getTableId() + 1)
             );
             newGroupInfo.group.setGroupTable(groupTable);
             groupTable.setGroup(newGroupInfo.group);
@@ -367,6 +370,13 @@ public class ProtobufReader {
             return new TableName(tableName.getSchemaName(), tableName.getTableName());
         }
         return null;
+    }
+
+    private static int computeNewTableID(Set<Integer> currentIDs, int starting) {
+        while(!currentIDs.add(starting)) {
+            ++starting;
+        }
+        return starting;
     }
 
     /**

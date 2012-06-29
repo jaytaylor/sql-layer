@@ -141,6 +141,16 @@ public interface Store extends Service<Store> {
 
     TableStatistics getTableStatistics(Session session, int tableId);
 
+    /**
+     * Delete all tree data associated with the group of rowDefId. This includes
+     * all indexes from all tables, group indexes, and the group itself.
+     */
+    void dropGroup(Session session, int rowDefId) throws PersistitException;
+
+    /**
+     * Truncate the group of rowDefId. This includes indexes from all tables, group
+     * indexes, the group itself, and all table statuses.
+     */
     void truncateGroup(Session session, int rowDefId) throws PersistitException;
 
     void truncateTableStatus(Session session, int rowDefId) throws RollbackException, PersistitException;

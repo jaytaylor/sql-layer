@@ -28,11 +28,13 @@ package com.akiban.server.test.it.memorytable;
 
 import static org.junit.Assert.*;
 
+import java.sql.Connection;
 import java.sql.Statement;
 import java.util.Set;
 import java.util.concurrent.Callable;
 
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
+import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -54,6 +56,7 @@ import com.akiban.sql.pg.PostgresServerConnection;
 import com.akiban.sql.pg.PostgresServerITBase;
 
 public class MemoryAdapterIT extends PostgresServerITBase {
+    private static final TableName TEST_NAME = new TableName (TableName.INFORMATION_SCHEMA, "test");
     private SchemaManager schemaManager;
     private UserTable table;
     
@@ -72,23 +75,29 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         schemaManager = serviceManager().getSchemaManager();
     }
 
+    @After
+    public void unRegister() {
+        if(schemaManager.getAis(session()).getUserTable(TEST_NAME) != null) {
+            schemaManager.unRegisterMemoryInformationSchemaTable(TEST_NAME);
+        }
+    }
+
     @Test
     public void insertFactoryTest() throws Exception {
   
-        TableName name = new TableName (TableName.INFORMATION_SCHEMA, "test");
-        table = AISBBasedBuilder.create().userTable(name.getSchemaName(),name.getTableName()).colLong("c1").pk("c1").ais().getUserTable(name);
-        MemoryTableFactory factory = new TestFactory (name);
+        table = AISBBasedBuilder.create().userTable(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colLong("c1").pk("c1").ais().getUserTable(TEST_NAME);
+        MemoryTableFactory factory = new TestFactory (TEST_NAME);
 
         registerISTable(table, factory);
  
-        UserTable table = schemaManager.getAis(session()).getUserTable(name);
+        UserTable table = schemaManager.getAis(session()).getUserTable(TEST_NAME);
         assertNotNull (table);
         assertTrue (table.hasMemoryTableFactory());
     }
 
     @Test
     public void testGetAdapter() throws Exception {
-        assertNotNull (connection);
+        Connection connection = openConnection();
         Statement executeStatement = connection.createStatement();
         executeStatement.execute("select 1");
 
@@ -100,15 +109,16 @@ public class MemoryAdapterIT extends PostgresServerITBase {
         PostgresServerConnection postgresConn = serviceManager().getPostgresService().getServer().getConnection(first.intValue());
         assertNotNull(postgresConn);
         
-        TableName name = new TableName (TableName.INFORMATION_SCHEMA, "test");
-        table = AISBBasedBuilder.create().userTable(name.getSchemaName(),name.getTableName()).colLong("c1").pk("c1").ais().getUserTable(name);
-        MemoryTableFactory factory = new TestFactory (name);
+        table = AISBBasedBuilder.create().userTable(TEST_NAME.getSchemaName(),TEST_NAME.getTableName()).colLong("c1").pk("c1").ais().getUserTable(TEST_NAME);
+        MemoryTableFactory factory = new TestFactory (TEST_NAME);
         registerISTable(table, factory);
-        UserTable newtable = serviceManager().getSchemaManager().getAis(session()).getUserTable(name);
+        UserTable newtable = serviceManager().getSchemaManager().getAis(session()).getUserTable(TEST_NAME);
         
         StoreAdapter adapter = postgresConn.getStore(newtable);
         assertNotNull (adapter);
         assertTrue (adapter instanceof MemoryAdapter);
+
+        closeConnection(connection);
     }
 
     private class TestFactory implements MemoryTableFactory {
