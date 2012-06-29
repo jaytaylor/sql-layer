@@ -58,27 +58,37 @@ public class MDatetimes
 
     public static final List<String> SUPPORTED_LOCALES = new LinkedList<String>();
     
-    public static final Map<String, String[]> MONTHS = new HashMap<String, String[]>();
-    public static final Map<String, String[]> SHORT_MONTHS = new HashMap<String, String[]>();
+    public static final Map<String, String[]> MONTHS;
+    public static final Map<String, String[]> SHORT_MONTHS;
     
-    public static final Map<String, String[]> WEEKDAYS = new HashMap<String, String[]>();
-    public static final Map<String, String[]> SHORT_WEEKDAYS = new HashMap<String, String[]>();
+    public static final Map<String, String[]> WEEKDAYS;
+    public static final Map<String, String[]> SHORT_WEEKDAYS;
     
     static
     {
         // TODO: add all supported LOCALES here
         SUPPORTED_LOCALES.add("en");
         
+       Map<String, String[]> months = new HashMap<String, String[]>();
+       Map<String, String[]> shortMonths = new HashMap<String, String[]>();
+       Map<String, String[]>weekDays = new HashMap<String, String[]>();
+       Map<String, String[]>shortWeekdays = new HashMap<String, String[]>();
+
        for (String locale : SUPPORTED_LOCALES)
        {
            DateFormatSymbols fm = new DateFormatSymbols(new Locale(System.getProperty(locale)));
            
-           MONTHS.put(locale, fm.getMonths());
-           SHORT_MONTHS.put(locale, fm.getShortMonths());
+           months.put(locale, fm.getMonths());
+           shortMonths.put(locale, fm.getShortMonths());
            
-           WEEKDAYS.put(locale, fm.getWeekdays());
-           SHORT_WEEKDAYS.put(locale, fm.getShortWeekdays());
+           weekDays.put(locale, fm.getWeekdays());
+           shortWeekdays.put(locale, fm.getShortWeekdays());
        }
+       
+       MONTHS = Collections.unmodifiableMap(months);
+       SHORT_MONTHS = Collections.unmodifiableMap(shortMonths);
+       WEEKDAYS = Collections.unmodifiableMap(weekDays);
+       SHORT_WEEKDAYS = Collections.unmodifiableMap(shortWeekdays);
     }
 
     public static String getMonthName(int numericRep, String locale, TExecutionContext context)
