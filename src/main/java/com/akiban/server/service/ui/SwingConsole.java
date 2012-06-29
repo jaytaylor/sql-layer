@@ -48,7 +48,7 @@ public class SwingConsole extends JFrame implements WindowListener
         addWindowListener(this);
         {
             boolean macOSX = "Mac OS X".equals(System.getProperty("os.name"));
-            int shift = (macOSX) ? InputEvent.ALT_MASK : InputEvent.CTRL_MASK;
+            int shift = (macOSX) ? InputEvent.META_MASK : InputEvent.CTRL_MASK;
 
             JMenuBar menuBar = new JMenuBar();
 
