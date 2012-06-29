@@ -357,7 +357,7 @@ public class MDatetimes
                 && ymdhms[SEC_INDEX] >= 0 && ymdhms[SEC_INDEX] < 60;
     }
  
-    private static boolean isValidDayMonth(long ymd[])
+    public static boolean isValidDayMonth(long ymd[])
     {
         long last = getLastDay(ymd);
         return last > 0 && ymd[DAY_INDEX] <= last;
