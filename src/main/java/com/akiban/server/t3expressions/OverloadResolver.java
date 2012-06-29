@@ -80,29 +80,24 @@ public final class OverloadResolver {
         if (candidates.size() == 1) {
             mostSpecific = candidates.get(0);
         } else {
-            List<List<TValidatedOverload>> groups = groupAndEliminate(candidates);
-            if(groups.size() == 1) {
-                if(groups.get(0).size() == 1)
-                    mostSpecific = groups.get(0).get(0);
-            }
+            List<List<TValidatedOverload>> groups = reduceToMinimalCastGroups(candidates);
+            if (groups.size() == 1 && groups.get(0).size() == 1)
+                mostSpecific = groups.get(0).get(0);
+            // else: 0 or >1 candidates
         }
         if (mostSpecific == null)
             return null;
-        TClass pickingClass = pickingClass(mostSpecific, inputs);
-        return new OverloadResult(mostSpecific, pickingClass);
+        return buildResult(mostSpecific, inputs);
     }
 
     private OverloadResult defaultResolution(List<? extends TPreptimeValue> inputs,
                                              Collection<? extends TValidatedOverload> namedOverloads) {
-        TValidatedOverload resolvedOverload;
-        TClass pickingClass;
         int nInputs = inputs.size();
-        resolvedOverload = namedOverloads.iterator().next();
+        TValidatedOverload resolvedOverload = namedOverloads.iterator().next();
         // throwing an exception here isn't strictly required, but it gives the user a more specific error
         if (!resolvedOverload.coversNInputs(nInputs))
             throw new WrongExpressionArityException(resolvedOverload.positionalInputs(), nInputs);
-        pickingClass = pickingClass(resolvedOverload, inputs);
-        return new OverloadResult(resolvedOverload, pickingClass);
+        return buildResult(resolvedOverload, inputs);
     }
 
     private boolean isCandidate(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
@@ -150,59 +145,77 @@ public final class OverloadResolver {
         return common;
     }
 
+    private OverloadResult buildResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
+        TClass pickingClass = pickingClass(overload, inputs);
+        return new OverloadResult(overload, pickingClass);
+    }
+
     /*
      * Two overloads have SIMILAR INPUT SETS if they
-     * 1) have the same number of input sets
-     * 2) each input set from one overload covers the same columns as an input set from the other function
+     *   1) have the same number of input sets
+     *   2) each input set from one overload covers the same columns as an input set from the other function
      *
      * For any two overloads A and B, if A and B have SIMILAR INPUT SETS, and the target type of each input
      * set Ai can be strongly cast to the target type of Bi, then A is said to be MORE SPECIFIC than A, and B
      * is discarded as a possible overload.
      */
-    private List<List<TValidatedOverload>> groupAndEliminate(List<TValidatedOverload> candidates) {
-        List<List<TValidatedOverload>> groups = new ArrayList<List<TValidatedOverload>>();
-        for(TValidatedOverload overload : candidates) {
-            final int nInputSets = overload.inputSets().size();
-            for(List<TValidatedOverload> group : groups) {
-                Iterator<TValidatedOverload> similarIt = group.iterator();
-                OUTER:
-                while(similarIt.hasNext()) {
-                    TValidatedOverload cur = similarIt.next();
-                    if(overload == null || (cur.inputSets().size() != nInputSets))
-                        break;
-                    boolean aToB = true;
-                    boolean bToA = true;
-                    for(int i = 0; i < nInputSets; ++i) {
-                        TInputSet aSet = cur.inputSetAt(i);
-                        TInputSet bSet = overload.inputSetAt(i);
-                        if(aSet.positionsLength() != bSet.positionsLength())
-                            break OUTER;
-                        aToB &= isStrong(registry.cast(aSet.targetType(), bSet.targetType()));
-                        bToA &= isStrong(registry.cast(bSet.targetType(), aSet.targetType()));
+    private List<List<TValidatedOverload>> reduceToMinimalCastGroups(List<TValidatedOverload> candidates) {
+        List<List<TValidatedOverload>> castGroups = new ArrayList<List<TValidatedOverload>>();
+
+        for(TValidatedOverload B : candidates) {
+            final int nInputSets = B.inputSets().size();
+
+            // Find the OVERLOAD CAST GROUP
+            List<TValidatedOverload> castGroup = null;
+            for(List<TValidatedOverload> group : castGroups) {
+                // Groups are not empty, can always get first
+                TValidatedOverload cur = group.get(0);
+                if(cur.inputSets().size() == nInputSets) {
+                    boolean matches = true;
+                    for(int i = 0; i < nInputSets && matches; ++i) {
+                        matches = (cur.inputSetAt(i).positionsLength() == B.inputSetAt(i).positionsLength());
                     }
-                    // This group is matching
-                    // Is current more specific and new?
-                    if(aToB) {
-                        // current more specific
-                        overload = null;
-                    } else if(bToA) {
-                        // new more specific
-                        similarIt.remove();
-                        if(!similarIt.hasNext()) {
-                            group.add(overload);
-                            overload = null;
-                        }
+                    if(matches) {
+                        castGroup = group;
+                        break;
                     }
                 }
             }
-            // Not eliminated and no matching group, new group
-            if(overload != null) {
-                List<TValidatedOverload> group = new ArrayList<TValidatedOverload>();
-                group.add(overload);
-                groups.add(group);
+
+            if(castGroup != null) {
+                // Found group, check for more specific
+                Iterator<TValidatedOverload> it = castGroup.iterator();
+                while(it.hasNext()) {
+                    TValidatedOverload A = it.next();
+                    boolean AtoB = true;
+                    boolean BtoA = true;
+                    for(int i = 0; i < nInputSets; ++i) {
+                        TInputSet Ai = A.inputSetAt(i);
+                        TInputSet Bi = B.inputSetAt(i);
+                        AtoB &= isStrong(registry.cast(Ai.targetType(), Bi.targetType()));
+                        BtoA &= isStrong(registry.cast(Bi.targetType(), Ai.targetType()));
+                    }
+                    if(AtoB) {
+                        // current more specific
+                        B = null;
+                        break;
+                    } else if(BtoA) {
+                        // new more specific
+                        it.remove();
+                    }
+                }
+                // None in current group was more specific or B was most specific
+                if(B != null) {
+                    castGroup.add(B);
+                }
+            } else {
+                // No matching group, must be in a new group
+                castGroup = new ArrayList<TValidatedOverload>(1);
+                castGroup.add(B);
+                castGroups.add(castGroup);
             }
         }
-        return groups;
+        return castGroups;
     }
 
     private static boolean isStrong(TCast cast) {
