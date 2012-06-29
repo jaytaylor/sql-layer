@@ -37,7 +37,6 @@ import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import org.junit.Test;
-import sun.security.util.BigInt;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -140,15 +139,28 @@ public class OverloadResolverTest {
 
     private static final String MUL_NAME = "*";
     private static class TestMulBase extends TOverloadBase {
-        private final TClass tClass;
+        private final TClass tLeft;
+        private final TClass tRight;
+        private final TClass tTarget;
 
         public TestMulBase(TClass tClass) {
-            this.tClass = tClass;
+            this(tClass, tClass, tClass);
+        }
+
+        public TestMulBase(TClass tLeft, TClass tRight, TClass tTarget) {
+            this.tLeft = tLeft;
+            this.tRight = tRight;
+            this.tTarget = tTarget;
         }
 
         @Override
         protected void buildInputSets(TInputSetBuilder builder) {
-            builder.covers(tClass, 0, 1);
+            if (tLeft == tRight) {
+                builder.covers(tLeft, 0, 1);
+            } else {
+                builder.covers(tLeft, 0);
+                builder.covers(tRight, 1);
+            }
         }
 
         @Override
@@ -163,27 +175,27 @@ public class OverloadResolverTest {
 
         @Override
         public TOverloadResult resultType() {
-            return TOverloadResult.fixed(tClass.instance());
+            return TOverloadResult.fixed(tTarget.instance());
         }
     }
 
     private final static TClass TINT = new TestClassBase("int", PUnderlying.INT_32);
     private final static TClass TBIGINT = new TestClassBase("bigint", PUnderlying.INT_64);
-    private final static TClass TINTERVAL = new TestClassBase("interval", PUnderlying.INT_32);
-    private final static TClass TDOUBLE = new TestClassBase("double",  PUnderlying.DOUBLE);
+    private final static TClass TDATE = new TestClassBase("date",  PUnderlying.DOUBLE);
 
     private final static TCast C_INT_INT = new TestCastBase(TINT);
     private final static TCast C_INT_BIGINT = new TestCastBase(TINT, TBIGINT, true);
     private final static TCast C_BIGINT_BIGINT = new TestCastBase(TBIGINT);
     private final static TCast C_BIGINT_INT = new TestCastBase(TBIGINT, TINT, false);
+    private final static TCast C_DATE_DATE = new TestCastBase(TDATE, TDATE, true);
 
-    private final static TestMulBase MUL_INT = new TestMulBase(TINT);
-    private final static TestMulBase MUL_BIGINT = new TestMulBase(TBIGINT);
-    private final static TestMulBase MUL_DOUBLE = new TestMulBase(TDOUBLE);
+    private final static TestMulBase MUL_INTS = new TestMulBase(TINT);
+    private final static TestMulBase MUL_BIGINTS = new TestMulBase(TBIGINT);
+    private final static TestMulBase MUL_DATE_INT = new TestMulBase(TDATE, TINT, TDATE);
 
 
     private static TPreptimeValue prepVal(TClass tClass) {
-        return new TPreptimeValue(tClass.instance());
+        return (tClass != null) ? new TPreptimeValue(tClass.instance()) : new TPreptimeValue();
     }
 
     private static List<TPreptimeValue> prepVals(TClass... tClasses) {
@@ -203,14 +215,14 @@ public class OverloadResolverTest {
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooFewParams() {
-        SimpleRegistry registry = new SimpleRegistry(MUL_INT);
+        SimpleRegistry registry = new SimpleRegistry(MUL_INTS);
         OverloadResolver resolver = new OverloadResolver(registry);
         resolver.get(MUL_NAME, prepVals(TINT));
     }
 
     @Test(expected=WrongExpressionArityException.class)
     public void knownOverloadTooManyParams() {
-        SimpleRegistry registry = new SimpleRegistry(MUL_INT);
+        SimpleRegistry registry = new SimpleRegistry(MUL_INTS);
         OverloadResolver resolver = new OverloadResolver(registry);
         resolver.get(MUL_NAME, prepVals(TINT, TINT, TINT));
     }
@@ -218,65 +230,96 @@ public class OverloadResolverTest {
     // default resolution, exact match
     @Test
     public void mulIntWithInts() {
-        SimpleRegistry registry = new SimpleRegistry(MUL_INT);
+        SimpleRegistry registry = new SimpleRegistry(MUL_INTS);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(registry.validated(MUL_INT),
+        assertSame("INT*INT",
+                   registry.validated(MUL_INTS),
                    resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
     }
 
-    // default resolution, requires strong cast (int -> bigint)
+    // default resolution, types don't match (no registered casts, int -> bigint)
     @Test
     public void mulBigIntWithInts() {
-        SimpleRegistry registry = new SimpleRegistry(MUL_BIGINT);
+        SimpleRegistry registry = new SimpleRegistry(MUL_BIGINTS);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(registry.validated(MUL_BIGINT),
+        assertSame("INT*INT",
+                   registry.validated(MUL_BIGINTS),
                    resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
     }
 
     // default resolution, requires weak cast (bigint -> int)
     @Test
     public void mulIntWithBigInts() {
-        SimpleRegistry registry = new SimpleRegistry(MUL_INT);
+        SimpleRegistry registry = new SimpleRegistry(MUL_INTS);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(registry.validated(MUL_INT),
+        assertSame("INT*INT",
+                   registry.validated(MUL_INTS),
                    resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
     }
 
     // input resolution, no casts
     @Test
     public void mulIntMulBigIntWithIntsNoCasts() {
-        SimpleRegistry registry = new SimpleRegistry(MUL_INT, MUL_BIGINT);
+        SimpleRegistry registry = new SimpleRegistry(MUL_INTS, MUL_BIGINTS);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(null,
+        assertSame("INT*INT",
+                   null,
                    resolver.get(MUL_NAME, prepVals(TINT, TINT)));
     }
 
     // input resolution, type only casts, only one candidate
     @Test
     public void mulIntMulBigIntWithIntsTypeOnlyCasts() {
-        SimpleRegistry registry = new SimpleRegistry(MUL_INT, MUL_BIGINT);
+        SimpleRegistry registry = new SimpleRegistry(MUL_INTS, MUL_BIGINTS);
         registry.setCasts(C_INT_INT, C_BIGINT_BIGINT);
         OverloadResolver resolver = new OverloadResolver(registry);
-        assertSame(registry.validated(MUL_INT),
+        assertSame("INT*INT",
+                   registry.validated(MUL_INTS),
                    resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
-        assertSame(registry.validated(MUL_INT),
+        assertSame("BIGINT*BIGINT",
+                   registry.validated(MUL_BIGINTS),
+                   resolver.get(MUL_NAME, prepVals(TBIGINT, TBIGINT)).getOverload());
+    }
+
+    // input resolution, more casts, 2 candidates but 1 more specific
+    @Test
+    public void mulIntMulBigIntWithIntsAndIntBigintStrongAndWeakCasts() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_INTS, MUL_BIGINTS);
+        registry.setCasts(C_INT_INT, C_INT_BIGINT,
+                          C_BIGINT_BIGINT, C_BIGINT_INT);
+        OverloadResolver resolver = new OverloadResolver(registry);
+        // 2 candidates, 1 more specific
+        assertSame("INT*INT",
+                   registry.validated(MUL_INTS),
                    resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
     }
 
-    // input resolution, more casts, only one candidate for each
     @Test
-    public void mulIntMulBigIntWithIntsAndIntBigintStrongAndWeakCasts() {
-        SimpleRegistry registry = new SimpleRegistry(MUL_INT, MUL_BIGINT);
-        registry.setCasts(C_INT_INT, C_INT_BIGINT, C_BIGINT_BIGINT, C_BIGINT_INT);
+    public void specMulExampleIntBigIntAndDateCombos() {
+        SimpleRegistry registry = new SimpleRegistry(MUL_INTS, MUL_BIGINTS, MUL_DATE_INT);
+        registry.setCasts(C_INT_INT, C_INT_BIGINT,
+                          C_BIGINT_BIGINT, C_BIGINT_INT,
+                          C_DATE_DATE);
         OverloadResolver resolver = new OverloadResolver(registry);
-        // 2 candidates, 1 more specific
-        assertSame("INT*INT", registry.validated(MUL_INT),
+        // 2 survive filtering, 1 more specific
+        assertSame("INT*INT",
+                   registry.validated(MUL_INTS),
                    resolver.get(MUL_NAME, prepVals(TINT, TINT)).getOverload());
-        // 1 candidate
-        assertSame("INT*BIGINT", registry.validated(MUL_BIGINT),
-                   resolver.get(MUL_NAME, prepVals(TINT, TBIGINT)).getOverload());
-        // 1 candidate
-        assertSame("BIGINT*BIGINT", registry.validated(MUL_BIGINT),
+        // 1 survives filtering (bigint can't be strongly cast to INT or DATE)
+        assertSame("BIGINT*BIGINT",
+                   registry.validated(MUL_BIGINTS),
                    resolver.get(MUL_NAME, prepVals(TBIGINT, TBIGINT)).getOverload());
+        // 1 survives filtering (INT strongly cast to BIGINT)
+        assertSame("BIGINT*INT",
+                   registry.validated(MUL_BIGINTS),
+                   resolver.get(MUL_NAME, prepVals(TBIGINT, TINT)).getOverload());
+        // 1 survives filtering
+        assertSame("DATE*INT",
+                   registry.validated(MUL_DATE_INT),
+                   resolver.get(MUL_NAME, prepVals(TDATE, TINT)).getOverload());
+        // 3 survive filtering, 1 less specific, 2 candidates
+        assertSame("?*INT",
+                   null,
+                   resolver.get(MUL_NAME, prepVals(null, TINT)));
     }
 }
