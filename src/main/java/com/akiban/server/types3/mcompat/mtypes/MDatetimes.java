@@ -430,7 +430,7 @@ public class MDatetimes
                     + val[MIN_INDEX] * DATETIME_MIN_SCALE
                     + val[SEC_INDEX]);
     }
-
+    
     public static int encodeTime(long hr, long min, long sec, TExecutionContext context)
     {
         if (min < 0 || sec < 0)
@@ -446,8 +446,8 @@ public class MDatetimes
         long ret = mul * (hr * DATETIME_HOUR_SCALE + min * DATETIME_MIN_SCALE + sec);
         return (int)CastUtils.getInRange(TIME_MAX, TIME_MIN, ret, context);
     }
-    
-    public static long[] decodeTimestamp(long ts, String tz)
+
+    public static long[] decodeTimestamp(long ts, String tz) 
     {
         DateTime dt = new DateTime(ts * 1000L, DateTimeZone.forID(tz));
         
@@ -556,6 +556,9 @@ public class MDatetimes
     private static final long DATETIME_DAY_SCALE = 1L * DATETIME_DATE_SCALE;
     private static final long DATETIME_HOUR_SCALE = 10000L;
     private static final long DATETIME_MIN_SCALE = 100L;
+    
+    private static final int TIME_HOURS_SCALE = 10000;
+    private static final int TIME_MINUTES_SCALE = 100;
     
     private static final int DATE_GROUP = 1;
     private static final int DATE_YEAR_GROUP = 2;

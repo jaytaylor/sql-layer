@@ -29,7 +29,6 @@ package com.akiban.server.types3.mcompat.mcasts;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -191,7 +190,7 @@ public class MNumericCastBase
 
     static class FromInt8ToInt16 extends TCastBase
     {
-        public FromInt8ToInt16(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt8ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
                   checkType(target, PUnderlying.INT_16), auto, c);
@@ -211,7 +210,7 @@ public class MNumericCastBase
 
     static class FromInt8ToInt32 extends TCastBase
     {
-        public FromInt8ToInt32(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt8ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
                   checkType(target, PUnderlying.INT_32), auto, c);
@@ -231,7 +230,7 @@ public class MNumericCastBase
     
     static class FromInt8ToInt64 extends TCastBase
     {
-        public FromInt8ToInt64(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt8ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
                   checkType(target, PUnderlying.INT_64), auto, c);
@@ -311,7 +310,7 @@ public class MNumericCastBase
     
     static class FromInt16ToInt8 extends TCastBase
     {
-        public FromInt16ToInt8(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt16ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
                   checkType(target, PUnderlying.INT_8), auto, c);
@@ -331,7 +330,7 @@ public class MNumericCastBase
     
     static class FromInt16ToInt16 extends TCastBase
     {
-        public FromInt16ToInt16(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt16ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
                   checkType(target, PUnderlying.INT_16), auto, c);
@@ -351,7 +350,7 @@ public class MNumericCastBase
         
     static class FromInt16ToInt32 extends TCastBase
     {
-        public FromInt16ToInt32(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt16ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
                   checkType(target, PUnderlying.INT_32), auto, c);
@@ -371,7 +370,7 @@ public class MNumericCastBase
     
     static class FromInt16ToInt64 extends TCastBase
     {
-        public FromInt16ToInt64(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt16ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
                   checkType(target, PUnderlying.INT_64), auto, c);
@@ -451,7 +450,7 @@ public class MNumericCastBase
     
     static class FromInt32ToInt8 extends TCastBase
     {
-        public FromInt32ToInt8(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt32ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
                   checkType(target, PUnderlying.INT_8), auto, c);
@@ -471,7 +470,7 @@ public class MNumericCastBase
     
     static class FromInt32ToInt16 extends TCastBase
     {
-        public FromInt32ToInt16(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt32ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
                   checkType(target, PUnderlying.INT_16), auto, c);
@@ -491,7 +490,7 @@ public class MNumericCastBase
     
     static class FromInt32ToInt32 extends TCastBase
     {
-        public FromInt32ToInt32(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt32ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
                   checkType(target, PUnderlying.INT_32), auto, c);
@@ -511,7 +510,7 @@ public class MNumericCastBase
     
     static class FromInt32ToInt64 extends TCastBase
     {
-        public FromInt32ToInt64(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt32ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
                   checkType(target, PUnderlying.INT_64), auto, c);
@@ -591,7 +590,7 @@ public class MNumericCastBase
     
     static class FromInt64ToInt8 extends TCastBase
     {
-        public FromInt64ToInt8(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt64ToInt8(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
                   checkType(target, PUnderlying.INT_8), auto, c);
@@ -611,7 +610,7 @@ public class MNumericCastBase
     
     static class FromInt64ToInt16 extends TCastBase
     {
-        public FromInt64ToInt16(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt64ToInt16(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
                   checkType(target, PUnderlying.INT_16), auto, c);
@@ -631,7 +630,7 @@ public class MNumericCastBase
     
     static class FromInt64ToInt32 extends TCastBase
     {
-        public FromInt64ToInt32(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt64ToInt32(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
                   checkType(target, PUnderlying.INT_32), auto, c);
@@ -651,7 +650,7 @@ public class MNumericCastBase
     
     static class FromInt64ToInt64 extends TCastBase
     {
-        public FromInt64ToInt64(TClass source, MNumeric target, boolean auto, Constantness c)
+        public FromInt64ToInt64(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
                   checkType(target, PUnderlying.INT_64), auto, c);
