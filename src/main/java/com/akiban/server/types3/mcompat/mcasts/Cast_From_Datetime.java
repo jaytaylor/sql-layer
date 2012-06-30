@@ -42,52 +42,33 @@ import com.akiban.server.types3.texpressions.Constantness;
 
 import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
 
-public class Cast_From_Date
+public class Cast_From_Datetime
 {
-    /**
-     * TODO:
-     * 
-     * TIME
-     * TIMESTAMP
-     * 
-     * BIT
-     * CHAR
-     * BINARY
-     * VARBINARY
-     * TINYBLOG
-     * TINYTEXT
-     * TEXT
-     * MEDIUMBLOB
-     * MEDIUMTEXT
-     * LONGBLOG
-     * LONTTEXT
-     * 
-     */
-   public static final TCast TO_TINYINT = new FromInt32ToInt8(MDatetimes.DATE, MNumeric.TINYINT, false, Constantness.UNKNOWN);
+    public static final TCast TO_TINYINT = new FromInt64ToInt8(MDatetimes.DATETIME, MNumeric.TINYINT, false, Constantness.UNKNOWN);
 
-    public static final TCast TO_UNSIGNED_TINYINT = new FromInt32ToInt16(MDatetimes.DATE, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_TINYINT = new FromInt64ToInt16(MDatetimes.DATETIME, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_SMALLINT = new FromInt32ToInt16(MDatetimes.DATE, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
+    public static final TCast TO_SMALLINT = new FromInt64ToInt16(MDatetimes.DATETIME, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_SMALINT = new FromInt32ToInt32(MDatetimes.DATE, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_SMALINT = new FromInt64ToInt32(MDatetimes.DATETIME, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MDatetimes.DATE, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
+    public static final TCast TO_MEDIUMINT = new FromInt64ToInt32(MDatetimes.DATETIME, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToInt64(MDatetimes.DATETIME, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_INT = new FromInt32ToInt32(MDatetimes.DATE, MNumeric.INT, false, Constantness.UNKNOWN);
+    public static final TCast TO_INT = new FromInt64ToInt32(MDatetimes.DATETIME, MNumeric.INT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_INT = new FromInt64ToInt64(MDatetimes.DATETIME, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT, true, Constantness.UNKNOWN);
+    public static final TCast TO_BIGINT = new FromInt64ToInt64(MDatetimes.DATETIME, MNumeric.BIGINT, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_BIGINT = new FromInt64ToInt64(MDatetimes.DATETIME, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.DATE, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MDatetimes.DATETIME, MDouble.INSTANCE, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.DATE, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MDatetimes.DATETIME, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.DATE, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_DATE = new TCastBase(MDatetimes.DATETIME, MDatetimes.DATE, true, Constantness.UNKNOWN)
     {
 
         @Override
@@ -99,11 +80,11 @@ public class Cast_From_Date
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(MDatetimes.encodeDatetime(MDatetimes.decodeDate(source.getInt32())));
+            target.putInt32(MDatetimes.encodeDate(MDatetimes.decodeDatetime(source.getInt64())));
         }
     };
     
-    public static final TCast TO_TIME = new TCastBase(MDatetimes.DATE, MDatetimes.TIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_TIME = new TCastBase(MDatetimes.DATETIME, MDatetimes.TIME, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -114,8 +95,7 @@ public class Cast_From_Date
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // DATE doesn't have any TIME
-            target.putInt32(0);
+            target.putInt32(MDatetimes.encodeTime(MDatetimes.decodeDatetime(source.getInt64())));
         }
     };
     
@@ -131,7 +111,7 @@ public class Cast_From_Date
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32(MDatetimes.encodeTimestamp(MDatetimes.decodeDate(source.getInt32()),
+            target.putInt32(MDatetimes.encodeTimestamp(MDatetimes.decodeDatetime(source.getInt64()),
                                                        context.getCurrentTimezone(),
                                                        context));
         }
@@ -148,7 +128,7 @@ public class Cast_From_Date
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putObject(MDatetimes.dateToString(source.getInt32()));
+            target.putObject(MDatetimes.datetimeToString(source.getInt64()));
         }
     };
 }

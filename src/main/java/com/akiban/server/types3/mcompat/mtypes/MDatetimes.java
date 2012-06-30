@@ -382,13 +382,13 @@ public class MDatetimes
         }; // TODO: fractional seconds
     }
 
-    public static long encodeTimestamp(long val[], String tz, TExecutionContext context)
+    public static int encodeTimestamp(long val[], String tz, TExecutionContext context)
     {
         DateTime dt = new DateTime((int)val[YEAR_INDEX], (int)val[MONTH_INDEX], (int)val[DAY_INDEX],
                                    (int)val[HOUR_INDEX], (int)val[MIN_INDEX], (int)val[SEC_INDEX], 0,
                                    DateTimeZone.forID(tz));
         
-        return CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, dt.getMillis() / 1000L, TS_ERROR_VALUE, context);
+        return (int)CastUtils.getInRange(TIMESTAMP_MAX, TIMESTAMP_MIN, dt.getMillis() / 1000L, TS_ERROR_VALUE, context);
     }
 
     public static long encodeTimetamp(long millis, TExecutionContext context)
