@@ -525,13 +525,13 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                      <copy todir="${mac.app}/Contents/Resources/Java">
+					<copy todir="${mac.app}/Contents/Resources/Java">
                                             <fileset dir="${project.build.directory}" includes="${mac.jarfile}" />
-                                      </copy>
-                                      <exec executable="SetFile" failonerror="true">
-                                        <arg line="-a B"/>
-                                        <arg file="${mac.app}"/>
-                                      </exec>
+					</copy>
+					<exec executable="SetFile" failonerror="true">
+					    <arg line="-a B"/>
+					    <arg file="${mac.app}"/>
+					</exec>
                                     </tasks>
                                 </configuration>
                             </execution>
