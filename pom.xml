@@ -543,7 +543,7 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-				      <!-- Ant does not know about symlinks and will try to delete through. -->
+				      <!-- Ant does not know about symlinks (without special task, see below) and will try to delete through. -->
 				      <exec executable="sh" failonerror="true">
 					  <arg value="-c" />
 					  <arg value="rm -f ${mac.itemp}/Applications" />
