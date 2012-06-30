@@ -119,7 +119,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
         }
         finally {
             if (cursor != null) {
-                cursor.destroy();
+                cursor.close();
             }
         }
         {        
