@@ -513,7 +513,7 @@
                                         <copy todir="${mac.app}/Contents/MacOS">
                                             <fileset dir="/System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS" includes="JavaApplicationStub" />
                                         </copy>
-					<chmod file="${mac.app}/Contents/MacOS/JavaApplicationStub" perm="uog+rx" />
+                                        <chmod file="${mac.app}/Contents/MacOS/JavaApplicationStub" perm="uog+rx" />
                                     </tasks>
                                 </configuration>
                             </execution>
@@ -525,13 +525,13 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-					<copy todir="${mac.app}/Contents/Resources/Java">
+                                        <copy todir="${mac.app}/Contents/Resources/Java">
                                             <fileset dir="${project.build.directory}" includes="${mac.jarfile}" />
-					</copy>
-					<exec executable="SetFile" failonerror="true">
-					    <arg line="-a B"/>
-					    <arg file="${mac.app}"/>
-					</exec>
+                                        </copy>
+                                        <exec executable="SetFile" failonerror="true">
+                                            <arg line="-a B"/>
+                                            <arg file="${mac.app}"/>
+                                        </exec>
                                     </tasks>
                                 </configuration>
                             </execution>
@@ -543,39 +543,39 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-					<!-- Ant does not know about symlinks (without special task, see below) and will try to delete through. -->
-					<exec executable="sh" failonerror="true">
-					    <arg value="-c" />
-					    <arg value="rm -f ${mac.itemp}/Applications" />
-					</exec>
-					<delete dir="${mac.itemp}" />
-					<mkdir dir="${mac.itemp}" />
-					<mkdir dir="${mac.itemp}/Akiban Server.app" />
-					<!-- (optional component)
-					     <symlink link="${mac.itemp}/Applications" resource="/Applications" />
-					-->
-					<exec executable="sh" failonerror="true">
-					    <arg value="-c" />
-					    <arg value="ln -s /Applications ${mac.itemp}/" />
-					</exec>
-					<mkdir dir="${mac.itemp}/.background" />
-					<copy todir="${mac.itemp}/.background">
-					    <fileset dir="${basedir}/macosx" includes="dmg_background.png" />
-					</copy>
-					<delete file="${mac.itemp}.dmg" />
-					<exec executable="hdiutil" failonerror="true">
-					    <arg line="create -fs HFSX -layout SPUD -size 40m" />
-					    <arg file="${mac.itemp}.dmg" />
-					    <arg line="-format UDRW -volname" />
-					    <arg value="Akiban Server" />
-					    <arg line="-srcfolder" />
-					    <arg file="${mac.itemp}" />
-					</exec>
-					<exec executable="sh" failonerror="true">
-					    <arg value="-c" />
-					    <arg value="rm -f ${mac.itemp}/Applications" />
-					</exec>
-					<delete dir="${mac.itemp}" />
+                                        <!-- Ant does not know about symlinks (without special task, see below) and will try to delete through. -->
+                                        <exec executable="sh" failonerror="true">
+                                            <arg value="-c" />
+                                            <arg value="rm -f ${mac.itemp}/Applications" />
+                                        </exec>
+                                        <delete dir="${mac.itemp}" />
+                                        <mkdir dir="${mac.itemp}" />
+                                        <mkdir dir="${mac.itemp}/Akiban Server.app" />
+                                        <!-- (optional component)
+                                             <symlink link="${mac.itemp}/Applications" resource="/Applications" />
+                                        -->
+                                        <exec executable="sh" failonerror="true">
+                                            <arg value="-c" />
+                                            <arg value="ln -s /Applications ${mac.itemp}/" />
+                                        </exec>
+                                        <mkdir dir="${mac.itemp}/.background" />
+                                        <copy todir="${mac.itemp}/.background">
+                                            <fileset dir="${basedir}/macosx" includes="dmg_background.png" />
+                                        </copy>
+                                        <delete file="${mac.itemp}.dmg" />
+                                        <exec executable="hdiutil" failonerror="true">
+                                            <arg line="create -fs HFSX -layout SPUD -size 40m" />
+                                            <arg file="${mac.itemp}.dmg" />
+                                            <arg line="-format UDRW -volname" />
+                                            <arg value="Akiban Server" />
+                                            <arg line="-srcfolder" />
+                                            <arg file="${mac.itemp}" />
+                                        </exec>
+                                        <exec executable="sh" failonerror="true">
+                                            <arg value="-c" />
+                                            <arg value="rm -f ${mac.itemp}/Applications" />
+                                        </exec>
+                                        <delete dir="${mac.itemp}" />
                                     </tasks>
                                 </configuration>
                             </execution>
@@ -587,30 +587,30 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
-					<mkdir dir="${mac.itemp}" />
-					<exec executable="hdiutil" failonerror="true">
-					    <arg line="attach" />
-					    <arg file="${mac.itemp}.dmg" />
-					    <arg line="-noautoopen -mountpoint" />
-					    <arg file="${mac.itemp}" />
-					</exec>
-					<exec executable="ditto" failonerror="true">
-					    <arg file="${mac.app}" />
-					    <arg file="${mac.itemp}/Akiban Server.app" />
-					</exec>
-					<copy file="${basedir}/macosx/dmg.DS_Store" tofile="${mac.itemp}/.DS_Store" />
-					<exec executable="sh" failonerror="true">
-					    <arg value="-c" />
-					    <arg value="hdiutil detach `hdiutil info | grep ${mac.itemp} | grep '^/dev' | cut -f1`" />
-					</exec>
-					<delete file="${mac.dmg}" />
-					<exec executable="hdiutil" failonerror="true">
-					    <arg line="convert" />
-					    <arg file="${mac.itemp}.dmg" />
-					    <arg line="-format UDZO -imagekey zlib-level=9 -o" />
-					    <arg file="${mac.dmg}" />
-					</exec>
-					<delete file="${mac.itemp}.dmg" />
+                                        <mkdir dir="${mac.itemp}" />
+                                        <exec executable="hdiutil" failonerror="true">
+                                            <arg line="attach" />
+                                            <arg file="${mac.itemp}.dmg" />
+                                            <arg line="-noautoopen -mountpoint" />
+                                            <arg file="${mac.itemp}" />
+                                        </exec>
+                                        <exec executable="ditto" failonerror="true">
+                                            <arg file="${mac.app}" />
+                                            <arg file="${mac.itemp}/Akiban Server.app" />
+                                        </exec>
+                                        <copy file="${basedir}/macosx/dmg.DS_Store" tofile="${mac.itemp}/.DS_Store" />
+                                        <exec executable="sh" failonerror="true">
+                                            <arg value="-c" />
+                                            <arg value="hdiutil detach `hdiutil info | grep ${mac.itemp} | grep '^/dev' | cut -f1`" />
+                                        </exec>
+                                        <delete file="${mac.dmg}" />
+                                        <exec executable="hdiutil" failonerror="true">
+                                            <arg line="convert" />
+                                            <arg file="${mac.itemp}.dmg" />
+                                            <arg line="-format UDZO -imagekey zlib-level=9 -o" />
+                                            <arg file="${mac.dmg}" />
+                                        </exec>
+                                        <delete file="${mac.itemp}.dmg" />
                                     </tasks>
                                 </configuration>
                             </execution>
