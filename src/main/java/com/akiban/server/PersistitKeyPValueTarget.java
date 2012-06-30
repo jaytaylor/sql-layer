@@ -51,7 +51,7 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     }
 
     public PersistitKeyPValueTarget expectingType(Column column) {
-        return expectingType(column.getType().instance().typeClass().underlyingType());
+        return expectingType(column.tInstance().typeClass().underlyingType());
     }
     
     // PValueTarget interface

@@ -394,11 +394,6 @@ final class UnionAll_Default extends Operator {
         }
 
         @Override
-        public TInstance tinstance(int index) {
-            return delegate.tinstance(index);
-        }
-
-        @Override
         public PValueSource pvalue(int index) {
             return delegate.pvalue(index);
         }

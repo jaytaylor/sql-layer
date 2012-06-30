@@ -28,6 +28,7 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 import java.util.List;
 
@@ -40,7 +41,6 @@ public class ProjectedRowType extends DerivedRowType
     {
         return String.format("project(%s)", projections);
     }
-
 
     // RowType interface
 
@@ -55,15 +55,22 @@ public class ProjectedRowType extends DerivedRowType
         return projections.get(index).valueType();
     }
 
+    @Override
+    public TInstance typeInstanceAt(int index) {
+        return tInstances.get(index);
+    }
+
     // ProjectedRowType interface
 
-    public ProjectedRowType(DerivedTypesSchema schema, int typeId, List<? extends Expression> projections)
+    public ProjectedRowType(DerivedTypesSchema schema, int typeId, List<? extends Expression> projections, List<? extends TInstance> tInstances)
     {
         super(schema, typeId);
         this.projections = projections;
+        this.tInstances = tInstances;
     }
     
     // Object state
 
     private final List<? extends Expression> projections;
+    private final List<? extends TInstance> tInstances;
 }

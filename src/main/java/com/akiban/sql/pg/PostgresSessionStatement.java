@@ -53,7 +53,7 @@ public class PostgresSessionStatement implements PostgresStatement
       "client_encoding", "DateStyle", "geqo", "ksqo",
       "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
       "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
-      "cbo"
+      "cbo", "newtypes"
     };
 
     private Operation operation;

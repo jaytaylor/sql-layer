@@ -31,6 +31,7 @@ import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.akiban.util.FilteringIterator;
 
 import java.util.ArrayList;
@@ -65,6 +66,11 @@ public class UserTableRowType extends AisRowType
     public HKey hKey()
     {
         return table.hKey();
+    }
+
+    @Override
+    public TInstance typeInstanceAt(int index) {
+        return table.getColumnsIncludingInternal().get(index).tInstance();
     }
 
     // UserTableRowType interface

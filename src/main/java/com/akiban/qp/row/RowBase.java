@@ -34,7 +34,6 @@ import com.akiban.server.types3.pvalue.PValueSource;
 
 public interface RowBase extends BoundExpressions
 {
-    TInstance tinstance(int index);
     PValueSource pvalue(int index);
     RowType rowType();
     HKey hKey();

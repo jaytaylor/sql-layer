@@ -121,6 +121,7 @@ public class
         column.setTypeParameter2(typeParameter2);
         column.setCharset(charset);
         column.setCollation(collation);
+        column.finishCreating();
     }
 
     public void index(String schemaName, String tableName, String indexName,
@@ -696,6 +697,7 @@ public class
                     .getCharsetAndCollation());
             userColumn.setGroupColumn(groupColumn);
             groupColumn.setUserColumn(userColumn);
+            groupColumn.finishCreating();
         }
         for (Join join : userTable.getChildJoins()) {
             generateGroupTableColumns(groupTable, join.getChild());

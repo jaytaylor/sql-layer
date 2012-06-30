@@ -117,11 +117,6 @@ public class NewRowBackedIndexRow implements RowBase
     }
 
     @Override
-    public TInstance tinstance(int index) {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
-    @Override
     public PValueSource pvalue(int index) {
         throw new UnsupportedOperationException(); // TODO
     }

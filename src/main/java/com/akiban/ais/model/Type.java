@@ -28,7 +28,6 @@ package com.akiban.ais.model;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PUnderlying;
 
 public class Type
 {
@@ -66,10 +65,6 @@ public class Type
     public AkType akType() {
         return akType;
     }
-    
-    public TInstance instance() {
-        return instance;
-    }
 
     @Override
     public boolean equals(Object object)
@@ -101,7 +96,8 @@ public class Type
         return result;
     }
     
-    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType, TInstance instance)
+    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding,
+                AkType akType)
     {
         this.name = name;
         this.typeParameters = typeParameters;
@@ -109,12 +105,11 @@ public class Type
         this.maxStorageSizeBytes = maxStorageSizeBytes;
         this.encoding = encoding;
         this.akType = akType;
-        this.instance = instance;
     }
 
     public static Type create(AkibanInformationSchema ais, String name, Integer typeParameters, Boolean fixedSize, 
                               Long maxStorageSizeBytes, String encoding, AkType akType, TInstance instance) {
-        Type type = new Type(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, akType, instance);
+        Type type = new Type(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, akType);
         ais.addType(type);
         return type;
     }
@@ -125,5 +120,4 @@ public class Type
     private final Long maxStorageSizeBytes;
     private final String encoding;
     private final AkType akType;
-    private final TInstance instance;
 }

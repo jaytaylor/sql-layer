@@ -162,6 +162,6 @@ public class MDouble extends TClass
 
     @Override
     protected void validate(TInstance instance) {
-        throw new UnsupportedOperationException(); // TODO
+        // TODO
     }
 }
