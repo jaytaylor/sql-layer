@@ -485,11 +485,11 @@
             </properties>
         </profile>
         <profile>
-            <id>installer-mac-bundle</id>
+            <id>installer-mac-dmg</id>
             <activation>
                 <property>
                     <name>installer</name>
-                    <value>mac-bundle</value>
+                    <value>mac-dmg</value>
                 </property>
             </activation>
             <build>
@@ -535,12 +535,91 @@
                                     </tasks>
                                 </configuration>
                             </execution>
+                            <execution>
+                                <id>mac-dmg-template</id>
+                                <phase>process-resources</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+				      <!-- Ant does not know about symlinks and will try to delete through. -->
+				      <exec executable="sh" failonerror="true">
+					  <arg value="-c" />
+					  <arg value="rm -f ${mac.itemp}/Applications" />
+				      </exec>
+                                      <mkdir dir="${mac.itemp}" />
+                                      <mkdir dir="${mac.itemp}/Akiban Server.app" />
+				      <!-- (optional component)
+				      <symlink link="${mac.itemp}/Applications" resource="/Applications" />
+				      -->
+				      <exec executable="sh" failonerror="true">
+					  <arg value="-c" />
+					  <arg value="ln -s /Applications ${mac.itemp}/" />
+				      </exec>
+				      <mkdir dir="${mac.itemp}/.background" />
+				      <copy todir="${mac.itemp}/.background">
+					  <fileset dir="${basedir}/macosx" includes="dmg_background.png" />
+                                      </copy>
+				      <delete file="${mac.itemp}.dmg" />
+				      <exec executable="hdiutil" failonerror="true">
+					  <arg line="create -fs HFSX -layout SPUD -size 40m" />
+					  <arg file="${mac.itemp}.dmg" />
+					  <arg line="-format UDRW -volname" />
+					  <arg value="Akiban Server" />
+					  <arg line="-srcfolder" />
+					  <arg file="${mac.itemp}" />
+                                      </exec>
+				      <exec executable="sh" failonerror="true">
+					  <arg value="-c" />
+					  <arg value="rm -f ${mac.itemp}/Applications" />
+				      </exec>
+				      <delete dir="${mac.itemp}" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
+                            <execution>
+                                <id>mac-dmg-create</id>
+                                <phase>package</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <tasks>
+				      <mkdir dir="${mac.itemp}" />
+				      <exec executable="hdiutil" failonerror="true">
+					  <arg line="attach" />
+					  <arg file="${mac.itemp}.dmg" />
+					  <arg line="-noautoopen -mountpoint" />
+					  <arg file="${mac.itemp}" />
+                                      </exec>
+				      <exec executable="ditto" failonerror="true">
+					  <arg file="${mac.app}" />
+					  <arg file="${mac.itemp}/Akiban Server.app" />
+                                      </exec>
+				      <copy file="${basedir}/macosx/dmg.DS_Store" tofile="${mac.itemp}/.DS_Store" />
+				      <exec executable="sh" failonerror="true">
+					  <arg value="-c" />
+					  <arg value="hdiutil detach `hdiutil info | grep ${mac.itemp} | grep '^/dev' | cut -f1`" />
+				      </exec>
+				      <exec executable="hdiutil" failonerror="true">
+					  <arg line="convert" />
+					  <arg file="${mac.itemp}.dmg" />
+					  <arg line="-format UDZO -imagekey zlib-level=9 -o" />
+					  <arg file="${mac.dmg}" />
+                                      </exec>
+				      <delete file="${mac.itemp}.dmg" />
+                                    </tasks>
+                                </configuration>
+                            </execution>
                         </executions>
                     </plugin>
                 </plugins>
             </build>
             <properties>
                 <mac.app>${project.build.directory}/Akiban Server.app</mac.app>
+                <mac.dmg>${project.build.directory}/Akiban Server.dmg</mac.dmg>
+                <mac.itemp>/tmp/inst_temp</mac.itemp>
                 <mac.jarfile>${project.build.finalName}-jar-with-dependencies.jar</mac.jarfile>
             </properties>
         </profile>
