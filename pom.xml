@@ -602,6 +602,7 @@
 					  <arg value="-c" />
 					  <arg value="hdiutil detach `hdiutil info | grep ${mac.itemp} | grep '^/dev' | cut -f1`" />
 				      </exec>
+				      <delete file="${mac.dmg}" />
 				      <exec executable="hdiutil" failonerror="true">
 					  <arg line="convert" />
 					  <arg file="${mac.itemp}.dmg" />
