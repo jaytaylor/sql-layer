@@ -26,6 +26,7 @@
 
 package com.akiban.qp.loadableplan.std;
 
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
@@ -35,10 +36,13 @@ import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.types.util.SqlLiteralValueFormatter;
 
 import java.sql.Types;
 
+import java.io.IOException;
 import java.util.*;
 
 /**
@@ -77,6 +81,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         private Cursor cursor;
         private Map<UserTable,Boolean> includeTables;
         private StringBuilder buffer;
+        private GroupRowFormatter formatter;
         private int messagesSent;
 
         public DumpGroupDirectObjectCursor(QueryContext context) {
@@ -85,9 +90,10 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
 
         @Override
         public void open() {
+            String currentSchema = context.getCurrentUser();
             String schemaName, tableName;
             if (context.getValue(0).isNull())
-                schemaName = context.getCurrentUser();
+                schemaName = currentSchema;
             else
                 schemaName = context.getValue(0).getString();
             tableName = context.getValue(1).getString();
@@ -100,6 +106,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             cursor.open();
             includeTables = new HashMap<UserTable,Boolean>();
             buffer = new StringBuilder();
+            formatter = new SQLRowFormatter(buffer, currentSchema);
             messagesSent = 0;
         }
 
@@ -119,7 +126,12 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 UserTable rowTable = rowType.userTable();
                 if (!includeTable(rowTable))
                     continue;
-                appendRow(rowType, row);
+                try {
+                    formatter.appendRow(rowType, row);
+                }
+                catch (IOException ex) {
+                    throw new AkibanInternalException("formatting error", ex);
+                }
                 if ((buffer.length() >= CHARS_PER_MESSAGE))
                     break;
                 buffer.append('\n');
@@ -141,10 +153,6 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
         }
 
-        private void appendRow(RowType rowType, Row row) {
-            buffer.append(row);
-        }
-
         private boolean includeTable(UserTable table) {
             Boolean include = includeTables.get(table);
             if (include == null) {
@@ -152,6 +160,63 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 includeTables.put(table, include);
             }
             return include;
+        }
+    }
+
+    public static abstract class GroupRowFormatter {
+        protected StringBuilder buffer;
+        protected String currentSchema;
+
+        protected GroupRowFormatter(StringBuilder buffer, String currentSchema) {
+            this.buffer = buffer;
+            this.currentSchema = currentSchema;
+        }
+
+        public abstract void appendRow(RowType rowType, Row row) throws IOException;
+    }
+
+    public static class SQLRowFormatter extends GroupRowFormatter {
+        private Map<UserTable,String> tableNames = new HashMap<UserTable,String>();
+        private SqlLiteralValueFormatter literalFormatter;
+
+        SQLRowFormatter(StringBuilder buffer, String currentSchema) {
+            super(buffer, currentSchema);
+            literalFormatter = new SqlLiteralValueFormatter(buffer);
+        }
+
+        @Override
+        public void appendRow(RowType rowType, Row row) throws IOException {
+            buffer.append("INSERT INTO ");
+            buffer.append(tableName(rowType.userTable()));
+            buffer.append(" VALUES(");
+            for (int i = 0; i < rowType.nFields(); i++) {
+                if (i > 0) buffer.append(", ");
+                literalFormatter.append(row.eval(i), rowType.typeAt(i));
+            }
+            buffer.append(")");
+        }
+
+        protected String tableName(UserTable table) {
+            String name = tableNames.get(table);
+            if (name == null) {
+                TableName tableName = table.getName();
+                name = identifier(tableName.getTableName());
+                if (!tableName.getSchemaName().equals(currentSchema)) {
+                    name = identifier(tableName.getSchemaName()) + "." + name;
+                }
+                tableNames.put(table, name);
+            }
+            return name;
+        }
+
+        protected static String identifier(String name) {
+            if (name.matches("[a-z][_a-z0-9]*")) // Note: lowercase only.
+                return name;
+            StringBuilder str = new StringBuilder();
+            str.append('`');
+            str.append(name.replace("`", "``"));
+            str.append('`');
+            return str.toString();
         }
     }
 
