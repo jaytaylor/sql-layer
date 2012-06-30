@@ -193,7 +193,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 if (i > 0) buffer.append(", ");
                 literalFormatter.append(row.eval(i), rowType.typeAt(i));
             }
-            buffer.append(")");
+            buffer.append(");");
         }
 
         protected String tableName(UserTable table) {
