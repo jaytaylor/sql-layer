@@ -548,7 +548,8 @@
 					  <arg value="-c" />
 					  <arg value="rm -f ${mac.itemp}/Applications" />
 				      </exec>
-                                      <mkdir dir="${mac.itemp}" />
+                                      <delete dir="${mac.itemp}" />
+				      <mkdir dir="${mac.itemp}" />
                                       <mkdir dir="${mac.itemp}/Akiban Server.app" />
 				      <!-- (optional component)
 				      <symlink link="${mac.itemp}/Applications" resource="/Applications" />
