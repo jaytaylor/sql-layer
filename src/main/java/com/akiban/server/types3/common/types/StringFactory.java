@@ -44,25 +44,8 @@ public class StringFactory implements TFactory
         ;
         
         public static Charset of(String value) {
-            StringBuilder sb = new StringBuilder(value);
-            for (int i = 0, len = sb.length(); i < len; ++i) {
-                char c = sb.charAt(i);
-                switch (c) {
-                case '-':
-                case '_':
-                    sb.deleteCharAt(i);
-                    --len;
-                    break;
-                default:
-                    if (Character.isLetter(c)) {
-                        sb.setCharAt(i, Character.toUpperCase(c));
-                    }
-                    else {
-                        throw new AkibanInternalException("not a valid encoding: " + value);
-                    }
-                }
-            }
-            value = value.toUpperCase().replaceAll("[-_]", "");
+            // Could optimize this with a StringBuilder, for-loop, etc
+            value = value.toUpperCase().replace("-", "").replace("_", "");
             try {
                 return valueOf(value);
             } catch (IllegalArgumentException e) {
