@@ -96,7 +96,7 @@ public final class TInstance {
         int capacity = className.length() + 2 + (5*nattrs);
         StringBuilder sb = new StringBuilder(capacity);
         sb.append(className).append('(');
-        int[] attrs = new int[] { attr0, attr1, attr2, attr3 };
+        long[] attrs = new long[] { attr0, attr1, attr2, attr3 };
         for (int i = 0; i < nattrs; ++i) {
             tclass.attributeToString(i, attrs[i], sb);
             if (i+1 < nattrs)
@@ -131,8 +131,8 @@ public final class TInstance {
     public int hashCode() {
         int result = tclass.hashCode();
         result = 31 * result + attr0;
-        result = 31 * result + attr1;
         result = 31 * result + attr2;
+        result = 31 * result + attr1;
         result = 31 * result + attr3;
         result = 31 * result + (isNullable != null ? isNullable.hashCode() : 0);
         return result;

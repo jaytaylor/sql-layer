@@ -39,7 +39,13 @@ public class StringFactory implements TFactory
     //TODO: add more charsets as needed
     public static enum Charset
     {
-        LATIN1, UTF8, UTF16
+        LATIN1, UTF_8, UTF_16
+        ;
+        
+        public static Charset of(String value) {
+            value = value.toUpperCase().replace("-", "_");
+            return valueOf(value);
+        }
     }
     
     //--------------------------------COLLATION---------------------------------
@@ -50,7 +56,7 @@ public class StringFactory implements TFactory
     // default number of characters in a string      
     protected static final int DEFAULT_LENGTH = 255;
     
-    protected static final Charset DEFAULT_CHARSET = Charset.UTF8;
+    protected static final Charset DEFAULT_CHARSET = Charset.UTF_8;
     
     protected static final int DEFAULT_COLLATION_ID = 0; // TODO:
     

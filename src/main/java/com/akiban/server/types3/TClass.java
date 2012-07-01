@@ -44,8 +44,8 @@ public abstract class TClass {
         throw new UnsupportedOperationException(); // TODO remove this, make it abstract
     }
 
-    public void attributeToString(int attributeIndex, int value, StringBuilder output) {
-        throw new UnsupportedOperationException(); // TODO remove this, make it abstract
+    public void attributeToString(int attributeIndex, long value, StringBuilder output) {
+        output.append(value);
     }
     
     public /*abstract*/ void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
@@ -62,26 +62,23 @@ public abstract class TClass {
                         TInstance targetInstance,
                         PValueTarget targetValue);
 
-    public TInstance instance()
-    {
-        return createInstance(0, EMPTY, EMPTY, EMPTY, EMPTY);
-    }
+    public abstract TInstance instance();
     
     public TInstance instance(int arg0)
     {
         return createInstance(1, arg0, EMPTY, EMPTY, EMPTY);
     }
-    
+
     public TInstance instance(int arg0, int arg1)
     {
         return createInstance(2, arg0, arg1, EMPTY, EMPTY);
     }
-    
+
     public TInstance instance(int arg0, int arg1, int arg2)
     {
         return createInstance(3, arg0, arg1, arg2, EMPTY);
     }
-    
+
     public TInstance instance(int arg0, int arg1, int arg2, int arg3)
     {
         return createInstance(4, arg0, arg1, arg2, arg3);
@@ -94,7 +91,7 @@ public abstract class TClass {
     public void readCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
         writeCanonical(inValue, typeInstance, out);
     }
-    
+
     public TInstance pickInstance(TInstance instance0, TInstance instance1) {
         if (instance0.typeClass() != this || instance1.typeClass() != this)
             throw new IllegalArgumentException("can't combine " + instance0 + " and " + instance1 + " using " + this);
@@ -157,18 +154,22 @@ public abstract class TClass {
     // for use by subclasses
 
     protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);
+
     protected abstract void validate(TInstance instance);
-    
     // for use by this class
-    
+
+    protected TInstance createInstanceNoArgs() {
+        return createInstance(0, EMPTY, EMPTY, EMPTY, EMPTY);
+    }
+
     protected TInstance createInstance(int nAttrs, int attr0, int attr1, int attr2, int attr3) {
         if (nAttributes() != nAttrs)
-            throw new AkibanInternalException(name() + "requires " + nAttributes() + " attributes, saw " + nAttrs);
+            throw new AkibanInternalException(name() + " requires " + nAttributes() + " attributes, saw " + nAttrs);
         TInstance result = new TInstance(this, enumClass, nAttrs, attr0, attr1, attr2, attr3);
         validate(result);
         return result;
     }
-    
+
     // state
 
      protected <A extends Enum<A> & Attribute> TClass(TName name,

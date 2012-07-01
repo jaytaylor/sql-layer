@@ -49,6 +49,11 @@ public class NoAttrTClass extends TClass {
     }
 
     @Override
+    public TInstance instance() {
+        return createInstanceNoArgs();
+    }
+
+    @Override
     protected void validate(TInstance instance) {
     }
 

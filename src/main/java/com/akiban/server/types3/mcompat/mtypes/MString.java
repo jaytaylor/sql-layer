@@ -31,15 +31,23 @@ import com.akiban.server.types3.mcompat.MBundle;
 
 public class MString extends TString
 {
-    public static final MString VARCHAR = new MString("varchar", -1);
+    public static final MString CHAR = new MString("varchar");
+    public static final MString VARCHAR = new MString("varchar");
+
+    public static final MString TINYTEXT = new MString("tinytext", 256);
+    public static final MString MEDIUMTEXT = new MString("mediumtext", 65535);
+    public static final MString TEXT = new MString("text", 16777215);
+    public static final MString LONGTEXT = new MString("longtext", Integer.MAX_VALUE); // TODO not big enough!
     
     // TODO: revisit VARBAR definition 
-    public static final MString VARBINARY = new MString("varbinary", -1);
+    public static final MString VARBINARY = new MString("varbinary");
     
-    // TODO: define CHAR
+    private MString(String name, int fixedSize) {
+        super(MBundle.INSTANCE, name, -1, fixedSize);
+    }
     
-    private MString(String name, int serialisationSize)
+    private MString(String name)
     {       
-        super(MBundle.INSTANCE, name, serialisationSize);
+        super(MBundle.INSTANCE, name, -1);
     }
 }

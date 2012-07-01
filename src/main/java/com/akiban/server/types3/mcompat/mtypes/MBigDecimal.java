@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.Attribute;
+import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
@@ -61,7 +62,12 @@ public class MBigDecimal extends TClass {
         
         return new String(val);
     }
-    
+
+    @Override
+    public TInstance instance() {
+        return instance(10, 0);
+    }
+
     @Override
     public void putSafety(QueryContext context, 
                           TInstance sourceInstance,
@@ -105,7 +111,10 @@ public class MBigDecimal extends TClass {
 
     @Override
     protected void validate(TInstance instance) {
-        throw new UnsupportedOperationException(); // TODO
+        int precision = instance.attribute(Attrs.PRECISION);
+        int scale = instance.attribute(Attrs.SCALE);
+        if (precision < scale)
+            throw new IllegalNameException("precision must be >= scale");
     }
 
     @Override

@@ -40,6 +40,11 @@ public abstract class TString extends TClass
 {
     protected TString (TBundle bundle, String name, int serialisationSize)
     {
+        this(bundle, name, serialisationSize, -1);
+    }
+
+    protected TString (TBundle bundle, String name, int serialisationSize, int fixedLength)
+    {
         super(bundle.id(),
                 name,
                 StringAttribute.class,
@@ -47,9 +52,16 @@ public abstract class TString extends TClass
                 1,
                 serialisationSize,
                 PUnderlying.BYTES);
+        this.fixedLength = fixedLength;
     }
 
-     
+    @Override
+    public TInstance instance(int charsetId, int collationId) {
+        return fixedLength < 0
+                ? super.instance(charsetId, collationId)
+                : super.instance(fixedLength, charsetId, collationId);
+    }
+
     @Override
     public void putSafety(QueryContext context, 
                           TInstance sourceInstance,
@@ -111,4 +123,6 @@ public abstract class TString extends TClass
         int collaitonid = instance.attribute(StringAttribute.COLLATION);
         // TODO
     }
+    
+    private final int fixedLength;
 }

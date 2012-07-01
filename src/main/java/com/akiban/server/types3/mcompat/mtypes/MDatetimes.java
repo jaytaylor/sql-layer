@@ -77,7 +77,7 @@ public class MDatetimes
 
        for (String locale : SUPPORTED_LOCALES)
        {
-           DateFormatSymbols fm = new DateFormatSymbols(new Locale(System.getProperty(locale)));
+           DateFormatSymbols fm = new DateFormatSymbols(new Locale(locale));
            
            months.put(locale, fm.getMonths());
            shortMonths.put(locale, fm.getShortMonths());
@@ -575,8 +575,8 @@ public class MDatetimes
 
     // upper and lower limit of TIMESTAMP value
     // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
-    public static final long TIMESTAMP_MAX = new DateTime("1970-01-01 00:00:01Z").getMillis();
-    public static final long TIMESTAMP_MIN = new DateTime("2038-01-19 03:14:07Z").getMillis();
+    public static final long TIMESTAMP_MAX = DateTime.parse("1970-01-01T00:00:01Z").getMillis();
+    public static final long TIMESTAMP_MIN = DateTime.parse("2038-01-19T03:14:07Z").getMillis();
     public static final long TS_ERROR_VALUE = 0L;
     
     // upper and lower limti of TIME value
