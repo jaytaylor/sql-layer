@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.common.types;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.TAttributeValues;
 import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
@@ -39,12 +40,34 @@ public class StringFactory implements TFactory
     //TODO: add more charsets as needed
     public static enum Charset
     {
-        LATIN1, UTF_8, UTF_16
+        LATIN1, UTF8, UTF16
         ;
         
         public static Charset of(String value) {
-            value = value.toUpperCase().replace("-", "_");
-            return valueOf(value);
+            StringBuilder sb = new StringBuilder(value);
+            for (int i = 0, len = sb.length(); i < len; ++i) {
+                char c = sb.charAt(i);
+                switch (c) {
+                case '-':
+                case '_':
+                    sb.deleteCharAt(i);
+                    --len;
+                    break;
+                default:
+                    if (Character.isLetter(c)) {
+                        sb.setCharAt(i, Character.toUpperCase(c));
+                    }
+                    else {
+                        throw new AkibanInternalException("not a valid encoding: " + value);
+                    }
+                }
+            }
+            value = value.toUpperCase().replaceAll("[-_]", "");
+            try {
+                return valueOf(value);
+            } catch (IllegalArgumentException e) {
+                throw new AkibanInternalException("not a valid encoding: " + value);
+            }
         }
     }
     
@@ -56,7 +79,7 @@ public class StringFactory implements TFactory
     // default number of characters in a string      
     protected static final int DEFAULT_LENGTH = 255;
     
-    protected static final Charset DEFAULT_CHARSET = Charset.UTF_8;
+    protected static final Charset DEFAULT_CHARSET = Charset.UTF8;
     
     protected static final int DEFAULT_COLLATION_ID = 0; // TODO:
     

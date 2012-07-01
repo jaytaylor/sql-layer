@@ -147,6 +147,8 @@ class Project_Default extends Operator
     }
 
     private List<TInstance> tInstances(List<? extends TPreparedExpression> pExpressions) {
+        if (pExpressions == null)
+            return null;
         List<TInstance> tInstances = new ArrayList<TInstance>(pExpressions.size());
         for (TPreparedExpression preparedExpression : pExpressions)
             tInstances.add(preparedExpression.resultType());
