@@ -30,8 +30,8 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -82,7 +82,7 @@ public class MChar extends TOverloadBase
     public TOverloadResult resultType()
     {
         // TODO: calculate the length of varbinary
-        return TOverloadResult.fixed(MString.VARBINARY.instance());
+        return TOverloadResult.fixed(MBinary.VARBINARY.instance());
     }
     
     private static final long MASK = 0xff;

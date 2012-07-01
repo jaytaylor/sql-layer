@@ -30,6 +30,7 @@ import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringFactory;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -424,7 +425,7 @@ public class Column
             throw new UnsupportedOperationException("unsupported type: " + type);
 
         case T_BLOB:
-            tinst = null; // TODO
+            tinst = MBinary.BLOB.instance();
             break;
         case T_BIGINT:
             tinst = MNumeric.BIGINT.instance();
@@ -433,7 +434,7 @@ public class Column
             tinst = MNumeric.BIGINT_UNSIGNED.instance();
             break;
         case T_BINARY:
-            tinst = MString.VARBINARY.instance(typeParameter1.intValue());
+            tinst = MBinary.BINARY.instance(typeParameter1.intValue());
             break;
         case T_CHAR:
             tinst = charString(MString.CHAR);
@@ -469,13 +470,13 @@ public class Column
             tinst = MNumeric.INT_UNSIGNED.instance();
             break;
         case T_LONGBLOB:
-            tinst = null; // TODO
+            tinst = MBinary.LONGBLOB.instance();
             break;
         case T_LONGTEXT:
             tinst = textString(MString.LONGTEXT);
             break;
         case T_MEDIUMBLOB:
-            tinst = null; // TODO
+            tinst = MBinary.MEDIUMBLOB.instance();
             break;
         case T_MEDIUMINT:
             tinst = MNumeric.MEDIUMINT.instance();
@@ -502,7 +503,7 @@ public class Column
             tinst = MDatetimes.TIMESTAMP.instance();
             break;
         case T_TINYBLOB:
-            tinst = null; // TODO
+            tinst = MBinary.TINYBLOB.instance();
             break;
         case T_TINYINT:
             tinst = MNumeric.TINYINT.instance();
@@ -514,7 +515,7 @@ public class Column
             tinst = textString(MString.TINYTEXT);
             break;
         case T_VARBINARY:
-            tinst = MString.VARBINARY.instance(typeParameter1.intValue());
+            tinst = MBinary.VARBINARY.instance(typeParameter1.intValue());
             break;
         case T_VARCHAR:
             tinst = charString(MString.VARCHAR);

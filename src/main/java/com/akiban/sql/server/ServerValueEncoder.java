@@ -33,6 +33,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -230,7 +231,7 @@ public class ServerValueEncoder
     /** Append the given value to the buffer. */
     public void appendPValue(PValueSource value, ServerType type, boolean binary) 
             throws IOException {
-        if (type.getInstance().typeClass() == MString.VARBINARY)
+        if (type.getInstance().typeClass() == MBinary.VARBINARY)
             getByteStream().write(value.getBytes());
         else {
             assert !binary : "expecting VARBINARY";

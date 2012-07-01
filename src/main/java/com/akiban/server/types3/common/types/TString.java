@@ -91,7 +91,7 @@ public abstract class TString extends TClass
     @Override
     public TInstance instance()
     {
-        return instance(StringFactory.DEFAULT_LENGTH, 
+        return instance(fixedLength >= 0 ? fixedLength : StringFactory.DEFAULT_LENGTH,
                         StringFactory.DEFAULT_CHARSET.ordinal(),
                         StringFactory.DEFAULT_COLLATION_ID);
     }

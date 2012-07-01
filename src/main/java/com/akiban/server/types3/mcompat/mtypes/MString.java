@@ -39,9 +39,6 @@ public class MString extends TString
     public static final MString TEXT = new MString("text", 16777215);
     public static final MString LONGTEXT = new MString("longtext", Integer.MAX_VALUE); // TODO not big enough!
     
-    // TODO: revisit VARBAR definition 
-    public static final MString VARBINARY = new MString("varbinary");
-    
     private MString(String name, int fixedSize) {
         super(MBundle.INSTANCE, name, -1, fixedSize);
     }
