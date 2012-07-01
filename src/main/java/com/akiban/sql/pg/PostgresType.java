@@ -297,8 +297,7 @@ public class PostgresType extends ServerType
             }
         }
 
-        assert false;
-        return new PostgresType(oid, length, modifier, aisType.akType(), null);
+        return new PostgresType(oid, length, modifier, aisType.akType(), aisColumn.tInstance());
     }
 
     public static PostgresType fromDerby(DataTypeDescriptor type)  {

@@ -40,7 +40,10 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MApproximateNumber extends TClass
 {
-    public static final TClass DOUBLE = new MApproximateNumber();
+    public static final TClass DOUBLE = new MApproximateNumber(PUnderlying.DOUBLE);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber(PUnderlying.DOUBLE);
+    public static final TClass FLOAT = new MApproximateNumber(PUnderlying.FLOAT);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber(PUnderlying.FLOAT);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
@@ -48,7 +51,7 @@ public class MApproximateNumber extends TClass
     private static final int MAX_INDEX = 0;
     private static final int MIN_INDEX = 1;
     
-    public static double round(TInstance instance, double val)
+    private static double round(TInstance instance, double val)
     {
         assert instance.typeClass() instanceof MApproximateNumber : "instance has to be of type MDouble";
 
@@ -110,7 +113,11 @@ public class MApproximateNumber extends TClass
                           TInstance targetInstance,
                           PValueTarget targetValue)
     {
-        double raw = sourceValue.getDouble();
+        double raw;
+        if (underlyingType() == PUnderlying.DOUBLE)
+            raw = sourceValue.getDouble();
+        else
+            raw = sourceValue.getFloat();
         double rounded = round(targetInstance, raw);
 
         // TODO: in strict (My)SQL mode, this would be an error
@@ -134,12 +141,12 @@ public class MApproximateNumber extends TClass
         }
     }
 
-    MApproximateNumber()
+    private MApproximateNumber(PUnderlying underlying)
     {
         super(MBundle.INSTANCE.id(), "double", 
                 DoubleAttribute.class,
                 1, 1, 8,
-                PUnderlying.DOUBLE);
+                underlying);
     }
     
     @Override

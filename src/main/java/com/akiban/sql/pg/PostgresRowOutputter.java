@@ -46,13 +46,11 @@ public class PostgresRowOutputter extends PostgresOutputter<Row>
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
-            PValueSource pfield = row.pvalue(i);
-            ValueSource field = row.eval(i);
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
             ByteArrayOutputStream bytes;
-            if (Types3Switch.ON) bytes = encoder.encodePValue(pfield, type, binary);
-            else bytes = encoder.encodeValue(field, type, binary);
+            if (Types3Switch.ON) bytes = encoder.encodePValue(row.pvalue(i), type, binary);
+            else bytes = encoder.encodeValue(row.eval(i), type, binary);
             if (bytes == null) {
                 messenger.writeInt(-1);
             }

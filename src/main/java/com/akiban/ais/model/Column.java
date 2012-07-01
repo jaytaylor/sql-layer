@@ -454,13 +454,13 @@ public class Column
             tinst = MApproximateNumber.DOUBLE.instance();
             break;
         case T_U_DOUBLE:
-            tinst = null; // TODO
+            tinst = MApproximateNumber.DOUBLE_UNSIGNED.instance();
             break;
         case T_FLOAT:
-            tinst = null; // TODO
+            tinst = MApproximateNumber.FLOAT.instance();
             break;
         case T_U_FLOAT:
-            tinst = null; // TODO
+            tinst = MApproximateNumber.FLOAT_UNSIGNED.instance();
             break;
         case T_INT:
             tinst = MNumeric.INT.instance();
