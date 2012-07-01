@@ -29,7 +29,7 @@ import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimal;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -131,7 +131,7 @@ public abstract class MRoundBase extends TOverloadBase {
             }
         };
 
-        TOverload inexactType = new MRoundBase(roundType, MDouble.INSTANCE) {
+        TOverload inexactType = new MRoundBase(roundType, MApproximateNumber.INSTANCE) {
             private int DEFAULT_DOUBLE = 17;
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {

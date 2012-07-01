@@ -29,7 +29,7 @@ package com.akiban.server.types3.mcompat.mcasts;
 import com.akiban.server.types3.*;
 import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -78,7 +78,7 @@ public class Cast_From_Time {
 
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
 
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.TIME, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.TIME, MApproximateNumber.INSTANCE, true, Constantness.UNKNOWN);
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     

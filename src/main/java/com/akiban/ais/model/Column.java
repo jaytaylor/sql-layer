@@ -31,7 +31,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
@@ -451,7 +451,7 @@ public class Column
             tinst = MNumeric.DECIMAL_UNSIGNED.instance(typeParameter1.intValue(), typeParameter2.intValue());
             break;
         case T_DOUBLE:
-            tinst = MDouble.INSTANCE.instance();
+            tinst = MApproximateNumber.INSTANCE.instance();
             break;
         case T_U_DOUBLE:
             tinst = null; // TODO

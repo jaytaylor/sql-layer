@@ -38,9 +38,9 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
-public class MDouble extends TClass
+public class MApproximateNumber extends TClass
 {
-    public static final TClass INSTANCE = new MDouble();
+    public static final TClass INSTANCE = new MApproximateNumber();
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
@@ -50,7 +50,7 @@ public class MDouble extends TClass
     
     public static double round(TInstance instance, double val)
     {
-        assert instance.typeClass() instanceof MDouble : "instance has to be of type MDouble";
+        assert instance.typeClass() instanceof MApproximateNumber : "instance has to be of type MDouble";
 
         // meta data
         double meta[] = (double[])instance.getMetaData();
@@ -134,7 +134,7 @@ public class MDouble extends TClass
         }
     }
 
-    MDouble()
+    MApproximateNumber()
     {
         super(MBundle.INSTANCE.id(), "double", 
                 DoubleAttribute.class,

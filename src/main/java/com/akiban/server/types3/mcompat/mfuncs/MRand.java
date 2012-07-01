@@ -28,9 +28,9 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.common.funcs.Rand;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
 public class MRand {
-    public static final TOverload[] INSTANCES = Rand.create(MNumeric.INT, MDouble.INSTANCE);
+    public static final TOverload[] INSTANCES = Rand.create(MNumeric.INT, MApproximateNumber.INSTANCE);
 }

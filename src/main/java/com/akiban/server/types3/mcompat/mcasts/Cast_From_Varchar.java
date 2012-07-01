@@ -33,7 +33,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -239,7 +239,7 @@ public class Cast_From_Varchar
             throw new UnsupportedOperationException("not supported yet");
         }
     };
-    public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MDouble.INSTANCE, true, Constantness.UNKNOWN)
+    public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MApproximateNumber.INSTANCE, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)

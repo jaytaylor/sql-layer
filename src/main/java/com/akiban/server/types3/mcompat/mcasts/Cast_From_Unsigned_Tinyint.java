@@ -27,7 +27,7 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.Constantness;
@@ -76,7 +76,7 @@ public class Cast_From_Unsigned_Tinyint
     
     public static final TCast TO_DECIMAL = new FromInt16ToDecimal(MNumeric.TINYINT_UNSIGNED, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUGLE = new FromInt16ToDouble(MNumeric.TINYINT_UNSIGNED, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUGLE = new FromInt16ToDouble(MNumeric.TINYINT_UNSIGNED, MApproximateNumber.INSTANCE, true, Constantness.UNKNOWN);
     
     public static final TCast TO_VARCHAR = new FromInt16ToString(MNumeric.TINYINT_UNSIGNED, MString.VARCHAR, true, Constantness.UNKNOWN);
 }

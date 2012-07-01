@@ -32,7 +32,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -59,7 +59,7 @@ public class MSum implements TAggregator {
                 }
             }
         }, 
-        DOUBLE(MDouble.INSTANCE) {
+        DOUBLE(MApproximateNumber.INSTANCE) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
                 double oldState = source.getDouble();

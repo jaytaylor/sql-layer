@@ -28,8 +28,8 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.common.funcs.TPow;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MPow {
-    public static final TOverload INSTANCE = new TPow(MDouble.INSTANCE) {};
+    public static final TOverload INSTANCE = new TPow(MApproximateNumber.INSTANCE) {};
 }

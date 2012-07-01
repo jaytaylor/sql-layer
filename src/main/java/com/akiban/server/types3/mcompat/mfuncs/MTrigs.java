@@ -28,7 +28,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.common.funcs.TTrigs;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MTrigs
 {
@@ -40,5 +40,5 @@ public class MTrigs
     // (each differing from each other by the width)
     // So we'd define a fixed/default width that this function returns
     
-    public static final TOverload TRIGS[] = TTrigs.create(MDouble.INSTANCE.instance());
+    public static final TOverload TRIGS[] = TTrigs.create(MApproximateNumber.INSTANCE.instance());
 }
