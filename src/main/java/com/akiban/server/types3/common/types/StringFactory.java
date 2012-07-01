@@ -34,23 +34,39 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.util.Enums;
 
+import java.util.HashMap;
+import java.util.Map;
+
 public class StringFactory implements TFactory
 {
     //--------------------------------CHARSET-----------------------------------
     //TODO: add more charsets as needed
     public static enum Charset
     {
-        LATIN1, UTF8, UTF16
+        LATIN1, UTF_8, UTF_16, ISO88591
         ;
         
         public static Charset of(String value) {
             // Could optimize this with a StringBuilder, for-loop, etc
-            value = value.toUpperCase().replace("-", "").replace("_", "");
-            try {
-                return valueOf(value);
-            } catch (IllegalArgumentException e) {
+            value = value.toUpperCase().replace('-', '_');
+            Charset charset = lookupMap.get(value);
+            if (charset == null)
                 throw new AkibanInternalException("not a valid encoding: " + value);
+            return charset;
+        }
+        
+        private static final Map<String,Charset> lookupMap = createLookupMap();
+
+        private static Map<String, Charset> createLookupMap() {
+            Map<String,Charset> map = new HashMap<String, Charset>();
+            for (Charset charset : Charset.values()) {
+                map.put(charset.name(), charset);
             }
+            // aliases
+            map.put("ISO_8859_1", LATIN1);
+            map.put("UTF8", UTF_8);
+            map.put("UTF16", UTF_16);
+            return map;
         }
     }
     
@@ -62,7 +78,7 @@ public class StringFactory implements TFactory
     // default number of characters in a string      
     protected static final int DEFAULT_LENGTH = 255;
     
-    protected static final Charset DEFAULT_CHARSET = Charset.UTF8;
+    protected static final Charset DEFAULT_CHARSET = Charset.UTF_8;
     
     protected static final int DEFAULT_COLLATION_ID = 0; // TODO:
     
