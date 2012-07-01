@@ -124,7 +124,10 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("CALL " + nrows);
+            if (useCopy)
+                messenger.writeString("COPY"); // Make CopyManager happy.
+            else
+                messenger.writeString("CALL " + nrows);
             messenger.sendMessage();
         }
         return nrows;
