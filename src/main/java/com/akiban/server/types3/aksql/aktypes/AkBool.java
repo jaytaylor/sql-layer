@@ -29,6 +29,7 @@ package com.akiban.server.types3.aksql.aktypes;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.sql.types.TypeId;
 
 /**
  * 
@@ -37,5 +38,5 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 public class AkBool
 {
     public static final NoAttrTClass INSTANCE = new NoAttrTClass(
-            AkBundle.INSTANCE.id(), "boolean", 1, 1, 1, PUnderlying.BOOL);
+            AkBundle.INSTANCE.id(), "boolean", 1, 1, 1, PUnderlying.BOOL, TypeId.BOOLEAN_ID);
 }

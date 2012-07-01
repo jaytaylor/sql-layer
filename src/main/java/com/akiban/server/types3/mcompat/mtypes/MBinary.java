@@ -23,19 +23,21 @@ import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.TypeId;
 
-public final class MBinary extends TClass {
+public final class MBinary extends SimpleDtdTClass {
 
-    public static final TClass VARBINARY = new MBinary("varbinary", -1);
-    public static final TClass BINARY = new MBinary("varbinary", -1);
-    public static final TClass TINYBLOB = new MBinary("tinyblob", 256);
-    public static final TClass MEDIUMBLOB = new MBinary("mediumblob", 65535);
-    public static final TClass BLOB = new MBinary("blob", 16777215);
-    public static final TClass LONGBLOB = new MBinary("longblob", Integer.MAX_VALUE); // TODO not big enough!
+    public static final TClass VARBINARY = new MBinary(TypeId.VARBIT_ID, "varbinary", -1);
+    public static final TClass BINARY = new MBinary(TypeId.BIT_ID, "varbinary", -1);
+    public static final TClass TINYBLOB = new MBinary(TypeId.BLOB_ID, "tinyblob", 256);
+    public static final TClass MEDIUMBLOB = new MBinary(TypeId.BLOB_ID, "mediumblob", 65535);
+    public static final TClass BLOB = new MBinary(TypeId.BLOB_ID, "blob", 16777215);
+    public static final TClass LONGBLOB = new MBinary(TypeId.BLOB_ID, "longblob", Integer.MAX_VALUE); // TODO not big enough!
     
     public enum Attrs implements Attribute {
         LENGTH
@@ -92,8 +94,8 @@ public final class MBinary extends TClass {
         }
     }
     
-    private MBinary(String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, Attrs.class, 1, 1, -1, PUnderlying.BYTES);
+    private MBinary(TypeId typeId, String name, int defaultLength) {
+        super(MBundle.INSTANCE.id(), name, Attrs.class, 1, 1, -1, PUnderlying.BYTES, typeId);
         this.defaultLength = defaultLength;
     }
     

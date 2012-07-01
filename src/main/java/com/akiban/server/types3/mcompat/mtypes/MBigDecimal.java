@@ -37,6 +37,9 @@ import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
+
 import java.util.Arrays;
 
 public class MBigDecimal extends TClass {
@@ -50,6 +53,20 @@ public class MBigDecimal extends TClass {
     
     public MBigDecimal(){
         super(MBundle.INSTANCE.id(), "decimal", Attrs.class, 1, 1, 8, PUnderlying.BYTES);
+    }
+
+    @Override
+    public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+        // stolen from TypesTranslation
+        int precision = instance.attribute(Attrs.PRECISION);
+        int scale = instance.attribute(Attrs.SCALE);
+        return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, instance.nullability(),
+                DataTypeDescriptor.computeMaxWidth(precision, scale));
+    }
+
+    @Override
+    public void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     public static String getNum(int scale, int precision)

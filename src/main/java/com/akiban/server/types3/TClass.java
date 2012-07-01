@@ -32,6 +32,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.TypeId;
 import com.akiban.util.ArgumentValidation;
 import java.util.EnumSet;
 import java.util.regex.Pattern;
@@ -40,20 +41,14 @@ public abstract class TClass {
 
     public abstract TFactory factory();
 
-    public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
-        throw new UnsupportedOperationException(); // TODO remove this, make it abstract
+    public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
+
+    public void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
+        out.putValueSource(inValue);
     }
 
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
         output.append(value);
-    }
-    
-    public /*abstract*/ void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        throw new AssertionError("make this abstract and implement in all subclasses"); // TODO
-    }
-
-    public Object getSwitcher() {
-        throw new UnsupportedOperationException(); // TODO get this from bundle
     }
 
     public abstract void putSafety(QueryContext context,
@@ -63,7 +58,7 @@ public abstract class TClass {
                         PValueTarget targetValue);
 
     public abstract TInstance instance();
-    
+
     public TInstance instance(int arg0)
     {
         return createInstance(1, arg0, EMPTY, EMPTY, EMPTY);
@@ -174,11 +169,11 @@ public abstract class TClass {
 
      protected <A extends Enum<A> & Attribute> TClass(TName name,
             Class<A> enumClass,
-            int internalRepVersion, int serializationVersion, int serializationSize, 
+            int internalRepVersion, int serializationVersion, int serializationSize,
             PUnderlying pUnderlying)
      {
-         
-         ArgumentValidation.notNull("name", name); 
+
+         ArgumentValidation.notNull("name", name);
          this.name = name;
          this.internalRepVersion = internalRepVersion;
          this.serializationVersion = serializationVersion;
@@ -187,7 +182,7 @@ public abstract class TClass {
          EnumSet<? extends Attribute> legalAttributes = EnumSet.allOf(enumClass);
          attributes = new Attribute[legalAttributes.size()];
          legalAttributes.toArray(attributes);
-         
+
          this.enumClass = enumClass;
          for (int i = 0; i < attributes.length; ++i)
          {
@@ -207,9 +202,9 @@ public abstract class TClass {
                 enumClass,
                 internalRepVersion, serializationVersion, serializationSize,
                 pUnderlying);
-    
+
      }
-     
+
     private final TName name;
     private final Class<?> enumClass;
     private final Attribute[] attributes;

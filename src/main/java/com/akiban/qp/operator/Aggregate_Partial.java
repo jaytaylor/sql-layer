@@ -616,7 +616,7 @@ final class Aggregate_Partial extends Operator
                 }
                 pAggrsStates = new ArrayList<PValue>(pAggrs.size());
                 for (TAggregator aggr : pAggrs) {
-                    assert false;
+                    assert false : "need to pass these in";
                     pAggrsStates.add(null); // TODO
                 }
             }

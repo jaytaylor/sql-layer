@@ -32,19 +32,28 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TypeDeclarationException;
 import com.akiban.server.types3.common.types.NumericAttribute;
+import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.TypeId;
 
-public class MNumeric extends TClass {
+public class MNumeric extends SimpleDtdTClass {
 
     protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying, int defaultWidth) {
         super(MBundle.INSTANCE.id(), name, 
                 NumericAttribute.class,
                 1, 1, serializationSize, 
-                pUnderlying);
+                pUnderlying, inferTypeid(name));
         this.defaultWidth = defaultWidth;
+    }
+
+    private static TypeId inferTypeid(String name) {
+        if (name.contains("unsigned"))
+            return TypeId.INTEGER_UNSIGNED_ID;
+        else
+            return TypeId.INTEGER_ID;
     }
 
     @Override

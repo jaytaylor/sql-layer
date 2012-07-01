@@ -38,6 +38,8 @@ import java.text.DateFormatSymbols;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.akiban.sql.types.TypeId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
@@ -47,15 +49,15 @@ public class MDatetimes
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
     
     public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
-            "date", 1, 1, 4, PUnderlying.INT_32);
+            "date", 1, 1, 4, PUnderlying.INT_32, TypeId.DATE_ID);
     public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
-            "datetime", 1, 1, 8, PUnderlying.INT_64);
+            "datetime", 1, 1, 8, PUnderlying.INT_64, TypeId.DATETIME_ID);
     public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
-            "time", 1, 1, 4, PUnderlying.INT_32);
+            "time", 1, 1, 4, PUnderlying.INT_32, TypeId.TIME_ID);
     public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
-            "year", 1, 1, 1, PUnderlying.INT_8);
+            "year", 1, 1, 1, PUnderlying.INT_8, TypeId.YEAR_ID);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
-            "timestamp", 1, 1, 4, PUnderlying.INT_32);
+            "timestamp", 1, 1, 4, PUnderlying.INT_32, TypeId.TIMESTAMP_ID);
 
     public static final List<String> SUPPORTED_LOCALES = new LinkedList<String>();
     
@@ -477,7 +479,7 @@ public class MDatetimes
     }
 
     /**
-     * @param val[] array encoding year, month, day, hour, min, sec
+     * @param val array encoding year, month, day, hour, min, sec
      * @param tz
      * @return a unix timestamp (w/o range-checking)
      */

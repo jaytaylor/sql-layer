@@ -29,6 +29,7 @@ package com.akiban.server.types3.aksql.aktypes;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.sql.types.TypeId;
 
 public class AkNumeric {
 
@@ -49,6 +50,7 @@ public class AkNumeric {
                                        int size,
                                        PUnderlying underlying)
     {
-        return new NoAttrTClass(AkBundle.INSTANCE.id(), name, internalVersion, serialVersion, size, underlying);
+        return new NoAttrTClass(AkBundle.INSTANCE.id(), name, internalVersion, serialVersion, size, underlying,
+                TypeId.INTEGER_ID);
     }
 }
