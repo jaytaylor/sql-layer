@@ -26,55 +26,82 @@
 
 package com.akiban.qp.loadableplan.std;
 
-import static org.junit.Assert.*;
-
-import java.util.List;
-
-import org.junit.Test;
-
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.test.it.ITBase;
+import com.akiban.sql.TestBase;
+import com.akiban.sql.pg.PostgresServerFilesITBase;
 
-public class PersistitCLILoadablePlanIT extends ITBase {
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.sql.Statement;
+import java.io.File;
+import java.util.List;
+
+public class DumpGroupLoadablePlanIT extends PostgresServerFilesITBase
+{
+    public static final File RESOURCE_DIR = 
+        new File("src/test/resources/"
+                 + DumpGroupLoadablePlanIT.class.getPackage().getName().replace('.', '/'));
+    public static final File SCHEMA_FILE = new File(RESOURCE_DIR, "schema.ddl");
+    public static final String GROUP_NAME = "customers";
+    public static final File TEST_FILE = new File(RESOURCE_DIR, GROUP_NAME + ".sql");
+    
+    @Before
+    public void loadDatabase() throws Exception {
+        loadSchemaFile(SCHEMA_FILE);
+    }
 
     @Test
-    public void invokePersistitOperation() throws Exception {
-        PersistitCLILoadablePlan loadablePlan = new PersistitCLILoadablePlan();
+    public void testDump() throws Exception {
+        // Run the INSERTs via SQL.
+        String sql = TestBase.fileContents(TEST_FILE);
+
+        Statement stmt = getConnection().createStatement();
+        for (String sqls : sql.split("\\;\\s*")) {
+            stmt.execute(sqls);
+        }
+        stmt.close();
+
+        DumpGroupLoadablePlan loadablePlan = new DumpGroupLoadablePlan();
         DirectObjectPlan plan = loadablePlan.plan();
 
         Schema schema = new Schema(rowDefCache().ais());
         PersistitAdapter adapter = persistitAdapter(schema);
-        QueryContext queryContext = queryContext(adapter);
+        QueryContext queryContext = new SimpleQueryContext(adapter) {
+                @Override
+                public String getCurrentUser() {
+                    return SCHEMA_NAME;
+                }
+            };
+        queryContext.setValue(0, SCHEMA_NAME);
+        queryContext.setValue(1, GROUP_NAME);
 
         DirectObjectCursor cursor = plan.cursor(queryContext);
-        queryContext.setValue(0, "stat");
-        queryContext.setValue(1, "count=3");
-        queryContext.setValue(2, "delay=2");
-        queryContext.setValue(3, "-a");
         
-        int populatedResults = 0;
-        int emptyResults = 0;
-        
+        StringBuilder actual = new StringBuilder();
+
         cursor.open();
         while(true) {
             List<? extends Object> columns = cursor.next();
             if (columns == null) {
                 break;
             }
-            if (columns.isEmpty()) {
-                emptyResults++;
-            } else {
-                assertEquals(1, columns.size());
-                assertTrue(columns.get(0) instanceof String);
-                populatedResults++;
+            else if (!columns.isEmpty()) {
+                assertTrue(columns.size() == 1);
+                if (actual.length() > 0)
+                    actual.append("\n");
+                actual.append(columns.get(0));
             }
         }
         cursor.close();
-        assertEquals(3, populatedResults);
-        assertTrue(emptyResults > 0 && emptyResults < 60);
+
+        assertEquals(sql, actual.toString());
     }
+
 }
