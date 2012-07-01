@@ -34,8 +34,8 @@ import com.akiban.server.types3.service.Scalar;
 public class MLogBase
 {
     @Scalar
-    public static final TOverload INSTANCES[] = TLog.create(MApproximateNumber.INSTANCE.instance());
+    public static final TOverload INSTANCES[] = TLog.create(MApproximateNumber.DOUBLE.instance());
 
     @Scalar
-    public static final TOverload TWO_ARG = new MLog(MApproximateNumber.INSTANCE);
+    public static final TOverload TWO_ARG = new MLog(MApproximateNumber.DOUBLE);
 }

@@ -96,7 +96,7 @@ public class MAbs {
             output.putObject(wrapper.abs());
         }
     };
-    public static final TOverload DOUBLE = new Abs(MApproximateNumber.INSTANCE) {
+    public static final TOverload DOUBLE = new Abs(MApproximateNumber.DOUBLE) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {

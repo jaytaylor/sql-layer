@@ -131,7 +131,7 @@ public abstract class MRoundBase extends TOverloadBase {
             }
         };
 
-        TOverload inexactType = new MRoundBase(roundType, MApproximateNumber.INSTANCE) {
+        TOverload inexactType = new MRoundBase(roundType, MApproximateNumber.DOUBLE) {
             private int DEFAULT_DOUBLE = 17;
             @Override
             protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {

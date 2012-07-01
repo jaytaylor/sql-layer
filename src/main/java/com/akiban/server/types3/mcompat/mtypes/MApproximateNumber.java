@@ -40,7 +40,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public class MApproximateNumber extends TClass
 {
-    public static final TClass INSTANCE = new MApproximateNumber();
+    public static final TClass DOUBLE = new MApproximateNumber();
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;

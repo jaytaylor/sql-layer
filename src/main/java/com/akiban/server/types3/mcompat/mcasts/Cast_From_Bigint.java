@@ -80,7 +80,7 @@ public class Cast_From_Bigint
     
     public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.BIGINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.BIGINT, MApproximateNumber.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.BIGINT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
     public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, true, Constantness.UNKNOWN)
     {

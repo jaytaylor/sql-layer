@@ -83,7 +83,7 @@ public class Cast_From_Date
     
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.DATE, MApproximateNumber.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.DATE, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.DATE, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     

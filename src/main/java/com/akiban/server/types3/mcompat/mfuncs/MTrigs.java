@@ -40,5 +40,5 @@ public class MTrigs
     // (each differing from each other by the width)
     // So we'd define a fixed/default width that this function returns
     
-    public static final TOverload TRIGS[] = TTrigs.create(MApproximateNumber.INSTANCE.instance());
+    public static final TOverload TRIGS[] = TTrigs.create(MApproximateNumber.DOUBLE.instance());
 }

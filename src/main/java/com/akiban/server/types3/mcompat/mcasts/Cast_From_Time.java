@@ -78,7 +78,7 @@ public class Cast_From_Time {
 
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
 
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.TIME, MApproximateNumber.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.TIME, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     

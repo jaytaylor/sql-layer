@@ -451,7 +451,7 @@ public class Column
             tinst = MNumeric.DECIMAL_UNSIGNED.instance(typeParameter1.intValue(), typeParameter2.intValue());
             break;
         case T_DOUBLE:
-            tinst = MApproximateNumber.INSTANCE.instance();
+            tinst = MApproximateNumber.DOUBLE.instance();
             break;
         case T_U_DOUBLE:
             tinst = null; // TODO

@@ -50,8 +50,8 @@ public class NoArgFuncs
     public static final TPreparedExpression PI = new TPreparedExpression()
     {
         private final PValue VAL = new PValue(Math.PI);
-        private final TPreptimeValue PREP_VAL = new TPreptimeValue(MApproximateNumber.INSTANCE.instance(), VAL);
-        private final TInstance RESULT_TYPE = MApproximateNumber.INSTANCE.instance();
+        private final TPreptimeValue PREP_VAL = new TPreptimeValue(MApproximateNumber.DOUBLE.instance(), VAL);
+        private final TInstance RESULT_TYPE = MApproximateNumber.DOUBLE.instance();
         
         @Override
         public TPreptimeValue evaluateConstant()

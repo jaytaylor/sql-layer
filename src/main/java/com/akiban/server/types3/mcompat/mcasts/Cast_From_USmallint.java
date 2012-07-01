@@ -76,7 +76,7 @@ public class Cast_From_USmallint
 
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MNumeric.SMALLINT_UNSIGNED, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
 
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MNumeric.SMALLINT_UNSIGNED, MApproximateNumber.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MNumeric.SMALLINT_UNSIGNED, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
 
     public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MNumeric.SMALLINT_UNSIGNED, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     

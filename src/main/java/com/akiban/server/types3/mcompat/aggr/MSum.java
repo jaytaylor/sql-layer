@@ -59,7 +59,7 @@ public class MSum implements TAggregator {
                 }
             }
         }, 
-        DOUBLE(MApproximateNumber.INSTANCE) {
+        DOUBLE(MApproximateNumber.DOUBLE) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
                 double oldState = source.getDouble();

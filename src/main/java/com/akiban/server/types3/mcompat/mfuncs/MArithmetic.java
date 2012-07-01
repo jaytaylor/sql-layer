@@ -167,7 +167,7 @@ public class MArithmetic {
     };
     
     // (Regular) Divide functions
-   public static final TOverload DIVIDE_TINYINT = new TArithmetic("/", MNumeric.TINYINT, MApproximateNumber.INSTANCE.instance())
+   public static final TOverload DIVIDE_TINYINT = new TArithmetic("/", MNumeric.TINYINT, MApproximateNumber.DOUBLE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -180,7 +180,7 @@ public class MArithmetic {
         }
     };
 
-   public static final TOverload DIVIDE_SMALLINT = new TArithmetic("/", MNumeric.SMALLINT, MApproximateNumber.INSTANCE.instance())
+   public static final TOverload DIVIDE_SMALLINT = new TArithmetic("/", MNumeric.SMALLINT, MApproximateNumber.DOUBLE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -193,7 +193,7 @@ public class MArithmetic {
         }
     };
     
-   public static final TOverload DIVIDE_INT = new TArithmetic("/", MNumeric.INT, MApproximateNumber.INSTANCE.instance())
+   public static final TOverload DIVIDE_INT = new TArithmetic("/", MNumeric.INT, MApproximateNumber.DOUBLE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -206,7 +206,7 @@ public class MArithmetic {
         }
     };
     
-   public static final TOverload DIVIDE_BIGINT = new TArithmetic("/", MNumeric.BIGINT, MApproximateNumber.INSTANCE.instance())
+   public static final TOverload DIVIDE_BIGINT = new TArithmetic("/", MNumeric.BIGINT, MApproximateNumber.DOUBLE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
@@ -219,7 +219,7 @@ public class MArithmetic {
         }
     };
 
-   public static final TOverload DIVIDE_DOUBLE = new TArithmetic("/", MApproximateNumber.INSTANCE, MApproximateNumber.INSTANCE.instance())
+   public static final TOverload DIVIDE_DOUBLE = new TArithmetic("/", MApproximateNumber.DOUBLE, MApproximateNumber.DOUBLE.instance())
     {
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)

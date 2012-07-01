@@ -31,5 +31,5 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MSqrt {
 
-    public static final TOverload INSTANCE = new Sqrt(MApproximateNumber.INSTANCE);
+    public static final TOverload INSTANCE = new Sqrt(MApproximateNumber.DOUBLE);
 }

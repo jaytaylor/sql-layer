@@ -69,7 +69,7 @@ public class MMinMax implements TAggregator {
                 state.putInt64(mType.condition(oldState - input) ? oldState : input);
             } 
         }, 
-        DOUBLE(MApproximateNumber.INSTANCE) {
+        DOUBLE(MApproximateNumber.DOUBLE) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
                 double oldState = source.getDouble();

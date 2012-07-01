@@ -43,7 +43,7 @@ public class MRadians extends TOverloadBase {
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MApproximateNumber.INSTANCE, 0);
+        builder.covers(MApproximateNumber.DOUBLE, 0);
     }
 
     @Override
@@ -58,6 +58,6 @@ public class MRadians extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MApproximateNumber.INSTANCE.instance());
+        return TOverloadResult.fixed(MApproximateNumber.DOUBLE.instance());
     }
 }

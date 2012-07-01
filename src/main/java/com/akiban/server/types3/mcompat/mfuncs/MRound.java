@@ -32,5 +32,5 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 public class MRound {
     public static final TOverload[] INSTANCES = MRoundBase.create(MRoundBase.RoundType.ROUND);
     
-    public static final TOverload TWO_ARG = new M2ArgRoundBase(M2ArgRoundBase.RoundType.ROUND, MApproximateNumber.INSTANCE);
+    public static final TOverload TWO_ARG = new M2ArgRoundBase(M2ArgRoundBase.RoundType.ROUND, MApproximateNumber.DOUBLE);
 }

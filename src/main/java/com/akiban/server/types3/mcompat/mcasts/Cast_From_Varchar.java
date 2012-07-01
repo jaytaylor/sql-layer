@@ -239,7 +239,7 @@ public class Cast_From_Varchar
             throw new UnsupportedOperationException("not supported yet");
         }
     };
-    public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MApproximateNumber.INSTANCE, true, Constantness.UNKNOWN)
+    public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)

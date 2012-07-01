@@ -32,5 +32,5 @@ import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 
 public class MExp
 {
-    public static final TOverload INSTANCE = new Exp(MApproximateNumber.INSTANCE);
+    public static final TOverload INSTANCE = new Exp(MApproximateNumber.DOUBLE);
 }
