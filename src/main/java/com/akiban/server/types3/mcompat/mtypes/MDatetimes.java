@@ -571,7 +571,7 @@ public class MDatetimes
     private static final int TIME_FRAC_GROUP = 9;
     private static final int TIME_TIMEZONE_GROUP = 10;
     private static final Pattern PARSE_PATTERN 
-            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+ (\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
+            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
 
     // upper and lower limit of TIMESTAMP value
     // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
