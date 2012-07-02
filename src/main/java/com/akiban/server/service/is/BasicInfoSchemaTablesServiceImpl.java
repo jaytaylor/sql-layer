@@ -113,7 +113,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new SchemaScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -121,10 +121,10 @@ public class BasicInfoSchemaTablesServiceImpl
             return aisHolder.getAis().getSchemas().size();
         }
 
-        private class SchemaScan extends Scan {
+        private class Scan extends BaseScan {
             final Iterator<Schema> it = aisHolder.getAis().getSchemas().values().iterator();
 
-            public SchemaScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super (rowType);
             }
 
@@ -152,7 +152,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new TablesScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -160,10 +160,10 @@ public class BasicInfoSchemaTablesServiceImpl
             return aisHolder.getAis().getUserTables().size();
         }
 
-        private class TablesScan extends Scan {
+        private class Scan extends BaseScan {
             final Iterator<UserTable> it = aisHolder.getAis().getUserTables().values().iterator();
 
-            public TablesScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType);
             }
 
@@ -196,7 +196,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new ColumnsScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -208,11 +208,11 @@ public class BasicInfoSchemaTablesServiceImpl
             return count;
         }
         
-        private class ColumnsScan extends Scan {
+        private class Scan extends BaseScan {
             final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
             Iterator<Column> columnIt;
 
-            public ColumnsScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType);
             }
 
@@ -281,7 +281,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new ConstraintsScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -294,10 +294,10 @@ public class BasicInfoSchemaTablesServiceImpl
             return count;
         }
 
-        private class ConstraintsScan extends Scan {
+        private class Scan extends BaseScan {
             final TableConstraintsIteration it = newIteration();
 
-            public ConstraintsScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType);
             }
 
@@ -330,7 +330,7 @@ public class BasicInfoSchemaTablesServiceImpl
         public long rowCount() {
             return 0;
         }
-        private class ConstraintsScan extends Scan {
+        private class ConstraintsScan extends BaseScan {
 
             public ConstraintsScan(RowType rowType) {
                 super(rowType);
@@ -354,7 +354,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new ConstraintsScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -369,10 +369,10 @@ public class BasicInfoSchemaTablesServiceImpl
             return count;
         }
 
-        private class ConstraintsScan extends Scan {
+        private class Scan extends BaseScan {
             final Iterator<UserTable> tableIt = newIteration();
 
-            public ConstraintsScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType);
             }
 
@@ -416,7 +416,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new KeyColumnScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -429,7 +429,7 @@ public class BasicInfoSchemaTablesServiceImpl
             return count;
         }
 
-        private class KeyColumnScan extends Scan {
+        private class Scan extends BaseScan {
             final TableConstraintsIteration it = newIteration();
             Iterator<IndexColumn> indexColIt;
             Iterator<JoinColumn> joinColIt;
@@ -437,7 +437,7 @@ public class BasicInfoSchemaTablesServiceImpl
             int colPos;
             Integer posInUnique;
 
-            public KeyColumnScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType);
             }
 
@@ -506,7 +506,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new IndexesScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -519,10 +519,10 @@ public class BasicInfoSchemaTablesServiceImpl
             return count;
         }
 
-        private class IndexesScan extends Scan{
+        private class Scan extends BaseScan {
             final IndexIteration indexIt = newIteration();
 
-            public IndexesScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType);
             }
 
@@ -568,7 +568,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public MemoryGroupCursor.GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new IndexColumnsScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -582,11 +582,11 @@ public class BasicInfoSchemaTablesServiceImpl
             return count;
         }
 
-        private class IndexColumnsScan extends Scan{
+        private class Scan extends BaseScan {
             final IndexIteration indexIt = newIteration();
             Iterator<IndexColumn> indexColumnIt;
 
-            public IndexColumnsScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType);
             }
 
