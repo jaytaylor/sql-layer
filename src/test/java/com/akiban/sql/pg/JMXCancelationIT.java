@@ -32,8 +32,13 @@ import org.junit.Before;
 import org.junit.Test;
 import static junit.framework.Assert.*;
 
+import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 
 public class JMXCancelationIT extends PostgresServerITBase
 {
@@ -43,7 +48,7 @@ public class JMXCancelationIT extends PostgresServerITBase
 
     @Before
     public void loadDB() throws Exception {
-        Statement statement = connection.createStatement();
+        Statement statement = getConnection().createStatement();
         statement.execute("CREATE TABLE t(id INTEGER NOT NULL PRIMARY KEY)");
         for (int id = 0; id < N; id++) {
             statement.execute(String.format("INSERT INTO t VALUES(%s)", id));
@@ -54,23 +59,42 @@ public class JMXCancelationIT extends PostgresServerITBase
     @Test
     public void testCancel() throws Exception {
         test("cancelQuery", false);
+    }
+
+    @Test
+    public void testKillConnection() throws Exception {
         test("killConnection", true);
     }
 
     private void test(String method, boolean closedOK) throws Exception {
-        Thread queryThread = startQueryThread(closedOK);
-        Thread.sleep(250);
         JMXInterpreter jmx = null;
         try {
             jmx = new JMXInterpreter(false);
+
             Integer[] sessions = (Integer[])
                 jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
                                  "com.akiban:type=PostgresServer",
                                  "CurrentSessions", null, "get");
-            assertEquals(1, sessions.length);
+            List<Integer> before = Arrays.asList(sessions);
+
+            Thread queryThread = startQueryThread(closedOK);
+            Thread.sleep(250);
+
+            sessions = (Integer[])
+                jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
+                                 "com.akiban:type=PostgresServer",
+                                 "CurrentSessions", null, "get");
+            List<Integer> after = Arrays.asList(sessions);
+            after = new ArrayList<Integer>(after);
+            after.removeAll(before);
+
+            assertEquals(1, after.size());
+            Integer session = after.get(0);
+
             jmx.makeBeanCall(SERVER_ADDRESS, SERVER_JMX_PORT,
                              "com.akiban:type=PostgresServer",
-                             method, sessions, "method");
+                             method, new Object[] { session }, "method");
+
             queryThread.join();
         }
         finally {
@@ -84,8 +108,10 @@ public class JMXCancelationIT extends PostgresServerITBase
         Thread thread = new Thread(new Runnable() {
                 @Override
                 public void run() {
+                    Connection connection = null;
                     Statement statement = null;
                     try {
+                        connection = openConnection();
                         statement = connection.createStatement();
                         statement.execute("SELECT COUNT(*) FROM t t1, t t2, t t3");
                         fail("Query should not complete.");
@@ -103,8 +129,9 @@ public class JMXCancelationIT extends PostgresServerITBase
                         try {
                             if (statement != null)
                                 statement.close();
+                            closeConnection(connection);
                         }
-                        catch (SQLException ex) {
+                        catch (Exception ex) {
                         }
                     }
                 }

@@ -30,7 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
@@ -43,7 +43,7 @@ public class MRadians extends TOverloadBase {
     
     @Override
     protected void buildInputSets(TInputSetBuilder builder) {
-        builder.covers(MDouble.INSTANCE, 0);
+        builder.covers(MApproximateNumber.DOUBLE, 0);
     }
 
     @Override
@@ -58,6 +58,6 @@ public class MRadians extends TOverloadBase {
 
     @Override
     public TOverloadResult resultType() {
-        return TOverloadResult.fixed(MDouble.INSTANCE.instance());
+        return TOverloadResult.fixed(MApproximateNumber.DOUBLE.instance());
     }
 }

@@ -33,7 +33,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -64,7 +64,7 @@ public class Cast_From_Datetime
     
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt64ToInt64(MDatetimes.DATETIME, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MDatetimes.DATETIME, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MDatetimes.DATETIME, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
     public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MDatetimes.DATETIME, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     

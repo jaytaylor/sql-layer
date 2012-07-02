@@ -38,6 +38,8 @@ import java.text.DateFormatSymbols;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import com.akiban.sql.types.TypeId;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
@@ -47,15 +49,15 @@ public class MDatetimes
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
     
     public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
-            "date", 1, 1, 4, PUnderlying.INT_32);
+            "date", 1, 1, 4, PUnderlying.INT_32, TypeId.DATE_ID);
     public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
-            "datetime", 1, 1, 8, PUnderlying.INT_64);
+            "datetime", 1, 1, 8, PUnderlying.INT_64, TypeId.DATETIME_ID);
     public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
-            "time", 1, 1, 4, PUnderlying.INT_32);
+            "time", 1, 1, 4, PUnderlying.INT_32, TypeId.TIME_ID);
     public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
-            "year", 1, 1, 1, PUnderlying.INT_8);
+            "year", 1, 1, 1, PUnderlying.INT_8, TypeId.YEAR_ID);
     public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
-            "timestamp", 1, 1, 4, PUnderlying.INT_32);
+            "timestamp", 1, 1, 4, PUnderlying.INT_32, TypeId.TIMESTAMP_ID);
 
     public static final List<String> SUPPORTED_LOCALES = new LinkedList<String>();
     
@@ -77,7 +79,7 @@ public class MDatetimes
 
        for (String locale : SUPPORTED_LOCALES)
        {
-           DateFormatSymbols fm = new DateFormatSymbols(new Locale(System.getProperty(locale)));
+           DateFormatSymbols fm = new DateFormatSymbols(new Locale(locale));
            
            months.put(locale, fm.getMonths());
            shortMonths.put(locale, fm.getShortMonths());
@@ -477,7 +479,7 @@ public class MDatetimes
     }
 
     /**
-     * @param val[] array encoding year, month, day, hour, min, sec
+     * @param val array encoding year, month, day, hour, min, sec
      * @param tz
      * @return a unix timestamp (w/o range-checking)
      */
@@ -571,12 +573,12 @@ public class MDatetimes
     private static final int TIME_FRAC_GROUP = 9;
     private static final int TIME_TIMEZONE_GROUP = 10;
     private static final Pattern PARSE_PATTERN 
-            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+ (\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
+            = Pattern.compile("^((\\d+)-(\\d+)-(\\d+))(\\s+(\\d+):(\\d+):(\\d+)(\\.\\d+)?([+-]\\d+:\\d+)?)?$");
 
     // upper and lower limit of TIMESTAMP value
     // as per http://dev.mysql.com/doc/refman/5.5/en/datetime.html
-    public static final long TIMESTAMP_MAX = new DateTime("1970-01-01 00:00:01Z").getMillis();
-    public static final long TIMESTAMP_MIN = new DateTime("2038-01-19 03:14:07Z").getMillis();
+    public static final long TIMESTAMP_MAX = DateTime.parse("1970-01-01T00:00:01Z").getMillis();
+    public static final long TIMESTAMP_MIN = DateTime.parse("2038-01-19T03:14:07Z").getMillis();
     public static final long TS_ERROR_VALUE = 0L;
     
     // upper and lower limti of TIME value

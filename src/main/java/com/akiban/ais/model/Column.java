@@ -30,8 +30,9 @@ import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringFactory;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
@@ -245,7 +246,7 @@ public class Column
         long maxStorageSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
             long maxCharacters = paramCheck(typeParameter1);
-            final long charWidthMultiplier = characterWidth();
+            final long charWidthMultiplier = maxCharacterWidth();
             long maxBytes = maxCharacters * charWidthMultiplier;
             maxStorageSize = maxBytes + prefixSize(maxBytes);
         } else if (type.equals(Types.VARBINARY)) {
@@ -285,12 +286,28 @@ public class Column
         return maxStorageSize;
     }
 
+    /** Same, but assume that characters take a common number of
+     * bytes, not the encoding's max.
+     */
+    public long getAverageStorageSize()
+    {
+        if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
+            long maxCharacters = paramCheck(typeParameter1);
+            final long charWidthMultiplier = averageCharacterWidth();
+            long maxBytes = maxCharacters * charWidthMultiplier;
+            return maxBytes + prefixSize(maxBytes);
+        }
+        else {
+            return getMaxStorageSize();
+        }
+    }
+
     public Integer getPrefixSize()
     {
         int prefixSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
             final long maxCharacters = paramCheck(typeParameter1);
-            final long charWidthMultiplier = characterWidth();
+            final long charWidthMultiplier = maxCharacterWidth();
             final long maxBytes = maxCharacters * charWidthMultiplier;
             prefixSize = prefixSize(maxBytes);
         } else if (type.equals(Types.VARBINARY)) {
@@ -316,13 +333,17 @@ public class Column
      * problem.
      * @return
      */
-    private int characterWidth() {
+    private int maxCharacterWidth() {
         // See bug687205
         if (charsetAndCollation != null && "utf8".equalsIgnoreCase(charsetAndCollation.charset())) {
             return 3;
         } else {
             return 1;
         }
+    }
+
+    private int averageCharacterWidth() {
+        return 1;
     }
 
     /**
@@ -424,20 +445,19 @@ public class Column
             throw new UnsupportedOperationException("unsupported type: " + type);
 
         case T_BLOB:
-            tinst = null; // TODO
+            tinst = MBinary.BLOB.instance();
             break;
         case T_BIGINT:
-            tinst = MNumeric.BIGINT.instance(typeParameter1.intValue());
+            tinst = MNumeric.BIGINT.instance();
             break;
         case T_U_BIGINT:
-            tinst = MNumeric.BIGINT_UNSIGNED.instance(typeParameter1.intValue());
+            tinst = MNumeric.BIGINT_UNSIGNED.instance();
             break;
         case T_BINARY:
-            tinst = MString.VARBINARY.instance(typeParameter1.intValue());
+            tinst = MBinary.BINARY.instance(typeParameter1.intValue());
             break;
         case T_CHAR:
-            assert false : "need a separate varchar type";
-            tinst = charString(MString.VARCHAR);
+            tinst = charString(MString.CHAR);
             break;
         case T_DATE:
             tinst = MDatetimes.DATE.instance();
@@ -446,55 +466,55 @@ public class Column
             tinst = MDatetimes.DATETIME.instance();
             break;
         case T_DECIMAL:
-            tinst = MNumeric.BIGINT.instance(typeParameter1.intValue(), typeParameter2.intValue());
+            tinst = MNumeric.DECIMAL.instance(typeParameter1.intValue(), typeParameter2.intValue());
             break;
         case T_U_DECIMAL:
-            tinst = MNumeric.BIGINT_UNSIGNED.instance(typeParameter1.intValue(), typeParameter2.intValue());
+            tinst = MNumeric.DECIMAL_UNSIGNED.instance(typeParameter1.intValue(), typeParameter2.intValue());
             break;
         case T_DOUBLE:
-            tinst = MDouble.INSTANCE.instance();
+            tinst = MApproximateNumber.DOUBLE.instance();
             break;
         case T_U_DOUBLE:
-            tinst = null; // TODO
+            tinst = MApproximateNumber.DOUBLE_UNSIGNED.instance();
             break;
         case T_FLOAT:
-            tinst = null; // TODO
+            tinst = MApproximateNumber.FLOAT.instance();
             break;
         case T_U_FLOAT:
-            tinst = null; // TODO
+            tinst = MApproximateNumber.FLOAT_UNSIGNED.instance();
             break;
         case T_INT:
-            tinst = MNumeric.INT.instance(11);
+            tinst = MNumeric.INT.instance();
             break;
         case T_U_INT:
-            tinst = MNumeric.INT_UNSIGNED.instance(10);
+            tinst = MNumeric.INT_UNSIGNED.instance();
             break;
         case T_LONGBLOB:
-            tinst = null; // TODO
+            tinst = MBinary.LONGBLOB.instance();
             break;
         case T_LONGTEXT:
-            tinst = null; // TODO
+            tinst = textString(MString.LONGTEXT);
             break;
         case T_MEDIUMBLOB:
-            tinst = null; // TODO
+            tinst = MBinary.MEDIUMBLOB.instance();
             break;
         case T_MEDIUMINT:
-            tinst = MNumeric.MEDIUMINT.instance(9);
+            tinst = MNumeric.MEDIUMINT.instance();
             break;
         case T_U_MEDIUMINT:
-            tinst = MNumeric.MEDIUMINT_UNSIGNED.instance(8);
+            tinst = MNumeric.MEDIUMINT_UNSIGNED.instance();
             break;
         case T_MEDIUMTEXT:
-            tinst = null; // TODO
+            tinst = textString(MString.MEDIUMTEXT);
             break;
         case T_SMALLINT:
-            tinst = MNumeric.SMALLINT.instance(6);
+            tinst = MNumeric.SMALLINT.instance();
             break;
         case T_U_SMALLINT:
-            tinst = MNumeric.SMALLINT_UNSIGNED.instance(5);
+            tinst = MNumeric.SMALLINT_UNSIGNED.instance();
             break;
         case T_TEXT:
-            tinst = null; // TODO
+            tinst = textString(MString.TEXT);
             break;
         case T_TIME:
             tinst = MDatetimes.TIME.instance();
@@ -503,19 +523,19 @@ public class Column
             tinst = MDatetimes.TIMESTAMP.instance();
             break;
         case T_TINYBLOB:
-            tinst = null; // TODO
+            tinst = MBinary.TINYBLOB.instance();
             break;
         case T_TINYINT:
-            tinst = MNumeric.TINYINT.instance(4);
+            tinst = MNumeric.TINYINT.instance();
             break;
         case T_U_TINYINT:
-            tinst = MNumeric.TINYINT_UNSIGNED.instance(3);
+            tinst = MNumeric.TINYINT_UNSIGNED.instance();
             break;
         case T_TINYTEXT:
-            tinst = null; // TODO
+            tinst = textString(MString.TINYTEXT);
             break;
         case T_VARBINARY:
-            tinst = MString.VARBINARY.instance(typeParameter1.intValue());
+            tinst = MBinary.VARBINARY.instance(typeParameter1.intValue());
             break;
         case T_VARCHAR:
             tinst = charString(MString.VARCHAR);
@@ -538,8 +558,15 @@ public class Column
     private TInstance charString(TClass tClass) {
         if (charsetAndCollation == null)
             return tClass.instance();
-        StringFactory.Charset charset = StringFactory.Charset.valueOf(charsetAndCollation.charset().toUpperCase());
+        StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
         return tClass.instance(typeParameter1.intValue(), charset.ordinal(), -1); // TODO collation
+    }
+
+    private TInstance textString(TClass tClass) {
+        if (charsetAndCollation == null)
+            return tClass.instance();
+        StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
+        return tClass.instance(charset.ordinal(), -1); // TODO collation
     }
 
     // State

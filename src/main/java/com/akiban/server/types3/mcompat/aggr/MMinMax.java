@@ -31,7 +31,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.common.BigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
@@ -69,7 +69,7 @@ public class MMinMax implements TAggregator {
                 state.putInt64(mType.condition(oldState - input) ? oldState : input);
             } 
         }, 
-        DOUBLE(MDouble.INSTANCE) {
+        DOUBLE(MApproximateNumber.DOUBLE) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
                 double oldState = source.getDouble();

@@ -33,24 +33,30 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.DoubleAttribute;
+import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
-public class MDouble extends TClass
+public class MApproximateNumber extends SimpleDtdTClass
 {
-    public static final TClass INSTANCE = new MDouble();
+    public static final TClass DOUBLE = new MApproximateNumber(TypeId.DOUBLE_ID, PUnderlying.DOUBLE);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber(TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE);
+    public static final TClass FLOAT = new MApproximateNumber(TypeId.REAL_ID, PUnderlying.FLOAT);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber(TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
 
     private static final int MAX_INDEX = 0;
     private static final int MIN_INDEX = 1;
-    
-    public static double round(TInstance instance, double val)
+
+    private static double round(TInstance instance, double val)
     {
-        assert instance.typeClass() instanceof MDouble : "instance has to be of type MDouble";
+        assert instance.typeClass() instanceof MApproximateNumber : "instance has to be of type MDouble";
 
         // meta data
         double meta[] = (double[])instance.getMetaData();
@@ -110,7 +116,11 @@ public class MDouble extends TClass
                           TInstance targetInstance,
                           PValueTarget targetValue)
     {
-        double raw = sourceValue.getDouble();
+        double raw;
+        if (underlyingType() == PUnderlying.DOUBLE)
+            raw = sourceValue.getDouble();
+        else
+            raw = sourceValue.getFloat();
         double rounded = round(targetInstance, raw);
 
         // TODO: in strict (My)SQL mode, this would be an error
@@ -134,12 +144,12 @@ public class MDouble extends TClass
         }
     }
 
-    MDouble()
+    private MApproximateNumber(TypeId typeId, PUnderlying underlying)
     {
         super(MBundle.INSTANCE.id(), "double", 
                 DoubleAttribute.class,
                 1, 1, 8,
-                PUnderlying.DOUBLE);
+                underlying, typeId);
     }
     
     @Override

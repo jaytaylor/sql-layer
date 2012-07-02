@@ -34,7 +34,7 @@ import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkString;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -50,8 +50,8 @@ public class NoArgFuncs
     public static final TPreparedExpression PI = new TPreparedExpression()
     {
         private final PValue VAL = new PValue(Math.PI);
-        private final TPreptimeValue PREP_VAL = new TPreptimeValue(MDouble.INSTANCE.instance(), VAL);
-        private final TInstance RESULT_TYPE = MDouble.INSTANCE.instance();
+        private final TPreptimeValue PREP_VAL = new TPreptimeValue(MApproximateNumber.DOUBLE.instance(), VAL);
+        private final TInstance RESULT_TYPE = MApproximateNumber.DOUBLE.instance();
         
         @Override
         public TPreptimeValue evaluateConstant()

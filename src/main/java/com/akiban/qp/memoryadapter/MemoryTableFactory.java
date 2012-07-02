@@ -28,7 +28,6 @@ package com.akiban.qp.memoryadapter;
 
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
@@ -40,7 +39,6 @@ import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
 public interface MemoryTableFactory {
     public TableName getName();
-    public UserTable getTableDefinition();
     
     // Used by MemoryAdapter to get cursors
     public GroupScan getGroupScan(MemoryAdapter adapter);

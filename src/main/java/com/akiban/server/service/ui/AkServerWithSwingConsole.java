@@ -24,27 +24,20 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.playground.exprfinder;
+package com.akiban.server.service.ui;
 
-public class Declaration {
-    public String columnName() {
-        return columnName;
+import com.akiban.server.AkServer;
+
+import java.io.PrintStream;
+
+public class AkServerWithSwingConsole
+{
+    public static void main(String[] args) throws Exception {
+        // This has to be done before log4j gets a chance to capture the previous
+        // System.out for the CONSOLE appender. It will get switched to the real
+        // console when that service starts up.
+        PrintStream ps = new SwingConsole.TextAreaPrintStream();
+        System.setOut(ps);
+        AkServer.main(args);
     }
-
-    public String columnDeclaration() {
-        return declaration;
-    }
-
-    public Declaration(String declaration, int count) {
-        columnName = "col_" + count;
-        this.declaration = declaration;
-    }
-
-    @Override
-    public String toString() {
-        return columnName + ' ' + declaration;
-    }
-
-    private final String columnName;
-    private final String declaration;
 }

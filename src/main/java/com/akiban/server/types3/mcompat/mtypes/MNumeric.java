@@ -32,18 +32,33 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TypeDeclarationException;
 import com.akiban.server.types3.common.types.NumericAttribute;
+import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.TypeId;
 
-public class MNumeric extends TClass {
+public class MNumeric extends SimpleDtdTClass {
 
-    protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying) {
+    protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying, int defaultWidth) {
         super(MBundle.INSTANCE.id(), name, 
                 NumericAttribute.class,
                 1, 1, serializationSize, 
-                pUnderlying);
+                pUnderlying, inferTypeid(name));
+        this.defaultWidth = defaultWidth;
+    }
+
+    private static TypeId inferTypeid(String name) {
+        if (name.contains("unsigned"))
+            return TypeId.INTEGER_UNSIGNED_ID;
+        else
+            return TypeId.INTEGER_ID;
+    }
+
+    @Override
+    public TInstance instance() {
+        return instance(defaultWidth);
     }
 
     @Override
@@ -81,17 +96,20 @@ public class MNumeric extends TClass {
         throw new UnsupportedOperationException("Not supported yet.");
     }
     
+    private final int defaultWidth;
+    
     // numeric types
-    public static final MNumeric TINYINT = new MNumeric("tinyint", 1, PUnderlying.INT_8);
-    public static final MNumeric TINYINT_UNSIGNED = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16);
-    public static final MNumeric SMALLINT = new MNumeric("smallint", 2, PUnderlying.INT_16);
-    public static final MNumeric SMALLINT_UNSIGNED = new MNumeric("smallintunsigned", 4, PUnderlying.INT_32);
-    public static final MNumeric MEDIUMINT = new MNumeric("mediumint", 3, PUnderlying.INT_32);
-    public static final MNumeric MEDIUMINT_UNSIGNED = new MNumeric("mediumintunsigned", 8, PUnderlying.INT_64);
-    public static final MNumeric INT = new MNumeric("int", 4, PUnderlying.INT_32);
-    public static final MNumeric INT_UNSIGNED = new MNumeric("intunsigned", 8, PUnderlying.INT_64);
-    public static final MNumeric BIGINT = new MNumeric("bigint", 8, PUnderlying.INT_64);
-    public static final MNumeric BIGINT_UNSIGNED = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64);
+    // TODO verify default widths
+    public static final MNumeric TINYINT = new MNumeric("tinyint", 1, PUnderlying.INT_8, 5);
+    public static final MNumeric TINYINT_UNSIGNED = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16, 4);
+    public static final MNumeric SMALLINT = new MNumeric("smallint", 2, PUnderlying.INT_16, 7);
+    public static final MNumeric SMALLINT_UNSIGNED = new MNumeric("smallintunsigned", 4, PUnderlying.INT_32, 6);
+    public static final MNumeric MEDIUMINT = new MNumeric("mediumint", 3, PUnderlying.INT_32, 9);
+    public static final MNumeric MEDIUMINT_UNSIGNED = new MNumeric("mediumintunsigned", 8, PUnderlying.INT_64, 8);
+    public static final MNumeric INT = new MNumeric("int", 4, PUnderlying.INT_32, 11);
+    public static final MNumeric INT_UNSIGNED = new MNumeric("intunsigned", 8, PUnderlying.INT_64, 10);
+    public static final MNumeric BIGINT = new MNumeric("bigint", 8, PUnderlying.INT_64, 21);
+    public static final MNumeric BIGINT_UNSIGNED = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64, 20);
     
     public static final TClass DECIMAL = new MBigDecimal();
     public static final TClass DECIMAL_UNSIGNED = new MBigDecimal();

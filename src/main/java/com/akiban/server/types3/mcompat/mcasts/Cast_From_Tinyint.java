@@ -27,17 +27,9 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TCastBase;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeContext;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
 import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
@@ -86,7 +78,7 @@ public class Cast_From_Tinyint
     
     public static final TCast TO_DECIMAL = new FromInt8ToDecimal(MNumeric.TINYINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt8ToDouble(MNumeric.TINYINT, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt8ToDouble(MNumeric.TINYINT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
     public static final TCast TO_VARCHAR = new FromInt8ToString(MNumeric.TINYINT, MString.VARCHAR, true, Constantness.UNKNOWN);
 }

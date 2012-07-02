@@ -28,7 +28,7 @@ package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TCast;
 import static com.akiban.server.types3.mcompat.mcasts.MNumericCastBase.*;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.texpressions.Constantness;
@@ -75,7 +75,7 @@ public class Cast_From_Unsigned_Mediumint
     
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt64ToInt64(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.MEDIUMINT_UNSIGNED, MDouble.INSTANCE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.MEDIUMINT_UNSIGNED, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
     public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
     

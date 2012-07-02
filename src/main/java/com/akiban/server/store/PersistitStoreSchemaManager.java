@@ -156,6 +156,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     public static final String SKIP_AIS_UPGRADE_PROPERTY = "akserver.skip_ais_upgrade";
     public static final SerializationType DEFAULT_SERIALIZATION = SerializationType.PROTOBUF;
 
+    public static final String DEFAULT_CHARSET = "akserver.default_charset";
+    public static final String DEFAULT_COLLATION = "akserver.default_collation";
+
     private static final String METAMODEL_PARENT_KEY = "byAIS";
     private static final String PROTOBUF_PARENT_KEY = "byPBAIS";
     private static final int PROTOBUF_PSSM_VERSION = 1;
@@ -219,6 +222,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             }
         });
         return newTable.getName();
+    }
+
+    @Override
+    public void unRegisterMemoryInformationSchemaTable(final TableName tableName) {
+        transactionally(sessionService.createSession(), new ThrowingRunnable() {
+            @Override
+            public void run(Session session) throws PersistitException {
+                deleteTableCommon(session, tableName, true, true);
+            }
+        });
     }
 
     @Override
@@ -423,20 +436,15 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         saveAISChangeWithRowDefs(session, newAIS, schemas);
     }
 
-
     @Override
-    public void deleteTableDefinition(final Session session, final String schemaName,
-                                      final String tableName) {
-        if (TableName.INFORMATION_SCHEMA.equals(schemaName)) {
-            return;
-        }
+    public void deleteTableDefinition(Session session, String schemaName, String tableName) {
+        deleteTableCommon(session, new TableName(schemaName, tableName), false, false);
+    }
 
-        final Table table = getAis().getTable(schemaName, tableName);
-        if (table == null) {
-            return;
-        }
+    private void deleteTableCommon(Session session, TableName tableName, boolean isInternal, boolean mustBeMemory) {
+        checkTableName(tableName, true, isInternal);
 
-
+        final Table table = getAis().getTable(tableName);
         final List<TableName> tables = new ArrayList<TableName>();
         if (table.isGroupTable() == true) {
             final Group group = table.getGroup();
@@ -448,6 +456,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             }
         } else if (table.isUserTable() == true) {
             final UserTable userTable = (UserTable) table;
+            if (mustBeMemory && !userTable.hasMemoryTableFactory()) {
+                throw new IllegalArgumentException("Cannot un-register non-memory table");
+            }
             if (userTable.getChildJoins().isEmpty() == false) {
                 throw new ReferencedTableException (table);
             }
@@ -596,8 +607,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         return (int) ts ^ (int) (ts >>> 32);
     }
     
-    @Override
-    public void forceNewTimestamp() {
+    public void saveCurrentTimestamp() {
         updateTimestamp.set(treeService.getDb().getCurrentTimestamp());
     }
 
@@ -621,6 +631,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             LOG.warn("Clamping property "+MAX_AIS_SIZE_PROPERTY+" to 0");
             maxAISBufferSize = 0;
         }
+        AkibanInformationSchema.setDefaultCharsetAndCollation(config.getProperty(DEFAULT_CHARSET),
+                                                              config.getProperty(DEFAULT_COLLATION));
 
         try {
             final AkibanInformationSchema newAIS = loadAISFromStorage();
@@ -860,7 +872,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         rowDefCache.clear();
         treeService.getTableStatusCache().detachAIS();
         rowDefCache.setAIS(newAis);
-        forceNewTimestamp();
+        saveCurrentTimestamp();
         aish.setAis(newAis);
     }
 
@@ -1127,18 +1139,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         return getAis().getUserTable(newName).getName();
     }
 
-    private static void checkAISSchema(TableName tableName, boolean shouldBeAIS) {
-        final boolean isAIS = TableName.INFORMATION_SCHEMA.equals(tableName.getSchemaName());
-        if(shouldBeAIS && !isAIS) {
+    private static void checkAISSchema(TableName tableName, boolean shouldBeIS) {
+        final boolean inIS = TableName.INFORMATION_SCHEMA.equals(tableName.getSchemaName());
+        if(shouldBeIS && !inIS) {
             throw new IllegalArgumentException("Table required to be in "+TableName.INFORMATION_SCHEMA +" schema");
         }
-        if(!shouldBeAIS && isAIS) {
+        if(!shouldBeIS && inIS) {
             throw new ProtectedTableDDLException(tableName);
         }
     }
 
-    private void checkTableName(TableName tableName, boolean shouldExist, boolean aisAllowed) {
-        checkAISSchema(tableName, aisAllowed);
+    private void checkTableName(TableName tableName, boolean shouldExist, boolean inIS) {
+        checkAISSchema(tableName, inIS);
         final boolean tableExists = getAis().getTable(tableName) != null;
         if(shouldExist && !tableExists) {
             throw new NoSuchTableException(tableName);

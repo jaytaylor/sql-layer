@@ -296,16 +296,21 @@ final class Aggregate_Partial extends Operator
         if (inputOperator == null || inputRowType == null || outputType == null)
             throw new NullPointerException();
         ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputRowType.nFields()+1);
-        if (inputsIndex + aggregatorFactories.size() != inputRowType.nFields()) {
+        int aggersSize;
+        if (aggregatorFactories == null) {
+            aggersSize = pAggrs.size();
+            if (pAggrTypes.size() != pAggrs.size())
+                throw new IllegalArgumentException("aggregators and aggregator types mismatch in size");
+        }
+        else {
+            aggersSize = aggregatorFactories.size();
+        }
+        if (inputsIndex + aggersSize != inputRowType.nFields()) {
             throw new IllegalArgumentException(
                     String.format("inputsIndex(=%d) + aggregatorNames.size(=%d) != inputRowType.nFields(=%d)",
-                            inputsIndex, aggregatorFactories.size(), inputRowType.nFields()
+                            inputsIndex, aggersSize, inputRowType.nFields()
             ));
         }
-        if (aggregatorFactories.size() != pAggrs.size())
-            throw new IllegalArgumentException("bad pAggrs");
-        if (pAggrTypes.size() != pAggrs.size())
-            throw new IllegalArgumentException("aggregators and aggregator types mismatch in size");
     }
     
     // class state
@@ -611,7 +616,7 @@ final class Aggregate_Partial extends Operator
                 }
                 pAggrsStates = new ArrayList<PValue>(pAggrs.size());
                 for (TAggregator aggr : pAggrs) {
-                    assert false;
+                    assert false : "need to pass these in";
                     pAggrsStates.add(null); // TODO
                 }
             }

@@ -90,4 +90,6 @@ public interface TreeService extends Service<TreeService> {
     boolean treeExists(final String schemaName, final String treeName);
 
     TreeCache populateTreeCache(TreeLink link) throws PersistitException;
+
+    void flushAll() throws Exception;
 }

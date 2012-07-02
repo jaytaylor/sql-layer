@@ -110,14 +110,7 @@ public class TreeServiceImpl
     private final TreeServiceMXBean bean = new TreeServiceMXBean() {
         @Override
         public void flushAll() throws Exception {
-            final Persistit db = dbRef.get();
-            try {
-                db.flush();
-                db.copyBackPages();
-            } catch (Exception e) {
-                LOG.error("flush failed", e);
-                throw e;
-            }
+            TreeServiceImpl.this.flushAll();
         }
     };
 
@@ -296,6 +289,18 @@ public class TreeServiceImpl
         }
         --instanceCount;
         assert instanceCount == 0 : instanceCount;
+    }
+
+    @Override
+    public void flushAll() throws Exception {
+        final Persistit db = dbRef.get();
+        try {
+            db.flush();
+            db.copyBackPages();
+        } catch (PersistitException e) {
+            LOG.error("flush failed", e);
+            throw new PersistitAdapterException(e);
+        }
     }
 
     @Override

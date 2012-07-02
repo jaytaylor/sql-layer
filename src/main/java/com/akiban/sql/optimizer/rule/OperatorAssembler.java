@@ -94,6 +94,10 @@ public class OperatorAssembler extends BaseRule
 
     private final boolean usePValues;
 
+    public OperatorAssembler() {
+        this(false);
+    }
+    
     public OperatorAssembler(boolean usePValues) {
         this.usePValues = usePValues;
     }

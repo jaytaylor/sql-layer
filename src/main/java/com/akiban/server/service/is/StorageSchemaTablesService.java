@@ -23,26 +23,7 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.service.is;
 
-package com.akiban.server.types3.playground.exprfinder;
-
-import java.sql.SQLException;
-import java.util.List;
-import java.util.Map;
-
-public interface DbAdapter {
-
-    void load(String username, String password);
-    
-    void close();
-    
-    void init() throws SQLException;
-    
-    String lastQuery();
-
-    void createTable(List<Declaration> declarations) throws SQLException;
-
-    Map<String,String> getDefinitions() throws SQLException;
-
-    String getResultDefinition(String query) throws SQLException;
+public interface StorageSchemaTablesService {
 }

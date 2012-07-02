@@ -31,7 +31,7 @@ import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.common.funcs.Abs;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
-import com.akiban.server.types3.mcompat.mtypes.MDouble;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -96,7 +96,7 @@ public class MAbs {
             output.putObject(wrapper.abs());
         }
     };
-    public static final TOverload DOUBLE = new Abs(MDouble.INSTANCE) {
+    public static final TOverload DOUBLE = new Abs(MApproximateNumber.DOUBLE) {
 
         @Override
         protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
