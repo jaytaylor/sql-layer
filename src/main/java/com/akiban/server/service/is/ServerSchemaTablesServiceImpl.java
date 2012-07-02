@@ -88,7 +88,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new InstanceScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -96,9 +96,9 @@ public class ServerSchemaTablesServiceImpl
             return 1;
         }
         
-        private class InstanceScan extends Scan {
+        private class Scan extends BaseScan {
             
-            public InstanceScan (RowType rowType) {
+            public Scan (RowType rowType) {
                 super(rowType);
             }
 

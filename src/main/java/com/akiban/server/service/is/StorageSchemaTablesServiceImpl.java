@@ -202,10 +202,10 @@ public class StorageSchemaTablesServiceImpl
         return value;
     }
     
-    private abstract class StorageScan extends Scan {
+    private abstract class BeanScan extends BaseScan {
         ObjectName mbeanName;
         
-        public StorageScan (RowType rowType, String beanName) {
+        public BeanScan (RowType rowType, String beanName) {
             super(rowType);
             mbeanName = getBeanName(beanName);
         }
@@ -218,7 +218,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new AlertSummaryScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -226,8 +226,8 @@ public class StorageSchemaTablesServiceImpl
             return 1;
         }
         
-        private class AlertSummaryScan extends StorageScan {
-            public AlertSummaryScan(RowType rowType) {
+        private class Scan extends BeanScan {
+            public Scan(RowType rowType) {
                 super (rowType, "AlertMonitor");
             }
 
@@ -252,7 +252,7 @@ public class StorageSchemaTablesServiceImpl
         }
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new BufferPoolScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -264,9 +264,9 @@ public class StorageSchemaTablesServiceImpl
             }
         }
         
-        private class BufferPoolScan extends StorageScan {
+        private class Scan extends BeanScan {
             BufferPoolInfo[] bufferPools = null;
-            public BufferPoolScan (RowType rowType) {
+            public Scan (RowType rowType) {
                 super(rowType, "BufferPool");
                 
                 try {
@@ -311,7 +311,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new CheckpointScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -320,9 +320,8 @@ public class StorageSchemaTablesServiceImpl
         }
         
        
-        private class CheckpointScan extends StorageScan{
-            
-            public CheckpointScan (RowType rowType) {
+        private class Scan extends BeanScan{
+            public Scan (RowType rowType) {
                 super (rowType, "CheckpointManager");
              }
             @Override
@@ -344,7 +343,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new CleanupScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -352,8 +351,8 @@ public class StorageSchemaTablesServiceImpl
             return 1;
         }
         
-        private class CleanupScan extends StorageScan {
-            public CleanupScan (RowType rowType) {
+        private class Scan extends BeanScan {
+            public Scan (RowType rowType) {
                 super (rowType, "CleanupManager");
             }
 
@@ -382,7 +381,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new IOScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -390,9 +389,8 @@ public class StorageSchemaTablesServiceImpl
             return 1;
         }
         
-        private class IOScan extends StorageScan{
-         
-            public IOScan (RowType rowType) {
+        private class Scan extends BeanScan{
+            public Scan (RowType rowType) {
                 super (rowType, "IOMeter");
             }
             
@@ -418,7 +416,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new IOMetersScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -426,9 +424,9 @@ public class StorageSchemaTablesServiceImpl
             return IOMeterMXBean.OPERATIONS.length - 1;
         }
         
-        private class IOMetersScan extends StorageScan {
+        private class Scan extends BeanScan {
             Vector<String> parameter;
-            public IOMetersScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType, "IOMeter");
                 parameter = new Vector<String> (1);
                 parameter.add(IOMeterMXBean.OPERATIONS[0]);
@@ -456,7 +454,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new JournalManagerScan (getRowType(adapter));
+            return new Scan (getRowType(adapter));
         }
 
         @Override
@@ -464,9 +462,9 @@ public class StorageSchemaTablesServiceImpl
             return 1;
         }
         
-        private class JournalManagerScan extends StorageScan {
+        private class Scan extends BeanScan {
             JournalInfo journal;
-            public JournalManagerScan (RowType rowType) {
+            public Scan (RowType rowType) {
                 super(rowType, "JournalManager");
                 try {
                     journal = treeService.getDb().getManagement().getJournalInfo();
@@ -527,7 +525,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new ManagementSummaryScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -535,10 +533,9 @@ public class StorageSchemaTablesServiceImpl
             return 1;
         }
         
-        private class ManagementSummaryScan extends StorageScan {
-
+        private class Scan extends BeanScan {
             Management db_manage;
-            public ManagementSummaryScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType, "Management");
                 
                 db_manage = treeService.getDb().getManagement();
@@ -578,7 +575,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new TransactionSummaryScan (getRowType(adapter));
+            return new Scan (getRowType(adapter));
         }
 
         @Override
@@ -586,9 +583,8 @@ public class StorageSchemaTablesServiceImpl
             return 1;
         }
         
-        private class TransactionSummaryScan extends StorageScan {
-
-            public TransactionSummaryScan(RowType rowType) {
+        private class Scan extends BeanScan {
+            public Scan(RowType rowType) {
                 super(rowType, "TransactionIndex");
             }
 
@@ -626,7 +622,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new TreeScan (getRowType(adapter));
+            return new Scan (getRowType(adapter));
         }
 
         @Override
@@ -643,14 +639,13 @@ public class StorageSchemaTablesServiceImpl
             }
             return rows;
         }
-        private class TreeScan extends StorageScan {
-
+        private class Scan extends BeanScan {
             VolumeInfo[] volumes;
             int volumeIndex = 0;
             TreeInfo[] trees = null;
             int treeIndex = 0;
             
-            public TreeScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType, "TreeInfo");
                 try {
                     volumes = treeService.getDb().getManagement().getVolumeInfoArray();
@@ -710,7 +705,7 @@ public class StorageSchemaTablesServiceImpl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new VolumesScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -723,10 +718,9 @@ public class StorageSchemaTablesServiceImpl
             }
         }
 
-        private class VolumesScan extends StorageScan {
-
+        private class Scan extends BeanScan {
             VolumeInfo[] volumes;
-            public VolumesScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType, "Volumes");
                 try {
                     volumes = treeService.getDb().getManagement().getVolumeInfoArray();
