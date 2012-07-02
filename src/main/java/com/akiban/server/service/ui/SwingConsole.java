@@ -95,6 +95,7 @@ public class SwingConsole extends JFrame implements WindowListener
         textArea.setLineWrap(true);
         DefaultCaret caret = (DefaultCaret)textArea.getCaret();
         caret.setUpdatePolicy(DefaultCaret.ALWAYS_UPDATE);
+        textArea.setEditable(false);
         JScrollPane scrollPane = new JScrollPane(textArea);
         add(scrollPane);
 
