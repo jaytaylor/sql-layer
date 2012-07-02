@@ -17,3 +17,4 @@
     com.akiban.server.store.statistics.IndexStatisticsService : com.akiban.server.store.statistics.IndexStatisticsServiceImpl
     com.akiban.server.service.is.BasicInfoSchemaTablesService : com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl
     com.akiban.server.service.is.StorageSchemaTablesService   : com.akiban.server.service.is.StorageSchemaTablesServiceImpl
+    com.akiban.server.service.ui.SwingConsoleService : com.akiban.server.service.ui.SwingConsoleServiceImpl

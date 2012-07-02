@@ -1,5 +1,6 @@
 # copied from packages-common/services-config.yaml
 - require:
+#   - com.akiban.server.service.ui.SwingConsoleService  # Presents a simple UI
     - com.akiban.server.AkServerInterface               # Loads the AKSERVER JMX bean
     - com.akiban.server.service.dxl.DXLService          # Loads the DDL/DML JMX bean
 #   - com.akiban.server.service.network.NetworkService  # MySQL replication
