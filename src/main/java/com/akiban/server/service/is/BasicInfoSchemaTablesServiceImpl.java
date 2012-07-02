@@ -548,6 +548,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      index.getIndexName().getName(),
                                      constraintName,
                                      index.getIndexId(),
+                                     index.getTreeName(),
                                      indexType,
                                      boolResult(index.isUnique()),
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
@@ -804,6 +805,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("index_name", IDENT_MAX, false)
                 .colString("constraint_name", IDENT_MAX, true)
                 .colBigInt("index_id", false)
+                .colString("tree_name", PATH_MAX, true)
                 .colString("index_type", IDENT_MAX, false)
                 .colString("is_unique", YES_NO_MAX, false)
                 .colString("join_type", DESCRIPTOR_MAX, true);
