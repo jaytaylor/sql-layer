@@ -144,6 +144,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         Map<Table, Integer> ordinalMap = new HashMap<Table, Integer>();
         for(UserTable userTable : holder.getAis().getUserTables().values()) {
             ordinalMap.put(userTable, 0);
+            userTable.setTreeName(userTable.getName().getTableName() + "_tree");
             for(Index index : userTable.getIndexesIncludingInternal()) {
                 index.computeFieldAssociations(ordinalMap);
             }
@@ -236,10 +237,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
-                { "test", "bar", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
-                { "test", "bar2", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
-                { "test", "foo", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
-                { "zap", "pow", "TABLE", LONG, "information_schema", VARCHAR, "information_schema", VARCHAR, LONG },
+                { "test", "bar", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "bar2", "TABLE", LONG, "bar2_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "foo", "TABLE", LONG, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "zap", "pow", "TABLE", LONG, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -260,7 +261,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 67, skipped);
+        assertEquals("Skipped I_S columns", 68, skipped);
     }
 
     @Test

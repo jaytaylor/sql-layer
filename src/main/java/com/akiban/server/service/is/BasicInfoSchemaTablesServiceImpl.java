@@ -179,6 +179,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      table.getName().getTableName(),
                                      tableType,
                                      table.getTableId(),
+                                     table.getTreeName(),
                                      CHARSET_SCHEMA,
                                      table.getCharsetAndCollation().charset(),
                                      COLLATION_SCHEMA,
@@ -731,6 +732,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_name", IDENT_MAX, false)
                 .colString("table_type", IDENT_MAX, false)
                 .colBigInt("table_id", false)
+                .colString("tree_name", PATH_MAX, true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
