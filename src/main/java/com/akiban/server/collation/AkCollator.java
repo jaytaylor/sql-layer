@@ -23,61 +23,50 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.collation;
 
-package com.akiban.qp.rowtype;
+import com.akiban.server.types.ValueSource;
+import com.ibm.icu.text.Collator;
+import com.persistit.Key;
 
-import com.akiban.ais.model.HKey;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
+public interface AkCollator {
+    /** Get the name of this collator. */
+    public String getName();
 
-public class HKeyRowType extends DerivedRowType
-{
-    // Object interface
+    /**
+     * @return true if this collator is capable of recovering the key string
+     *         from a key segment.
+     */
+    public boolean isRecoverable();
 
-    @Override
-    public String toString()
-    {
-        return "HKey";
-    }
+    /**
+     * Append the given value to the given key.
+     */
+    public void append(Key key, String value);
 
-    // RowType interface
+    /**
+     * Recover the value or throw an unsupported exception.
+     */
+    public String decode(Key key);
 
-    @Override
-    public int nFields()
-    {
-        return nFields;
-    }
+    /**
+     * Compare two string values: Comparable<ValueSource>
+     */
+    public int compare(ValueSource value1, ValueSource value2);
 
-    @Override
-    public AkType typeAt(int index)
-    {
-        return hKey().columnType(index);
-    }
-    
-    @Override
-    public AkCollator collatorAt(int index)
-    {
-        // TODO - probably not correct
-        return null;
-    }
+    /**
+     * Compare two string objects: Comparable<String>
+     */
+    public int compare(String string1, String string2);
 
-    @Override
-    public HKey hKey()
-    {
-        return hKey;
-    }
+    /**
+     * @return the underlying Collator instance, or null if there isn't one.
+     */
 
-    // HKeyRowType interface
-    
-    public HKeyRowType(DerivedTypesSchema schema, HKey hKey)
-    {
-        super(schema, schema.nextTypeId());
-        this.hKey = hKey;
-        this.nFields = hKey.nColumns();
-    }
+    public Collator getCollator();
 
-    // Object state
-
-    private final int nFields;
-    private HKey hKey;
+    /**
+     * @return whether the underlying collation scheme is case-sensitive
+     */
+    public boolean isCaseSensitive();
 }

@@ -23,61 +23,56 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.collation;
 
-package com.akiban.qp.rowtype;
+import com.akiban.server.types.ValueSource;
+import com.ibm.icu.text.Collator;
+import com.persistit.Key;
 
-import com.akiban.ais.model.HKey;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-
-public class HKeyRowType extends DerivedRowType
-{
-    // Object interface
+public class AkCollatorBinary implements AkCollator {
 
     @Override
-    public String toString()
-    {
-        return "HKey";
-    }
-
-    // RowType interface
-
-    @Override
-    public int nFields()
-    {
-        return nFields;
+    public String getName() {
+        return AkCollatorFactory.UCS_BINARY;
     }
 
     @Override
-    public AkType typeAt(int index)
-    {
-        return hKey().columnType(index);
+    public boolean isRecoverable() {
+        return true;
     }
-    
+
     @Override
-    public AkCollator collatorAt(int index)
-    {
-        // TODO - probably not correct
+    public void append(Key key, String value) {
+        key.append(value);
+    }
+
+    @Override
+    public String decode(Key key) {
+        return key.decodeString();
+    }
+
+    @Override
+    public int compare(ValueSource value1, ValueSource value2) {
+        return compare(value1.getString(), value2.getString());
+    }
+
+    @Override
+    public int compare(String string1, String string2) {
+        return string1.compareTo(string2);
+    }
+
+    @Override
+    public Collator getCollator() {
         return null;
     }
 
     @Override
-    public HKey hKey()
-    {
-        return hKey;
+    public boolean isCaseSensitive() {
+        return true;
     }
 
-    // HKeyRowType interface
-    
-    public HKeyRowType(DerivedTypesSchema schema, HKey hKey)
-    {
-        super(schema, schema.nextTypeId());
-        this.hKey = hKey;
-        this.nFields = hKey.nColumns();
+    @Override
+    public String toString() {
+        return getName();
     }
-
-    // Object state
-
-    private final int nFields;
-    private HKey hKey;
 }

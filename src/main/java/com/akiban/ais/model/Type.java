@@ -65,6 +65,10 @@ public class Type
         return akType;
     }
 
+    public boolean usesCollator() {
+        return ((akType == AkType.VARCHAR || akType == AkType.TEXT));
+    }
+
     @Override
     public boolean equals(Object object)
     {

@@ -28,6 +28,8 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
 
+import com.akiban.server.collation.AkCollator;
+
 public class Column
 {
     public static Column create(Table table, String name, Integer position, Type type, Boolean nullable,
@@ -336,6 +338,16 @@ public class Column
             charsetAndCollation == null
             ? table.getCharsetAndCollation()
             : charsetAndCollation;
+    }
+
+    public AkCollator getCollator() {
+        if (type.usesCollator()) {
+            CharsetAndCollation cac = getCharsetAndCollation();
+            if (cac != null) {
+                return cac.getCollator();
+            }
+        }
+        return null;
     }
 
     // Note: made public for AISBuilder -- peter.  TODO remove this comment.

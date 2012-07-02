@@ -28,6 +28,7 @@ package com.akiban.server;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
@@ -40,18 +41,25 @@ import java.math.BigInteger;
 
 public final class PersistitKeyValueSource implements ValueSource {
 
+    private AkCollator collator = null;
+
     // PersistitKeyValueSource interface
 
     public void attach(Key key, IndexColumn indexColumn) {
-        attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().akType());
+        attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().akType(), indexColumn.getColumn().getCollator());
     }
 
     public void attach(Key key, int depth, AkType type) {
+        attach(key, depth, type, null);
+    }
+
+    public void attach(Key key, int depth, AkType type, AkCollator collator) {
         if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.key = key;
         this.depth = depth;
         this.akType = type;
+        this.collator = collator;
         clear();
     }
     
@@ -203,13 +211,17 @@ public final class PersistitKeyValueSource implements ValueSource {
             }
             else
             {
-                switch (akType.underlyingType()) {
-                    case BOOLEAN_AKTYPE:valueHolder.putBool(key.decodeBoolean());       break;
-                    case LONG_AKTYPE:   valueHolder.putRaw(akType, key.decodeLong());   break;
-                    case FLOAT_AKTYPE:  valueHolder.putRaw(akType, key.decodeFloat());  break;
-                    case DOUBLE_AKTYPE: valueHolder.putRaw(akType, key.decodeDouble()); break;
-                    case OBJECT_AKTYPE: valueHolder.putRaw(akType, key.decode());       break;
-                    default: throw new UnsupportedOperationException(akType.name());
+                if (collator != null) {
+                    valueHolder.putRaw(akType, collator.decode(key));
+                } else {
+                    switch (akType.underlyingType()) {
+                        case BOOLEAN_AKTYPE:valueHolder.putBool(key.decodeBoolean());       break;
+                        case LONG_AKTYPE:   valueHolder.putRaw(akType, key.decodeLong());   break;
+                        case FLOAT_AKTYPE:  valueHolder.putRaw(akType, key.decodeFloat());  break;
+                        case DOUBLE_AKTYPE: valueHolder.putRaw(akType, key.decodeDouble()); break;
+                        case OBJECT_AKTYPE: valueHolder.putRaw(akType, key.decode());       break;
+                        default: throw new UnsupportedOperationException(akType.name());
+                    }
                 }
             }
             needsDecoding = false;
