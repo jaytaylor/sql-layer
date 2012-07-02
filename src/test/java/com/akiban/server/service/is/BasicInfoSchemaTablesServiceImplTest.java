@@ -92,79 +92,79 @@ public class BasicInfoSchemaTablesServiceImplTest {
         AISBuilder builder = new AISBuilder(holder.getAis());
 
         {
-            String schema = "test";
-            String table = "foo";
-            builder.userTable(schema, table);
-            builder.column(schema, table, "c1", 0, "INT", null, null, false, false, null, null);
-            builder.column(schema, table, "c2", 1, "DOUBLE", null, null, true, false, null, null);
-            builder.createGroup(table, schema, "_akiban_"+table);
-            builder.addTableToGroup(table, schema, table);
-            // no defined pk or indexes
+        String schema = "test";
+        String table = "foo";
+        builder.userTable(schema, table);
+        builder.column(schema, table, "c1", 0, "INT", null, null, false, false, null, null);
+        builder.column(schema, table, "c2", 1, "DOUBLE", null, null, true, false, null, null);
+        builder.createGroup(table, schema, "_akiban_"+table);
+        builder.addTableToGroup(table, schema, table);
+        // no defined pk or indexes
         }
 
         {
-            String schema = "test";
-            String table = "bar";
-            builder.userTable(schema, table);
-            builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
-            builder.column(schema, table, "name", 1, "INT", null, null, false, false, null, null);
-            builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
-            builder.createGroup(table, schema, "_akiban_"+table);
+        String schema = "test";
+        String table = "bar";
+        builder.userTable(schema, table);
+        builder.column(schema, table, "col", 0, "BIGINT", null, null, false, false, null, null);
+        builder.column(schema, table, "name", 1, "INT", null, null, false, false, null, null);
+        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "col", 0, true, null);
+        builder.createGroup(table, schema, "_akiban_"+table);
 
-            schema = "test";
-            String childTable = table + "2";
-            String indexName = "foo_name";
-            builder.userTable(schema, childTable);
-            builder.column(schema, childTable, "foo", 0, "INT", null, null, true, false, null, null);
-            builder.column(schema, childTable, "pid", 1, "INT", null, null, true, false, null, null);
+        schema = "test";
+        String childTable = table + "2";
+        String indexName = "foo_name";
+        builder.userTable(schema, childTable);
+        builder.column(schema, childTable, "foo", 0, "INT", null, null, true, false, null, null);
+        builder.column(schema, childTable, "pid", 1, "INT", null, null, true, false, null, null);
 
-            String joinName = childTable + "/" + table;
-            builder.joinTables(joinName, schema, table, schema, childTable);
-            builder.joinColumns(joinName, schema, table, "col", schema, childTable, "pid");
-            builder.addJoinToGroup(table, joinName, 0);
+        String joinName = childTable + "/" + table;
+        builder.joinTables(joinName, schema, table, schema, childTable);
+        builder.joinColumns(joinName, schema, table, "col", schema, childTable, "pid");
+        builder.addJoinToGroup(table, joinName, 0);
 
-            builder.groupIndex(table, indexName, false, Index.JoinType.RIGHT);
-            builder.groupIndexColumn(table, indexName, schema, childTable, "foo", 0);
-            builder.groupIndexColumn(table, indexName, schema, table, "name", 1);
+        builder.groupIndex(table, indexName, false, Index.JoinType.RIGHT);
+        builder.groupIndexColumn(table, indexName, schema, childTable, "foo", 0);
+        builder.groupIndexColumn(table, indexName, schema, table, "name", 1);
         }
 
         {
-            String schema = "zap";
-            String table = "pow";
-            String indexName = "name_value";
-            builder.userTable(schema, table);
-            builder.column(schema, table, "name", 0, "VARCHAR", 32L, null, true, false, null, null);
-            builder.column(schema, table, "value", 1, "DECIMAL", 10L, 2L, true, false, null, null);
-            builder.index(schema, table, indexName, true, Index.UNIQUE_KEY_CONSTRAINT);
-            builder.indexColumn(schema, table, indexName, "name", 0, true, null);
-            builder.indexColumn(schema, table, indexName, "value", 1, true, null);
-            builder.createGroup(table, schema, "_akiban_"+table);
-            builder.addTableToGroup(table, schema, table);
-            // no defined pk
+        String schema = "zap";
+        String table = "pow";
+        String indexName = "name_value";
+        builder.userTable(schema, table);
+        builder.column(schema, table, "name", 0, "VARCHAR", 32L, null, true, false, null, null);
+        builder.column(schema, table, "value", 1, "DECIMAL", 10L, 2L, true, false, null, null);
+        builder.index(schema, table, indexName, true, Index.UNIQUE_KEY_CONSTRAINT);
+        builder.indexColumn(schema, table, indexName, "name", 0, true, null);
+        builder.indexColumn(schema, table, indexName, "value", 1, true, null);
+        builder.createGroup(table, schema, "_akiban_"+table);
+        builder.addTableToGroup(table, schema, table);
+        // no defined pk
         }
 
         {
-            // Added for bug1019905: Last table only had GFK show up in constraints/key_column_usage if it had a GFK
-            String schema = "zzz";
-            String table = schema + "1";
-            builder.userTable(schema, table);
-            builder.column(schema, table, "id", 0, "INT", null, null, false, false, null, null);
-            builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
-            builder.createGroup(table, schema, "_akiban_"+table);
+        // Added for bug1019905: Last table only had GFK show up in constraints/key_column_usage if it had a GFK
+        String schema = "zzz";
+        String table = schema + "1";
+        builder.userTable(schema, table);
+        builder.column(schema, table, "id", 0, "INT", null, null, false, false, null, null);
+        builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        builder.createGroup(table, schema, "_akiban_"+table);
 
-            String childTable = schema + "2";
-            builder.userTable(schema, childTable);
-            builder.column(schema, childTable, "id", 0, "INT", null, null, false, false, null, null);
-            builder.column(schema, childTable, "one_id", 1, "INT", null, null, true, false, null, null);
-            builder.index(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
-            builder.indexColumn(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        String childTable = schema + "2";
+        builder.userTable(schema, childTable);
+        builder.column(schema, childTable, "id", 0, "INT", null, null, false, false, null, null);
+        builder.column(schema, childTable, "one_id", 1, "INT", null, null, true, false, null, null);
+        builder.index(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn(schema, childTable, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
 
-            String joinName = childTable + "/" + table;
-            builder.joinTables(joinName, schema, table, schema, childTable);
-            builder.joinColumns(joinName, schema, table, "id", schema, childTable, "one_id");
-            builder.addJoinToGroup(table, joinName, 0);
+        String joinName = childTable + "/" + table;
+        builder.joinTables(joinName, schema, table, schema, childTable);
+        builder.joinColumns(joinName, schema, table, "id", schema, childTable, "one_id");
+        builder.addJoinToGroup(table, joinName, 0);
         }
 
         builder.basicSchemaIsComplete();
