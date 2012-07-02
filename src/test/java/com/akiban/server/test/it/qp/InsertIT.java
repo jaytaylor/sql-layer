@@ -51,7 +51,7 @@ import static org.junit.Assert.fail;
 
 public class InsertIT extends OperatorITBase {
     @Test
-    public void basic() {
+    public void insertCustomer() {
         use(db);
         doInsert();
         compareRows(
@@ -72,7 +72,7 @@ public class InsertIT extends OperatorITBase {
     }
 
     @Test
-    public void basicCheckTableIndex() {
+    public void insertCustomerCheckNameIndex() {
         use(db);
         doInsert();
         compareRows(
@@ -93,7 +93,7 @@ public class InsertIT extends OperatorITBase {
     }
 
     @Test
-    public void basicCheckGroupIndex() {
+    public void insertCustomerCheckNameItemOidGroupIndex() {
         use(db);
         doInsert();
         compareRows(
@@ -102,13 +102,13 @@ public class InsertIT extends OperatorITBase {
                       row(customerNameItemOidIndexRowType, "abc", 21L, 2L, 21L, 212L),
                       row(customerNameItemOidIndexRowType, "abc", 22L, 2L, 22L, 221L),
                       row(customerNameItemOidIndexRowType, "abc", 22L, 2L, 22L, 222L),
-                      row(customerNameItemOidIndexRowType, "jkl", null, null, null, null),
-                      row(customerNameItemOidIndexRowType, "ooo", null, null, null, null),
+                      row(customerNameItemOidIndexRowType, "jkl", null, 3L, null, null),
+                      row(customerNameItemOidIndexRowType, "ooo", null, 5L, null, null),
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 111L),
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 112L),
                       row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 121L),
                       row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 122L),
-                      row(customerNameItemOidIndexRowType, "zzz", null, null, null, null)
+                      row(customerNameItemOidIndexRowType, "zzz", null, 0L, null, null)
                 ),
                 cursor(
                 indexScan_Default(
