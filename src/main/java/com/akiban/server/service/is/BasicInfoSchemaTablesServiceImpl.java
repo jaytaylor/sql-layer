@@ -611,6 +611,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      indexIt.getTable().getName().getSchemaName(),
                                      indexColumn.getIndex().getIndexName().getName(),
                                      indexIt.getTable().getName().getTableName(),
+                                     indexColumn.getColumn().getTable().getName().getSchemaName(),
                                      indexColumn.getColumn().getTable().getName().getTableName(),
                                      indexColumn.getColumn().getName(),
                                      indexColumn.getPosition(),
@@ -817,6 +818,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("index_name", IDENT_MAX, false)
                 .colString("index_table_name", IDENT_MAX, false)
+                .colString("column_schema_name", IDENT_MAX, false)
                 .colString("column_table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
