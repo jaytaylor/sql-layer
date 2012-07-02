@@ -46,7 +46,6 @@ import static com.akiban.qp.operator.API.delete_Default;
 import static com.akiban.qp.operator.API.filter_Default;
 import static com.akiban.qp.operator.API.groupScan_Default;
 import static com.akiban.qp.operator.API.indexScan_Default;
-import static com.akiban.qp.operator.API.insert_Default;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
@@ -54,7 +53,7 @@ public class DeleteIT extends OperatorITBase {
     @Test
     public void deleteCustomer() {
         use(db);
-        doInsert();
+        doDelete();
         compareRows(
                 array(TestRow.class,
                       row(customerRowType, 1L, "xyz")
@@ -71,7 +70,7 @@ public class DeleteIT extends OperatorITBase {
     @Test
     public void deleteCustomerCheckNameIndex() {
         use(db);
-        doInsert();
+        doDelete();
         compareRows(
                 array(RowBase.class,
                       row(customerNameIndexRowType, "xyz", 1L)
@@ -88,7 +87,7 @@ public class DeleteIT extends OperatorITBase {
     @Test
     public void deleteCustomerCheckNameItemOidGroupIndex() {
         use(db);
-        doInsert();
+        doDelete();
         compareRows(
                 array(RowBase.class,
                       row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 111L),
@@ -106,22 +105,7 @@ public class DeleteIT extends OperatorITBase {
         ));
     }
 
-    Operator rowsToValueScan(Row... rows) {
-        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
-        RowType type = null;
-        for(Row row : rows) {
-            RowType newType = row.rowType();
-            if(type == null) {
-                type = newType;
-            } else if(type != newType) {
-                fail("Multiple row types: " + type + " vs " + newType);
-            }
-            bindableRows.add(BindableRow.of(row));
-        }
-        return API.valuesScan_Default(bindableRows, type);
-    }
-
-    private void doInsert() {
+    private void doDelete() {
         Row[] rows = {
                 row(customerRowType, 2, "abc"),
         };

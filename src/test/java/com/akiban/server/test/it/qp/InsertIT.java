@@ -120,21 +120,6 @@ public class InsertIT extends OperatorITBase {
         ));
     }
 
-    Operator rowsToValueScan(Row... rows) {
-        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
-        RowType type = null;
-        for(Row row : rows) {
-            RowType newType = row.rowType();
-            if(type == null) {
-                type = newType;
-            } else if(type != newType) {
-                fail("Multiple row types: " + type + " vs " + newType);
-            }
-            bindableRows.add(BindableRow.of(row));
-        }
-        return API.valuesScan_Default(bindableRows, type);
-    }
-
     private void doInsert() {
         Row[] rows = {
                 row(customerRowType, 0, "zzz"),

@@ -27,12 +27,14 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.row.ValuesHolderRow;
@@ -428,6 +430,23 @@ public class OperatorITBase extends ITBase
     {
         return rowType.userTable().rowDef().getOrdinal();
     }
+
+
+    public Operator rowsToValueScan(Row... rows) {
+        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
+        RowType type = null;
+        for(Row row : rows) {
+            RowType newType = row.rowType();
+            if(type == null) {
+                type = newType;
+            } else if(type != newType) {
+                fail("Multiple row types: " + type + " vs " + newType);
+            }
+            bindableRows.add(BindableRow.of(row));
+        }
+        return API.valuesScan_Default(bindableRows, type);
+    }
+
 
     protected int customer;
     protected int order;
