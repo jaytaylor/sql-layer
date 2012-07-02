@@ -46,4 +46,6 @@ public interface ArithOp
     BigInteger evaluate (BigInteger one, BigInteger two, ExpressionType exp);
 
     abstract char opName ();
+    
+    boolean isInfix();
 }

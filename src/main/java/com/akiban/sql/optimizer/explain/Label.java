@@ -46,6 +46,7 @@ public enum Label
     START_TABLE(Category.IDENTIFIER),
     STOP_TABLE(Category.IDENTIFIER),
     GROUP_TABLE(Category.IDENTIFIER),
+    INFIX(Category.IDENTIFIER),
     
     // OPTION
     //--------------------------------------------------------------------------

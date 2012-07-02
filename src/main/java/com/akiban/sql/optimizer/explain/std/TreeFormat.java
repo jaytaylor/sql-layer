@@ -18,7 +18,7 @@ package com.akiban.sql.optimizer.explain.std;
 
 import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Format;
+import com.akiban.sql.optimizer.explain.Formatter;
 import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
@@ -26,14 +26,13 @@ import java.util.Map.Entry;
 
 /**
  * 
- * implements a simple Formatter that would print all the Explainer in an
+ * implements a simple Format that would print all the Explainer in an
  * indenting-fashion. 
  * 
  */
-public class TreeFormat implements Format<String>
+public class TreeFormat // used to implement Format.java, now is outdated.
 {
 
-    @Override
     public String describe(Explainer explainer)
     {
         StringBuilder bd = new StringBuilder();

@@ -275,7 +275,10 @@ public class ArithExpression extends AbstractBinaryExpression
     @Override
     public Explainer getExplainer ()
     {
-        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+        ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+        if (op.isInfix())
+            explainer.addAttribute(Label.INFIX, explainer);
+        return explainer;
     }
     
     /**
