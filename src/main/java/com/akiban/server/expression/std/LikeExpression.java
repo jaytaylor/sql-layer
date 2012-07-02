@@ -68,7 +68,7 @@ public class LikeExpression extends AbstractCompositeExpression
         @Override
         public String toString ()
         {
-            if (case_insensitive)
+            if (case_insensitive == null)
                 return "LIKE";
             else
                 return "LIKE " + (case_insensitive ? "IN" : "" ) + "SENSITIVE";
