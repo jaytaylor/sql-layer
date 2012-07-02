@@ -27,6 +27,7 @@
 package com.akiban.server.expression.std;
 
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.WrongExpressionArityException;
@@ -47,19 +48,19 @@ import java.util.List;
 public class LikeExpression extends AbstractCompositeExpression
 {
     @Scalar("ilike")
-    public static final ExpressionComposer ILIKE_COMPOSER = new InnerComposer(true);
+    public static final ExpressionComposer ILIKE_COMPOSER = new InnerComposer(Boolean.TRUE);
 
     @Scalar("blike")
-    public static final ExpressionComposer BLIKE_COMPOSER = new InnerComposer(false);
+    public static final ExpressionComposer BLIKE_COMPOSER = new InnerComposer(Boolean.FALSE);
 
     @Scalar("like")
-    public static final ExpressionComposer LIKE_COMPOSER = ILIKE_COMPOSER;
+    public static final ExpressionComposer LIKE_COMPOSER = new InnerComposer(null);
 
 
     private static final class InnerComposer implements ExpressionComposer
     {
-        private final boolean case_insensitive;
-        public InnerComposer (boolean mode)
+        private final Boolean case_insensitive;
+        public InnerComposer (Boolean mode)
         {
             this.case_insensitive = mode;
         }
@@ -67,7 +68,10 @@ public class LikeExpression extends AbstractCompositeExpression
         @Override
         public String toString ()
         {
-            return "LIKE " + (case_insensitive ? "IN" : "" ) + "SENSITIVE";
+            if (case_insensitive)
+                return "LIKE";
+            else
+                return "LIKE " + (case_insensitive ? "IN" : "" ) + "SENSITIVE";
         }
 
         @Override
@@ -84,6 +88,19 @@ public class LikeExpression extends AbstractCompositeExpression
         @Override
         public Expression compose(List<? extends Expression> arguments, List<ExpressionType> typesList)
         {
+            Boolean case_insensitive = this.case_insensitive;
+            if (case_insensitive == null) {
+                // Figure out case sensitivity from collation.
+                if (typesList.size() > 3) {
+                    AkCollator collator = ExpressionTypes.operationCollation(typesList.get(0), typesList.get(1));
+                    if (collator != null) {
+                        case_insensitive = !collator.isCaseSensitive();
+                    }
+                }
+                if (case_insensitive == null) {
+                    case_insensitive = false;
+                }
+            }
             return new LikeExpression(arguments, case_insensitive);
         }
 
