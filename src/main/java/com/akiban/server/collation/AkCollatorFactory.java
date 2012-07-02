@@ -141,9 +141,6 @@ public class AkCollatorFactory {
             }
 
             collator = Collator.getInstance(new ULocale(locale));
-            if (collator == null) {
-                throw new IllegalArgumentException("No such Collator named: " + scheme);
-            }
             collator.setStrength(strength);
             sourceMap.put(scheme, collator);
         }
