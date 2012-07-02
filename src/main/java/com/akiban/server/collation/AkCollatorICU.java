@@ -37,14 +37,28 @@ public class AkCollatorICU implements AkCollator {
 
     private final String collatorName;
 
+    private final String collatorScheme;
+
     ThreadLocal<Collator> collator = new ThreadLocal<Collator>() {
         protected Collator initialValue() {
-            return AkCollatorFactory.forName(collatorName);
+            return AkCollatorFactory.forScheme(collatorScheme);
         }
     };
 
-    AkCollatorICU(final String name) {
-        collatorName = name;
+    /**
+     * Create an AkCollator which may be used in across multiple threads. Each
+     * instance of AkCollator has a ThreadLocal which optionally contains a
+     * reference to a thread-private ICU4J Collator.
+     * 
+     * @param name
+     *            Name given to AkCollatorFactory by which to look up the scheme
+     * @param scheme
+     *            Formatted string containing Locale name, and collation string
+     *            strength.
+     */
+    AkCollatorICU(final String name, final String scheme) {
+        this.collatorName = name;
+        this.collatorScheme = scheme;
     }
 
     @Override
@@ -114,6 +128,6 @@ public class AkCollatorICU implements AkCollator {
 
     @Override
     public String toString() {
-        return getName();
+        return collatorName + "(" + collatorScheme + ")";
     }
 }

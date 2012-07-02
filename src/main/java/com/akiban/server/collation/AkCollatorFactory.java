@@ -29,6 +29,7 @@ package com.akiban.server.collation;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
 
 import com.ibm.icu.text.Collator;
@@ -51,7 +52,18 @@ public class AkCollatorFactory {
 
     private final static Map<String, SoftReference<AkCollator>> collatorMap = new ConcurrentHashMap<String, SoftReference<AkCollator>>();
 
-    public final static boolean MAP_CI = Boolean.parseBoolean(System.getProperty("akiban.collation.map_ci", "true"));
+    public final static boolean COLLATION_ENABLED = Boolean.parseBoolean(System.getProperty("akiban.collation.enabled",
+            "true"));
+
+    private final static String DEFAULT_PROPERTIES_FILE_NAME = "collation_names.properties";
+
+    private final static String COLLATION_PROPERTIES_FILE_NAME_PROPERTY = "akiban.collation.properties";
+
+    private final static Properties collationNameProperties = new Properties();
+
+    private final static long SANITY_RELOAD_INTERVAL = 10000;
+
+    private static volatile long lastReloadTime = Long.MIN_VALUE;
 
     /**
      * 
@@ -59,13 +71,16 @@ public class AkCollatorFactory {
      * @return an AkCollator
      */
     public static AkCollator getAkCollator(final String name) {
-        if (UCS_BINARY.equalsIgnoreCase(name) ||
-        // TODO: Temporarily just know this one.
-                !MAP_CI || !"latin1_swedish_ci".equals(name)) {
+        if (!COLLATION_ENABLED || name == null || UCS_BINARY.equalsIgnoreCase(name)) {
+            return UCS_BINARY_COLLATOR;
+        }
+        
+        final String scheme = schemeForName(name);
+        if (scheme.startsWith(UCS_BINARY)) {
             return UCS_BINARY_COLLATOR;
         }
 
-        SoftReference<AkCollator> ref = collatorMap.get(name);
+        SoftReference<AkCollator> ref = collatorMap.get(scheme);
         if (ref != null) {
             AkCollator akCollator = ref.get();
             if (akCollator != null) {
@@ -73,11 +88,11 @@ public class AkCollatorFactory {
             }
         }
         /*
-         * Note that another thread may win a race here, but it doesn't
-         * matter. The result is that there will be an AkCollator in
-         * the map which is sufficient.
+         * Note that another thread may win a race here, but it doesn't matter.
+         * The result is that there will be an AkCollator in the map which is
+         * sufficient.
          */
-        AkCollator akCollator = new AkCollatorICU(name);
+        AkCollator akCollator = new AkCollatorICU(name, scheme);
         collatorMap.put(name, new SoftReference<AkCollator>(akCollator));
         return akCollator;
     }
@@ -86,30 +101,84 @@ public class AkCollatorFactory {
      * Construct an actual ICU Collator given a collation scheme name. The
      * result is a Collator that must be use in a thread-private manner.
      * 
-     * @param name
+     * Collation scheme names must be defined in a properties file, for which
+     * the default location is
+     * 
+     * <pre>
+     * <code>
+     * com.akiban.server.collation.collation_names.properties
+     * </code>
+     * </pre>
+     * 
+     * This location can be overridden with the system property named
+     * 
+     * <pre>
+     * <code>
+     * akiban.collation.properties
+     * </code>
+     * </pre>
+     * 
+     * To support experimentation with new names this method will attempt
+     * to reload the properties file whenever asked to find a collation name
+     * that does not exist. Reloading is limited to once every 10 seconds for
+     * avoid a avenue for denial-of-service.
+     * 
+     * @param scheme
      * @return
      */
-    static synchronized Collator forName(final String name) {
-        Collator collator = sourceMap.get(name);
+    static synchronized Collator forScheme(final String scheme) {
+        Collator collator = sourceMap.get(scheme);
         if (collator == null) {
-            /*
-             * TODO - figure out how ICU4J decodes names - this is certainly
-             * wrong.
-             */
-            String locale = "sv_SE"; // Swedish for Sweden.
-            int strength = Collator.SECONDARY; // _ci; _cs = TERTIARY.
+            final String locale;
+            final int strength;
+
+            try {
+                String[] pieces = scheme.split(",");
+                locale = pieces[0];
+                strength = Integer.parseInt(pieces[1]);
+            } catch (Exception e) {
+                throw new IllegalStateException("Malformed property for name " + scheme);
+            }
 
             collator = Collator.getInstance(new ULocale(locale));
             if (collator == null) {
-                throw new IllegalArgumentException("No such Collator named: " + name);
+                throw new IllegalArgumentException("No such Collator named: " + scheme);
             }
-
             collator.setStrength(strength);
-
-            sourceMap.put(name, collator);
+            sourceMap.put(scheme, collator);
         }
         collator = collator.cloneAsThawed();
         return collator;
     }
+
+    private static String schemeForName(final String name) {
+        final String lcname = name.toLowerCase();
+        String scheme = collationNameProperties.getProperty(lcname);
+        if (scheme == null) {
+            reloadCollationProperties();
+            scheme = collationNameProperties.getProperty(lcname);
+            if (scheme == null) {
+                throw new IllegalArgumentException("Collation " + name + " is unknown");
+            }
+        }
+        return scheme;
+    }
+    
+    
+    private static void reloadCollationProperties() {
+        long now = System.currentTimeMillis();
+        if (now - SANITY_RELOAD_INTERVAL > lastReloadTime) {
+            lastReloadTime = now;
+            try {
+                final String resourceName = System.getProperty(COLLATION_PROPERTIES_FILE_NAME_PROPERTY,
+                        DEFAULT_PROPERTIES_FILE_NAME);
+                collationNameProperties.clear();
+                collationNameProperties.load(AkCollatorFactory.class.getResourceAsStream(resourceName));
+            } catch (Exception e) {
+
+            }
+        }
+    }
+
 
 }
