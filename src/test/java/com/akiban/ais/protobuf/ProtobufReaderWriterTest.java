@@ -158,6 +158,7 @@ public class ProtobufReaderWriterTest {
         writeAndRead(inAIS);
     }
 
+    @org.junit.Ignore
     @Test(expected=ProtobufReadException.class)
     public void readBufferTooSmall() {
         GrowableByteBuffer bb = new GrowableByteBuffer(4096);
