@@ -635,7 +635,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         public boolean next() {
-            while(indexIt != null || tableIt.hasNext()) {
+            while(curTable != null || tableIt.hasNext()) {
                 if(curTable == null) {
                     curTable = tableIt.next();
                     if(curTable.getParentJoin() != null) {
