@@ -56,7 +56,6 @@ import java.util.regex.Pattern;
 @Ignore
 public class PostgresServerFilesITBase extends PostgresServerITBase
 {
-    private static final Pattern INDEX_PATTERN = Pattern.compile("CREATE INDEX (\\w+) ON (\\w+)\\((.*)\\);");
     public void loadDatabase(File dir) throws Exception {
         loadSchemaFile(new File(dir, "schema.ddl"));
         for (File data : dir.listFiles(new RegexFilenameFilter(".*\\.dat"))) {

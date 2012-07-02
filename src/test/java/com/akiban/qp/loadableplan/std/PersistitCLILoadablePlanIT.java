@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.tree;
+package com.akiban.qp.loadableplan.std;
 
 import static org.junit.Assert.*;
 
@@ -73,6 +73,7 @@ public class PersistitCLILoadablePlanIT extends ITBase {
                 populatedResults++;
             }
         }
+        cursor.close();
         assertEquals(3, populatedResults);
         assertTrue(emptyResults > 0 && emptyResults < 60);
     }
