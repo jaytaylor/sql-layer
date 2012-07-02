@@ -91,7 +91,7 @@ public class LikeExpression extends AbstractCompositeExpression
             Boolean case_insensitive = this.case_insensitive;
             if (case_insensitive == null) {
                 // Figure out case sensitivity from collation.
-                if (typesList.size() > 3) {
+                if (typesList.size() >= 3) {
                     AkCollator collator = ExpressionTypes.operationCollation(typesList.get(0), typesList.get(1));
                     if (collator != null) {
                         case_insensitive = !collator.isCaseSensitive();
