@@ -37,6 +37,7 @@ import com.akiban.qp.persistitadapter.PersistitGroupRow;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.RowValuesHolder;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
@@ -46,6 +47,7 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.util.ValueHolder;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -304,6 +306,11 @@ public class OperatorITBase extends ITBase
     protected TestRow row(String hKeyString, RowType rowType, Object... fields)
     {
         return new TestRow(rowType, fields, hKeyString);
+    }
+
+    protected TestRow row(RowType rowType, Object[] fields, AkType[] types)
+    {
+        return new TestRow(rowType, new RowValuesHolder(fields, types), null);
     }
 
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)

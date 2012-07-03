@@ -261,7 +261,7 @@ public class UpdateIT extends OperatorITBase
 
     private void doUpdate() {
         Row[] rows = {
-                row(customerRowType, 2, "abc"),
+                row(customerRowType, new Object[]{2, "abc"}, new AkType[]{AkType.INT, AkType.VARCHAR})
         };
         UpdateFunction updateFunction = new UpdateFunction() {
             @Override

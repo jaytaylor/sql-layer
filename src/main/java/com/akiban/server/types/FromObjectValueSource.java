@@ -208,9 +208,7 @@ public final class FromObjectValueSource implements ValueSource {
     public static AkType reflectivelyGetAkType(Object object) {
         if (object == null)
             return AkType.NULL;
-        if (object instanceof Integer)
-            return AkType.INT;
-        if (object instanceof Long)
+        if (object instanceof Integer || object instanceof Long)
             return AkType.LONG;
         else if (object instanceof String)
             return AkType.VARCHAR;

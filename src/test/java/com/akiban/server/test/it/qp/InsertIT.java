@@ -35,6 +35,7 @@ import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.AkType;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -122,9 +123,9 @@ public class InsertIT extends OperatorITBase {
 
     private void doInsert() {
         Row[] rows = {
-                row(customerRowType, 0, "zzz"),
-                row(customerRowType, 3, "jkl"),
-                row(customerRowType, 5, "ooo")
+                row(customerRowType, new Object[]{0, "zzz"}, new AkType[]{AkType.INT, AkType.VARCHAR}),
+                row(customerRowType, new Object[]{3, "jkl"}, new AkType[]{AkType.INT, AkType.VARCHAR}),
+                row(customerRowType, new Object[]{5, "ooo"}, new AkType[]{AkType.INT, AkType.VARCHAR})
         };
         UpdatePlannable insertPlan = insert_Default(rowsToValueScan(rows));
         UpdateResult result = insertPlan.run(queryContext);
