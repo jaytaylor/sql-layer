@@ -805,7 +805,7 @@ public class PostgresServerConnection extends ServerSessionBase
             "parserInfixBit".equals(key) ||
             "parserInfixLogical".equals(key) ||
             "parserDoubleQuoted".equals(key) ||
-            "colunmAsFunc".equals(key) ||
+            "columnAsFunc".equals(key) ||
             "cbo".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();
