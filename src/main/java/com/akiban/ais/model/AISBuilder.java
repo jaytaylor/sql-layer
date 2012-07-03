@@ -63,24 +63,16 @@ public class
         LOG.trace("creating builder");
         this.ais = ais;
         this.nameGenerator = nameGenerator;
-        // this.tableIdGenerator = (int)(Math.random() * 2500);
-        this.tableIdGenerator = tableGeneratorBase += 1000;
         if (ais != null) {
-            Map<TableName, UserTable> userTables = ais.getUserTables();
-            Map<TableName, GroupTable> groupTables = ais.getGroupTables();
-            // Yuval: this next line isn't actually necessary if we initialize
-            // tableIdGenerator to random, but I'm
-            // keeping it in case we change that randomness.
-            this.tableIdGenerator += (userTables == null ? 0 : userTables
-                    .size()) + (groupTables == null ? 0 : groupTables.size());
+            for (UserTable table : ais.getUserTables().values()) {
+                tableIdGenerator = Math.max(tableIdGenerator, table.getTableId() + 1);
+            }
+            for (GroupTable table : ais.getGroupTables().values()) {
+                tableIdGenerator = Math.max(tableIdGenerator, table.getTableId() + 1);
+            }
         }
     }
 
-    /**
-     * Studio may or may not require the static incrementing tableGeneratorBase
-     * that is the default behavior. Let a consumer avoid that for now.
-     * @param offset New offset for tableIdGenerator
-     */
     public void setTableIdOffset(int offset) {
         this.tableIdGenerator = offset;
     }
@@ -816,7 +808,6 @@ public class
     }
 
     public final static int MAX_COLUMN_NAME_LENGTH = 64;
-    private static int tableGeneratorBase = 25000;
 
     private final AkibanInformationSchema ais;
     private Map<String, ForwardTableReference> forwardReferences = // join name
@@ -825,7 +816,7 @@ public class
     new LinkedHashMap<String, ForwardTableReference>();
     private NameGenerator nameGenerator;
     // This is temporary. We need unique ids generated here until the
-    // chunkserver assigns them.
+    // server assigns them.
     private int tableIdGenerator = 0;
     private int indexIdGenerator = 1;
 
