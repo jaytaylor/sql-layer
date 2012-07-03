@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.types3.TInstance;
+
 public interface PValueSource extends PBasicValueSource {
 
     boolean hasAnyValue();
@@ -34,5 +36,5 @@ public interface PValueSource extends PBasicValueSource {
     
     boolean hasCacheValue();
 
-    Object getObject(PValueCacher cacher);
+    Object getObject();
 }

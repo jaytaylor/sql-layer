@@ -30,5 +30,5 @@ public interface PValueTarget extends PBasicValueTarget {
 
     void putValueSource(PValueSource source);
 
-    void putObject(Object object, PValueCacher cacher);
+    void putObject(Object object);
 }

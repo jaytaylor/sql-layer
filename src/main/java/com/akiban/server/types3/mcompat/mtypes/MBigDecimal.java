@@ -35,11 +35,15 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.pvalue.PBasicValueSource;
+import com.akiban.server.types3.pvalue.PBasicValueTarget;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.AkibanAppender;
 
 import java.math.BigDecimal;
 import java.util.Arrays;
@@ -66,20 +70,6 @@ public class MBigDecimal extends TClass {
                 DataTypeDescriptor.computeMaxWidth(precision, scale));
     }
 
-    @Override
-    public void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        if (inValue.isNull()) {
-            out.putNull();
-            return;
-        }
-        BigDecimalWrapper bdw = (BigDecimalWrapper)inValue.getObject();
-        BigDecimal bd = bdw.asBigDecimal();
-        int precision = typeInstance.attribute(Attrs.PRECISION);
-        int scale = typeInstance.attribute(Attrs.SCALE);
-        byte[] bb = ConversionHelperBigDecimal.bytesFromObject(bd, precision, scale);
-        out.putBytes(bb);
-    }
-
     public static String getNum(int scale, int precision)
     {
         assert precision >= scale : "precision has to be >= scale";
@@ -97,7 +87,7 @@ public class MBigDecimal extends TClass {
     }
 
     @Override
-    public void putSafety(QueryContext context, 
+    public void putSafety(QueryContext context,
                           TInstance sourceInstance,
                           PValueSource sourceValue,
                           TInstance targetInstance,
@@ -154,4 +144,27 @@ public class MBigDecimal extends TClass {
         }*/
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
+    public static final PValueCacher cacher = new PValueCacher() {
+
+        @Override
+        public void cacheToValue(Object cached, TInstance tInstance, PBasicValueTarget target) {
+            BigDecimalWrapper bdw = (BigDecimalWrapper)cached;
+            BigDecimal bd = bdw.asBigDecimal();
+            int precision = tInstance.attribute(Attrs.PRECISION);
+            int scale = tInstance.attribute(Attrs.SCALE);
+            byte[] bb = ConversionHelperBigDecimal.bytesFromObject(bd, precision, scale);
+            target.putBytes(bb);
+        }
+
+        @Override
+        public Object valueToCache(PBasicValueSource value, TInstance tInstance) {
+            int precision = tInstance.attribute(Attrs.PRECISION);
+            int scale = tInstance.attribute(Attrs.SCALE);
+            byte[] bb = value.getBytes();
+            StringBuilder sb = new StringBuilder(precision + 2); // +2 for dot and minus sign
+            ConversionHelperBigDecimal.decodeToString(bb, 0, precision, scale, AkibanAppender.of(sb));
+            return new MBigDecimalWrapper(sb.toString());
+        }
+    };
 }

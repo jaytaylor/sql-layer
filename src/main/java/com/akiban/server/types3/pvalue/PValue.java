@@ -101,12 +101,11 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     @Override
-    public final void putObject(Object object, PValueCacher cacher) {
+    public final void putObject(Object object) {
         if (object == null)
             putNull();
         else
             setRawValues(State.CACHE_ONLY, -1, null, object);
-        this.cacher = cacher;
     }
 
     // PValueSource interface
@@ -179,15 +178,14 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     @Override
-    public final Object getObject(PValueCacher cacher) {
+    public final Object getObject() {
         switch (state) {
         case UNSET:
             throw new IllegalStateException("no value set");
         case NULL:
             return null;
         case VAL_ONLY:
-            oCache = cacher.valueToCache(this);
-            state = State.VAL_AND_CACHE;
+            throw new IllegalArgumentException("no cached object set");
             // fall through
         case CACHE_ONLY:
         case VAL_AND_CACHE:
@@ -279,7 +277,6 @@ public final class PValue implements PValueSource, PValueTarget {
         return iVal;
     }
 
-    @SuppressWarnings("unchecked")
     private void internalUpdateRaw() {
         switch (state) {
         case UNSET:
@@ -288,7 +285,6 @@ public final class PValue implements PValueSource, PValueTarget {
             throw new NullValueException();
         case CACHE_ONLY:
             Object savedCache = oCache;
-            cacher.cacheToValue(oCache, this);
             if (state == State.NULL)
                 throw new NullValueException();
             assert state == State.VAL_ONLY;
@@ -337,7 +333,6 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     private final PUnderlying underlying;
-    private PValueCacher cacher;
     private State state;
     private long iVal;
     private byte[] bVal;

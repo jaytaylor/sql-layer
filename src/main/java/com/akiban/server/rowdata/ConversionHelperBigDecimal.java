@@ -208,7 +208,7 @@ public final class ConversionHelperBigDecimal {
      * @throws NumberFormatException if the parse failed; the exception's message will be the String that we
      * tried to parse
      */
-    static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender appender) {
+    public static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender appender) {
         final int intCount = precision - scale;
         final int intFull = intCount / DECIMAL_DIGIT_PER;
         final int intPartial = intCount % DECIMAL_DIGIT_PER;

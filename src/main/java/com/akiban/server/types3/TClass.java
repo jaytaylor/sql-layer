@@ -43,8 +43,11 @@ public abstract class TClass {
 
     public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
-    public void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        out.putValueSource(inValue);
+    public void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        if (in.isNull())
+            out.putNull();
+        else
+            out.putValueSource(in);
     }
 
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
