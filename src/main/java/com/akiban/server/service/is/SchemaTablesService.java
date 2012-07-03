@@ -52,7 +52,7 @@ public class SchemaTablesService {
         assert table != null;
         final BasicFactoryBase factory;
         try {
-            factory = clazz.getConstructor(getClass(), TableName.class).newInstance(this, name);
+            factory = clazz.getConstructor(this.getClass(), TableName.class).newInstance(this, name);
         } catch(Exception e) {
             throw new RuntimeException(e);
         }

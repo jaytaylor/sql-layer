@@ -93,7 +93,7 @@ public class ServerSchemaTablesServiceImpl
 
         @Override
         public long rowCount() {
-            return 1;
+            return 0;
         }
         
         private class Scan extends BaseScan {
