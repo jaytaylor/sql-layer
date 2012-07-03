@@ -71,7 +71,7 @@ public class FlattenedRow extends AbstractRow
         if (i < nParentFields) {
             source = parenth.isEmpty() ? nullPValue(i) : parenth.get().pvalue(i);
         } else {
-            source = childh.isEmpty() ? nullPValue(i - nParentFields) : childh.get().pvalue(i - nParentFields);
+            source = childh.isEmpty() ? nullPValue(i) : childh.get().pvalue(i - nParentFields);
         }
         return source;
     }

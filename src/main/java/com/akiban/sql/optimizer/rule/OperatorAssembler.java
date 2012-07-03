@@ -29,7 +29,14 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -177,18 +184,29 @@ public class OperatorAssembler extends BaseRule
             UserTableRowType targetRowType = 
                 tableRowType(insertStatement.getTargetTable());
             List<Expression> inserts = null;
+            List<TPreparedExpression> insertsP = null;
             if (projectFields != null) {
                 // In the common case, we can project into a wider row
                 // of the correct type directly.
-
-                inserts = assembleExpressions(projectFields, stream.fieldOffsets);
+                assert false : "need to create assembler for types3";
+                inserts = Types3Switch.ON
+                        ? null
+                        : assembleExpressions(projectFields, stream.fieldOffsets);
             }
             else {
                 // VALUES just needs each field, which will get rearranged below.
                 int nfields = stream.rowType.nFields();
-                inserts = new ArrayList<Expression>(nfields);
-                for (int i = 0; i < nfields; i++) {
-                    inserts.add(Expressions.field(stream.rowType, i));
+                if (Types3Switch.ON) {
+                    insertsP = new ArrayList<TPreparedExpression>(nfields);
+                    for (int i = 0; i < nfields; ++i) {
+                        insertsP.add(new TPreparedField(stream.rowType.typeInstanceAt(i), i));
+                    }
+                }
+                else {
+                    inserts = new ArrayList<Expression>(nfields);
+                    for (int i = 0; i < nfields; i++) {
+                        inserts.add(Expressions.field(stream.rowType, i));
+                    }
                 }
             }
             // Have a list of expressions in the order specified.
@@ -196,15 +214,31 @@ public class OperatorAssembler extends BaseRule
             // literals for the gaps.
             // TODO: That doesn't seem right. How are explicit NULLs
             // to be distinguished from the column's default value?
-            Expression[] row = new Expression[targetRowType.nFields()];
-            Arrays.fill(row, LiteralExpression.forNull());
-            int ncols = inserts.size();
-            for (int i = 0; i < ncols; i++) {
-                Column column = insertStatement.getTargetColumns().get(i);
-                row[column.getPosition()] = inserts.get(i);
+            if (inserts != null) {
+                Expression[] row = new Expression[targetRowType.nFields()];
+                Arrays.fill(row, LiteralExpression.forNull());
+                int ncols = inserts.size();
+                for (int i = 0; i < ncols; i++) {
+                    Column column = insertStatement.getTargetColumns().get(i);
+                    row[column.getPosition()] = inserts.get(i);
+                }
+                inserts = Arrays.asList(row);
             }
-            inserts = Arrays.asList(row);
-            assert ! usePValues : "inserts not supported with pvalues";
+            else {
+                TPreparedExpression[] row = new TPreparedExpression[targetRowType.nFields()];
+                int ncols = insertsP.size();
+                for (int i = 0; i < ncols; i++) {
+                    Column column = insertStatement.getTargetColumns().get(i);
+                    row[column.getPosition()] = insertsP.get(i);
+                }
+                for (int i = 0, len = targetRowType.nFields(); i < len; ++i) {
+                    if (row[i] == null) {
+                        TInstance tinst = targetRowType.typeInstanceAt(i);
+                        PUnderlying underlying = tinst.typeClass().underlyingType();
+                        row[i] = new TPreparedLiteral(tinst, PValueSources.getNullSource(underlying));
+                    }
+                }
+            }
             stream.operator = API.project_Table(stream.operator, stream.rowType,
                                                 targetRowType, inserts, null);
             UpdatePlannable plan = API.insert_Default(stream.operator);

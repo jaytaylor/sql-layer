@@ -83,7 +83,7 @@ public class ProductRow extends AbstractRow
         if (i < nLeftFields) {
             source = left.isEmpty() ? nullPValue(i) : left.get().pvalue(i);
         } else {
-            source = right.isEmpty() ? nullPValue(i - firstRightFieldOffset) : right.get().pvalue(i - firstRightFieldOffset);
+            source = right.isEmpty() ? nullPValue(i) : right.get().pvalue(i - firstRightFieldOffset);
         }
         return source;
     }
