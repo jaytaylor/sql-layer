@@ -42,7 +42,7 @@ public class FunctionExpression extends BaseExpression
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
                               DataTypeDescriptor sqlType, ValueNode sqlSource) {
-        super(sqlType, AkType.NULL, sqlSource); // TODO
+        super(sqlType, sqlSource); // TODO
         this.function = function;
         this.operands = operands;
     }
