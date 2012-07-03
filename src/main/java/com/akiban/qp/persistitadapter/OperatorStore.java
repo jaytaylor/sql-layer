@@ -80,8 +80,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
      */
     private static final boolean WITH_STEPS = false;
 
-    private PersistitAdapter createAdapter(Session session) {
-        AkibanInformationSchema ais = aisHolder.getAis();
+    private PersistitAdapter createAdapter(AkibanInformationSchema ais, Session session) {
         return new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session, config, WITH_STEPS);
     }
 
@@ -102,7 +101,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
-            PersistitAdapter adapter = createAdapter(session);
+            PersistitAdapter adapter = createAdapter(ais, session);
             Schema schema = adapter.schema();
 
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
@@ -171,7 +170,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();
-            PersistitAdapter adapter = createAdapter(session);
+            PersistitAdapter adapter = createAdapter(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
             super.writeRow(session, rowData);
             maintainGroupIndexes(session,
@@ -192,7 +191,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         DELETE_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();
-            PersistitAdapter adapter = createAdapter(session);
+            PersistitAdapter adapter = createAdapter(ais, session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
             maintainGroupIndexes(session,
@@ -230,7 +229,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter = createAdapter(session);
+        PersistitAdapter adapter = createAdapter(ais, session);
         QueryContext context = new SimpleQueryContext(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
@@ -390,7 +389,6 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     // consts
 
-    private static final int MAX_RETRIES = 10;
     private static final InOutTap INSERT_TOTAL = Tap.createTimer("write: write_total");
     private static final InOutTap UPDATE_TOTAL = Tap.createTimer("write: update_total");
     private static final InOutTap DELETE_TOTAL = Tap.createTimer("write: delete_total");
