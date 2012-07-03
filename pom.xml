@@ -563,10 +563,6 @@
                                             <fileset dir="${basedir}/macosx" includes="dmg_background.png" />
                                         </copy>
                                         <copy file="${basedir}/macosx/dmg_VolumeIcon.icns" tofile="${mac.itemp}/.VolumeIcon.icns" />
-                                        <exec executable="SetFile" failonerror="true">
-                                            <arg line="-c icnC"/>
-                                            <arg file="${mac.itemp}/.VolumeIcon.icns" />
-                                        </exec>
                                         <delete file="${mac.itemp}.dmg" />
                                         <exec executable="hdiutil" failonerror="true">
                                             <arg line="create -fs HFSX -layout SPUD -size 40m" />
@@ -604,6 +600,10 @@
                                             <arg file="${mac.itemp}/Akiban Server.app" />
                                         </exec>
                                         <copy file="${basedir}/macosx/dmg.DS_Store" tofile="${mac.itemp}/.DS_Store" />
+                                        <exec executable="SetFile" failonerror="true">
+                                            <arg line="-a C"/>
+                                            <arg file="${mac.itemp}" />
+                                        </exec>
                                         <exec executable="sh" failonerror="true">
                                             <arg value="-c" />
                                             <arg value="hdiutil detach `hdiutil info | grep ${mac.itemp} | grep '^/dev' | cut -f1`" />
