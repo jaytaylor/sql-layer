@@ -441,11 +441,15 @@ public class PersistitStore implements Store {
         hEx = getExchange(session, rowDef);
         WRITE_ROW_TAP.in();
         try {
-            //
             // Does the heavy lifting of looking up the full hkey in
             // parent's primary index if necessary.
-            //
-            constructHKey(session, hEx, rowDef, rowData, true);
+            // About the propagateHKeyChanges flag: The last argument of constructHKey is insertingRow.
+            // If this argument is true, it means that we're inserting a new row, and if the row's type
+            // has a generated PK, then a PK value needs to be generated. If this writeRow invocation is
+            // being done as part of hkey maintenance (called from propagateDownGroup with propagateHKeyChanges
+            // false), then we are deleting and reinserting a row, and we don't want the PK value changed.
+            // See bug 1020342.
+            constructHKey(session, hEx, rowDef, rowData, propagateHKeyChanges);
             if (hEx.isValueDefined()) {
                 throw new DuplicateKeyException("PRIMARY", hEx.getKey());
             }

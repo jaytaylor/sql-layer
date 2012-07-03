@@ -57,13 +57,17 @@ public class TestRow extends AbstractRow
 
     public TestRow(RowType rowType, Object[] fields, String hKeyString)
     {
-        this.rowType = rowType;
-        this.hKeyString = hKeyString;
-        this.valuesHolder = new RowValuesHolder(fields);
+        this(rowType, new RowValuesHolder(fields), hKeyString);
     }
 
     public TestRow(RowType rowType, Object[] fields) {
         this(rowType, fields, null);
+    }
+
+    public TestRow(RowType rowType, RowValuesHolder valuesHolder, String hKeyString) {
+        this.rowType = rowType;
+        this.valuesHolder = valuesHolder;
+        this.hKeyString = hKeyString;
     }
 
     public String persistityString() {

@@ -57,7 +57,7 @@ public abstract class ITBase extends ApiTestBase {
             RowBase actualRow;
             while ((actualRow = cursor.next()) != null) {
                 int count = actualRows.size();
-                assertTrue(String.format("failed test %d < %d", count, expected.length), count < expected.length);
+                assertTrue(String.format("failed test %d < %d (more rows than expected)", count, expected.length), count < expected.length);
                 if(!equal(expected[count], actualRow)) {
                     String expectedString = expected[count] == null ? "null" : expected[count].toString();
                     String actualString = actualRow == null ? "null" : actualRow.toString();

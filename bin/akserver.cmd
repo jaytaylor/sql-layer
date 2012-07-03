@@ -129,6 +129,7 @@ IF NOT DEFINED AKIBAN_LOGCONF SET AKIBAN_LOGCONF=%AKIBAN_CONF%\config\log4j.prop
 
 IF EXIST "%AKIBAN_CONF%\config\jvm-options.cmd" CALL "%AKIBAN_CONF%\config\jvm-options.cmd"
 
+IF "%VERB%"=="window" GOTO RUN_CMD
 IF "%VERB%"=="run" GOTO RUN_CMD
 
 SET PRUNSRV_ARGS=--StartMode=jvm --StartClass com.akiban.server.AkServer --StartMethod=procrunStart --StopMode=jvm --StopClass=com.akiban.server.AkServer --StopMethod=procrunStop --StdOutput="%AKIBAN_LOGDIR%\stdout.log" --DisplayName="%SERVICE_DNAME%" --Description="%SERVICE_DESC%" --Startup=%SERVICE_MODE% --Classpath="%JAR_FILE%"
@@ -142,12 +143,13 @@ IF "%VERB%"=="install" (
 )
 
 :USAGE
-ECHO Usage: {install,uninstall,start,stop,run,monitor,version} [-j jarfile] [-c confdir] [-l log4j.properties] [-g] [-m manual,auto]
+ECHO Usage: {install,uninstall,start,stop,run,window,monitor,version} [-j jarfile] [-c confdir] [-l log4j.properties] [-g] [-m manual,auto]
 ECHO install   - install as service
 ECHO uninstall - remove installed service
 ECHO start     - start installed service
 ECHO stop      - stop installed service
-ECHO run       - run as ordinary application
+ECHO window    - run as ordinary application
+ECHO run       - run in command window
 ECHO monitor   - start tray icon service monitor
 ECHO version   - print version and exit
 GOTO EOF
@@ -167,7 +169,13 @@ SET JVM_OPTS=%JVM_OPTS% -Dservices.config="%AKIBAN_CONF%\config\services-config.
 SET JVM_OPTS=%JVM_OPTS% -Dlog4j.configuration="file:%AKIBAN_LOGCONF%"
 SET JVM_OPTS=%JVM_OPTS% -ea
 IF DEFINED MAX_HEAP_SIZE SET JVM_OPTS=%JVM_OPTS% -Xms%MAX_HEAP_SIZE%-Xmx%MAX_HEAP_SIZE%
+IF "%VERB%"=="window" GOTO WINDOW_CMD
 java %JVM_OPTS% -jar "%JAR_FILE%"
+GOTO EOF
+
+:WINDOW_CMD
+SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.akiban.server.service.ui.SwingConsoleService"
+javaw %JVM_OPTS% -cp "%JAR_FILE%" com.akiban.server.service.ui.AkServerWithSwingConsole
 GOTO EOF
 
 :EOF
