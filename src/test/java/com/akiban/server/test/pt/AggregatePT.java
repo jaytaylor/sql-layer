@@ -803,7 +803,7 @@ public class AggregatePT extends ApiTestBase {
         
         public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
             session = createNewSession();
-            adapter = new PersistitAdapter((Schema)valuesType.schema(), persistitStore(), treeService(), session, configService());
+            adapter = new PersistitAdapter((Schema)valuesType.schema(), store(), treeService(), session, configService());
             context = queryContext(adapter);
             context.setRow(bindingPosition, valuesRow);
             inputCursor = API.cursor(inputOperator, context);

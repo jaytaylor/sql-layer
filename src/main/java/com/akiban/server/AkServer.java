@@ -60,7 +60,7 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
     public static final String VERSION_STRING = getVersionString();
 
     private static final Logger LOG = LoggerFactory.getLogger(AkServer.class.getName());
-    private static final String AKSERVER_NAME = System.getProperty("akserver.name");
+    private static final String AKSERVER_NAME = System.getProperty("akserver.name", "Akiban Server");
     private static final String PID_FILE_NAME = System.getProperty("akserver.pidfile");
 
     private final JmxObjectInfo jmxObjectInfo;
@@ -76,8 +76,6 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
 
     @Override
     public void start() {
-        LOG.info("Starting AkServer {}", AKSERVER_NAME);
-
         try {
             Tap.registerMXBean();
         } catch (Exception e) {
@@ -88,7 +86,6 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
     @Override
     public void stop() 
     {
-        LOG.info("Stopping AkServer {}", AKSERVER_NAME);
         try {
             Tap.unregisterMXBean();
         } catch (Exception e) {
@@ -114,6 +111,18 @@ public class AkServer implements Service<AkServerInterface>, JmxManageable, AkSe
     @Override
     public Class<AkServerInterface> castClass() {
         return AkServerInterface.class;
+    }
+
+    @Override
+    public String getServerName()
+    {
+        return AKSERVER_NAME;
+    }
+
+    @Override
+    public String getServerVersion()
+    {
+        return VERSION_STRING;
     }
 
     private static String getVersionString()

@@ -123,12 +123,19 @@ public class ProtobufWriter {
     }
 
     private void writeMessageLite(MessageLite msg) {
+        final String MESSAGE_NAME = AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName();
         final int serializedSize = msg.getSerializedSize();
         buffer.prepareForSize(serializedSize + 4);
         buffer.limit(buffer.capacity());
         buffer.putInt(serializedSize);
         final int initialPos = buffer.position();
         final int bufferSize = buffer.limit() - initialPos;
+        if(serializedSize > bufferSize) {
+            throw new ProtobufWriteException(
+                    MESSAGE_NAME,
+                    String.format("Required size exceeded available size: %d vs %d", serializedSize, bufferSize)
+            );
+        }
         CodedOutputStream codedOutput = CodedOutputStream.newInstance(buffer.array(), initialPos, bufferSize);
         try {
             msg.writeTo(codedOutput);
@@ -136,10 +143,7 @@ public class ProtobufWriter {
             buffer.position(initialPos + serializedSize);
         } catch(IOException e) {
             // CodedOutputStream really only throws OutOfSpace exception, but declares IOE
-            throw new ProtobufWriteException(
-                    AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName(),
-                    String.format("Required size exceeded available size: %d vs %d", serializedSize, bufferSize)
-            );
+            throw new ProtobufWriteException(MESSAGE_NAME, e.getMessage());
         }
     }
 
