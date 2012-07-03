@@ -30,6 +30,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.persistit.Key;
 
 public class PersistitKeyPValueTarget implements PValueTarget {
@@ -63,19 +64,7 @@ public class PersistitKeyPValueTarget implements PValueTarget {
 
     @Override
     public void putValueSource(PValueSource source) {
-        if (source.getUnderlyingType() == null) return;
-        switch (source.getUnderlyingType()) {
-            case BOOL: putBool(source.getBoolean()); break;
-            case INT_8: putInt8(source.getInt8()); break;
-            case INT_16: putInt16(source.getInt16()); break;
-            case UINT_16: putUInt16(source.getUInt16()); break;
-            case INT_32: putInt32(source.getInt32()); break;
-            case INT_64: putInt64(source.getInt64()); break;
-            case FLOAT: putFloat(source.getFloat()); break;
-            case DOUBLE: putDouble(source.getDouble()); break;
-            case BYTES: putBytes(source.getBytes()); break;
-            default: putObject(source.getObject()); break;
-        }
+        PValueTargets.copyFrom(source, this);
     }
 
     @Override

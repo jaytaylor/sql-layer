@@ -28,11 +28,19 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.util.ByteSource;
+
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 
 public final class RowDataBuilder {
 
@@ -155,14 +163,14 @@ public final class RowDataBuilder {
                 }
             } else if (fieldDef.isFixedSize()) {
                 pTarget.bind(fieldDef, bytes, fixedWidthSectionOffset);
-                doConvert(source);
+                doConvert(source, pTarget);
                 if (pTarget.lastEncodedLength() != currFixedWidth) {
                     throw new IllegalStateException("expected to write " + currFixedWidth
                             + " fixed-width byte(s), but wrote " + pTarget.lastEncodedLength());
                 }
             } else {
                 pTarget.bind(fieldDef, bytes, variableWidthSectionOffset);
-                doConvert(source);
+                doConvert(source, pTarget);
                 int varWidthExpected = readVarWidth(bytes, currFixedWidth);
                 // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
                 // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
@@ -269,6 +277,131 @@ public final class RowDataBuilder {
             Converters.convert(source, target);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
+        }
+    }
+
+    private void doConvert(ValueSource in, PValueTarget out) {
+        long lval = 0;
+        float fval = 0;
+        double dval = 0;
+        byte[] bval = null;
+        boolean boolval = false;
+
+        switch (in.getConversionType()) {
+        case DATE:
+            lval = in.getDate();
+            break;
+        case DATETIME:
+            lval = in.getDateTime();
+            break;
+        case DECIMAL:
+        {
+            BigDecimal bd = in.getDecimal();
+            FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
+            int size = fieldDef.getEncoding().widthFromObject(fieldDef, bd);
+            bval = new byte[size];
+            ConversionHelperBigDecimal.fromObject(fieldDef, bd, bval, 0);
+        }
+            break;
+        case DOUBLE:
+            dval = in.getDouble();
+            break;
+        case FLOAT:
+            fval = in.getFloat();
+            break;
+        case INT:
+            lval = in.getInt();
+            break;
+        case LONG:
+            lval = in.getLong();
+            break;
+        case VARCHAR:
+        {
+            String charset = rowDef.getFieldDef(fieldIndex).column().getCharsetAndCollation().charset();
+            try {
+                bval = in.getString().getBytes(charset);
+            } catch (UnsupportedEncodingException e) {
+                throw new AkibanInternalException("while decoding with charset " + charset, e);
+            }
+        }
+            break;
+        case TEXT:
+        {
+            String charset = rowDef.getFieldDef(fieldIndex).column().getCharsetAndCollation().charset();
+            try {
+                bval = in.getString().getBytes(charset);
+            } catch (UnsupportedEncodingException e) {
+                throw new AkibanInternalException("while decoding with charset " + charset, e);
+            }
+        }
+            break;
+        case TIME:
+            lval = in.getTime();
+            break;
+        case TIMESTAMP:
+            lval = in.getTimestamp();
+            break;
+        case U_BIGINT:
+            lval = in.getUBigInt().longValue();
+            break;
+        case U_DOUBLE:
+            dval = in.getUDouble();
+            break;
+        case U_FLOAT:
+            fval = in.getUFloat();
+            break;
+        case U_INT:
+            lval = in.getUInt();
+            break;
+        case VARBINARY:
+            ByteSource bs = in.getVarBinary();
+            bval = new byte[bs.byteArrayLength()];
+            System.arraycopy(bs.byteArray(), bs.byteArrayOffset(), bval, 0, bs.byteArrayLength());
+            break;
+        case YEAR:
+            lval = in.getYear();
+            break;
+        case BOOL:
+            boolval = in.getBool();
+            break;
+        case INTERVAL_MILLIS:
+            lval = in.getInterval_Millis();
+            break;
+        case INTERVAL_MONTH:
+            lval = in.getInterval_Month();
+            break;
+        default:
+            throw new AssertionError(in.getConversionType());
+        }
+
+        switch (out.getUnderlyingType()) {
+        case BOOL:
+            out.putBool(boolval);
+            break;
+        case INT_8:
+            out.putInt8((byte)lval);
+            break;
+        case INT_16:
+            out.putInt16((short)lval);
+            break;
+        case UINT_16:
+            out.putUInt16((char)lval);
+            break;
+        case INT_32:
+            out.putInt32((int)lval);
+            break;
+        case INT_64:
+            out.putInt64(lval);
+            break;
+        case FLOAT:
+            out.putFloat(fval);
+            break;
+        case DOUBLE:
+            out.putDouble(dval);
+            break;
+        case BYTES:
+            out.putBytes(bval);
+            break;
         }
     }
 

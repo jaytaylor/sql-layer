@@ -30,6 +30,7 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigInteger;
 
@@ -80,7 +81,7 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putValueSource(PValueSource source) {
-        throw new UnsupportedOperationException();
+        PValueTargets.copyFrom(source, this);
     }
 
     @Override
@@ -90,17 +91,17 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putInt8(byte value) {
-        throw new UnsupportedOperationException();
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putInt16(short value) {
-        throw new UnsupportedOperationException();
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putUInt16(char value) {
-        throw new UnsupportedOperationException();
+        recordEncoded(encodeLong(value));
     }
 
     @Override
@@ -115,7 +116,7 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putBytes(byte[] value) {
-        throw new UnsupportedOperationException();
+        recordEncoded(ConversionHelper.putByteArray(value, 0, value.length, bytes, offset, fieldDef));
     }
 
     @Override
