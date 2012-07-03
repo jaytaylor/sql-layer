@@ -48,4 +48,6 @@ public interface ArithOp
     abstract char opName ();
     
     boolean isInfix();
+    
+    boolean isAssociative();
 }

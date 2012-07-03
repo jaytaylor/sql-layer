@@ -39,6 +39,8 @@ public enum Label
     //--------------------------------------------------------------------------
     BINDING_POSITION(Category.DESCRIPTION),
     EXTRA_TAG(Category.DESCRIPTION), // extra info
+    INFIX(Category.DESCRIPTION),
+    ASSOCIATIVE(Category.DESCRIPTION),
     
     // IDENTIFIER
     //--------------------------------------------------------------------------
@@ -46,7 +48,6 @@ public enum Label
     START_TABLE(Category.IDENTIFIER),
     STOP_TABLE(Category.IDENTIFIER),
     GROUP_TABLE(Category.IDENTIFIER),
-    INFIX(Category.IDENTIFIER),
     
     // OPTION
     //--------------------------------------------------------------------------

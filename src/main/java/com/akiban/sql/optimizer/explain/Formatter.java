@@ -24,12 +24,16 @@ public class Formatter {
         describe(explainer, sb);
         return sb.toString();
     }
-
+    
     void describe(Explainer explainer, StringBuilder sb) {
+        describe(explainer, sb, true);
+    }
+
+    void describe(Explainer explainer, StringBuilder sb, boolean noParens) {
         if (explainer.hasAttributes())
         {
             OperationExplainer opEx = (OperationExplainer) explainer;
-            describeOperation(opEx, sb);
+            describeOperation(opEx, sb, noParens);
         }
         else
         {
@@ -38,23 +42,22 @@ public class Formatter {
         }
     }
 
-    void describeExpression(ExpressionExplainer explainer, StringBuilder sb) {
-        // TODO
-    }
-
-    void describeOperation(OperationExplainer explainer, StringBuilder sb) {
+    void describeOperation(OperationExplainer explainer, StringBuilder sb, boolean noParens) {
         
         Attributes atts = (Attributes) explainer.get().clone();
         
         if (explainer.get().containsKey(Label.INFIX))
         {
-            sb.append("(");
-            describe(atts.valuePairs().get(0).getValue(), sb);
-            sb.append(" ");
-            sb.append(atts.get(Label.NAME).get(0).get());
-            sb.append(" ");
-            describe(atts.valuePairs().get(1).getValue(), sb);
-            sb.append(")");
+            Explainer leftExplainer = atts.valuePairs().get(0).getValue();
+            Explainer rightExplainer = atts.valuePairs().get(1).getValue();
+            if (!noParens)
+                sb.append("(");
+            boolean associative = explainer.get().containsKey(Label.ASSOCIATIVE);   
+            describe(leftExplainer, sb, associative && explainer.equals(leftExplainer));
+            sb.append(" ").append(atts.get(Label.NAME).get(0).get()).append(" ");
+            describe(rightExplainer, sb, associative && explainer.equals(rightExplainer));
+            if (!noParens)
+                sb.append(")");
         }
         else
         {
@@ -74,9 +77,7 @@ public class Formatter {
     void describePrimitive(PrimitiveExplainer explainer, StringBuilder sb) {
         if (explainer.getType()==Type.STRING)
         {
-            sb.append("\"");
-            sb.append(explainer.get());
-            sb.append("\"");
+            sb.append("\"").append(explainer.get()).append("\"");
         }
         else
         {

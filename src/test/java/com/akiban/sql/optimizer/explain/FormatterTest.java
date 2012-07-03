@@ -112,7 +112,7 @@ public class FormatterTest {
         
         Explainer explainer = substr.getExplainer();
         Formatter instance = new Formatter();
-        String expResult = "SUBSTRING(FROM_UNIXTIME(((123456 * 7) + 8), \"%Y-%m-%d\"), (9 + 10), 11)";
+        String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \"%Y-%m-%d\"), 9 + 10, 11)";
         String result = instance.describe(explainer);
         assertEquals(expResult, result);
     }

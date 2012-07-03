@@ -83,6 +83,13 @@ public class ArithOps
         {
             return true;
         }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return true;
+        }
+        
     };
     
     @Scalar("minus")
@@ -138,6 +145,12 @@ public class ArithOps
         {
             return true;
         }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return false;
+        }
     };
 
     @Scalar("mod")
@@ -185,6 +198,12 @@ public class ArithOps
         public boolean isInfix()
         {
             return true;
+        }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return false;
         }
     };
 
@@ -246,6 +265,12 @@ public class ArithOps
         {
             return true;
         }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return false;
+        }
     };
     
     /**
@@ -306,6 +331,12 @@ public class ArithOps
         {
             return true;
         }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return false;
+        }
     };
     
     @Scalar("plus")
@@ -348,6 +379,12 @@ public class ArithOps
 
         @Override
         public boolean isInfix()
+        {
+            return true;
+        }
+        
+        @Override
+        public boolean isAssociative()
         {
             return true;
         }
