@@ -101,6 +101,7 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
             inputCursor.open();
             Row row;
             while ((row = inputCursor.next()) != null) {
+                // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
                 checkQueryCancelation();
                 ++seen;
                 adapter().writeRow(row);
@@ -108,7 +109,6 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
                 if (LOG.isDebugEnabled()) {
                     LOG.debug("Insert: row {}", row);
                 }
-
             }
         } finally {
             if (inputCursor != null) {
