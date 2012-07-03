@@ -28,24 +28,16 @@ package com.akiban.server.service.is;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.net.URL;
-import java.util.Map;
-import java.util.SortedMap;
 
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
-import com.akiban.server.test.ApiTestBase;
 
-public final class SchemaTableServiceIT extends ApiTestBase {
+import com.akiban.server.test.it.ITBase;
 
-    public SchemaTableServiceIT() {
-        super("IT");
-    }
+public final class SchemaTableServiceIT extends ITBase {
 
     @Override
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
