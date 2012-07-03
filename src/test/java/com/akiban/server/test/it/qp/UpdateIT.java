@@ -28,6 +28,8 @@ package com.akiban.server.test.it.qp;
 
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
+import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
@@ -43,9 +45,12 @@ import static com.akiban.qp.operator.API.*;
 import com.persistit.Transaction;
 
 import org.junit.Test;
+
+import static com.akiban.qp.operator.API.indexScan_Default;
 import static org.junit.Assert.assertEquals;
 
 import java.util.Arrays;
+import java.util.Collections;
 
 public class UpdateIT extends OperatorITBase
 {
@@ -192,4 +197,86 @@ public class UpdateIT extends OperatorITBase
         compareRows(expected, executable);
     }
 
+
+    @Test
+    public void updateCustomer() {
+        use(db);
+        doUpdate();
+        compareRows(
+                array(TestRow.class,
+                      row(customerRowType, 1L, "xyz"),
+                      row(customerRowType, 2L, "zzz")
+                      ),
+                cursor(
+                        filter_Default(
+                                groupScan_Default(coi),
+                                Collections.singleton(customerRowType)),
+                        queryContext
+                )
+        );
+    }
+
+    @Test
+    public void updateCustomerCheckNameIndex() {
+        use(db);
+        doUpdate();
+        compareRows(
+                array(RowBase.class,
+                      row(customerNameIndexRowType, "xyz", 1L),
+                      row(customerNameIndexRowType, "zzz", 2L)
+                      ),
+                cursor(
+                        indexScan_Default(
+                                customerNameIndexRowType,
+                                IndexKeyRange.unbounded(customerNameIndexRowType),
+                                new API.Ordering()),
+                        queryContext
+                ));
+    }
+
+    @Test
+    public void updateCustomerCheckNameItemOidGroupIndex() {
+        use(db);
+        doUpdate();
+        compareRows(
+                array(RowBase.class,
+                      row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 111L),
+                      row(customerNameItemOidIndexRowType, "xyz", 11L, 1L, 11L, 112L),
+                      row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 121L),
+                      row(customerNameItemOidIndexRowType, "xyz", 12L, 1L, 12L, 122L),
+                      row(customerNameItemOidIndexRowType, "zzz", 21L, 2L, 21L, 211L),
+                      row(customerNameItemOidIndexRowType, "zzz", 21L, 2L, 21L, 212L),
+                      row(customerNameItemOidIndexRowType, "zzz", 22L, 2L, 22L, 221L),
+                      row(customerNameItemOidIndexRowType, "zzz", 22L, 2L, 22L, 222L)
+                ),
+                cursor(
+                        indexScan_Default(
+                                customerNameItemOidIndexRowType,
+                                IndexKeyRange.unbounded(customerNameItemOidIndexRowType),
+                                new API.Ordering(),
+                                customerRowType),
+                        queryContext
+                ));
+    }
+
+    private void doUpdate() {
+        Row[] rows = {
+                row(customerRowType, 2, "abc"),
+        };
+        UpdateFunction updateFunction = new UpdateFunction() {
+            @Override
+            public Row evaluate(Row original, QueryContext context) {
+                return row(customerRowType, 2L, "zzz");
+            }
+
+            @Override
+            public boolean rowIsSelected(Row row) {
+                return true;
+            }
+        };
+        UpdatePlannable insertPlan = update_Default(rowsToValueScan(rows), updateFunction);
+        UpdateResult result = insertPlan.run(queryContext);
+        assertEquals("rows touched", rows.length, result.rowsTouched());
+        assertEquals("rows modified", rows.length, result.rowsModified());
+    }
 }

@@ -87,7 +87,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             RowDef rowDef = persistitStore.getRowDefCache().rowDef(oldRowData.getRowDefId());
             if ((columnSelector != null) && !rowDef.table().getGroupIndexes().isEmpty()) {
-                throw new RuntimeException("group index maintence won't work with partial rows");
+                throw new RuntimeException("group index maintenance won't work with partial rows");
             }
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
