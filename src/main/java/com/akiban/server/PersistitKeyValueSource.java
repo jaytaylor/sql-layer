@@ -72,7 +72,14 @@ public final class PersistitKeyValueSource implements ValueSource {
 
     @Override
     public boolean isNull() {
-        return decode().isNull();
+        /*
+         * No need to decode the value to detect null
+         */
+        if (needsDecoding) {
+            key.indexTo(depth);
+            return key.isNull();
+        }
+        return valueHolder.isNull();
     }
 
     @Override

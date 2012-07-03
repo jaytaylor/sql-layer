@@ -50,7 +50,7 @@
 - Statement: SELECT i, j FROM parent RIGHT JOIN child USING (name)
 - output: [[1, 100],[null,200],[4,400]]
 ---
-- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32))
+- CreateTable: t1 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE utf8_bin)
 ---
 - Statement: INSERT INTO t1(id, s)
     VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
