@@ -60,6 +60,8 @@ public final class PValueSources {
             return one.getFloat() == two.getFloat();
         case DOUBLE:
             return one.getDouble() == two.getDouble();
+        case STRING:
+            return one.getString().equals(two.getString());
         case BYTES:
             return Arrays.equals(one.getBytes(), two.getBytes());
         default:
@@ -98,6 +100,9 @@ public final class PValueSources {
             break;
         case BYTES:
             hash = Arrays.hashCode(source.getBytes());
+            break;
+        case STRING:
+            hash = source.getString().hashCode();
             break;
         default:
             throw new AssertionError(source.getUnderlyingType());
@@ -246,6 +251,9 @@ public final class PValueSources {
                     break;
                 case BYTES:
                     out.putBytes((byte[])oval); // ensured by "oval.getClass() != byte[].class" above
+                    break;
+                case STRING:
+                    out.putString((String)(oval));
                     break;
                 default:
                     throw new AssertionError(out.getUnderlyingType());

@@ -62,6 +62,9 @@ public final class PValueTargets {
             case BYTES:
                 target.putBytes(source.getBytes());
                 break;
+            case STRING:
+                target.putString(source.getString());
+                break;
             default:
                 throw new AssertionError(source.getUnderlyingType());
             }

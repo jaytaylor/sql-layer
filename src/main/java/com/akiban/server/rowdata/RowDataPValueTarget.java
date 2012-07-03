@@ -76,7 +76,9 @@ public final class RowDataPValueTarget implements PValueTarget {
     
     @Override
     public PUnderlying getUnderlyingType() {
-        return fieldDef.column().tInstance().typeClass().underlyingType();
+        // STRING should actually be interpreted as BYTES
+        PUnderlying underlying = fieldDef.column().tInstance().typeClass().underlyingType();
+        return underlying == PUnderlying.STRING ? PUnderlying.BYTES : underlying;
     }
 
     @Override
@@ -117,6 +119,12 @@ public final class RowDataPValueTarget implements PValueTarget {
     @Override
     public void putBytes(byte[] value) {
         recordEncoded(ConversionHelper.putByteArray(value, 0, value.length, bytes, offset, fieldDef));
+    }
+
+    @Override
+    public void putString(String value) {
+        throw new AssertionError("should be targeted to bytes instead");
+//        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
     @Override

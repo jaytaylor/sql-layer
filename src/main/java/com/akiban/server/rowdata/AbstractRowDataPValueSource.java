@@ -121,6 +121,14 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
     }
 
     @Override
+    public String getString() {
+        final long location = getRawOffsetAndWidth();
+        return location == 0
+                ? null
+                : AkServerUtil.decodeMySQLString(bytes(), (int) location, (int) (location >>> 32), fieldDef());
+    }
+
+    @Override
     public Object getObject() {
         throw new UnsupportedOperationException();
     }

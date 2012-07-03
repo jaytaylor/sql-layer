@@ -137,6 +137,13 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     }
 
     @Override
+    public void putString(String value) {
+        assert type == PUnderlying.STRING : type;
+        key.append(value);
+        invalidate();
+    }
+
+    @Override
     public void putObject(Object object) {
         key.append(object);
         invalidate();

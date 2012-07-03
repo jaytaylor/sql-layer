@@ -95,6 +95,12 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     @Override
+    public void putString(String value) {
+        checkUnderlying(PUnderlying.STRING);
+        setRawValues(State.CACHE_ONLY, -1, null, value);
+    }
+
+    @Override
     public final void putObject(Object object) {
         if (object == null)
             putNull();
@@ -163,6 +169,11 @@ public final class PValue implements PValueSource, PValueTarget {
         checkUnderlying(PUnderlying.BYTES);
         internalUpdateRaw();
         return bVal;
+    }
+
+    @Override
+    public String getString() {
+        return (String) getObject();
     }
 
     @Override
@@ -241,6 +252,9 @@ public final class PValue implements PValueSource, PValueTarget {
                 break;
             case BOOL:
                 sb.append(getBoolean());
+                break;
+            case STRING:
+                sb.append(getString());
                 break;
             case BYTES:
                 sb.append("0x ");
@@ -324,17 +338,6 @@ public final class PValue implements PValueSource, PValueTarget {
         this.underlying = underlying;
         this.state = State.UNSET;
         this.cacher = cacher;
-    }
-
-    public static PValue copyOf(PValueSource source) {
-        PValue sourceRaw = (PValue) source;
-        PValue result = new PValue(sourceRaw.underlying);
-        result.cacher = sourceRaw.cacher;
-        result.state = sourceRaw.state;
-        result.iVal = sourceRaw.iVal;
-        result.bVal = sourceRaw.bVal;
-        result.oCache = sourceRaw.oCache;
-        return result;
     }
 
     private final PUnderlying underlying;

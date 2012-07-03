@@ -45,12 +45,12 @@ public class MString extends TString
 
     @Override
     public void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        out.putObject(inValue.getObject()); // TODO put string with no collation
+        out.putString(inValue.getString()); // TODO put string with no collation
     }
 
     @Override
     public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-        out.putObject(inValue.getObject()); // TODO put string with collation
+        out.putString(inValue.getString()); // TODO put string with collation
     }
 
     private MString(TypeId typeId, String name, int fixedSize) {

@@ -51,5 +51,7 @@ public interface PValueTarget {
 
     void putBytes(byte[] value);
 
+    void putString(String value);
+
     void putObject(Object object);
 }

@@ -58,5 +58,7 @@ public interface PValueSource {
 
     byte[] getBytes();
 
+    String getString();
+
     Object getObject();
 }
