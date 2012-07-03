@@ -24,40 +24,46 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.test.it.qp;
+package com.akiban.server.types3.texpressions;
 
-import com.akiban.qp.row.AbstractRow;
-import com.akiban.qp.row.HKey;
+import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.NullValueSource;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.util.ArgumentValidation;
 
-public final class NullsRow extends AbstractRow {
+abstract class SubqueryTExpression implements TPreparedExpression {
     @Override
-    public RowType rowType() {
-        return rowType;
+    public TPreptimeValue evaluateConstant() {
+        return new TPreptimeValue(resultType());
     }
 
-    @Override
-    public HKey hKey() {
-        throw new UnsupportedOperationException();
+    // for use by subclasses
+
+    protected final Operator subquery() {
+        return subquery;
+    }
+    protected final RowType outerRowType() {
+        return outerRowType;
+    }
+    protected final RowType innerRowType() {
+        return innerRowType;
+    }
+    protected final int bindingPosition() {
+        return bindingPosition;
     }
 
-    @Override
-    public ValueSource eval(int index) {
-        return NullValueSource.only();
+    SubqueryTExpression(Operator subquery, RowType outerRowType,
+                        RowType innerRowType, int bindingPosition) {
+        ArgumentValidation.notNull("subquery", subquery);
+        ArgumentValidation.isGTE("binding position", bindingPosition, 0);
+        this.subquery = subquery;
+        this.outerRowType = outerRowType;
+        this.innerRowType = innerRowType;
+        this.bindingPosition = bindingPosition;
     }
 
-    @Override
-    public PValueSource pvalue(int index) {
-        return PValueSources.getNullSource(rowType.typeInstanceAt(index).typeClass().underlyingType());
-    }
-
-    public NullsRow(RowType rowType) {
-        this.rowType = rowType;
-    }
-
-    private final RowType rowType;
+    private final Operator subquery;
+    private final RowType outerRowType;
+    private final RowType innerRowType;
+    private final int bindingPosition;
 }

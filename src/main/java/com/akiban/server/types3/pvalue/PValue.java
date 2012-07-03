@@ -31,11 +31,12 @@ public final class PValue implements PValueSource, PValueTarget {
     // PValueTarget interface
 
     @Override
+    public boolean supportsCachedObjects() {
+        return true;
+    }
+
+    @Override
     public void putValueSource(PValueSource source) {
-        if (source.isNull()) {
-            putNull();
-            return;
-        }
         if (source instanceof PValue) {
             PValue sourceRaw = (PValue) source;
             if (sourceRaw.underlying != this.underlying)
@@ -43,37 +44,7 @@ public final class PValue implements PValueSource, PValueTarget {
             setRawValues(sourceRaw.state, sourceRaw.iVal, sourceRaw.bVal, sourceRaw.oCache);
         }
         else {
-            switch (source.getUnderlyingType()) {
-            case BOOL:
-                putBool(source.getBoolean());
-                break;
-            case INT_8:
-                putInt8(source.getInt8());
-                break;
-            case INT_16:
-                putInt16(source.getInt16());
-                break;
-            case UINT_16:
-                putUInt16(source.getUInt16());
-                break;
-            case INT_32:
-                putInt32(source.getInt32());
-                break;
-            case INT_64:
-                putInt64(source.getInt64());
-                break;
-            case FLOAT:
-                putFloat(source.getFloat());
-                break;
-            case DOUBLE:
-                putDouble(source.getDouble());
-                break;
-            case BYTES:
-                putBytes(source.getBytes());
-                break;
-            default:
-                throw new AssertionError(source.getUnderlyingType());
-            }
+            PValueTargets.copyFrom(source, this);
         }
     }
 
@@ -126,6 +97,12 @@ public final class PValue implements PValueSource, PValueTarget {
     public final void putBytes(byte[] value) {
         checkUnderlying(PUnderlying.BYTES);
         setRawValues(State.VAL_ONLY, -1, value, null);
+    }
+
+    @Override
+    public void putString(String value) {
+        checkUnderlying(PUnderlying.STRING);
+        setRawValues(State.CACHE_ONLY, -1, null, value);
     }
 
     @Override
@@ -200,6 +177,12 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     @Override
+    public String getString() {
+        checkUnderlying(PUnderlying.STRING);
+        return (String) oCache;
+    }
+
+    @Override
     public final Object getObject() {
         switch (state) {
         case UNSET:
@@ -207,8 +190,7 @@ public final class PValue implements PValueSource, PValueTarget {
         case NULL:
             return null;
         case VAL_ONLY:
-            oCache = cacher.valueToCache(this);
-            state = State.VAL_AND_CACHE;
+            throw new IllegalArgumentException("no cached object set");
             // fall through
         case CACHE_ONLY:
         case VAL_AND_CACHE:
@@ -238,12 +220,6 @@ public final class PValue implements PValueSource, PValueTarget {
     @Override
     public PUnderlying getUnderlyingType() {
         return underlying;
-    }
-
-    // PValue interface
-
-    public void setCacher(PValueCacher<?> cacher) {
-        this.cacher = cacher;
     }
 
     // Object interface
@@ -276,6 +252,9 @@ public final class PValue implements PValueSource, PValueTarget {
             case BOOL:
                 sb.append(getBoolean());
                 break;
+            case STRING:
+                sb.append(getString());
+                break;
             case BYTES:
                 sb.append("0x ");
                 for (int i = 0, max= bVal.length; i < max; ++i) {
@@ -303,7 +282,6 @@ public final class PValue implements PValueSource, PValueTarget {
         return iVal;
     }
 
-    @SuppressWarnings("unchecked")
     private void internalUpdateRaw() {
         switch (state) {
         case UNSET:
@@ -312,7 +290,6 @@ public final class PValue implements PValueSource, PValueTarget {
             throw new NullValueException();
         case CACHE_ONLY:
             Object savedCache = oCache;
-            ((PValueCacher)cacher).cacheToValue(oCache, this);
             if (state == State.NULL)
                 throw new NullValueException();
             assert state == State.VAL_ONLY;
@@ -345,7 +322,8 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     public PValue(PUnderlying underlying) {
-        this(underlying, null);
+        this.underlying = underlying;
+        this.state = State.UNSET;
     }
     
     public PValue(double val)
@@ -353,26 +331,13 @@ public final class PValue implements PValueSource, PValueTarget {
         this(PUnderlying.DOUBLE);
         putDouble(val);
     }
-    
-    public PValue(PUnderlying underlying, PValueCacher<?> cacher) {
-        this.underlying = underlying;
-        this.state = State.UNSET;
-        this.cacher = cacher;
-    }
 
-    public static PValue copyOf(PValueSource source) {
-        PValue sourceRaw = (PValue) source;
-        PValue result = new PValue(sourceRaw.underlying);
-        result.cacher = sourceRaw.cacher;
-        result.state = sourceRaw.state;
-        result.iVal = sourceRaw.iVal;
-        result.bVal = sourceRaw.bVal;
-        result.oCache = sourceRaw.oCache;
-        return result;
+    public PValue(int val) {
+        this(PUnderlying.INT_32);
+        putInt32(val);
     }
 
     private final PUnderlying underlying;
-    private PValueCacher<?> cacher;
     private State state;
     private long iVal;
     private byte[] bVal;
@@ -384,50 +349,4 @@ public final class PValue implements PValueSource, PValueTarget {
     private enum State {
         UNSET, NULL, VAL_ONLY, CACHE_ONLY, VAL_AND_CACHE
     }
-
-//    public static void main(String[] args) {
-//        PValue a = new PValue(PUnderlying.INT_32);
-//        System.out.println(a);
-//        a.putInt32(42);
-//        System.out.println(a);
-//
-//        PValue b = new PValue(PUnderlying.UINT_16);
-//        b.putUInt16('a');
-//        System.out.println(b);
-//
-//        PValue c = new PValue(PUnderlying.BYTES);
-//        c.putBytes(new byte[]{0x12, (byte) 0xFF, (byte) 0xCA, (byte) 0xEA, (byte) 0x21});
-//        System.out.println(c);
-//
-//        PValue d = new PValue(PUnderlying.INT_64, new PValueCacher<BigDecimal>() {
-//            @Override
-//            public void cacheToValue(BigDecimal cached, PValueTarget value) {
-//                String asString = cached.toPlainString();
-//                asString = asString.replace(".", "");
-//                long asLong = Long.parseLong(asString);
-//                value.putInt64(asLong);
-//            }
-//
-//            @Override
-//            public BigDecimal valueToCache(PValueSource value) {
-//                long asLong = value.getInt64();
-//                StringBuilder asSb = new StringBuilder(String.format("%020d", asLong));
-//                asSb.reverse();
-//                asSb.insert(3, '.');
-//                asSb.reverse();
-//                return new BigDecimal(asSb.toString());
-//            }
-//        });
-//        d.putInt64(123456L);
-//        System.out.println(d);
-//        d.getObject();
-//        System.out.println(d);
-//        System.out.println(d.getObject());
-//        System.out.println(d.getInt64());
-//        d.putObject(new BigDecimal("567.890"));
-//        System.out.println(d.getInt64());
-//        System.out.println(d.getObject());
-//        System.out.println(d);
-//        d.getInt16();
-//    }
 }

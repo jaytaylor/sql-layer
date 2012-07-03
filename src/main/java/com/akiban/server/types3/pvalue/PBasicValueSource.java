@@ -23,31 +23,33 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.types3.common;
 
-import java.math.BigDecimal;
+package com.akiban.server.types3.pvalue;
 
-public interface BigDecimalWrapper {
-    
-     BigDecimalWrapper add(BigDecimalWrapper augend);
-     BigDecimalWrapper subtract(BigDecimalWrapper augend);
-     BigDecimalWrapper multiply(BigDecimalWrapper augend);
-     BigDecimalWrapper divide(BigDecimalWrapper augend);
-     BigDecimalWrapper floor();
-     BigDecimalWrapper ceil();
-     BigDecimalWrapper truncate(int scale);
-     BigDecimalWrapper round(int scale);
-     BigDecimalWrapper divide(BigDecimalWrapper augend, int scale);
-     BigDecimalWrapper parseString(String num);
-     BigDecimalWrapper round (int precision, int scale);
-     BigDecimalWrapper negate();
-     BigDecimalWrapper abs();
-     
-     int compareTo (Object o);
-     int getScale();
-     int getPrecision();
-     int getSign();
-     void reset();
+public interface PBasicValueSource {
+    PUnderlying getUnderlyingType();
 
-    BigDecimal asBigDecimal();
+    boolean isNull();
+
+    boolean getBoolean();
+
+    boolean getBoolean(boolean defaultValue);
+
+    byte getInt8();
+
+    short getInt16();
+
+    char getUInt16();
+
+    int getInt32();
+
+    long getInt64();
+
+    float getFloat();
+
+    double getDouble();
+
+    byte[] getBytes();
+
+    String getString();
 }

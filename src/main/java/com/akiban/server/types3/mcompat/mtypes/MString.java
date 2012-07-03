@@ -26,8 +26,11 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
 public class MString extends TString
@@ -39,7 +42,12 @@ public class MString extends TString
     public static final MString MEDIUMTEXT = new MString(TypeId.LONGVARCHAR_ID, "mediumtext", 65535);
     public static final MString TEXT = new MString(TypeId.LONGVARCHAR_ID, "text", 16777215);
     public static final MString LONGTEXT = new MString(TypeId.LONGVARCHAR_ID, "longtext", Integer.MAX_VALUE); // TODO not big enough!
-    
+
+    @Override
+    public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
+        out.putString(inValue.getString()); // TODO put string with collation
+    }
+
     private MString(TypeId typeId, String name, int fixedSize) {
         super(typeId, MBundle.INSTANCE, name, -1, fixedSize);
     }

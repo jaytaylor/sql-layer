@@ -29,10 +29,11 @@ package com.akiban.server.types3;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueCacher;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.sql.types.TypeId;
 import com.akiban.util.ArgumentValidation;
 import java.util.EnumSet;
 import java.util.regex.Pattern;
@@ -43,8 +44,8 @@ public abstract class TClass {
 
     public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
-    public void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        out.putValueSource(inValue);
+    public void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        PValueTargets.copyFrom(in, out, cacher(), typeInstance);
     }
 
     public void attributeToString(int attributeIndex, long value, StringBuilder output) {
@@ -163,6 +164,10 @@ public abstract class TClass {
         TInstance result = new TInstance(this, enumClass, nAttrs, attr0, attr1, attr2, attr3);
         validate(result);
         return result;
+    }
+
+    public PValueCacher<?> cacher() {
+        return null;
     }
 
     // state

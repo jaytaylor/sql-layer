@@ -52,5 +52,5 @@ public abstract class PostgresOutputter<T>
                                          server.getZeroDateTimeBehavior());
     }
 
-    public abstract void output(T row) throws IOException;
+    public abstract void output(T row, boolean usePVals) throws IOException;
 }
