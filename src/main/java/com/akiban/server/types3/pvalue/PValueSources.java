@@ -26,6 +26,11 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.util.ByteSource;
+
+import java.math.BigDecimal;
 import java.util.Arrays;
 
 public final class PValueSources {
@@ -100,5 +105,166 @@ public final class PValueSources {
         return ((int) (hash >> 32)) ^ (int) hash;
     }
 
+    public static PValueSource getNullSource(PUnderlying underlying) {
+        PValueSource source = NULL_SOURCES[underlying.ordinal()];
+        assert source.isNull() : source;
+        return source;
+    }
+
     private PValueSources() {}
+
+    private static final PValueSource[] NULL_SOURCES = createNullSources();
+
+    private static PValueSource[] createNullSources() {
+        PUnderlying[] vals = PUnderlying.values();
+        PValueSource[] arr = new PValueSource[vals.length];
+        for (int i = 0; i < vals.length; ++i) {
+            PValue pval = new PValue(vals[i]);
+            pval.putNull();
+            arr[i] = pval;
+        }
+        return arr;
+    }
+
+    public static PValueSource fromValueSource(ValueSource source, PUnderlying pUnderlying) {
+        PValue result = new PValue(pUnderlying);
+        plainConverter.convert(null, source, result);
+        return result;
+    }
+
+    public static abstract class ValueSourceConverter<T> {
+
+        protected abstract Object handleBigDecimal(T state, BigDecimal bigDecimal);
+        protected abstract Object handleString(T state, String string);
+
+        public final void convert(T state, ValueSource in, PValueTarget out) {
+            if (in.isNull())
+                out.putNull();
+
+            long lval = 0;
+            float fval = 0;
+            double dval = 0;
+            Object oval = UNDEF;
+            boolean boolval = false;
+
+            switch (in.getConversionType()) {
+            case DATE:
+                lval = in.getDate();
+                break;
+            case DATETIME:
+                lval = in.getDateTime();
+                break;
+            case DECIMAL:
+                oval = handleBigDecimal(state, in.getDecimal());
+                break;
+            case DOUBLE:
+                dval = in.getDouble();
+                break;
+            case FLOAT:
+                fval = in.getFloat();
+                break;
+            case INT:
+                lval = in.getInt();
+                break;
+            case LONG:
+                lval = in.getLong();
+                break;
+            case VARCHAR:
+                oval = handleString(state, in.getString());
+                break;
+            case TEXT:
+                oval = handleString(state, in.getText());
+                break;
+            case TIME:
+                lval = in.getTime();
+                break;
+            case TIMESTAMP:
+                lval = in.getTimestamp();
+                break;
+            case U_BIGINT:
+                lval = in.getUBigInt().longValue();
+                break;
+            case U_DOUBLE:
+                dval = in.getUDouble();
+                break;
+            case U_FLOAT:
+                fval = in.getUFloat();
+                break;
+            case U_INT:
+                lval = in.getUInt();
+                break;
+            case VARBINARY:
+                ByteSource bs = in.getVarBinary();
+                byte[] bval = new byte[bs.byteArrayLength()];
+                System.arraycopy(bs.byteArray(), bs.byteArrayOffset(), bval, 0, bs.byteArrayLength());
+                oval = bval;
+                break;
+            case YEAR:
+                lval = in.getYear();
+                break;
+            case BOOL:
+                boolval = in.getBool();
+                break;
+            case INTERVAL_MILLIS:
+                lval = in.getInterval_Millis();
+                break;
+            case INTERVAL_MONTH:
+                lval = in.getInterval_Month();
+                break;
+            default:
+                throw new AssertionError(in.getConversionType());
+            }
+
+            if (oval != UNDEF && oval.getClass() != byte[].class) {
+                out.putObject(oval);
+            }
+            else {
+                switch (out.getUnderlyingType()) {
+                case BOOL:
+                    out.putBool(boolval);
+                    break;
+                case INT_8:
+                    out.putInt8((byte)lval);
+                    break;
+                case INT_16:
+                    out.putInt16((short)lval);
+                    break;
+                case UINT_16:
+                    out.putUInt16((char)lval);
+                    break;
+                case INT_32:
+                    out.putInt32((int)lval);
+                    break;
+                case INT_64:
+                    out.putInt64(lval);
+                    break;
+                case FLOAT:
+                    out.putFloat(fval);
+                    break;
+                case DOUBLE:
+                    out.putDouble(dval);
+                    break;
+                case BYTES:
+                    out.putBytes((byte[])oval); // ensured by "oval.getClass() != byte[].class" above
+                    break;
+                default:
+                    throw new AssertionError(out.getUnderlyingType());
+                }
+            }
+        }
+
+        private static Object UNDEF = new Object();
+    }
+
+    private static final ValueSourceConverter<Void> plainConverter = new ValueSourceConverter<Void>() {
+        @Override
+        protected Object handleBigDecimal(Void state, BigDecimal bigDecimal) {
+            return new MBigDecimalWrapper(bigDecimal);
+        }
+
+        @Override
+        protected Object handleString(Void state, String string) {
+            return string;
+        }
+    };
 }

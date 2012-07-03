@@ -144,6 +144,7 @@ class Project_Default extends Operator
         this.rowType = rowType;
         this.projections = new ArrayList<Expression>(projections);
         projectType = rowType.schema().newProjectType(this.projections, tInstances(pExpressions));
+        this.pExpressions = pExpressions;
     }
 
     private List<TInstance> tInstances(List<? extends TPreparedExpression> pExpressions) {
@@ -172,6 +173,7 @@ class Project_Default extends Operator
                                                     projectTableRowType.userTable(),
                                                     projections,
                                                     tInstances(pExpressions));
+        this.pExpressions = pExpressions;
     }
 
 
@@ -185,6 +187,7 @@ class Project_Default extends Operator
     protected final Operator inputOperator;
     protected final RowType rowType;
     protected final List<Expression> projections;
+    private final List<? extends TPreparedExpression> pExpressions;
     protected ProjectedRowType projectType;
 
     @Override
@@ -232,7 +235,7 @@ class Project_Default extends Operator
                 if ((inputRow = input.next()) != null) {
                     projectedRow =
                         inputRow.rowType() == rowType
-                        ? new ProjectedRow(projectType, inputRow, context, projections)
+                        ? new ProjectedRow(projectType, inputRow, context, projections, pExpressions)
                         : inputRow;
                 }
                 if (projectedRow == null) {

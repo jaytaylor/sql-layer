@@ -69,7 +69,6 @@ public class PersistitKeyPValueTarget implements PValueTarget {
 
     @Override
     public void putNull() {
-        assert type == null : type;
         key.append(null);
         invalidate();
     }

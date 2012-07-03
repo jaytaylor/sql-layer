@@ -73,17 +73,17 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public byte getInt8() {
-        throw new UnsupportedOperationException();
+        return (byte) extractLong(Signage.SIGNED);
     }
 
     @Override
     public short getInt16() {
-        throw new UnsupportedOperationException();
+        return (short) extractLong(Signage.SIGNED);
     }
 
     @Override
     public char getUInt16() {
-        throw new UnsupportedOperationException();
+        return (char) extractLong(Signage.SIGNED);
     }
 
     @Override
@@ -108,7 +108,16 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public byte[] getBytes() {
-        throw new UnsupportedOperationException();
+
+        long offsetAndWidth = getRawOffsetAndWidth();
+        if (offsetAndWidth == 0) {
+            return null;
+        }
+        int offset = (int) offsetAndWidth + fieldDef().getPrefixSize();
+        int size = (int) (offsetAndWidth >>> 32) - fieldDef().getPrefixSize();
+        byte[] bytes = new byte[size];
+        System.arraycopy(bytes(), offset, bytes, 0, size);
+        return bytes;
     }
 
     @Override
