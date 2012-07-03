@@ -120,7 +120,6 @@ public class PersistitStoreIndexStatistics
     private static final int DISTINCT_COUNT_FIELD_INDEX = 8;
 
     private static final int MAX_TRANSACTION_RETRY_COUNT = 10;
-    private static final boolean forceToDisk = false;
     private static final int INITIAL_ROW_SIZE = 4096;
 
     protected IndexStatistics decodeHeader(Exchange exchange, RowDef indexStatisticsRowDef,
@@ -260,7 +259,7 @@ public class PersistitStoreIndexStatistics
                         }
                     }
                 }
-                transaction.commit(forceToDisk);
+                transaction.commit();
                 break;
             }
             catch (RollbackException ex) {
@@ -296,7 +295,7 @@ public class PersistitStoreIndexStatistics
                                     indexStatisticsRowDef, rowData, false);
                 exchange.remove(Key.GTEQ);
                 // TODO: See exchange.remove() above.
-                transaction.commit(forceToDisk);
+                transaction.commit();
                 break;
             } 
             catch (RollbackException ex) {
