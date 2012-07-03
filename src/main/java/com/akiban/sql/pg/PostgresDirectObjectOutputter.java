@@ -39,7 +39,7 @@ public class PostgresDirectObjectOutputter extends PostgresOutputter<List<?>>
     }
 
     @Override
-    public void output(List<?> row) throws IOException {
+    public void output(List<?> row, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
@@ -47,7 +47,7 @@ public class PostgresDirectObjectOutputter extends PostgresOutputter<List<?>>
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
             ByteArrayOutputStream bytes;
-            if (Types3Switch.ON) bytes = encoder.encodePObject(field, type, binary);
+            if (usePVals) bytes = encoder.encodePObject(field, type, binary);
             else bytes = encoder.encodeObject(field, type, binary);
             if (field == null) {
                 messenger.writeInt(-1);

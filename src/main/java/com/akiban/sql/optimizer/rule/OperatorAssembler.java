@@ -432,14 +432,14 @@ public class OperatorAssembler extends BaseRule
             if (projectFields != null) {
                 // In the common case, we can project into a wider row
                 // of the correct type directly.
-                inserts = Types3Switch.ON
+                inserts = usePValues
                         ? null
                         : oldPartialAssembler.assembleExpressions(projectFields, stream.fieldOffsets);
             }
             else {
                 // VALUES just needs each field, which will get rearranged below.
                 int nfields = stream.rowType.nFields();
-                if (Types3Switch.ON) {
+                if (usePValues) {
                     insertsP = new ArrayList<TPreparedExpression>(nfields);
                     for (int i = 0; i < nfields; ++i) {
                         insertsP.add(new TPreparedField(stream.rowType.typeInstanceAt(i), i));
@@ -1112,7 +1112,7 @@ public class OperatorAssembler extends BaseRule
                 nlimit = Integer.MAX_VALUE; // Slight disagreement in saying unlimited.
             stream.operator = API.limit_Default(stream.operator, 
                                                 limit.getOffset(), limit.isOffsetParameter(),
-                                                nlimit, limit.isLimitParameter());
+                                                nlimit, limit.isLimitParameter(), usePValues);
             return stream;
         }
 
@@ -1130,7 +1130,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleOnlyIfEmpty(OnlyIfEmpty onlyIfEmpty) {
             RowStream stream = assembleStream(onlyIfEmpty.getInput());
-            stream.operator = API.limit_Default(stream.operator, 0, false, 1, false);
+            stream.operator = API.limit_Default(stream.operator, 0, false, 1, false, usePValues);
             // Nulls here have no semantic meaning, but they're easier than trying to
             // figure out an interesting non-null value for each
             // AkType in the row. All that really matters is that the

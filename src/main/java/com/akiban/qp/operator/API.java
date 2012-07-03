@@ -40,6 +40,7 @@ import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 
 import java.util.*;
@@ -206,16 +207,30 @@ public class API
 
     public static Operator limit_Default(Operator inputOperator, int limitRows)
     {
-        return new Limit_Default(inputOperator, limitRows);
+        return limit_Default(inputOperator, limitRows, Types3Switch.ON);
     }
 
+    public static Operator limit_Default(Operator inputOperator, int limitRows, boolean usePVals)
+    {
+        return new Limit_Default(inputOperator, limitRows, usePVals);
+    }
+
+    public static Operator limit_Default(Operator inputOperator,
+                                         int skipRows,
+                                         boolean skipIsBinding,
+                                         int limitRows,
+                                         boolean limitIsBinding)
+    {
+        return limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding, Types3Switch.ON);
+    }
     public static Operator limit_Default(Operator inputOperator,
                                                  int skipRows,
                                                  boolean skipIsBinding,
                                                  int limitRows,
-                                                 boolean limitIsBinding)
+                                                 boolean limitIsBinding,
+                                                 boolean usePVals)
     {
-        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding);
+        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding, usePVals);
     }
 
     // AncestorLookup

@@ -84,7 +84,7 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
@@ -93,7 +93,7 @@ public class PostgresExplainStatement implements PostgresStatement
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(1);
             ByteArrayOutputStream bytes;
-            if (Types3Switch.ON) bytes = encoder.encodePObject(row, colType, false);
+            if (usePVals) bytes = encoder.encodePObject(row, colType, false);
             else bytes = encoder.encodeObject(row, colType, false);
             messenger.writeInt(bytes.size());
             messenger.writeByteStream(bytes);

@@ -53,7 +53,7 @@ public class PostgresJsonOutputter extends PostgresOutputter<Row>
     }
 
     @Override
-    public void output(Row row) throws IOException {
+    public void output(Row row, boolean usePVals) throws IOException {
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(1);
         encoder.reset();

@@ -65,7 +65,7 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         return TransactionMode.WRITE;
     }
 
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();

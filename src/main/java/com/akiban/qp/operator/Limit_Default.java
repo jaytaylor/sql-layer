@@ -28,7 +28,6 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
@@ -43,7 +42,6 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -140,13 +138,14 @@ final class Limit_Default extends Operator
 
     // Limit_Default interface
 
-    Limit_Default(Operator inputOperator, int limit) {
-        this(inputOperator, 0, false, limit, false);
+    Limit_Default(Operator inputOperator, int limit, boolean usePVals) {
+        this(inputOperator, 0, false, limit, false, usePVals);
     }
 
     Limit_Default(Operator inputOperator,
                   int skip, boolean skipIsBinding,
-                  int limit, boolean limitIsBinding) {
+                  int limit, boolean limitIsBinding,
+                  boolean usePVals) {
         ArgumentValidation.isGTE("skip", skip, 0);
         ArgumentValidation.isGTE("limit", limit, 0);
         this.skip = skip;
@@ -154,6 +153,7 @@ final class Limit_Default extends Operator
         this.limit = limit;
         this.limitIsBinding = limitIsBinding;
         this.inputOperator = inputOperator;
+        this.usePVals = usePVals;
     }
 
     public int skip() {
@@ -179,6 +179,7 @@ final class Limit_Default extends Operator
     private final int skip, limit;
     private final boolean skipIsBinding, limitIsBinding;
     private final Operator inputOperator;
+    private final boolean usePVals;
 
     @Override
     public Explainer getExplainer()
@@ -222,7 +223,7 @@ final class Limit_Default extends Operator
                 super.open();
                 closed = false;
                 if (isSkipBinding()) {
-                    if (Types3Switch.ON) {
+                    if (usePVals) {
                         PValueSource value = context.getPValue(skip());
                         if (!value.isNull())
                             this.skipLeft = value.getInt32();
@@ -239,7 +240,7 @@ final class Limit_Default extends Operator
                 if (skipLeft < 0)
                     throw new NegativeLimitException("OFFSET", skipLeft);
                 if (isLimitBinding()) {
-                    if (Types3Switch.ON) {
+                    if (usePVals) {
                         PValueSource value = context.getPValue(limit());
                         if (value.isNull())
                             this.limitLeft = Integer.MAX_VALUE;
