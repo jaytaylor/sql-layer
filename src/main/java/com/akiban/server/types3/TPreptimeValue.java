@@ -62,6 +62,8 @@ public final class TPreptimeValue {
         this.tInstance = tInstance;
         this.value = value;
         this.mutable = false;
+        if (value != null)
+            tInstance.setNullable(value.isNull());
     }
 
     private TInstance tInstance;

@@ -44,6 +44,8 @@ public abstract class TClass {
 
     public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
+    public abstract int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB);
+
     public void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
         PValueTargets.copyFrom(in, out, cacher(), typeInstance);
     }

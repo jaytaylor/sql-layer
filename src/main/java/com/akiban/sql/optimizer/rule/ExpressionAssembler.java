@@ -45,7 +45,7 @@ import com.akiban.sql.optimizer.plan.SubqueryExpression;
 import java.util.Arrays;
 import java.util.List;
 
-abstract class  ExpressionAssembler<T> {
+abstract class ExpressionAssembler<T> {
 
     protected abstract T assembleFunction(ExpressionNode functionNode,
                                           String functionName,
