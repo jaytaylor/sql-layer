@@ -29,9 +29,11 @@ package com.akiban.server.types3.common.funcs;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
@@ -53,6 +55,8 @@ public class Coalesce extends TOverloadBase {
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         for (int i = 0; i < inputs.size(); ++i) {
             if (!inputs.get(i).isNull()) {
+                TInstance tinst = context.outputTInstance();
+                PValueTargets.copyFrom(inputs.get(i), output, tinst.typeClass().cacher(), tinst);
                 output.putObject(inputs.get(i).getObject());
                 return;
             }

@@ -44,11 +44,6 @@ public class MString extends TString
     public static final MString LONGTEXT = new MString(TypeId.LONGVARCHAR_ID, "longtext", Integer.MAX_VALUE); // TODO not big enough!
 
     @Override
-    public void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        out.putString(inValue.getString()); // TODO put string with no collation
-    }
-
-    @Override
     public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
         out.putString(inValue.getString()); // TODO put string with collation
     }

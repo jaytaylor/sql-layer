@@ -72,8 +72,8 @@ public class MBigDecimal extends TClass {
     }
 
     @Override
-    public void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
-        PValueTargets.copyFrom(in, out, cacher, typeInstance);
+    public PValueCacher<BigDecimalWrapper> cacher() {
+        return cacher;
     }
 
     public static String getNum(int scale, int precision)
