@@ -55,8 +55,10 @@ import java.util.Iterator;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
-public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
-    private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
+public class BasicInfoSchemaTablesServiceImpl
+    extends SchemaTablesService
+    implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
+    
     static final TableName SCHEMATA = new TableName(SCHEMA_NAME, "schemata");
     static final TableName TABLES = new TableName(SCHEMA_NAME, "tables");
     static final TableName COLUMNS = new TableName(SCHEMA_NAME, "columns");
@@ -71,12 +73,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
 
     private final AisHolder aisHolder;
-    private final SchemaManager schemaManager;
-
+    
     @Inject
     public BasicInfoSchemaTablesServiceImpl(AisHolder aisHolder, SchemaManager schemaManager) {
+        super(schemaManager);
         this.aisHolder = aisHolder;
-        this.schemaManager = schemaManager;
     }
 
     @Override
@@ -120,13 +121,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return aisHolder.getAis().getSchemas().size();
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final Iterator<Schema> it = aisHolder.getAis().getSchemas().values().iterator();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super (rowType);
             }
 
             @Override
@@ -142,10 +141,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      null, // collation
                                      ++rowCounter /*hidden pk*/);
 
-            }
-
-            @Override
-            public void close() {
             }
         }
     }
@@ -165,13 +160,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return aisHolder.getAis().getUserTables().size();
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final Iterator<UserTable> it = aisHolder.getAis().getUserTables().values().iterator();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             @Override
@@ -191,10 +184,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      COLLATION_SCHEMA,
                                      table.getCharsetAndCollation().collation(),
                                      ++rowCounter /*hidden pk*/);
-            }
-
-            @Override
-            public void close() {
             }
         }
     }
@@ -217,15 +206,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             }
             return count;
         }
-
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        
+        private class Scan extends BaseScan {
             final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
             Iterator<Column> columnIt;
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             @Override
@@ -279,10 +266,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      charAndColl != null ? charAndColl.collation() : null,
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
@@ -310,13 +293,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final TableConstraintsIteration it = newIteration();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             @Override
@@ -331,10 +312,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      it.getType(),
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
@@ -345,28 +322,22 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new ConstraintsScan(getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             return 0;
         }
+        private class ConstraintsScan extends BaseScan {
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
-
-            public Scan(RowType rowType) {
-                this.rowType = rowType;
+            public ConstraintsScan(RowType rowType) {
+                super(rowType);
             }
 
             @Override
             public Row next() {
                 return null;
-            }
-
-            @Override
-            public void close() {
             }
         }
     }
@@ -397,13 +368,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final Iterator<UserTable> tableIt = newIteration();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             private UserTable advance() {
@@ -432,10 +401,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      Index.PRIMARY_KEY_CONSTRAINT,
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
@@ -463,18 +428,16 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final TableConstraintsIteration it = newIteration();
             Iterator<IndexColumn> indexColIt;
             Iterator<JoinColumn> joinColIt;
             String colName;
             int colPos;
             Integer posInUnique;
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             // Find position in parents PK
@@ -528,10 +491,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      posInUnique,
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
@@ -559,13 +518,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan{
             final IndexIteration indexIt = newIteration();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             @Override
@@ -595,10 +552,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
@@ -627,14 +580,12 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan{
             final IndexIteration indexIt = newIteration();
             Iterator<IndexColumn> indexColumnIt;
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             private IndexColumn advance() {
@@ -664,10 +615,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      boolResult(indexColumn.isAscending()),
                                      indexColumn.getIndexedLength(),
                                      ++rowCounter /*hidden pk*/);
-            }
-
-            @Override
-            public void close() {
             }
         }
     }
@@ -774,28 +721,28 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         builder.userTable(SCHEMATA)
-                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("schema_owner", BasicFactoryBase.IDENT_MAX, true)
-                .colString("default_character_set_name", BasicFactoryBase.IDENT_MAX, true)
-                .colString("default_collation_name", BasicFactoryBase.IDENT_MAX, true);
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("schema_owner", IDENT_MAX, true)
+                .colString("default_character_set_name", IDENT_MAX, true)
+                .colString("default_collation_name", IDENT_MAX, true);
         //primary key (schema_name)
         builder.userTable(TABLES)
-                .colString("table_schema", BasicFactoryBase.IDENT_MAX, false)
-                .colString("table_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("table_type", BasicFactoryBase.IDENT_MAX, false)
+                .colString("table_schema", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("table_type", IDENT_MAX, false)
                 .colBigInt("table_id", false)
-                .colString("character_set_schema", BasicFactoryBase.IDENT_MAX, true)
-                .colString("character_set_name", BasicFactoryBase.IDENT_MAX, true)
-                .colString("collation_schema", BasicFactoryBase.IDENT_MAX, true)
-                .colString("collation_name", BasicFactoryBase.IDENT_MAX, true);
+                .colString("character_set_schema", IDENT_MAX, true)
+                .colString("character_set_name", IDENT_MAX, true)
+                .colString("collation_schema", IDENT_MAX, true)
+                .colString("collation_name", IDENT_MAX, true);
         //primary key (schema_name, table_name)
         //foreign_key (schema_name) references SCHEMATA (schema_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collations_schema, collation_name) references COLLATIONS
         builder.userTable(COLUMNS)
-                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("table_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("column_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("column_name", IDENT_MAX, false)
                 .colBigInt("position", false)
                 .colString("type", 32, false)
                 .colString("nullable", 3, false)
@@ -804,72 +751,72 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colBigInt("scale", true)
                 .colBigInt("prefix_size", true)
                 .colBigInt("identity_start", true)
-                .colString("character_set_schema", BasicFactoryBase.IDENT_MAX, true)
-                .colString("character_set_name", BasicFactoryBase.IDENT_MAX, true)
-                .colString("collation_schema", BasicFactoryBase.IDENT_MAX, true)
-                .colString("collation_name", BasicFactoryBase.IDENT_MAX, true);
+                .colString("character_set_schema", IDENT_MAX, true)
+                .colString("character_set_name", IDENT_MAX, true)
+                .colString("collation_schema", IDENT_MAX, true)
+                .colString("collation_name", IDENT_MAX, true);
         //primary key(schema_name, table_name, column_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
         //foreign key (type) references TYPES (type_name)
         //foreign key (character_set_schema, character_set_name) references CHARACTER_SETS
         //foreign key (collation_schema, collation_name) references COLLATIONS
         builder.userTable(TABLE_CONSTRAINTS)
-                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("table_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("constraint_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("constraint_name", IDENT_MAX, false)
                 .colString("constraint_type", 32, false);
         //primary key (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES
         builder.userTable(REFERENTIAL_CONSTRAINTS)
-            .colString("constraint_schema_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("constraint_table_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("constraint_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("unique_schema_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("unique_table_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("unique_constraint_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("update_rule", 32, false)
-            .colString("delete_rule", 32, false);
+            .colString("constraint_schema_name", IDENT_MAX, false)
+            .colString("constraint_table_name", IDENT_MAX, false)
+            .colString("constraint_name", IDENT_MAX, false)
+            .colString("unique_schema_name", IDENT_MAX, false)
+            .colString("unique_table_name", IDENT_MAX, false)
+            .colString("unique_constraint_name", IDENT_MAX, false)
+            .colString("update_rule", DESCRIPTOR_MAX, false)
+            .colString("delete_rule", DESCRIPTOR_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(GROUPING_CONSTRAINTS)
-            .colString("constraint_schema_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("constraint_table_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("constraint_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("unique_schema_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("unique_table_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("unique_constraint_name", BasicFactoryBase.IDENT_MAX, false);
+            .colString("constraint_schema_name", IDENT_MAX, false)
+            .colString("constraint_table_name", IDENT_MAX, false)
+            .colString("constraint_name", IDENT_MAX, false)
+            .colString("unique_schema_name", IDENT_MAX, false)
+            .colString("unique_table_name", IDENT_MAX, false)
+            .colString("unique_constraint_name", IDENT_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
-            .colString("schema_name", BasicFactoryBase.IDENT_MAX, true)
-            .colString("table_name", BasicFactoryBase.IDENT_MAX, true)
-            .colString("constraint_name", BasicFactoryBase.IDENT_MAX, true)
-            .colString("column_name", BasicFactoryBase.IDENT_MAX, true)
+            .colString("schema_name", IDENT_MAX, true)
+            .colString("table_name", IDENT_MAX, true)
+            .colString("constraint_name", IDENT_MAX, true)
+            .colString("column_name", IDENT_MAX, true)
             .colBigInt("ordinal_position", false)
             .colBigInt("position_in_unique_constraint", true);
         //primary key  (schema_name, table_name, constraint_name, column_name),
         //foreign key (schema_name, table_name, constraint_name) references TABLE_CONSTRAINTS
         builder.userTable(INDEXES)
-                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("table_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("index_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("constraint_name", BasicFactoryBase.IDENT_MAX, true)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colString("index_name", IDENT_MAX, false)
+                .colString("constraint_name", IDENT_MAX, true)
                 .colBigInt("index_id", false)
-                .colString("index_type", BasicFactoryBase.IDENT_MAX, false)
-                .colString("is_unique", 3, false)
-                .colString("join_type", 32, true);
+                .colString("index_type", IDENT_MAX, false)
+                .colString("is_unique", YES_NO_MAX, false)
+                .colString("join_type", DESCRIPTOR_MAX, true);
         //primary key(schema_name, table_name, index_name)
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
         builder.userTable(INDEX_COLUMNS)
-                .colString("schema_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("index_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("index_table_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("column_table_name", BasicFactoryBase.IDENT_MAX, false)
-                .colString("column_name", BasicFactoryBase.IDENT_MAX, false)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("index_name", IDENT_MAX, false)
+                .colString("index_table_name", IDENT_MAX, false)
+                .colString("column_table_name", IDENT_MAX, false)
+                .colString("column_name", IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
-                .colString("is_ascending", BasicFactoryBase.IDENT_MAX, false)
+                .colString("is_ascending", IDENT_MAX, false)
                 .colBigInt("indexed_length", true);
         //primary key(schema_name, index_name, index_table_name, column_table_name, column_name)
         //foreign key(schema_name, index_table_name, index_name)
@@ -878,21 +825,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         //    references COLUMNS (schema_name, table_name, column_name)
 
         return builder.ais(false);
-    }
-
-    private void attach(AkibanInformationSchema ais, boolean doRegister, TableName name, Class<? extends BasicFactoryBase> clazz) {
-        UserTable table = ais.getUserTable(name);
-        final BasicFactoryBase factory;
-        try {
-            factory = clazz.getConstructor(BasicInfoSchemaTablesServiceImpl.class, TableName.class).newInstance(this, name);
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
-        if(doRegister) {
-            schemaManager.registerMemoryInformationSchemaTable(table, factory);
-        } else {
-            table.setMemoryTableFactory(factory);
-        }
     }
 
     void attachFactories(AkibanInformationSchema ais, boolean doRegister) {
