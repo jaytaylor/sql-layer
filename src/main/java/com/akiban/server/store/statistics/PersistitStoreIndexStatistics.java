@@ -29,7 +29,6 @@ package com.akiban.server.store.statistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
 
 import com.akiban.ais.model.Index;
-import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.rowdata.IndexDef;
 import com.akiban.server.rowdata.RowData;
@@ -225,12 +224,7 @@ public class PersistitStoreIndexStatistics
                                   indexStatistics.getRowCount(),
                                   indexStatistics.getSampledCount()
                               });
-            try {
-                store.writeRow(session, rowData);
-            } 
-            catch (InvalidOperationException ex) {
-                throw new RollbackException(ex);
-            }
+            store.writeRow(session, rowData);
                 
             for (int i = 0; i < index.getKeyColumns().size(); i++) {
                 Histogram histogram = indexStatistics.getHistogram(i + 1);
@@ -248,12 +242,7 @@ public class PersistitStoreIndexStatistics
                                           entry.getLessCount(),
                                           entry.getDistinctCount()
                                       });
-                    try {
-                        store.writeRow(session, rowData);
-                    } 
-                    catch (InvalidOperationException ex) {
-                        throw new RollbackException(ex);
-                    }
+                    store.writeRow(session, rowData);
                 }
             }
             transaction.commit();
@@ -332,7 +321,7 @@ public class PersistitStoreIndexStatistics
         long count = 0;
 
         @Override
-        protected void visit(Key key, Value value) throws PersistitException, InvalidOperationException {
+        protected void visit(Key key, Value value) throws PersistitException {
             ++count;
         }
 
