@@ -562,6 +562,11 @@
                                         <copy todir="${mac.itemp}/.background">
                                             <fileset dir="${basedir}/macosx" includes="dmg_background.png" />
                                         </copy>
+                                        <copy file="${basedir}/macosx/dmg_VolumeIcon.icns" tofile="${mac.itemp}/.VolumeIcon.icns" />
+                                        <exec executable="SetFile" failonerror="true">
+                                            <arg line="-c icnC"/>
+                                            <arg file="${mac.itemp}/.VolumeIcon.icns" />
+                                        </exec>
                                         <delete file="${mac.itemp}.dmg" />
                                         <exec executable="hdiutil" failonerror="true">
                                             <arg line="create -fs HFSX -layout SPUD -size 40m" />
