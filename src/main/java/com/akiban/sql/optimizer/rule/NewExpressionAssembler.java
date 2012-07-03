@@ -26,5 +26,62 @@
 
 package com.akiban.sql.optimizer.rule;
 
-public final class NewExpressionAssembler {
+import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.sql.optimizer.plan.CastExpression;
+import com.akiban.sql.optimizer.plan.ColumnExpression;
+import com.akiban.sql.optimizer.plan.ConstantExpression;
+import com.akiban.sql.optimizer.plan.ExpressionNode;
+import com.akiban.sql.optimizer.plan.ParameterExpression;
+
+import java.util.List;
+
+public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedExpression> {
+    @Override
+    protected TPreparedExpression assembleFunction(ExpressionNode functionNode, String functionName,
+                                                   List<ExpressionNode> argumentNodes,
+                                                   ColumnExpressionContext columnContext,
+                                                   SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected TPreparedExpression assembleColumnExpression(ColumnExpression column,
+                                                           ColumnExpressionContext columnContext) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected TPreparedExpression assembleCastExpression(CastExpression castExpression,
+                                                         ColumnExpressionContext columnContext,
+                                                         SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected List<TPreparedExpression> assembleExpressions(List<ExpressionNode> expressions,
+                                                            ColumnExpressionContext columnContext,
+                                                            SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected TPreparedExpression literal(ConstantExpression expression) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected TPreparedExpression variable(ParameterExpression expression) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected TPreparedExpression compare(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected TPreparedExpression in(TPreparedExpression lhs, List<TPreparedExpression> rhs) {
+        throw new UnsupportedOperationException(); // TODO
+    }
 }
