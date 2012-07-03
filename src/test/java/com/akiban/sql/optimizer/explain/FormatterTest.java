@@ -101,67 +101,30 @@ public class FormatterTest {
         // from times exp
         Expression times = ((ExpressionComposer)ArithOps.MULTIPLY).compose(Arrays.asList(lit_123456, lit_7), Collections.<ExpressionType>nCopies(3, null));
         Expression add = ((ExpressionComposer)ArithOps.ADD).compose(Arrays.asList(times, lit_8), Collections.<ExpressionType>nCopies(3, null));
+        Expression times_ = ((ExpressionComposer)ArithOps.MULTIPLY).compose(Arrays.asList(times, lit_8), Collections.<ExpressionType>nCopies(3, null));
         
         Expression arg2 = ((ExpressionComposer)ArithOps.ADD).compose(Arrays.asList(lit_9, lit_10), Collections.<ExpressionType>nCopies(3, null));
         
         // from unix exp
         Expression arg1 = FromUnixExpression.COMPOSER.compose(Arrays.asList(add, lit_varchar), Collections.<ExpressionType>nCopies(3, null));
+        Expression arg1_ = FromUnixExpression.COMPOSER.compose(Arrays.asList(times_, lit_varchar), Collections.<ExpressionType>nCopies(3, null));
         
         // substr exp
         Expression substr = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
+        Expression substr_ = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1_, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         
         Explainer explainer = substr.getExplainer();
         Formatter instance = new Formatter();
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \"%Y-%m-%d\"), 9 + 10, 11)";
         String result = instance.describe(explainer);
         assertEquals(expResult, result);
+        
+        explainer = substr_.getExplainer();
+        expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \"%Y-%m-%d\"), 9 + 10, 11)";
+        result = instance.describe(explainer);
+        assertEquals(expResult, result);
     }
 
-    /**
-     * Test of describe method, of class Formatter.
-     *
-    @Test
-    public void testDescribe_Explainer_StringBuilder() {
-        System.out.println("describe");
-        Explainer explainer = null;
-        StringBuilder sb = null;
-        Formatter instance = new Formatter();
-        instance.describe(explainer, sb);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of describeExpression method, of class Formatter.
-     *
-    @Test
-    public void testDescribeExpression() {
-        System.out.println("describeExpression");
-        ExpressionExplainer explainer = null;
-        StringBuilder sb = null;
-        Formatter instance = new Formatter();
-        instance.describeExpression(explainer, sb);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of describeOperation method, of class Formatter.
-     *
-    @Test
-    public void testDescribeOperation() {
-        System.out.println("describeOperation");
-        OperationExplainer explainer = null;
-        StringBuilder sb = null;
-        Formatter instance = new Formatter();
-        instance.describeOperation(explainer, sb);
-        // TODO review the generated test code and remove the default call to fail.
-        fail("The test case is a prototype.");
-    }
-
-    /**
-     * Test of describePrimitive method, of class Formatter.
-     */
     @Test
     public void testDescribePrimitive() {
         System.out.println("describePrimitive");

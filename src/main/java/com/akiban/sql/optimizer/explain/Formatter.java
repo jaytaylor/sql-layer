@@ -26,14 +26,14 @@ public class Formatter {
     }
     
     void describe(Explainer explainer, StringBuilder sb) {
-        describe(explainer, sb, true);
+        describe(explainer, sb, false, null);
     }
 
-    void describe(Explainer explainer, StringBuilder sb, boolean noParens) {
+    void describe(Explainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         if (explainer.hasAttributes())
         {
             OperationExplainer opEx = (OperationExplainer) explainer;
-            describeOperation(opEx, sb, noParens);
+            describeOperation(opEx, sb, needsParens, parentName);
         }
         else
         {
@@ -42,7 +42,7 @@ public class Formatter {
         }
     }
 
-    void describeOperation(OperationExplainer explainer, StringBuilder sb, boolean noParens) {
+    void describeOperation(OperationExplainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         
         Attributes atts = (Attributes) explainer.get().clone();
         
@@ -50,13 +50,15 @@ public class Formatter {
         {
             Explainer leftExplainer = atts.valuePairs().get(0).getValue();
             Explainer rightExplainer = atts.valuePairs().get(1).getValue();
-            if (!noParens)
+            String name = atts.get(Label.NAME).get(0).get().toString();
+            if (name.equals(parentName) && explainer.get().containsKey(Label.ASSOCIATIVE))
+                needsParens = false;
+            if (needsParens)
                 sb.append("(");
-            boolean associative = explainer.get().containsKey(Label.ASSOCIATIVE);   
-            describe(leftExplainer, sb, associative && explainer.equals(leftExplainer));
-            sb.append(" ").append(atts.get(Label.NAME).get(0).get()).append(" ");
-            describe(rightExplainer, sb, associative && explainer.equals(rightExplainer));
-            if (!noParens)
+            describe(leftExplainer, sb, true, name);
+            sb.append(" ").append(name).append(" ");
+            describe(rightExplainer, sb, true, name);
+            if (needsParens)
                 sb.append(")");
         }
         else
