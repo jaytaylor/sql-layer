@@ -1,0 +1,6 @@
+## Test special functions
+---
+- CreateTable: t (date_field date, time_field time)
+---
+- Statement: INSERT INTO t values(current_date, current_time);
+...
