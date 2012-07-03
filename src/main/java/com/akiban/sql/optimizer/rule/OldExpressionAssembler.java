@@ -26,6 +26,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.InExpression;
 import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.types.DataTypeDescriptor;
@@ -34,13 +37,10 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.ExpressionType;
-import com.akiban.server.expression.std.InExpression;
 import com.akiban.server.expression.std.IntervalCastExpression;
 import static com.akiban.server.expression.std.Expressions.*;
 import com.akiban.server.service.functions.FunctionsRegistry;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
-import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
@@ -49,11 +49,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 /** Turn {@link ExpressionNode} into {@link Expression}. */
-public class OldExpressionAssembler implements ExpressionAssembler<Expression>
+public class OldExpressionAssembler extends ExpressionAssembler<Expression>
 {
     private static final Logger logger = LoggerFactory.getLogger(OldExpressionAssembler.class);
 
@@ -68,106 +67,13 @@ public class OldExpressionAssembler implements ExpressionAssembler<Expression>
     {
         return functionsRegistry;
     }
-    
-    public interface ColumnExpressionToIndex {
-        /** Return the field position of the given column in the target row. */
-        public int getIndex(ColumnExpression column);
-
-        /** Return the row type that the index goes with. */
-        public RowType getRowType();
-    }
-    
-    public interface ColumnExpressionContext {
-        /** Get the current input row if any. */
-        public ColumnExpressionToIndex getCurrentRow();
-
-        /** Get list (deepest first) of rows from nested loops. */
-        public List<ColumnExpressionToIndex> getBoundRows();
-
-        /** Get the index offset to be used for the deepest nested loop.
-         * Normally this is the number of parameters to the query.
-         */
-        public int getExpressionBindingsOffset();
-
-        /** Get the index offset to be used for the deepest nested loop.
-         * These come after any expressions.
-         */
-        public int getLoopBindingsOffset();
-    }
-
-    public interface SubqueryOperatorAssembler<T> {
-        /** Assemble the given subquery expression. */
-        public T assembleSubqueryExpression(SubqueryExpression subqueryExpression);
-    }
 
     @Override
-    public Expression assembleExpression(ExpressionNode node,
-                                         ColumnExpressionContext columnContext,
-                                         SubqueryOperatorAssembler<Expression> subqueryAssembler) {
-        if (node instanceof ConstantExpression) {
-            if (node.getAkType() == null)
-                return literal(((ConstantExpression)node).getValue());
-            else
-                return literal(((ConstantExpression)node).getValue(),
-                               node.getAkType());
-        }
-        else if (node instanceof ColumnExpression)
-            return assembleColumnExpression((ColumnExpression)node, columnContext);
-        else if (node instanceof ParameterExpression)
-            return variable(node.getAkType(), ((ParameterExpression)node).getPosition());
-        else if (node instanceof BooleanOperationExpression) {
-            BooleanOperationExpression bexpr = (BooleanOperationExpression)node;
-            return assembleFunction(bexpr, bexpr.getOperation().getFunctionName(),
-                                    Arrays.<ExpressionNode>asList(bexpr.getLeft(), bexpr.getRight()), 
-                                    columnContext, subqueryAssembler);
-        }
-        else if (node instanceof CastExpression)
-            return assembleCastExpression((CastExpression)node,
-                                          columnContext, subqueryAssembler);
-        else if (node instanceof ComparisonCondition) {
-            ComparisonCondition cond = (ComparisonCondition)node;
-            return compare(assembleExpression(cond.getLeft(), 
-                                              columnContext, subqueryAssembler),
-                           cond.getOperation(),
-                           assembleExpression(cond.getRight(), 
-                                              columnContext, subqueryAssembler));
-        }
-        else if (node instanceof FunctionExpression) {
-            FunctionExpression funcNode = (FunctionExpression)node;
-            return assembleFunction(funcNode, funcNode.getFunction(),
-                                    funcNode.getOperands(), 
-                                    columnContext, subqueryAssembler);
-        }
-        else if (node instanceof IfElseExpression) {
-            IfElseExpression ifElse = (IfElseExpression)node;
-            return assembleFunction(ifElse, "if",
-                                    Arrays.asList(ifElse.getTestCondition(), 
-                                                  ifElse.getThenExpression(), 
-                                                  ifElse.getElseExpression()), 
-                                    columnContext, subqueryAssembler);
-        }
-        else if (node instanceof InListCondition) {
-            InListCondition inList = (InListCondition)node;
-            Expression lhs = assembleExpression(inList.getOperand(), 
-                                                columnContext, subqueryAssembler);
-            List<Expression> rhs = assembleExpressions(inList.getExpressions(),
-                                                       columnContext, subqueryAssembler);
-            return new InExpression(lhs, rhs);
-        }
-        else if (node instanceof SubqueryExpression)
-            return subqueryAssembler.assembleSubqueryExpression((SubqueryExpression)node);
-        else if (node instanceof AggregateFunctionExpression)
-            throw new UnsupportedSQLException("Aggregate used as regular function", 
-                                              node.getSQLsource());
-        else
-            throw new UnsupportedSQLException("Unknown expression", node.getSQLsource());
-    }
-
-    public Expression assembleFunction(ExpressionNode functionNode,
+    protected Expression assembleFunction(ExpressionNode functionNode,
                                        String functionName,
                                        List<ExpressionNode> argumentNodes,
                                        ColumnExpressionContext columnContext,
-                                       SubqueryOperatorAssembler subqueryAssembler) {
+                                       SubqueryOperatorAssembler<Expression> subqueryAssembler) {
         List<Expression> arguments = 
             assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
         int nargs = arguments.size();
@@ -178,8 +84,9 @@ public class OldExpressionAssembler implements ExpressionAssembler<Expression>
         types.add(TypesTranslation.toExpressionType(functionNode.getSQLtype()));
         return functionsRegistry.composer(functionName).compose(arguments, types);
     }
-                                       
-    public Expression assembleColumnExpression(ColumnExpression column,
+
+    @Override
+    protected Expression assembleColumnExpression(ColumnExpression column,
                                                ColumnExpressionContext columnContext) {
         ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();
         if (currentRow != null) {
@@ -203,9 +110,10 @@ public class OldExpressionAssembler implements ExpressionAssembler<Expression>
         throw new AkibanInternalException("Column not found " + column);
     }
 
+    @Override
     protected Expression assembleCastExpression(CastExpression castExpression,
                                                 ColumnExpressionContext columnContext,
-                                                SubqueryOperatorAssembler subqueryAssembler) {
+                                                SubqueryOperatorAssembler<Expression> subqueryAssembler) {
         ExpressionNode operand = castExpression.getOperand();
         Expression expr = assembleExpression(operand, columnContext, subqueryAssembler);
         AkType toType = castExpression.getAkType();
@@ -246,9 +154,10 @@ public class OldExpressionAssembler implements ExpressionAssembler<Expression>
         return expr;
     }
 
+    @Override
     protected List<Expression> assembleExpressions(List<ExpressionNode> expressions,
                                                    ColumnExpressionContext columnContext,
-                                                   SubqueryOperatorAssembler subqueryAssembler) {
+                                                   SubqueryOperatorAssembler<Expression> subqueryAssembler) {
         List<Expression> result = new ArrayList<Expression>(expressions.size());
         for (ExpressionNode expr : expressions) {
             result.add(assembleExpression(expr, columnContext, subqueryAssembler));
@@ -278,4 +187,26 @@ public class OldExpressionAssembler implements ExpressionAssembler<Expression>
         }
     }
 
+    @Override
+    protected Expression literal(ConstantExpression expression) {
+        if (expression.getAkType() == null)
+            return Expressions.literal(expression.getValue());
+        else
+            return Expressions.literal(expression.getValue(), expression.getAkType());
+    }
+
+    @Override
+    protected Expression variable(ParameterExpression expression) {
+        return Expressions.variable(expression.getAkType(), expression.getPosition());
+    }
+
+    @Override
+    protected Expression compare(Expression left, Comparison comparison, Expression right) {
+        return Expressions.compare(left, comparison, right);
+    }
+
+    @Override
+    protected Expression in(Expression lhs, List<Expression> rhs) {
+        return new InExpression(lhs, rhs);
+    }
 }

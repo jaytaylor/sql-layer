@@ -29,12 +29,14 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
 import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.AnySubqueryTExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
@@ -198,16 +200,17 @@ public class OperatorAssembler extends BaseRule
             protected abstract T existsExpression(Operator operator, RowType outerRowType,
                                                   RowType innerRowType,
                                                   int bindingPosition);
-            protected abstract T anyExpression(Operator operator, Expression innerExpression, RowType outerRowType,
+            protected abstract T anyExpression(Operator operator, T innerExpression, RowType outerRowType,
                                                RowType innerRowType,
                                                int bindingPosition);
-            protected abstract T scalarSubqueryExpression(Operator operator, Expression innerExpression,
+            protected abstract T scalarSubqueryExpression(Operator operator, T innerExpression,
                                                           RowType outerRowType,
                                                           RowType innerRowType,
                                                           int bindingPosition);
             protected abstract T resultSetSubqueryExpression(Operator operator, RowType outerRowType,
                                                              RowType innerRowType,
                                                              int bindingPosition);
+            protected abstract T field(RowType rowType, int position);
 
             @Override
             public T assembleSubqueryExpression(SubqueryExpression sexpr) {
@@ -233,11 +236,11 @@ public class OperatorAssembler extends BaseRule
                     }
                 }
                 RowStream stream = assembleQuery(subquery);
-                Expression innerExpression = null;
+                T innerExpression = null;
                 if (fieldExpression)
-                    innerExpression = Expressions.field(stream.rowType, 0);
+                    innerExpression = field(stream.rowType, 0);
                 else if (expression != null)
-                    innerExpression = oldPartialAssembler.assembleExpression(expression, stream.fieldOffsets);
+                    innerExpression = assembleExpression(expression, stream.fieldOffsets);
                 T result = assembleSubqueryExpression(sexpr,
                         stream.operator,
                         innerExpression,
@@ -251,7 +254,7 @@ public class OperatorAssembler extends BaseRule
 
             private T assembleSubqueryExpression(SubqueryExpression sexpr,
                                                  Operator operator,
-                                                 Expression innerExpression,
+                                                 T innerExpression,
                                                  RowType outerRowType,
                                                  RowType innerRowType,
                                                  int bindingPosition) {
@@ -307,6 +310,50 @@ public class OperatorAssembler extends BaseRule
                                                              int bindingPosition) {
                 return new ResultSetSubqueryExpression(operator, outerRowType, innerRowType, bindingPosition);
             }
+
+            @Override
+            protected Expression field(RowType rowType, int position) {
+                return new FieldExpression(rowType, position);
+            }
+        }
+
+        private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
+            private NewPartialAssembler(RulesContext context) {
+                super(null); // TODO
+                assert false;
+            }
+
+            @Override
+            protected TPreparedExpression existsExpression(Operator operator, RowType outerRowType,
+                                                           RowType innerRowType,
+                                                           int bindingPosition) {
+                throw new UnsupportedOperationException(); // TODO
+            }
+
+            @Override
+            protected TPreparedExpression anyExpression(Operator operator, TPreparedExpression innerExpression,
+                                                        RowType outerRowType,
+                                                        RowType innerRowType, int bindingPosition) {
+                return new AnySubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
+            }
+
+            @Override
+            protected TPreparedExpression scalarSubqueryExpression(Operator operator, TPreparedExpression innerExpression,
+                                                                   RowType outerRowType, RowType innerRowType,
+                                                                   int bindingPosition) {
+                throw new UnsupportedOperationException(); // TODO
+            }
+
+            @Override
+            protected TPreparedExpression resultSetSubqueryExpression(Operator operator, RowType outerRowType,
+                                                                      RowType innerRowType, int bindingPosition) {
+                throw new UnsupportedOperationException(); // TODO
+            }
+
+            @Override
+            protected TPreparedExpression field(RowType rowType, int position) {
+                return new TPreparedField(rowType.typeInstanceAt(position), position);
+            }
         }
 
         private PlanContext planContext;
@@ -314,6 +361,7 @@ public class OperatorAssembler extends BaseRule
         private Schema schema;
         private boolean usePValues;
         private final PartialAssembler<Expression> oldPartialAssembler;
+        private final PartialAssembler<TPreparedExpression> newPartialAssembler;
 
         public Assembler(PlanContext planContext, boolean usePValues) {
             this.usePValues = usePValues;
@@ -321,9 +369,11 @@ public class OperatorAssembler extends BaseRule
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
             if (usePValues) {
+                newPartialAssembler = new NewPartialAssembler(rulesContext);
                 oldPartialAssembler = nullAssembler();
             }
             else {
+                newPartialAssembler = nullAssembler();
                 oldPartialAssembler = new OldPartialAssembler(rulesContext);
             }
             computeBindingsOffsets();
