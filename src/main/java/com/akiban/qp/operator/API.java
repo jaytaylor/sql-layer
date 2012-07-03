@@ -452,7 +452,7 @@ public class API
     // Distinct
     public static Operator distinct_Partial(Operator input, RowType distinctType)
     {
-        return new Distinct_Partial(input, distinctType, USE_PVALUES_DEFAULT);
+        return new Distinct_Partial(input, distinctType, Types3Switch.ON);
     }
 
     public static Operator distinct_Partial(Operator input, RowType distinctType, boolean usePValues)
@@ -499,7 +499,7 @@ public class API
     {
         return intersect_Ordered(leftInput, rightInput,  leftRowType, rightRowType,
                 leftOrderingFields, rightOrderingFields, comparisonFields, joinType, intersectOutput,
-                USE_PVALUES_DEFAULT);
+                Types3Switch.ON);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -541,7 +541,7 @@ public class API
                 ascending,
                 joinType,
                 intersectOptions,
-                USE_PVALUES_DEFAULT);
+                Types3Switch.ON);
     }
 
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
@@ -576,7 +576,7 @@ public class API
                 leftOrderingFields,
                 rightOrderingFields,
                 ascending,
-                USE_PVALUES_DEFAULT);
+                Types3Switch.ON);
     }
 
     public static Operator union_Ordered(Operator leftInput, Operator rightInput,
@@ -622,7 +622,7 @@ public class API
                 estimatedRowCount,
                 filterBindingPosition,
                 streamInput,
-                USE_PVALUES_DEFAULT);
+                Types3Switch.ON);
     }
 
     public static Operator using_BloomFilter(Operator filterInput,
@@ -824,6 +824,4 @@ public class API
         }
 
     };
-
-    public static final boolean USE_PVALUES_DEFAULT = false;
 }
