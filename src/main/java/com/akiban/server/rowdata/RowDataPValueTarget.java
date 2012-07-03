@@ -108,7 +108,7 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putInt32(int value) {
-        recordEncoded(encodeInt(value));
+        recordEncoded(encodeLong(value));
     }
 
     @Override
@@ -153,10 +153,6 @@ public final class RowDataPValueTarget implements PValueTarget {
     private int encodeLong(long value) {
         int width = fieldDef.getMaxStorageSize();
         return AkServerUtil.putIntegerByWidth(bytes, offset, width, value);
-    }
-
-    private boolean encodableAsLong(BigInteger value) {
-        return value.compareTo(MAX_BIGINT) <= 0;
     }
 
     private void setNullBit() {

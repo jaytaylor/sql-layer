@@ -162,14 +162,14 @@ public final class RowDataBuilder {
                 }
             } else if (fieldDef.isFixedSize()) {
                 pTarget.bind(fieldDef, bytes, fixedWidthSectionOffset);
-                converter.convert(rowDef.getFieldDef(fieldIndex), source, pTarget);
+                doConvertP(source);
                 if (pTarget.lastEncodedLength() != currFixedWidth) {
                     throw new IllegalStateException("expected to write " + currFixedWidth
                             + " fixed-width byte(s), but wrote " + pTarget.lastEncodedLength());
                 }
             } else {
                 pTarget.bind(fieldDef, bytes, variableWidthSectionOffset);
-                converter.convert(rowDef.getFieldDef(fieldIndex), source, pTarget);
+                doConvertP(source);
                 int varWidthExpected = readVarWidth(bytes, currFixedWidth);
                 // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
                 // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
@@ -274,6 +274,14 @@ public final class RowDataBuilder {
     private void doConvert(ValueSource source) {
         try {
             Converters.convert(source, target);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
+        }
+    }
+
+    private void doConvertP(ValueSource source) {
+        try {
+            converter.convert(rowDef.getFieldDef(fieldIndex), source, pTarget);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
         }
