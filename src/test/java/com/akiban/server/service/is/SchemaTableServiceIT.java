@@ -37,6 +37,9 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
 import com.akiban.server.test.it.ITBase;
 
+import com.akiban.server.service.config.Property;
+import java.util.Collection;
+
 public final class SchemaTableServiceIT extends ITBase {
 
     @Override
@@ -45,6 +48,11 @@ public final class SchemaTableServiceIT extends ITBase {
                 .bind(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
                 .bind(StorageSchemaTablesService.class, StorageSchemaTablesServiceImpl.class)
                 .overrideRequires(getClass().getResource("SchemaTableService-requires.yaml"));
+    }
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
     }
 
     private AkibanInformationSchema ais;
