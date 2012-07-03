@@ -100,8 +100,9 @@ public class OperatorAssembler extends BaseRule
 
     private final boolean usePValues;
 
+    @SuppressWarnings("unused") // used by reflection in RulesTestHelper
     public OperatorAssembler() {
-        this(false);
+        this.usePValues = Types3Switch.ON;
     }
     
     public OperatorAssembler(boolean usePValues) {
@@ -381,7 +382,6 @@ public class OperatorAssembler extends BaseRule
             if (projectFields != null) {
                 // In the common case, we can project into a wider row
                 // of the correct type directly.
-                assert false : "need to create assembler for types3";
                 inserts = Types3Switch.ON
                         ? null
                         : oldPartialAssembler.assembleExpressions(projectFields, stream.fieldOffsets);
