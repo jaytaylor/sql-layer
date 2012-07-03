@@ -141,6 +141,7 @@ public final class PValueSources {
 
         protected abstract Object handleBigDecimal(T state, BigDecimal bigDecimal);
         protected abstract Object handleString(T state, String string);
+        protected abstract ValueSource tweakSource(T state, ValueSource source);
 
         public final void convert(T state, ValueSource in, PValueTarget out) {
             if (in.isNull())
@@ -151,6 +152,8 @@ public final class PValueSources {
             double dval = 0;
             Object oval = UNDEF;
             boolean boolval = false;
+
+            in = tweakSource(state, in);
 
             switch (in.getConversionType()) {
             case DATE:
@@ -273,6 +276,11 @@ public final class PValueSources {
         @Override
         protected Object handleString(Void state, String string) {
             return string;
+        }
+
+        @Override
+        protected ValueSource tweakSource(Void state, ValueSource source) {
+            return source;
         }
     };
 }

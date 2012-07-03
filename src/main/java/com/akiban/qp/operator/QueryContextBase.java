@@ -39,6 +39,8 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.SparseArray;
 
@@ -58,6 +60,28 @@ public abstract class QueryContextBase implements QueryContext
     }
 
     /* QueryContext interface */
+
+    @Override
+    public PValueSource getPValue(int index) {
+        if (!bindings.isDefined(index))
+            throw new BindingNotSetException(index);
+        return (PValueSource)bindings.get(index);
+    }
+
+    @Override
+    public void setPValue(int index, PValueSource value) {
+        PValue holder = null;
+        if (bindings.isDefined(index)) {
+            holder = (PValue)bindings.get(index);
+            if (holder.getUnderlyingType() != value.getUnderlyingType())
+                holder = null;
+        }
+        if (holder == null) {
+            holder = new PValue(value.getUnderlyingType());
+            bindings.set(index, holder);
+        }
+        holder.putValueSource(value);
+    }
 
     @Override
     public ValueSource getValue(int index) {

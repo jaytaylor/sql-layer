@@ -134,6 +134,8 @@ public class ProjectedRow extends AbstractRow
     private List<ExpressionEvaluation> createEvaluations(List<Expression> expressions, 
                                                          Row row, QueryContext context)
     {
+        if (expressions == null)
+            return null;
         List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
         for (Expression expression : expressions) {
             ExpressionEvaluation evaluation = expression.evaluation();
@@ -146,6 +148,8 @@ public class ProjectedRow extends AbstractRow
 
     private List<? extends PValueSource> createPEvals(List<? extends TPreparedExpression> pExpressions,
                                                              Row row, QueryContext context) {
+        if (pExpressions == null)
+            return null;
         List<PValueSource> result = new ArrayList<PValueSource>(pExpressions.size());
         for (TPreparedExpression expression : pExpressions) {
             TEvaluatableExpression eval = expression.build();

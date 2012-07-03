@@ -28,6 +28,8 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -220,9 +222,16 @@ final class Limit_Default extends Operator
                 super.open();
                 closed = false;
                 if (isSkipBinding()) {
-                    ValueSource value = context.getValue(skip());
-                    if (!value.isNull())
-                        this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                    if (Types3Switch.ON) {
+                        PValueSource value = context.getPValue(skip());
+                        if (!value.isNull())
+                            this.skipLeft = value.getInt32();
+                    }
+                    else {
+                        ValueSource value = context.getValue(skip());
+                        if (!value.isNull())
+                            this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                    }
                 }
                 else {
                     this.skipLeft = skip();
@@ -230,11 +239,20 @@ final class Limit_Default extends Operator
                 if (skipLeft < 0)
                     throw new NegativeLimitException("OFFSET", skipLeft);
                 if (isLimitBinding()) {
-                    ValueSource value = context.getValue(limit());
-                    if (value.isNull())
-                        this.limitLeft = Integer.MAX_VALUE;
-                    else
-                        this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                    if (Types3Switch.ON) {
+                        PValueSource value = context.getPValue(limit());
+                        if (value.isNull())
+                            this.limitLeft = Integer.MAX_VALUE;
+                        else
+                            this.limitLeft = value.getInt32();
+                    }
+                    else {
+                        ValueSource value = context.getValue(limit());
+                        if (value.isNull())
+                            this.limitLeft = Integer.MAX_VALUE;
+                        else
+                            this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                    }
                 }
                 else {
                     this.limitLeft = limit();
