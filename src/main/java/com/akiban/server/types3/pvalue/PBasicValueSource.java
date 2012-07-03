@@ -26,11 +26,30 @@
 
 package com.akiban.server.types3.pvalue;
 
-public interface PValueTarget extends PBasicValueTarget {
+public interface PBasicValueSource {
+    PUnderlying getUnderlyingType();
 
-    boolean supportsCachedObjects();
+    boolean isNull();
 
-    void putValueSource(PValueSource source);
+    boolean getBoolean();
 
-    void putObject(Object object);
+    boolean getBoolean(boolean defaultValue);
+
+    byte getInt8();
+
+    short getInt16();
+
+    char getUInt16();
+
+    int getInt32();
+
+    long getInt64();
+
+    float getFloat();
+
+    double getDouble();
+
+    byte[] getBytes();
+
+    String getString();
 }

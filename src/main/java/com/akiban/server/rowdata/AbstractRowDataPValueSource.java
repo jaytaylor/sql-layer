@@ -44,19 +44,18 @@ abstract class AbstractRowDataPValueSource implements PValueSource {
 
     @Override
     public boolean hasAnyValue() {
-        throw new UnsupportedOperationException();
+        return true;
     }
 
     @Override
     public boolean hasRawValue() {
-        throw new UnsupportedOperationException();
+        return true;
     }
 
     @Override
     public boolean hasCacheValue() {
-        throw new UnsupportedOperationException();
+        return false;
     }
-
 
     @Override
     public abstract boolean isNull();

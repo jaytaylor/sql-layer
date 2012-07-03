@@ -26,48 +26,73 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.types3.TInstance;
+
 public final class PValueTargets {
     private PValueTargets() {}
 
     public static void copyFrom(PValueSource source, PValueTarget target) {
+        copyFrom(source, target, null, null);
+    }
+
+    public static <T> void copyFrom(PValueSource source, PValueTarget target,
+                                    PValueCacher<T> cacher, TInstance tInstance)
+    {
         if (source.isNull()) {
             target.putNull();
+            return;
         }
-        else {
-            switch (source.getUnderlyingType()) {
-            case BOOL:
-                target.putBool(source.getBoolean());
-                break;
-            case INT_8:
-                target.putInt8(source.getInt8());
-                break;
-            case INT_16:
-                target.putInt16(source.getInt16());
-                break;
-            case UINT_16:
-                target.putUInt16(source.getUInt16());
-                break;
-            case INT_32:
-                target.putInt32(source.getInt32());
-                break;
-            case INT_64:
-                target.putInt64(source.getInt64());
-                break;
-            case FLOAT:
-                target.putFloat(source.getFloat());
-                break;
-            case DOUBLE:
-                target.putDouble(source.getDouble());
-                break;
-            case BYTES:
-                target.putBytes(source.getBytes());
-                break;
-            case STRING:
-                target.putString(source.getString());
-                break;
-            default:
-                throw new AssertionError(source.getUnderlyingType());
+        else if (source.hasCacheValue()) {
+            if (target.supportsCachedObjects()) {
+                target.putObject(source.getObject());
+                return;
             }
+            else if (cacher != null) {
+                @SuppressWarnings("unchecked")
+                T cached = (T) source.getObject();
+                cacher.cacheToValue(cached, tInstance, target);
+                return;
+            }
+            else if (!source.hasRawValue()) {
+                throw new IllegalStateException("source has only cached object, but no cacher provided: " + source);
+            }
+        }
+        else if (!source.hasRawValue()) {
+            throw new IllegalStateException("source has no value: " + source);
+        }
+        switch (source.getUnderlyingType()) {
+        case BOOL:
+            target.putBool(source.getBoolean());
+            break;
+        case INT_8:
+            target.putInt8(source.getInt8());
+            break;
+        case INT_16:
+            target.putInt16(source.getInt16());
+            break;
+        case UINT_16:
+            target.putUInt16(source.getUInt16());
+            break;
+        case INT_32:
+            target.putInt32(source.getInt32());
+            break;
+        case INT_64:
+            target.putInt64(source.getInt64());
+            break;
+        case FLOAT:
+            target.putFloat(source.getFloat());
+            break;
+        case DOUBLE:
+            target.putDouble(source.getDouble());
+            break;
+        case BYTES:
+            target.putBytes(source.getBytes());
+            break;
+        case STRING:
+            target.putString(source.getString());
+            break;
+        default:
+            throw new AssertionError(source.getUnderlyingType());
         }
     }
 

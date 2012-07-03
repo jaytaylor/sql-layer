@@ -42,6 +42,11 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     
     // PersistitKeyPValueTarget interface
 
+    @Override
+    public boolean supportsCachedObjects() {
+        return true;
+    }
+
     public void attach(Key key) {
         this.key = key;
     }

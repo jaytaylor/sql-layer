@@ -59,6 +59,11 @@ public final class RowDataPValueTarget implements PValueTarget {
     // ValueTarget interface
 
     @Override
+    public boolean supportsCachedObjects() {
+        return false;
+    }
+
+    @Override
     public void putNull() {
         setNullBit();
         recordEncoded(0);
@@ -129,7 +134,7 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putObject(Object object) {
-//        cacher.cacheToValue(object, this);
+        throw new UnsupportedOperationException();
     }
 
     // private methods

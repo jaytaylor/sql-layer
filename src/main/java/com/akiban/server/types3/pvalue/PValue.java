@@ -31,6 +31,11 @@ public final class PValue implements PValueSource, PValueTarget {
     // PValueTarget interface
 
     @Override
+    public boolean supportsCachedObjects() {
+        return true;
+    }
+
+    @Override
     public void putValueSource(PValueSource source) {
         if (source instanceof PValue) {
             PValue sourceRaw = (PValue) source;

@@ -41,6 +41,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
@@ -68,6 +69,11 @@ public class MBigDecimal extends TClass {
         int scale = instance.attribute(Attrs.SCALE);
         return new DataTypeDescriptor(TypeId.DECIMAL_ID, precision, scale, instance.nullability(),
                 DataTypeDescriptor.computeMaxWidth(precision, scale));
+    }
+
+    @Override
+    public void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
+        PValueTargets.copyFrom(in, out, cacher, typeInstance);
     }
 
     public static String getNum(int scale, int precision)
@@ -145,11 +151,10 @@ public class MBigDecimal extends TClass {
         throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    public static final PValueCacher cacher = new PValueCacher() {
+    public static final PValueCacher<BigDecimalWrapper> cacher = new PValueCacher<BigDecimalWrapper>() {
 
         @Override
-        public void cacheToValue(Object cached, TInstance tInstance, PBasicValueTarget target) {
-            BigDecimalWrapper bdw = (BigDecimalWrapper)cached;
+        public void cacheToValue(BigDecimalWrapper bdw, TInstance tInstance, PBasicValueTarget target) {
             BigDecimal bd = bdw.asBigDecimal();
             int precision = tInstance.attribute(Attrs.PRECISION);
             int scale = tInstance.attribute(Attrs.SCALE);
@@ -158,7 +163,7 @@ public class MBigDecimal extends TClass {
         }
 
         @Override
-        public Object valueToCache(PBasicValueSource value, TInstance tInstance) {
+        public BigDecimalWrapper valueToCache(PBasicValueSource value, TInstance tInstance) {
             int precision = tInstance.attribute(Attrs.PRECISION);
             int scale = tInstance.attribute(Attrs.SCALE);
             byte[] bb = value.getBytes();

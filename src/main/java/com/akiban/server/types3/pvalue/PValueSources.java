@@ -27,6 +27,7 @@
 package com.akiban.server.types3.pvalue;
 
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.util.ByteSource;
 
@@ -67,6 +68,13 @@ public final class PValueSources {
         default:
             throw new AssertionError(underlyingType);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T getCached(PValueSource source, TInstance tInstance, PValueCacher<? extends T> cacher) {
+        if (source.hasCacheValue())
+            return (T) source.getObject();
+        return cacher.valueToCache(source, tInstance);
     }
 
     public static int hash(PValueSource source) {
