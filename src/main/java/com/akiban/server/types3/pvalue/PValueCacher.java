@@ -26,7 +26,7 @@
 
 package com.akiban.server.types3.pvalue;
 
-public interface PValueCacher<T> {
-    void cacheToValue(T cached, PValueTarget value);
-    T valueToCache(PValueSource value);
+public interface PValueCacher {
+    void cacheToValue(Object cached, PBasicValueTarget value);
+    Object valueToCache(PBasicValueSource value);
 }

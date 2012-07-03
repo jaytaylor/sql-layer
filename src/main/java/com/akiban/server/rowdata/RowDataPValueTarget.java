@@ -28,6 +28,7 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.pvalue.PValueTargets;
@@ -128,8 +129,8 @@ public final class RowDataPValueTarget implements PValueTarget {
     }
 
     @Override
-    public void putObject(Object object) {
-        throw new UnsupportedOperationException();
+    public void putObject(Object object, PValueCacher cacher) {
+        cacher.cacheToValue(object, this);
     }
 
     // private methods

@@ -101,11 +101,12 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     @Override
-    public final void putObject(Object object) {
+    public final void putObject(Object object, PValueCacher cacher) {
         if (object == null)
             putNull();
         else
             setRawValues(State.CACHE_ONLY, -1, null, object);
+        this.cacher = cacher;
     }
 
     // PValueSource interface
@@ -173,11 +174,12 @@ public final class PValue implements PValueSource, PValueTarget {
 
     @Override
     public String getString() {
-        return (String) getObject();
+        checkUnderlying(PUnderlying.STRING);
+        return (String) oCache;
     }
 
     @Override
-    public final Object getObject() {
+    public final Object getObject(PValueCacher cacher) {
         switch (state) {
         case UNSET:
             throw new IllegalStateException("no value set");
@@ -215,12 +217,6 @@ public final class PValue implements PValueSource, PValueTarget {
     @Override
     public PUnderlying getUnderlyingType() {
         return underlying;
-    }
-
-    // PValue interface
-
-    public void setCacher(PValueCacher<?> cacher) {
-        this.cacher = cacher;
     }
 
     // Object interface
@@ -292,7 +288,7 @@ public final class PValue implements PValueSource, PValueTarget {
             throw new NullValueException();
         case CACHE_ONLY:
             Object savedCache = oCache;
-            ((PValueCacher)cacher).cacheToValue(oCache, this);
+            cacher.cacheToValue(oCache, this);
             if (state == State.NULL)
                 throw new NullValueException();
             assert state == State.VAL_ONLY;
@@ -325,7 +321,8 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     public PValue(PUnderlying underlying) {
-        this(underlying, null);
+        this.underlying = underlying;
+        this.state = State.UNSET;
     }
     
     public PValue(double val)
@@ -338,15 +335,9 @@ public final class PValue implements PValueSource, PValueTarget {
         this(PUnderlying.INT_32);
         putInt32(val);
     }
-    
-    public PValue(PUnderlying underlying, PValueCacher<?> cacher) {
-        this.underlying = underlying;
-        this.state = State.UNSET;
-        this.cacher = cacher;
-    }
 
     private final PUnderlying underlying;
-    private PValueCacher<?> cacher;
+    private PValueCacher cacher;
     private State state;
     private long iVal;
     private byte[] bVal;
@@ -358,50 +349,4 @@ public final class PValue implements PValueSource, PValueTarget {
     private enum State {
         UNSET, NULL, VAL_ONLY, CACHE_ONLY, VAL_AND_CACHE
     }
-
-//    public static void main(String[] args) {
-//        PValue a = new PValue(PUnderlying.INT_32);
-//        System.out.println(a);
-//        a.putInt32(42);
-//        System.out.println(a);
-//
-//        PValue b = new PValue(PUnderlying.UINT_16);
-//        b.putUInt16('a');
-//        System.out.println(b);
-//
-//        PValue c = new PValue(PUnderlying.BYTES);
-//        c.putBytes(new byte[]{0x12, (byte) 0xFF, (byte) 0xCA, (byte) 0xEA, (byte) 0x21});
-//        System.out.println(c);
-//
-//        PValue d = new PValue(PUnderlying.INT_64, new PValueCacher<BigDecimal>() {
-//            @Override
-//            public void cacheToValue(BigDecimal cached, PValueTarget value) {
-//                String asString = cached.toPlainString();
-//                asString = asString.replace(".", "");
-//                long asLong = Long.parseLong(asString);
-//                value.putInt64(asLong);
-//            }
-//
-//            @Override
-//            public BigDecimal valueToCache(PValueSource value) {
-//                long asLong = value.getInt64();
-//                StringBuilder asSb = new StringBuilder(String.format("%020d", asLong));
-//                asSb.reverse();
-//                asSb.insert(3, '.');
-//                asSb.reverse();
-//                return new BigDecimal(asSb.toString());
-//            }
-//        });
-//        d.putInt64(123456L);
-//        System.out.println(d);
-//        d.getObject();
-//        System.out.println(d);
-//        System.out.println(d.getObject());
-//        System.out.println(d.getInt64());
-//        d.putObject(new BigDecimal("567.890"));
-//        System.out.println(d.getInt64());
-//        System.out.println(d.getObject());
-//        System.out.println(d);
-//        d.getInt16();
-//    }
 }
