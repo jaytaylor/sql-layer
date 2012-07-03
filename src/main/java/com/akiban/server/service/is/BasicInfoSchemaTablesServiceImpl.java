@@ -179,6 +179,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      table.getName().getTableName(),
                                      tableType,
                                      table.getTableId(),
+                                     table.hasMemoryTableFactory() ? null : table.getTreeName(),
                                      CHARSET_SCHEMA,
                                      table.getCharsetAndCollation().charset(),
                                      COLLATION_SCHEMA,
@@ -518,7 +519,7 @@ public class BasicInfoSchemaTablesServiceImpl
             return count;
         }
 
-        private class Scan extends BaseScan{
+        private class Scan extends BaseScan {
             final IndexIteration indexIt = newIteration();
 
             public Scan(RowType rowType) {
@@ -547,6 +548,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      index.getIndexName().getName(),
                                      constraintName,
                                      index.getIndexId(),
+                                     indexIt.curTable.hasMemoryTableFactory() ? null : index.getTreeName(),
                                      indexType,
                                      boolResult(index.isUnique()),
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
@@ -580,7 +582,7 @@ public class BasicInfoSchemaTablesServiceImpl
             return count;
         }
 
-        private class Scan extends BaseScan{
+        private class Scan extends BaseScan {
             final IndexIteration indexIt = newIteration();
             Iterator<IndexColumn> indexColumnIt;
 
@@ -609,6 +611,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                      indexIt.getTable().getName().getSchemaName(),
                                      indexColumn.getIndex().getIndexName().getName(),
                                      indexIt.getTable().getName().getTableName(),
+                                     indexColumn.getColumn().getTable().getName().getSchemaName(),
                                      indexColumn.getColumn().getTable().getName().getTableName(),
                                      indexColumn.getColumn().getName(),
                                      indexColumn.getPosition(),
@@ -632,7 +635,7 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         public boolean next() {
-            while(indexIt != null || tableIt.hasNext()) {
+            while(curTable != null || tableIt.hasNext()) {
                 if(curTable == null) {
                     curTable = tableIt.next();
                     if(curTable.getParentJoin() != null) {
@@ -731,6 +734,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_name", IDENT_MAX, false)
                 .colString("table_type", IDENT_MAX, false)
                 .colBigInt("table_id", false)
+                .colString("tree_name", PATH_MAX, true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
@@ -802,6 +806,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("index_name", IDENT_MAX, false)
                 .colString("constraint_name", IDENT_MAX, true)
                 .colBigInt("index_id", false)
+                .colString("tree_name", PATH_MAX, true)
                 .colString("index_type", IDENT_MAX, false)
                 .colString("is_unique", YES_NO_MAX, false)
                 .colString("join_type", DESCRIPTOR_MAX, true);
@@ -813,6 +818,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("index_name", IDENT_MAX, false)
                 .colString("index_table_name", IDENT_MAX, false)
+                .colString("column_schema_name", IDENT_MAX, false)
                 .colString("column_table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
