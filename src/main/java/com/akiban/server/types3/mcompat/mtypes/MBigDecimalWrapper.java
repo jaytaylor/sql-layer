@@ -173,5 +173,10 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
         value = value.negate();
         return this;
     }
+
+    @Override
+    public BigDecimal asBigDecimal() {
+        return value;
+    }
 }
 

@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.rowdata.ConversionHelperBigDecimal;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TClass;
@@ -40,6 +41,7 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import java.math.BigDecimal;
 import java.util.Arrays;
 
 public class MBigDecimal extends TClass {
@@ -66,7 +68,16 @@ public class MBigDecimal extends TClass {
 
     @Override
     public void writeCanonical(PValueSource inValue, TInstance typeInstance, PValueTarget out) {
-        throw new UnsupportedOperationException(); // TODO
+        if (inValue.isNull()) {
+            out.putNull();
+            return;
+        }
+        BigDecimalWrapper bdw = (BigDecimalWrapper)inValue.getObject();
+        BigDecimal bd = bdw.asBigDecimal();
+        int precision = typeInstance.attribute(Attrs.PRECISION);
+        int scale = typeInstance.attribute(Attrs.SCALE);
+        byte[] bb = ConversionHelperBigDecimal.bytesFromObject(bd, precision, scale);
+        out.putBytes(bb);
     }
 
     public static String getNum(int scale, int precision)

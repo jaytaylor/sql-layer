@@ -153,4 +153,9 @@ public class AkBigDecimalWrapper implements BigDecimalWrapper {
         value = value.negate();
         return this;
     }
+
+    @Override
+    public BigDecimal asBigDecimal() {
+        return value;
+    }
 }

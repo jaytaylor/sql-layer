@@ -333,6 +333,11 @@ public final class PValue implements PValueSource, PValueTarget {
         this(PUnderlying.DOUBLE);
         putDouble(val);
     }
+
+    public PValue(int val) {
+        this(PUnderlying.INT_32);
+        putInt32(val);
+    }
     
     public PValue(PUnderlying underlying, PValueCacher<?> cacher) {
         this.underlying = underlying;

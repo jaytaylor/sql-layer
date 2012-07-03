@@ -180,6 +180,7 @@ public class OperatorAssembler extends BaseRule
             if (projectFields != null) {
                 // In the common case, we can project into a wider row
                 // of the correct type directly.
+
                 inserts = assembleExpressions(projectFields, stream.fieldOffsets);
             }
             else {
@@ -899,10 +900,10 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
-            List<Expression> oldProjections; ;
+            List<Expression> oldProjections;
             List<? extends TPreparedExpression> pExpressions;
             if (usePValues) {
-                pExpressions = null; assert false;
+                pExpressions = null;
                 oldProjections = null;
             }
             else {
