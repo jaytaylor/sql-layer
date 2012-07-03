@@ -79,12 +79,6 @@ public class HKey
         ensureDerived();
         return columnTypes[i];
     }
-    
-    public PUnderlying pType(int i)
-    {
-        ensureDerived();
-        return pTypes[i];
-    }
 
     public HKey(Table table)
     {
@@ -139,7 +133,6 @@ public class HKey
                         Type type = column.getType();
                         columns[c] = column;
                         columnTypes[c] = type.akType();
-                        pTypes[c] = type.pUnderlying();
                         c++;
                     }
                     // keyDepth
@@ -166,5 +159,4 @@ public class HKey
     private int[] keyDepth;
     private Column[] columns;
     private AkType[] columnTypes;
-    private PUnderlying[] pTypes;
 }

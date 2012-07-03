@@ -32,17 +32,24 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TFactory;
 
 import java.util.Map;
+import java.util.UUID;
 
 public enum  MBundle implements TBundle {
     INSTANCE;
 
     @Override
     public TBundleID id() {
-        throw new UnsupportedOperationException(); // TODO
+        return bundleId;
     }
 
     @Override
     public Map<TClass, TFactory> typeClasses() {
         throw new UnsupportedOperationException(); // TODO
     }
+
+    public enum MSwitcher {
+        // TODO
+    }
+
+    private static TBundleID bundleId = new TBundleID("mcompat", "b9833ebf-423d-4a60-8226-1dd635ba8892");
 }

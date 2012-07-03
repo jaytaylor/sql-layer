@@ -28,6 +28,8 @@ package com.akiban.sql.pg;
 
 import com.akiban.qp.row.Row;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -44,10 +46,11 @@ public class PostgresRowOutputter extends PostgresOutputter<Row>
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(ncols);
         for (int i = 0; i < ncols; i++) {
-            ValueSource field = row.eval(i);
             PostgresType type = columnTypes.get(i);
             boolean binary = context.isColumnBinary(i);
-            ByteArrayOutputStream bytes = encoder.encodeValue(field, type, binary);
+            ByteArrayOutputStream bytes;
+            if (Types3Switch.ON) bytes = encoder.encodePValue(row.pvalue(i), type, binary);
+            else bytes = encoder.encodeValue(row.eval(i), type, binary);
             if (bytes == null) {
                 messenger.writeInt(-1);
             }

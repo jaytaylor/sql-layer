@@ -28,6 +28,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.common.funcs.TAesEncryptDecrypt;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 
 public class MEncryption
@@ -36,5 +37,5 @@ public class MEncryption
     public static final int DEFAULT_KEY_LENGTH = 16;
     
     public static final TOverload[] AES_CRYPTOS
-            = TAesEncryptDecrypt.create(MString.VARCHAR, MString.VARBINARY, DEFAULT_KEY_LENGTH);
+            = TAesEncryptDecrypt.create(MString.VARCHAR, MBinary.VARBINARY, DEFAULT_KEY_LENGTH);
 }

@@ -121,9 +121,9 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initParser(parser);
             compiler.initFunctionsRegistry(new FunctionsRegistryImpl());
             if (Boolean.parseBoolean(properties.getProperty("cbo", "true")))
-                compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties));
+                compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties), false);
             else
-                compiler.initCostEstimator(null);
+                compiler.initCostEstimator(null, false);
             compiler.initDone();
             return compiler;
         }

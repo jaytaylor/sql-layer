@@ -35,10 +35,17 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 
 public abstract class TString extends TClass
 {
-    protected TString (TBundle bundle, String name, int serialisationSize)
+    protected TString (TypeId typeId, TBundle bundle, String name, int serialisationSize)
+    {
+        this(typeId, bundle, name, serialisationSize, -1);
+    }
+
+    protected TString (TypeId typeId, TBundle bundle, String name, int serialisationSize, int fixedLength)
     {
         super(bundle.id(),
                 name,
@@ -47,9 +54,23 @@ public abstract class TString extends TClass
                 1,
                 serialisationSize,
                 PUnderlying.BYTES);
+        this.fixedLength = fixedLength;
+        this.typeId = typeId;
     }
 
-     
+    @Override
+    public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
+        return new DataTypeDescriptor(
+                typeId, instance.nullability(), instance.attribute(StringAttribute.LENGTH));
+    }
+
+    @Override
+    public TInstance instance(int charsetId, int collationId) {
+        return fixedLength < 0
+                ? super.instance(charsetId, collationId)
+                : super.instance(fixedLength, charsetId, collationId);
+    }
+
     @Override
     public void putSafety(QueryContext context, 
                           TInstance sourceInstance,
@@ -79,7 +100,7 @@ public abstract class TString extends TClass
     @Override
     public TInstance instance()
     {
-        return instance(StringFactory.DEFAULT_LENGTH, 
+        return instance(fixedLength >= 0 ? fixedLength : StringFactory.DEFAULT_LENGTH,
                         StringFactory.DEFAULT_CHARSET.ordinal(),
                         StringFactory.DEFAULT_COLLATION_ID);
     }
@@ -109,6 +130,9 @@ public abstract class TString extends TClass
         int length = instance.attribute(StringAttribute.LENGTH);
         int charsetId = instance.attribute(StringAttribute.CHARSET);
         int collaitonid = instance.attribute(StringAttribute.COLLATION);
-        throw new UnsupportedOperationException(); // TODO
+        // TODO
     }
+    
+    private final int fixedLength;
+    private final TypeId typeId;
 }

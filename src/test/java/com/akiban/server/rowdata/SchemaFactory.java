@@ -237,11 +237,6 @@ public class SchemaFactory {
         }
 
         @Override
-        public void forceGenerationUpdate() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
             AkibanInformationSchema newAIS = new AkibanInformationSchema();
             new Writer(new AISTarget(newAIS)).save(ais);

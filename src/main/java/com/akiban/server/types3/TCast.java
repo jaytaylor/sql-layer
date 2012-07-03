@@ -35,7 +35,6 @@ public interface TCast {
     Constantness constness();
     public TClass sourceClass();
     public TClass targetClass();
-    
     /**
      * 
      * @param context
@@ -46,5 +45,6 @@ public interface TCast {
      * @return 
      */
     public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget);
+
     public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target);
 }

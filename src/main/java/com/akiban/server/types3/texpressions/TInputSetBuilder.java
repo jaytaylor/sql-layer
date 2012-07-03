@@ -55,6 +55,11 @@ public final class TInputSetBuilder {
         return this;
     }
 
+    public TInputSetBuilder reset(TInputSetBuilder builder) {
+        inputSets = builder.toList();
+        return this;
+    }
+
     List<TInputSet> toList() {
         return new ArrayList<TInputSet>(inputSets);
     }

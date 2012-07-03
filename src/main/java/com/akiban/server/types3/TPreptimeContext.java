@@ -31,17 +31,36 @@ import com.akiban.util.SparseArray;
 import java.util.List;
 
 public final class TPreptimeContext {
-    
+    public void setOutputType(TInstance outputType) {
+        this.outputType = outputType;
+    }
+
     public TExecutionContext createExecutionContext() {
         return new TExecutionContext(preptimeCache, inputTypes, outputType, 
                 null,
                 null, null, null); // TODO pass in
     }
     
+    public String getCurrentTimezone()
+    {
+        //TODO:
+        throw new UnsupportedOperationException("not supported yet");
+    }
+    
+    public String getLocale()
+    {
+        // TODO:
+        throw new UnsupportedOperationException("not supported yet");
+    }
+    
     public void set(int index, Object value) {
         if (preptimeCache == null)
             preptimeCache = new SparseArray<Object>(index);
         preptimeCache.set(index, value);
+    }
+
+    public TPreptimeContext(List<TInstance> inputTypes) {
+        this.inputTypes = inputTypes;
     }
 
     public TPreptimeContext(List<TInstance> inputTypes, TInstance outputType) {

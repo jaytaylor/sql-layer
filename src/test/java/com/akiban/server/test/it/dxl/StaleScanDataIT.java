@@ -28,6 +28,7 @@ package com.akiban.server.test.it.dxl;
 
 import com.akiban.server.api.FixedCountLimit;
 import com.akiban.server.api.dml.scan.ColumnSet;
+import com.akiban.server.api.dml.scan.CursorId;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.ScanAllRequest;
 import com.akiban.server.api.dml.scan.ScanRequest;
@@ -36,6 +37,7 @@ import com.akiban.server.test.it.ITBase;
 import org.junit.Test;
 
 import static junit.framework.Assert.assertEquals;
+import static junit.framework.Assert.assertTrue;
 
 // Inspired by bug 885697
 
@@ -63,7 +65,7 @@ public final class StaleScanDataIT extends ITBase
                                                        0,
                                                        null,
                                                        new FixedCountLimit(1));
-        dml().openCursor(session(), aisGeneration(), t1ScanRequest);
+        CursorId cursorId = dml().openCursor(session(), aisGeneration(), t1ScanRequest);
         assertEquals(1, dml().getCursors(session()).size());
         // Update a t2 row. This provokes bug 885697 because:
         // - The rows passed in are LegacyRowWrappers (as opposed to NiceRows). Indexing into the RowData's RowDef
@@ -76,5 +78,7 @@ public final class StaleScanDataIT extends ITBase
                         new LegacyRowWrapper(createNewRow(t2, 2, 2).toRowData(), store()),
                         new LegacyRowWrapper(createNewRow(t2, 2, 999).toRowData(), store()),
                         null);
+        dml().closeCursor(session(), cursorId);
+        assertTrue(dml().getCursors(session()).isEmpty());
     }
 }

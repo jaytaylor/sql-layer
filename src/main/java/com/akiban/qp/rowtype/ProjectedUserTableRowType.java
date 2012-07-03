@@ -31,11 +31,12 @@ import java.util.List;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.types3.TInstance;
 
 public class ProjectedUserTableRowType extends ProjectedRowType {
 
-    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections) {
-        super(schema, table.getTableId(), projections);
+    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TInstance> tInstances) {
+        super(schema, table.getTableId(), projections, tInstances);
         this.table = table;
     }
 

@@ -45,6 +45,9 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
     public static final int NROWS = 100;
     public static final String CAPACITY = "10";
 
+    private int hitsBase;
+    private int missesBase;
+    
     @Override
     protected Collection<Property> startupConfigProperties() {
         return Collections.singleton(new Property("akserver.postgres.statementCacheCapacity", CAPACITY));
@@ -58,28 +61,30 @@ public class PostgresServerCacheIT extends PostgresServerFilesITBase
             rows[i] = createNewRow(tid, i);
         }
         writeRows(rows);
+        hitsBase = server().getStatementCacheHits();
+        missesBase = server().getStatementCacheMisses();
     }
 
     @Test
     public void testRepeated() throws Exception {
-        Statement stmt = connection.createStatement();
+        Statement stmt = getConnection().createStatement();
         for (int i = 0; i < 1000; i++) {
             query(stmt, i / NROWS);
         }
         stmt.close();
-        assertEquals("Cache hits matches", 990, server().getStatementCacheHits());
-        assertEquals("Cache misses matches", 10, server().getStatementCacheMisses());
+        assertEquals("Cache hits matches", 990, server().getStatementCacheHits() - hitsBase);
+        assertEquals("Cache misses matches", 10, server().getStatementCacheMisses() - missesBase);
     }
 
     @Test
     public void testSequential() throws Exception {
-        Statement stmt = connection.createStatement();
+        Statement stmt = getConnection().createStatement();
         for (int i = 0; i < 1000; i++) {
             query(stmt, i % NROWS);
         }
         stmt.close();
-        assertEquals("Cache hits matches", 0, server().getStatementCacheHits());
-        assertEquals("Cache misses matches", 1000, server().getStatementCacheMisses());
+        assertEquals("Cache hits matches", 0, server().getStatementCacheHits() - hitsBase);
+        assertEquals("Cache misses matches", 1000, server().getStatementCacheMisses() - missesBase);
     }
 
     protected void query(Statement stmt, int n) throws Exception {

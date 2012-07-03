@@ -195,7 +195,7 @@ class PersistitHKey implements HKey
             pSources = new PersistitKeyPValueSource[hKeyMetadata.nColumns()];
             underlyingTypes = new PUnderlying[hKeyMetadata.nColumns()];
             for (int c = 0; c < hKeyMetadata.nColumns(); c++) {
-                underlyingTypes[c] = hKeyMetadata.pType(c);
+                underlyingTypes[c] = hKeyMetadata.column(c).tInstance().typeClass().underlyingType();
             }
         }
         if (pSources[i] == null) {

@@ -138,7 +138,8 @@ class Union_Ordered extends Operator
                          IndexRowType rightRowType,
                          int leftOrderingFields,
                          int rightOrderingFields,
-                         boolean[] ascending)
+                         boolean[] ascending,
+                         boolean usePValues)
     {
         ArgumentValidation.notNull("left", left);
         ArgumentValidation.notNull("right", right);
@@ -162,6 +163,7 @@ class Union_Ordered extends Operator
         this.fieldsToCompare = leftOrderingFields;
         this.ascending = Arrays.copyOf(ascending, ascending.length);
         // TODO (in Execution): Check that ascending bits are consistent with SortCursor directions.
+        this.usePValues = usePValues;
     }
 
     // For use by this class
@@ -180,6 +182,7 @@ class Union_Ordered extends Operator
     private final int fixedFields;
     private final int fieldsToCompare;
     private final boolean[] ascending;
+    private final boolean usePValues;
 
     @Override
     public Explainer getExplainer() {
@@ -375,29 +378,43 @@ class Union_Ordered extends Operator
                                         Row suffixRow,
                                         int suffixRowFixedFields)
         {
+            boolean usingPValues = Union_Ordered.this.usePValues;
             if (suffixRow == null) {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    skipRow.holderAt(skipRowFixedFields + f).putNull();
+                    if (usingPValues)
+                        skipRow.pvalueAt(skipRowFixedFields + f).putNull();
+                    else
+                        skipRow.holderAt(skipRowFixedFields + f).putNull();
                 }
             } else {
                 for (int f = 0; f < fieldsToCompare; f++) {
-                    skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
+                    if (usingPValues)
+                        skipRow.pvalueAt(skipRowFixedFields + f).putValueSource(suffixRow.pvalue(suffixRowFixedFields + f));
+                    else
+                        skipRow.holderAt(skipRowFixedFields + f).copyFrom(suffixRow.eval(suffixRowFixedFields + f));
                 }
             }
         }
 
         private ValuesHolderRow leftSkipRow()
         {
+            boolean usingPValues = Union_Ordered.this.usePValues;
             if (leftSkipRow == null) {
                 assert leftRow.isHolding();
-                leftSkipRow = new ValuesHolderRow(rowType);
+                leftSkipRow = new ValuesHolderRow(rowType, usingPValues);
                 int f = 0;
                 while (f < fixedFields) {
-                    leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
+                    if (usingPValues)
+                        leftSkipRow.pvalueAt(f).putValueSource(leftRow.get().pvalue(f));
+                    else
+                        leftSkipRow.holderAt(f).copyFrom(leftRow.get().eval(f));
                     f++;
                 }
                 while (f < rowType.nFields()) {
-                    leftSkipRow.holderAt(f++).putNull();
+                    if (usingPValues)
+                        leftSkipRow.pvalueAt(f++).putNull();
+                    else
+                        leftSkipRow.holderAt(f++).putNull();
                 }
             }
             return leftSkipRow;
@@ -405,16 +422,23 @@ class Union_Ordered extends Operator
 
         private ValuesHolderRow rightSkipRow()
         {
+            boolean usingPValues = Union_Ordered.this.usePValues;
             if (rightSkipRow == null) {
                 assert rightRow.isHolding();
-                rightSkipRow = new ValuesHolderRow(rowType);
+                rightSkipRow = new ValuesHolderRow(rowType, usingPValues);
                 int f = 0;
                 while (f < fixedFields) {
-                    rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
+                    if (usingPValues)
+                        rightSkipRow.pvalueAt(f).putValueSource(rightRow.get().pvalue(f));
+                    else
+                        rightSkipRow.holderAt(f).copyFrom(rightRow.get().eval(f));
                     f++;
                 }
                 while (f < rowType.nFields()) {
-                    rightSkipRow.holderAt(f++).putNull();
+                    if (usingPValues)
+                        rightSkipRow.pvalueAt(f++).putNull();
+                    else
+                        rightSkipRow.holderAt(f++).putNull();
                 }
             }
             return rightSkipRow;

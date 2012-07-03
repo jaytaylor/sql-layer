@@ -32,6 +32,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -202,12 +203,10 @@ public final class SchemaManagerIT extends ITBase {
         assertTablesInSchema(SCHEMA);
     }
 
-    @Test
+    @Test(expected=NoSuchTableException.class)
     public void deleteUnknownDefinition() throws Exception {
-        deleteTableDef("schema1", "table1");
         assertTablesInSchema(SCHEMA);
         deleteTableDef("schema1", "table1");
-        assertTablesInSchema(SCHEMA);
     }
 
     @Test
@@ -215,8 +214,6 @@ public final class SchemaManagerIT extends ITBase {
         createTableDef(SCHEMA, T1_NAME, T1_DDL);
         assertTablesInSchema(SCHEMA, T1_NAME);
         
-        deleteTableDef(SCHEMA, T1_NAME);
-        assertTablesInSchema(SCHEMA);
         deleteTableDef(SCHEMA, T1_NAME);
         assertTablesInSchema(SCHEMA);
     }
@@ -361,22 +358,6 @@ public final class SchemaManagerIT extends ITBase {
     }
 
     @Test
-    public void forceNewTimestampChangesTimestamp() throws Exception {
-        final long first = schemaManager.getUpdateTimestamp();
-        schemaManager.forceNewTimestamp();
-        final long second = schemaManager.getUpdateTimestamp();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
-    public void forceNewTimestampChangesSchemaGen() throws Exception {
-        final int first = schemaManager.getSchemaGeneration();
-        schemaManager.forceNewTimestamp();
-        final int second = schemaManager.getSchemaGeneration();
-        assertTrue("timestamp changed", first != second);
-    }
-
-    @Test
     public void tableIDsAreLow() throws Exception {
         // TODO: Delete this test, only confirming temporarily desired behavior
         // Purely testing initial table IDs start at 1 and don't change when adding new tables
@@ -402,7 +383,7 @@ public final class SchemaManagerIT extends ITBase {
         // Check 1) basic ordering 2) that the statements are 'canonicalized'
         final String TABLE_DDL =  "id int not null primary key";
         final String SCHEMA_DDL = "create schema if not exists `foo`;";
-        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb";
+        final String TABLE_CANONICAL = "create table `foo`.`bar`(`id` int NOT NULL, PRIMARY KEY(`id`)) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
         createTableDef("foo", "bar", TABLE_DDL);
         final List<String> ddls = getSchemaStringsWithoutAIS(false);
         assertEquals("ddl count", 2, ddls.size()); // schema and table
@@ -548,15 +529,15 @@ public final class SchemaManagerIT extends ITBase {
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `analysis_timestamp` timestamp, "+
             "`row_count` bigint, `sampled_count` bigint, "+
             "PRIMARY KEY(`table_id`, `index_id`)"+
-        ") engine=akibandb";
+        ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
         final String ENTRY_DDL = "create table `information_schema`.`index_statistics_entry`("+
             "`table_id` int NOT NULL, `index_id` int NOT NULL, `column_count` int NOT NULL, "+
-            "`item_number` int NOT NULL, `key_string` varchar(2048), `key_bytes` varbinary(4096), "+
+            "`item_number` int NOT NULL, `key_string` varchar(2048) CHARACTER SET latin1, `key_bytes` varbinary(4096), "+
             "`eq_count` bigint, `lt_count` bigint, `distinct_count` bigint, "+
             "PRIMARY KEY(`table_id`, `index_id`, `column_count`, `item_number`), "+
             "CONSTRAINT `__akiban_fk_0` FOREIGN KEY `__akiban_fk_0`(`table_id`, `index_id`) "+
                 "REFERENCES `index_statistics`(`table_id`, `index_id`)"+
-        ") engine=akibandb";
+        ") engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin";
 
         TableDefinition statsDef = getTableDef(SCHEMA, STATS_TABLE);
         assertNotNull("Stats table present", statsDef);
@@ -577,7 +558,6 @@ public final class SchemaManagerIT extends ITBase {
         String newTreeName = getUserTable("foo", "bar").getTreeName();
         assertTrue("Unique tree names", !originalTreeName.equals(newTreeName));
     }
-
 
     @Test
     public void createRestartAndCreateMore() throws Exception {
@@ -618,13 +598,20 @@ public final class SchemaManagerIT extends ITBase {
         }
     }
 
-    @Test(expected=DuplicateTableNameException.class)
+    @Test
     public void noDuplicateMemoryTables() throws Exception {
         final TableName tableName = new TableName(TableName.INFORMATION_SCHEMA, "test_table");
         final UserTable sourceTable = makeSimpleISTable(tableName);
         MemoryTableFactory factory = new MemoryTableFactoryMock();
         registerISTable(sourceTable, factory);
-        registerISTable(sourceTable, factory);
+        try {
+            registerISTable(sourceTable, factory);
+            fail("Expected DuplicateTableNameException");
+        } catch(DuplicateTableNameException e) {
+            // expected
+        } finally {
+            schemaManager.unRegisterMemoryInformationSchemaTable(tableName);
+        }
     }
 
     @Test(expected=IllegalArgumentException.class)
@@ -776,11 +763,6 @@ public final class SchemaManagerIT extends ITBase {
     private static class MemoryTableFactoryMock implements MemoryTableFactory {
         @Override
         public TableName getName() {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public UserTable getTableDefinition() {
             throw new UnsupportedOperationException();
         }
 

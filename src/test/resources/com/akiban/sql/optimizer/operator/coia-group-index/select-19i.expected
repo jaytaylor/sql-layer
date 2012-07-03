@@ -1,4 +1,4 @@
-PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci]
+PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin]
   project([Field(0)])
     Aggregation(without GROUP BY: [maxVARCHAR])
       Map_NestedLoops

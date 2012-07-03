@@ -54,11 +54,6 @@ public class PersistitStoreIndexStatisticsIT extends PostgresServerFilesITBase
     public void getService() throws Exception {
         service = serviceManager().getServiceByClass(IndexStatisticsService.class);
     }
-
-    @Override
-    public void openTheConnection() throws Exception {
-        // TODO: Test class modularity isn't right.
-    }
     
     @Test
     public void testLoadDump() throws Exception {

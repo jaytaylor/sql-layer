@@ -29,6 +29,7 @@ package com.akiban.sql.optimizer.rule;
 import static com.akiban.sql.optimizer.rule.ExpressionAssembler.*;
 
 import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.sql.optimizer.*;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -91,6 +92,16 @@ public class OperatorAssembler extends BaseRule
 
     public static final int INSERTION_SORT_MAX_LIMIT = 100;
 
+    private final boolean usePValues;
+
+    public OperatorAssembler() {
+        this(false);
+    }
+    
+    public OperatorAssembler(boolean usePValues) {
+        this.usePValues = usePValues;
+    }
+
     @Override
     protected Logger getLogger() {
         return logger;
@@ -98,16 +109,18 @@ public class OperatorAssembler extends BaseRule
 
     @Override
     public void apply(PlanContext plan) {
-        new Assembler(plan).apply();
+        new Assembler(plan, usePValues).apply();
     }
 
     static class Assembler implements SubqueryOperatorAssembler {
         private PlanContext planContext;
         private SchemaRulesContext rulesContext;
         private Schema schema;
+        private boolean usePValues;
         private final ExpressionAssembler expressionAssembler;
 
-        public Assembler(PlanContext planContext) {
+        public Assembler(PlanContext planContext, boolean usePValues) {
+            this.usePValues = usePValues;
             this.planContext = planContext;
             rulesContext = (SchemaRulesContext)planContext.getRulesContext();
             schema = rulesContext.getSchema();
@@ -190,8 +203,9 @@ public class OperatorAssembler extends BaseRule
                 row[column.getPosition()] = inserts.get(i);
             }
             inserts = Arrays.asList(row);
+            assert ! usePValues : "inserts not supported with pvalues";
             stream.operator = API.project_Table(stream.operator, stream.rowType,
-                                                targetRowType, inserts);
+                                                targetRowType, inserts, null);
             UpdatePlannable plan = API.insert_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -315,7 +329,8 @@ public class OperatorAssembler extends BaseRule
                     EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
                                API.IntersectOption.SKIP_SCAN) :
                     EnumSet.of(API.IntersectOption.OUTPUT_LEFT, 
-                               API.IntersectOption.SEQUENTIAL_SCAN));
+                               API.IntersectOption.SEQUENTIAL_SCAN),
+                    usePValues);
             stream.rowType = outputScan.rowType;
             stream.fieldOffsets = new IndexFieldOffsets(index, stream.rowType);
             return stream;
@@ -387,7 +402,8 @@ public class OperatorAssembler extends BaseRule
                         stream.operator = API.union_Ordered(stream.operator, scan,
                                                             (IndexRowType)stream.rowType, indexRowType,
                                                             nordering, nordering, 
-                                                            ascending);
+                                                            ascending,
+                                                            usePValues);
                     }
                     else {
                         stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
@@ -753,7 +769,7 @@ public class OperatorAssembler extends BaseRule
               impl = Distinct.Implementation.SORT;
             switch (impl) {
             case PRESORTED:
-                stream.operator = API.distinct_Partial(stream.operator, stream.rowType);
+                stream.operator = API.distinct_Partial(stream.operator, stream.rowType, usePValues);
                 break;
             default:
                 assembleSort(stream, stream.rowType.nFields(), distinct.getInput(),
@@ -859,7 +875,8 @@ public class OperatorAssembler extends BaseRule
                                                     lstream.rowType,
                                                     bloomFilter.getEstimatedSize(),
                                                     pos,
-                                                    stream.operator);
+                                                    stream.operator,
+                                                    usePValues);
             popHashTable(bloomFilter);
             return stream;
         }
@@ -882,10 +899,20 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleProject(Project project) {
             RowStream stream = assembleStream(project.getInput());
+            List<Expression> oldProjections; ;
+            List<? extends TPreparedExpression> pExpressions;
+            if (usePValues) {
+                pExpressions = null; assert false;
+                oldProjections = null;
+            }
+            else {
+                pExpressions = null;
+                oldProjections = assembleExpressions(project.getFields(), stream.fieldOffsets);
+            }
             stream.operator = API.project_Default(stream.operator,
                                                   stream.rowType,
-                                                  assembleExpressions(project.getFields(),
-                                                                      stream.fieldOffsets));
+                                                  oldProjections,
+                                                  pExpressions);
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(project,
                                                                stream.rowType);

@@ -47,7 +47,7 @@ public class PersistitKeyPValueSource implements PValueSource {
     }
     
     public void attach(Key key, IndexColumn indexColumn) {
-        attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().pUnderlying());
+        attach(key, indexColumn.getPosition(), indexColumn.getColumn().tInstance().typeClass().underlyingType());
     }
 
     public void attach(Key key, int depth, PUnderlying pUnderlying) {

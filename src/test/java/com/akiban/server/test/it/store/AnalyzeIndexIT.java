@@ -39,7 +39,7 @@ public class AnalyzeIndexIT extends AbstractScanBase {
     @Test
     public void testPopulateTableStatistics() throws Exception {
         final RowDef rowDef = rowDef("aa");
-        final TableStatistics ts = serviceManager.getDXL().dmlFunctions().getTableStatistics(session, rowDef.getRowDefId(), true);
+        final TableStatistics ts = dml().getTableStatistics(session(), rowDef.getRowDefId(), true);
         {
             // Checks a secondary index
             //

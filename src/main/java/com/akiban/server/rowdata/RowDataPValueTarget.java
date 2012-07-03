@@ -73,9 +73,9 @@ public final class RowDataPValueTarget implements PValueTarget {
         recordEncoded(encodeInt(Float.floatToIntBits(value)));
     }
     
-      @Override
+    @Override
     public PUnderlying getUnderlyingType() {
-          return fieldDef.getType().pUnderlying();
+        return fieldDef.column().tInstance().typeClass().underlyingType();
     }
 
     @Override

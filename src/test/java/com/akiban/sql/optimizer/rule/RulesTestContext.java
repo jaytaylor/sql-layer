@@ -55,7 +55,7 @@ public class RulesTestContext extends SchemaRulesContext
         context.initFunctionsRegistry(new FunctionsRegistryImpl());
         context.initCostEstimator(new TestCostEstimator(ais, context.getSchema(), 
                                                         statsFile, statsIgnoreMissingIndexes,
-                                                        properties));
+                                                        properties), false);
         context.initDone();
         return context;
     }

@@ -32,6 +32,8 @@ import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Label;
@@ -134,19 +136,28 @@ class Project_Default extends Operator
 
     // Project_Default interface
 
-    public Project_Default(Operator inputOperator, RowType rowType, List<? extends Expression> projections)
+    public Project_Default(Operator inputOperator, RowType rowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("rowType", rowType);
         ArgumentValidation.notEmpty("projections", projections);
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.projections = new ArrayList<Expression>(projections);
-        projectType = rowType.schema().newProjectType(this.projections);
+        projectType = rowType.schema().newProjectType(this.projections, tInstances(pExpressions));
     }
-    
+
+    private List<TInstance> tInstances(List<? extends TPreparedExpression> pExpressions) {
+        if (pExpressions == null)
+            return null;
+        List<TInstance> tInstances = new ArrayList<TInstance>(pExpressions.size());
+        for (TPreparedExpression preparedExpression : pExpressions)
+            tInstances.add(preparedExpression.resultType());
+        return tInstances;
+    }
+
     // Project_Default constructor, returns ProjectedUserTableRowType rows 
     public Project_Default(Operator inputOperator, RowType inputRowType,
-            RowType projectTableRowType, List<? extends Expression> projections)
+            RowType projectTableRowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
         ArgumentValidation.notEmpty("projections", projections);
@@ -159,7 +170,8 @@ class Project_Default extends Operator
         ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
         projectType = new ProjectedUserTableRowType(projectTableRowType.schema(),
                                                     projectTableRowType.userTable(),
-                                                    projections);
+                                                    projections,
+                                                    tInstances(pExpressions));
     }
 
 

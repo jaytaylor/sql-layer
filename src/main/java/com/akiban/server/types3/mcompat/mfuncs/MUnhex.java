@@ -29,6 +29,7 @@ package com.akiban.server.types3.mcompat.mfuncs;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -78,9 +79,9 @@ public class MUnhex extends TOverloadBase {
                 int stringLength = preptimeValue.instance().attribute(StringAttribute.LENGTH);
                 int varbinLength = stringLength / 2;
                 if (varbinLength > VARBINARY_MAX_LENGTH)
-                    return MString.VARBINARY.instance(VARBINARY_MAX_LENGTH);
+                    return MBinary.VARBINARY.instance(VARBINARY_MAX_LENGTH);
                 else
-                    return MString.VARBINARY.instance(varbinLength);
+                    return MBinary.VARBINARY.instance(varbinLength);
             }        
         });
     }

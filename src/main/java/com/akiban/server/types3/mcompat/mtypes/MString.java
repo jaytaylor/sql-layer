@@ -28,18 +28,24 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.sql.types.TypeId;
 
 public class MString extends TString
 {
-    public static final MString VARCHAR = new MString("varchar", -1);
+    public static final MString CHAR = new MString(TypeId.CHAR_ID, "varchar");
+    public static final MString VARCHAR = new MString(TypeId.VARCHAR_ID, "varchar");
+
+    public static final MString TINYTEXT = new MString(TypeId.LONGVARCHAR_ID, "tinytext", 256);
+    public static final MString MEDIUMTEXT = new MString(TypeId.LONGVARCHAR_ID, "mediumtext", 65535);
+    public static final MString TEXT = new MString(TypeId.LONGVARCHAR_ID, "text", 16777215);
+    public static final MString LONGTEXT = new MString(TypeId.LONGVARCHAR_ID, "longtext", Integer.MAX_VALUE); // TODO not big enough!
     
-    // TODO: revisit VARBAR definition 
-    public static final MString VARBINARY = new MString("varbinary", -1);
+    private MString(TypeId typeId, String name, int fixedSize) {
+        super(typeId, MBundle.INSTANCE, name, -1, fixedSize);
+    }
     
-    // TODO: define CHAR
-    
-    private MString(String name, int serialisationSize)
+    private MString(TypeId typeId, String name)
     {       
-        super(MBundle.INSTANCE, name, serialisationSize);
+        super(typeId, MBundle.INSTANCE, name, -1);
     }
 }
