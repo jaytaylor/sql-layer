@@ -268,7 +268,7 @@ public class PersistitAdapter extends StoreAdapter
     {
         Transaction transaction = transaction();
         int step = transaction.getStep();
-        if (step > 0)
+        if (step > 0 && withStepChanging)
             transaction.incrementStep();
         return step;
     }
@@ -283,11 +283,22 @@ public class PersistitAdapter extends StoreAdapter
                             Session session,
                             ConfigurationService config)
     {
+        this(schema, store, treeService, session, config, true);
+    }
+
+    public PersistitAdapter(Schema schema,
+                            Store store,
+                            TreeService treeService,
+                            Session session,
+                            ConfigurationService config,
+                            boolean withStepChanging)
+    {
         super(schema, session, config);
         this.store = store;
         this.persistit = store.getPersistitStore();
-        this.treeService = treeService;
         assert this.persistit != null : store;
+        this.treeService = treeService;
+        this.withStepChanging = withStepChanging;
     }
     
     // Object state
@@ -295,4 +306,5 @@ public class PersistitAdapter extends StoreAdapter
     private final TreeService treeService;
     private final Store store;
     private final PersistitStore persistit;
+    private final boolean withStepChanging;
 }

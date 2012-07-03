@@ -73,6 +73,17 @@ import static com.akiban.qp.operator.API.limit_Default;
 import static com.akiban.qp.operator.API.update_Default;
 
 public class OperatorStore extends DelegatingStore<PersistitStore> {
+    /*
+     * We instantiate another PersistitAdapter for doing scans/changes with the raw
+     * PersistitStore explicitly passed. We don't want step management in this sub-adapter
+     * or we'll get a double increment for each row (if we are already being called with it).
+     */
+    private static final boolean WITH_STEPS = false;
+
+    private PersistitAdapter createAdapter(Session session) {
+        AkibanInformationSchema ais = aisHolder.getAis();
+        return new PersistitAdapter(SchemaCache.globalSchema(ais), getPersistitStore(), treeService, session, config, WITH_STEPS);
+    }
 
     // Store interface
 
@@ -91,8 +102,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
-            PersistitAdapter adapter =
-                new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session, config);
+            PersistitAdapter adapter = createAdapter(session);
             Schema schema = adapter.schema();
 
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
@@ -161,12 +171,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();
-            PersistitAdapter adapter =
-                new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                     getPersistitStore(),
-                                     treeService,
-                                     session,
-                                     config);
+            PersistitAdapter adapter = createAdapter(session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
             super.writeRow(session, rowData);
             maintainGroupIndexes(session,
@@ -187,12 +192,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         DELETE_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();
-            PersistitAdapter adapter =
-                new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                     getPersistitStore(),
-                                     treeService,
-                                     session,
-                                     config);
+            PersistitAdapter adapter = createAdapter(session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
             maintainGroupIndexes(session,
@@ -230,12 +230,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         }
 
         AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter =
-            new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                 getPersistitStore(),
-                                 treeService,
-                                 session,
-                                 config);
+        PersistitAdapter adapter = createAdapter(session);
         QueryContext context = new SimpleQueryContext(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
