@@ -71,8 +71,8 @@ elif [ ${platform} == "macosx" ]; then
     cp -R macosx/Contents "$mac_app"
     mkdir "$mac_app/Contents/MacOS"
     cp /System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS/JavaApplicationStub "$mac_app/Contents/MacOS"
-    mkdir "$mac_app/Contents/Java"
-    cp $server_jar "$mac_app/Java"
+    mkdir -p "$mac_app/Contents/Resources/Java"
+    cp $server_jar "$mac_app/Contents/Resources/Java"
     SetFile -a B "$mac_app"
     # build disk image template
     rm -rf $inst_temp; mkdir $inst_temp; mkdir "$inst_temp/Akiban Server.app"
