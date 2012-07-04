@@ -38,6 +38,8 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.Types;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
 /** A type according to the PostgreSQL regime.
  * Information corresponds more-or-less directly to what's in the 
@@ -196,8 +198,8 @@ public class PostgresType extends ServerType
     private short length;
     private int modifier;
 
-    public PostgresType(int oid, short length, int modifier, AkType akType) {
-        super(akType);
+    public PostgresType(int oid, short length, int modifier, AkType akType, TInstance instance) {
+        super(akType, instance);
         this.oid = oid;
         this.length = length;
         this.modifier = modifier;
@@ -246,10 +248,11 @@ public class PostgresType extends ServerType
                 throw new UnknownTypeSizeException (aisType);
             }
         }
-        else if ("U_BIGINT".equals(encoding))
+        else if ("U_BIGINT".equals(encoding)) {
             // Closest exact numeric type capable of holding 64-bit unsigned is DEC(20).
             return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
-                                    aisType.akType());
+                                    aisType.akType(), aisColumn.tInstance());
+        }
         else if ("DATE".equals(encoding))
             oid = TypeOid.DATE_TYPE_OID.getOid();
         else if ("TIME".equals(encoding))
@@ -293,7 +296,7 @@ public class PostgresType extends ServerType
             }
         }
 
-        return new PostgresType(oid, length, modifier, aisType.akType());
+        return new PostgresType(oid, length, modifier, aisType.akType(), aisColumn == null ? null : aisColumn.tInstance());
     }
 
     public static PostgresType fromDerby(DataTypeDescriptor type)  {
@@ -304,6 +307,9 @@ public class PostgresType extends ServerType
         TypeId typeId = type.getTypeId();
 
         AkType akType;
+        
+        // TODO: replace AkType with Instance
+        TInstance instance = null;
 
         switch (typeId.getTypeFormatId()) {
         case TypeId.FormatIds.INTERVAL_DAY_SECOND_ID:
@@ -352,7 +358,7 @@ public class PostgresType extends ServerType
         case TypeId.FormatIds.LONGINT_TYPE_ID:
             if (typeId.isUnsigned())
                 return new PostgresType(TypeOid.NUMERIC_TYPE_OID.getOid(), (short)8, (20 << 16) + 4,
-                                        AkType.U_BIGINT);
+                                        AkType.U_BIGINT, MNumeric.BIGINT_UNSIGNED.instance());
             oid = TypeOid.INT8_TYPE_OID.getOid();
             akType = AkType.LONG;
             break;
@@ -442,7 +448,7 @@ public class PostgresType extends ServerType
             length = (short)typeId.getMaximumMaximumWidth();
         }
         
-        return new PostgresType(oid, length, modifier, akType);
+        return new PostgresType(oid, length, modifier, akType, instance);
     }
 
     @Override

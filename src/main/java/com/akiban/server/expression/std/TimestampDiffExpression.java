@@ -74,6 +74,11 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
             return new TimestampDiffExpression(arguments);
         }
     };
+
+    @Override
+    public String name() {
+        return "TIMESTAMPDIFF";
+    }
     
     private static class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
@@ -214,7 +219,7 @@ public class TimestampDiffExpression extends AbstractTernaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("TIMESTAMPDIFF");
+        sb.append(name());
     }
 
     @Override

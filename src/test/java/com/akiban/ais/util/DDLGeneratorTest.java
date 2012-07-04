@@ -57,10 +57,10 @@ public final class DDLGeneratorTest {
     public void testColumnCharset() throws Exception {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "table");
-        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "euckr", null);
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf-16", null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET euckr) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET utf-16) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 

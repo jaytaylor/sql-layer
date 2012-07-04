@@ -70,6 +70,11 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
             return NullTreating.RETURN_NULL;
         }
     };
+
+    @Override
+    public String name() {
+        return "TIMESTAMP";
+    }
             
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -109,7 +114,7 @@ public class UnixTimestampExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("TIMESTAMP");
+        sb.append(name());
     }
 
     @Override

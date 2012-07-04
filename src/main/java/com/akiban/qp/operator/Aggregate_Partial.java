@@ -34,6 +34,17 @@ import com.akiban.server.aggregation.Aggregator;
 import com.akiban.server.aggregation.AggregatorFactory;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -168,9 +179,15 @@ final class Aggregate_Partial extends Operator
 
     @Override
     protected Cursor cursor(QueryContext context) {
-        List<Aggregator> aggregators = new ArrayList<Aggregator>();
-        for (AggregatorFactory factory : aggregatorFactories) {
-            aggregators.add(factory.get());
+        final List<Aggregator> aggregators;
+        if (aggregatorFactories != null) {
+            aggregators = new ArrayList<Aggregator>();
+            for (AggregatorFactory factory : aggregatorFactories) {
+                aggregators.add(factory.get());
+            }
+        }
+        else {
+            aggregators = null;
         }
         return new AggregateCursor(
                 context,
@@ -196,6 +213,10 @@ final class Aggregate_Partial extends Operator
 
     // AggregationOperator interface
 
+    /**
+     * @deprecated implies no PValues
+     */
+    @Deprecated
     public Aggregate_Partial(Operator inputOperator,
                              RowType inputRowType,
                              int inputsIndex,
@@ -205,7 +226,25 @@ final class Aggregate_Partial extends Operator
                 inputRowType,
                 inputsIndex,
                 aggregatorFactories,
-                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, aggregatorFactories)
+                null,
+                null,
+                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, aggregatorFactories, null)
+        );
+    }
+
+    public Aggregate_Partial(Operator inputOperator,
+                             RowType inputRowType,
+                             int inputsIndex,
+                             List<? extends TAggregator> aggregatorFactories,
+                             List<? extends TInstance> pAggrTypes) {
+        this(
+                inputOperator,
+                inputRowType,
+                inputsIndex,
+                null,
+                aggregatorFactories,
+                pAggrTypes,
+                inputRowType.schema().newAggregateType(inputRowType, inputsIndex, null, pAggrTypes)
         );
     }
 
@@ -224,17 +263,30 @@ final class Aggregate_Partial extends Operator
 
 
     // package-private (for testing)
+    @Deprecated
+    Aggregate_Partial(Operator inputOperator,
+                      RowType inputRowType,
+                      int inputsIndex,
+                      List<AggregatorFactory> aggregatorFactories,
+                      AggregatedRowType outputType)
+    {
+        this(inputOperator, inputRowType, inputsIndex, aggregatorFactories, null, null, outputType);
+    }
 
     Aggregate_Partial(Operator inputOperator,
                       RowType inputRowType,
                       int inputsIndex,
                       List<AggregatorFactory> aggregatorFactories,
+                      List<? extends TAggregator> pAggrs,
+                      List<? extends TInstance> pAggrTypes,
                       AggregatedRowType outputType) {
         this.inputOperator = inputOperator;
         this.inputRowType = inputRowType;
         this.inputsIndex = inputsIndex;
         this.aggregatorFactories = new ArrayList<AggregatorFactory>(aggregatorFactories);
         this.outputType = outputType;
+        this.pAggrs = pAggrs;
+        this.pAggrTypes = pAggrTypes;
         validate();
     }
 
@@ -244,10 +296,19 @@ final class Aggregate_Partial extends Operator
         if (inputOperator == null || inputRowType == null || outputType == null)
             throw new NullPointerException();
         ArgumentValidation.isBetween("inputsIndex", 0, inputsIndex, inputRowType.nFields()+1);
-        if (inputsIndex + aggregatorFactories.size() != inputRowType.nFields()) {
+        int aggersSize;
+        if (aggregatorFactories == null) {
+            aggersSize = pAggrs.size();
+            if (pAggrTypes.size() != pAggrs.size())
+                throw new IllegalArgumentException("aggregators and aggregator types mismatch in size");
+        }
+        else {
+            aggersSize = aggregatorFactories.size();
+        }
+        if (inputsIndex + aggersSize != inputRowType.nFields()) {
             throw new IllegalArgumentException(
                     String.format("inputsIndex(=%d) + aggregatorNames.size(=%d) != inputRowType.nFields(=%d)",
-                            inputsIndex, aggregatorFactories.size(), inputRowType.nFields()
+                            inputsIndex, aggersSize, inputRowType.nFields()
             ));
         }
     }
@@ -264,6 +325,26 @@ final class Aggregate_Partial extends Operator
     private final AggregatedRowType outputType;
     private final int inputsIndex;
     private final List<AggregatorFactory> aggregatorFactories;
+    private final List<? extends TInstance> pAggrTypes;
+    private final List<? extends TAggregator> pAggrs;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Attributes atts = new Attributes();
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("AGGREGATE_PARTIAL"));
+        
+ 
+        for (AggregatorFactory agg : aggregatorFactories)
+            atts.put(Label.AGGREGATORS, PrimitiveExplainer.getInstance(agg.toString()));
+        
+        atts.put(Label.GROUPING_OPTION, PrimitiveExplainer.getInstance("GROUP BY " + inputsIndex + "FIELD(s)"));
+        atts.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        atts.put(Label.INPUT_TYPE, PrimitiveExplainer.getInstance(inputRowType.toString()));
+        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputType.toString()));
+        
+        return new OperationExplainer(Type.PHYSICAL_OPERATOR, atts);
+    }
 
     // nested classes
 
@@ -369,27 +450,54 @@ final class Aggregate_Partial extends Operator
         // for use in this class
 
         private void aggregate(Row input) {
-            for (int i=0; i < aggregators.size(); ++i) {
-                Aggregator aggregator = aggregators.get(i);
-                int inputIndex = i + inputsIndex;
-                aggregator.input(input.eval(inputIndex));
+            if (aggregators != null) {
+                for (int i=0; i < aggregators.size(); ++i) {
+                    Aggregator aggregator = aggregators.get(i);
+                    int inputIndex = i + inputsIndex;
+                    aggregator.input(input.eval(inputIndex));
+                }
+            }
+            else {
+                for (int i=0; i < pAggrs.size(); ++i) {
+                    TAggregator aggregator = pAggrs.get(i);
+                    int inputIndex = i + inputsIndex;
+                    TInstance inputType = input.rowType().typeInstanceAt(inputIndex);
+                    PValueSource inputSource = input.pvalue(inputIndex);
+                    aggregator.input(inputType, inputSource, pAggrTypes.get(i), pAggrsStates.get(i));
+                }
+
             }
         }
 
         private Row createOutput() {
             ValuesHolderRow outputRow = unsharedOutputRow();
-            for(int i = 0; i < inputsIndex; ++i) {
-                ValueHolder holder = outputRow.holderAt(i);
-                ValueSource key = keyValues.get(i);
-                holder.copyFrom(key);
+            if (aggregators != null) {
+                for(int i = 0; i < inputsIndex; ++i) {
+                    ValueHolder holder = outputRow.holderAt(i);
+                    ValueSource key = keyValues.get(i);
+                    holder.copyFrom(key);
+                }
+                for (int i = inputsIndex; i < inputRowType.nFields(); ++i) {
+                    ValueHolder holder = outputRow.holderAt(i);
+                    int aggregatorIndex = i - inputsIndex;
+                    AggregatorFactory factory = aggregatorFactories.get(aggregatorIndex);
+                    Aggregator aggregator = aggregators.get(aggregatorIndex);
+                    holder.expectType(factory.outputType());
+                    aggregator.output(holder);
+                }
             }
-            for (int i = inputsIndex; i < inputRowType.nFields(); ++i) {
-                ValueHolder holder = outputRow.holderAt(i);
-                int aggregatorIndex = i - inputsIndex;
-                AggregatorFactory factory = aggregatorFactories.get(aggregatorIndex);
-                Aggregator aggregator = aggregators.get(aggregatorIndex);
-                holder.expectType(factory.outputType());
-                aggregator.output(holder);
+            else {
+                for(int i = 0; i < inputsIndex; ++i) {
+                    PValue pValue = outputRow.pvalueAt(i);
+                    PValue key = keyPValues.get(i);
+                    pValue.putValueSource(key);
+                }
+                for (int i = inputsIndex; i < inputRowType.nFields(); ++i) {
+                    PValue pValue = outputRow.pvalueAt(i);
+                    int aggregatorIndex = i - inputsIndex;
+                    PValueSource aggregatorState = pAggrsStates.get(aggregatorIndex);
+                    pValue.putValueSource(aggregatorState);
+                }
             }
             return outputRow;
         }
@@ -397,8 +505,15 @@ final class Aggregate_Partial extends Operator
         private Row createEmptyOutput() {
             assert noGroupBy() : "shouldn't be creating null output row when I have a grouping";
             ValuesHolderRow outputRow = unsharedOutputRow();
-            for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
-                outputRow.holderAt(i).copyFrom(aggregators.get(i).emptyValue());
+            if (aggregators != null) {
+                for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
+                    outputRow.holderAt(i).copyFrom(aggregators.get(i).emptyValue());
+                }
+            }
+            else {
+                for (int i = 0; i < outputRow.rowType().nFields(); ++i) {
+                    pAggrs.get(i).emptyValue(outputRow.pvalueAt(i));
+                }
             }
             return outputRow;
         }
@@ -415,9 +530,16 @@ final class Aggregate_Partial extends Operator
             // Coming into this code, we're either RUNNING (within a GROUP BY run) or OPENING (about to start
             // a new run).
             if (cursorState == CursorState.OPENING) {
-                // Copy over this row's values; switch mode to RUNNING; return false
-                for (int i = 0; i < keyValues.size(); ++i) {
-                    keyValues.get(i).copyFrom(givenInput.eval(i));
+                if (aggregators != null) {
+                    // Copy over this row's values; switch mode to RUNNING; return false
+                    for (int i = 0; i < keyValues.size(); ++i) {
+                        keyValues.get(i).copyFrom(givenInput.eval(i));
+                    }
+                }
+                else {
+                    for (int i = 0; i < keyPValues.size(); ++i) {
+                        keyPValues.get(i).putValueSource(givenInput.pvalue(i));
+                    }
                 }
                 cursorState = CursorState.RUNNING;
                 return false;
@@ -425,12 +547,24 @@ final class Aggregate_Partial extends Operator
             else {
                 assert cursorState == CursorState.RUNNING : cursorState;
                 // If any keys are different, switch mode to OPENING and return true; else return false.
-                for (int i = 0; i < keyValues.size(); ++i) {
-                    ValueHolder key = keyValues.get(i);
-                    scratchValueHolder.copyFrom(givenInput.eval(i));
-                    if (!scratchValueHolder.equals(key)) {
-                        cursorState = CursorState.OPENING;
-                        return true;
+                if (aggregators != null) {
+                    for (int i = 0; i < keyValues.size(); ++i) {
+                        ValueHolder key = keyValues.get(i);
+                        scratchValueHolder.copyFrom(givenInput.eval(i));
+                        if (!scratchValueHolder.equals(key)) {
+                            cursorState = CursorState.OPENING;
+                            return true;
+                        }
+                    }
+                }
+                else {
+                    for (int i = 0; i < keyPValues.size(); ++i) {
+                        PValue key = keyPValues.get(i);
+                        PValueSource input = givenInput.pvalue(i);
+                        if (!PValueSources.areEqual(key, input)) {
+                            cursorState = CursorState.OPENING;
+                            return true;
+                        }
                     }
                 }
                 return false;
@@ -456,7 +590,7 @@ final class Aggregate_Partial extends Operator
         }
 
         private ValuesHolderRow unsharedOutputRow() {
-            return new ValuesHolderRow(outputType); // TODO row sharing, etc
+            return new ValuesHolderRow(outputType, aggregators == null); // TODO row sharing, etc
         }
 
         // AggregateCursor interface
@@ -466,9 +600,25 @@ final class Aggregate_Partial extends Operator
             super(context);
             this.inputCursor = inputOperator.cursor(context);
             this.aggregators = aggregators;
-            keyValues = new ArrayList<ValueHolder>();
-            for (int i = 0; i < inputsIndex; ++i) {
-                keyValues.add(new ValueHolder());
+            if (aggregators != null) {
+                keyValues = new ArrayList<ValueHolder>();
+                for (int i = 0; i < inputsIndex; ++i) {
+                    keyValues.add(new ValueHolder());
+                }
+                keyPValues = null;
+                pAggrsStates = null;
+            }
+            else {
+                keyValues = null;
+                keyPValues = new ArrayList<PValue>(inputsIndex);
+                for (int i = 0; i < inputsIndex; ++i) {
+                    keyPValues.add(new PValue(outputType.typeInstanceAt(i).typeClass().underlyingType()));
+                }
+                pAggrsStates = new ArrayList<PValue>(pAggrs.size());
+                for (TAggregator aggr : pAggrs) {
+                    assert false : "need to pass these in";
+                    pAggrsStates.add(null); // TODO
+                }
             }
         }
 
@@ -478,6 +628,8 @@ final class Aggregate_Partial extends Operator
         private final Cursor inputCursor;
         private final List<Aggregator> aggregators;
         private final List<ValueHolder> keyValues;
+        private final List<PValue> keyPValues;
+        private final List<PValue> pAggrsStates;
         private final ValueHolder scratchValueHolder = new ValueHolder();
         private final ShareHolder<Row> holder = new ShareHolder<Row>();
         private CursorState cursorState = CursorState.CLOSED;

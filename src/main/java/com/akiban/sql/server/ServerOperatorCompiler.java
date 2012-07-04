@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.rule.BaseRule;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -45,10 +46,13 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
-        if (Boolean.parseBoolean(server.getProperty("cbo", "true")))
-            initCostEstimator(server.costEstimator(this));
+        if (Boolean.parseBoolean(server.getProperty("cbo", "true"))) {
+            boolean usePValues = Types3Switch.ON || Boolean.parseBoolean(server.getProperty("newtypes", "false"));
+            initCostEstimator(server.costEstimator(this), usePValues);
+
+        }
         else
-            initCostEstimator(null);
+            initCostEstimator(null, false);
         
         server.setAttribute("aisBinder", binder);
         server.setAttribute("compiler", this);

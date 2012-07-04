@@ -76,9 +76,9 @@ public class SysDateExpression extends AbstractNoArgExpression
     }
 
     @Override
-    protected String name() 
+    public String name() 
     {
-        return "SYSDATE()";
+        return "SYSDATE";
     }
 
     @Override

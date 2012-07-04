@@ -26,6 +26,7 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.sql.optimizer.explain.Explainer;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -33,6 +34,11 @@ import java.util.Iterator;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.tap.InOutTap;
 
 /**
@@ -107,6 +113,17 @@ public class ValuesScan_Default extends Operator
     
     private final Collection<? extends BindableRow> rows;
     private final RowType rowType;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("VALUE SCAN DEFAULT"));
+        att.put(Label.ROWTYPE, PrimitiveExplainer.getInstance(rows.toString()));
+        
+        return new OperationExplainer(Type.SCAN_OPERATOR, att);
+    }
     
     private static class Execution extends OperatorExecutionBase implements Cursor
     {

@@ -58,6 +58,7 @@ import com.akiban.server.store.DelegatingStore;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -132,7 +133,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
             // MVCC will render this useless, but for now, a limit of 1 ensures we won't see the row we just updated,
             // and therefore scan through two rows -- once to update old -> new, then to update new -> copy of new
-            scanOp = limit_Default(scanOp, 1);
+            scanOp = limit_Default(scanOp, 1, Types3Switch.ON);
 
             UpdatePlannable updateOp = update_Default(scanOp, updateFunction);
 

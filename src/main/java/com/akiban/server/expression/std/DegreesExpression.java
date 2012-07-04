@@ -59,7 +59,7 @@ public class DegreesExpression extends AbstractUnaryExpression {
     }
 
     @Override
-    protected String name() {
+    public String name() {
         return "DEGREES";
     }
 

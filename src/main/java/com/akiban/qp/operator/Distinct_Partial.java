@@ -29,6 +29,11 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.DistinctExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -100,7 +105,7 @@ class Distinct_Partial extends Operator
     @Override
     protected Cursor cursor(QueryContext context)
     {
-        return new Execution(context, inputOperator.cursor(context));
+        return new Execution(context, inputOperator.cursor(context), usePValue);
     }
 
     @Override
@@ -124,11 +129,12 @@ class Distinct_Partial extends Operator
 
     // Distinct_Partial interface
 
-    public Distinct_Partial(Operator inputOperator, RowType distinctType)
+    public Distinct_Partial(Operator inputOperator, RowType distinctType, boolean usePValue)
     {
         ArgumentValidation.notNull("distinctType", distinctType);
         this.inputOperator = inputOperator;
         this.distinctType = distinctType;
+        this.usePValue = usePValue;
     }
 
     // Class state
@@ -140,6 +146,13 @@ class Distinct_Partial extends Operator
 
     private final Operator inputOperator;
     private final RowType distinctType;
+    private final boolean usePValue;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        return new DistinctExplainer("DISTINCT PARTIAL", distinctType, inputOperator);
+    }
 
     // Inner classes
 
@@ -169,7 +182,8 @@ class Distinct_Partial extends Operator
                 Row row;
                 while ((row = input.next()) != null) {
                     assert row.rowType() == distinctType : row;
-                    if (isDistinct(row))
+                    boolean isDistinct = (currentValues == null) ? isDistinctP(row) : isDistinct(row);
+                    if (isDistinct) // TODO inline this var once legacy types are gone
                         break;
                 }
                 if (row == null) {
@@ -217,13 +231,51 @@ class Distinct_Partial extends Operator
 
         // Execution interface
 
-        Execution(QueryContext context, Cursor input)
+        Execution(QueryContext context, Cursor input, boolean usePValue)
         {
             super(context);
             this.input = input;
 
             nfields = distinctType.nFields();
-            currentValues = new ValueHolder[nfields];
+            if (!usePValue) {
+                currentValues = new ValueHolder[nfields];
+                currentPValues = null;
+            }
+            else {
+                currentValues = null;
+                currentPValues = new PValue[nfields];
+                for (int i = 0; i < nfields; ++i) {
+                    currentPValues[i] = new PValue(distinctType.typeInstanceAt(i).typeClass().underlyingType());
+                }
+            }
+        }
+
+        private boolean isDistinctP(Row inputRow) {
+            if ((nvalid == 0) && currentRow.isEmpty()) {
+                // Very first row.
+                currentRow.hold(inputRow);
+                return true;
+            }
+            for (int i = 0; i < nfields; i++) {
+                if (i == nvalid) {
+                    assert currentRow.isHolding();
+                    currentPValues[i].putValueSource(currentRow.get().pvalue(i));
+                    nvalid++;
+                    if (nvalid == nfields)
+                        // Once we have copies of all fields, don't need row any more.
+                        currentRow.release();
+                }
+                PValueSource inputValue = inputRow.pvalue(i);
+                if (!PValueSources.areEqual(currentPValues[i], inputValue)) {
+                    currentPValues[i].putValueSource(inputValue);
+                    nvalid = i + 1;
+                    if (i < nfields - 1)
+                        // Might need later fields.
+                        currentRow.hold(inputRow);
+                    return true;
+                }
+            }
+            return false;
         }
 
         private boolean isDistinct(Row inputRow) 
@@ -267,6 +319,7 @@ class Distinct_Partial extends Operator
         // filled as needed.
         private int nvalid;
         private final ValueHolder[] currentValues;
+        private final PValue[] currentPValues;
         private boolean idle = true;
         private boolean destroyed = false;
     }

@@ -65,6 +65,12 @@ public class ReplaceExpression extends AbstractTernaryExpression
         }
     };
 
+    @Override
+    public String name()
+    {
+        return "REPLACE";
+    }
+
     private static final class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
         public InnerEvaluation(List<? extends ExpressionEvaluation> childrenEvals)
@@ -98,7 +104,7 @@ public class ReplaceExpression extends AbstractTernaryExpression
     {
         return true;
     }
-
+    
     @Override
     protected void describe(StringBuilder sb)
     {

@@ -32,7 +32,7 @@ import com.akiban.util.AkibanAppender;
 
 import java.math.BigDecimal;
 
-final class ConversionHelperBigDecimal {
+public final class ConversionHelperBigDecimal {
 
     // "public" methods (though still only available within-package)
 
@@ -68,6 +68,23 @@ final class ConversionHelperBigDecimal {
 
 
     public static int fromObject(FieldDef fieldDef, BigDecimal value, byte[] dest, int offset) {
+        final int declPrec = fieldDef.getTypeParameter1().intValue();
+        final int declScale = fieldDef.getTypeParameter2().intValue();
+
+        return fromObject(value, dest, offset, declPrec, declScale);
+    }
+
+    public static byte[] bytesFromObject(BigDecimal value, int declPrec, int declScale) {
+        final int declIntSize = calcBinSize(declPrec - declScale);
+        final int declFracSize = calcBinSize(declScale);
+
+        int size = declIntSize + declFracSize;
+        byte[] results = new byte[size];
+        fromObject(value, results, 0, declPrec, declScale);
+        return results;
+    }
+
+    private static int fromObject(BigDecimal value, byte[] dest, int offset, int declPrec, int declScale) {
         final String from = value.toPlainString();
         final int mask = (from.charAt(0) == '-') ? -1 : 0;
         int fromOff = 0;
@@ -95,8 +112,6 @@ final class ConversionHelperBigDecimal {
         final int fracPart = fracCnt % DECIMAL_DIGIT_PER;
         final int intSize = calcBinSize(intCnt);
 
-        final int declPrec = fieldDef.getTypeParameter1().intValue();
-        final int declScale = fieldDef.getTypeParameter2().intValue();
         final int declIntSize = calcBinSize(declPrec - declScale);
         final int declFracSize = calcBinSize(declScale);
 
@@ -193,7 +208,7 @@ final class ConversionHelperBigDecimal {
      * @throws NumberFormatException if the parse failed; the exception's message will be the String that we
      * tried to parse
      */
-    static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender appender) {
+    public static void decodeToString(byte[] from, int location, int precision, int scale, AkibanAppender appender) {
         final int intCount = precision - scale;
         final int intFull = intCount / DECIMAL_DIGIT_PER;
         final int intPartial = intCount % DECIMAL_DIGIT_PER;

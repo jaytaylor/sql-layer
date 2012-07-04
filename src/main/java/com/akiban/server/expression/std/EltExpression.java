@@ -79,6 +79,11 @@ public class EltExpression extends AbstractCompositeExpression
         }
         
     };
+
+    @Override
+    public String name() {
+        return "ELT";
+    }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -107,7 +112,7 @@ public class EltExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("ELT");
+        sb.append(name());
     }
 
     @Override
