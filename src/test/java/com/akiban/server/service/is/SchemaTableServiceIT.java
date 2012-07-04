@@ -29,10 +29,13 @@ package com.akiban.server.service.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
+import java.util.Collection;
+
 import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.server.service.config.Property;
 import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
 import com.akiban.server.test.it.ITBase;
@@ -46,6 +49,11 @@ public final class SchemaTableServiceIT extends ITBase {
                 .bind(StorageSchemaTablesService.class, StorageSchemaTablesServiceImpl.class)
                 .bind(ServerSchemaTablesService.class, ServerSchemaTablesServiceImpl.class)
                 .overrideRequires(getClass().getResource("SchemaTableService-requires.yaml"));
+    }
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
     }
 
     private AkibanInformationSchema ais;
