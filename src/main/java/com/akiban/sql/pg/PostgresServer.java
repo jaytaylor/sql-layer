@@ -371,6 +371,11 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     {
         return (System.nanoTime() - startTime);
     }
+    
+    public long getStartTime() 
+    {
+        return startTime;
+    }
 
     @Override
     public void clearPlans()

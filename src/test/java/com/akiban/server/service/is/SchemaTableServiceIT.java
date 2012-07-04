@@ -44,6 +44,7 @@ public final class SchemaTableServiceIT extends ITBase {
         return super.serviceBindingsProvider()
                 .bind(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
                 .bind(StorageSchemaTablesService.class, StorageSchemaTablesServiceImpl.class)
+                .bind(ServerSchemaTablesService.class, ServerSchemaTablesServiceImpl.class)
                 .overrideRequires(getClass().getResource("SchemaTableService-requires.yaml"));
     }
 
@@ -56,7 +57,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void baseInfoExamine() {
-        assertEquals(ais.getUserTables().size(), 22);
+        assertEquals(ais.getUserTables().size(), 24);
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.TABLES));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
@@ -81,5 +82,11 @@ public final class SchemaTableServiceIT extends ITBase {
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_TRANSACTION_SUMMARY));
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_TREES));
         assertNotNull (ais.getUserTable(StorageSchemaTablesServiceImpl.STORAGE_VOLUMES));
+    }
+    
+    @Test
+    public void serverExamine() {
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SESSIONS));
     }
 }
