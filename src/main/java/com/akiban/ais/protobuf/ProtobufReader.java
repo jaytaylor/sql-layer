@@ -93,20 +93,25 @@ public class ProtobufReader {
     }
 
     private void loadFromBuffer(GrowableByteBuffer buffer) {
+        final String MESSAGE_NAME = AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName();
         checkBuffer(buffer);
         final int serializedSize = buffer.getInt();
         final int initialPos = buffer.position();
         final int bufferSize = buffer.limit() - initialPos;
+        if(bufferSize < serializedSize) {
+            throw new ProtobufReadException(
+                    MESSAGE_NAME,
+                    String.format("Required size exceeded actual size: %d vs %d", serializedSize, bufferSize)
+            );
+        }
         CodedInputStream codedInput = CodedInputStream.newInstance(buffer.array(), buffer.position(), Math.min(serializedSize, bufferSize));
         try {
             pbAISBuilder.mergeFrom(codedInput);
             // Successfully consumed, update byte buffer
             buffer.position(initialPos + serializedSize);
         } catch(IOException e) {
-            throw new ProtobufReadException(
-                    AISProtobuf.AkibanInformationSchema.getDescriptor().getFullName(),
-                    String.format("Required size exceeded actual size: %d vs %d", serializedSize, bufferSize)
-            );
+            // CodedInputStream really only throws InvalidProtocolBufferException, but declares IOE
+            throw new ProtobufReadException(MESSAGE_NAME, e.getMessage());
         }
     }
     
@@ -119,6 +124,7 @@ public class ProtobufReader {
                     pbType.getParameters(),
                     pbType.getFixedSize(),
                     pbType.getMaxSizeBytes(),
+                    null,
                     null,
                     null
             );

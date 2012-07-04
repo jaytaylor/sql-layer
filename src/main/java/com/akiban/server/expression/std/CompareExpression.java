@@ -39,6 +39,9 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueSources;
 import com.akiban.sql.StandardException;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 
 import java.util.EnumMap;
 import java.util.List;
@@ -55,12 +58,22 @@ public class CompareExpression extends AbstractBinaryExpression {
     // AbstractTwoArgExpression interface
     @Override
     protected void describe(StringBuilder sb) {
-        sb.append(comparison);
+        sb.append(name());
         // TODO: Need nicer presentation.
         if (collator != null)
             sb.append("/").append(collator);
     }
+    
+    @Override
+    public String name () {
+        return comparison.name();
+    }
 
+    @Override
+    public Explainer getExplainer () {
+        return new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
+    }
+    
     @Override
     public ExpressionEvaluation evaluation() {
         if (collator != null)
@@ -77,7 +90,22 @@ public class CompareExpression extends AbstractBinaryExpression {
     public CompareExpression(Expression lhs, Comparison comparison, Expression rhs, AkCollator collator) {
         this(AkType.BOOL, lhs, comparison, rhs, collator);
     }
+
+    /*
+     * Old version
+    public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
+        super(AkType.BOOL, lhs, rhs);
+        this.comparison = comparison;
+        AkType type = childrenType(children());
+        assert type != null;
+        this.op = readOnlyCompareOps.get(type);
+        if (this.op == null)
+            throw new AkibanInternalException("couldn't find internal comparator for " + type);
+        //this(AkType.BOOL, lhs, comparison, rhs);
+    }
+    */
     
+    //copied from trunk
     public CompareExpression(Expression lhs, Comparison comparison, Expression rhs) {
         this(AkType.BOOL, lhs, comparison, rhs, null);
     }
@@ -87,14 +115,6 @@ public class CompareExpression extends AbstractBinaryExpression {
         this(AkType.INT, lhs, null, rhs, null);
     }
     
-    // overriding protected methods
-
-    @Override
-    protected void buildToString(StringBuilder sb) {//Field(2) < Literal(8888)
-        sb.append(left()).append(' ').append(comparison).append(' ').append(right());
-    }
-
-
     // for use in this class
 
     private CompareExpression(AkType outputType, Expression lhs, Comparison comparison, Expression rhs, AkCollator collator)
@@ -102,6 +122,13 @@ public class CompareExpression extends AbstractBinaryExpression {
         super(outputType, lhs, rhs);
         this.comparison = comparison;
         this.collator = collator;
+    }
+    
+    // overriding protected methods
+
+    @Override
+    protected void buildToString(StringBuilder sb) {//Field(2) < Literal(8888)
+        sb.append(left()).append(' ').append(comparison).append(' ').append(right());
     }
 
 

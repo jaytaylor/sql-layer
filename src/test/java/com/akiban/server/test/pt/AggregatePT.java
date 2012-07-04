@@ -61,6 +61,9 @@ import com.akiban.server.service.functions.FunctionsRegistryImpl;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.sql.optimizer.explain.Explainer;
 
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -284,6 +287,11 @@ public class AggregatePT extends ApiTestBase {
         public RowType rowType() {
             return outputType;
         }
+
+        @Override
+        public Explainer getExplainer() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     static class BespokeCursor extends OperatorExecutionBase implements Cursor {
@@ -364,6 +372,10 @@ public class AggregatePT extends ApiTestBase {
     };
     
 
+    static final TInstance[] TINSTANCES = {
+        MNumeric.INT.instance(),MNumeric.INT.instance() ,MNumeric.INT.instance() ,MNumeric.INT.instance()
+    };
+
     static class BespokeRowType extends RowType {
         public BespokeRowType() {
             super(-1);
@@ -377,13 +389,19 @@ public class AggregatePT extends ApiTestBase {
         public int nFields() {
             return TYPES.length;
         }
-        
+
+        @Override
         public AkType typeAt(int index) {
             return TYPES[index];
         }
-        
+
         public AkCollator collatorAt(int index) {
             return COLLATORS[index];
+        }
+
+        @Override
+        public TInstance typeInstanceAt(int index) {
+            return TINSTANCES[index];
         }
     }
 
@@ -650,6 +668,11 @@ public class AggregatePT extends ApiTestBase {
         public List<Operator> getInputOperators() {
             return Collections.singletonList(inputOperator);
         }
+
+        @Override
+        public Explainer getExplainer() {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     // Nulls are not allowed in ConcurrentLinkedQueue.
@@ -792,7 +815,7 @@ public class AggregatePT extends ApiTestBase {
         
         public WorkerThread(QueryContext context, Operator inputOperator, ValuesRowType valuesType, ValuesRow valuesRow, int bindingPosition, RowQueue queue) {
             session = createNewSession();
-            adapter = new PersistitAdapter((Schema)valuesType.schema(), persistitStore(), treeService(), session, configService());
+            adapter = new PersistitAdapter((Schema)valuesType.schema(), store(), treeService(), session, configService());
             context = queryContext(adapter);
             context.setRow(bindingPosition, valuesRow);
             inputCursor = API.cursor(inputOperator, context);

@@ -54,7 +54,7 @@ public abstract class SchemaRulesContext extends RulesContext
         this.functionsRegistry = functionsRegistry;
     }
 
-    protected void initCostEstimator(CostEstimator costEstimator) {
+    protected void initCostEstimator(CostEstimator costEstimator, boolean usePValues) {
         this.costEstimator = costEstimator;
     }
 

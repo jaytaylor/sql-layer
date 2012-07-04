@@ -30,6 +30,7 @@ import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -86,6 +87,13 @@ public class FlattenedRowType extends DerivedRowType
         if (index < parent.nFields())
             return parent.collatorAt(index);
         return child.collatorAt(index - parent.nFields());
+    }
+
+    @Override
+    public TInstance typeInstanceAt(int index) {
+        if (index < parent.nFields())
+            return parent.typeInstanceAt(index);
+        return child.typeInstanceAt(index - parent.nFields());
     }
 
     @Override

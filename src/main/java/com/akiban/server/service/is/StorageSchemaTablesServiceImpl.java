@@ -43,7 +43,6 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.qp.memoryadapter.BasicFactoryBase;
@@ -65,9 +64,10 @@ import com.persistit.Management.TreeInfo;
 import com.persistit.Management.VolumeInfo;
 import com.persistit.mxbeans.IOMeterMXBean;
 
-public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTablesService>, StorageSchemaTablesService {
+public class StorageSchemaTablesServiceImpl
+    extends SchemaTablesService
+    implements Service<StorageSchemaTablesService>, StorageSchemaTablesService {
 
-    private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
     private static final String BASE_PERSITIT_JMX_PATH = "com.persistit:type=Persistit,class=";
 
     static final TableName STORAGE_ALERTS_SUMMARY = new TableName (SCHEMA_NAME, "storage_alert_summary");
@@ -84,15 +84,13 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
     static final TableName STORAGE_VOLUMES = new TableName (SCHEMA_NAME, "storage_volumes");
 
     private final TreeService treeService;
-    
-    private final SchemaManager schemaManager;
     private MBeanServer jmxServer;
     
     private final static Logger logger = LoggerFactory.getLogger(StorageSchemaTablesServiceImpl.class);
     
     @Inject
     public StorageSchemaTablesServiceImpl (SchemaManager schemaManager, TreeService treeService) {
-        this.schemaManager = schemaManager;
+        super(schemaManager);
         this.treeService = treeService;
     }
 
@@ -114,58 +112,37 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         AkibanInformationSchema ais = createTablesToRegister();
         
         //STORAGE_ALERTS_SUMMARY
-        UserTable alertSummary = ais.getUserTable(STORAGE_ALERTS_SUMMARY);
-        assert alertSummary  != null;
-        schemaManager.registerMemoryInformationSchemaTable(alertSummary, new AlertSummaryFactory (STORAGE_ALERTS_SUMMARY));
+        attach (ais, true, STORAGE_ALERTS_SUMMARY, AlertSummaryFactory.class);
         
         // STORAGE_BUFFER_POOLS
-        UserTable bufferPools = ais.getUserTable(STORAGE_BUFFER_POOLS);
-        assert bufferPools != null;
-        schemaManager.registerMemoryInformationSchemaTable(bufferPools, new BufferPoolFactory (STORAGE_BUFFER_POOLS));
+        attach (ais, true, STORAGE_BUFFER_POOLS, BufferPoolFactory.class);
         
         //STORAGE_CHECKPOINT_SUMMARY
-        UserTable checkpointSummary = ais.getUserTable(STORAGE_CHECKPOINT_SUMMARY);
-        assert checkpointSummary != null;
-        schemaManager.registerMemoryInformationSchemaTable (checkpointSummary, new CheckpointSummaryFactory(STORAGE_CHECKPOINT_SUMMARY));
+        attach (ais, true, STORAGE_CHECKPOINT_SUMMARY, CheckpointSummaryFactory.class);
 
         //STORAGE_CLEANUP_MANAGER_SUMMARY
-        UserTable cleanupManagerSummary = ais.getUserTable(STORAGE_CLEANUP_MANAGER_SUMMARY);
-        assert cleanupManagerSummary != null;
-        schemaManager.registerMemoryInformationSchemaTable(cleanupManagerSummary, new CleanupSummaryFactory(STORAGE_CLEANUP_MANAGER_SUMMARY));
+        attach (ais, true, STORAGE_CLEANUP_MANAGER_SUMMARY, CleanupSummaryFactory.class);
         
         //STORAGE_IO_METER_SUMMARY
-        UserTable ioMeterSummary = ais.getUserTable(STORAGE_IO_METER_SUMMARY);
-        assert ioMeterSummary != null;
-        schemaManager.registerMemoryInformationSchemaTable(ioMeterSummary, new IoSummaryFactory (STORAGE_IO_METER_SUMMARY));
+        attach (ais, true, STORAGE_IO_METER_SUMMARY, IoSummaryFactory.class);
 
         // STORAGE_IO_METERS
-        UserTable ioMeters = ais.getUserTable(STORAGE_IO_METERS);
-        assert ioMeters != null;
-        schemaManager.registerMemoryInformationSchemaTable(ioMeters, new IOMetersFactory(STORAGE_IO_METERS));
-        
+        attach(ais, true, STORAGE_IO_METERS, IOMetersFactory.class);
+
         //STORAGE_JOURNAL_MANAGER_SUMMARY
-        UserTable journalManager = ais.getUserTable(STORAGE_JOURNAL_MANAGER_SUMMARY);
-        assert journalManager != null;
-        schemaManager.registerMemoryInformationSchemaTable(journalManager, new JournalManagerFactory (STORAGE_JOURNAL_MANAGER_SUMMARY));
+        attach (ais, true, STORAGE_JOURNAL_MANAGER_SUMMARY, JournalManagerFactory.class);
 
         //STORAGE_MANAGEMENT_SUMMARY
-        UserTable managementSummary = ais.getUserTable(STORAGE_MANAGEMENT_SUMMARY);
-        assert managementSummary != null;
-        schemaManager.registerMemoryInformationSchemaTable(managementSummary, new ManagementSummaryFactory(STORAGE_MANAGEMENT_SUMMARY));
+        attach(ais, true, STORAGE_MANAGEMENT_SUMMARY, ManagementSummaryFactory.class);
 
         //STORAGE_TRANSACTION_SUMMARY
-        UserTable transactionSummary = ais.getUserTable(STORAGE_TRANSACTION_SUMMARY);
-        assert transactionSummary != null;
-        schemaManager.registerMemoryInformationSchemaTable(transactionSummary, new TransactionSummaryFactory(STORAGE_TRANSACTION_SUMMARY));
+        attach (ais, true, STORAGE_TRANSACTION_SUMMARY, TransactionSummaryFactory.class);
 
         //STORAGE_TREES
-        UserTable trees = ais.getUserTable(STORAGE_TREES);
-        assert trees != null;
-        schemaManager.registerMemoryInformationSchemaTable(trees, new TreesFactory(STORAGE_TREES));
+        attach (ais, true, STORAGE_TREES, TreesFactory.class);
+
         //STORAGE_VOLUMES
-        UserTable volumes = ais.getUserTable(STORAGE_VOLUMES);
-        assert volumes != null;
-        schemaManager.registerMemoryInformationSchemaTable(volumes, new VolumesFactory(STORAGE_VOLUMES));
+        attach (ais, true, STORAGE_VOLUMES, VolumesFactory.class);
     }
 
     @Override
@@ -225,18 +202,12 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         return value;
     }
     
-    private abstract class Scan implements GroupScan {
-        final RowType rowType;
-        int rowCounter = 0;
+    private abstract class BeanScan extends BaseScan {
         ObjectName mbeanName;
         
-        public Scan (RowType rowType, String beanName) {
-            this.rowType = rowType;
+        public BeanScan (RowType rowType, String beanName) {
+            super(rowType);
             mbeanName = getBeanName(beanName);
-        }
-
-        @Override
-        public void close() {
         }
     }
 
@@ -247,7 +218,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new AlertSummaryScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -255,8 +226,8 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             return 1;
         }
         
-        private class AlertSummaryScan extends Scan {
-            public AlertSummaryScan(RowType rowType) {
+        private class Scan extends BeanScan {
+            public Scan(RowType rowType) {
                 super (rowType, "AlertMonitor");
             }
 
@@ -281,7 +252,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         }
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new BufferPoolScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -293,9 +264,9 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             }
         }
         
-        private class BufferPoolScan extends Scan {
+        private class Scan extends BeanScan {
             BufferPoolInfo[] bufferPools = null;
-            public BufferPoolScan (RowType rowType) {
+            public Scan (RowType rowType) {
                 super(rowType, "BufferPool");
                 
                 try {
@@ -340,7 +311,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new CheckpointScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -349,9 +320,8 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         }
         
        
-        private class CheckpointScan extends Scan{
-            
-            public CheckpointScan (RowType rowType) {
+        private class Scan extends BeanScan{
+            public Scan (RowType rowType) {
                 super (rowType, "CheckpointManager");
              }
             @Override
@@ -363,10 +333,6 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
                             getJMXAttribute(mbeanName, "CheckpointInterval"),
                             ++rowCounter /* Hidden PK */);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
     
@@ -377,7 +343,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new CleanupScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -385,8 +351,8 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             return 1;
         }
         
-        private class CleanupScan extends Scan {
-            public CleanupScan (RowType rowType) {
+        private class Scan extends BeanScan {
+            public Scan (RowType rowType) {
                 super (rowType, "CleanupManager");
             }
 
@@ -415,7 +381,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new IOScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -423,9 +389,8 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             return 1;
         }
         
-        private class IOScan extends Scan{
-         
-            public IOScan (RowType rowType) {
+        private class Scan extends BeanScan{
+            public Scan (RowType rowType) {
                 super (rowType, "IOMeter");
             }
             
@@ -451,7 +416,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new IOMetersScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -459,9 +424,9 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             return IOMeterMXBean.OPERATIONS.length - 1;
         }
         
-        private class IOMetersScan extends Scan {
+        private class Scan extends BeanScan {
             Vector<String> parameter;
-            public IOMetersScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType, "IOMeter");
                 parameter = new Vector<String> (1);
                 parameter.add(IOMeterMXBean.OPERATIONS[0]);
@@ -489,7 +454,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new JournalManagerScan (getRowType(adapter));
+            return new Scan (getRowType(adapter));
         }
 
         @Override
@@ -497,9 +462,9 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             return 1;
         }
         
-        private class JournalManagerScan extends Scan {
+        private class Scan extends BeanScan {
             JournalInfo journal;
-            public JournalManagerScan (RowType rowType) {
+            public Scan (RowType rowType) {
                 super(rowType, "JournalManager");
                 try {
                     journal = treeService.getDb().getManagement().getJournalInfo();
@@ -560,7 +525,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new ManagementSummaryScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -568,10 +533,9 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             return 1;
         }
         
-        private class ManagementSummaryScan extends Scan {
-
+        private class Scan extends BeanScan {
             Management db_manage;
-            public ManagementSummaryScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType, "Management");
                 
                 db_manage = treeService.getDb().getManagement();
@@ -611,7 +575,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new TransactionSummaryScan (getRowType(adapter));
+            return new Scan (getRowType(adapter));
         }
 
         @Override
@@ -619,9 +583,8 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             return 1;
         }
         
-        private class TransactionSummaryScan extends Scan {
-
-            public TransactionSummaryScan(RowType rowType) {
+        private class Scan extends BeanScan {
+            public Scan(RowType rowType) {
                 super(rowType, "TransactionIndex");
             }
 
@@ -659,7 +622,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new TreeScan (getRowType(adapter));
+            return new Scan (getRowType(adapter));
         }
 
         @Override
@@ -676,14 +639,13 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             }
             return rows;
         }
-        private class TreeScan extends Scan {
-
+        private class Scan extends BeanScan {
             VolumeInfo[] volumes;
             int volumeIndex = 0;
             TreeInfo[] trees = null;
             int treeIndex = 0;
             
-            public TreeScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType, "TreeInfo");
                 try {
                     volumes = treeService.getDb().getManagement().getVolumeInfoArray();
@@ -743,7 +705,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new VolumesScan(getRowType(adapter));
+            return new Scan(getRowType(adapter));
         }
 
         @Override
@@ -756,10 +718,9 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             }
         }
 
-        private class VolumesScan extends Scan {
-
+        private class Scan extends BeanScan {
             VolumeInfo[] volumes;
-            public VolumesScan(RowType rowType) {
+            public Scan(RowType rowType) {
                 super(rowType, "Volumes");
                 try {
                     volumes = treeService.getDb().getManagement().getVolumeInfoArray();
@@ -814,7 +775,7 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         NewAISBuilder builder = AISBBasedBuilder.create();
         
         builder.userTable(STORAGE_ALERTS_SUMMARY)
-            .colString("alert_level", 64, false)
+            .colString("alert_level", DESCRIPTOR_MAX, false)
             .colBigInt("warn_log_interval", false)
             .colBigInt("error_log_interval", false)
             .colBigInt("history_length", false);
@@ -851,10 +812,10 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
         builder.userTable(STORAGE_IO_METER_SUMMARY)
             .colBigInt("io_rate", false)
             .colBigInt("quiescent_threshold", false)
-            .colString("log_file", 1024);
+            .colString("log_file", PATH_MAX);
         
         builder.userTable(STORAGE_IO_METERS)
-            .colString("operation", 64, false)
+            .colString("operation", DESCRIPTOR_MAX, false)
             .colBigInt("total_bytes", false)
             .colBigInt("operations", false);
         
@@ -868,10 +829,10 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             .colBigInt("copied_page_count", false)
             .colBigInt("dropped_page_count", false)
             .colBigInt("read_page_count", false)
-            .colString("append_only", 3, false)
-            .colString("fast_copy", 3, false)
-            .colString("copy_active", 3, false)
-            .colString("flush_active", 3, false)
+            .colString("append_only", YES_NO_MAX, false)
+            .colString("fast_copy", YES_NO_MAX, false)
+            .colString("copy_active", YES_NO_MAX, false)
+            .colString("flush_active", YES_NO_MAX, false)
             .colTimestamp("checkpoint_time", false)
             
             .colBigInt("page_list_size", false)
@@ -881,20 +842,20 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             .colBigInt("total_commits", false)
             .colBigInt("commit_wait_time", false)
             .colBigInt("slow_alert_threshold", false)
-            .colString("rollback_pruning_enabled", 3, false)
+            .colString("rollback_pruning_enabled", YES_NO_MAX, false)
 
-            .colString("file_path", 1024, false)
+            .colString("file_path", PATH_MAX, false)
             .colTimestamp("create_time", false);
 
         
         builder.userTable(STORAGE_MANAGEMENT_SUMMARY)
-            .colString("initialized", 3, false)
-            .colString("update_suspended", 3, false)
-            .colString("shutdown_suspended", 3, false)
-            .colString("version", BasicFactoryBase.IDENT_MAX, false)
-            .colString("copyright", BasicFactoryBase.IDENT_MAX, false)
+            .colString("initialized", YES_NO_MAX, false)
+            .colString("update_suspended", YES_NO_MAX, false)
+            .colString("shutdown_suspended", YES_NO_MAX, false)
+            .colString("version", IDENT_MAX, false)
+            .colString("copyright", IDENT_MAX, false)
             .colTimestamp("start_time", false)
-            .colString("default_commit_policy", 64, false);
+            .colString("default_commit_policy", DESCRIPTOR_MAX, false);
         
         builder.userTable(STORAGE_TRANSACTION_SUMMARY)
             .colBigInt("active_floor", false)
@@ -907,9 +868,9 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             .colBigInt("dropped_count", false);
 
         builder.userTable(STORAGE_TREES)
-            .colString("volume_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("tree_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("status", 64, false)
+            .colString("volume_name", IDENT_MAX, false)
+            .colString("tree_name", IDENT_MAX, false)
+            .colString("status", DESCRIPTOR_MAX, false)
             .colBigInt("depth", false)
             .colBigInt("fetch_counter", false)
             .colBigInt("traverse_counter", false)
@@ -917,9 +878,9 @@ public class StorageSchemaTablesServiceImpl implements Service<StorageSchemaTabl
             .colBigInt("remove_counter", false);
             
         builder.userTable(STORAGE_VOLUMES)
-            .colString("volume_name", BasicFactoryBase.IDENT_MAX, false)
-            .colString("path", 1024, false)
-            .colString("temporary", 3, false)
+            .colString("volume_name", IDENT_MAX, false)
+            .colString("path", PATH_MAX, false)
+            .colString("temporary", YES_NO_MAX, false)
             .colBigInt("page_size", false)
             .colBigInt("current_size", false)
             .colBigInt("maximum_size", false)

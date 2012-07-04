@@ -27,9 +27,12 @@
 package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.row.HKey;
+import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
 
 class PersistitHKey implements HKey
@@ -128,6 +131,11 @@ class PersistitHKey implements HKey
     {
         return source(i);
     }
+     
+    @Override
+    public PValueSource pEval(int i) {
+        return pSource(i);
+    }
 
     // PersistitHKey interface
 
@@ -179,6 +187,27 @@ class PersistitHKey implements HKey
         }
         return sources[i];
     }
+    
+    private PersistitKeyPValueSource pSource(int i) 
+    {
+        if (pSources == null) {
+            assert underlyingTypes == null;
+            pSources = new PersistitKeyPValueSource[hKeyMetadata.nColumns()];
+            underlyingTypes = new PUnderlying[hKeyMetadata.nColumns()];
+            for (int c = 0; c < hKeyMetadata.nColumns(); c++) {
+                underlyingTypes[c] = hKeyMetadata.column(c).tInstance().typeClass().underlyingType();
+            }
+        }
+        if (pSources[i] == null) {
+            pSources[i] = new PersistitKeyPValueSource(underlyingTypes[i]);
+            pSources[i].attach(hKey, keyDepth[i], underlyingTypes[i]);
+        } else {
+            // TODO: Add state tracking whether hkey has been changed (e.g. by useSegments). Avoid attach calls
+            // TODO: when there has been no change.
+            pSources[i].attach(hKey);
+        }
+        return pSources[i];
+    }
 
     // Object state
 
@@ -189,5 +218,7 @@ class PersistitHKey implements HKey
     // Identifies the persistit key depth for the ith hkey segment, 1 <= i <= #hkey segments.
     private final int[] keyDepth;
     private PersistitKeyValueSource[] sources;
+    private PersistitKeyPValueSource[] pSources;
     private AkType[] types;
+    private PUnderlying[] underlyingTypes;
 }

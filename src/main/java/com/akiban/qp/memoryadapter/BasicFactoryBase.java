@@ -67,5 +67,4 @@ public abstract class BasicFactoryBase implements MemoryTableFactory {
     public static String boolResult(boolean bool) {
         return bool ? "YES" : "NO";
     }
-    public static final int IDENT_MAX = 128;
 }

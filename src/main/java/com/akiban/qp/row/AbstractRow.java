@@ -30,6 +30,10 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.Quote;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
 
 public abstract class AbstractRow implements Row
@@ -49,6 +53,17 @@ public abstract class AbstractRow implements Row
 
     @Override
     public abstract HKey hKey();
+
+    @Override
+    public PValueSource pvalue(int i) {
+        // Default, though inefficient.
+        return PValueSources.fromValueSource(eval(i), rowType().typeInstanceAt(i).typeClass().underlyingType());
+    }
+
+    @Override
+    public ValueSource eval(int index) {
+        throw new UnsupportedOperationException(); // TODO
+    }
 
     @Override
     public HKey ancestorHKey(UserTable table)

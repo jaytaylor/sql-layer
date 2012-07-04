@@ -28,6 +28,8 @@ package com.akiban.server.expression.std;
 
 public interface Matcher
 {
+    boolean sameState(String pattern, char escape);
+
     /**
      * 
      * @param str

@@ -43,6 +43,11 @@ import java.util.EnumMap;
 import java.util.List;
 
 public class CoalesceExpression extends AbstractCompositeExpression {
+    
+    @Override
+    protected void describe(StringBuilder sb) {
+        sb.append(name());
+    }
 
     @Scalar("coalesce")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer() {
@@ -80,8 +85,8 @@ public class CoalesceExpression extends AbstractCompositeExpression {
     };
 
     @Override
-    protected void describe(StringBuilder sb) {
-        sb.append("COALESCE");
+    public String name () {
+        return "COALESCE";
     }
 
     @Override

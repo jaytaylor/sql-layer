@@ -29,6 +29,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -44,7 +45,6 @@ public class ProductRowType extends DerivedRowType
     {
         return String.format("product(%s: %s x %s)", branchType, leftType, rightType);
     }
-
 
     // RowType interface
 
@@ -66,6 +66,13 @@ public class ProductRowType extends DerivedRowType
         if (index < leftType.nFields())
             return leftType.collatorAt(index);
         return rightType.collatorAt(index - leftType.nFields() + branchType.nFields());
+    }
+
+    @Override
+    public TInstance typeInstanceAt(int index) {
+        if (index < leftType.nFields())
+            return leftType.typeInstanceAt(index);
+        return rightType.typeInstanceAt(index - leftType.nFields() + branchType.nFields());
     }
 
     // ProductRowType interface

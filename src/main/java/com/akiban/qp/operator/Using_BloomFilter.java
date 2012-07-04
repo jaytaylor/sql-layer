@@ -30,6 +30,9 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
@@ -121,7 +124,8 @@ class Using_BloomFilter extends Operator
                              RowType filterRowType,
                              long estimatedRowCount,
                              int filterBindingPosition,
-                             Operator streamInput)
+                             Operator streamInput,
+                             boolean usePValues)
     {
         ArgumentValidation.notNull("filterInput", filterInput);
         ArgumentValidation.notNull("filterRowType", filterRowType);
@@ -133,6 +137,7 @@ class Using_BloomFilter extends Operator
         this.estimatedRowCount = estimatedRowCount;
         this.filterBindingPosition = filterBindingPosition;
         this.streamInput = streamInput;
+        this.usePValues = usePValues;
     }
 
     // Class state
@@ -148,6 +153,12 @@ class Using_BloomFilter extends Operator
     private final long estimatedRowCount;
     private final int filterBindingPosition;
     private final Operator streamInput;
+    private final boolean usePValues;
+
+    @Override
+    public Explainer getExplainer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 
@@ -243,8 +254,14 @@ class Using_BloomFilter extends Operator
             while ((row = loadCursor.next()) != null) {
                 int h = 0;
                 for (int f = 0; f < fields; f++) {
-                    ValueSource valueSource = row.eval(f);
-                    h = h ^ ValueSourceHasher.hash(valueSource);
+                    if (usePValues) {
+                        PValueSource valueSource = row.pvalue(f);
+                        h = h ^ PValueSources.hash(valueSource);
+                    }
+                    else {
+                        ValueSource valueSource = row.eval(f);
+                        h = h ^ ValueSourceHasher.hash(valueSource);
+                    }
                 }
                 filter.add(h);
                 rows++;

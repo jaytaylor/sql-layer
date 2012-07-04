@@ -26,6 +26,8 @@
 
 package com.akiban.qp.operator;
 
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.ais.model.HKeySegment;
 import com.akiban.qp.row.FlattenedRow;
 import com.akiban.qp.row.HKey;
@@ -33,6 +35,10 @@ import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -266,6 +272,24 @@ class Flatten_HKeyOrdered extends Operator
     private final int childOrdinal;
     private final int nChildHKeySegmentFields;
     private final int parentHKeySegments;
+
+    @Override
+    public Explainer getExplainer()
+    {
+       
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("FLATTEN HKEY ORDERED"));
+        if (keepParent) 
+            att.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP PARENT"));
+        if (keepChild) 
+            att.put(Label.FLATTEN_OPTION, PrimitiveExplainer.getInstance("KEEP CHILD"));
+        att.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(leftJoin && rightJoin ? "FULL" : leftJoin ? "LEFT" : "RIGHT"));
+        att.put(Label.PARENT_TYPE, PrimitiveExplainer.getInstance(parentType));
+        att.put(Label.CHILD_TYPE, PrimitiveExplainer.getInstance(childType));
+        
+        return new OperationExplainer(Type.FLATTEN_OPERATOR, att);
+    }
 
     // Inner classes
 

@@ -34,12 +34,17 @@ import com.akiban.server.error.ErrorCode;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.BloomFilter;
 
 import java.util.Date;
 
 public interface QueryContext 
 {
+    public PValueSource getPValue(int index);
+
+    public void setPValue(int index, PValueSource value);
+
     /**
      * Gets the value bound to the given index.
      * @param index the index to look up

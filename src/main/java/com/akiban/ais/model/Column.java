@@ -27,6 +27,16 @@
 package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.StringFactory;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
+
+import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.server.collation.AkCollator;
 
@@ -48,6 +58,10 @@ public class Column
 
     public static Column create(Table table, String name, Integer position, Type type) {
         return create(table, name, position, type, null, null, null, null, null);
+    }
+
+    public TInstance tInstance() {
+        return tInstance(false);
     }
 
     @Override
@@ -80,6 +94,11 @@ public class Column
         }
         return s;
          ***/
+    }
+
+    public void finishCreating() {
+        fillInDefaultParams();
+        tInstance(false).setNullable(nullable);
     }
 
     public void setNullable(Boolean nullable)
@@ -386,7 +405,11 @@ public class Column
         this.initialAutoIncrementValue = initialAutoIncValue;
         this.charsetAndCollation = charsetAndCollation;
 
-        Long[] defaults = Types.defaultParams().get(type);
+        fillInDefaultParams();
+    }
+
+    private void fillInDefaultParams() {
+        Long[] defaults = Types.defaultParams().get(getType());
         if(defaults != null) {
             if(this.typeParameter1 == null) {
                 this.typeParameter1 = defaults[0];
@@ -413,6 +436,151 @@ public class Column
             byteCount < 16777216 ? 3 : 4;
     }
 
+    private TInstance tInstance(boolean force) {
+        final TInstance old = tInstanceRef.get();
+        if (old != null && !force)
+            return old;
+        final TInstance tinst;
+
+        switch (Types.asEnum(type)) {
+        case T_ENUM:
+        case T_BIT:
+        case T_GEOMETRY:
+        case T_GEOMETRYCOLLECTION:
+        case T_POINT:
+        case T_POLYGON:
+        case T_SET:
+        case T_LINESTRING:
+        case T_MULTILINESTRING:
+        case T_MULTIPOLYGON:
+        case T_MULTIPOINT:
+            throw new UnsupportedOperationException("unsupported type: " + type);
+
+        case T_BLOB:
+            tinst = MBinary.BLOB.instance();
+            break;
+        case T_BIGINT:
+            tinst = MNumeric.BIGINT.instance();
+            break;
+        case T_U_BIGINT:
+            tinst = MNumeric.BIGINT_UNSIGNED.instance();
+            break;
+        case T_BINARY:
+            tinst = MBinary.BINARY.instance(typeParameter1.intValue());
+            break;
+        case T_CHAR:
+            tinst = charString(MString.CHAR);
+            break;
+        case T_DATE:
+            tinst = MDatetimes.DATE.instance();
+            break;
+        case T_DATETIME:
+            tinst = MDatetimes.DATETIME.instance();
+            break;
+        case T_DECIMAL:
+            tinst = MNumeric.DECIMAL.instance(typeParameter1.intValue(), typeParameter2.intValue());
+            break;
+        case T_U_DECIMAL:
+            tinst = MNumeric.DECIMAL_UNSIGNED.instance(typeParameter1.intValue(), typeParameter2.intValue());
+            break;
+        case T_DOUBLE:
+            tinst = MApproximateNumber.DOUBLE.instance();
+            break;
+        case T_U_DOUBLE:
+            tinst = MApproximateNumber.DOUBLE_UNSIGNED.instance();
+            break;
+        case T_FLOAT:
+            tinst = MApproximateNumber.FLOAT.instance();
+            break;
+        case T_U_FLOAT:
+            tinst = MApproximateNumber.FLOAT_UNSIGNED.instance();
+            break;
+        case T_INT:
+            tinst = MNumeric.INT.instance();
+            break;
+        case T_U_INT:
+            tinst = MNumeric.INT_UNSIGNED.instance();
+            break;
+        case T_LONGBLOB:
+            tinst = MBinary.LONGBLOB.instance();
+            break;
+        case T_LONGTEXT:
+            tinst = textString(MString.LONGTEXT);
+            break;
+        case T_MEDIUMBLOB:
+            tinst = MBinary.MEDIUMBLOB.instance();
+            break;
+        case T_MEDIUMINT:
+            tinst = MNumeric.MEDIUMINT.instance();
+            break;
+        case T_U_MEDIUMINT:
+            tinst = MNumeric.MEDIUMINT_UNSIGNED.instance();
+            break;
+        case T_MEDIUMTEXT:
+            tinst = textString(MString.MEDIUMTEXT);
+            break;
+        case T_SMALLINT:
+            tinst = MNumeric.SMALLINT.instance();
+            break;
+        case T_U_SMALLINT:
+            tinst = MNumeric.SMALLINT_UNSIGNED.instance();
+            break;
+        case T_TEXT:
+            tinst = textString(MString.TEXT);
+            break;
+        case T_TIME:
+            tinst = MDatetimes.TIME.instance();
+            break;
+        case T_TIMESTAMP:
+            tinst = MDatetimes.TIMESTAMP.instance();
+            break;
+        case T_TINYBLOB:
+            tinst = MBinary.TINYBLOB.instance();
+            break;
+        case T_TINYINT:
+            tinst = MNumeric.TINYINT.instance();
+            break;
+        case T_U_TINYINT:
+            tinst = MNumeric.TINYINT_UNSIGNED.instance();
+            break;
+        case T_TINYTEXT:
+            tinst = textString(MString.TINYTEXT);
+            break;
+        case T_VARBINARY:
+            tinst = MBinary.VARBINARY.instance(typeParameter1.intValue());
+            break;
+        case T_VARCHAR:
+            tinst = charString(MString.VARCHAR);
+            break;
+        case T_YEAR:
+            tinst = MDatetimes.YEAR.instance();
+            break;
+        default:
+            throw new UnsupportedOperationException("unknown type: " + type);
+        }
+
+        assert tinst != null : type;
+        
+        if (!tInstanceRef.compareAndSet(old, tinst))
+            assert false : "CAS failed; Column is not thread-safe, so mutating it from multiple threads is bad!";
+
+        return tinst;
+    }
+
+    private TInstance charString(TClass tClass) {
+        if (charsetAndCollation == null)
+            return tClass.instance();
+        StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
+        return tClass.instance(typeParameter1.intValue(), charset.ordinal(), -1); // TODO collation
+    }
+
+    private TInstance textString(TClass tClass) {
+        if (charsetAndCollation == null)
+            return tClass.instance();
+        StringFactory.Charset charset = StringFactory.Charset.of(charsetAndCollation.charset());
+        return tClass.instance(charset.ordinal(), -1); // TODO collation
+    }
+
     // State
 
     public static final String AKIBAN_PK_NAME = "__akiban_pk";
@@ -426,6 +594,7 @@ public class Column
     private Long typeParameter2;
     private Long initialAutoIncrementValue;
     private CharsetAndCollation charsetAndCollation;
+    private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<TInstance>();
 
     private Column groupColumn; // Non-null iff this is a user table column
     private Column userColumn; // Non-null iff this is a group table column

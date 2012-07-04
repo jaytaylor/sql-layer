@@ -29,6 +29,8 @@ package com.akiban.sql.pg;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 
 import java.util.List;
 import java.io.ByteArrayOutputStream;
@@ -51,7 +53,7 @@ public class PostgresExplainStatement implements PostgresStatement
         }
         colName = "OPERATORS";
         colType = new PostgresType(PostgresType.TypeOid.VARCHAR_TYPE_OID.getOid(), (short)-1, maxlen,
-                                   AkType.VARCHAR);
+                                   AkType.VARCHAR, MString.VARCHAR.instance());
     }
 
     @Override
@@ -82,7 +84,7 @@ public class PostgresExplainStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
@@ -90,7 +92,9 @@ public class PostgresExplainStatement implements PostgresStatement
         for (String row : explanation) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(1);
-            ByteArrayOutputStream bytes = encoder.encodeObject(row, colType, false);
+            ByteArrayOutputStream bytes;
+            if (usePVals) bytes = encoder.encodePObject(row, colType, false);
+            else bytes = encoder.encodeObject(row, colType, false);
             messenger.writeInt(bytes.size());
             messenger.writeByteStream(bytes);
             messenger.sendMessage();

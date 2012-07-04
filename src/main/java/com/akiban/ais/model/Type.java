@@ -27,6 +27,7 @@
 package com.akiban.ais.model;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 public class Type
 {
@@ -99,7 +100,8 @@ public class Type
         return result;
     }
     
-    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding, AkType akType)
+    public Type(String name, Integer typeParameters, Boolean fixedSize, Long maxStorageSizeBytes, String encoding,
+                AkType akType)
     {
         this.name = name;
         this.typeParameters = typeParameters;
@@ -110,7 +112,7 @@ public class Type
     }
 
     public static Type create(AkibanInformationSchema ais, String name, Integer typeParameters, Boolean fixedSize, 
-                              Long maxStorageSizeBytes, String encoding, AkType akType) {
+                              Long maxStorageSizeBytes, String encoding, AkType akType, TInstance instance) {
         Type type = new Type(name, typeParameters, fixedSize, maxStorageSizeBytes, encoding, akType);
         ais.addType(type);
         return type;

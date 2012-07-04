@@ -29,6 +29,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.*;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 import java.util.*;
 
@@ -43,6 +44,11 @@ public class IndexRowType extends AisRowType
     }
 
     // RowType interface
+
+    @Override
+    public TInstance typeInstanceAt(int i) {
+        return index.getAllColumns().get(i).getColumn().tInstance();
+    }
 
     @Override
     public int nFields()

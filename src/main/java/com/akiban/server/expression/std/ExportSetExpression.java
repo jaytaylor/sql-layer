@@ -84,6 +84,11 @@ public class ExportSetExpression extends AbstractCompositeExpression
         
     };
 
+    @Override
+    public String name() {
+        return "EXPORT_SET";
+    }
+
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
         private static final BigInteger MASK = new BigInteger("ffffffffffffffff", 16);
@@ -141,7 +146,7 @@ public class ExportSetExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("EXPORT_SET");
+        sb.append(name());
     }
 
     @Override
