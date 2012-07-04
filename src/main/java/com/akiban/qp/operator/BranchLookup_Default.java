@@ -30,6 +30,14 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.qp.rowtype.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -42,6 +50,7 @@ import java.util.List;
 import java.util.Set;
 
 import static java.lang.Math.min;
+import java.math.BigDecimal;
 
 /**
 
@@ -292,6 +301,14 @@ public class BranchLookup_Default extends Operator
     private final UserTable commonAncestor;
     private final int branchRootOrdinal;
     private final Limit limit;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        OperationExplainer ex = new LookUpOperatorExplainer("Branch Lookup Default", groupTable, inputRowType, keepInput, inputOperator);        
+        ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
+        return ex;
+    }
 
     private class Execution extends OperatorExecutionBase implements Cursor
     {

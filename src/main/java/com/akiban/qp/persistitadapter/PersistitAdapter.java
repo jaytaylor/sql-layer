@@ -48,6 +48,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
+import com.akiban.server.store.Store;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
@@ -118,7 +119,7 @@ public class PersistitAdapter extends StoreAdapter
         RowData newRowData = rowData(rowDef, newRow);
         int oldStep = enterUpdateStep();
         try {
-            persistit.updateRow(getSession(), oldRowData, newRowData, null);
+            store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
@@ -133,7 +134,7 @@ public class PersistitAdapter extends StoreAdapter
         RowData newRowData = rowData (rowDef, newRow);
         int oldStep = enterUpdateStep();
         try {
-            persistit.writeRow(getSession(), newRowData);
+            store.writeRow(getSession(), newRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
@@ -149,7 +150,7 @@ public class PersistitAdapter extends StoreAdapter
         RowData oldRowData = rowData(rowDef, oldRow);
         int oldStep = enterUpdateStep();
         try {
-            persistit.deleteRow(getSession(), oldRowData);
+            store.deleteRow(getSession(), oldRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
             assert false;
@@ -267,7 +268,7 @@ public class PersistitAdapter extends StoreAdapter
     {
         Transaction transaction = transaction();
         int step = transaction.getStep();
-        if (step > 0)
+        if (step > 0 && withStepChanging)
             transaction.incrementStep();
         return step;
     }
@@ -277,18 +278,33 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     public PersistitAdapter(Schema schema,
-                            PersistitStore persistit,
+                            Store store,
                             TreeService treeService,
                             Session session,
                             ConfigurationService config)
     {
+        this(schema, store, treeService, session, config, true);
+    }
+
+    public PersistitAdapter(Schema schema,
+                            Store store,
+                            TreeService treeService,
+                            Session session,
+                            ConfigurationService config,
+                            boolean withStepChanging)
+    {
         super(schema, session, config);
-        this.persistit = persistit;
+        this.store = store;
+        this.persistit = store.getPersistitStore();
+        assert this.persistit != null : store;
         this.treeService = treeService;
+        this.withStepChanging = withStepChanging;
     }
     
     // Object state
 
     private final TreeService treeService;
+    private final Store store;
     private final PersistitStore persistit;
+    private final boolean withStepChanging;
 }

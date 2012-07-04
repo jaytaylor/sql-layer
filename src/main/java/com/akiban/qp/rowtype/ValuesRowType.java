@@ -27,6 +27,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 
 import java.util.Arrays;
 
@@ -39,7 +40,6 @@ public class ValuesRowType extends DerivedRowType
     {
         return "values(" + Arrays.toString(types) + ')';
     }
-
 
     // RowType interface
 
@@ -54,15 +54,22 @@ public class ValuesRowType extends DerivedRowType
         return types[index];
     }
 
+    @Override
+    public TInstance typeInstanceAt(int index) {
+        return tInstances[index];
+    }
+
     // ValuesRowType interface
 
     public ValuesRowType(DerivedTypesSchema schema, int typeId, AkType... types)
     {
         super(schema, typeId);
         this.types = types;
+        this.tInstances = null;
     }
 
     // Object state
 
     private final AkType[] types;
+    private final TInstance[] tInstances;
 }

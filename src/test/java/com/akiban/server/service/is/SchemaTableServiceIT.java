@@ -40,6 +40,9 @@ import com.akiban.server.service.servicemanager.GuicedServiceManager;
 
 import com.akiban.server.test.it.ITBase;
 
+import com.akiban.server.service.config.Property;
+import java.util.Collection;
+
 public final class SchemaTableServiceIT extends ITBase {
 
     @Override

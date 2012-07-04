@@ -32,6 +32,12 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
+import java.util.List;
 
 public final class VariableExpression implements Expression {
 
@@ -80,12 +86,26 @@ public final class VariableExpression implements Expression {
     private final int position;
 
     @Override
+    public String name()
+    {
+        return "VARIABLE";
+    }
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Explainer ex = new ExpressionExplainer(Type.FUNCTION, name(), (List)null);
+        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(position));
+        return ex;
+    }
+
     public boolean nullIsContaminating()
     {
         return true;
     }
 
-   private static class InnerEvaluation extends ExpressionEvaluation.Base {
+    private static class InnerEvaluation extends ExpressionEvaluation.Base {
+
         @Override
         public void of(Row row) {
         }

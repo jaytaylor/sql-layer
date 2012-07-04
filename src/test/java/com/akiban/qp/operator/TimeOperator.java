@@ -28,6 +28,7 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.optimizer.explain.Explainer;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -87,6 +88,11 @@ public class TimeOperator extends Operator
 
     private final Operator inputOperator;
     private long elapsedNsec = 0;
+
+    @Override
+    public Explainer getExplainer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

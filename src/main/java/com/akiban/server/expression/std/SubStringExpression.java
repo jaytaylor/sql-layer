@@ -72,6 +72,12 @@ public class SubStringExpression extends AbstractCompositeExpression
     
     @Scalar("substr")
     public final static ExpressionComposer COMPOSER_ALIAS = COMPOSER;
+
+    @Override
+    public String name()
+    {
+        return "SUBSTRING";
+    }
     
     private static final class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -158,7 +164,7 @@ public class SubStringExpression extends AbstractCompositeExpression
         if (children.size() > 3 || children.size() < 2)
             throw new WrongExpressionArityException(3, children.size());        
     }
-
+    
     @Override
     protected void describe(StringBuilder sb) 
     {

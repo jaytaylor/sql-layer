@@ -40,6 +40,8 @@ import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 
 import java.util.*;
 
@@ -66,18 +68,27 @@ public class API
     // Project
 
     public static Operator project_Default(Operator inputOperator,
-                                                   RowType rowType,
-                                                   List<Expression> projections)
+                                           RowType rowType,
+                                           List<Expression> projections)
     {
-        return new Project_Default(inputOperator, rowType, projections);
+        return new Project_Default(inputOperator, rowType, projections, null);
+    }
+
+    public static Operator project_Default(Operator inputOperator,
+                                                   RowType rowType,
+                                                   List<Expression> projections,
+                                                   List<? extends TPreparedExpression> pExpressions)
+    {
+        return new Project_Default(inputOperator, rowType, projections, pExpressions);
     }
     
     public static Operator project_Table(Operator inputOperator,
                                                  RowType inputRowType,
                                                  RowType outputRowType,
-                                                 List<Expression> projections)
+                                                 List<Expression> projections,
+                                                 List<? extends TPreparedExpression> pExpressions)
     {
-        return new Project_Default (inputOperator, inputRowType, outputRowType, projections);
+        return new Project_Default (inputOperator, inputRowType, outputRowType, projections, pExpressions);
     }
     // Flatten
 
@@ -196,16 +207,30 @@ public class API
 
     public static Operator limit_Default(Operator inputOperator, int limitRows)
     {
-        return new Limit_Default(inputOperator, limitRows);
+        return limit_Default(inputOperator, limitRows, Types3Switch.ON);
     }
 
+    public static Operator limit_Default(Operator inputOperator, int limitRows, boolean usePVals)
+    {
+        return new Limit_Default(inputOperator, limitRows, usePVals);
+    }
+
+    public static Operator limit_Default(Operator inputOperator,
+                                         int skipRows,
+                                         boolean skipIsBinding,
+                                         int limitRows,
+                                         boolean limitIsBinding)
+    {
+        return limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding, Types3Switch.ON);
+    }
     public static Operator limit_Default(Operator inputOperator,
                                                  int skipRows,
                                                  boolean skipIsBinding,
                                                  int limitRows,
-                                                 boolean limitIsBinding)
+                                                 boolean limitIsBinding,
+                                                 boolean usePVals)
     {
-        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding);
+        return new Limit_Default(inputOperator, skipRows, skipIsBinding, limitRows, limitIsBinding, usePVals);
     }
 
     // AncestorLookup
@@ -425,10 +450,14 @@ public class API
     }
 
     // Distinct
-
     public static Operator distinct_Partial(Operator input, RowType distinctType)
     {
-        return new Distinct_Partial(input, distinctType);
+        return new Distinct_Partial(input, distinctType, Types3Switch.ON);
+    }
+
+    public static Operator distinct_Partial(Operator input, RowType distinctType, boolean usePValues)
+    {
+        return new Distinct_Partial(input, distinctType, usePValues);
     }
 
     // Map
@@ -459,13 +488,28 @@ public class API
     // Intersect
     
     /** deprecated */
+
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
+                                             IndexRowType leftRowType, IndexRowType rightRowType,
+                                             int leftOrderingFields,
+                                             int rightOrderingFields,
+                                             int comparisonFields,
+                                             JoinType joinType,
+                                             IntersectOption intersectOutput)
+    {
+        return intersect_Ordered(leftInput, rightInput,  leftRowType, rightRowType,
+                leftOrderingFields, rightOrderingFields, comparisonFields, joinType, intersectOutput,
+                Types3Switch.ON);
+    }
+
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                             IndexRowType leftRowType, IndexRowType rightRowType,
                                             int leftOrderingFields,
                                             int rightOrderingFields,
                                             int comparisonFields,
                                             JoinType joinType,
-                                            IntersectOption intersectOutput)
+                                            IntersectOption intersectOutput,
+                                            boolean usePValues)
     {
         if (comparisonFields < 0) {
             throw new IllegalArgumentException();
@@ -478,16 +522,36 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     EnumSet.of(intersectOutput));
+                                     EnumSet.of(intersectOutput),
+                                     usePValues);
     }
-    
+
+    public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
+                                             IndexRowType leftRowType, IndexRowType rightRowType,
+                                             int leftOrderingFields,
+                                             int rightOrderingFields,
+                                             boolean[] ascending,
+                                             JoinType joinType,
+                                             EnumSet<IntersectOption> intersectOptions)
+    {
+        return new Intersect_Ordered(leftInput, rightInput,
+                leftRowType, rightRowType,
+                leftOrderingFields,
+                rightOrderingFields,
+                ascending,
+                joinType,
+                intersectOptions,
+                Types3Switch.ON);
+    }
+
     public static Operator intersect_Ordered(Operator leftInput, Operator rightInput,
                                             IndexRowType leftRowType, IndexRowType rightRowType,
                                             int leftOrderingFields,
                                             int rightOrderingFields,
                                             boolean[] ascending,
                                             JoinType joinType,
-                                            EnumSet<IntersectOption> intersectOptions)
+                                            EnumSet<IntersectOption> intersectOptions,
+                                            boolean usePValues)
     {
         return new Intersect_Ordered(leftInput, rightInput,
                                      leftRowType, rightRowType,
@@ -495,22 +559,39 @@ public class API
                                      rightOrderingFields,
                                      ascending,
                                      joinType,
-                                     intersectOptions);
+                                     intersectOptions,
+                                     usePValues);
     }
     
     // Union
 
     public static Operator union_Ordered(Operator leftInput, Operator rightInput,
+                                         IndexRowType leftRowType, IndexRowType rightRowType,
+                                         int leftOrderingFields,
+                                         int rightOrderingFields,
+                                         boolean[] ascending)
+    {
+        return new Union_Ordered(leftInput, rightInput,
+                leftRowType, rightRowType,
+                leftOrderingFields,
+                rightOrderingFields,
+                ascending,
+                Types3Switch.ON);
+    }
+
+    public static Operator union_Ordered(Operator leftInput, Operator rightInput,
                                           IndexRowType leftRowType, IndexRowType rightRowType,
                                           int leftOrderingFields,
                                           int rightOrderingFields,
-                                          boolean[] ascending)
+                                          boolean[] ascending,
+                                          boolean usePValues)
     {
         return new Union_Ordered(leftInput, rightInput,
                                  leftRowType, rightRowType,
                                  leftOrderingFields,
                                  rightOrderingFields,
-                                 ascending);
+                                 ascending,
+                                 usePValues);
     }
 
     // HKeyUnion
@@ -537,10 +618,26 @@ public class API
                                              Operator streamInput)
     {
         return new Using_BloomFilter(filterInput,
+                filterRowType,
+                estimatedRowCount,
+                filterBindingPosition,
+                streamInput,
+                Types3Switch.ON);
+    }
+
+    public static Operator using_BloomFilter(Operator filterInput,
+                                             RowType filterRowType,
+                                             long estimatedRowCount,
+                                             int filterBindingPosition,
+                                             Operator streamInput,
+                                             boolean usePValues)
+    {
+        return new Using_BloomFilter(filterInput,
                                      filterRowType,
                                      estimatedRowCount,
                                      filterBindingPosition,
-                                     streamInput);
+                                     streamInput,
+                                     usePValues);
     }
 
     // Select_BloomFilter

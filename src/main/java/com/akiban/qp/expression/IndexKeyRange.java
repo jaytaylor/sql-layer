@@ -92,7 +92,7 @@ public class IndexKeyRange
      */
     public static IndexKeyRange unbounded(IndexRowType indexRowType)
     {
-        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType), ConstantColumnSelector.ALL_OFF);
+        IndexBound unbounded = new IndexBound(new ValuesHolderRow(indexRowType, false), ConstantColumnSelector.ALL_OFF);
         return new IndexKeyRange(indexRowType, unbounded, false, unbounded, false, false);
     }
 

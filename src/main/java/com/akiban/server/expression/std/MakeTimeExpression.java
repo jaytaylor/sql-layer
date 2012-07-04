@@ -68,6 +68,11 @@ public class MakeTimeExpression extends AbstractTernaryExpression
         }
         
     };
+
+    @Override
+    public String name() {
+        return "MAKETIME";
+    }
     
     private static final class InnerEvaluation extends AbstractThreeArgExpressionEvaluation
     {
@@ -116,7 +121,7 @@ public class MakeTimeExpression extends AbstractTernaryExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("MAKETIME");
+        sb.append(name());
     }
 
     @Override

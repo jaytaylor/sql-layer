@@ -402,7 +402,7 @@ public class ApiTestBase {
     }
 
     protected final PersistitAdapter persistitAdapter(Schema schema) {
-        return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
+        return new PersistitAdapter(schema, store(), treeService(), session(), configService());
     }
 
     protected final QueryContext queryContext(PersistitAdapter adapter) {

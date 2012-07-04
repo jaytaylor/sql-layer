@@ -115,8 +115,10 @@ public enum ErrorCode {
     SUBQUERY_TOO_MANY_ROWS  ("21", "000", Importance.DEBUG, SubqueryTooManyRowsException.class),
     // Class 22 - data exception
         // SubClass 001 - string data, right truncation
+    STRING_TRUNCATION       ("22", "001", Importance.DEBUG, StringTruncationException.class),
         // SubClass 002 - null value, no indicator parameter 
         // SubClass 003 - numeric value out of range
+    VALUE_OUT_OF_RANGE      ("22", "003", Importance.DEBUG, OutOfRangeException.class),
         // SubClass 004 - null value not allowed
         // SubClass 005 - error in assignment
         // SubClass 006 - invalid interval format

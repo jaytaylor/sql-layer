@@ -30,6 +30,8 @@ import com.akiban.qp.row.ProductRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.ProductRowType;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.std.NestedLoopsExplainer;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -120,6 +122,12 @@ class Product_NestedLoops extends Operator
         return String.format("%s(%s x %s)", getClass().getSimpleName(), outerType, innerType);
     }
 
+    @Override
+    public Explainer getExplainer()
+    {
+        return new NestedLoopsExplainer("PRODUCT NESTED LOOPS", innerInputOperator, outerInputOperator, innerType, outerType);
+    }
+    
     // Operator interface
 
     @Override

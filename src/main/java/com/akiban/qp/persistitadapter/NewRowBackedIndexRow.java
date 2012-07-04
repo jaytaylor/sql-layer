@@ -37,6 +37,8 @@ import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
 
 public class NewRowBackedIndexRow implements RowBase
 {
@@ -112,6 +114,11 @@ public class NewRowBackedIndexRow implements RowBase
     public Row subRow(RowType subRowType)
     {
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public PValueSource pvalue(int index) {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     // Object state
