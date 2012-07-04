@@ -42,7 +42,6 @@ import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
-import com.akiban.sql.pg.PostgresServerManager;
 import com.akiban.sql.pg.PostgresService;
 import com.google.inject.Inject;
 
@@ -117,12 +116,13 @@ public class ServerSchemaTablesServiceImpl
                 if (rowCounter != 0) {
                     return null;
                 }
-                if (manager.getServer() == null) return null;
+                long startTime = System.currentTimeMillis() -  
+                        (manager.getServer().getUptime() / 1000000);
                 ValuesRow row = new ValuesRow (rowType,
                         manager.getServer().isListening() ? "RUNNING" : "CLOSED",
-                        manager.getServer().getStartTime(),
+                        startTime,
                         ++rowCounter);
-                ((FromObjectValueSource)row.eval(1)).setExplicitly(manager.getServer().getStartTime()/1000000, AkType.TIMESTAMP);
+                ((FromObjectValueSource)row.eval(1)).setExplicitly(startTime/1000, AkType.TIMESTAMP);
                 return row;
             }
         }
