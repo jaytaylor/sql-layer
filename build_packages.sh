@@ -85,7 +85,7 @@ elif [ ${platform} == "macosx" ]; then
     # update disk image
     mkdir $inst_temp
     hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
-    ditto "$mac_app" $inst_temp/Akiban Server.app
+    ditto "$mac_app" "$inst_temp/Akiban Server.app"
     cp macosx/dmg.DS_Store $inst_temp/.DS_Store
     cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns    
     SetFile -a C $inst_temp
