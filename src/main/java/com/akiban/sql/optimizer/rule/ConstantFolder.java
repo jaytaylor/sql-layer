@@ -63,7 +63,7 @@ public class ConstantFolder extends BaseRule
 
     static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
         private final PlanContext planContext;
-        private final ExpressionAssembler expressionAssembler;
+        private final OldExpressionAssembler expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
         private Set<AggregateSource> changedAggregates = null;
         private enum State { FOLDING, AGGREGATES };
@@ -74,7 +74,7 @@ public class ConstantFolder extends BaseRule
 
         public Folder(PlanContext planContext) {
             this.planContext = planContext;
-            this.expressionAssembler = new ExpressionAssembler(planContext.getRulesContext());
+            this.expressionAssembler = new OldExpressionAssembler(planContext.getRulesContext());
         }
 
         /** Return <code>true</code> if substantial enough changes were made that

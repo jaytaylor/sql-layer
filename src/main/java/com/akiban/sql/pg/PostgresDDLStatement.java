@@ -87,7 +87,7 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         AkibanInformationSchema ais = server.getAIS();
         String schema = server.getDefaultSchemaName();

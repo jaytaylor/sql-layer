@@ -30,6 +30,7 @@ import com.akiban.server.AkServerUtil;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.ArgumentValidation;
 import java.math.BigInteger;
 
@@ -58,6 +59,11 @@ public final class RowDataPValueTarget implements PValueTarget {
     // ValueTarget interface
 
     @Override
+    public boolean supportsCachedObjects() {
+        return false;
+    }
+
+    @Override
     public void putNull() {
         setNullBit();
         recordEncoded(0);
@@ -75,12 +81,14 @@ public final class RowDataPValueTarget implements PValueTarget {
     
     @Override
     public PUnderlying getUnderlyingType() {
-        return fieldDef.column().tInstance().typeClass().underlyingType();
+        // STRING should actually be interpreted as BYTES
+        PUnderlying underlying = fieldDef.column().tInstance().typeClass().underlyingType();
+        return underlying == PUnderlying.STRING ? PUnderlying.BYTES : underlying;
     }
 
     @Override
     public void putValueSource(PValueSource source) {
-        throw new UnsupportedOperationException();
+        PValueTargets.copyFrom(source, this);
     }
 
     @Override
@@ -90,22 +98,22 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putInt8(byte value) {
-        throw new UnsupportedOperationException();
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putInt16(short value) {
-        throw new UnsupportedOperationException();
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putUInt16(char value) {
-        throw new UnsupportedOperationException();
+        recordEncoded(encodeLong(value));
     }
 
     @Override
     public void putInt32(int value) {
-        recordEncoded(encodeInt(value));
+        recordEncoded(encodeLong(value));
     }
 
     @Override
@@ -115,7 +123,13 @@ public final class RowDataPValueTarget implements PValueTarget {
 
     @Override
     public void putBytes(byte[] value) {
-        throw new UnsupportedOperationException();
+        recordEncoded(ConversionHelper.putByteArray(value, 0, value.length, bytes, offset, fieldDef));
+    }
+
+    @Override
+    public void putString(String value) {
+        throw new AssertionError("should be targeted to bytes instead");
+//        recordEncoded(ConversionHelper.encodeString(value, bytes, offset, fieldDef));
     }
 
     @Override
@@ -144,10 +158,6 @@ public final class RowDataPValueTarget implements PValueTarget {
     private int encodeLong(long value) {
         int width = fieldDef.getMaxStorageSize();
         return AkServerUtil.putIntegerByWidth(bytes, offset, width, value);
-    }
-
-    private boolean encodableAsLong(BigInteger value) {
-        return value.compareTo(MAX_BIGINT) <= 0;
     }
 
     private void setNullBit() {

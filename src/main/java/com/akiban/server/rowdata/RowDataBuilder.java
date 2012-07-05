@@ -28,11 +28,18 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSources.ValueSourceConverter;
+
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 
 public final class RowDataBuilder {
 
@@ -155,14 +162,14 @@ public final class RowDataBuilder {
                 }
             } else if (fieldDef.isFixedSize()) {
                 pTarget.bind(fieldDef, bytes, fixedWidthSectionOffset);
-                doConvert(source);
+                doConvertP(source);
                 if (pTarget.lastEncodedLength() != currFixedWidth) {
                     throw new IllegalStateException("expected to write " + currFixedWidth
                             + " fixed-width byte(s), but wrote " + pTarget.lastEncodedLength());
                 }
             } else {
                 pTarget.bind(fieldDef, bytes, variableWidthSectionOffset);
-                doConvert(source);
+                doConvertP(source);
                 int varWidthExpected = readVarWidth(bytes, currFixedWidth);
                 // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
                 // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
@@ -272,6 +279,14 @@ public final class RowDataBuilder {
         }
     }
 
+    private void doConvertP(ValueSource source) {
+        try {
+            converter.convert(rowDef.getFieldDef(fieldIndex), source, pTarget);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
+        }
+    }
+
     private void nullRemainingAllocations() {
         int fieldsCount = rowDef.getFieldCount();
         while ( fieldIndex < fieldsCount) {
@@ -308,4 +323,37 @@ public final class RowDataBuilder {
             }
         }
     }
+
+    private static final ValueSourceConverter<FieldDef> converter = new ValueSourceConverter<FieldDef>() {
+
+        @Override
+        protected ValueSource tweakSource(FieldDef fieldDef, ValueSource source) {
+            AkType shouldBe = fieldDef.column().getType().akType();
+            if (shouldBe != source.getConversionType()) {
+                ValueHolder holder = new ValueHolder();
+                holder.expectType(shouldBe);
+                Converters.convert(source, holder);
+                source = holder;
+            }
+            return source;
+        }
+
+        @Override
+        protected Object handleBigDecimal(FieldDef fieldDef, BigDecimal bigDecimal) {
+            int size = fieldDef.getEncoding().widthFromObject(fieldDef, bigDecimal);
+            byte[] bval = new byte[size];
+            ConversionHelperBigDecimal.fromObject(fieldDef, bigDecimal, bval, 0);
+            return bval;
+        }
+
+        @Override
+        protected Object handleString(FieldDef fieldDef, String string) {
+            String charset = fieldDef.column().getCharsetAndCollation().charset();
+            try {
+                return string.getBytes(charset);
+            } catch (UnsupportedEncodingException e) {
+                throw new AkibanInternalException("while decoding with charset " + charset, e);
+            }
+        }
+    };
 }

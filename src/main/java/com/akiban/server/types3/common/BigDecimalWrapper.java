@@ -48,4 +48,6 @@ public interface BigDecimalWrapper {
      int getPrecision();
      int getSign();
      void reset();
+
+    BigDecimal asBigDecimal();
 }

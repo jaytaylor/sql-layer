@@ -35,6 +35,10 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
 
     private BigDecimal value;
 
+    public MBigDecimalWrapper(BigDecimal value) {
+        this.value = value;
+    }
+
     public MBigDecimalWrapper(String num)
     {
         value = new BigDecimal(num);
@@ -168,6 +172,11 @@ public class MBigDecimalWrapper implements BigDecimalWrapper {
     {
         value = value.negate();
         return this;
+    }
+
+    @Override
+    public BigDecimal asBigDecimal() {
+        return value;
     }
 }
 

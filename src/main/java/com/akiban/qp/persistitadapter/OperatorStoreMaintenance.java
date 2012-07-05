@@ -81,7 +81,7 @@ final class OperatorStoreMaintenance {
                 source.bind((FieldDef)col.getFieldDef(), forRow);
                 
                 // New types
-                if (Types3Switch.ON) context.setValue(bindingsIndex, pSource);
+                if (Types3Switch.ON) context.setPValue(bindingsIndex, pSource);
                 else context.setValue(bindingsIndex, source);
             }
             cursor = API.cursor(planOperator, context);

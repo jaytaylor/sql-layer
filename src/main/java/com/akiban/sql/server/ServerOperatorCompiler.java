@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.optimizer.OperatorCompiler;
 import com.akiban.sql.optimizer.rule.BaseRule;
 import com.akiban.sql.parser.DMLStatementNode;
@@ -46,7 +47,8 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
         if (Boolean.parseBoolean(server.getProperty("cbo", "true"))) {
-            initCostEstimator(server.costEstimator(this), Boolean.parseBoolean(server.getProperty("newtypes", "false")));
+            boolean usePValues = Types3Switch.ON || Boolean.parseBoolean(server.getProperty("newtypes", "false"));
+            initCostEstimator(server.costEstimator(this), usePValues);
 
         }
         else

@@ -157,7 +157,7 @@ public class SparseArray<T> {
     }
 
     public SparseArray(int initialCapacity) {
-        internalArray = new Object[initialCapacity+1];
+        internalArray = new Object[initialCapacity];
         definedElements = new BitSet(initialCapacity);
     }
     

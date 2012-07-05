@@ -49,6 +49,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.RowCollector;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.GrowableByteBuffer;
 import com.akiban.util.ShareHolder;
 import org.slf4j.Logger;
@@ -299,9 +300,9 @@ public abstract class OperatorBasedRowCollector implements RowCollector
             plan = groupScan_Default(groupTable);
             if (scanLimit != ScanLimit.NONE) {
                 if (scanLimit instanceof FixedCountLimit) {
-                    plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit());
+                    plan = limit_Default(plan, ((FixedCountLimit) scanLimit).getLimit(), usePVals);
                 } else if (scanLimit instanceof PredicateLimit) {
-                    plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit());
+                    plan = limit_Default(plan, ((PredicateLimit) scanLimit).getLimit(), usePVals);
                 }
             }
         }
@@ -430,6 +431,7 @@ public abstract class OperatorBasedRowCollector implements RowCollector
     private int rowCount = 0;
     private ShareHolder<Row> currentRow = new ShareHolder<Row>();
     private boolean closed = true; // Not false, so that initial call to hasMore, prior to open, will proceed to call open.
+    private boolean usePVals = Types3Switch.ON;
 
 //    // inner class
 //    static class OpenInfoStruct {

@@ -199,12 +199,12 @@ public class GroupIndexIT extends ITBase {
     @Test
     public void createACWithExistingData() throws Exception {
         writeRows(createNewRow(cId, 1, "bob"),
-                    createNewRow(aId, 3, 1, 123),
+                    createNewRow(aId, 3, 1, "123"),
                   createNewRow(cId, 2, "jill"),
-                    createNewRow(aId, 1, 2, 875),
+                    createNewRow(aId, 1, 2, "875"),
                   createNewRow(cId, 3, "foo"),
                   createNewRow(cId, 4, "bar"),
-                    createNewRow(aId, 2, 4, 23));
+                    createNewRow(aId, 2, 4, "23"));
 
         GroupIndex aAddr_cID = createGroupIndex(groupName, "aAddr_cID", "a.addr, c.id");
         expectIndexContents(aAddr_cID,

@@ -119,7 +119,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         int nrows = 0;
@@ -128,7 +128,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             nrows = odbcLoTypeQuery(messenger, maxrows);
             break;
         case SEQUEL_B_TYPE_QUERY:
-            nrows = sequelBTypeQuery(messenger, maxrows);
+            nrows = sequelBTypeQuery(messenger, maxrows, usePVals);
             break;
         }
         {        
@@ -143,7 +143,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return 0;
     }
 
-    private int sequelBTypeQuery(PostgresMessenger messenger, int maxrows) throws IOException {
+    private int sequelBTypeQuery(PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
     	for (PostgresType.TypeOid pgtype : PostgresType.TypeOid.values()) {
@@ -151,7 +151,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(2); // 2 columns for this query
                 ByteArrayOutputStream bytes;
-                if (Types3Switch.ON) bytes = encoder.encodePObject(pgtype.getOid(), OID_PG_TYPE, false);
+                if (usePVals) bytes = encoder.encodePObject(pgtype.getOid(), OID_PG_TYPE, false);
                 else bytes = encoder.encodeObject(pgtype.getOid(), OID_PG_TYPE, false);
                 if (bytes == null) {
                     messenger.writeInt(-1);
@@ -159,7 +159,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                     messenger.writeInt(bytes.size());
                     messenger.writeByteStream(bytes);
                 }
-                if (Types3Switch.ON) bytes = encoder.encodePObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
+                if (usePVals) bytes = encoder.encodePObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
                 else bytes = encoder.encodeObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
                 if (bytes == null) {
                     messenger.writeInt(-1);

@@ -39,7 +39,6 @@ import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
-import java.math.BigDecimal;
 import java.util.Collections;
 import java.util.List;
 

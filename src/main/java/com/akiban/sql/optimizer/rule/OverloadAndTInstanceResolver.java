@@ -342,8 +342,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     if (ovalue instanceof String) {
                         assert AkString.VARCHAR.equals(instance.typeClass()) : instance;
                         pvalue.putObject(ovalue);
-                        assert false : "cacher needed";
-                        pvalue.setCacher(null); // TODO
                     }
                     break;
                 }

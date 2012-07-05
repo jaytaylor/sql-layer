@@ -138,6 +138,11 @@ public class PersistitKeyPValueSource implements PValueSource {
     }
 
     @Override
+    public String getString() {
+        return decode().getString();
+    }
+
+    @Override
     public Object getObject() {
         return decode().getObject();
     }
@@ -161,6 +166,7 @@ public class PersistitKeyPValueSource implements PValueSource {
                     case FLOAT:     output.putFloat(key.decodeFloat());         break;
                     case DOUBLE:    output.putDouble(key.decodeDouble());       break;
                     case BYTES:     output.putBytes(key.decodeByteArray());     break;
+                    case STRING:    output.putString(key.decodeString());       break;
                     default: throw new UnsupportedOperationException(pUnderlying.name());
                 }
             }

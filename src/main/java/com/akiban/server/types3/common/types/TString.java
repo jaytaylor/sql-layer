@@ -53,7 +53,7 @@ public abstract class TString extends TClass
                 1,
                 1,
                 serialisationSize,
-                PUnderlying.BYTES);
+                PUnderlying.STRING);
         this.fixedLength = fixedLength;
         this.typeId = typeId;
     }
