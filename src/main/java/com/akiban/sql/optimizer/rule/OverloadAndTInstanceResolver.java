@@ -45,6 +45,7 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AnyCondition;
@@ -317,35 +318,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
-            // TODO temporary bridge between AkType world and types3 world
-            TInstance instance = tinst(expression.getSQLtype());
-            Object ovalue = expression.getValue();
-            PValue pvalue = new PValue(instance.typeClass().underlyingType());
-            if (ovalue == null) {
-                pvalue.putNull();
-            }
-            else {
-                switch (expression.getAkType().underlyingType()) {
-                case BOOLEAN_AKTYPE:
-                    pvalue.putBool((Boolean)ovalue);
-                    break;
-                case LONG_AKTYPE:
-                    pvalue.putInt64((Long)ovalue);
-                    break;
-                case FLOAT_AKTYPE:
-                    pvalue.putFloat((Float)ovalue);
-                    break;
-                case DOUBLE_AKTYPE:
-                    pvalue.putDouble((Double)ovalue);
-                    break;
-                case OBJECT_AKTYPE:
-                    if (ovalue instanceof String) {
-                        assert AkString.VARCHAR.equals(instance.typeClass()) : instance;
-                        pvalue.putObject(ovalue);
-                    }
-                    break;
-                }
-            }
+            TPreptimeValue preptimeValue = PValueSources.fromObject(expression.getValue());
+            expression.setPreptimeValue(preptimeValue);
             return expression;
         }
 
