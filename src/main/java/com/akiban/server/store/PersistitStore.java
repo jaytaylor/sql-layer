@@ -26,65 +26,36 @@
 
 package com.akiban.server.store;
 
-import java.rmi.RemoteException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.BitSet;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
 import com.akiban.ais.model.*;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.server.*;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.rowdata.CorruptRowDataException;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.IndexDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.tree.TreeLink;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.persistit.exception.PersistitInterruptedException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
-import com.akiban.server.error.CursorCloseBadException;
-import com.akiban.server.error.CursorIsUnknownException;
-import com.akiban.server.error.DisplayFilterSetException;
-import com.akiban.server.error.DuplicateKeyException;
-import com.akiban.server.error.InvalidOperationException;
-import com.akiban.server.error.NoSuchRowException;
-import com.akiban.server.error.PersistitAdapterException;
-import com.akiban.server.error.RowDataCorruptionException;
+import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.error.*;
+import com.akiban.server.rowdata.*;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
-import com.persistit.Exchange;
-import com.persistit.Key;
-import com.persistit.KeyFilter;
-import com.persistit.KeyState;
+import com.persistit.*;
 import com.persistit.Management.DisplayFilter;
-import com.persistit.Persistit;
-import com.persistit.Tree;
-import com.persistit.Value;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.exception.RollbackException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.rmi.RemoteException;
+import java.util.*;
 
 public class PersistitStore implements Store {
 
@@ -330,19 +301,19 @@ public class PersistitStore implements Store {
         }
     }
 
-    public static void constructIndexKey(PersistitKeyAppender iKeyAppender, RowData rowData, Index index, Key hKey)
+    private static void constructIndexRow(Key targetKey, RowData rowData, Index index, Key hKey)
     {
         assert index.isTableIndex() : index;
+        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(targetKey);
         IndexRowComposition indexRowComp = index.indexRowComposition();
-        iKeyAppender.key().clear();
         for(int indexPos = 0; indexPos < indexRowComp.getLength(); ++indexPos) {
             if(indexRowComp.isInRowData(indexPos)) {
                 int fieldPos = indexRowComp.getFieldPosition(indexPos);
                 RowDef rowDef = index.indexDef().getRowDef();
-                iKeyAppender.append(rowDef.getFieldDef(fieldPos), rowData);
+                indexRow.append(rowDef.getFieldDef(fieldPos), rowData);
             }
             else if(indexRowComp.isInHKey(indexPos)) {
-                appendKeyFieldFromKey(hKey, iKeyAppender.key(), indexRowComp.getHKeyPosition(indexPos));
+                indexRow.appendFieldFromKey(hKey, indexRowComp.getHKeyPosition(indexPos));
             }
             else {
                 throw new IllegalStateException("Invalid IndexRowComposition: " + indexRowComp);
@@ -350,35 +321,13 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void constructHKeyFromIndexKey(Key hKey, Key indexKey, IndexToHKey indexToHKey)
+    void constructParentPKIndexKey(PersistitKeyAppender iKeyAppender, final RowDef rowDef, final RowData rowData)
     {
-        hKey.clear();
-        for(int i = 0; i < indexToHKey.getLength(); ++i) {
-            if(indexToHKey.isOrdinal(i)) {
-                hKey.append(indexToHKey.getOrdinal(i));
-            }
-            else {
-                int depth = indexToHKey.getIndexRowPosition(i);
-                if (depth < 0 || depth > indexKey.getDepth()) {
-                    throw new IllegalStateException(
-                            "IndexKey too shallow - requires depth=" + depth
-                                    + ": " + indexKey);
-                }
-                appendKeyFieldFromKey(indexKey, hKey, depth);
-            }
-        }
-    }
-
-    void constructParentPKIndexKey(PersistitKeyAppender iKeyAppender, final RowDef rowDef, final RowData rowData) {
         iKeyAppender.key().clear();
-        appendKeyFields(iKeyAppender, rowDef, rowData, rowDef.getParentJoinFields());
-    }
-
-    void appendKeyFields(PersistitKeyAppender appender, final RowDef rowDef,
-            final RowData rowData, final int[] fields) {
+        int[] fields = rowDef.getParentJoinFields();
         for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
-            final FieldDef fieldDef = rowDef.getFieldDef(fields[fieldIndex]);
-            appender.append(fieldDef, rowData);
+            FieldDef fieldDef = rowDef.getFieldDef(fields[fieldIndex]);
+            iKeyAppender.append(fieldDef, rowData);
         }
     }
 
@@ -400,14 +349,6 @@ public class PersistitStore implements Store {
     @Override
     public RowDefCache getRowDefCache() {
         return rowDefCache;
-    }
-
-    private static <T> T errorIfNull(String description, T object) {
-        if (object == null) {
-            throw new NullPointerException(description
-                    + " is null; did you call startUp()?");
-        }
-        return object;
     }
 
     @Override
@@ -1079,7 +1020,7 @@ public class PersistitStore implements Store {
                          final Key hkey, final boolean deferIndexes) {
         checkNotGroupIndex(index);
         final Exchange iEx = getExchange(session, index);
-        constructIndexKey(new PersistitKeyAppender(iEx.getKey()), rowData, index, hkey);
+        constructIndexRow(iEx.getKey(), rowData, index, hkey);
 
         checkUniqueness(index, rowData, iEx);
 
@@ -1151,9 +1092,9 @@ public class PersistitStore implements Store {
             TABLE_INDEX_MAINTENANCE_TAP.in();
             try {
                 Exchange oldExchange = getExchange(session, index);
-                constructIndexKey(new PersistitKeyAppender(oldExchange.getKey()), oldRowData, index, hkey);
+                constructIndexRow(oldExchange.getKey(), oldRowData, index, hkey);
                 Exchange newExchange = getExchange(session, index);
-                constructIndexKey(new PersistitKeyAppender(newExchange.getKey()), newRowData, index, hkey);
+                constructIndexRow(newExchange.getKey(), newRowData, index, hkey);
 
                 checkUniqueness(index, newRowData, newExchange);
 
@@ -1175,7 +1116,7 @@ public class PersistitStore implements Store {
             throws PersistitException {
         checkNotGroupIndex(index);
         final Exchange iEx = getExchange(session, index);
-        constructIndexKey(new PersistitKeyAppender(iEx.getKey()), rowData, index, hkey);
+        constructIndexRow(iEx.getKey(), rowData, index, hkey);
         boolean removed = iEx.remove();
         releaseExchange(session, iEx);
     }

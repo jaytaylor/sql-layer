@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter;
 
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
+import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRow;
 import com.akiban.qp.persistitadapter.sort.IterationHelper;
 import com.akiban.qp.persistitadapter.sort.SortCursor;
 import com.akiban.qp.row.Row;

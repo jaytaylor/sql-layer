@@ -74,7 +74,7 @@ final class OperatorStoreMaintenance {
             for (int i=0; i < lookupCols.size(); ++i) {
                 int bindingsIndex = i+1;
                 Column col = lookupCols.get(i);
-                source.bind((FieldDef)col.getFieldDef(), forRow);
+                source.bind(col.getFieldDef(), forRow);
                 context.setValue(bindingsIndex, source);
             }
             cursor = API.cursor(planOperator, context);

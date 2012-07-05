@@ -32,7 +32,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.persistit.Key;
 
-class PersistitHKey implements HKey
+public class PersistitHKey implements HKey
 {
     // Object interface
 
@@ -150,9 +150,7 @@ class PersistitHKey implements HKey
         this.keyDepth = hKeyMetadata.keyDepth();
     }
 
-    // For use by this package
-
-    Key key()
+    public Key key()
     {
         return hKey;
     }

@@ -27,6 +27,7 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.Column;
+import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
@@ -64,6 +65,11 @@ public final class PersistitKeyAppender {
 
     public void appendNull() {
         target.expectingType(AkType.NULL).putNull();
+    }
+
+    public void appendFieldFromKey(Key fromKey, int depth)
+    {
+        PersistitKey.appendFieldFromKey(fromKey, depth, key);
     }
 
     public Key key() {
