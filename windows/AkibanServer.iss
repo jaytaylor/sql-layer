@@ -48,15 +48,20 @@ begin
 end;
 
 function ExpandKey(Key: String) : String;
+var
+  Value: String;
 begin
   if Key = 'datadir' then
-    Result := ExpandConstant('{commonappdata}\Akiban\data')
+    Value := '{commonappdata}\Akiban\data'
   else if Key = 'logdir' then
-    Result := ExpandConstant('{commonappdata}\Akiban\log')
+    Value := '{commonappdata}\Akiban\log'
   else if Key = 'tempdir' then
-    Result := ExpandConstant('{%TEMP}')
+    Value := '{%TEMP}'
   else
-    Result := ''
+    Value := ''
+  Value := ExpandConstant(Value);
+  StringChange(Value, '\', '/');
+  Result := Value;
 end;
 
 procedure EditFile(FileName: String);
