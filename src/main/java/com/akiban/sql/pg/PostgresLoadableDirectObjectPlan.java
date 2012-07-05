@@ -83,7 +83,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();
         Session session = server.getSession();
@@ -107,7 +107,7 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
                     messenger.flush();
                 }
                 else {
-                    outputter.output(row);
+                    outputter.output(row, usePVals);
                     nrows++;
                 }
                 if ((maxrows > 0) && (nrows >= maxrows))
@@ -119,12 +119,15 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
         }
         finally {
             if (cursor != null) {
-                cursor.destroy();
+                cursor.close();
             }
         }
         {        
             messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString("CALL " + nrows);
+            if (useCopy)
+                messenger.writeString("COPY"); // Make CopyManager happy.
+            else
+                messenger.writeString("CALL " + nrows);
             messenger.sendMessage();
         }
         return nrows;

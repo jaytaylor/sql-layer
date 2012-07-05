@@ -31,6 +31,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.AkServer;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.error.QueryTimedOutException;
+import com.akiban.sql.optimizer.explain.Explainer;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -206,6 +207,12 @@ public class QueryTimeoutIT extends OperatorITBase
         protected Cursor cursor(QueryContext context)
         {
             return new Execution(context);
+        }
+
+        @Override
+        public Explainer getExplainer()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
         }
 
         private class Execution extends OperatorExecutionBase implements Cursor

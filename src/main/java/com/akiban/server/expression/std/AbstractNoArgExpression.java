@@ -28,11 +28,21 @@ package com.akiban.server.expression.std;
 
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
+import java.util.List;
 
 public abstract class AbstractNoArgExpression implements Expression {
 
     // Expression interface
-
+    
+    @Override
+    public Explainer getExplainer ()
+    {
+        return new ExpressionExplainer(Type.FUNCTION, name(), (List)null);
+    }
+    
     @Override
     public boolean nullIsContaminating()
     {
@@ -60,8 +70,6 @@ public abstract class AbstractNoArgExpression implements Expression {
     }
 
     // for use by subclasses
-
-    protected abstract String name();
 
     protected AbstractNoArgExpression(AkType type) {
         this.type = type;

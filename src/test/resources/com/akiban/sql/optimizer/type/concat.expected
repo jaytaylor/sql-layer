@@ -29,7 +29,7 @@ resultSet:
 						com.akiban.sql.parser.ColumnReference@53797795
 						columnName: y
 						tableName: null
-						type: VARCHAR(7) CHARACTER SET latin1 COLLATE latin1_swedish_ci
+						type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
 						userData: t1.y from com.akiban.sql.parser.FromBaseTable@56acdd02
 				methodParms[1] :					
 					com.akiban.sql.parser.SQLToJavaValueNode@78e45b5e

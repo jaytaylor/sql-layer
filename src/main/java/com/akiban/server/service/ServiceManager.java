@@ -39,7 +39,11 @@ import com.akiban.server.store.SchemaManager;
 import com.akiban.server.store.Store;
 import com.akiban.sql.pg.PostgresService;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public interface ServiceManager {
+    static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
     void startServices() throws ServiceStartupException;
 

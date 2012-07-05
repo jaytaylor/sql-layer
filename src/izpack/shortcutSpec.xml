@@ -5,10 +5,10 @@
     <shortcut
         name="Akiban Server"
         target="$INSTALL_PATH\bin\akserver.cmd"
-        commandLine="run"
+        commandLine="window"
         workingDirectory="$INSTALL_PATH"
-        description="Run the server in a command window"
-        initialState="normal"
+        description="Run the server as an application"
+        initialState="noShow"
         programGroup="yes" >
         <createForPack name="Server" />
     </shortcut>

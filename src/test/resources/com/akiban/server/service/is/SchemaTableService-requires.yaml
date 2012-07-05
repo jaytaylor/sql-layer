@@ -1,0 +1,8 @@
+- require:
+    - com.akiban.server.service.stats.StatisticsService
+#   - com.akiban.sql.pg.PostgresService
+    - com.akiban.server.service.jmx.JmxRegistryService
+    - com.akiban.server.AkServerInterface               # Loads the AKSERVER JMX bean
+    - com.akiban.server.service.is.BasicInfoSchemaTablesService
+    - com.akiban.server.service.is.StorageSchemaTablesService
+    - com.akiban.server.service.is.ServerSchemaTablesService

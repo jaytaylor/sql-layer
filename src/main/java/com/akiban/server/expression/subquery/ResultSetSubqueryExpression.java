@@ -55,6 +55,11 @@ public final class ResultSetSubqueryExpression extends SubqueryExpression {
         return "RESULT_SET(" + subquery() + ")";
     }
 
+    @Override
+    public String name () {
+        return "RESULT_SET";
+    }
+    
     public ResultSetSubqueryExpression(Operator subquery,
                                        RowType outerRowType, RowType innerRowType, 
                                        int bindingPosition) {

@@ -33,11 +33,14 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.HKeyCache;
+import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -137,6 +140,14 @@ public abstract class PersistitIndexRow extends AbstractRow
         return keySource;
     }
 
+    @Override
+    public PValueSource pvalue(int i) {
+        PUnderlying underlying = rowType().typeInstanceAt(i).typeClass().underlyingType();
+        PersistitKeyPValueSource keySource = keyPSource(i, underlying);
+        keySource.attach(indexRow, i, underlying);
+        return keySource;
+    }
+
     // PersistitIndexRow interface
 
     public abstract IndexToHKey indexToHKey();
@@ -183,7 +194,6 @@ public abstract class PersistitIndexRow extends AbstractRow
         for (IndexColumn indexColumn : indexRowType.index().getAllColumns()) {
             this.akTypes[indexColumn.getPosition()] = indexColumn.getColumn().getType().akType();
         }
-        this.keySources = new PersistitKeyValueSource[indexRowType.nFields()];
         this.indexRow = adapter.persistit().getKey(adapter.getSession());
         this.leafmostTable = (UserTable) indexRowType.index().leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
@@ -193,18 +203,33 @@ public abstract class PersistitIndexRow extends AbstractRow
 
     private PersistitKeyValueSource keySource(int i)
     {
+        if (keySources == null)
+            keySources = new PersistitKeyValueSource[indexRowType.nFields()];
         if (keySources[i] == null) {
             keySources[i] = new PersistitKeyValueSource();
         }
         return keySources[i];
     }
 
+    private PersistitKeyPValueSource keyPSource(int i, PUnderlying underlying)
+    {
+        if (keyPSources == null)
+            keyPSources = new PersistitKeyPValueSource[indexRowType.nFields()];
+        if (keyPSources[i] == null) {
+            keyPSources[i] = new PersistitKeyPValueSource(underlying);
+        }
+        return keyPSources[i];
+    }
+
+
+
     // Object state
 
     protected final PersistitAdapter adapter;
     protected final IndexRowType indexRowType;
     protected AkType[] akTypes;
-    protected final PersistitKeyValueSource[] keySources;
+    protected PersistitKeyValueSource[] keySources;
+    protected PersistitKeyPValueSource[] keyPSources;
     protected final Key indexRow;
     protected final HKeyCache<PersistitHKey> hKeyCache;
     protected final UserTable leafmostTable;

@@ -30,6 +30,14 @@ import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
+import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.qp.rowtype.RowType;
+import com.akiban.qp.rowtype.UserTableRowType;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.std.LookUpOperatorExplainer;
 import com.akiban.qp.rowtype.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -274,6 +282,14 @@ public class BranchLookup_Nested extends Operator
     private final int inputBindingPosition;
     private final UserTable commonAncestor;
     private final int branchRootOrdinal;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        OperationExplainer ex =  new LookUpOperatorExplainer("Branch Lookup Nested", groupTable, inputRowType, keepInput, null);
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType));
+        return ex;
+    }
 
     // Inner classes
 

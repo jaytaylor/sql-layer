@@ -34,6 +34,9 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.AkibanAppender;
 
 import java.util.ArrayList;
@@ -81,6 +84,11 @@ public class ProjectedRow extends AbstractRow
     }
 
     @Override
+    public PValueSource pvalue(int index) {
+        return pEvals.get(index);
+    }
+
+    @Override
     public HKey hKey()
     {
         return null;
@@ -102,11 +110,13 @@ public class ProjectedRow extends AbstractRow
 
     // ProjectedRow interface
 
-    public ProjectedRow(ProjectedRowType rowType, Row row, QueryContext context, List<Expression> expressions)
+    public ProjectedRow(ProjectedRowType rowType, Row row, QueryContext context, List<Expression> expressions,
+                        List<? extends TPreparedExpression> pExpressions)
     {
         this.rowType = rowType;
         this.row = row;
         this.evaluations = createEvaluations(expressions, row, context);
+        this.pEvals = createPEvals(pExpressions, row, context);
         this.holders = new ValueHolder[expressions.size()];
     }
 
@@ -124,6 +134,8 @@ public class ProjectedRow extends AbstractRow
     private List<ExpressionEvaluation> createEvaluations(List<Expression> expressions, 
                                                          Row row, QueryContext context)
     {
+        if (expressions == null)
+            return null;
         List<ExpressionEvaluation> result = new ArrayList<ExpressionEvaluation>();
         for (Expression expression : expressions) {
             ExpressionEvaluation evaluation = expression.evaluation();
@@ -134,10 +146,26 @@ public class ProjectedRow extends AbstractRow
         return result;
     }
 
+    private List<? extends PValueSource> createPEvals(List<? extends TPreparedExpression> pExpressions,
+                                                             Row row, QueryContext context) {
+        if (pExpressions == null)
+            return null;
+        List<PValueSource> result = new ArrayList<PValueSource>(pExpressions.size());
+        for (TPreparedExpression expression : pExpressions) {
+            TEvaluatableExpression eval = expression.build();
+            eval.with(row);
+            eval.with(context);
+            eval.evaluate();
+            result.add(eval.resultValue());
+        }
+        return result;
+    }
+
     // Object state
 
     private final ProjectedRowType rowType;
     private final Row row;
     private final List<ExpressionEvaluation> evaluations;
+    private final List<? extends PValueSource> pEvals;
     private final ValueHolder[] holders;
 }

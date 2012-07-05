@@ -33,6 +33,11 @@ import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -142,6 +147,7 @@ class Sort_InsertionLimited extends Operator
         this.sortType = sortType;
         this.ordering = ordering;
         this.preserveDuplicates = sortOption == API.SortOption.PRESERVE_DUPLICATES;
+        this.sortOption = sortOption;
         this.limit = limit;
     }
 
@@ -151,12 +157,20 @@ class Sort_InsertionLimited extends Operator
     private static final InOutTap TAP_NEXT = OPERATOR_TAP.createSubsidiaryTap("operator: Sort_InsertionLimited next");
     
     // Object state
-
+    private final API.SortOption sortOption;
     private final Operator inputOperator;
     private final RowType sortType;
     private final API.Ordering ordering;
     private final boolean preserveDuplicates;
     private final int limit;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        OperationExplainer ex = new SortOperatorExplainer("SORT INSERTION LIMITED", sortOption, sortType, inputOperator);
+        ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit));
+        return ex;
+    }
 
     // Inner classes
 

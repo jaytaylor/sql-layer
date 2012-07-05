@@ -42,7 +42,7 @@ public class CreateRowIT extends ITBase
     public void smallRowCantGrow() throws InvalidOperationException
     {
         int t = createTable("s", "t",
-                            "string varchar(100)");
+                            "string varchar(100) character set latin1");
         RowDef rowDef = rowDefCache().getRowDef(t);
         RowData rowData = new RowData(new byte[RowData.MINIMUM_RECORD_LENGTH + 1 /* null bitmap */ + 5]);
         rowData.createRow(rowDef, new Object[]{"abc"}, false);

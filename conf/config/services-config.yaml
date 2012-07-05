@@ -1,11 +1,14 @@
 # copied from packages-common/services-config.yaml
 - require:
-    - com.akiban.server.AkServerInterface           # loads the AKSERVER jmx bean
-    - com.akiban.server.service.dxl.DXLService           # leads the DDL/DML jmx bean
-    - com.akiban.server.service.network.NetworkService   # MySQL replication
-    - com.akiban.server.service.stats.StatisticsService  # Stats gathering
-    - com.akiban.server.service.jmx.JmxRegistryService   # Turns on JMX for other services
-    - com.akiban.sql.pg.PostgresService                  # Akiban SQL
+#   - com.akiban.server.service.ui.SwingConsoleService  # Presents a simple UI
+    - com.akiban.server.AkServerInterface               # Loads the AKSERVER JMX bean
+    - com.akiban.server.service.dxl.DXLService          # Loads the DDL/DML JMX bean
+    - com.akiban.server.service.network.NetworkService  # MySQL replication
+    - com.akiban.server.service.stats.StatisticsService # Stats gathering
+    - com.akiban.server.service.jmx.JmxRegistryService  # Turns on JMX for other services
+    - com.akiban.sql.pg.PostgresService                 # Akiban SQL
     - com.akiban.server.service.log4jconfig.Log4JConfigurationService
     - com.akiban.server.service.instrumentation.InstrumentationService
     - com.akiban.server.service.is.BasicInfoSchemaTablesService
+    - com.akiban.server.service.is.StorageSchemaTablesService
+    - com.akiban.server.service.is.ServerSchemaTablesService

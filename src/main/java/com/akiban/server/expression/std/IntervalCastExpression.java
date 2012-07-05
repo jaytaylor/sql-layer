@@ -41,6 +41,9 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.NullValueSource;
 
 import static com.akiban.server.types.AkType.*;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 
 public class IntervalCastExpression extends AbstractUnaryExpression
 {
@@ -237,9 +240,17 @@ public class IntervalCastExpression extends AbstractUnaryExpression
             return ep;
     }
     @Override
-    protected String name() 
+    public String name() 
     {
         return "CAST_INTERVAL_" + endPoint;
+    }
+    
+    @Override
+    public Explainer getExplainer ()
+    {
+        Explainer ex = super.getExplainer();
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(endPoint.type.name()));
+        return ex;
     }
 
     @Override

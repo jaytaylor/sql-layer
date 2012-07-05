@@ -29,6 +29,11 @@ package com.akiban.qp.operator;
 import com.akiban.qp.exec.UpdatePlannable;
 import com.akiban.qp.exec.UpdateResult;
 import com.akiban.qp.row.Row;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.std.DUIOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.Strings;
 import com.akiban.util.tap.InOutTap;
@@ -164,5 +169,13 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
     private final Operator inputOperator;
     private final UpdateFunction updateFunction;
     private static final InOutTap UPDATE_TAP = Tap.createTimer("operator: Update_Default");
+
+    @Override
+    public Explainer getExplainer()
+    {
+        OperationExplainer ex = new DUIOperatorExplainer("UPDATE DEFAULT", inputOperator);
+        ex.addAttribute(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
+        return ex;
+    }
     
 }

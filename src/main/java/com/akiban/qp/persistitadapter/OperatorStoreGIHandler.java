@@ -32,10 +32,15 @@ import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -58,7 +63,11 @@ class OperatorStoreGIHandler {
         try {
             Key key = exchange.getKey();
             key.clear();
-            target.attach(key);
+            
+            // Temporary until we remove old type system
+            if (Types3Switch.ON) pTarget.attach(key); 
+            else target.attach(key);
+            
             IndexRowComposition irc = groupIndex.indexRowComposition();
 
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
@@ -68,8 +77,16 @@ class OperatorStoreGIHandler {
                 final int flattenedIndex = irc.getFieldPosition(i);
                 Column column = groupIndex.getColumnForFlattenedRow(flattenedIndex);
 
-                ValueSource source = row.eval(flattenedIndex);
-                Converters.convert(source, target.expectingType(column));
+                if (Types3Switch.ON) {
+                    PValueSource source = row.pvalue(flattenedIndex);
+                    TInstance sourceInstance = row.rowType().typeInstanceAt(flattenedIndex);
+                    TClass sourceClass = sourceInstance.typeClass();
+                    sourceClass.writeCollating(source, sourceInstance, pTarget.expectingType(column));
+                }
+                else {
+                    ValueSource source = row.eval(flattenedIndex);
+                    Converters.convert(source, target.expectingType(column));
+                }
             }
             // The group index row's value contains a bitmap indicating which of the tables covered by the index
             // have rows contributing to this index row. The leafmost table of the index is represented by bit position 0.
@@ -183,6 +200,7 @@ class OperatorStoreGIHandler {
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
     private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+    private final PersistitKeyPValueTarget pTarget = new PersistitKeyPValueTarget();
     
     // class state
     private static volatile GIHandlerHook giHandlerHook;

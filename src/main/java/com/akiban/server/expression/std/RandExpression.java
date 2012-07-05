@@ -71,6 +71,11 @@ public class RandExpression extends AbstractCompositeExpression
         }
         
     };
+
+    @Override
+    public String name() {
+        return "RAND";
+    }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -125,7 +130,7 @@ public class RandExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("RAND");
+        sb.append(name());
     }
 
     @Override

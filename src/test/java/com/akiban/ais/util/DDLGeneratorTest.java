@@ -49,7 +49,7 @@ public final class DDLGeneratorTest {
         DDLGenerator generator = new DDLGenerator();
 
         assertEquals("group table",
-                "create table `some_group_schema`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint NOT NULL, KEY `table$PRIMARY`(`table$__akiban_pk`)) engine=AKIBANDB",
+                "create table `some_group_schema`.`_group0`(`table$col` decimal(11, 3) unsigned, `table$__akiban_pk` bigint NOT NULL, KEY `table$PRIMARY`(`table$__akiban_pk`)) engine=AKIBANDB DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                 generator.createTable(ais.getGroup("myGroup").getGroupTable()));
     }
 
@@ -57,10 +57,10 @@ public final class DDLGeneratorTest {
     public void testColumnCharset() throws Exception {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "table");
-        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf8", null);
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, "utf-16", null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET utf8) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) CHARACTER SET utf-16) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 
@@ -68,10 +68,10 @@ public final class DDLGeneratorTest {
     public void testColumnCollation() throws Exception {
         AISBuilder builder = new AISBuilder();
         builder.userTable("schema", "table");
-        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "utf8_bin");
+        builder.column("schema", "table", "c1", 0, "varchar", 255L, null, true, false, null, "euckr_korean_ci");
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE utf8_bin) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` varchar(255) COLLATE euckr_korean_ci) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 
@@ -82,7 +82,7 @@ public final class DDLGeneratorTest {
         builder.column("schema", "table", "c1", 0, "int", null, null, false, false, null, null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` int NOT NULL) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` int NOT NULL) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                     new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 
@@ -93,7 +93,7 @@ public final class DDLGeneratorTest {
         builder.column("schema", "table", "c1", 0, "int", null, null, true, true, null, null);
         builder.basicSchemaIsComplete();
         AkibanInformationSchema ais = builder.akibanInformationSchema();
-        assertEquals("create table `schema`.`table`(`c1` int AUTO_INCREMENT) engine=akibandb",
+        assertEquals("create table `schema`.`table`(`c1` int AUTO_INCREMENT) engine=akibandb DEFAULT CHARSET=utf8 COLLATE=utf8_bin",
                      new DDLGenerator().createTable(ais.getTable("schema", "table")));
     }
 }

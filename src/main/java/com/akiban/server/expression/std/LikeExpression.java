@@ -41,6 +41,9 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.sql.StandardException;
 import com.akiban.server.expression.TypesList;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.List;
 
 
@@ -178,13 +181,23 @@ public class LikeExpression extends AbstractCompositeExpression
     {
         return true;
     }
+    
+    @Override
+    public String name ()
+    {
+        return "LIKE_" + (ignore_case? "IN" : "") + "SENSITIVE";
+    }
+    
+    @Override
+    public Explainer getExplainer ()
+    {
+        return new ExpressionExplainer (Type.BINARY_OPERATOR, name(), children());
+    }
 
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("LIKE_");
-        sb.append(ignore_case? "IN" : "");
-        sb.append("SENSITIVE");
+        sb.append(name());
     }
 
     @Override

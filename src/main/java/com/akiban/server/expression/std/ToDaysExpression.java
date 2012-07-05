@@ -106,7 +106,7 @@ public class ToDaysExpression  extends AbstractUnaryExpression
     }
     
     @Override
-    protected String name()
+    public String name()
     {
         return "TO_DAYS";
     }

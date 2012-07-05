@@ -31,6 +31,9 @@ import com.akiban.qp.rowtype.FlattenedRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.ShareHolder;
 
 public class FlattenedRow extends AbstractRow
@@ -60,6 +63,22 @@ public class FlattenedRow extends AbstractRow
             source = childh.isEmpty() ? NullValueSource.only() : childh.get().eval(i - nParentFields);
         }
         return source;
+    }
+
+    @Override
+    public PValueSource pvalue(int i) {
+        PValueSource source;
+        if (i < nParentFields) {
+            source = parenth.isEmpty() ? nullPValue(i) : parenth.get().pvalue(i);
+        } else {
+            source = childh.isEmpty() ? nullPValue(i) : childh.get().pvalue(i - nParentFields);
+        }
+        return source;
+    }
+
+    private PValueSource nullPValue(int i) {
+        PUnderlying underlying = rowType.typeInstanceAt(i).typeClass().underlyingType();
+        return PValueSources.getNullSource(underlying);
     }
 
     @Override

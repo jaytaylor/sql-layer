@@ -28,4 +28,6 @@ package com.akiban.server;
 
 public interface AkServerInterface
 {
+    String getServerName();
+    String getServerVersion();
 }

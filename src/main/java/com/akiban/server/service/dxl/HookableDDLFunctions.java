@@ -298,26 +298,6 @@ public final class HookableDDLFunctions implements DDLFunctions {
     }
 
     @Override
-    public void forceGenerationUpdate() {
-        Session session = sessionService.createSession();
-        Throwable thrown = null;
-        try {
-            hook.hookFunctionIn(session, DXLFunction.FORCE_GENERATION_UPDATE);
-            delegate.forceGenerationUpdate();
-        } catch (Throwable t) {
-            thrown = t;
-            hook.hookFunctionCatch(session, DXLFunction.FORCE_GENERATION_UPDATE, t);
-            throw throwAlways(t);
-        } finally {
-            try {
-                hook.hookFunctionFinally(session, DXLFunction.FORCE_GENERATION_UPDATE, thrown);
-            } finally {
-                session.close();
-            }
-        }
-    }
-
-    @Override
     public void createIndexes(final Session session, Collection<? extends Index> indexesToAdd) {
         Throwable thrown = null;
         try {

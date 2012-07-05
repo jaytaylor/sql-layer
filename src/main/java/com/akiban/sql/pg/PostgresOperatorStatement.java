@@ -69,7 +69,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     }
 
     @Override
-    public int execute(PostgresQueryContext context, int maxrows) throws IOException {
+    public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         Session session = server.getSession();
         int nrows = 0;
@@ -83,7 +83,7 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
             Row row;
             while ((row = cursor.next()) != null) {
                 assert resultRowType == null || (row.rowType() == resultRowType) : row;
-                outputter.output(row);
+                outputter.output(row, usePVals);
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows))
                     break;

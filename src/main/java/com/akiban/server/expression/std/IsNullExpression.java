@@ -81,9 +81,9 @@ public class IsNullExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name() 
+    public String name() 
     {
-        return "IsNull";
+        return "ISNULL";
     }
 
     @Override

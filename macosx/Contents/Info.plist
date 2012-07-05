@@ -1,0 +1,75 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist SYSTEM "file://localhost/System/Library/DTDs/PropertyList.dtd">
+<plist version="0.9">
+<dict>
+    <key>CFBundleName</key>
+    <string>Akiban Server</string>
+    <key>CFBundleIdentifier</key>
+    <string>com.akiban.server</string>
+    <key>CFBundleVersion</key>
+    <string>1.3.0</string>
+    <key>CFBundleAllowMixedLocalizations</key>
+    <string>true</string>
+    <key>CFBundleExecutable</key>
+    <string>JavaApplicationStub</string>
+    <key>CFBundleDevelopmentRegion</key>
+    <string>English</string>
+    <key>CFBundlePackageType</key>
+    <string>APPL</string>
+    <key>CFBundleSignature</key>
+    <string>????</string>
+    <key>CFBundleGetInfoString</key>
+    <string>Akiban Server 1.0.3</string>
+    <key>CFBundleInfoDictionaryVersion</key>
+    <string>6.0</string>
+    <key>CFBundleIconFile</key>
+    <string>Akiban Server.icns</string>
+    <key>Java</key>
+    <dict>
+        <key>JVMVersion</key>
+        <string>1.6+</string>
+        <key>ClassPath</key>
+        <string>$JAVAROOT/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar</string>
+        <key>MainClass</key>
+        <string>com.akiban.server.service.ui.AkServerWithSwingConsole</string>
+        <key>VMOptions</key>
+        <array>
+          <string>-ea</string>
+          <string>-XX:+UseThreadPriorities</string>
+          <string>-XX:ThreadPriorityPolicy=42</string>
+          <string>-Xms1024Mm</string>
+          <string>-Xmx1024Mm</string>
+          <!--
+          <string>-XX:+HeapDumpOnOutOfMemoryError</string>
+          -->
+          <string>-XX:+UseParNewGC</string>
+          <!--
+          <string>-Xrunjdwp:transport=dt_socket,address=8000,suspend=n,server=y</string>
+          -->
+        </array>
+        <key>Properties</key>
+        <dict>
+          <key>apple.laf.useScreenMenuBar</key>
+          <string>true</string>
+          <key>akiban.admin</key>
+          <string>$APP_PACKAGE/Contents/Resources</string>
+          <key>services.config</key>
+          <string>$APP_PACKAGE/Contents/Resources/config/services-config.yaml</string>
+          <key>log4j.configuration</key>
+          <string>file:$APP_PACKAGE/Contents/Resources/config/log4j.properties</string>
+          <!--
+          <key>java.net.preferIPv4Stack</key>
+          <string>true</string>
+          <key>com.sun.management.jmxremote.port=</key>
+          <string>8082</string>
+          <key>com.sun.management.jmxremote.ssl</key>
+          <string>false</string>
+          <key>com.sun.management.jmxremote.authenticate=</key>
+          <string>false</string>
+          -->
+        </dict>
+        <key>WorkingDirectory</key>
+        <string>$USER_HOME/Library/Application Support</string>
+    </dict>
+</dict>
+</plist>

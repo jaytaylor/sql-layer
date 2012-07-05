@@ -27,14 +27,17 @@
 package com.akiban.server.test.it.qp;
 
 import com.akiban.ais.model.*;
+import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Cursor;
 import com.akiban.qp.operator.CursorLifecycle;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitGroupRow;
+import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.RowBase;
+import com.akiban.qp.row.RowValuesHolder;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.*;
 import com.akiban.qp.rowtype.Schema;
@@ -44,6 +47,7 @@ import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.util.ValueHolder;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
@@ -111,6 +115,7 @@ public class OperatorITBase extends ITBase
             "grouping foreign key (cid) references customer(cid)");
         createIndex("schema", "address", "cid", "cid");
         createIndex("schema", "address", "address", "address");
+        createGroupIndex("customer", "cname_ioid", "customer.name,item.oid", Index.JoinType.LEFT);
         schema = new Schema(rowDefCache().ais());
         customerRowType = schema.userTableRowType(userTable(customer));
         orderRowType = schema.userTableRowType(userTable(order));
@@ -126,6 +131,7 @@ public class OperatorITBase extends ITBase
         customerCidIndexRowType = indexType(customer, "cid");
         addressCidIndexRowType = indexType(address, "cid");
         addressAddressIndexRowType = indexType(address, "address");
+        customerNameItemOidIndexRowType = groupIndexType(Index.JoinType.LEFT, "customer.name", "item.oid");
         coi = groupTable(customer);
         customerOrdinal =  ddl().getTable(session(),  customer).rowDef().getOrdinal();
         orderOrdinal =  ddl().getTable(session(),  order).rowDef().getOrdinal();
@@ -302,6 +308,11 @@ public class OperatorITBase extends ITBase
         return new TestRow(rowType, fields, hKeyString);
     }
 
+    protected TestRow row(RowType rowType, Object[] fields, AkType[] types)
+    {
+        return new TestRow(rowType, new RowValuesHolder(fields, types), null);
+    }
+
     protected RowBase row(int tableId, Object... values /* alternating field position and value */)
     {
         NiceRow niceRow = new NiceRow(tableId, store());
@@ -427,6 +438,23 @@ public class OperatorITBase extends ITBase
         return rowType.userTable().rowDef().getOrdinal();
     }
 
+
+    public Operator rowsToValueScan(Row... rows) {
+        List<BindableRow> bindableRows = new ArrayList<BindableRow>();
+        RowType type = null;
+        for(Row row : rows) {
+            RowType newType = row.rowType();
+            if(type == null) {
+                type = newType;
+            } else if(type != newType) {
+                fail("Multiple row types: " + type + " vs " + newType);
+            }
+            bindableRows.add(BindableRow.of(row));
+        }
+        return API.valuesScan_Default(bindableRows, type);
+    }
+
+
     protected int customer;
     protected int order;
     protected int item;
@@ -445,6 +473,7 @@ public class OperatorITBase extends ITBase
     protected IndexRowType itemIidIndexRowType;
     protected IndexRowType addressCidIndexRowType;
     protected IndexRowType addressAddressIndexRowType;
+    protected IndexRowType customerNameItemOidIndexRowType;
     protected GroupTable coi;
     protected Schema schema;
     protected NewRow[] db;

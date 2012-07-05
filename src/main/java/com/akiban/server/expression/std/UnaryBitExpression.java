@@ -164,7 +164,7 @@ public class UnaryBitExpression extends AbstractUnaryExpression
     }
 
     @Override
-    protected String name()
+    public String name()
     {
         return op.name();
     }

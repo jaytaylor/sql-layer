@@ -97,7 +97,7 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
     @Override
     public String generateResult() throws Exception {
         StringBuilder data = new StringBuilder();
-        PreparedStatement stmt = connection.prepareStatement(sql);
+        PreparedStatement stmt = getConnection().prepareStatement(sql);
         if (params != null) {
             for (int i = 0; i < params.length; i++) {
                 String param = params[i];
@@ -112,7 +112,9 @@ public class PostgresServerSelectIT extends PostgresServerFilesITBase
             rs = stmt.executeQuery();
         }
         catch (Exception ex) {
-            return ex.getMessage();
+            if (error == null)
+                forgetConnection();
+            throw ex;
         }
         ResultSetMetaData md = rs.getMetaData();
         for (int i = 1; i <= md.getColumnCount(); i++) {

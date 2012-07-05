@@ -29,8 +29,10 @@ package com.akiban.server.test;
 import static junit.framework.Assert.assertEquals;
 import static junit.framework.Assert.assertNotNull;
 import static junit.framework.Assert.assertTrue;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -57,6 +59,7 @@ import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
+import com.akiban.server.AkServerUtil;
 import com.akiban.server.api.dml.scan.ScanFlag;
 import com.akiban.server.rowdata.SchemaFactory;
 import com.akiban.server.service.ServiceManagerImpl;
@@ -107,15 +110,20 @@ import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.ServiceManager;
 import com.akiban.server.service.session.Session;
 import org.junit.Rule;
+import org.junit.rules.MethodRule;
 import org.junit.rules.TestName;
+import org.junit.rules.TestWatchman;
+import org.junit.runners.model.FrameworkMethod;
 
 /**
  * <p>Base class for all API tests. Contains a @SetUp that gives you a fresh DDLFunctions and DMLFunctions, plus
  * various convenience testing methods.</p>
  */
 public class ApiTestBase {
+    private static final int MIN_FREE_SPACE = 256 * 1024 * 1024;
     private static final String TAPS = System.getProperty("it.taps");
     protected final static Object UNDEF = Undef.only();
+
     private static final Comparator<? super TapReport> TAP_REPORT_COMPARATOR = new Comparator<TapReport>() {
         @Override
         public int compare(TapReport o1, TapReport o2) {
@@ -162,12 +170,13 @@ public class ApiTestBase {
         }
     }
 
-    private ServiceManager sm;
+    private static ServiceManager sm;
     private Session session;
     private int aisGeneration;
     private int akibanFKCount;
-    private boolean testServicesStarted;
     private final Set<RowUpdater> unfinishedRowUpdaters = new HashSet<RowUpdater>();
+    private static Map<String,String> lastStartupConfigProperties = null;
+    private static boolean needServicesRestart = false;
     
     @Rule
     public static final TestName testName = new TestName();
@@ -181,20 +190,47 @@ public class ApiTestBase {
         assertTrue("some row updaters were left over: " + unfinishedRowUpdaters, unfinishedRowUpdaters.isEmpty());
         try {
             ConverterTestUtils.setGlobalTimezone("UTC");
-            testServicesStarted = false;
-            sm = createServiceManager( startupConfigProperties() );
-            sm.startServices();
-            ServiceManagerImpl.setServiceManager(sm);
-            session = sm.getSessionService().createSession();
-            testServicesStarted = true;
-            if (TAPS != null) {
-                sm.getStatisticsService().reset(TAPS);
-                sm.getStatisticsService().setEnabled(TAPS, true);
+            Collection<Property> startupConfigProperties = startupConfigProperties();
+            Map<String,String> propertiesForEquality = propertiesForEquality(startupConfigProperties);
+            if (needServicesRestart || lastStartupConfigProperties == null ||
+                    !lastStartupConfigProperties.equals(propertiesForEquality))
+            {
+                // we need a shutdown if we needed a restart, or if the lastStartupConfigProperties are not null,
+                // which (because of the condition on the "if" above) implies the last startup config properties
+                // are different from this one's
+                boolean needShutdown = needServicesRestart || lastStartupConfigProperties != null;
+                if (needShutdown) {
+                    needServicesRestart = false; // clear the flag if it was set
+                    stopTestServices();
+                }
+                int attempt = 1;
+                while (!AkServerUtil.cleanUpDirectory(TestConfigService.dataDirectory())) {
+                    assertTrue("Too many directory failures", (attempt++ < 10));
+                    TestConfigService.newDataDirectory();
+                }
+                assertNull("lastStartupConfigProperties should be null", lastStartupConfigProperties);
+                sm = createServiceManager(startupConfigProperties);
+                sm.startServices();
+                ServiceManagerImpl.setServiceManager(sm);
+                if (TAPS != null) {
+                    sm.getStatisticsService().reset(TAPS);
+                    sm.getStatisticsService().setEnabled(TAPS, true);
+                }
+                lastStartupConfigProperties = propertiesForEquality;
             }
+            session = sm.getSessionService().createSession();
         } catch (Exception e) {
             handleStartupFailure(e);
         }
     }
+
+    @Rule
+    public MethodRule exceptionCatchingRule = new TestWatchman() {
+        @Override
+        public void failed(Throwable e, FrameworkMethod method)  {
+            needServicesRestart = true;
+        }
+    };
 
     /**
      * Handle a failure during services startup. The default implementation is to just throw the exception, and
@@ -211,17 +247,30 @@ public class ApiTestBase {
         return new GuicedServiceManager(serviceBindingsProvider());
     }
 
+    /** Specify special service bindings.
+     * If you override this, you need to override {@link #startupConfigProperties} 
+     * to return something different so that the special services aren't shared 
+     * with other tests.
+     */
     protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
         return GuicedServiceManager.testUrls();
     }
 
     @After
-    public final void stopTestServices() throws Exception {
+    public final void tearDownAllTables() throws Exception {
+        if (lastStartupConfigProperties == null)
+            return; // services never started up
         Set<RowUpdater> localUnfinishedUpdaters = new HashSet<RowUpdater>(unfinishedRowUpdaters);
         unfinishedRowUpdaters.clear();
-        ServiceManagerImpl.setServiceManager(null);
-        if (!testServicesStarted) {
-            return;
+        dropAllTables();
+        assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
+        String openCursorsMessage = null;
+        if (sm.serviceIsStarted(DXLService.class)) {
+            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
+            // Check for any residual open cursors
+            if (dxlTestHooks.openCursorsExist()) {
+                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
+            }
         }
         if (TAPS != null) {
             TapReport[] reports = sm.getStatisticsService().getReport(TAPS);
@@ -240,39 +289,49 @@ public class ApiTestBase {
                 );
             }
         }
-        String openCursorsMessage = null;
-        if (sm.serviceIsStarted(DXLService.class)) {
-            DXLTestHooks dxlTestHooks = DXLTestHookRegistry.get();
-            // Check for any residual open cursors
-            if (dxlTestHooks.openCursorsExist()) {
-                openCursorsMessage = "open cursors remaining:" + dxlTestHooks.describeOpenCursors();
-            }
-        }
+        session.close();
 
-        if(session != null) {
-            session.close();
-        }
-        sm.stopServices();
-        sm = null;
-        session = null;
         if (openCursorsMessage != null) {
             fail(openCursorsMessage);
         }
-        testServicesStarted = false;
-        assertTrue("not all updaters were used: " + localUnfinishedUpdaters, localUnfinishedUpdaters.isEmpty());
+        
+        needServicesRestart |= runningOutOfSpace();
+    }
+    
+    private static boolean runningOutOfSpace() {
+        return TestConfigService.dataDirectory().getFreeSpace() < MIN_FREE_SPACE;
+    }
+
+    private static void beforeStopServices(boolean crash) throws Exception {
+        com.akiban.sql.pg.PostgresServerITBase.forgetConnection();
+    }
+
+    public final void stopTestServices() throws Exception {
+        beforeStopServices(false);
+        ServiceManagerImpl.setServiceManager(null);
+        if (lastStartupConfigProperties == null) {
+            return;
+        }
+        lastStartupConfigProperties = null;
+        sm.stopServices();
     }
     
     public final void crashTestServices() throws Exception {
+        beforeStopServices(true);
         sm.crashServices();
         sm = null;
         session = null;
+        lastStartupConfigProperties = null;
     }
     
     public final void restartTestServices(Collection<Property> properties) throws Exception {
+        ServiceManagerImpl.setServiceManager(null);
         sm = createServiceManager( properties );
         sm.startServices();
         session = sm.getSessionService().createSession();
+        lastStartupConfigProperties = propertiesForEquality(properties);
         ddl(); // loads up the schema manager et al
+        ServiceManagerImpl.setServiceManager(sm);
     }
 
     public final Session createNewSession()
@@ -282,8 +341,12 @@ public class ApiTestBase {
 
     protected Collection<Property> defaultPropertiesToPreserveOnRestart() {
         List<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("akserver.datapath", treeService().getDataPath()));
+        properties.add(new Property(TestConfigService.DATA_PATH_KEY, TestConfigService.dataDirectory().getAbsolutePath()));
         return properties;
+    }
+
+    protected boolean defaultDoCleanOnUnload() {
+        return true;
     }
 
     public final void safeRestartTestServices() throws Exception {
@@ -291,8 +354,19 @@ public class ApiTestBase {
     }
 
     public final void safeRestartTestServices(Collection<Property> propertiesToPreserve) throws Exception {
-        Thread.sleep(1000);  // Let journal flush
-        crashTestServices(); // TODO: WHY doesn't this work with stop?
+        /*
+         * Need this because deleting Trees currently is not transactional.  Therefore after
+         * restart we recover the previous trees and forget about the deleteTree operations.
+         * TODO: remove when transaction Tree management is done.
+         */
+        treeService().getDb().checkpoint();
+        final boolean original = TestConfigService.getDoCleanOnUnload();
+        try {
+            TestConfigService.setDoCleanOnUnload(defaultDoCleanOnUnload());
+            crashTestServices(); // TODO: WHY doesn't this work with stop?
+        } finally {
+            TestConfigService.setDoCleanOnUnload(original);
+        }
         restartTestServices(propertiesToPreserve);
     }
     
@@ -328,7 +402,7 @@ public class ApiTestBase {
     }
 
     protected final PersistitAdapter persistitAdapter(Schema schema) {
-        return new PersistitAdapter(schema, persistitStore(), treeService(), session(), configService());
+        return new PersistitAdapter(schema, store(), treeService(), session(), configService());
     }
 
     protected final QueryContext queryContext(PersistitAdapter adapter) {
@@ -366,6 +440,26 @@ public class ApiTestBase {
 
     protected Collection<Property> startupConfigProperties() {
         return Collections.emptyList();
+    }
+
+    // Property.equals() does not include the value.
+    protected Map<String,String> propertiesForEquality(Collection<Property> properties) {
+        Map<String,String> result = new HashMap<String,String>(properties.size());
+        for (Property p : properties) {
+            result.put(p.getKey(), p.getValue());
+        }
+        return result;
+    }
+
+    /**
+     * A simple unique (per class) property that can be returned for tests
+     * overriding the {@link #startupConfigProperties()} and/or
+     * {@link #serviceBindingsProvider()} methods.
+     */
+    protected static Collection<Property> uniqueStartupConfigProperties(Class clazz) {
+        final Collection<Property> properties = new ArrayList<Property>();
+        properties.add(new Property("test.services", clazz.getName()));
+        return properties;
     }
 
     protected AkibanInformationSchema createFromDDL(String schema, String ddl) {
@@ -719,16 +813,14 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables() throws InvalidOperationException {
-        // Can't drop a parent before child. Get all to drop and sort children first (they always have higher id).
-        List<Integer> allIds = new ArrayList<Integer>();
-        for (Map.Entry<TableName, UserTable> entry : ddl().getAIS(session()).getUserTables().entrySet()) {
-            if (!TableName.INFORMATION_SCHEMA.equals(entry.getKey().getSchemaName())) {
-                allIds.add(entry.getValue().getTableId());
+        Set<String> groupNames = new HashSet<String>();
+        for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
+            if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
+                groupNames.add(table.getGroup().getName());
             }
         }
-        Collections.sort(allIds, Collections.reverseOrder());
-        for (Integer id : allIds) {
-            ddl().dropTable(session(), tableName(id));
+        for(String groupName : groupNames) {
+            ddl().dropGroup(session(), groupName);
         }
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {

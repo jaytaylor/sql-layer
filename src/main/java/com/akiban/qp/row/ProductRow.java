@@ -32,6 +32,9 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ShareHolder;
 
@@ -70,6 +73,17 @@ public class ProductRow extends AbstractRow
             source = left.isEmpty() ? NullValueSource.only() : left.get().eval(i);
         } else {
             source = right.isEmpty() ? NullValueSource.only() : right.get().eval(i - firstRightFieldOffset);
+        }
+        return source;
+    }
+
+    @Override
+    public PValueSource pvalue(int i) {
+        PValueSource source;
+        if (i < nLeftFields) {
+            source = left.isEmpty() ? nullPValue(i) : left.get().pvalue(i);
+        } else {
+            source = right.isEmpty() ? nullPValue(i) : right.get().pvalue(i - firstRightFieldOffset);
         }
         return source;
     }
@@ -119,4 +133,11 @@ public class ProductRow extends AbstractRow
     private final ShareHolder<Row> right = new ShareHolder<Row>();
     private final int nLeftFields;
     private final int firstRightFieldOffset;
+
+    // private methods
+
+    private PValueSource nullPValue(int i) {
+        PUnderlying underlying = rowType.typeInstanceAt(i).typeClass().underlyingType();
+        return PValueSources.getNullSource(underlying);
+    }
 }

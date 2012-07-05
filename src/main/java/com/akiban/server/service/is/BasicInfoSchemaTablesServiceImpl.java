@@ -40,29 +40,25 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
-import com.akiban.qp.expression.IndexKeyRange;
+import com.akiban.qp.memoryadapter.BasicFactoryBase;
 import com.akiban.qp.memoryadapter.MemoryAdapter;
 import com.akiban.qp.memoryadapter.MemoryGroupCursor;
-import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.qp.operator.API;
-import com.akiban.qp.operator.Cursor;
-import com.akiban.qp.operator.IndexScanSelector;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.service.Service;
-import com.akiban.server.service.session.Session;
 import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
-import com.akiban.server.store.statistics.IndexStatistics;
 import com.google.inject.Inject;
 
 import java.util.Iterator;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 
-public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
-    private static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
+public class BasicInfoSchemaTablesServiceImpl
+    extends SchemaTablesService
+    implements Service<BasicInfoSchemaTablesService>, BasicInfoSchemaTablesService {
+    
     static final TableName SCHEMATA = new TableName(SCHEMA_NAME, "schemata");
     static final TableName TABLES = new TableName(SCHEMA_NAME, "tables");
     static final TableName COLUMNS = new TableName(SCHEMA_NAME, "columns");
@@ -73,17 +69,15 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
     static final TableName INDEXES = new TableName(SCHEMA_NAME, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(SCHEMA_NAME, "index_columns");
 
-    private static final int IDENT_MAX = 128;
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
 
     private final AisHolder aisHolder;
-    private final SchemaManager schemaManager;
-
+    
     @Inject
     public BasicInfoSchemaTablesServiceImpl(AisHolder aisHolder, SchemaManager schemaManager) {
+        super(schemaManager);
         this.aisHolder = aisHolder;
-        this.schemaManager = schemaManager;
     }
 
     @Override
@@ -112,44 +106,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         // Nothing
     }
 
-    private static String boolResult(boolean bool) {
-        return bool ? "YES" : "NO";
-    }
-
-    private abstract class BasicFactoryBase implements MemoryTableFactory {
-        private final UserTable sourceTable;
-
-        public BasicFactoryBase(UserTable sourceTable) {
-            this.sourceTable = sourceTable;
-        }
-
-        @Override
-        public TableName getName() {
-            return sourceTable.getName();
-        }
-
-        @Override
-        public UserTable getTableDefinition() {
-            return sourceTable;
-        }
-
-        @Override
-        public Cursor getIndexCursor(Index index, Session session, IndexKeyRange keyRange, API.Ordering ordering, IndexScanSelector scanSelector) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
-        public IndexStatistics computeIndexStatistics(Session session, Index index) {
-            throw new UnsupportedOperationException();
-        }
-
-        protected RowType getRowType(MemoryAdapter adapter) {
-            return adapter.schema().userTableRowType(adapter.schema().ais().getUserTable(sourceTable.getName()));
-        }
-    }
-
     private class SchemataFactory extends BasicFactoryBase {
-        public SchemataFactory(UserTable sourceTable) {
+        public SchemataFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -163,13 +121,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return aisHolder.getAis().getSchemas().size();
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final Iterator<Schema> it = aisHolder.getAis().getSchemas().values().iterator();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super (rowType);
             }
 
             @Override
@@ -186,15 +142,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      ++rowCounter /*hidden pk*/);
 
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
     private class TablesFactory extends BasicFactoryBase {
-        public TablesFactory(UserTable sourceTable) {
+        public TablesFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -208,13 +160,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return aisHolder.getAis().getUserTables().size();
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final Iterator<UserTable> it = aisHolder.getAis().getUserTables().values().iterator();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             @Override
@@ -229,21 +179,18 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      table.getName().getTableName(),
                                      tableType,
                                      table.getTableId(),
+                                     table.hasMemoryTableFactory() ? null : table.getTreeName(),
                                      CHARSET_SCHEMA,
                                      table.getCharsetAndCollation().charset(),
                                      COLLATION_SCHEMA,
                                      table.getCharsetAndCollation().collation(),
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
     private class ColumnsFactory extends BasicFactoryBase {
-        public ColumnsFactory(UserTable sourceTable) {
+        public ColumnsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -260,15 +207,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             }
             return count;
         }
-
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        
+        private class Scan extends BaseScan {
             final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
             Iterator<Column> columnIt;
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             @Override
@@ -322,15 +267,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      charAndColl != null ? charAndColl.collation() : null,
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
     private class TableConstraintsFactory extends BasicFactoryBase {
-        public TableConstraintsFactory(UserTable sourceTable) {
+        public TableConstraintsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -353,13 +294,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final TableConstraintsIteration it = newIteration();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             @Override
@@ -374,48 +313,38 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      it.getType(),
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
     private class ReferentialConstraintsFactory extends BasicFactoryBase {
-        public ReferentialConstraintsFactory(UserTable sourceTable) {
+        public ReferentialConstraintsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
         @Override
         public GroupScan getGroupScan(MemoryAdapter adapter) {
-            return new Scan(getRowType(adapter));
+            return new ConstraintsScan(getRowType(adapter));
         }
 
         @Override
         public long rowCount() {
             return 0;
         }
+        private class ConstraintsScan extends BaseScan {
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
-
-            public Scan(RowType rowType) {
-                this.rowType = rowType;
+            public ConstraintsScan(RowType rowType) {
+                super(rowType);
             }
 
             @Override
             public Row next() {
                 return null;
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
     private class GroupingConstraintsFactory extends BasicFactoryBase {
-        public GroupingConstraintsFactory(UserTable sourceTable) {
+        public GroupingConstraintsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -440,13 +369,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final Iterator<UserTable> tableIt = newIteration();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             private UserTable advance() {
@@ -475,15 +402,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      Index.PRIMARY_KEY_CONSTRAINT,
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
     private class KeyColumnUsageFactory extends BasicFactoryBase {
-        public KeyColumnUsageFactory(UserTable sourceTable) {
+        public KeyColumnUsageFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -506,18 +429,16 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final TableConstraintsIteration it = newIteration();
             Iterator<IndexColumn> indexColIt;
             Iterator<JoinColumn> joinColIt;
             String colName;
             int colPos;
             Integer posInUnique;
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             // Find position in parents PK
@@ -571,15 +492,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      posInUnique,
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
     private class IndexesFactory extends BasicFactoryBase {
-        public IndexesFactory(UserTable sourceTable) {
+        public IndexesFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -602,13 +519,11 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final IndexIteration indexIt = newIteration();
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             @Override
@@ -633,20 +548,17 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      index.getIndexName().getName(),
                                      constraintName,
                                      index.getIndexId(),
+                                     indexIt.curTable.hasMemoryTableFactory() ? null : index.getTreeName(),
                                      indexType,
                                      boolResult(index.isUnique()),
                                      index.isGroupIndex() ? index.getJoinType().name() : null,
                                      ++rowCounter /*hidden pk*/);
             }
-
-            @Override
-            public void close() {
-            }
         }
     }
 
     private class IndexColumnsFactory extends BasicFactoryBase {
-        public IndexColumnsFactory(UserTable sourceTable) {
+        public IndexColumnsFactory(TableName sourceTable) {
             super(sourceTable);
         }
 
@@ -670,14 +582,12 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             return count;
         }
 
-        private class Scan implements GroupScan {
-            final RowType rowType;
+        private class Scan extends BaseScan {
             final IndexIteration indexIt = newIteration();
             Iterator<IndexColumn> indexColumnIt;
-            int rowCounter;
 
             public Scan(RowType rowType) {
-                this.rowType = rowType;
+                super(rowType);
             }
 
             private IndexColumn advance() {
@@ -701,16 +611,13 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                                      indexIt.getTable().getName().getSchemaName(),
                                      indexColumn.getIndex().getIndexName().getName(),
                                      indexIt.getTable().getName().getTableName(),
+                                     indexColumn.getColumn().getTable().getName().getSchemaName(),
                                      indexColumn.getColumn().getTable().getName().getTableName(),
                                      indexColumn.getColumn().getName(),
                                      indexColumn.getPosition(),
                                      boolResult(indexColumn.isAscending()),
                                      indexColumn.getIndexedLength(),
                                      ++rowCounter /*hidden pk*/);
-            }
-
-            @Override
-            public void close() {
             }
         }
     }
@@ -728,7 +635,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         }
 
         public boolean next() {
-            while(indexIt != null || tableIt.hasNext()) {
+            while(curTable != null || tableIt.hasNext()) {
                 if(curTable == null) {
                     curTable = tableIt.next();
                     if(curTable.getParentJoin() != null) {
@@ -827,6 +734,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("table_name", IDENT_MAX, false)
                 .colString("table_type", IDENT_MAX, false)
                 .colBigInt("table_id", false)
+                .colString("tree_name", PATH_MAX, true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
                 .colString("collation_schema", IDENT_MAX, true)
@@ -870,8 +778,8 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
             .colString("unique_schema_name", IDENT_MAX, false)
             .colString("unique_table_name", IDENT_MAX, false)
             .colString("unique_constraint_name", IDENT_MAX, false)
-            .colString("update_rule", 32, false)
-            .colString("delete_rule", 32, false);
+            .colString("update_rule", DESCRIPTOR_MAX, false)
+            .colString("delete_rule", DESCRIPTOR_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(GROUPING_CONSTRAINTS)
@@ -898,9 +806,10 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("index_name", IDENT_MAX, false)
                 .colString("constraint_name", IDENT_MAX, true)
                 .colBigInt("index_id", false)
+                .colString("tree_name", PATH_MAX, true)
                 .colString("index_type", IDENT_MAX, false)
-                .colString("is_unique", 3, false)
-                .colString("join_type", 32, true);
+                .colString("is_unique", YES_NO_MAX, false)
+                .colString("join_type", DESCRIPTOR_MAX, true);
         //primary key(schema_name, table_name, index_name)
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
@@ -909,6 +818,7 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("index_name", IDENT_MAX, false)
                 .colString("index_table_name", IDENT_MAX, false)
+                .colString("column_schema_name", IDENT_MAX, false)
                 .colString("column_table_name", IDENT_MAX, false)
                 .colString("column_name", IDENT_MAX, false)
                 .colBigInt("ordinal_position", false)
@@ -921,21 +831,6 @@ public class BasicInfoSchemaTablesServiceImpl implements Service<BasicInfoSchema
         //    references COLUMNS (schema_name, table_name, column_name)
 
         return builder.ais(false);
-    }
-
-    private void attach(AkibanInformationSchema ais, boolean doRegister, TableName name, Class<? extends BasicFactoryBase> clazz) {
-        UserTable table = ais.getUserTable(name);
-        final BasicFactoryBase factory;
-        try {
-            factory = clazz.getConstructor(BasicInfoSchemaTablesServiceImpl.class, UserTable.class).newInstance(this, table);
-        } catch(Exception e) {
-            throw new RuntimeException(e);
-        }
-        if(doRegister) {
-            schemaManager.registerMemoryInformationSchemaTable(table, factory);
-        } else {
-            table.setMemoryTableFactory(factory);
-        }
     }
 
     void attachFactories(AkibanInformationSchema ais, boolean doRegister) {

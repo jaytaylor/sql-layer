@@ -51,6 +51,7 @@ import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.tree.TreeLink;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.persistit.exception.PersistitInterruptedException;
@@ -440,11 +441,15 @@ public class PersistitStore implements Store {
         hEx = getExchange(session, rowDef);
         WRITE_ROW_TAP.in();
         try {
-            //
             // Does the heavy lifting of looking up the full hkey in
             // parent's primary index if necessary.
-            //
-            constructHKey(session, hEx, rowDef, rowData, true);
+            // About the propagateHKeyChanges flag: The last argument of constructHKey is insertingRow.
+            // If this argument is true, it means that we're inserting a new row, and if the row's type
+            // has a generated PK, then a PK value needs to be generated. If this writeRow invocation is
+            // being done as part of hkey maintenance (called from propagateDownGroup with propagateHKeyChanges
+            // false), then we are deleting and reinserting a row, and we don't want the PK value changed.
+            // See bug 1020342.
+            constructHKey(session, hEx, rowDef, rowData, propagateHKeyChanges);
             if (hEx.isValueDefined()) {
                 throw new DuplicateKeyException("PRIMARY", hEx.getKey());
             }
@@ -757,17 +762,18 @@ public class PersistitStore implements Store {
         }
     }
 
-    /**
-     * Remove data from the <b>entire group</b> that this RowDef ID is contained
-     * in. This includes all table and index data for all user and group tables
-     * in the group.
-     * 
-     * @param session
-     *            Session to work on.
-     * @param rowDefId
-     *            RowDef ID to select group to truncate
-     * @throws PersistitException 
-     */
+    @Override
+    public void dropGroup(Session session, int rowDefId) throws PersistitException {
+        RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
+        if (!groupRowDef.isGroupTable()) {
+            groupRowDef = rowDefCache.getRowDef(groupRowDef.getGroupRowDefId());
+        }
+        for(RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
+            removeTrees(session, userRowDef.table());
+        }
+        // tableStatusCache entries updated elsewhere
+    }
+
     @Override
     public void truncateGroup(final Session session, final int rowDefId) throws PersistitException {
         RowDef groupRowDef = rowDefCache.getRowDef(rowDefId);
@@ -776,19 +782,19 @@ public class PersistitStore implements Store {
         }
 
         //
-        // Remove the index trees
+        // Truncate the index trees
         //
         for (RowDef userRowDef : groupRowDef.getUserTableRowDefs()) {
             for (Index index : userRowDef.getIndexes()) {
-                removeIndexTree(session, index);
+                truncateIndex(session, index);
             }
         }
         for (Index index : groupRowDef.getGroupIndexes()) {
-            removeIndexTree(session, index);
+            truncateIndex(session, index);
         }
 
         //
-        // remove the htable tree
+        // Truncate the group tree
         //
         final Exchange hEx = getExchange(session, groupRowDef);
         hEx.removeAll();
@@ -808,7 +814,7 @@ public class PersistitStore implements Store {
         this.indexStatistics = indexStatistics;
     }
 
-    protected final void removeIndexTree(Session session, Index index) {
+    protected final void truncateIndex(Session session, Index index) {
         Exchange iEx = getExchange(session, index);
         try {
             iEx.removeAll();
@@ -826,7 +832,6 @@ public class PersistitStore implements Store {
     public void truncateTableStatus(final Session session, final int rowDefId) throws RollbackException, PersistitException {
         tableStatusCache.truncate(rowDefId);
     }
-
 
     @Override
     public RowCollector getSavedRowCollector(final Session session,
@@ -1320,35 +1325,42 @@ public class PersistitStore implements Store {
         }
     }
 
-    @Override
-    public void removeTrees(Session session, Table table) {
-        Exchange hEx = null;
-        Exchange iEx = null;
-        Collection<Index> indexes = new ArrayList<Index>();
-        indexes.addAll(table.isUserTable() ? ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes());
-        indexes.addAll(table.getGroupIndexes());
-
+    private void removeTrees(Session session, Collection<TreeLink> treeLinks) {
+        Exchange ex = null;
         try {
-            hEx = getExchange(session, table.rowDef());
-            for(Index index : indexes) {
-                iEx = getExchange(session, index);
-                iEx.removeTree();
-                releaseExchange(session, iEx);
-                iEx = null;
+            for(TreeLink link : treeLinks) {
+                ex = treeService.getExchange(session, link);
+                ex.removeTree();
+                releaseExchange(session, ex);
+                ex = null;
             }
-            hEx.removeTree();
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         } finally {
-            if(hEx != null) {
-                releaseExchange(session, hEx);
-            }
-            if(iEx != null) {
-                releaseExchange(session, iEx);
+            if(ex != null) {
+                releaseExchange(session, ex);
             }
         }
+    }
 
-        indexStatistics.deleteIndexStatistics(session, indexes);
+    @Override
+    public void removeTrees(Session session, Table table) {
+        Collection<TreeLink> treeLinks = new ArrayList<TreeLink>();
+        // Add all index trees
+        final Collection<TableIndex> tableIndexes = table.isUserTable() ? ((UserTable)table).getIndexesIncludingInternal() : table.getIndexes();
+        final Collection<GroupIndex> groupIndexes = table.getGroupIndexes();
+        for(Index index : tableIndexes) {
+            treeLinks.add(index.indexDef());
+        }
+        for(Index index : groupIndexes) {
+            treeLinks.add(index.indexDef());
+        }
+        // And the group tree
+        treeLinks.add(table.rowDef());
+        // And drop them all
+        removeTrees(session, treeLinks);
+        indexStatistics.deleteIndexStatistics(session, tableIndexes);
+        indexStatistics.deleteIndexStatistics(session, groupIndexes);
     }
 
     public void flushIndexes(final Session session) {

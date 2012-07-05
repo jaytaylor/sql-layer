@@ -42,6 +42,10 @@ import java.util.List;
 
 public class LeftRightExpression extends AbstractBinaryExpression
 {
+    @Override
+    public String name() {
+        return op.name();
+    }
     protected enum Op
     {
         LEFT

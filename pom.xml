@@ -264,7 +264,7 @@
                         <akserver.port>${akserver.port}</akserver.port>
                         <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>-Xmx512m -Xms128m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                     <includes>
                         <include>**/*Test.java</include>
                         <include>**/*Test?.java</include>
@@ -283,7 +283,7 @@
                         <akserver.port>${akserver.port}</akserver.port>
                         <akserver.postgres.port>${akserver.postgres.port}</akserver.postgres.port>
                     </systemPropertyVariables>
-                    <argLine>${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
+                    <argLine>-Xmx512m ${akiban.test.extraJvmArgs} ${akiban.test.JmxJvmArgs}</argLine>
                 </configuration>
                 <executions>
                     <execution>
@@ -345,6 +345,7 @@
                         <exclude>debian/*</exclude>
                         <exclude>redhat/*</exclude>
                         <exclude>src/izpack/**</exclude>
+                        <exclude>macosx/**</exclude>
                         <exclude>LICENSE.txt</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>

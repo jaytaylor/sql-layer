@@ -56,8 +56,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 
 @RunWith(NamedParameterizedRunner.class)
-public class
-        RulesTest extends OptimizerTestBase
+public class RulesTest extends OptimizerTestBase
                        implements TestBase.GenerateAndCheckResult
 {
     public static final File RESOURCE_DIR = 

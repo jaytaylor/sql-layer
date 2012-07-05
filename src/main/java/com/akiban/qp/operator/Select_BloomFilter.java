@@ -31,6 +31,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.BloomFilter;
 import com.akiban.util.tap.InOutTap;
@@ -153,6 +154,11 @@ class Select_BloomFilter extends Operator
     private final Operator onPositive;
     private final int bindingPosition;
     private final List<? extends Expression> fields;
+
+    @Override
+    public Explainer getExplainer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

@@ -43,6 +43,11 @@ import java.util.List;
 
 public class IfExpression extends AbstractCompositeExpression
 {
+    @Override
+    protected void describe(StringBuilder sb)
+    {
+        sb.append("IF()");
+    }
 
     @Scalar("if")
     public static final ExpressionComposer COMPOSER = new ExpressionComposer()
@@ -91,6 +96,12 @@ public class IfExpression extends AbstractCompositeExpression
                                                                children.get(2).valueType()));
     }
 
+    @Override
+    public String name()
+    {
+        return "IF";
+    }
+
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
         public InnerEvaluation(List<? extends ExpressionEvaluation> eva)
@@ -114,12 +125,6 @@ public class IfExpression extends AbstractCompositeExpression
     public boolean nullIsContaminating()
     {
         return false;
-    }
-
-    @Override
-    protected void describe(StringBuilder sb)
-    {
-        sb.append("IF()");
     }
 
     @Override

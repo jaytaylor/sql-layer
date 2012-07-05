@@ -28,6 +28,7 @@ package com.akiban.qp.exec;
 
 import com.akiban.qp.operator.Operator;
 
+import com.akiban.sql.optimizer.explain.Explainer;
 import java.util.List;
 
 public interface Plannable {
@@ -36,4 +37,6 @@ public interface Plannable {
     String describePlan();
 
     String describePlan(Operator inputOperator);
+    
+    Explainer getExplainer ();
 }
