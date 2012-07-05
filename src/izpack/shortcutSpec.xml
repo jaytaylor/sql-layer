@@ -5,6 +5,8 @@
     <shortcut
         name="Akiban Server"
         target="$INSTALL_PATH\bin\akserver.cmd"
+        iconFile="$INSTALL_PATH\bin\Akiban_Server.ico"
+        iconIndex="0"
         commandLine="window"
         workingDirectory="$INSTALL_PATH"
         description="Run the server as an application"
