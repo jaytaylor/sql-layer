@@ -29,6 +29,7 @@ package com.akiban.server.store;
 import com.akiban.ais.model.*;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.row.IndexRow;
 import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
@@ -61,7 +62,6 @@ import java.util.*;
 public class PersistitStore implements Store {
 
     private static final Session.MapKey<Integer, List<RowCollector>> COLLECTORS = Session.MapKey.mapNamed("collectors");
-    final static int INITIAL_BUFFER_SIZE = 1024;
 
     private static final Logger LOG = LoggerFactory
             .getLogger(PersistitStore.class.getName());
@@ -81,11 +81,9 @@ public class PersistitStore implements Store {
     private static final PointTap PROPAGATE_HKEY_CHANGE_TAP = Tap.createCount("write: propagate_hkey_change");
     private static final PointTap PROPAGATE_HKEY_CHANGE_ROW_REPLACE_TAP = Tap.createCount("write: propagate_hkey_change_row_replace");
 
-    private final static int MEGA = 1024 * 1024;
-
     private final static int MAX_ROW_SIZE = 5000000;
 
-    private final static int MAX_INDEX_TRANCHE_SIZE = 10 * MEGA;
+    private final static int MAX_INDEX_TRANCHE_SIZE = 10 * 1024 * 1024;
 
     private final static int KEY_STATE_SIZE_OVERHEAD = 50;
 
@@ -102,8 +100,6 @@ public class PersistitStore implements Store {
     private final TreeService treeService;
 
     private TableStatusCache tableStatusCache;
-
-    private boolean forceToDisk = false; // default to "group commit"
 
     private DisplayFilter originalDisplayFilter;
 
@@ -305,7 +301,7 @@ public class PersistitStore implements Store {
     private static void constructIndexRow(Key targetKey, RowData rowData, Index index, Key hKey)
     {
         assert index.isTableIndex() : index;
-        PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(targetKey);
+        IndexRow indexRow = new PersistitIndexRowBuffer(targetKey);
         IndexRowComposition indexRowComp = index.indexRowComposition();
         for(int indexPos = 0; indexPos < indexRowComp.getLength(); ++indexPos) {
             if(indexRowComp.isInRowData(indexPos)) {
@@ -1008,10 +1004,10 @@ public class PersistitStore implements Store {
         }
     }
 
-    void insertIntoIndex(Session session, Index index, RowData rowData, Key hkey, boolean deferIndexes)
+    private void insertIntoIndex(Session session, Index index, RowData rowData, Key hkey, boolean deferIndexes)
     {
         checkNotGroupIndex(index);
-        final Exchange iEx = getExchange(session, index);
+        Exchange iEx = getExchange(session, index);
         constructIndexRow(iEx.getKey(), rowData, index, hkey);
         checkUniqueness(index, rowData, iEx);
         iEx.getValue().clear();
@@ -1071,9 +1067,12 @@ public class PersistitStore implements Store {
         }
     }
 
-    public void updateIndex(final Session session, final Index index,
-                            final RowDef rowDef, final RowData oldRowData,
-                            final RowData newRowData, final Key hkey)
+    public void updateIndex(Session session,
+                            Index index,
+                            RowDef rowDef,
+                            RowData oldRowData,
+                            RowData newRowData,
+                            Key hkey)
             throws PersistitException
     {
         checkNotGroupIndex(index);
@@ -1102,7 +1101,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    void deleteIndex(final Session session, final Index index, final RowData rowData, final Key hkey)
+    void deleteIndex(Session session, Index index, RowData rowData, Key hkey)
             throws PersistitException {
         checkNotGroupIndex(index);
         final Exchange iEx = getExchange(session, index);
@@ -1111,8 +1110,8 @@ public class PersistitStore implements Store {
         releaseExchange(session, iEx);
     }
 
-    static boolean bytesEqual(final byte[] a, final int aoffset, final int asize,
-            final byte[] b, final int boffset, final int bsize) {
+    static boolean bytesEqual(byte[] a, int aoffset, int asize,
+                              byte[] b, int boffset, int bsize) {
         if (asize != bsize) {
             return false;
         }
@@ -1338,8 +1337,7 @@ public class PersistitStore implements Store {
         }
     }
 
-    private RowData mergeRows(RowDef rowDef, RowData currentRow,
-            RowData newRowData, ColumnSelector columnSelector) {
+    private RowData mergeRows(RowDef rowDef, RowData currentRow, RowData newRowData, ColumnSelector columnSelector) {
         NewRow mergedRow = NiceRow.fromRowData(currentRow, rowDef);
         NewRow newRow = new LegacyRowWrapper(newRowData, this);
         int fields = rowDef.getFieldCount();

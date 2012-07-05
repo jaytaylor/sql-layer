@@ -29,10 +29,8 @@ package com.akiban.qp.persistitadapter.indexrow;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.PersistitHKey;
-import com.akiban.qp.row.AbstractRow;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
@@ -46,7 +44,7 @@ import com.akiban.util.AkibanAppender;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-public abstract class PersistitIndexRow extends AbstractRow
+public abstract class PersistitIndexRow extends PersistitIndexRowBuffer
 {
     // Object interface
 
@@ -66,18 +64,10 @@ public abstract class PersistitIndexRow extends AbstractRow
         return buffer.toString();
     }
     
-    // BoundExpressions interface
-
-    @Override
-    public final int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
-    {
-        PersistitIndexRow that = (PersistitIndexRow) row;
-        return indexRow.compareTo(that.indexRow, leftStartIndex, rightStartIndex, fieldCount);
-    }
-
-
     // RowBase interface
 
+    // TODO: This is not a correct implementation of hKey, because it returns an empty hKey to be filled in
+    // TODO: by the caller. Normally, hKey returns the HKey of the row.
     @Override
     public HKey hKey()
     {
@@ -94,18 +84,13 @@ public abstract class PersistitIndexRow extends AbstractRow
     public final ValueSource eval(int i)
     {
         PersistitKeyValueSource keySource = keySource(i);
-        indexRow.attach(keySource, i, akTypes[i]);
+        attach(keySource, i, akTypes[i]);
         return keySource;
     }
 
     // PersistitIndexRow interface
 
     public abstract IndexToHKey indexToHKey();
-
-    public final boolean keyEmpty()
-    {
-        return indexRow.keyEmpty();
-    }
 
     public long tableBitmap()
     {
@@ -114,12 +99,11 @@ public abstract class PersistitIndexRow extends AbstractRow
 
     public void copyFromExchange(Exchange exchange) throws PersistitException
     {
-        indexRow.copyFrom(exchange);
-        indexRow.constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
+        copyFrom(exchange);
+        constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
     }
 
     public static PersistitTableIndexRow tableIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
-        throws PersistitException
     {
         return new PersistitTableIndexRow(adapter, indexRowType);
     }
@@ -133,6 +117,7 @@ public abstract class PersistitIndexRow extends AbstractRow
 
     protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
+        super(adapter.persistit().getKey(adapter.getSession()));
         this.adapter = adapter;
         this.indexRowType = indexRowType;
         assert indexRowType.nFields() == indexRowType.index().getAllColumns().size();
@@ -141,7 +126,6 @@ public abstract class PersistitIndexRow extends AbstractRow
             this.akTypes[indexColumn.getPosition()] = indexColumn.getColumn().getType().akType();
         }
         this.keySources = new PersistitKeyValueSource[indexRowType.nFields()];
-        this.indexRow = new PersistitIndexRowBuffer(adapter.persistit().getKey(adapter.getSession()));
         this.leafmostTable = (UserTable) indexRowType.index().leafMostTable();
         this.hKeyCache = new HKeyCache<PersistitHKey>(adapter);
     }
@@ -162,7 +146,6 @@ public abstract class PersistitIndexRow extends AbstractRow
     protected final IndexRowType indexRowType;
     protected AkType[] akTypes;
     protected final PersistitKeyValueSource[] keySources;
-    protected final PersistitIndexRowBuffer indexRow;
     protected final HKeyCache<PersistitHKey> hKeyCache;
     protected final UserTable leafmostTable;
 

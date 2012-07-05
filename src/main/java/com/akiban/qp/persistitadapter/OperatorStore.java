@@ -83,8 +83,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             }
             BitSet changedColumnPositions = changedColumnPositions(rowDef, oldRowData, newRowData);
 
-            PersistitAdapter adapter =
-                new PersistitAdapter(SchemaCache.globalSchema(ais), persistitStore, treeService, session, config);
+            PersistitAdapter adapter = newAdapter(session);
             Schema schema = adapter.schema();
 
             UpdateFunction updateFunction = new InternalUpdateFunction(adapter, rowDef, newRowData, columnSelector);
@@ -153,12 +152,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         INSERT_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();
-            PersistitAdapter adapter =
-                new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                     getPersistitStore(),
-                                     treeService,
-                                     session,
-                                     config);
+            PersistitAdapter adapter = newAdapter(session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
             super.writeRow(session, rowData);
             maintainGroupIndexes(session,
@@ -179,12 +173,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         DELETE_MAINTENANCE.in();
         try {
             AkibanInformationSchema ais = aisHolder.getAis();
-            PersistitAdapter adapter =
-                new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                     getPersistitStore(),
-                                     treeService,
-                                     session,
-                                     config);
+            PersistitAdapter adapter = newAdapter(session);
             UserTable uTable = ais.getUserTable(rowData.getRowDefId());
 
             maintainGroupIndexes(session,
@@ -221,13 +210,7 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
             super.buildIndexes(session, tableIndexes, defer);
         }
 
-        AkibanInformationSchema ais = aisHolder.getAis();
-        PersistitAdapter adapter =
-            new PersistitAdapter(SchemaCache.globalSchema(ais),
-                                 getPersistitStore(),
-                                 treeService,
-                                 session,
-                                 config);
+        PersistitAdapter adapter = newAdapter(session);
         QueryContext context = new SimpleQueryContext(adapter);
         for(GroupIndex groupIndex : groupIndexes) {
             Operator plan = OperatorStoreMaintenancePlans.groupIndexCreationPlan(adapter.schema(), groupIndex);
@@ -266,7 +249,8 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
 
     private void maintainGroupIndexes(
             Session session,
-            AkibanInformationSchema ais, PersistitAdapter adapter,
+            AkibanInformationSchema ais,
+            PersistitAdapter adapter,
             RowData rowData,
             BitSet columnDifferences,
             OperatorStoreGIHandler handler,
@@ -380,14 +364,23 @@ public class OperatorStore extends DelegatingStore<PersistitStore> {
         return true;
     }
 
+    private PersistitAdapter newAdapter(Session session)
+    {
+        return new PersistitAdapter(SchemaCache.globalSchema(aisHolder.getAis()),
+                                                             getPersistitStore(),
+                                                             treeService,
+                                                             session,
+                                                             config);
+    }
+
     // object state
     private final ConfigurationService config;
     private final TreeService treeService;
     private final AisHolder aisHolder;
 
+
     // consts
 
-    private static final int MAX_RETRIES = 10;
     private static final InOutTap INSERT_TOTAL = Tap.createTimer("write: write_total");
     private static final InOutTap UPDATE_TOTAL = Tap.createTimer("write: update_total");
     private static final InOutTap DELETE_TOTAL = Tap.createTimer("write: delete_total");

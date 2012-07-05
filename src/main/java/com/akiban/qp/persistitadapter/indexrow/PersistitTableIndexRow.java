@@ -64,7 +64,6 @@ public class PersistitTableIndexRow extends PersistitIndexRow
     // PersistitTableIndexRow interface
 
     public PersistitTableIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
-        throws PersistitException
     {
         super(adapter, indexRowType);
         this.index = (TableIndex) indexRowType.index();

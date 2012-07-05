@@ -28,6 +28,8 @@ package com.akiban.qp.persistitadapter.indexrow;
 
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexToHKey;
+import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.row.IndexRow;
 import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.rowdata.FieldDef;
@@ -42,62 +44,13 @@ import com.persistit.exception.PersistitException;
 
 import static java.lang.Math.min;
 
-public class PersistitIndexRowBuffer
+public class PersistitIndexRowBuffer extends IndexRow
 {
-    // PersistitIndexRowBuffer interface
+    // BoundExpressions interface
 
-    public void append(FieldDef fieldDef, RowData rowData)
+    public final int compareTo(BoundExpressions row, int leftStartIndex, int rightStartIndex, int fieldCount)
     {
-        keyAppender.append(fieldDef, rowData);
-    }
-
-    public void append(Column column, ValueSource source)
-    {
-        keyAppender.append(source, column);
-    }
-
-    public void appendFieldFromKey(Key fromKey, int depth)
-    {
-        keyAppender.appendFieldFromKey(fromKey, depth);
-    }
-
-    public boolean keyEmpty()
-    {
-        return keyAppender.key().getEncodedSize() == 0;
-    }
-
-    public void attach(PersistitKeyValueSource source, int position, AkType type)
-    {
-        source.attach(keyAppender.key(), position, type);
-    }
-
-    public void copyFrom(Exchange exchange) throws PersistitException
-    {
-        exchange.getKey().copyTo(keyAppender.key());
-    }
-
-    public void constructHKeyFromIndexKey(Key hKey, IndexToHKey indexToHKey)
-    {
-        Key indexRowKey = keyAppender.key();
-        hKey.clear();
-        for(int i = 0; i < indexToHKey.getLength(); ++i) {
-            if(indexToHKey.isOrdinal(i)) {
-                hKey.append(indexToHKey.getOrdinal(i));
-            }
-            else {
-                int depth = indexToHKey.getIndexRowPosition(i);
-                if (depth < 0 || depth > indexRowKey.getDepth()) {
-                    throw new IllegalStateException(
-                        "IndexKey too shallow - requires depth=" + depth
-                        + ": " + indexRowKey);
-                }
-                PersistitKey.appendFieldFromKey(hKey, indexRowKey, depth);
-            }
-        }
-    }
-
-    public final int compareTo(PersistitIndexRowBuffer that, int leftStartIndex, int rightStartIndex, int fieldCount)
-    {
+        PersistitIndexRowBuffer that = (PersistitIndexRowBuffer) row;
         Key thisKey = this.keyAppender.key();
         Key thatKey = that.keyAppender.key();
         int thisPosition = thisKey.indexTo(leftStartIndex).getIndex();
@@ -131,6 +84,30 @@ public class PersistitIndexRowBuffer
         return c;
     }
 
+    // IndexRow interface
+
+    public void append(FieldDef fieldDef, RowData rowData)
+    {
+        keyAppender.append(fieldDef, rowData);
+    }
+
+    public void append(Column column, ValueSource source)
+    {
+        keyAppender.append(source, column);
+    }
+
+    public void appendFieldFromKey(Key fromKey, int depth)
+    {
+        keyAppender.appendFieldFromKey(fromKey, depth);
+    }
+
+    public boolean keyEmpty()
+    {
+        return keyAppender.key().getEncodedSize() == 0;
+    }
+
+    // PersistitIndexRowBuffer interface
+
     public void tableBitmap(long bitmap)
     {
         value.put(bitmap);
@@ -151,6 +128,38 @@ public class PersistitIndexRowBuffer
         this.keyAppender = new PersistitKeyAppender(key);
         value.clear();
         this.value = value;
+    }
+
+    // For use by subclasses
+
+    protected void attach(PersistitKeyValueSource source, int position, AkType type)
+    {
+        source.attach(keyAppender.key(), position, type);
+    }
+
+    protected void copyFrom(Exchange exchange) throws PersistitException
+    {
+        exchange.getKey().copyTo(keyAppender.key());
+    }
+
+    protected void constructHKeyFromIndexKey(Key hKey, IndexToHKey indexToHKey)
+    {
+        Key indexRowKey = keyAppender.key();
+        hKey.clear();
+        for(int i = 0; i < indexToHKey.getLength(); ++i) {
+            if(indexToHKey.isOrdinal(i)) {
+                hKey.append(indexToHKey.getOrdinal(i));
+            }
+            else {
+                int depth = indexToHKey.getIndexRowPosition(i);
+                if (depth < 0 || depth > indexRowKey.getDepth()) {
+                    throw new IllegalStateException(
+                        "IndexKey too shallow - requires depth=" + depth
+                        + ": " + indexRowKey);
+                }
+                PersistitKey.appendFieldFromKey(hKey, indexRowKey, depth);
+            }
+        }
     }
 
     // Object state
