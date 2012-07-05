@@ -425,9 +425,21 @@
                                             <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
                                             <fileset dir="${basedir}/src/izpack" />
                                         </copy>
-                                        <get src="http://mirrors.ibiblio.org/apache/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${izpack.staging.dir}/procrun.zip" usetimestamp="true" />
+                                        <get src="http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${izpack.staging.dir}/procrun.zip" usetimestamp="true" />
                                         <mkdir dir="${izpack.staging.dir}/procrun" />
                                         <unzip src="${izpack.staging.dir}/procrun.zip" dest="${izpack.staging.dir}/procrun" />
+                                        <exec dir="${izpack.staging.dir}/procrun" executable="mt" failonerror="true">
+                                            <arg line="-manifest ..\prunsrv.manifest -outputresource:prunsrv.exe;1" />
+                                        </exec>
+                                        <exec dir="${izpack.staging.dir}/procrun" executable="mt" failonerror="true">
+                                            <arg line="-manifest ..\prunmgr.manifest -outputresource:prunmgr.exe;1" />
+                                        </exec>
+                                        <exec dir="${izpack.staging.dir}/procrun/amd64" executable="mt" failonerror="true">
+                                            <arg line="-manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1" />
+                                        </exec>
+                                        <exec dir="${izpack.staging.dir}/procrun/ia64" executable="mt" failonerror="true">
+                                            <arg line="-manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1" />
+                                        </exec>
                                     </tasks>
                                 </configuration>
                             </execution>
