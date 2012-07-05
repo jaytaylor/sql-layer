@@ -25,8 +25,10 @@
  */
 package com.akiban.server.t3expressions;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInputSet;
@@ -40,31 +42,46 @@ import java.util.Iterator;
 import java.util.List;
 
 public final class OverloadResolver {
+
     public static class OverloadResult {
         private TValidatedOverload overload;
-        private TClass pickingClass;
 
-        public OverloadResult(TValidatedOverload overload, TClass pickingClass) {
+        private TInstance pickedInstance;
+        public OverloadResult(TValidatedOverload overload, TInstance pickedInstance) {
             this.overload = overload;
-            this.pickingClass = pickingClass;
+            this.pickedInstance = pickedInstance;
         }
 
         public TValidatedOverload getOverload() {
             return overload;
         }
 
-        public TClass getPickingClass() {
-            return pickingClass;
+        public TInstance getPickedInstance() {
+            return pickedInstance;
+        }
+
+        public TClass getTypeInstance(int inputIndex) {
+            throw new UnsupportedOperationException(); // TODO
         }
     }
 
     private final T3ScalarsRegistry registry;
+    private final T3AggregatesRegistry aggregatesRegistry;
 
-    public OverloadResolver(T3ScalarsRegistry registry) {
-        this.registry = registry;
+    /**
+     * For testing. Aggregates will not work.
+     * @param registry the scalar registry
+     */
+    OverloadResolver(T3ScalarsRegistry registry) {
+        this(registry, null);
     }
 
-    OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
+    public OverloadResolver(T3ScalarsRegistry registry, T3AggregatesRegistry aggregatesRegistry) {
+        this.registry = registry;
+        this.aggregatesRegistry = aggregatesRegistry;
+    }
+
+    public OverloadResult get(String name, List<? extends TPreptimeValue> inputs) {
         Collection<? extends TValidatedOverload> namedOverloads = registry.getOverloads(name);
         if (namedOverloads == null || namedOverloads.isEmpty()) {
             throw new NoSuchFunctionException(name);
@@ -74,6 +91,16 @@ public final class OverloadResolver {
         } else {
             return inputBasedResolution(inputs, namedOverloads);
         }
+    }
+
+    public TAggregator getAggregation(String name, TClass inputType) {
+        List<TAggregator> candidates = new ArrayList<TAggregator>(aggregatesRegistry.getAggregates(name));
+        for (TAggregator candidate : candidates) {
+            if (candidate.getTypeClass().equals(inputType))
+                return candidate;
+            // TODO use casting types, etc
+        }
+        throw new AkibanInternalException("no appropriate aggregate found for " + name + "(" + inputType + ")");
     }
 
     private OverloadResult inputBasedResolution(List<? extends TPreptimeValue> inputs,
@@ -136,31 +163,32 @@ public final class OverloadResolver {
     }
 
     private OverloadResult buildResult(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
-        TClass pickingClass = pickingClass(overload, inputs);
-        return new OverloadResult(overload, pickingClass);
+        TInstance pickingInstance = pickingInstance(overload, inputs);
+        return new OverloadResult(overload, pickingInstance);
     }
 
-    private TClass pickingClass(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
+    private TInstance pickingInstance(TValidatedOverload overload, List<? extends TPreptimeValue> inputs) {
         TInputSet pickingSet = overload.pickingInputSet();
         if (pickingSet == null) {
             return null;
         }
-        TClass common = null;
+        TClass common = null; // TODO change to TInstance, so we can more precisely pick instances
         for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i)) {
             TInstance instance = inputs.get(i).instance();
             common = registry.commonTClass(common, instance != null ? instance.typeClass() : null).get();
             if (common == T3ScalarsRegistry.NO_COMMON)
-                return common;
+                return common.instance(); // TODO shouldn't we throw an exception?
         }
         if (pickingSet.coversRemaining()) {
             for (int i = overload.firstVarargInput(), last = inputs.size(); i < last; ++i) {
                 TInstance instance = inputs.get(i).instance();
                 common = registry.commonTClass(common, instance != null ? instance.typeClass() : null).get();
                 if (common == T3ScalarsRegistry.NO_COMMON)
-                    return common;
+                    return common.instance(); // TODO shouldn't we throw an exception?
             }
         }
-        return common;
+        assert common != null : "no common type found";
+        return common.instance();
     }
 
     /*

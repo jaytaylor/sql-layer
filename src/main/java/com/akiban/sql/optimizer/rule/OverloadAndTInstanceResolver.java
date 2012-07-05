@@ -26,8 +26,8 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.t3expressions.OverloadResolutionResult;
 import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3ScalarsRegistry;
 import com.akiban.server.t3expressions.TClassPossibility;
 import com.akiban.server.types3.LazyListBase;
@@ -171,19 +171,21 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleFunctionExpression(FunctionExpression expression) {
             List<ExpressionNode> operands = expression.getOperands();
-            List<TClass> operandClasses = new ArrayList<TClass>(operands.size());
+            List<TPreptimeValue> operandClasses = new ArrayList<TPreptimeValue>(operands.size());
             for (ExpressionNode operand : operands)
-                operandClasses.add(tclass(operand));
+                operandClasses.add(operand.getPreptimeValue());
 
-            OverloadResolutionResult resolutionResult = registry.get(expression.getFunction(), operandClasses);
+            OverloadResult resolutionResult = resolver.get(expression.getFunction(), operandClasses);
 
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
-                ExpressionNode operand = castTo(operands.get(i), resolutionResult.tClass(i));
+
+                ExpressionNode operand = castTo(operands.get(i), resolutionResult.getTypeInstance(i));
                 operands.set(i, operand);
             }
 
-            TValidatedOverload overload = resolutionResult.overload();
+            TValidatedOverload overload = resolutionResult.getOverload();
+            expression.setOverload(overload);
 
             final List<TPreptimeValue> operandValues = new ArrayList<TPreptimeValue>(operands.size());
             List<TInstance> operandInstances = new ArrayList<TInstance>(operands.size());
@@ -208,7 +210,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 resultInstance = overloadResultStrategy.fixed();
                 break;
             case PICKING:
-                resultInstance = resolutionResult.pickingType();
+                resultInstance = resolutionResult.getPickedInstance();
                 break;
             default:
                 throw new AssertionError(overloadResultStrategy.category());

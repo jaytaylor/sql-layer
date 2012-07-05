@@ -30,6 +30,7 @@ import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegist
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.inject.Singleton;
 import java.lang.reflect.*;
 import java.util.ArrayList;
@@ -40,7 +41,7 @@ import java.util.List;
 public class FunctionRegistryImpl implements FunctionRegistry
 {
     // TODO : define aggregates here
-    private Collection<TOverload> scalars;
+    private Collection<TValidatedOverload> scalars;
     private Collection<TClass> types;
     private Collection<TCast> casts;
     
@@ -55,7 +56,12 @@ public class FunctionRegistryImpl implements FunctionRegistry
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
         // collect all scalar TOverload instances
-        scalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
+        Collection<TOverload> rawScalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
+        scalars = new ArrayList<TValidatedOverload>(rawScalars.size());
+        for (TOverload rawScalar : rawScalars) {
+            TValidatedOverload scalar = new TValidatedOverload(rawScalar);
+            scalars.add(scalar);
+        }
         
         // collect all TClass instances
         types = collectInstances(typesClassFinder.findClasses(), TClass.class);
@@ -186,7 +192,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
     }
 
     @Override
-    public Collection<TOverload> overloads()
+    public Collection<TValidatedOverload> overloads()
     {
         return scalars;
     }

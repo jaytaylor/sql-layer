@@ -38,7 +38,7 @@ public enum AkBundle implements TBundle {
 
     @Override
     public TBundleID id() {
-        throw new UnsupportedOperationException(); // TODO
+        return bundleId;
     }
 
     @Override
@@ -49,4 +49,6 @@ public enum AkBundle implements TBundle {
     public enum AkSwitcher {
         // TODO
     }
+
+    private static TBundleID bundleId = new TBundleID("mcompat", "282696ac-6f10-450c-9960-a54c8abe94c0");
 }
