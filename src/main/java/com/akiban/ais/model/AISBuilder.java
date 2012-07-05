@@ -36,6 +36,7 @@ import com.akiban.ais.gwtutils.GwtLogging;
 import com.akiban.ais.model.Join.GroupingUsage;
 import com.akiban.ais.model.Join.SourceType;
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.sql.parser.ExistenceCheck;
 
 // AISBuilder can be used to create an AIS. The API is designed to sify the creation of an AIS during a scan
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
@@ -81,9 +82,15 @@ public class
         this.indexIdGenerator = offset;
     }
 
-    public void userTable(String schemaName, String tableName) {
+    public void userTable(String schemaName, String tableName) 
+    {
         LOG.info("userTable: " + schemaName + "." + tableName);
-        UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
+        UserTable.create(ais, schemaName, tableName, ExistenceCheck.NO_CONDITION, tableIdGenerator++);
+    }
+
+    public void userTable(String schemaName, String tableName, ExistenceCheck check) {
+        LOG.info("userTable: " + schemaName + "." + tableName);
+        UserTable.create(ais, schemaName, tableName, check, tableIdGenerator++);
     }
 
     public void userTableInitialAutoIncrement(String schemaName,

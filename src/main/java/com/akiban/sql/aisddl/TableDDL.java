@@ -60,6 +60,7 @@ import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
+import com.akiban.sql.parser.ExistenceCheck;
 
 /** DDL operations on Tables */
 public class TableDDL
@@ -76,7 +77,8 @@ public class TableDDL
         
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName tableName = TableName.create(schemaName, parserName.getTableName());
-        
+        ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
+
         if (ddlFunctions.getAIS(session).getUserTable(tableName) == null && 
                 ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
             throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
@@ -102,10 +104,11 @@ public class TableDDL
         com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String tableName = parserName.getTableName();
-        
+        ExistenceCheck existenceCheck = createTable.getExistenceCheck();
+
         AISBuilder builder = new AISBuilder();
         
-        builder.userTable(schemaName, tableName);
+        builder.userTable(schemaName, tableName, existenceCheck);
 
         int colpos = 0;
         // first loop through table elements, add the columns
@@ -246,13 +249,13 @@ public class TableDDL
                 fkdn.getRefTableName().getSchemaName() : schemaName;
         String parentTableName = fkdn.getRefTableName().getTableName();
         
-
+        
         UserTable parentTable = ais.getUserTable(parentSchemaName, parentTableName);
         if (parentTable == null) {
             throw new NoSuchTableException (parentSchemaName, parentTableName);
         }
         
-        builder.userTable(parentSchemaName, parentTableName);
+        builder.userTable(parentSchemaName, parentTableName, ExistenceCheck.NO_CONDITION);
         
         builder.index(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
         int colpos = 0;
