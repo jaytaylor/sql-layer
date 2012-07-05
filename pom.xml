@@ -344,8 +344,8 @@
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>debian/*</exclude>
                         <exclude>redhat/*</exclude>
-                        <exclude>src/izpack/**</exclude>
                         <exclude>macosx/**</exclude>
+                        <exclude>windows/**</exclude>
                         <exclude>LICENSE.txt</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
@@ -401,11 +401,11 @@
     </build>
     <profiles>
         <profile>
-            <id>installer-izpack</id>
+            <id>installer-inno-setup</id>
             <activation>
                 <property>
                     <name>installer</name>
-                    <value>izpack</value>
+                    <value>inno-setup</value>
                 </property>
             </activation>
             <build>
@@ -414,86 +414,63 @@
                         <artifactId>maven-antrun-plugin</artifactId>
                         <executions>
                             <execution>
-                                <id>izpack-staging</id>
+                                <id>inno-setup-stage</id>
                                 <phase>process-resources</phase>
                                 <goals>
                                     <goal>run</goal>
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                        <copy todir="${izpack.staging.dir}">
+                                        <copy todir="${setup.staging.dir}">
                                             <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
-                                            <fileset dir="${basedir}/src/izpack" />
+                                            <fileset dir="${basedir}/windows" />
                                         </copy>
-                                        <get src="http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${izpack.staging.dir}/procrun.zip" usetimestamp="true" />
-                                        <mkdir dir="${izpack.staging.dir}/procrun" />
-                                        <unzip src="${izpack.staging.dir}/procrun.zip" dest="${izpack.staging.dir}/procrun" />
-                                        <exec dir="${izpack.staging.dir}/procrun" executable="mt" failonerror="true">
+                                        <get src="http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${setup.staging.dir}/procrun.zip" usetimestamp="true" />
+                                        <mkdir dir="${setup.staging.dir}/procrun" />
+                                        <unzip src="${setup.staging.dir}/procrun.zip" dest="${setup.staging.dir}/procrun" />
+                                        <exec dir="${setup.staging.dir}/procrun" executable="mt" failonerror="true">
                                             <arg line="-manifest ..\prunsrv.manifest -outputresource:prunsrv.exe;1" />
                                         </exec>
-                                        <exec dir="${izpack.staging.dir}/procrun" executable="mt" failonerror="true">
+                                        <exec dir="${setup.staging.dir}/procrun" executable="mt" failonerror="true">
                                             <arg line="-manifest ..\prunmgr.manifest -outputresource:prunmgr.exe;1" />
                                         </exec>
-                                        <exec dir="${izpack.staging.dir}/procrun/amd64" executable="mt" failonerror="true">
+                                        <exec dir="${setup.staging.dir}/procrun/amd64" executable="mt" failonerror="true">
                                             <arg line="-manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1" />
                                         </exec>
-                                        <exec dir="${izpack.staging.dir}/procrun/ia64" executable="mt" failonerror="true">
+                                        <exec dir="${setup.staging.dir}/procrun/ia64" executable="mt" failonerror="true">
                                             <arg line="-manifest ..\..\prunsrv.manifest -outputresource:prunsrv.exe;1" />
                                         </exec>
                                     </tasks>
                                 </configuration>
                             </execution>
                             <execution>
-                                <id>izpack-staging-2</id>
+                                <id>inno-setup-compile</id>
                                 <phase>package</phase>
                                 <goals>
                                     <goal>run</goal>
                                 </goals>
                                 <configuration>
                                     <tasks>
-                                        <copy todir="${izpack.staging.dir}/lib">
-                                            <fileset dir="${project.build.directory}" includes="${izpack.jarfile}" />
+                                        <copy todir="${setup.staging.dir}/lib">
+                                            <fileset dir="${project.build.directory}" includes="${setup.jarfile}" />
                                         </copy>
-                                        <mkdir dir="${izpack.staging.dir}/log" />
-                                        <mkdir dir="${izpack.staging.dir}/data" />
+                                        <exec dir="${setup.staging.dir}" executable="iscc" failonerror="true">
+                                            <arg line="/F&quot;${setup.output}&quot;" />
+                                            <arg line="/dVERSION=${setup.appversion}" />
+                                            <arg value="AkibanServer.iss" />
+                                        </exec>
                                     </tasks>
                                 </configuration>
-                            </execution>
-                        </executions>
-                    </plugin>
-                    <plugin>
-                        <groupId>org.codehaus.izpack</groupId>
-                        <artifactId>izpack-maven-plugin</artifactId>
-                        <version>1.0-alpha-5</version>
-                        <dependencies>
-                            <dependency>
-                                <groupId>org.codehaus.izpack</groupId>
-                                <artifactId>izpack-standalone-compiler</artifactId>
-                                <version>4.3.1</version>
-                            </dependency>
-                        </dependencies>
-                        <configuration>
-                              <izpackBasedir>${izpack.staging.dir}</izpackBasedir>
-                              <customPanelDirectory>${izpack.staging.dir}</customPanelDirectory>
-                              <installerFile>${project.build.directory}/${project.build.finalName}-installer.jar</installerFile>
-                        </configuration>
-                        <executions>
-                            <execution>
-                                <id>standard-installer</id>
-                                <phase>package</phase>
-                                <goals>
-                                    <goal>izpack</goal>
-                                </goals>
                             </execution>
                         </executions>
                     </plugin>
                 </plugins>
             </build>
             <properties>
-                <izpack.staging.dir>${project.build.directory}/izpack</izpack.staging.dir>
-                <izpack.appname>${project.name}</izpack.appname>
-                <izpack.appversion>${project.version}</izpack.appversion>
-                <izpack.jarfile>${project.build.finalName}-jar-with-dependencies.jar</izpack.jarfile>
+                <setup.staging.dir>${project.build.directory}/isstage</setup.staging.dir>
+                <setup.appversion>${project.version}</setup.appversion>
+                <setup.jarfile>${project.build.finalName}-jar-with-dependencies.jar</setup.jarfile>
+                <setup.output>${project.build.finalName}-installer</setup.output>
             </properties>
         </profile>
     </profiles>
