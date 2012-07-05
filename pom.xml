@@ -455,6 +455,7 @@
                                             <fileset dir="${project.build.directory}" includes="${setup.jarfile}" />
                                         </copy>
                                         <exec dir="${setup.staging.dir}" executable="iscc" failonerror="true">
+                                            <arg line="/O.." />
                                             <arg line="/F&quot;${setup.output}&quot;" />
                                             <arg line="/dVERSION=${setup.appversion}" />
                                             <arg value="AkibanServer.iss" />
