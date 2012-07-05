@@ -35,7 +35,7 @@ import com.akiban.qp.rowtype.IndexRowType;
 import com.persistit.Exchange;
 import com.persistit.exception.PersistitException;
 
-class PersistitGroupIndexRow extends PersistitIndexRow
+public class PersistitGroupIndexRow extends PersistitIndexRow
 {
     // RowBase interface
 
@@ -43,9 +43,7 @@ class PersistitGroupIndexRow extends PersistitIndexRow
     public HKey ancestorHKey(UserTable table)
     {
         PersistitHKey ancestorHKey = hKeyCache.hKey(table);
-        indexRow.constructHKeyFromIndexKey(adapter.persistit(),
-                                           ancestorHKey.key(),
-                                           index.indexToHKey(table.getDepth()));
+        indexRow.constructHKeyFromIndexKey(ancestorHKey.key(), index.indexToHKey(table.getDepth()));
         return ancestorHKey;
     }
 
@@ -70,7 +68,6 @@ class PersistitGroupIndexRow extends PersistitIndexRow
     // PersistitGroupIndexRow interface
 
     public PersistitGroupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
-        throws PersistitException
     {
         super(adapter, indexRowType);
         this.index = (GroupIndex) indexRowType.index();

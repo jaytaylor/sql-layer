@@ -26,16 +26,18 @@
 
 package com.akiban.qp.persistitadapter.indexrow;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexToHKey;
 import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.store.PersistitKeyAppender;
-import com.akiban.server.store.PersistitStore;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
 import com.persistit.Exchange;
 import com.persistit.Key;
+import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 
 import static java.lang.Math.min;
@@ -47,6 +49,11 @@ public class PersistitIndexRowBuffer
     public void append(FieldDef fieldDef, RowData rowData)
     {
         keyAppender.append(fieldDef, rowData);
+    }
+
+    public void append(Column column, ValueSource source)
+    {
+        keyAppender.append(source, column);
     }
 
     public void appendFieldFromKey(Key fromKey, int depth)
@@ -69,7 +76,7 @@ public class PersistitIndexRowBuffer
         exchange.getKey().copyTo(keyAppender.key());
     }
 
-    public void constructHKeyFromIndexKey(PersistitStore persistit, Key hKey, IndexToHKey indexToHKey)
+    public void constructHKeyFromIndexKey(Key hKey, IndexToHKey indexToHKey)
     {
         Key indexRowKey = keyAppender.key();
         hKey.clear();
@@ -124,13 +131,30 @@ public class PersistitIndexRowBuffer
         return c;
     }
 
+    public void tableBitmap(long bitmap)
+    {
+        value.put(bitmap);
+    }
+
+    // For table index rows
     public PersistitIndexRowBuffer(Key key)
     {
         key.clear();
         this.keyAppender = new PersistitKeyAppender(key);
+        this.value = null;
+    }
+
+    // For group index rows
+    public PersistitIndexRowBuffer(Key key, Value value)
+    {
+        key.clear();
+        this.keyAppender = new PersistitKeyAppender(key);
+        value.clear();
+        this.value = value;
     }
 
     // Object state
 
     private final PersistitKeyAppender keyAppender;
+    private final Value value;
 }

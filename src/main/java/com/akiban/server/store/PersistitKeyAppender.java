@@ -33,6 +33,7 @@ import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDataValueSource;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.FromObjectValueSource;
 import com.persistit.Key;
@@ -51,6 +52,11 @@ public final class PersistitKeyAppender {
         fromObjectSource.setReflectively(object);
         target.expectingType(column);
         Converters.convert(fromObjectSource, target);
+    }
+
+    public void append(ValueSource source, Column column) {
+        target.expectingType(column);
+        Converters.convert(source, target);
     }
 
     public void append(Object object, FieldDef fieldDef) {

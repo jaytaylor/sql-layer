@@ -112,27 +112,26 @@ public abstract class PersistitIndexRow extends AbstractRow
         throw new UnsupportedOperationException(getClass().toString());
     }
 
-    public static PersistitIndexRow tableIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
+    public void copyFromExchange(Exchange exchange) throws PersistitException
+    {
+        indexRow.copyFrom(exchange);
+        indexRow.constructHKeyFromIndexKey(hKeyCache.hKey(leafmostTable).key(), indexToHKey());
+    }
+
+    public static PersistitTableIndexRow tableIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
         throws PersistitException
     {
         return new PersistitTableIndexRow(adapter, indexRowType);
     }
 
-    public static PersistitIndexRow groupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
-        throws PersistitException
+    public static PersistitGroupIndexRow groupIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
         return new PersistitGroupIndexRow(adapter, indexRowType);
     }
 
-    public void copyFromExchange(Exchange exchange) throws PersistitException
-    {
-        indexRow.copyFrom(exchange);
-        indexRow.constructHKeyFromIndexKey(adapter.persistit(), hKeyCache.hKey(leafmostTable).key(), indexToHKey());
-    }
-
     // For use by subclasses
 
-    protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType) throws PersistitException
+    protected PersistitIndexRow(PersistitAdapter adapter, IndexRowType indexRowType)
     {
         this.adapter = adapter;
         this.indexRowType = indexRowType;

@@ -34,7 +34,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.persistit.exception.PersistitException;
 
-class PersistitTableIndexRow extends PersistitIndexRow
+public class PersistitTableIndexRow extends PersistitIndexRow
 {
     // RowBase interface
 

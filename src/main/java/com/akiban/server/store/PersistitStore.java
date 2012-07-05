@@ -177,7 +177,7 @@ public class PersistitStore implements Store {
         return treeService.getExchange(session, index.indexDef());
     }
 
-    public Key getKey(Session session) throws PersistitException
+    public Key getKey(Session session)
     {
         return treeService.getKey(session);
     }
