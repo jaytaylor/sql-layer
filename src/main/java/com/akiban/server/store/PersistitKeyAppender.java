@@ -69,7 +69,7 @@ public final class PersistitKeyAppender {
 
     public void appendFieldFromKey(Key fromKey, int depth)
     {
-        PersistitKey.appendFieldFromKey(fromKey, depth, key);
+        PersistitKey.appendFieldFromKey(key, fromKey, depth);
     }
 
     public Key key() {

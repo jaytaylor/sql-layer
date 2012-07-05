@@ -29,6 +29,7 @@ package com.akiban.server.store;
 import com.akiban.ais.model.*;
 import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
+import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -234,7 +235,7 @@ public class PersistitStore implements Store {
                         TableIndex parentPK = parentRowDef.getPKIndex();
                         indexToHKey = parentPK.indexToHKey();
                         parentPKExchange = getExchange(session, parentPK);
-                        constructParentPKIndexKey(new PersistitKeyAppender(parentPKExchange.getKey()), rowDef, rowData);
+                        constructParentPKIndexKey(parentPKExchange, rowDef, rowData);
                         parentExists = parentPKExchange.hasChildren();
                         if (parentExists) {
                             boolean hasNext = parentPKExchange.next(true);
@@ -248,10 +249,10 @@ public class PersistitStore implements Store {
                         ++i2hPosition;
                     }
                     if (parentExists) {
-                        appendKeyFieldFromKey(parentPKExchange.getKey(), hKeyAppender.key(),
-                                              indexToHKey.getIndexRowPosition(i2hPosition));
-                    }
-                    else {
+                        PersistitKey.appendFieldFromKey(hKeyAppender.key(),
+                                                        parentPKExchange.getKey(),
+                                                        indexToHKey.getIndexRowPosition(i2hPosition));
+                    } else {
                         hKeyAppender.appendNull(); // orphan row
                     }
                     ++i2hPosition;
@@ -321,26 +322,14 @@ public class PersistitStore implements Store {
         }
     }
 
-    void constructParentPKIndexKey(PersistitKeyAppender iKeyAppender, final RowDef rowDef, final RowData rowData)
+    void constructParentPKIndexKey(Exchange parentPKExchange, RowDef rowDef, RowData rowData)
     {
+        PersistitKeyAppender iKeyAppender = new PersistitKeyAppender(parentPKExchange.getKey());
         iKeyAppender.key().clear();
         int[] fields = rowDef.getParentJoinFields();
         for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
             FieldDef fieldDef = rowDef.getFieldDef(fields[fieldIndex]);
             iKeyAppender.append(fieldDef, rowData);
-        }
-    }
-
-    static private void appendKeyFieldFromKey(Key fromKey, Key toKey, int depth)
-    {
-        fromKey.indexTo(depth);
-        int from = fromKey.getIndex();
-        fromKey.indexTo(depth + 1);
-        int to = fromKey.getIndex();
-        if (from >= 0 && to >= 0 && to > from) {
-            System.arraycopy(fromKey.getEncodedBytes(), from,
-                    toKey.getEncodedBytes(), toKey.getEncodedSize(), to - from);
-            toKey.setEncodedSize(toKey.getEncodedSize() + to - from);
         }
     }
 
@@ -355,11 +344,7 @@ public class PersistitStore implements Store {
     public void writeRow(Session session, RowData rowData)
         throws PersistitException
     {
-        RowDef rowDef = rowDefCache.getRowDef(rowData.getRowDefId());
-        UserTable table = rowDef.userTable();
         writeRow(session, rowData, null, true);
-        // TODO: It should be possible to optimize propagateDownGroup for inserts too
-        // writeRow(session, rowData, hKeyDependentTableOrdinals(rowData.getRowDefId()), true);
     }
     
     private void writeRow(Session session,
@@ -755,8 +740,9 @@ public class PersistitStore implements Store {
         Exchange iEx = getExchange(session, index);
         try {
             iEx.removeAll();
-            if (index.isGroupIndex())
+            if (index.isGroupIndex()) {
                 new AccumulatorAdapter(AccumulatorAdapter.AccumInfo.ROW_COUNT, treeService, iEx.getTree()).set(0);
+            }
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -950,8 +936,9 @@ public class PersistitStore implements Store {
         for (Index index : rowDef.getIndexes()) {
             TableStatistics.Histogram histogram = indexStatisticsToHistogram(session, 
                                                                              index);
-            if (histogram != null)
+            if (histogram != null) {
                 ts.addHistogram(histogram);
+            }
         }
         return ts;
     }
@@ -960,9 +947,13 @@ public class PersistitStore implements Store {
     protected TableStatistics.Histogram indexStatisticsToHistogram(Session session,
                                                                    Index index) {
         IndexStatistics stats = indexStatistics.getIndexStatistics(session, index);
-        if (stats == null) return null;
+        if (stats == null) {
+            return null;
+        }
         IndexStatistics.Histogram fromHistogram = stats.getHistogram(index.getKeyColumns().size());
-        if (fromHistogram == null) return null;
+        if (fromHistogram == null) {
+            return null;
+        }
         IndexDef indexDef = index.indexDef();
         RowDef indexRowDef = indexDef.getRowDef();
         TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
@@ -979,10 +970,11 @@ public class PersistitStore implements Store {
             int depth = key.getDepth();
             // Copy key fields to index row.
             for (int field : indexDef.getFields()) {
-                if (--depth >= 0)
+                if (--depth >= 0) {
                     indexValues[field] = key.decode();
-                else
+                } else {
                     indexValues[field] = null;
+                }
             }
             indexRowData.createRow(indexRowDef, indexValues);
             // Partial counts to running total less than key.
@@ -1016,14 +1008,12 @@ public class PersistitStore implements Store {
         }
     }
 
-    void insertIntoIndex(final Session session, final Index index, final RowData rowData,
-                         final Key hkey, final boolean deferIndexes) {
+    void insertIntoIndex(Session session, Index index, RowData rowData, Key hkey, boolean deferIndexes)
+    {
         checkNotGroupIndex(index);
         final Exchange iEx = getExchange(session, index);
         constructIndexRow(iEx.getKey(), rowData, index, hkey);
-
         checkUniqueness(index, rowData, iEx);
-
         iEx.getValue().clear();
         if (deferIndexes) {
             // TODO: bug767737, deferred indexing does not handle uniqueness

@@ -30,16 +30,16 @@ import com.persistit.Key;
 
 public class PersistitKey
 {
-    public static void appendFieldFromKey(Key fromKey, int depth, Key toKey)
+    public static void appendFieldFromKey(Key targetKey, Key sourceKey, int sourceDepth)
     {
-        fromKey.indexTo(depth);
-        int from = fromKey.getIndex();
-        fromKey.indexTo(depth + 1);
-        int to = fromKey.getIndex();
+        sourceKey.indexTo(sourceDepth);
+        int from = sourceKey.getIndex();
+        sourceKey.indexTo(sourceDepth + 1);
+        int to = sourceKey.getIndex();
         if (from >= 0 && to >= 0 && to > from) {
-            System.arraycopy(fromKey.getEncodedBytes(), from,
-                             toKey.getEncodedBytes(), toKey.getEncodedSize(), to - from);
-            toKey.setEncodedSize(toKey.getEncodedSize() + to - from);
+            System.arraycopy(sourceKey.getEncodedBytes(), from,
+                             targetKey.getEncodedBytes(), targetKey.getEncodedSize(), to - from);
+            targetKey.setEncodedSize(targetKey.getEncodedSize() + to - from);
         }
     }
 }

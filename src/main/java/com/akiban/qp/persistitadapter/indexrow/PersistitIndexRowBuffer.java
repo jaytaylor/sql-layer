@@ -84,7 +84,7 @@ public class PersistitIndexRowBuffer
                         "IndexKey too shallow - requires depth=" + depth
                         + ": " + indexRowKey);
                 }
-                PersistitKey.appendFieldFromKey(indexRowKey, depth, hKey);
+                PersistitKey.appendFieldFromKey(hKey, indexRowKey, depth);
             }
         }
     }
