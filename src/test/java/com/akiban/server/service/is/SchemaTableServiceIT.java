@@ -68,7 +68,7 @@ public final class SchemaTableServiceIT extends ITBase {
     
     @Test
     public void baseInfoExamine() {
-        assertEquals(ais.getUserTables().size(), 24);
+        assertEquals(ais.getUserTables().size(), 25);
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.SCHEMATA));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.TABLES));
         assertNotNull (ais.getUserTable(BasicInfoSchemaTablesServiceImpl.COLUMNS));
@@ -99,5 +99,6 @@ public final class SchemaTableServiceIT extends ITBase {
     public void serverExamine() {
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_INSTANCE_SUMMARY));
         assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.SERVER_SESSIONS));
+        assertNotNull (ais.getUserTable(ServerSchemaTablesServiceImpl.ERROR_CODES));
     }
 }
