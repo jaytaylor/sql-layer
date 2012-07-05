@@ -1,5 +1,5 @@
 #ifndef VERSION
-#define VERSION "1.0-UNKNOWN"
+#define VERSION '1.0-UNKNOWN'
 #endif
 
 [Setup]
@@ -33,6 +33,60 @@ Source: "procrun\*"; DestDir: "{app}\procrun";
 Name: "{group}\Akiban Server"; Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; Comment: "Run the server as an application"; IconFilename: "{app}\bin\Akiban_Server.ico"
 
 [Code]
+
+function InitializeSetup(): Boolean;
+var
+  JavaInstalled : Boolean;
+begin
+  JavaInstalled := RegKeyExists(HKLM,'SOFTWARE\JavaSoft\Java Runtime Environment');
+  if JavaInstalled then
+    Result := true
+  else begin
+      MsgBox('Java is required to run Akiban Server', mbError, MB_OK);
+      Result := false;
+  end;
+end;
+
+function ExpandKey(Key: String) : String;
+begin
+  if Key = 'datadir' then
+    Result := ExpandConstant('{commonappdata}\Akiban\data')
+  else if Key = 'logdir' then
+    Result := ExpandConstant('{commonappdata}\Akiban\log')
+  else if Key = 'tempdir' then
+    Result := ExpandConstant('{%TEMP}')
+  else
+    Result := ''
+end;
+
+procedure EditFile(FileName: String);
+var
+  FileLines: TArrayOfString;
+  Index, DollarBrace, EndBrace: Integer;
+  Key: String;
+begin
+  if FileExists(FileName) then begin
+    LoadStringsFromFile(FileName, FileLines);
+    for Index := 0 to GetArrayLength(FileLines) - 1 do begin
+      DollarBrace := Pos('${', FileLines[Index]);
+      if DollarBrace <> 0 then begin
+        EndBrace := Pos('}', FileLines[Index]);
+        Key := Copy(FileLines[Index], DollarBrace + 2, EndBrace - DollarBrace - 2);
+        Delete(FileLines[Index], DollarBrace, EndBrace - DollarBrace + 1);
+        Insert(ExpandKey(Key), FileLines[Index], DollarBrace);
+      end
+    end;
+    SaveStringsToFile(FileName, FileLines, false);
+  end;
+end;
+
+procedure CurStepChanged(CurStep: TSetupStep);
+begin
+  if CurStep = ssPostInstall then begin
+    EditFile(ExpandConstant('{app}\config\log4j.properties'));
+    EditFile(ExpandConstant('{app}\config\server.properties'));
+  end;
+end;
 
 function JustVersion(Param: String): String;
 var
