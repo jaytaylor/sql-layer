@@ -192,8 +192,8 @@ public final class OverloadResolver {
                     return common.instance(); // TODO shouldn't we throw an exception?
             }
         }
-        assert common != null : "no common type found";
-        return common.instance();
+//        assert common != null : "no common type found"; // TODO re-enable that assert once common types are known
+        return common == null ? null : common.instance();
     }
 
     /*

@@ -138,6 +138,14 @@ class Project_Default extends Operator
     public Project_Default(Operator inputOperator, RowType rowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("rowType", rowType);
+        if (projections == null && pExpressions == null)
+            throw new IllegalArgumentException("either projections or pExpressions must be present");
+        if (projections == null)
+            ArgumentValidation.isGT("pExpressions.size()", pExpressions.size(), 0);
+        else if (pExpressions == null)
+            ArgumentValidation.isGT("projections.size()", projections.size(), 0);
+        else
+            throw new IllegalArgumentException("only one of projections or pExpressions must be present");
         this.inputOperator = inputOperator;
         this.rowType = rowType;
         this.pExpressions = pExpressions;
