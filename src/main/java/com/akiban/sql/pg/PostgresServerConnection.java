@@ -638,6 +638,8 @@ public class PostgresServerConnection extends ServerSessionBase
             parserFeatures.add(SQLParserFeature.INFIX_BIT_OPERATORS);
         if (Boolean.parseBoolean(getProperty("parserInfixLogical", "false")))
             parserFeatures.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
+        if (Boolean.parseBoolean(getProperty("columnAsFunc", "false")))
+            parserFeatures.add(SQLParserFeature.MYSQL_COLUMN_AS_FUNCS);
         if ("string".equals(getProperty("parserDoubleQuoted", "identifier")))
             parserFeatures.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
         parser.getFeatures().addAll(parserFeatures);
@@ -805,6 +807,7 @@ public class PostgresServerConnection extends ServerSessionBase
             "parserInfixBit".equals(key) ||
             "parserInfixLogical".equals(key) ||
             "parserDoubleQuoted".equals(key) ||
+            "columnAsFunc".equals(key) ||
             "cbo".equals(key)) {
             if (parsedGenerators != null)
                 rebuildCompiler();
