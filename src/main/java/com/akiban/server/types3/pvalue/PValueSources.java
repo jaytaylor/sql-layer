@@ -26,16 +26,144 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.util.ByteSource;
 
 import java.math.BigDecimal;
+import java.math.BigInteger;
 import java.util.Arrays;
 
 public final class PValueSources {
-    
+
+    /**
+     * Reflectively creates a {@linkplain TPreptimeValue} from the given object, optionally consulting the given
+     * {@linkplain AkType} if that object is a <tt>Long</tt>. Most classes are fairly unambiguous as to what sort of
+     * TClass and TInstance they provide, but Longs can represent various type, so the <tt>AkType</tt> is used to
+     * a disambiguate. If it is <tt>null</tt>, the type class is assumed to be <tt>MCOMPAT_ BIGINT</tt>.
+     * @param object the object to convert into a TPreptimeValue
+     * @param akType the object's associated AkType, which only matters if the object is a Long
+     * @return the Object as a TPreptimeValue
+     */
+    public static TPreptimeValue fromObject(Object object, AkType akType) {
+        final PValue value;
+        final TInstance tInstance;
+        if (object == null) {
+            throw new UnsupportedOperationException("can't infer type of null object");
+        }
+        else if (object instanceof Integer) {
+            tInstance = MNumeric.INT.instance();
+            value = new PValue((Integer)object);
+        }
+        else if (object instanceof Long) {
+            if (akType == null) {
+                tInstance = MNumeric.BIGINT.instance();
+            }
+            else {
+                TClass tClass;
+                switch (akType) {
+                case DATE:
+                    tClass = MDatetimes.DATE;
+                    break;
+                case DATETIME:
+                    tClass = MDatetimes.DATETIME;
+                    break;
+                case INT:
+                    tClass = MNumeric.INT;
+                    break;
+                case LONG:
+                    tClass = MNumeric.BIGINT;
+                    break;
+                case TIME:
+                    tClass = MDatetimes.TIME;
+                    break;
+                case TIMESTAMP:
+                    tClass = MDatetimes.TIMESTAMP;
+                    break;
+                case U_BIGINT:
+                    tClass = MNumeric.BIGINT_UNSIGNED;
+                    break;
+                case U_INT:
+                    tClass = MNumeric.INT_UNSIGNED;
+                    break;
+                case YEAR:
+                    tClass = MDatetimes.YEAR;
+                    break;
+                case INTERVAL_MILLIS:
+                case INTERVAL_MONTH:
+                    throw new UnsupportedOperationException("interval literals not supported");
+                default:
+                    throw new IllegalArgumentException("can't convert longs of AkType " + akType);
+                }
+                tInstance = tClass.instance();
+            }
+            value = new PValue((Long)object);
+        }
+        else if (object instanceof String) {
+            String s = (String) object;
+            tInstance = MString.VARCHAR.instance(s.length());
+            value = new PValue(s);
+        }
+        else if (object instanceof Double) {
+            tInstance = MApproximateNumber.DOUBLE.instance();
+            value = new PValue((Double)object);
+        }
+        else if (object instanceof Float) {
+            tInstance = MApproximateNumber.FLOAT.instance();
+            value = new PValue((Float)object);
+        }
+        else if (object instanceof BigDecimal) {
+            BigDecimal bd = (BigDecimal) object;
+            tInstance = MNumeric.DECIMAL.instance(bd.precision(), bd.scale());
+            value = new PValue(PUnderlying.BYTES);
+            value.putObject(new MBigDecimalWrapper(bd));
+        }
+        else if (object instanceof ByteSource || object instanceof byte[]) {
+            byte[] bytes;
+            if (object instanceof byte[]) {
+                bytes = (byte[])object;
+            }
+            else {
+                ByteSource source = (ByteSource) object;
+                byte[] srcArray = source.byteArray();
+                int offset = source.byteArrayOffset();
+                int end = offset + source.byteArrayLength();
+                bytes = Arrays.copyOfRange(srcArray, offset, end);
+            }
+            tInstance = MBinary.VARBINARY.instance(bytes.length);
+            value = new PValue(PUnderlying.BYTES);
+            value.putBytes(bytes);
+        }
+        else if (object instanceof BigInteger) {
+            tInstance = MNumeric.BIGINT_UNSIGNED.instance();
+            BigInteger bi = (BigInteger) object;
+            value = new PValue(bi.longValue());
+        }
+        else if (object instanceof Boolean) {
+            tInstance = AkBool.INSTANCE.instance();
+            value = new PValue((Boolean)object);
+        }
+        else if (object instanceof Character) {
+            tInstance = MString.VARCHAR.instance(1);
+            value = new PValue(object.toString());
+        }
+        else {
+            throw new UnsupportedOperationException("can't convert " + object + " of type " + object.getClass());
+        }
+
+        return new TPreptimeValue(tInstance, value);
+    }
+
     public static boolean areEqual(PValueSource one, PValueSource two) {
         PUnderlying underlyingType = one.getUnderlyingType();
         if (underlyingType != two.getUnderlyingType())

@@ -325,7 +325,18 @@ public final class PValue implements PValueSource, PValueTarget {
         this.underlying = underlying;
         this.state = State.UNSET;
     }
-    
+
+    public PValue(long val) {
+        this(PUnderlying.INT_64);
+        putInt64(val);
+    }
+
+    public PValue(float val)
+    {
+        this(PUnderlying.FLOAT);
+        putFloat(val);
+    }
+
     public PValue(double val)
     {
         this(PUnderlying.DOUBLE);
@@ -335,6 +346,16 @@ public final class PValue implements PValueSource, PValueTarget {
     public PValue(int val) {
         this(PUnderlying.INT_32);
         putInt32(val);
+    }
+
+    public PValue(String val) {
+        this(PUnderlying.STRING);
+        putString(val);
+    }
+
+    public PValue(boolean val) {
+        this(PUnderlying.BOOL);
+        putBool(val);
     }
 
     private final PUnderlying underlying;
