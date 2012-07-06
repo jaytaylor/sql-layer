@@ -26,6 +26,7 @@
 
 package com.akiban.server.types3.service;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
@@ -33,6 +34,9 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -41,7 +45,8 @@ import java.util.List;
 @Singleton
 public class FunctionRegistryImpl implements FunctionRegistry
 {
-    // TODO : define aggregates here
+    private static final Logger logger = LoggerFactory.getLogger(FunctionRegistryImpl.class);
+
     private Collection<TValidatedOverload> scalars;
     private Collection<TClass> types;
     private Collection<TCast> casts;
@@ -73,7 +78,14 @@ public class FunctionRegistryImpl implements FunctionRegistry
         Collection<TOverload> rawScalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
         scalars = new ArrayList<TValidatedOverload>(rawScalars.size());
         for (TOverload rawScalar : rawScalars) {
-            TValidatedOverload scalar = new TValidatedOverload(rawScalar);
+            TValidatedOverload scalar;
+            try {
+                scalar = new TValidatedOverload(rawScalar);
+            } catch (RuntimeException e) {
+                throw rejectTOverload(rawScalar, e);
+            } catch (AssertionError e) {
+                throw rejectTOverload(rawScalar, e);
+            }
             scalars.add(scalar);
         }
         
@@ -83,6 +95,11 @@ public class FunctionRegistryImpl implements FunctionRegistry
         casts = collectInstances(castsClassFinder.findClasses(), TCast.class);
 
         aggregators = collectInstances(overloadsClassFinder.findClasses(), TAggregator.class);
+    }
+
+    private AkibanInternalException rejectTOverload(TOverload overload, Throwable e) {
+        logger.error("rejecting overload {} from {}", overload, overload.getClass());
+        return new AkibanInternalException("while creating overload " + overload, e);
     }
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
