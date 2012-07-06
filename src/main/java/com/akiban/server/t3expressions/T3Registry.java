@@ -27,6 +27,8 @@
 package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.NoSuchFunctionException;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.service.FunctionRegistry;
@@ -40,8 +42,13 @@ import java.util.Map;
 
 public final class T3Registry {
 
+    public T3AggregatesRegistry aggregates() {
+        return aggregates;
+    }
+
     public T3Registry(FunctionRegistry finder) {
         scalars = new InternalScalarsRegistry(finder);
+        aggregates = new InternalAggregatesRegistry(finder);
     }
 
     public T3ScalarsRegistry scalars() {
@@ -49,6 +56,7 @@ public final class T3Registry {
     }
 
     private final T3ScalarsRegistry scalars;
+    private final T3AggregatesRegistry aggregates;
 
     private static class InternalScalarsRegistry implements T3ScalarsRegistry {
         @Override
@@ -92,5 +100,32 @@ public final class T3Registry {
 
         private final List<TValidatedOverload> overloads;
         private final Map<TClass,Map<TClass,TCast>> castsBySource;
+    }
+
+    private static class InternalAggregatesRegistry implements T3AggregatesRegistry {
+        @Override
+        public Collection<? extends TAggregator> getAggregates(String name) {
+            Collection<? extends TAggregator> aggrs = aggregatorsByName.get(name);
+            if (aggrs == null)
+                throw new NoSuchFunctionException(name);
+            return aggrs;
+        }
+
+        private InternalAggregatesRegistry(FunctionRegistry finder) {
+            Collection<? extends TAggregator> aggrs = finder.aggregators();
+            aggregatorsByName = new HashMap<String, Collection<TAggregator>>(aggrs.size());
+            for (TAggregator aggr : aggrs) {
+                String name = aggr.name();
+                Collection<TAggregator> values = aggregatorsByName.get(name);
+                if (values == null) {
+                    values = new ArrayList<TAggregator>(2); // most aggrs don't have many overloads
+                    aggregatorsByName.put(name, values);
+                }
+                values.add(aggr);
+            }
+        }
+
+
+        private final Map<String,Collection<TAggregator>> aggregatorsByName;
     }
 }

@@ -109,7 +109,6 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     @Override
     protected TPreparedExpression literal(ConstantExpression expression) {
         TPreptimeValue ptval = expression.getPreptimeValue();
-        PValueSources.fromValueSource(expression.)
         return new TPreparedLiteral(ptval.instance(), ptval.value());
     }
 

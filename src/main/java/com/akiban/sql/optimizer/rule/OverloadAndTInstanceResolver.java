@@ -31,6 +31,7 @@ import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.T3ScalarsRegistry;
 import com.akiban.server.t3expressions.TClassPossibility;
 import com.akiban.server.types3.LazyListBase;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
@@ -94,11 +95,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private Folder folder;
         private OverloadResolver resolver;
-        private T3ScalarsRegistry registry;
 
 
         ResolvingVistor(PlanContext context) {
             folder = new Folder(context);
+            SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
+            resolver = src.getOverloadResolver();
         }
 
         public void resolve(PlanNode root) {
@@ -259,7 +261,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TInstance thenType = tinst(thenExpr);
             TInstance elseType = tinst(elseExpr);
 
-            TClassPossibility commonPossibility = registry.commonTClass(thenType.typeClass(), elseType.typeClass());
+            TClassPossibility commonPossibility = resolver.commonTClass(thenType.typeClass(), elseType.typeClass());
             if (commonPossibility.isAny() || commonPossibility.isNone())
                 throw error("couldn't determine a type for CASE expression");
             TClass commonClass = commonPossibility.get();
@@ -271,7 +273,24 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
-            throw new UnsupportedOperationException(); // TODO
+            ExpressionNode operand = expression.getOperand();
+            TInstance resultType;
+            if (operand == null) {
+                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), null);
+                resultType = tAggregator.resultType(null);
+                expression.setPreptimeValue(new TPreptimeValue(resultType));
+            }
+            else {
+                TClass inputTClass = tclass(operand);
+                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
+                if (!tAggregator.getTypeClass().equals(inputTClass)) {
+                    operand = castTo(operand, tAggregator.getTypeClass());
+                    expression.setOperand(operand);
+                }
+                resultType = tAggregator.resultType(expression.getPreptimeValue());
+            }
+            expression.setPreptimeValue(new TPreptimeValue(resultType));
+            return expression;
         }
 
         ExpressionNode handleExistsCondition(ExistsCondition expression) {

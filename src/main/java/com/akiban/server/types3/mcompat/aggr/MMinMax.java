@@ -167,4 +167,9 @@ public class MMinMax implements TAggregator {
     public TClass getTypeClass() {
         return tType.typeClass;
     }
+
+    @Override
+    public String name() {
+        return mType.name();
+    }
 }

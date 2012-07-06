@@ -27,6 +27,7 @@
 package com.akiban.server.types3.service;
 
 import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
@@ -44,13 +45,26 @@ public class FunctionRegistryImpl implements FunctionRegistry
     private Collection<TValidatedOverload> scalars;
     private Collection<TClass> types;
     private Collection<TCast> casts;
+    private Collection<TAggregator> aggregators;
     
     private static final int SKIP = -1;
     private static final int FIELD = 0;
     private static final int ARRAY = 1;
     private static final int COLLECTION = 2;
 
-    FunctionRegistryImpl (ClassFinder overloadsClassFinder,
+    public FunctionRegistryImpl()
+    throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
+    {
+        this(new ConfigurableClassFinder("t3s.txt"));
+    }
+
+    public FunctionRegistryImpl(ClassFinder classFinder)
+    throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
+    {
+        this(classFinder, classFinder, classFinder);
+    }
+
+    public FunctionRegistryImpl (ClassFinder overloadsClassFinder,
                           ClassFinder typesClassFinder,
                           ClassFinder castsClassFinder) 
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
@@ -67,6 +81,8 @@ public class FunctionRegistryImpl implements FunctionRegistry
         types = collectInstances(typesClassFinder.findClasses(), TClass.class);
         
         casts = collectInstances(castsClassFinder.findClasses(), TCast.class);
+
+        aggregators = collectInstances(overloadsClassFinder.findClasses(), TAggregator.class);
     }
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
@@ -184,11 +200,10 @@ public class FunctionRegistryImpl implements FunctionRegistry
     {
         return field.getAnnotation(DontRegister.class) == null;
     }
-    
+
     @Override
-    public FunctionKind getFunctionKind(String name)
-    {
-        throw new UnsupportedOperationException("not supported yet");
+    public Collection<? extends TAggregator> aggregators() {
+        return aggregators;
     }
 
     @Override

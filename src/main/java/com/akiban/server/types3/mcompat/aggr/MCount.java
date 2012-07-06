@@ -42,12 +42,29 @@ public abstract class MCount implements TAggregator {
         new MCount() {
 
             @Override
+            public TClass getTypeClass() {
+                return null;
+            }
+
+            @Override
             public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
                 long count = state.getInt64();
                 ++count;
                 state.putInt64(count);
+
+
             }
-        }, 
+
+            @Override
+            public TInstance resultType(TPreptimeValue value) {
+                return MNumeric.BIGINT.instance();
+            }
+
+            @Override
+            public String name() {
+                return "COUNT(*)";
+            }
+        },
         // COUNT
         new MCount() {
 
@@ -59,21 +76,26 @@ public abstract class MCount implements TAggregator {
                     state.putInt64(count);
                 }
             }
+
+            @Override
+            public TClass getTypeClass() {
+                return MNumeric.BIGINT;
+            }
+
+            @Override
+            public TInstance resultType(TPreptimeValue value) {
+                return value.instance();
+            }
+
+            @Override
+            public String name() {
+                return "COUNT";
+            }
         }
     };
 
     @Override
     public void emptyValue(PValueTarget state) {
         state.putInt64(0L);
-    }
-
-    @Override
-    public TInstance resultType(TPreptimeValue value) {
-        return value.instance();
-    }
-
-    @Override
-    public TClass getTypeClass() {
-        return MNumeric.BIGINT;
     }
 }
