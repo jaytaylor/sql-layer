@@ -18,19 +18,35 @@ MinVersion = 5.1
 PrivilegesRequired = admin
 ArchitecturesInstallIn64BitMode=x64 ia64
 
+[Tasks]
+Name: "installsvc"; Description: "Run as Windows Service"; Flags: unchecked
+Name: "installsvc\auto"; Description: "Start with Windows"
+Name: "start"; Description: "Start now"
+
 [Dirs]
 Name: "{commonappdata}\Akiban\data"
 Name: "{commonappdata}\Akiban\log"
 
 [Files]
-Source: "LICENSE.txt"; DestDir: "{app}";
-Source: "bin\*"; DestDir: "{app}\bin";
-Source: "config\*"; DestDir: "{app}\config";
-Source: "lib\*"; DestDir: "{app}\lib";
-Source: "procrun\*"; DestDir: "{app}\procrun";
+Source: "LICENSE.txt"; DestDir: "{app}"
+Source: "bin\*"; DestDir: "{app}\bin"
+Source: "config\*"; DestDir: "{app}\config"
+Source: "lib\*"; DestDir: "{app}\lib"
+Source: "procrun\*"; DestDir: "{app}\procrun"; Flags: recursesubdirs
 
 [Icons]
 Name: "{group}\Akiban Server"; Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; Comment: "Run the server as an application"; IconFilename: "{app}\bin\Akiban_Server.ico"
+Name: "{group}\Start Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "start";  WorkingDir: "{app}"; Comment: "Start Windows service"
+Name: "{group}\Stop Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "stop";  WorkingDir: "{app}"; Comment: "Stop Windows service"
+Name: "{group}\Monitor Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "monitor";  WorkingDir: "{app}"; Comment: "Monitor Windows service"
+
+[Run]
+Filename: "{app}\bin\akserver.cmd"; Parameters: "install -m {code:InstallMode}";  WorkingDir: "{app}"; StatusMsg: "Installing service ..."; Tasks: installsvc
+Filename: "{app}\bin\akserver.cmd"; Parameters: "start";  WorkingDir: "{app}"; StatusMsg: "Starting service ..."; Tasks: start and installsvc
+Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; StatusMsg: "Starting database ..."; Tasks: start and not installsvc
+
+[UninstallRun]
+Filename: "{app}\bin\akserver.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Tasks: installsvc
 
 [Code]
 
@@ -104,4 +120,12 @@ begin
   else
     Result := Param;
 
+end;
+
+function InstallMode(Param: String): String;
+begin
+  if IsTaskSelected('installsvc\auto') then
+    Result := 'auto'
+  else
+    Result := 'manual'
 end;
