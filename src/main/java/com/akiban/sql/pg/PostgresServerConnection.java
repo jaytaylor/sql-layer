@@ -258,7 +258,7 @@ public class PostgresServerConnection extends ServerSessionBase
         }
     }
 
-    private void sendErrorResponse(PostgresMessages type, Exception exception, ErrorCode errorCode, String message)
+    protected void sendErrorResponse(PostgresMessages type, Exception exception, ErrorCode errorCode, String message)
         throws Exception
     {
         if (type.errorMode() == PostgresMessages.ErrorMode.NONE) throw exception;
@@ -456,8 +456,9 @@ public class PostgresServerConnection extends ServerSessionBase
         int[] paramTypes = new int[nparams];
         for (int i = 0; i < nparams; i++)
             paramTypes[i] = messenger.readInt();
+        sessionTracer.setCurrentStatement(sql);
         logger.info("Parse: {}", sql);
-
+        
         updateAIS();
 
         PostgresStatement pstmt = null;

@@ -39,6 +39,8 @@ import javax.management.ReflectionException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.akiban.server.error.ConnectionTerminatedException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.sql.parser.AlterServerNode;
 
@@ -73,23 +75,29 @@ public class PostgresServerStatement implements PostgresStatement {
     @Override
     public int execute(PostgresQueryContext context, int maxrows,
             boolean usePVals) throws IOException {
+        
+        context.checkQueryCancelation();
         PostgresServerSession server = context.getServer();
-        doOperation(server);
-        {        
-            PostgresMessenger messenger = server.getMessenger();
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString(statement.statementToString());
-            messenger.sendMessage();
+        try {
+            doOperation(server);
+        } catch (Exception e) {
+            LOG.error("Execute command failed: " + e.getMessage());
+            if (e instanceof IOException)
+                throw (IOException)e;
+            else if (e instanceof InvalidOperationException) {
+                throw (InvalidOperationException)e;
+            }
         }
         return 0;
     }
     
-    protected void doOperation (PostgresServerSession session) {
+    protected void doOperation (PostgresServerSession session) throws Exception {
         PostgresServer server = ((PostgresServerConnection)session).getServer();
         Integer sessionId = statement.getSessionID();
         switch (statement.getAlterSessionType()) {
         case SET_SERVER_VARIABLE:
             setVariable (session, statement.getVariable(), statement.getValue());
+            sendComplete (session.getMessenger());
             break;
         case INTERRUPT_SESSION:
             if (sessionId == null) {
@@ -99,19 +107,26 @@ public class PostgresServerStatement implements PostgresStatement {
             } else if (server.getConnection(sessionId) != null) {
                 server.cancelQuery(sessionId);
             } 
+            sendComplete (session.getMessenger());
             break;
         case DISCONNECT_SESSION:
         case KILL_SESSION:
             if (sessionId == null) {
                 for (Integer sesId : server.getCurrentSessions()) {
+                    sendCompleteClosed(server.getConnection(sesId), "your session being disconnected");
                     server.killConnection(sesId);
                 }
             }
-            if (server.getConnection(sessionId.intValue()) != null) {
+            if (server.getConnection(sessionId) != null) {
+                sendCompleteClosed(server.getConnection(sessionId), "your session being disconnected");
                 server.killConnection(sessionId);
             }
             break;
         case SHUTDOWN:
+            for (Integer sesId : server.getCurrentSessions()) {
+                sendCompleteClosed(server.getConnection(sesId), "Akiban server being shutdown");
+                server.killConnection(sesId);
+            }
             shutdown(session, statement.isShutdownImmediate());
             break;
         }
@@ -123,39 +138,20 @@ public class PostgresServerStatement implements PostgresStatement {
         server.setProperty(variable, value);
     }
     
-    protected void shutdown (PostgresServerSession server, boolean immediate) {
-        MBeanServer jmxServer = ManagementFactory.getPlatformMBeanServer();
-        ObjectName mbeanName = null;
-
-        PostgresMessenger messenger = server.getMessenger();
-        try {
-            messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
-            messenger.writeString(statement.statementToString());
-            messenger.sendMessage();
-        } catch (IOException e1) {
-            
-        }
+    protected void sendComplete (PostgresMessenger messenger) throws IOException {
+        messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
+        messenger.writeString(statement.statementToString());
+        messenger.sendMessage();
         
-        try {
-            mbeanName = new ObjectName ("com.akiban:type=SHUTDOWN");
-        } catch (MalformedObjectNameException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (NullPointerException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
-        try {
-            jmxServer.invoke(mbeanName, "shutdown", new Object[0], new String[0]);
-        } catch (InstanceNotFoundException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (ReflectionException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        } catch (MBeanException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+    }
+    
+    protected void sendCompleteClosed(PostgresServerConnection session, String reason) throws Exception {
+        InvalidOperationException ex = new ConnectionTerminatedException (reason);
+        session.sendErrorResponse(PostgresMessages.QUERY_TYPE, ex, ex.getCode(), ex.getMessage());
+    }
+    
+    protected void shutdown (PostgresServerSession server, boolean immediate) throws Exception {
+        MBeanServer jmxServer = ManagementFactory.getPlatformMBeanServer();
+        jmxServer.invoke(new ObjectName ("com.akiban:type=SHUTDOWN"), "shutdown", new Object[0], new String[0]);
     }
 }
