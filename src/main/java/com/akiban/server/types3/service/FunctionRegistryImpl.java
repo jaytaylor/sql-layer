@@ -114,11 +114,12 @@ public class FunctionRegistryImpl implements FunctionRegistry
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
     {
         List<T> ret = new ArrayList<T>();
-        for (Class<?> cls : classes)
+        for (Class<?> cls : classes) {
             if (!Modifier.isPublic(cls.getModifiers()))
                 continue;
             else
                 doCollecting(ret, cls, target);
+        }
         return ret;
     }
 
@@ -136,14 +137,18 @@ public class FunctionRegistryImpl implements FunctionRegistry
                             putItem(ret, field.get(null), target);
                             break;
                         case ARRAY:
-                            for (Object item : (Object[])field.get(null))
-                                putItem(ret, item, target);
+                            for (Object item : (Object[])field.get(null)) {
+                                if (target.isInstance(item))
+                                    putItem(ret, item, target);
+                            }
                             break;
                         case COLLECTION:
                             try
                             {
-                                for (Object raw : (Collection<?>)field.get(null))
-                                    putItem(ret, raw, target);
+                                for (Object raw : (Collection<?>)field.get(null)) {
+                                    if (target.isInstance(raw))
+                                        putItem(ret, raw, target);
+                                }
                                 break;
                             }
                             catch (ClassCastException e) {/* fall thru */}
@@ -212,9 +217,12 @@ public class FunctionRegistryImpl implements FunctionRegistry
     {
         if (c.isArray() && target.isAssignableFrom(c.getComponentType()))
             return ARRAY;
-        else if (TOverload.class.isAssignableFrom(c))
+        else if (target.isAssignableFrom(c))
             return FIELD;
-        else return COLLECTION;
+        else if (Collection.class.isAssignableFrom(c))
+            return COLLECTION;
+        else
+            return SKIP;
     }
 
     private static <T> void putItem(Collection<T> list, Object item,  Class<T> targetClass)

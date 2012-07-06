@@ -33,6 +33,8 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.service.FunctionRegistry;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -93,8 +95,12 @@ public final class T3Registry {
                     castsBySource.put(source, castsByTarget);
                 }
                 TCast old = castsByTarget.put(target, cast);
-                if (old != null)
+                if (old != null) {
+                    logger.error("CAST({} AS {}): {} replaced by {} ", new Object[]{
+                            source, target,  old.getClass(), cast.getClass()
+                    });
                     throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
+                }
             }
         }
 
@@ -128,4 +134,6 @@ public final class T3Registry {
 
         private final Map<String,Collection<TAggregator>> aggregatorsByName;
     }
+
+    private static final Logger logger = LoggerFactory.getLogger(T3Registry.class);
 }
