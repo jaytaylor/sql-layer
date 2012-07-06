@@ -1,0 +1,20 @@
+# test conditonal create
+---
+- CreateTable: t1(ff double);
+---
+- CreateTable: t1(ff double);
+- error: [50006]
+---
+- CreateTable: IF NOT EXISTS t1(ff double)
+---
+- DropTable: t1;
+#--- #BUG: error can't be captured
+#- DropTable: t1;
+#- error: [42501]
+---
+- DropTable: if exists t1;
+---
+- Statement: create schema S;
+--- #BUG: duplicate schema DOES NOT cause any error?
+- Statement: create schema S;
+...

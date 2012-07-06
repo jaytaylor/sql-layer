@@ -77,10 +77,39 @@ public class SchemaDDLTest {
         SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
     }
     
+        
+    @Test
+    public void createSchemaIfNotExist() throws Exception
+    {
+        String sql = "CREATE SCHEMA IF NOT EXISTS S";
+        AkibanInformationSchema ais = factory();
+        
+        assertNotNull(ais.getTable("s", "t"));
+        
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateSchemaNode);
+        
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
+    }
+
     @Test (expected=NoSuchSchemaException.class)
     public void dropSchemaEmpty() throws Exception 
     {
         String sql = "DROP SCHEMA EMPTY RESTRICT";
+        AkibanInformationSchema ais = new AkibanInformationSchema();
+        
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof DropSchemaNode);
+        
+        DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
+        
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
+    }
+
+    @Test
+    public void dropSchemaEmptyIfExists() throws Exception 
+    {
+        String sql = "DROP SCHEMA IF EXISTS EMPTY RESTRICT";
         AkibanInformationSchema ais = new AkibanInformationSchema();
         
         StatementNode stmt = parser.parseStatement(sql);
