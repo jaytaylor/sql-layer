@@ -288,11 +288,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             else {
                 TClass inputTClass = tclass(operand);
                 TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
-                if (!tAggregator.getTypeClass().equals(inputTClass)) {
-                    operand = castTo(operand, tAggregator.getTypeClass());
+                TClass aggrTypeClass = tAggregator.getTypeClass();
+                if (aggrTypeClass != null && !aggrTypeClass.equals(inputTClass)) {
+                    operand = castTo(operand, aggrTypeClass);
                     expression.setOperand(operand);
                 }
-                resultType = tAggregator.resultType(expression.getPreptimeValue());
+                resultType = tAggregator.resultType(operand.getPreptimeValue());
             }
             expression.setPreptimeValue(new TPreptimeValue(resultType));
             return expression;
