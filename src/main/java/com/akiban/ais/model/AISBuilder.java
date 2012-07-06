@@ -82,8 +82,7 @@ public class
         this.indexIdGenerator = offset;
     }
 
-    public void userTable(String schemaName, String tableName) 
-    {
+    public void userTable(String schemaName, String tableName) {
         LOG.info("userTable: " + schemaName + "." + tableName);
         UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
     }

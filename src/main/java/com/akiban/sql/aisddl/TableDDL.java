@@ -267,7 +267,7 @@ public class TableDDL
                 fkdn.getRefTableName().getSchemaName() : schemaName;
         String parentTableName = fkdn.getRefTableName().getTableName();
         
-        
+
         UserTable parentTable = ais.getUserTable(parentSchemaName, parentTableName);
         if (parentTable == null) {
             throw new NoSuchTableException (parentSchemaName, parentTableName);

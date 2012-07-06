@@ -38,7 +38,6 @@ public class UserTable extends Table
                                    String tableName,
                                    Integer tableId)
     {
-       // if (ais.getUserTable(schemaName, tableName) == null
         UserTable userTable = new UserTable(ais, schemaName, tableName, tableId);
         ais.addUserTable(userTable);
         return userTable;
