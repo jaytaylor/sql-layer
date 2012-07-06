@@ -20,6 +20,7 @@ ArchitecturesInstallIn64BitMode=x64 ia64
 
 [Tasks]
 Name: "installsvc"; Description: "Run as Windows Service"; Flags: unchecked
+Name: "installsvc\system"; Description: "Run as System account"
 Name: "installsvc\auto"; Description: "Start with Windows"
 Name: "start"; Description: "Start now"
 
@@ -50,6 +51,8 @@ Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; 
 Filename: "{app}\bin\akserver.cmd"; Parameters: "uninstall";  WorkingDir: "{app}"; StatusMsg: "Removing service ..."; Tasks: installsvc
 
 [Code]
+var
+  ServiceAccountPage: TInputQueryWizardPage;
 
 function InitializeSetup(): Boolean;
 var
@@ -62,6 +65,50 @@ begin
       MsgBox('Java is required to run Akiban Server', mbError, MB_OK);
       Result := false;
   end;
+end;
+
+procedure InitializeWizard;
+begin
+  ServiceAccountPage := CreateInputQueryPage(wpSelectTasks,
+    'Service Account', 'Use what account?',
+    'Please specify the account under which the Akiban Server service should run, then click Next.');
+  ServiceAccountPage.Add('Username:', False);
+  ServiceAccountPage.Add('Password:', True);
+  ServiceAccountPage.Add('Repeat password:', True);
+  ServiceAccountPage.Values[0] := GetPreviousData('ServiceUsername', '');
+end;
+
+procedure RegisterPreviousData(PreviousDataKey: Integer);
+begin
+  SetPreviousData(PreviousDataKey, 'ServiceUsername', ServiceAccountPage.Values[0]);
+end;
+
+function RunServiceAsUser(): Boolean;
+begin
+  Result := IsTaskSelected('installsvc') and not IsTaskSelected('installsvc\system');
+end;
+
+function ShouldSkipPage(PageID: Integer): Boolean;
+begin
+  if (PageID = ServiceAccountPage.ID) and not RunServiceAsUser() then
+    Result := True
+  else                
+    Result := False;
+end;
+
+function NextButtonClick(CurPageID: Integer): Boolean;
+begin
+  if CurPageID = ServiceAccountPage.ID then begin
+    if (ServiceAccountPage.Values[0] = '') then begin
+      MsgBox('You must enter account name.', mbError, MB_OK);
+      Result := False;
+    end else if (ServiceAccountPage.Values[1] <> ServiceAccountPage.Values[2]) then begin
+      MsgBox('Passwords do not match.', mbError, MB_OK);
+      Result := False;
+    end else
+      Result := True;
+  end else
+    Result := True;
 end;
 
 function ExpandKey(Key: String) : String;
@@ -124,9 +171,18 @@ begin
 end;
 
 function InstallMode(Param: String): String;
+var
+  Mode: String;
+  Username: String;
 begin
   if IsTaskSelected('installsvc\auto') then
-    Result := 'auto'
+    Mode := 'auto'
   else
-    Result := 'manual'
+    Mode := 'manual';
+  if RunServiceAsUser() then begin
+    Username := ServiceAccountPage.Values[0];
+    if (Pos('\', Username) = 0) then Username := '.\' + Username;
+    Mode := Mode + ' -su ' + Username + ' ' + ServiceAccountPage.Values[1];
+  end;
+  Result := Mode;
 end;
