@@ -610,7 +610,7 @@ public final class CBasicIT extends ITBase {
     public void groupedTablesWithSameNameAndColumnNames() {
         createTable("s1", "t1", "id int not null primary key");
         createTable("s2", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s1.t1(id)");
-        createTable("s3", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s2.t1(id)");
+        createTable("s3", "t1", "some_id int not null primary key, id int, grouping foreign key(id) references s2.t1(some_id)");
         AkibanInformationSchema ais = ddl().getAIS(session());
         Group group = ais.getGroup("t1");
         assertNotNull("Found group", group);
