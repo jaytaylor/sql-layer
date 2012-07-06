@@ -46,6 +46,15 @@ import java.util.Arrays;
 
 public final class PValueSources {
 
+    /**
+     * Reflectively creates a {@linkplain TPreptimeValue} from the given object, optionally consulting the given
+     * {@linkplain AkType} if that object is a <tt>Long</tt>. Most classes are fairly unambiguous as to what sort of
+     * TClass and TInstance they provide, but Longs can represent various type, so the <tt>AkType</tt> is used to
+     * a disambiguate. If it is <tt>null</tt>, the type class is assumed to be <tt>MCOMPAT_ BIGINT</tt>.
+     * @param object the object to convert into a TPreptimeValue
+     * @param akType the object's associated AkType, which only matters if the object is a Long
+     * @return the Object as a TPreptimeValue
+     */
     public static TPreptimeValue fromObject(Object object, AkType akType) {
         final PValue value;
         final TInstance tInstance;
