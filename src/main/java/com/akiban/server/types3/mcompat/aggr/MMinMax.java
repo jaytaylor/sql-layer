@@ -65,7 +65,9 @@ public class MMinMax implements TAggregator {
     public void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
         TClass tClass = instance.typeClass();
         assert stateType.typeClass().equals(tClass) : "incompatible types " + instance + " and " + stateType;
-        throw new UnsupportedOperationException("wait for TClass.compare");
+        int comparison = tClass.compare(instance, source, stateType, state);
+        if (mType.condition(comparison))
+            state.putValueSource(source);
     }
 
     @Override
