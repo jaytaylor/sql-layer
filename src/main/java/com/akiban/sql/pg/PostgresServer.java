@@ -371,7 +371,7 @@ public class PostgresServer implements Runnable, PostgresMXBean {
     {
         return (System.nanoTime() - startTime);
     }
-
+    
     @Override
     public void clearPlans()
     {
@@ -385,8 +385,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
         if (plans.length() > 0) {
             for (String className : plans.split(",")) {
                 try {
-                    Class klass = Class.forName(className);
-                    LoadablePlan<?> loadablePlan = (LoadablePlan)klass.newInstance();
+                    Class<?> klass = Class.forName(className);
+                    LoadablePlan<?> loadablePlan = (LoadablePlan<?>)klass.newInstance();
                     LoadablePlan<?> prev = loadablePlans.put(loadablePlan.name(), loadablePlan);
                     assert (prev == null) : className;
                 }
@@ -414,8 +414,8 @@ public class PostgresServer implements Runnable, PostgresMXBean {
             }
             URL url = new URL(String.format("file://%s", jarFilePath));
             URLClassLoader classLoader = new URLClassLoader(new URL[]{url});
-            Class klass = classLoader.loadClass(className);
-            LoadablePlan<?> loadablePlan = (LoadablePlan) klass.newInstance();
+            Class<?> klass = classLoader.loadClass(className);
+            LoadablePlan<?> loadablePlan = (LoadablePlan<?>) klass.newInstance();
             LoadablePlan<?> previousPlan = loadablePlans.put(loadablePlan.name(), loadablePlan);
             status = String.format("%s %s -> %s",
                                    (previousPlan == null ? "Loaded" : "Reloaded"),

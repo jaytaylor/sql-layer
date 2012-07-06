@@ -44,6 +44,7 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.error.ProtobufWriteException;
 import com.akiban.util.GrowableByteBuffer;
+import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.ais.AISComparator.compareAndAssert;
@@ -158,7 +159,6 @@ public class ProtobufReaderWriterTest {
         writeAndRead(inAIS);
     }
 
-    @org.junit.Ignore
     @Test(expected=ProtobufReadException.class)
     public void readBufferTooSmall() {
         GrowableByteBuffer bb = new GrowableByteBuffer(4096);

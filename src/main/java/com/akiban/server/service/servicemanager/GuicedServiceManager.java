@@ -62,20 +62,28 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     @Override
     public void startServices() {
+        logger.info("Starting services.");
         getJmxRegistryService().register(this);
         for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
             guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
         }
+        AkServerInterface akServer = getAkSserver();
+        logger.info("{} {} ready.",
+                    akServer.getServerName(), akServer.getServerVersion());
     }
 
     @Override
     public void stopServices() throws Exception {
+        logger.info("Stopping services normally.");
         guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
+        logger.info("Services stopped.");
     }
 
     @Override
     public void crashServices() throws Exception {
+        logger.info("Stopping services abnormally.");
         guicer.stopAllServices(CRASH_SERVICES);
+        logger.info("Services stopped.");
     }
 
     @Override

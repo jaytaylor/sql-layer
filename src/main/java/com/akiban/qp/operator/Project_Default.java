@@ -43,7 +43,6 @@ import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
@@ -139,12 +138,11 @@ class Project_Default extends Operator
     public Project_Default(Operator inputOperator, RowType rowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("rowType", rowType);
-        ArgumentValidation.notEmpty("projections", projections);
         this.inputOperator = inputOperator;
         this.rowType = rowType;
-        this.projections = new ArrayList<Expression>(projections);
-        projectType = rowType.schema().newProjectType(this.projections, tInstances(pExpressions));
         this.pExpressions = pExpressions;
+        this.projections = projections;
+        projectType = rowType.schema().newProjectType(this.projections, tInstances(pExpressions));
     }
 
     private List<TInstance> tInstances(List<? extends TPreparedExpression> pExpressions) {
@@ -186,7 +184,7 @@ class Project_Default extends Operator
 
     protected final Operator inputOperator;
     protected final RowType rowType;
-    protected final List<Expression> projections;
+    protected final List<? extends Expression> projections;
     private final List<? extends TPreparedExpression> pExpressions;
     protected ProjectedRowType projectType;
 

@@ -1,15 +1,13 @@
-SelectQuery@2be26d42
-  ResultSet@1e731e90[cid, name, cid, name, id, pid, name, id, name, state]
-    Project@17db8f8e[c1.cid, c1.name, c2.cid, c2.name, child.id, child.pid, child.name, parent.id, parent.name, parent.state]
-      Select@4fadbfde[]
-        JoinNode@180fb0b0(LEFT[parent.name == c1.name])
-          JoinNode@2e18ff27(INNER[child.name == c2.name])
-            JoinNode@6b177115(INNER[c2.name == c1.name, c2.cid != c1.cid])
-              TableGroupJoinTree@500150a0(TableGroup@6546169(customers), c1)
-                TableSource@4fff395a(c1 - TableGroup@6546169(customers))
-              TableGroupJoinTree@dc737be(TableGroup@121ca203(customers), c2)
-                TableSource@7d0e6cbd(c2 - TableGroup@121ca203(customers))
-            TableGroupJoinTree@15d07c3f(TableGroup@2a8d1749(parent), child)
-              TableSource@3e052c6f(child - TableGroup@2a8d1749(parent))
-          TableGroupJoinTree@14f3cf72(TableGroup@12b8501d(parent), parent)
-            TableSource@45a84b38(parent - TableGroup@12b8501d(parent))
+SelectQuery@38ea76e6
+  ResultSet@2924133b[cid, name, id, pid, name, oid, cid, order_date, id, name, state]
+    Project@7f6a9b96[customers.cid, customers.name, child.id, child.pid, child.name, orders.oid, orders.cid, orders.order_date, parent.id, parent.name, parent.state]
+      Select@300cd634[child.name == customers.name]
+        JoinNode@1ac30891(LEFT/GROUP[child.pid == parent.id])
+          JoinNode@7a677550(INNER)
+            TableGroupJoinTree@1e4715f8(TableGroup@30a303f8(customers), customers INNER orders)
+              TableSource@616c4812(customers - TableGroup@30a303f8(customers))
+                TableSource@3ca6a831(orders - TableGroupJoin@4cf35c4f(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableGroupJoinTree@7d316e00(TableGroup@1e59a7ba(parent), child)
+              TableSource@befc7b6(child - TableGroup@1e59a7ba(parent))
+          TableGroupJoinTree@382d0236(TableGroup@1e59a7ba(parent), parent)
+            TableSource@2b2083d9(parent - TableGroup@1e59a7ba(parent))

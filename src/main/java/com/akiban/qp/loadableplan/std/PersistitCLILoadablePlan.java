@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.tree;
+package com.akiban.qp.loadableplan.std;
 
 import java.rmi.RemoteException;
 import java.sql.Types;

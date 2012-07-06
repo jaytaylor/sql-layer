@@ -283,7 +283,7 @@ final class Aggregate_Partial extends Operator
         this.inputOperator = inputOperator;
         this.inputRowType = inputRowType;
         this.inputsIndex = inputsIndex;
-        this.aggregatorFactories = new ArrayList<AggregatorFactory>(aggregatorFactories);
+        this.aggregatorFactories = aggregatorFactories;
         this.outputType = outputType;
         this.pAggrs = pAggrs;
         this.pAggrTypes = pAggrTypes;

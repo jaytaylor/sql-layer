@@ -49,11 +49,7 @@ public final class FailureOnStartupIT extends ApiTestBase {
 
     @Override
     protected Collection<Property> startupConfigProperties() {
-        // This is just something unique so that startTestServices()
-        // does not share with other tests.
-        final Collection<Property> properties = new ArrayList<Property>();
-        properties.add(new Property("test.services", getClass().getName()));
-        return properties;
+        return uniqueStartupConfigProperties(getClass());
     }
 
     @Test

@@ -39,9 +39,7 @@ import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
-import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
-import java.math.BigDecimal;
 
 /**
 

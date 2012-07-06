@@ -37,7 +37,6 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public abstract class NoArgExpression extends TOverloadBase
 {
-    public abstract TInstance tInstance(TExecutionContext context);
     public abstract void evaluate(TExecutionContext context, PValueTarget target);
 
     public boolean constantPerPreparation()
@@ -67,10 +66,11 @@ public abstract class NoArgExpression extends TOverloadBase
     @Override
     public TOverloadResult resultType()
     {
-        // TODO: where does the contex come from?
-        return TOverloadResult.fixed(tInstance(null));
+        return TOverloadResult.fixed(tInstance());
     }
-    
+
+    protected abstract TInstance tInstance();
+
     public NoArgExpression(String name, boolean constPerPrep)
     {
         this.name = name;

@@ -61,7 +61,6 @@ public class ValuesRowType extends DerivedRowType
 
     // ValuesRowType interface
 
-    @Deprecated
     public ValuesRowType(DerivedTypesSchema schema, int typeId, AkType... types)
     {
         super(schema, typeId);

@@ -654,7 +654,7 @@ public class PostgresServerConnection extends ServerSessionBase
         // Add the Persisitit Adapter - default for most tables
         adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
                 new PersistitAdapter(compiler.getSchema(),
-                                       reqs.store().getPersistitStore(),
+                                       reqs.store(),
                                        reqs.treeService(),
                                        session,
                                        reqs.config()));

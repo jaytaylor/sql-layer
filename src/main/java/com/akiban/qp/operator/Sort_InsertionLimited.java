@@ -42,7 +42,6 @@ import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
 
-import java.math.BigDecimal;
 import java.util.*;
 
 /**

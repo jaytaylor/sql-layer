@@ -1,15 +1,14 @@
-SelectQuery@6770526a
-  ResultSet@7f32e233[cid, name, cid, name, id, pid, name, id, name, state]
-    Project@65a0c382[c1.cid, c1.name, c2.cid, c2.name, child.id, child.pid, child.name, parent.id, parent.name, parent.state]
-      Select@1d83bfee[]
-        JoinNode@34adb165(LEFT[parent.name == c1.name])
-          JoinNode@775978e7(INNER[child.name == c2.name])
-            JoinNode@1310c2e8(INNER[c2.name == c1.name, c2.cid != c1.cid])
-              TableJoins@316c171f(TableGroup@2f620d92(customers))
-                TableSource@2c10d16b(c1 - TableGroup@2f620d92(customers))
-              TableJoins@4e69048b(TableGroup@50a969e4(customers))
-                TableSource@424de67(c2 - TableGroup@50a969e4(customers))
-            TableJoins@2267211b(TableGroup@20ae8542(parent))
-              TableSource@10853e51(child - TableGroup@20ae8542(parent))
-          TableJoins@21aec0d1(TableGroup@57f4ea9d(parent))
-            TableSource@1bbe4050(parent - TableGroup@57f4ea9d(parent))
+SelectQuery@5566f63a
+  ResultSet@5aaf85a3[cid, name, id, pid, name, oid, cid, order_date, id, name, state]
+    Project@396ebed8[customers.cid, customers.name, child.id, child.pid, child.name, orders.oid, orders.cid, orders.order_date, parent.id, parent.name, parent.state]
+      Select@15b3745d[child.name == customers.name]
+        JoinNode@389c90cc(LEFT/GROUP[child.pid == parent.id] - TableGroupJoin@2ee65e1d(Join(test/parent/id/test/test.child/pid: test.child -> test.parent, group(parent))))
+          JoinNode@162cd9f9(INNER)
+            TableJoins@5a9a75ce(TableGroup@2924133b(customers))
+              JoinNode@52ac55da(INNER/GROUP[orders.cid == customers.cid] - TableGroupJoin@3038859d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+                TableSource@53023556(customers - TableGroup@2924133b(customers))
+                TableSource@40553c13(orders - TableGroupJoin@3038859d(Join(test/customers/cid/test/test.orders/cid: test.orders -> test.customers, group(customers))))
+            TableJoins@4ecc1f26(TableGroup@7f6a9b96(parent))
+              TableSource@1bdb2464(child - TableGroup@7f6a9b96(parent))
+          TableJoins@3b112034(TableGroup@7f6a9b96(parent))
+            TableSource@13328d64(parent - TableGroup@7f6a9b96(parent))

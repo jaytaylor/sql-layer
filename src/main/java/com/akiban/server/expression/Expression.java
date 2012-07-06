@@ -29,7 +29,6 @@ package com.akiban.server.expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.util.Shareable;
 
 public interface Expression {
     boolean nullIsContaminating();
