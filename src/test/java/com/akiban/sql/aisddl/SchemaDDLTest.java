@@ -41,6 +41,7 @@ import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.server.error.DuplicateSchemaException;
 import com.akiban.server.error.DropSchemaNotAllowedException;
+import com.akiban.server.error.NoSuchSchemaException;
 
 
 public class SchemaDDLTest {
@@ -76,7 +77,7 @@ public class SchemaDDLTest {
         SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
     }
     
-    @Test
+    @Test (expected=NoSuchSchemaException.class)
     public void dropSchemaEmpty() throws Exception 
     {
         String sql = "DROP SCHEMA EMPTY RESTRICT";
