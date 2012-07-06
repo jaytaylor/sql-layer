@@ -29,8 +29,8 @@ package com.akiban.sql.optimizer.explain;
  * <b>Type</b>
  * Reflects object's type/class
  * Can be useful for those formatters that want to format
- * scan_xyz_operators' explainer differently from insert_operator's explainer, 
- * or to format functions' differently from binary operators (such as +, -, LIKE, ILIKE, etc
+ * scan_xyz_operator's explainer differently from insert_operator's explainer, 
+ * or to format functions differently from binary operators (such as +, -, LIKE, ILIKE, etc)
  * 
  * <b>GeneralType</b>
  * Refects each class of Explainers
