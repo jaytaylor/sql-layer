@@ -31,6 +31,12 @@ import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -170,6 +176,17 @@ class IfEmpty_Default extends Operator
     private final RowType rowType;
     private final List<Expression> expressions;
     private final API.InputPreservationOption inputPreservation;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Attributes att = new Attributes();
+        
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("IF EMPTY"));
+        for (Expression ex : expressions)
+            att.put(Label.OPERAND, ex.getExplainer());
+        return new OperationExplainer(Type.IF_ELSE, att);
+    }
 
     // Inner classes
 

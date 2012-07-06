@@ -11,3 +11,4 @@
     - com.akiban.server.service.instrumentation.InstrumentationService
     - com.akiban.server.service.is.BasicInfoSchemaTablesService
     - com.akiban.server.service.is.StorageSchemaTablesService
+    - com.akiban.server.service.is.ServerSchemaTablesService

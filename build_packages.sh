@@ -26,7 +26,7 @@
 #
 
 if [ $# -lt 1 ]; then
-    echo "Usage: ./build_packages.sh [debian|redhat]"
+    echo "Usage: ./build_packages.sh [debian|redhat|macosx]"
     exit 1
 fi
 
@@ -59,6 +59,39 @@ elif [ ${platform} == "redhat" ]; then
     cat ${PWD}/redhat/akiban-server.spec | sed "9,9s/REVISION/${bzr_revno}/g" > ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     sed -i "10,10s/EPOCH/${epoch}/g" ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
+elif [ ${platform} == "macosx" ]; then
+    server_jar=target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar
+    mac_app='target/Akiban Server.app'
+    mac_dmg='target/Akiban Server.dmg'
+    inst_temp=/tmp/inst_temp
+    # build jar
+    mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
+    # build app bundle
+    mkdir "$mac_app"
+    cp -R macosx/Contents "$mac_app"
+    mkdir "$mac_app/Contents/MacOS"
+    cp /System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS/JavaApplicationStub "$mac_app/Contents/MacOS"
+    mkdir -p "$mac_app/Contents/Resources/Java"
+    cp $server_jar "$mac_app/Contents/Resources/Java"
+    SetFile -a B "$mac_app"
+    # build disk image template
+    rm -rf $inst_temp; mkdir $inst_temp; mkdir "$inst_temp/Akiban Server.app"
+    ln -s /Applications $inst_temp
+    mkdir $inst_temp/.background
+    cp macosx/dmg_background.png $inst_temp/.background
+    rm -f $inst_temp.dmg
+    hdiutil create -fs HFSX -layout SPUD -size 40m $inst_temp.dmg -format UDRW -volname 'Akiban Server' -srcfolder $inst_temp
+    rm -rf $inst_temp
+    # update disk image
+    mkdir $inst_temp
+    hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
+    ditto "$mac_app" "$inst_temp/Akiban Server.app"
+    cp macosx/dmg.DS_Store $inst_temp/.DS_Store
+    cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns    
+    SetFile -a C $inst_temp
+    hdiutil detach `hdiutil info | grep $inst_temp | grep '^/dev' | cut -f1`
+    hdiutil convert $inst_temp.dmg -format UDZO -imagekey zlib-level=9 -o "$mac_dmg"
+    rm $inst_temp.dmg
 else
     echo "Invalid Argument: ${platform}"
     echo "Usage: ./build_packages.sh [debian|redhat]"

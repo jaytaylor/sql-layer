@@ -36,6 +36,7 @@ import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.RankExpression;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -183,6 +184,11 @@ class HKeyUnion_Ordered extends Operator
     private final UserTableRowType outputHKeyTableRowType;
     private final HKeyRowType outputHKeyRowType;
     private final int outputHKeySegments;
+
+    @Override
+    public Explainer getExplainer() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     // Inner classes
 

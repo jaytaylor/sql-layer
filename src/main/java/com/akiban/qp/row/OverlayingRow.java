@@ -30,6 +30,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.pvalue.PValueSource;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
@@ -64,6 +65,13 @@ public final class OverlayingRow extends AbstractRow {
     @Override
     public ValueSource eval(int i) {
         return overlays[i] == null ? underlying.eval(i) : overlays[i];
+    }
+
+    @Override
+    public PValueSource pvalue(int i) {
+        if (overlays[i] == null)
+            return underlying.pvalue(i);
+        throw new UnsupportedOperationException("overlaying pvaluesources not supported");
     }
 
     @Override

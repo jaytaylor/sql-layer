@@ -35,7 +35,9 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDataPValueSource;
 import com.akiban.server.rowdata.RowDataValueSource;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
@@ -64,11 +66,16 @@ final class OperatorStoreMaintenance {
 
             // Copy the values into the array bindings
             RowDataValueSource source = new RowDataValueSource();
+            RowDataPValueSource pSource = new RowDataPValueSource();
             for (int i=0; i < lookupCols.size(); ++i) {
                 int bindingsIndex = i+1;
                 Column col = lookupCols.get(i);
+                pSource.bind(col.getFieldDef(), forRow);
                 source.bind(col.getFieldDef(), forRow);
-                context.setValue(bindingsIndex, source);
+                
+                // New types
+                if (Types3Switch.ON) context.setPValue(bindingsIndex, pSource);
+                else context.setValue(bindingsIndex, source);
             }
             cursor = API.cursor(planOperator, context);
             RUN_TAP.in();

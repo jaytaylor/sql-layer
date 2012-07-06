@@ -28,6 +28,8 @@ package com.akiban.util;
 
 import org.junit.Test;
 
+import java.util.List;
+
 import static org.junit.Assert.*;
 
 public final class SparseArrayTest {
@@ -109,7 +111,25 @@ public final class SparseArrayTest {
 
         assertEquals("create count", 0, tester.count);
     }
-    
+
+    @Test
+    public void toListIsCompact() {
+        SparseArray<Integer> array = new SparseArray<Integer>();
+        array.set(0, 10);
+        array.set(1, 11);
+        List<Integer> list = array.toList();
+        // Internal size may be bigger, but only get defined elements
+        assertEquals("list size", 2, list.size());
+        assertEquals("list get(0)", Integer.valueOf(10), list.get(0));
+        assertEquals("list get(1)", Integer.valueOf(11), list.get(1));
+    }
+
+    @Test(expected=IllegalArgumentException.class)
+    public void toListMustBeCompact() {
+        SparseArray<Integer> array = new SparseArray<Integer>();
+        array.set(5, 50);
+        array.toList();
+    }
 
     @Test(expected = IndexOutOfBoundsException.class)
     public void negativeIndex() {

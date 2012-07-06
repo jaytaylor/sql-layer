@@ -193,7 +193,7 @@ public class PersistitStore implements Store {
     {
         // Initialize the hkey being constructed
         long uniqueId = -1;
-        PersistitKeyAppender hKeyAppender = new PersistitKeyAppender(hEx.getKey());
+        PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hEx.getKey());
         hKeyAppender.key().clear();
         // Metadata for the row's table
         UserTable table = rowDef.userTable();
@@ -276,7 +276,7 @@ public class PersistitStore implements Store {
 
     void constructHKey(Exchange hEx, RowDef rowDef, int[] ordinals,
             int[] nKeyColumns, FieldDef[] hKeyFieldDefs, Object[] hKeyValues) throws PersistitInterruptedException {
-        PersistitKeyAppender appender = new PersistitKeyAppender(hEx.getKey());
+        PersistitKeyAppender appender = PersistitKeyAppender.create(hEx.getKey());
         final Key hkey = hEx.getKey();
         hkey.clear();
         int k = 0;
@@ -320,7 +320,7 @@ public class PersistitStore implements Store {
 
     void constructParentPKIndexKey(Exchange parentPKExchange, RowDef rowDef, RowData rowData)
     {
-        PersistitKeyAppender iKeyAppender = new PersistitKeyAppender(parentPKExchange.getKey());
+        PersistitKeyAppender iKeyAppender = PersistitKeyAppender.create(parentPKExchange.getKey());
         iKeyAppender.key().clear();
         int[] fields = rowDef.getParentJoinFields();
         for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
@@ -363,11 +363,15 @@ public class PersistitStore implements Store {
         hEx = getExchange(session, rowDef);
         WRITE_ROW_TAP.in();
         try {
-            //
             // Does the heavy lifting of looking up the full hkey in
             // parent's primary index if necessary.
-            //
-            constructHKey(session, hEx, rowDef, rowData, true);
+            // About the propagateHKeyChanges flag: The last argument of constructHKey is insertingRow.
+            // If this argument is true, it means that we're inserting a new row, and if the row's type
+            // has a generated PK, then a PK value needs to be generated. If this writeRow invocation is
+            // being done as part of hkey maintenance (called from propagateDownGroup with propagateHKeyChanges
+            // false), then we are deleting and reinserting a row, and we don't want the PK value changed.
+            // See bug 1020342.
+            constructHKey(session, hEx, rowDef, rowData, propagateHKeyChanges);
             if (hEx.isValueDefined()) {
                 throw new DuplicateKeyException("PRIMARY", hEx.getKey());
             }
@@ -400,7 +404,7 @@ public class PersistitStore implements Store {
                 // then this propagation could be skipped.
                 hEx.clear();
                 Key hKey = hEx.getKey();
-                PersistitKeyAppender hKeyAppender = new PersistitKeyAppender(hKey);
+                PersistitKeyAppender hKeyAppender = PersistitKeyAppender.create(hKey);
                 UserTable table = rowDef.userTable();
                 List<Column> pkColumns = table.getPrimaryKeyIncludingInternal().getColumns();
                 List<HKeySegment> hKeySegments = table.hKey().segments();

@@ -43,7 +43,7 @@ public class ObjectToKeyIT extends ITBase {
 
     private void testObjectToKey(FieldDef field, Object... testValues) throws PersistitException {
         Key key = persistitStore().getKey(session());
-        PersistitKeyAppender appender = new PersistitKeyAppender(key);
+        PersistitKeyAppender appender = PersistitKeyAppender.create(key);
         for(Object inObj : testValues) {
             key.clear();
             appender.append(inObj, field);

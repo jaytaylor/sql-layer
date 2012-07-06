@@ -31,6 +31,12 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.IndexRowType;
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -198,6 +204,18 @@ class IndexScan_Default extends Operator
     private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
     private final IndexScanSelector scanSelector;
+
+    @Override
+    public Explainer getExplainer()
+    {
+        Attributes atts = new Attributes();
+        
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Index Scan"));
+        atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.toString()));
+        atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
+        
+        return new OperationExplainer(Type.SCAN_OPERATOR, atts);
+    }
 
     // Inner classes
 

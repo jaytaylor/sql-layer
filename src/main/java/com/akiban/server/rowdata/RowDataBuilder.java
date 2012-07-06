@@ -28,10 +28,18 @@ package com.akiban.server.rowdata;
 
 import com.akiban.server.AkServerUtil;
 import com.akiban.server.encoding.EncodingException;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValueSources.ValueSourceConverter;
+
+import java.io.UnsupportedEncodingException;
+import java.math.BigDecimal;
 
 public final class RowDataBuilder {
 
@@ -142,40 +150,74 @@ public final class RowDataBuilder {
         FieldDef fieldDef = rowDef.getFieldDef(fieldIndex);
         byte[] bytes = rowData.getBytes();
         int currFixedWidth = fieldWidths[fieldIndex];
-
-        if (source.isNull()) {
-            if (currFixedWidth != 0) {
-                throw new IllegalStateException("expected source to give null: " + source);
-            }
-            target.bind(fieldDef, bytes, nullMapOffset);
-            target.putNull();
-            if (target.lastEncodedLength() != 0) {
-                throw new IllegalStateException("putting a null should have encoded 0 bytes");
-            }
-        } else if (fieldDef.isFixedSize()) {
-            target.bind(fieldDef, bytes, fixedWidthSectionOffset);
-            doConvert(source);
-            if (target.lastEncodedLength() != currFixedWidth) {
-                throw new IllegalStateException("expected to write " + currFixedWidth
-                        + " fixed-width byte(s), but wrote " + target.lastEncodedLength());
+        if (Types3Switch.ON) {
+            if (source.isNull()) {
+                if (currFixedWidth != 0) {
+                    throw new IllegalStateException("expected source to give null: " + source);
+                }
+                pTarget.bind(fieldDef, bytes, nullMapOffset);
+                pTarget.putNull();
+                if (pTarget.lastEncodedLength() != 0) {
+                    throw new IllegalStateException("putting a null should have encoded 0 bytes");
+                }
+            } else if (fieldDef.isFixedSize()) {
+                pTarget.bind(fieldDef, bytes, fixedWidthSectionOffset);
+                doConvertP(source);
+                if (pTarget.lastEncodedLength() != currFixedWidth) {
+                    throw new IllegalStateException("expected to write " + currFixedWidth
+                            + " fixed-width byte(s), but wrote " + pTarget.lastEncodedLength());
+                }
+            } else {
+                pTarget.bind(fieldDef, bytes, variableWidthSectionOffset);
+                doConvertP(source);
+                int varWidthExpected = readVarWidth(bytes, currFixedWidth);
+                // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
+                // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
+                // previous variable-length fields, and use that for our comparison. Once that's done, we'll add this
+                // field's length to that cumulative sum.
+                varWidthExpected -= vlength;
+                if (pTarget.lastEncodedLength() != varWidthExpected) {
+                    throw new IllegalStateException("expected to write " + varWidthExpected
+                            + " variable-width byte(s), but wrote " + pTarget.lastEncodedLength()
+                            + " (vlength=" + vlength + ')');
+                }
+                vlength += varWidthExpected;
+                variableWidthSectionOffset += varWidthExpected;
             }
         } else {
-            target.bind(fieldDef, bytes, variableWidthSectionOffset);
-            doConvert(source);
-            int varWidthExpected = readVarWidth(bytes, currFixedWidth);
-            // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
-            // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
-            // previous variable-length fields, and use that for our comparison. Once that's done, we'll add this
-            // field's length to that cumulative sum.
-            varWidthExpected -= vlength;
-            if (target.lastEncodedLength() != varWidthExpected) {
-                throw new IllegalStateException("expected to write " + varWidthExpected
-                        + " variable-width byte(s), but wrote " + target.lastEncodedLength()
-                        + " (vlength=" + vlength + ')'
-                );
+            if (source.isNull()) {
+                if (currFixedWidth != 0) {
+                    throw new IllegalStateException("expected source to give null: " + source);
+                }
+                target.bind(fieldDef, bytes, nullMapOffset);
+                target.putNull();
+                if (target.lastEncodedLength() != 0) {
+                    throw new IllegalStateException("putting a null should have encoded 0 bytes");
+                }
+            } else if (fieldDef.isFixedSize()) {
+                target.bind(fieldDef, bytes, fixedWidthSectionOffset);
+                doConvert(source);
+                if (target.lastEncodedLength() != currFixedWidth) {
+                    throw new IllegalStateException("expected to write " + currFixedWidth
+                            + " fixed-width byte(s), but wrote " + target.lastEncodedLength());
+                }
+            } else {
+                target.bind(fieldDef, bytes, variableWidthSectionOffset);
+                doConvert(source);
+                int varWidthExpected = readVarWidth(bytes, currFixedWidth);
+                // the stored value (retrieved by readVarWidth) is actually the *cumulative* length; we want just
+                // this field's length. So, we'll subtract from this cumulative value the previously-maintained sum of the
+                // previous variable-length fields, and use that for our comparison. Once that's done, we'll add this
+                // field's length to that cumulative sum.
+                varWidthExpected -= vlength;
+                if (target.lastEncodedLength() != varWidthExpected) {
+                    throw new IllegalStateException("expected to write " + varWidthExpected
+                            + " variable-width byte(s), but wrote " + target.lastEncodedLength()
+                            + " (vlength=" + vlength + ')');
+                }
+                vlength += varWidthExpected;
+                variableWidthSectionOffset += varWidthExpected;
             }
-            vlength += varWidthExpected;
-            variableWidthSectionOffset += varWidthExpected;
         }
         fixedWidthSectionOffset += currFixedWidth;
 
@@ -208,6 +250,7 @@ public final class RowDataBuilder {
     }
 
     private final RowDataValueTarget target = new RowDataValueTarget();
+    private final RowDataPValueTarget pTarget = new RowDataPValueTarget();
     private FromObjectValueSource source = null; // lazy-loaded
     private final RowDef rowDef;
     private final RowData rowData;
@@ -231,6 +274,14 @@ public final class RowDataBuilder {
     private void doConvert(ValueSource source) {
         try {
             Converters.convert(source, target);
+        } catch (ArrayIndexOutOfBoundsException e) {
+            throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
+        }
+    }
+
+    private void doConvertP(ValueSource source) {
+        try {
+            converter.convert(rowDef.getFieldDef(fieldIndex), source, pTarget);
         } catch (ArrayIndexOutOfBoundsException e) {
             throw EncodingException.dueTo(e); // assumed to be during writing to the RowData's byte[]
         }
@@ -272,4 +323,37 @@ public final class RowDataBuilder {
             }
         }
     }
+
+    private static final ValueSourceConverter<FieldDef> converter = new ValueSourceConverter<FieldDef>() {
+
+        @Override
+        protected ValueSource tweakSource(FieldDef fieldDef, ValueSource source) {
+            AkType shouldBe = fieldDef.column().getType().akType();
+            if (shouldBe != source.getConversionType()) {
+                ValueHolder holder = new ValueHolder();
+                holder.expectType(shouldBe);
+                Converters.convert(source, holder);
+                source = holder;
+            }
+            return source;
+        }
+
+        @Override
+        protected Object handleBigDecimal(FieldDef fieldDef, BigDecimal bigDecimal) {
+            int size = fieldDef.getEncoding().widthFromObject(fieldDef, bigDecimal);
+            byte[] bval = new byte[size];
+            ConversionHelperBigDecimal.fromObject(fieldDef, bigDecimal, bval, 0);
+            return bval;
+        }
+
+        @Override
+        protected Object handleString(FieldDef fieldDef, String string) {
+            String charset = fieldDef.column().getCharsetAndCollation().charset();
+            try {
+                return string.getBytes(charset);
+            } catch (UnsupportedEncodingException e) {
+                throw new AkibanInternalException("while decoding with charset " + charset, e);
+            }
+        }
+    };
 }

@@ -28,6 +28,8 @@ package com.akiban.qp.operator;
 
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.server.error.NegativeLimitException;
@@ -35,6 +37,11 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.extract.Extractors;
 
+import com.akiban.sql.optimizer.explain.Attributes;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
@@ -131,13 +138,14 @@ final class Limit_Default extends Operator
 
     // Limit_Default interface
 
-    Limit_Default(Operator inputOperator, int limit) {
-        this(inputOperator, 0, false, limit, false);
+    Limit_Default(Operator inputOperator, int limit, boolean usePVals) {
+        this(inputOperator, 0, false, limit, false, usePVals);
     }
 
     Limit_Default(Operator inputOperator,
                   int skip, boolean skipIsBinding,
-                  int limit, boolean limitIsBinding) {
+                  int limit, boolean limitIsBinding,
+                  boolean usePVals) {
         ArgumentValidation.isGTE("skip", skip, 0);
         ArgumentValidation.isGTE("limit", limit, 0);
         this.skip = skip;
@@ -145,6 +153,7 @@ final class Limit_Default extends Operator
         this.limit = limit;
         this.limitIsBinding = limitIsBinding;
         this.inputOperator = inputOperator;
+        this.usePVals = usePVals;
     }
 
     public int skip() {
@@ -170,6 +179,35 @@ final class Limit_Default extends Operator
     private final int skip, limit;
     private final boolean skipIsBinding, limitIsBinding;
     private final Operator inputOperator;
+    private final boolean usePVals;
+
+    @Override
+    public Explainer getExplainer()
+    {
+         StringBuilder str = new StringBuilder(getClass().getSimpleName());
+        str.append("(");
+        if (skip > 0) {
+            str.append(String.format("skip=%d", skip));
+        }
+        if ((limit >= 0) && (limit < Integer.MAX_VALUE)) {
+            if (skip > 0) str.append(", ");
+            str.append(String.format("limit=%d", limit));
+        }
+        str.append(": ");
+        str.append(inputOperator);
+        str.append(")");
+        
+        
+        Attributes att = new Attributes();
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("LIMIT DEFAULT"));
+        if (skip > 0)
+            att.put(Label.LIMIT, PrimitiveExplainer.getInstance(String.format("skip = %d", skip)));
+        if (limit >= 0 && limit < Integer.MAX_VALUE)
+            att.put(Label.LIMIT, PrimitiveExplainer.getInstance(String.format("limit = %d", limit)));
+        att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
+        
+        return new OperationExplainer(Type.LIMIT_OPERATOR, att);
+    }
 
     // internal classes
 
@@ -185,9 +223,16 @@ final class Limit_Default extends Operator
                 super.open();
                 closed = false;
                 if (isSkipBinding()) {
-                    ValueSource value = context.getValue(skip());
-                    if (!value.isNull())
-                        this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                    if (usePVals) {
+                        PValueSource value = context.getPValue(skip());
+                        if (!value.isNull())
+                            this.skipLeft = value.getInt32();
+                    }
+                    else {
+                        ValueSource value = context.getValue(skip());
+                        if (!value.isNull())
+                            this.skipLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                    }
                 }
                 else {
                     this.skipLeft = skip();
@@ -195,11 +240,20 @@ final class Limit_Default extends Operator
                 if (skipLeft < 0)
                     throw new NegativeLimitException("OFFSET", skipLeft);
                 if (isLimitBinding()) {
-                    ValueSource value = context.getValue(limit());
-                    if (value.isNull())
-                        this.limitLeft = Integer.MAX_VALUE;
-                    else
-                        this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                    if (usePVals) {
+                        PValueSource value = context.getPValue(limit());
+                        if (value.isNull())
+                            this.limitLeft = Integer.MAX_VALUE;
+                        else
+                            this.limitLeft = value.getInt32();
+                    }
+                    else {
+                        ValueSource value = context.getValue(limit());
+                        if (value.isNull())
+                            this.limitLeft = Integer.MAX_VALUE;
+                        else
+                            this.limitLeft = (int)Extractors.getLongExtractor(AkType.LONG).getLong(value);
+                    }
                 }
                 else {
                     this.limitLeft = limit();

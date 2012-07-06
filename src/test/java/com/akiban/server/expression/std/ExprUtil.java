@@ -32,6 +32,7 @@ import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.optimizer.explain.Explainer;
 
 final class ExprUtil {
 
@@ -122,6 +123,17 @@ final class ExprUtil {
         private final AkType type;
 
         @Override
+        public String name()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Explainer getExplainer()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
         public boolean nullIsContaminating()
         {
             throw new UnsupportedOperationException("Not supported yet.");
@@ -200,6 +212,17 @@ final class ExprUtil {
         };
 
         @Override
+        public String name()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Explainer getExplainer()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
         public boolean nullIsContaminating()
         {
             return true;
@@ -245,6 +268,17 @@ final class ExprUtil {
         private final Expression delegate;
 
         @Override
+        public String name()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public Explainer getExplainer()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        
         public boolean nullIsContaminating()
         {
             return true;

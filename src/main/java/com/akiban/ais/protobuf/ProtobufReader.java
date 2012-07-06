@@ -125,6 +125,7 @@ public class ProtobufReader {
                     pbType.getFixedSize(),
                     pbType.getMaxSizeBytes(),
                     null,
+                    null,
                     null
             );
         }

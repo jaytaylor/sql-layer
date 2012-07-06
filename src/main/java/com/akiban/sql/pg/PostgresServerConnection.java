@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.sql.server.ServerServiceRequirements;
 import com.akiban.sql.server.ServerSessionBase;
 import com.akiban.sql.server.ServerSessionTracer;
@@ -653,7 +654,7 @@ public class PostgresServerConnection extends ServerSessionBase
         // Add the Persisitit Adapter - default for most tables
         adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
                 new PersistitAdapter(compiler.getSchema(),
-                                       reqs.store().getPersistitStore(),
+                                       reqs.store(),
                                        reqs.treeService(),
                                        session,
                                        reqs.config()));
@@ -715,14 +716,15 @@ public class PostgresServerConnection extends ServerSessionBase
         throw new UnsupportedSQLException ("", stmt);
     }
 
-    protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows) 
+    protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
         ServerTransaction localTransaction = beforeExecute(pstmt);
         int rowsProcessed = 0;
         boolean success = false;
         try {
             sessionTracer.beginEvent(EventTypes.EXECUTE);
-            rowsProcessed = pstmt.execute(context, maxrows);
+            boolean usePVals = Boolean.parseBoolean(getProperty("newtypes", Boolean.toString(Types3Switch.ON)));
+            rowsProcessed = pstmt.execute(context, maxrows, usePVals);
             success = true;
         }
         finally {

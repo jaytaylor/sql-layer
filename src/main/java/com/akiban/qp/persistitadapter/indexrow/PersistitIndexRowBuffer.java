@@ -31,12 +31,14 @@ import com.akiban.ais.model.IndexToHKey;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.row.IndexRow;
 import com.akiban.qp.util.PersistitKey;
+import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Value;
@@ -117,7 +119,7 @@ public class PersistitIndexRowBuffer extends IndexRow
     public PersistitIndexRowBuffer(Key key)
     {
         key.clear();
-        this.keyAppender = new PersistitKeyAppender(key);
+        this.keyAppender = PersistitKeyAppender.create(key);
         this.value = null;
     }
 
@@ -125,7 +127,7 @@ public class PersistitIndexRowBuffer extends IndexRow
     public PersistitIndexRowBuffer(Key key, Value value)
     {
         key.clear();
-        this.keyAppender = new PersistitKeyAppender(key);
+        this.keyAppender = PersistitKeyAppender.create(key);
         value.clear();
         this.value = value;
     }
@@ -133,6 +135,11 @@ public class PersistitIndexRowBuffer extends IndexRow
     // For use by subclasses
 
     protected void attach(PersistitKeyValueSource source, int position, AkType type)
+    {
+        source.attach(keyAppender.key(), position, type);
+    }
+
+    protected void attach(PersistitKeyPValueSource source, int position, PUnderlying type)
     {
         source.attach(keyAppender.key(), position, type);
     }

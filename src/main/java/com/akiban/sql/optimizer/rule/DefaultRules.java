@@ -31,6 +31,27 @@ import java.util.List;
 
 public class DefaultRules
 {
+    /** These are the rules that get run for the new types with CBO compilation. */
+    public static final List<BaseRule> DEFAULT_RULES_NEWTYPES = Arrays.asList(
+            // These aren't singletons because someday they will have options.
+            new ASTStatementLoader(),
+            new AggregateMapper(),
+            new AggregateToDistinctMapper(),
+            new OuterJoinPromoter(),
+            new ColumnEquivalenceFinder(),
+            new GroupJoinFinder(),
+            new InConditionReverser(),
+            new JoinAndIndexPicker(),
+            new NestedLoopMapper(),
+            new BranchJoiner(),
+            new SelectPreponer(),
+            new AggregateSplitter(),
+            new SortSplitter(),
+            new MapFolder(),
+            new ExpressionCompactor(),
+            new OperatorAssembler(true)
+    );
+
     /** These are the rules that get run for CBO compilation. */
     public static final List<BaseRule> DEFAULT_RULES_CBO = Arrays.asList(
         // These aren't singletons because someday they will have options.
@@ -50,7 +71,7 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
-        new OperatorAssembler()
+        new OperatorAssembler(false)
      );
 
     /** These are the rules that get run for non-CBO compilation. */
@@ -72,7 +93,7 @@ public class DefaultRules
         new SortSplitter(),
         new MapFolder(),
         new ExpressionCompactor(),
-        new OperatorAssembler()
+        new OperatorAssembler(false)
      );
 
     private DefaultRules() {

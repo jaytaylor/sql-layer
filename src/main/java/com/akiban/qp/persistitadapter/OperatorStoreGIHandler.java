@@ -33,6 +33,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.Row;
 import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.types.ValueSource;
@@ -174,6 +175,7 @@ class OperatorStoreGIHandler {
     private final PersistitAdapter adapter;
     private final UserTable sourceTable;
     private final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+    private final PersistitKeyPValueTarget pTarget = new PersistitKeyPValueTarget();
     
     // class state
     private static volatile GIHandlerHook giHandlerHook;

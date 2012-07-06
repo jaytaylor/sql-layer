@@ -72,6 +72,11 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
         }
         
     };
+
+    @Override
+    public String name() {
+        return "FIELD_FUNCTION";
+    }
     
     private static class InnerEvaluation extends AbstractCompositeExpressionEvaluation
     {
@@ -85,7 +90,7 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
         {
             ValueSource first = children().get(0).eval();
             long ret = 0;
-              
+
             if (!first.isNull())
             {
             
@@ -140,7 +145,7 @@ public class FieldFunctionExpression extends AbstractCompositeExpression
     @Override
     protected void describe(StringBuilder sb)
     {
-        sb.append("FIELD_FUNCTION");
+        sb.append(name());
     }
 
     @Override
