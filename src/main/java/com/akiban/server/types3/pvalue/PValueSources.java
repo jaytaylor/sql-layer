@@ -26,14 +26,16 @@
 
 package com.akiban.server.types3.pvalue;
 
-import com.akiban.server.types.FromObjectValueSource;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.util.ByteSource;
@@ -44,7 +46,7 @@ import java.util.Arrays;
 
 public final class PValueSources {
 
-    public static TPreptimeValue fromObject(Object object) {
+    public static TPreptimeValue fromObject(Object object, AkType akType) {
         final PValue value;
         final TInstance tInstance;
         if (object == null) {
@@ -55,7 +57,47 @@ public final class PValueSources {
             value = new PValue((Integer)object);
         }
         else if (object instanceof Long) {
-            tInstance = MNumeric.BIGINT.instance();
+            if (akType == null) {
+                tInstance = MNumeric.BIGINT.instance();
+            }
+            else {
+                TClass tClass;
+                switch (akType) {
+                case DATE:
+                    tClass = MDatetimes.DATE;
+                    break;
+                case DATETIME:
+                    tClass = MDatetimes.DATETIME;
+                    break;
+                case INT:
+                    tClass = MNumeric.INT;
+                    break;
+                case LONG:
+                    tClass = MNumeric.BIGINT;
+                    break;
+                case TIME:
+                    tClass = MDatetimes.TIME;
+                    break;
+                case TIMESTAMP:
+                    tClass = MDatetimes.TIMESTAMP;
+                    break;
+                case U_BIGINT:
+                    tClass = MNumeric.BIGINT_UNSIGNED;
+                    break;
+                case U_INT:
+                    tClass = MNumeric.INT_UNSIGNED;
+                    break;
+                case YEAR:
+                    tClass = MDatetimes.YEAR;
+                    break;
+                case INTERVAL_MILLIS:
+                case INTERVAL_MONTH:
+                    throw new UnsupportedOperationException("interval literals not supported");
+                default:
+                    throw new IllegalArgumentException("can't convert longs of AkType " + akType);
+                }
+                tInstance = tClass.instance();
+            }
             value = new PValue((Long)object);
         }
         else if (object instanceof String) {
