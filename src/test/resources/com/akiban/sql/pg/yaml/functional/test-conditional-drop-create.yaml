@@ -13,8 +13,13 @@
 #- error: [42501]
 ---
 - DropTable: if exists t1;
----
-- Statement: create schema S;
---- #BUG: duplicate schema DOES NOT cause any error?
-- Statement: create schema S;
+#--- CreateSchema is not implemented yet
+# as per http://akibainc.onconfluence.com/pages/viewpage.action?pageId=3015866
+#- CreateSchema: create schema S;
+#---
+#- CreateSchema: create schema S;
+#- error: [5000N]
+#---
+#- CreateSchema: IF NOT EXISTS schema S;
+#---
 ...
