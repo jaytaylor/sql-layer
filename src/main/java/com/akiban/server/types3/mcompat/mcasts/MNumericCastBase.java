@@ -152,7 +152,7 @@ public class MNumericCastBase
         public FromDoubleToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.DOUBLE),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
         @Override
@@ -173,7 +173,7 @@ public class MNumericCastBase
         public FromInt8ToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_8),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
         @Override
@@ -293,7 +293,7 @@ public class MNumericCastBase
         public FromInt16ToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_16),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
         @Override
@@ -433,7 +433,7 @@ public class MNumericCastBase
         public FromInt32ToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_32),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
         @Override
@@ -573,7 +573,7 @@ public class MNumericCastBase
         public FromInt64ToString(TClass source, TClass target, boolean auto, Constantness c)
         {
             super(checkType(source, PUnderlying.INT_64),
-                  checkType(target, PUnderlying.BYTES), auto, c);
+                  checkType(target, PUnderlying.STRING), auto, c);
         }
 
         @Override
