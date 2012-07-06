@@ -35,7 +35,6 @@ import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
-import com.akiban.util.Equality;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -101,7 +100,8 @@ public final class OverloadResolver {
     public TAggregator getAggregation(String name, TClass inputType) {
         List<TAggregator> candidates = new ArrayList<TAggregator>(aggregatesRegistry.getAggregates(name));
         for (TAggregator candidate : candidates) {
-            if (Equality.areEqual(candidate.getTypeClass(), inputType))
+            TClass expectedInput = candidate.getTypeClass();
+            if (expectedInput == null || expectedInput.equals(inputType)) // null means input type is irrelevant
                 return candidate;
             // TODO use casting types, etc
         }

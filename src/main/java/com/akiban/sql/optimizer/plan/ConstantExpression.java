@@ -31,6 +31,7 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -45,6 +46,7 @@ public class ConstantExpression extends BaseExpression
         if (value instanceof Integer)
             value = new Long(((Integer)value).intValue());
         this.value = value;
+        setPreptimeValue(PValueSources.fromObject(value, type));
     }
 
     public ConstantExpression(Object value, DataTypeDescriptor sqlType, ValueNode sqlSource) {

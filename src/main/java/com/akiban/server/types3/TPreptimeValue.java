@@ -64,6 +64,14 @@ public final class TPreptimeValue {
         this.mutable = false;
     }
 
+    @Override
+    public String toString() {
+        String result = tInstance.toString();
+        if (value != null)
+            result = result + '=' + value;
+        return result;
+    }
+
     private TInstance tInstance;
     private PValueSource value;
     private boolean mutable; // TODO ugh! should we next this, or create a hierarchy of TPV, MutableTPV?

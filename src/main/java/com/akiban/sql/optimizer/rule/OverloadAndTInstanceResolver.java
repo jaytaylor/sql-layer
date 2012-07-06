@@ -26,9 +26,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.ais.model.Column;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
-import com.akiban.server.t3expressions.T3ScalarsRegistry;
 import com.akiban.server.t3expressions.TClassPossibility;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TAggregator;
@@ -39,36 +39,41 @@ import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.aksql.aktypes.AkString;
 import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
+import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.AnyCondition;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
+import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
+import com.akiban.sql.optimizer.plan.ExpressionsSource;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
+import com.akiban.sql.optimizer.plan.NullSource;
 import com.akiban.sql.optimizer.plan.ParameterCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
+import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
+import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
+import com.akiban.sql.optimizer.plan.TableSource;
 import com.akiban.sql.optimizer.rule.ConstantFolder.Folder;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -314,7 +319,38 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleColumnExpression(ColumnExpression expression) {
-            expression.setPreptimeValue(new TPreptimeValue(expression.getColumn().tInstance()));
+            Column column = expression.getColumn();
+            ColumnSource columnSource = expression.getTable();
+            if (column != null) {
+                assert columnSource instanceof TableSource : columnSource;
+                expression.setPreptimeValue(new TPreptimeValue(column.tInstance()));
+            }
+            else if (columnSource instanceof AggregateSource) {
+                AggregateSource aggTable = (AggregateSource) columnSource;
+                TPreptimeValue ptv = aggTable.getField(expression.getPosition()).getPreptimeValue();
+                expression.setPreptimeValue(ptv);
+            }
+            else if (columnSource instanceof SubquerySource) {
+                SubquerySource subTable = (SubquerySource) columnSource;
+                throw new UnsupportedOperationException(); // TODO
+            }
+            else if (columnSource instanceof NullSource) {
+                NullSource nsTable = (NullSource) columnSource;
+                throw new UnsupportedOperationException(); // TODO
+            }
+            else if (columnSource instanceof Project) {
+                Project pTable = (Project) columnSource;
+                TPreptimeValue ptv = pTable.getFields().get(expression.getPosition()).getPreptimeValue();
+                expression.setPreptimeValue(ptv);
+            }
+            else if (columnSource instanceof ExpressionsSource) {
+                ExpressionsSource exprsTable = (ExpressionsSource) columnSource;
+                TPreptimeValue ptv = exprsTable.getPreptimeValues().get(expression.getPosition());
+                expression.setPreptimeValue(ptv);
+            }
+            else {
+                throw new AssertionError(columnSource + "(" + columnSource.getClass() + ")");
+            }
             return expression;
         }
 
