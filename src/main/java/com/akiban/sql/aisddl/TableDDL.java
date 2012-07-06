@@ -28,6 +28,7 @@ package com.akiban.sql.aisddl;
 
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.Map;
 
 import com.akiban.server.api.DDLFunctions;
@@ -210,24 +211,49 @@ public class TableDDL
                 parentSchemaName, parentTableName, 
                 schemaName, tableName);
 
-        UserTable table = builder.akibanInformationSchema().getUserTable(parentSchemaName, parentTableName);
-        if (table == null) {
-            throw new NoSuchTableException(parentSchemaName, parentTableName);
+        AkibanInformationSchema ais = builder.akibanInformationSchema();
+        // Check parent table exists
+        UserTable parentTable = ais.getUserTable(parentSchemaName, parentTableName);
+        if (parentTable == null) {
+            throw new JoinToUnknownTableException(new TableName(schemaName, tableName),
+                                                  new TableName(parentSchemaName, parentTableName));
         }
-        if (fkdn.getColumnList().size() != table.getPrimaryKeyIncludingInternal().getColumns().size()) {
+        // Check child table exists
+        UserTable childTable = ais.getUserTable(schemaName, tableName);
+        if (childTable == null) {
+            throw new NoSuchTableException(schemaName, tableName);
+        }
+        // Check that fk list and pk list are the same size
+        if (fkdn.getColumnList().size() != parentTable.getPrimaryKeyIncludingInternal().getColumns().size()) {
             throw new JoinColumnMismatchException(fkdn.getColumnList().size(),
                                                   new TableName(schemaName, tableName),
                                                   new TableName(parentSchemaName, parentTableName),
-                                                  table.getPrimaryKeyIncludingInternal().getColumns().size());
+                                                  parentTable.getPrimaryKeyIncludingInternal().getColumns().size());
         }
-        
+        // Check pk and fk columns exist
+        Iterator<ResultColumn> fkColumnScan = fkdn.getColumnList().iterator();
+        Iterator<ResultColumn> pkColumnScan = fkdn.getRefResultColumnList().iterator();
+        while (fkColumnScan.hasNext() && pkColumnScan.hasNext()) {
+            ResultColumn fkColumn = fkColumnScan.next();
+            ResultColumn pkColumn = pkColumnScan.next();
+            if (childTable.getColumn(fkColumn.getName()) == null) {
+                throw new NoSuchColumnException(String.format("%s.%s.%s", schemaName, tableName, fkColumn.getName()));
+            }
+            if (parentTable.getColumn(pkColumn.getName()) == null) {
+                throw new JoinToWrongColumnsException(new TableName(schemaName, tableName),
+                                                      fkColumn.getName(),
+                                                      new TableName(parentSchemaName, parentTableName),
+                                                      pkColumn.getName());
+            }
+        }
+
         builder.joinTables(joinName, parentSchemaName, parentTableName, schemaName, tableName);
         
         int colpos = 0;
         for (ResultColumn column : fkdn.getColumnList()) {
             String columnName = column.getName();
             builder.joinColumns(joinName, 
-                    parentSchemaName, parentTableName, table.getColumn(colpos).getName(), 
+                    parentSchemaName, parentTableName, parentTable.getColumn(colpos).getName(),
                     schemaName, tableName, columnName);
             colpos++;
         }

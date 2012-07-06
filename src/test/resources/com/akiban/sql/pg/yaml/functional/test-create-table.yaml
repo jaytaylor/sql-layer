@@ -47,11 +47,21 @@
 - error: [50008]
 ---
 
-# Bug 941657
+# Bug 941657 -- number of fk columns != number of pk columns
 - CreateTable: parent (pid int not null, primary key(pid))
 ---
-- CreateTable: child (cid int not null, cx int, pid int, primary key(cid), grouping foreign key(pid, cx) references parent(pid))
+- CreateTable: child1 (cid int not null, cx int, pid int, primary key(cid), grouping foreign key(pid, cx) references parent(pid))
 - error: [50016]
+---
+
+# Bug 941657 -- fk refers to columns that don't exist
+- CreateTable: child2 (cid int not null, pid int, primary key(cid), grouping foreign key(pid) references parent(this_is_not_a_column))
+- error: [50005]
+---
+
+# Bug 941657 -- fk column doesn't exist
+- CreateTable: child3 (cid int not null, pid int, primary key(cid), grouping foreign key(no_such_column) references parent(pid))
+- error: [50018]
 
 ...
 
