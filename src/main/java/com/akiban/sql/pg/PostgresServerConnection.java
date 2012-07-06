@@ -677,7 +677,8 @@ public class PostgresServerConnection extends ServerSessionBase
             new PostgresDDLStatementGenerator(this),
             new PostgresSessionStatementGenerator(this),
             new PostgresCallStatementGenerator(this),
-            new PostgresExplainStatementGenerator(this)
+            new PostgresExplainStatementGenerator(this),
+            new PostgresServerStatementGenerator(this)
         };
     }
 
@@ -835,6 +836,10 @@ public class PostgresServerConnection extends ServerSessionBase
     
     public String getRemoteAddress() {
         return socket.getInetAddress().getHostAddress();
+    }
+    
+    public PostgresServer getServer() {
+        return server;
     }
 
 }

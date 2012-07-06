@@ -31,6 +31,7 @@ import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
 import com.akiban.sql.parser.AccessMode;
+import com.akiban.sql.parser.AlterServerNode;
 import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
@@ -46,7 +47,11 @@ public class PostgresSessionStatement implements PostgresStatement
     enum Operation {
         USE, CONFIGURATION,
         BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
-        TRANSACTION_ISOLATION, TRANSACTION_ACCESS
+        TRANSACTION_ISOLATION, TRANSACTION_ACCESS;
+        
+        public PostgresSessionStatement getStatement(StatementNode statement) {
+            return new PostgresSessionStatement (this, statement);
+        }
     };
 
     public static final String[] ALLOWED_CONFIGURATION = new String[] {
@@ -137,15 +142,17 @@ public class PostgresSessionStatement implements PostgresStatement
         case CONFIGURATION:
             {
                 SetConfigurationNode node = (SetConfigurationNode)statement;
-                String variable = node.getVariable();
-                if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
-                    throw new UnsupportedConfigurationException(variable);
-                server.setProperty(variable, node.getValue());
+                setVariable (server, node.getVariable(), node.getValue());
             }
             break;
         default:
             throw new UnsupportedSQLException("session control", statement);
         }
     }
-
+    
+    protected void setVariable(PostgresServerSession server, String variable, String value) {
+        if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
+            throw new UnsupportedConfigurationException (variable);
+        server.setProperty(variable, value);
+    }
 }
