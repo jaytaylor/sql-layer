@@ -85,12 +85,7 @@ public class
     public void userTable(String schemaName, String tableName) 
     {
         LOG.info("userTable: " + schemaName + "." + tableName);
-        UserTable.create(ais, schemaName, tableName, ExistenceCheck.NO_CONDITION, tableIdGenerator++);
-    }
-
-    public void userTable(String schemaName, String tableName, ExistenceCheck check) {
-        LOG.info("userTable: " + schemaName + "." + tableName);
-        UserTable.create(ais, schemaName, tableName, check, tableIdGenerator++);
+        UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
     }
 
     public void userTableInitialAutoIncrement(String schemaName,

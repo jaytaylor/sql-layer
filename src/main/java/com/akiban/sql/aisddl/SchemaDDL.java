@@ -32,10 +32,12 @@ import com.akiban.ais.model.TableName;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.DropSchemaNotAllowedException;
 import com.akiban.server.error.DuplicateSchemaException;
+import com.akiban.server.error.NoSuchSchemaException;
 import com.akiban.server.service.session.Session;
 
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
+import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.sql.parser.StatementType;
 
 
@@ -48,11 +50,20 @@ public class SchemaDDL {
                                    CreateSchemaNode createSchema)
     {
         final String schemaName = createSchema.getSchemaName();
+        ExistenceCheck condition = createSchema.getExistenceCheck();
         
-        if (checkSchema (ais, schemaName)) {
-            throw new DuplicateSchemaException (schemaName);
-        }
-        
+        if (checkSchema (ais, schemaName))
+            switch(condition)
+            {
+                case IF_NOT_EXISTS:
+                    // schema already exists. does nothing
+                    return;
+                case NO_CONDITION:
+                    throw new DuplicateSchemaException (schemaName);
+                default:
+                    throw new UnsupportedOperationException("Unexpected condition in CREATE SCHEMA: " + condition);
+            }
+
         // If you get to this point, the schema name isn't being used by any user or group table
         // therefore is a valid "new" schema. 
         // TODO: update the AIS to store the new schema. 
@@ -64,18 +75,31 @@ public class SchemaDDL {
     {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         final String schemaName = dropSchema.getSchemaName();
-
-        // 1 == RESTRICT, meaning no drop if the schema isn't empty 
-        if (dropSchema.getDropBehavior() == StatementType.DROP_RESTRICT ||
-            dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT) {
-            if (checkSchema (ais, schemaName)) {
+        ExistenceCheck condition = dropSchema.getExistenceCheck();
+        
+        if (checkSchema(ais, schemaName))
+        {
+            // 1 == RESTRICT, meaning no drop if the schema isn't empty 
+            if (dropSchema.getDropBehavior() == StatementType.DROP_RESTRICT ||
+                    dropSchema.getDropBehavior() == StatementType.DROP_DEFAULT)
                 throw new DropSchemaNotAllowedException (schemaName);
-            }
             // If the schema isn't used by any existing tables, it has effectively 
             // been dropped, so the drop "succeeds".
-        } else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE) {
-            ddlFunctions.dropSchema(session, schemaName);
+            else if (dropSchema.getDropBehavior() == StatementType.DROP_CASCADE) 
+                ddlFunctions.dropSchema(session, schemaName);       
         }
+        else
+            switch(condition)
+            {
+                case IF_EXISTS:
+                    // schema doesn't exists. does nothing
+                    return;
+                case NO_CONDITION:
+                    throw new NoSuchSchemaException(schemaName);
+                default:
+                    throw new UnsupportedOperationException("Unexpected condition in DROP SCHEMA: " + condition);
+            }
+        
     }
     
     /**

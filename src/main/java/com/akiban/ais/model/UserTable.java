@@ -27,7 +27,6 @@
 package com.akiban.ais.model;
 
 import com.akiban.qp.memoryadapter.MemoryTableFactory;
-import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.*;
@@ -39,26 +38,15 @@ public class UserTable extends Table
                                    String tableName,
                                    Integer tableId)
     {
-        UserTable userTable = new UserTable(ais, schemaName, tableName, ExistenceCheck.NO_CONDITION, tableId);
-        ais.addUserTable(userTable);
-        return userTable;
-    }
-    
-    public static UserTable create(AkibanInformationSchema ais,
-                                   String schemaName,
-                                   String tableName,
-                                   ExistenceCheck check,
-                                   Integer tableId)
-    {
-        UserTable userTable = new UserTable(ais, schemaName, tableName, check, tableId);
+       // if (ais.getUserTable(schemaName, tableName) == null
+        UserTable userTable = new UserTable(ais, schemaName, tableName, tableId);
         ais.addUserTable(userTable);
         return userTable;
     }
 
-    public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, ExistenceCheck check, Integer tableId)
+    public UserTable(AkibanInformationSchema ais, String schemaName, String tableName, Integer tableId)
     {
         super(ais, schemaName, tableName, tableId);
-        this.existenceCheck = check;
     }
 
     @Override
@@ -542,7 +530,6 @@ public class UserTable extends Table
     private volatile List<UserTable> ancestors;
     private MemoryTableFactory tableFactory;
     private Integer version;
-    private ExistenceCheck existenceCheck;
 
     // consts
 
