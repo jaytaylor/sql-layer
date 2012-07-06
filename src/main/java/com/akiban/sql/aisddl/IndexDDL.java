@@ -83,7 +83,7 @@ public class IndexDDL
             case NO_CONDITION:
                 throw error;
             default:
-                throw new UnsupportedOperationException("Unexpected condition in DROP INDEX: " + condition);
+                throw new IllegalStateException("Unexpected condition in DROP INDEX: " + condition);
         }
     }
 
@@ -123,8 +123,7 @@ public class IndexDDL
             if (group.getIndex(indexName) != null) {
                 // Table and it's group share an index name, we're confused. 
                 if (tableName != null) {
-                    if(returnHere(condition, new IndistinguishableIndexException(indexName)))
-                        return;
+                    throw new IndistinguishableIndexException(indexName);
                 }
                 // else flag group index for dropping
                 groupName = group.getName();
@@ -141,8 +140,7 @@ public class IndexDDL
                     if (tableName == null) {
                         tableName = table.getName();
                     } else {
-                        if(returnHere(condition, new IndistinguishableIndexException(indexName)))
-                                return;
+                        throw new IndistinguishableIndexException(indexName);
                     }
                 }
             }
@@ -152,8 +150,7 @@ public class IndexDDL
                     if (tableName == null && groupName == null) {
                         groupName = table.getName();
                     } else {
-                        if(returnHere(condition, new IndistinguishableIndexException(indexName)))
-                            return;
+                        throw new IndistinguishableIndexException(indexName);
                     }
                 }
             }

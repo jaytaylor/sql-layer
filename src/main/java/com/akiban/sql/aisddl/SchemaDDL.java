@@ -61,7 +61,7 @@ public class SchemaDDL {
                 case NO_CONDITION:
                     throw new DuplicateSchemaException (schemaName);
                 default:
-                    throw new UnsupportedOperationException("Unexpected condition in CREATE SCHEMA: " + condition);
+                    throw new IllegalStateException("Unexpected condition in CREATE SCHEMA: " + condition);
             }
 
         // If you get to this point, the schema name isn't being used by any user or group table

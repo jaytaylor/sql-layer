@@ -110,9 +110,9 @@ public class TableDDL
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String tableName = parserName.getTableName();
         ExistenceCheck condition = createTable.getExistenceCheck();
-        
-        AkibanInformationSchema ais = new AkibanInformationSchema();
-        
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+
         if (ais.getUserTable(schemaName, tableName) != null)
             switch(condition)
             {
@@ -122,10 +122,10 @@ public class TableDDL
                 case NO_CONDITION:
                     throw new DuplicateTableNameException(schemaName, tableName);
                 default:
-                    throw new UnsupportedOperationException("Unexpected condition: " + condition);
+                    throw new IllegalStateException("Unexpected condition: " + condition);
             }
 
-        AISBuilder builder = new AISBuilder(ais);
+        AISBuilder builder = new AISBuilder();
         builder.userTable(schemaName, tableName);
 
         int colpos = 0;

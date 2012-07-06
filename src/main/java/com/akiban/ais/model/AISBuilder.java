@@ -36,7 +36,6 @@ import com.akiban.ais.gwtutils.GwtLogging;
 import com.akiban.ais.model.Join.GroupingUsage;
 import com.akiban.ais.model.Join.SourceType;
 import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.sql.parser.ExistenceCheck;
 
 // AISBuilder can be used to create an AIS. The API is designed to sify the creation of an AIS during a scan
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
