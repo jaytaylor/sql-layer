@@ -318,7 +318,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
-            TPreptimeValue preptimeValue = PValueSources.fromObject(expression.getValue());
+            TPreptimeValue preptimeValue = PValueSources.fromObject(expression.getValue(), expression.getAkType());
             expression.setPreptimeValue(preptimeValue);
             return expression;
         }
