@@ -108,7 +108,7 @@ public class FunctionRegistryImpl implements FunctionRegistry
     }
 
     private void rejectTOverload(TOverload overload, Throwable e) {
-        logger.error("rejecting overload " + overload + " from " +  overload.getClass() + ": " + e);
+        logger.error("rejecting overload " + overload + " from " +  overload.getClass(), e);
     }
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)

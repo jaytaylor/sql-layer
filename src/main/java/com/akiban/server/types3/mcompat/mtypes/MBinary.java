@@ -96,10 +96,12 @@ public final class MBinary extends SimpleDtdTClass {
     protected void validate(TInstance instance) {
         int len = instance.attribute(Attrs.LENGTH);
         if (defaultLength < 0) {
+            // This is BINARY or VARBINARY, so the user set the length
             if (len < 0)
-                throw new IllegalNameException("length must be positive");
+                throw new IllegalNameException("length must be non-negative");
         }
         else {
+            // This is one of the blob types, so the length has to be exactly what we expect
             assert len == defaultLength : "expected length=" + defaultLength + " but was " + len;
         }
     }
