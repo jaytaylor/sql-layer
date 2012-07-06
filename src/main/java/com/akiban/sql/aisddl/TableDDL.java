@@ -31,12 +31,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.NoSuchTableException;
-import com.akiban.server.error.UnsupportedCheckConstraintException;
-import com.akiban.server.error.UnsupportedCreateSelectException;
-import com.akiban.server.error.UnsupportedDataTypeException;
-import com.akiban.server.error.UnsupportedFKIndexException;
-import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.error.*;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.ColumnDefinitionNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
@@ -216,6 +211,15 @@ public class TableDDL
                 schemaName, tableName);
 
         UserTable table = builder.akibanInformationSchema().getUserTable(parentSchemaName, parentTableName);
+        if (table == null) {
+            throw new NoSuchTableException(parentSchemaName, parentTableName);
+        }
+        if (fkdn.getColumnList().size() != table.getPrimaryKeyIncludingInternal().getColumns().size()) {
+            throw new JoinColumnMismatchException(fkdn.getColumnList().size(),
+                                                  new TableName(schemaName, tableName),
+                                                  new TableName(parentSchemaName, parentTableName),
+                                                  table.getPrimaryKeyIncludingInternal().getColumns().size());
+        }
         
         builder.joinTables(joinName, parentSchemaName, parentTableName, schemaName, tableName);
         
