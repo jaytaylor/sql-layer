@@ -77,16 +77,26 @@ public class FunctionRegistryImpl implements FunctionRegistry
         // collect all scalar TOverload instances
         Collection<TOverload> rawScalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
         scalars = new ArrayList<TValidatedOverload>(rawScalars.size());
+        int errors = 0;
         for (TOverload rawScalar : rawScalars) {
             TValidatedOverload scalar;
             try {
                 scalar = new TValidatedOverload(rawScalar);
+                scalars.add(scalar);
             } catch (RuntimeException e) {
-                throw rejectTOverload(rawScalar, e);
+                rejectTOverload(rawScalar, e);
+                ++errors;
             } catch (AssertionError e) {
-                throw rejectTOverload(rawScalar, e);
+                rejectTOverload(rawScalar, e);
+                ++errors;
             }
-            scalars.add(scalar);
+        }
+        if (errors > 0) {
+            StringBuilder sb = new StringBuilder("Found ").append(errors).append(" error");
+            if (errors != 1)
+                sb.append('s');
+            sb.append(" while collecting scalar functions. Check logs for details.");
+            throw new AkibanInternalException(sb.toString());
         }
         
         // collect all TClass instances
@@ -97,9 +107,8 @@ public class FunctionRegistryImpl implements FunctionRegistry
         aggregators = collectInstances(overloadsClassFinder.findClasses(), TAggregator.class);
     }
 
-    private AkibanInternalException rejectTOverload(TOverload overload, Throwable e) {
-        logger.error("rejecting overload {} from {}", overload, overload.getClass());
-        return new AkibanInternalException("while creating overload " + overload, e);
+    private void rejectTOverload(TOverload overload, Throwable e) {
+        logger.error("rejecting overload " + overload + " from " +  overload.getClass() + ": " + e);
     }
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
