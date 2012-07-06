@@ -25,8 +25,8 @@ Name: "installsvc\auto"; Description: "Start with Windows"
 Name: "start"; Description: "Start now"
 
 [Dirs]
-Name: "{commonappdata}\Akiban\data"
-Name: "{commonappdata}\Akiban\log"
+Name: "{code:DataDir}\data"
+Name: "{code:DataDir}\log"
 
 [Files]
 Source: "LICENSE.txt"; DestDir: "{app}"
@@ -52,6 +52,7 @@ Filename: "{app}\bin\akserver.cmd"; Parameters: "uninstall";  WorkingDir: "{app}
 
 [Code]
 var
+  DataDirPage: TInputDirWizardPage;
   ServiceAccountPage: TInputQueryWizardPage;
 
 function InitializeSetup(): Boolean;
@@ -69,6 +70,13 @@ end;
 
 procedure InitializeWizard;
 begin
+  DataDirPage := CreateInputDirPage(wpSelectDir,
+    'Select Data Directory', 'Where should Akiban data files be installed?',
+    'Select the folder in which the database will store its data files, then click Next.',
+    False, '');
+  DataDirPage.Add('');
+  DataDirPage.Values[0] := GetPreviousData('DataDir', ExpandConstant('{commonappdata}\Akiban'));
+
   ServiceAccountPage := CreateInputQueryPage(wpSelectTasks,
     'Service Account', 'Use what account?',
     'Please specify the account under which the Akiban Server service should run, then click Next.');
@@ -80,6 +88,7 @@ end;
 
 procedure RegisterPreviousData(PreviousDataKey: Integer);
 begin
+  SetPreviousData(PreviousDataKey, 'DataDir', DataDirPage.Values[0]);
   SetPreviousData(PreviousDataKey, 'ServiceUsername', ServiceAccountPage.Values[0]);
 end;
 
@@ -116,9 +125,9 @@ var
   Value: String;
 begin
   if Key = 'datadir' then
-    Value := '{commonappdata}\Akiban\data'
+    Value := '{code:DataDir}\data'
   else if Key = 'logdir' then
-    Value := '{commonappdata}\Akiban\log'
+    Value := '{code:DataDir}\log'
   else if Key = 'tempdir' then
     Value := '{%TEMP}'
   else
@@ -168,6 +177,11 @@ begin
   else
     Result := Param;
 
+end;
+
+function DataDir(Param: String): String;
+begin
+  Result := DataDirPage.Values[0];
 end;
 
 function InstallMode(Param: String): String;
