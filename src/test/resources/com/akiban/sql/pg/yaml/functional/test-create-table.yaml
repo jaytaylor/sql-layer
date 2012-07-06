@@ -45,8 +45,15 @@
 # tinyint is not supported yet
 - CreateTable: table_tinyint (tinyint_field tinyint)
 - error: [50008]
+---
+
+# Bug 941657
+- CreateTable: parent (pid int not null, primary key(pid))
+---
+- CreateTable: child (cid int not null, cx int, pid int, primary key(cid), grouping foreign key(pid, cx) references parent(pid))
+- error: [50016]
+
 ...
 
 # Notes
 # clob is marked as not supported, but is
-
