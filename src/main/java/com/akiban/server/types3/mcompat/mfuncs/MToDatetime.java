@@ -33,13 +33,20 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+import org.joda.time.DateTimeZone;
 import org.joda.time.MutableDateTime;
 
 public class MToDatetime extends TOverloadBase {
     
     private static final long SECONDS_FACTOR = 100L;
     private static final long DAY_FACTOR = 3600L * 1000 * 24;
-    private static final long BEGINNING = new MutableDateTime(1,1,1,0,0,0,0).getMillis();
+    private static final long BEGINNING = encodeBeginning();
+
+    private static long encodeBeginning() {
+        MutableDateTime dt = new MutableDateTime(1,1,1,0,0,0,0);
+        dt.setZone(DateTimeZone.UTC);
+        return dt.getMillis();
+    }
 
     private final DateType dateType;
     private final FuncType funcType;
