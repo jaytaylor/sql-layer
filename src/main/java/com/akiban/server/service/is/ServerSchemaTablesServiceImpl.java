@@ -37,6 +37,7 @@ import com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.store.SchemaManager;
@@ -49,6 +50,7 @@ public class ServerSchemaTablesServiceImpl
     extends SchemaTablesService
     implements Service<ServerSchemaTablesService>, ServerSchemaTablesService {
 
+    static final TableName ERROR_CODES = new TableName (SCHEMA_NAME, "error_codes");
     static final TableName SERVER_INSTANCE_SUMMARY = new TableName (SCHEMA_NAME, "server_instance_summary");
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
     
@@ -73,6 +75,8 @@ public class ServerSchemaTablesServiceImpl
     @Override
     public void start() {
         AkibanInformationSchema ais = createTablesToRegister();
+        // ERROR_CODES
+        attach (ais, true, ERROR_CODES, ServerErrorCodes.class);
         //SERVER_INSTANCE_SUMMARY
         attach (ais, true, SERVER_INSTANCE_SUMMARY, InstanceSummary.class);
         //SERVER_SESSIONS
@@ -170,6 +174,43 @@ public class ServerSchemaTablesServiceImpl
         }
     }
     
+    private class ServerErrorCodes extends BasicFactoryBase {
+
+        public ServerErrorCodes(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return ErrorCode.values().length;
+        }
+        
+        private class Scan extends BaseScan {
+
+            private final ErrorCode[] codes = ErrorCode.values();
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                if (rowCounter >= codes.length)
+                    return null;
+                return new ValuesRow (rowType,
+                        codes[rowCounter].getFormattedValue(),
+                        codes[rowCounter].name(),
+                        codes[rowCounter].getMessage(),
+                        null,
+                        ++rowCounter);
+            }
+        }
+    }
+    
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
         
@@ -183,6 +224,11 @@ public class ServerSchemaTablesServiceImpl
             .colString("instrumentation_enabled", YES_NO_MAX, false)
             .colString("session_status", DESCRIPTOR_MAX, true);
         
+        builder.userTable(ERROR_CODES)
+            .colString("code", 5, false)
+            .colString("name", DESCRIPTOR_MAX, false)
+            .colString("message", IDENT_MAX, false)
+            .colString("description", PATH_MAX, true);
         return builder.ais(false);
     }
 }
