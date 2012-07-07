@@ -320,10 +320,15 @@ public class PostgresServerConnection extends ServerSessionBase
         session = reqs.sessionService().createSession();
         updateAIS();
 
-        {
+        if (Boolean.parseBoolean(properties.getProperty("require_password", "false"))) {
             messenger.beginMessage(PostgresMessages.AUTHENTICATION_TYPE.code());
             messenger.writeInt(PostgresMessenger.AUTHENTICATION_CLEAR_TEXT);
             messenger.sendMessage(true);
+        }
+        else {
+            String user = properties.getProperty("user");
+            logger.info("Login {}", user);
+            authenticationOkay(user);
         }
         return true;
     }
@@ -364,6 +369,10 @@ public class PostgresServerConnection extends ServerSessionBase
         String user = properties.getProperty("user");
         String pass = messenger.readString();
         logger.info("Login {}/{}", user, pass);
+        authenticationOkay(user);
+    }
+    
+    protected void authenticationOkay(String user) throws IOException {
         Properties status = new Properties();
         // This is enough to make the JDBC driver happy.
         status.put("client_encoding", properties.getProperty("client_encoding", "UNICODE"));
