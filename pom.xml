@@ -424,6 +424,11 @@
                                         <copy todir="${setup.staging.dir}">
                                             <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
                                             <fileset dir="${basedir}/windows" />
+                                            <fileset dir="${akiban.client.project}" includes="bin/*.cmd" />
+                                        </copy>
+                                        <copy todir="${setup.staging.dir}/lib">
+                                            <fileset dir="${akiban.client.project}/target" includes="akiban-client-tools-${project.version}.jar" />
+                                            <fileset dir="${akiban.client.project}/target/dependency" />
                                         </copy>
                                         <get src="http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${setup.staging.dir}/procrun.zip" usetimestamp="true" />
                                         <mkdir dir="${setup.staging.dir}/procrun" />
@@ -472,6 +477,7 @@
                 <setup.appversion>${project.version}</setup.appversion>
                 <setup.jarfile>${project.build.finalName}-jar-with-dependencies.jar</setup.jarfile>
                 <setup.output>${project.build.finalName}-installer</setup.output>
+                <akiban.client.project>${basedir}/../client-latest</akiban.client.project>
             </properties>
         </profile>
     </profiles>
