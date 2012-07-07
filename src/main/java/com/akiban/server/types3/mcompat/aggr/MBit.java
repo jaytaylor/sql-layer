@@ -42,7 +42,7 @@ public abstract class MBit implements TAggregator {
     
     public static final TAggregator[] INSTANCES = {
         // BIT_AND
-        new MBit() {
+        new MBit("BIT_AND") {
 
             @Override
             long process(long i0, long i1) {
@@ -55,7 +55,7 @@ public abstract class MBit implements TAggregator {
             }
         }, 
         // BIT_OR
-        new MBit() {
+        new MBit("BIT_OR") {
 
             @Override
             long process(long i0, long i1) {
@@ -68,7 +68,7 @@ public abstract class MBit implements TAggregator {
             }   
         }, 
         // BIT_XOR
-        new MBit() {
+        new MBit("BIT_XOR") {
 
             @Override
             long process(long i0, long i1) {
@@ -102,4 +102,15 @@ public abstract class MBit implements TAggregator {
     public TClass getTypeClass() {
         return MNumeric.BIGINT;
     }
+
+    @Override
+    public String name() {
+        return name;
+    }
+
+    protected MBit(String name) {
+        this.name = name;
+    }
+
+    private final String name;
 }

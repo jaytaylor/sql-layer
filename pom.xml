@@ -354,6 +354,7 @@
                         <exclude>src/main/resources/com/akiban/server/service/functions/functionpath.txt</exclude>
                         <exclude>src/test/resources/com/akiban/server/service/functions/testfunctionpath.txt</exclude>
                         <exclude>src/test/resources/com/akiban/server/service/servicemanager/configuration/yaml/test-composite.yaml.1</exclude>
+                        <exclude>src/main/resources/com/akiban/server/types3/service/t3s.txt</exclude>
                     </excludes>
                     <mapping>
                         <g>JAVADOC_STYLE</g>

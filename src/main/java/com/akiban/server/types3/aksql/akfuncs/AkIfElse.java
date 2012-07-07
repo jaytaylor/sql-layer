@@ -33,11 +33,13 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.service.DontRegister;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class AkIfElse extends TOverloadBase
 {
+    @DontRegister
     public static final TOverload INSTANCE = new AkIfElse();
     
     @Override
@@ -63,4 +65,6 @@ public class AkIfElse extends TOverloadBase
     {
         return TOverloadResult.picking();
     }
+
+    private AkIfElse() {}
 }

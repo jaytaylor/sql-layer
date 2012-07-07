@@ -24,8 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.t3expressions;
 
-public class Types3Switch {
-    public static volatile boolean ON = Boolean.getBoolean("newtypes");
+import com.akiban.server.types3.TAggregator;
+
+import java.util.Collection;
+
+public interface T3AggregatesRegistry {
+    Collection<? extends TAggregator> getAggregates(String name);
 }
