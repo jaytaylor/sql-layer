@@ -24,7 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.server;
+package com.akiban.sql.optimizer;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.sql.parser.SQLParser;
@@ -32,7 +32,10 @@ import com.akiban.sql.parser.SQLParserFeature;
 
 import java.util.*;
 
-public class ServerParserContext
+/** An Akiban schema, parser and binder with various client properties.
+ * Also caches view definitions.
+ */
+public class AISBinderContext
 {
     protected Properties properties;
     protected AkibanInformationSchema ais;

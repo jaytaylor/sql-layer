@@ -36,11 +36,12 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import java.util.*;
 
-public abstract class ServerSessionBase extends ServerParserContext implements ServerSession
+public abstract class ServerSessionBase extends AISBinderContext implements ServerSession
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
 
