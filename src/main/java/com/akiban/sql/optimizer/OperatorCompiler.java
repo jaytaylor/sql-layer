@@ -53,7 +53,6 @@ import java.util.List;
 /**
  * Compile SQL statements into operator trees.
  */ 
-// TODO: Temporary name during transition.
 public class OperatorCompiler extends SchemaRulesContext
 {
     protected SQLParserContext parserContext;

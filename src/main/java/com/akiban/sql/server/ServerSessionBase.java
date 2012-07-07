@@ -26,7 +26,6 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.server.error.NoTransactionInProgressException;
@@ -38,26 +37,20 @@ import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
-import com.akiban.sql.parser.SQLParser;
 
 import java.util.*;
 
-public abstract class ServerSessionBase implements ServerSession
+public abstract class ServerSessionBase extends ServerParserContext implements ServerSession
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
 
     protected final ServerServiceRequirements reqs;
-    protected Properties properties, compilerProperties;
+    protected Properties compilerProperties;
     protected Map<String,Object> attributes = new HashMap<String,Object>();
     
     protected Session session;
-    protected long aisTimestamp = -1;
-    protected AkibanInformationSchema ais;
     protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
         new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
-    //protected StoreAdapter adapter;
-    protected String defaultSchemaName;
-    protected SQLParser parser;
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
@@ -71,32 +64,14 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public Properties getProperties() {
-        return properties;
-    }
-
-    @Override
-    public String getProperty(String key) {
-        return properties.getProperty(key);
-    }
-
-    @Override
-    public String getProperty(String key, String defval) {
-        return properties.getProperty(key, defval);
-    }
-
-    @Override
     public void setProperty(String key, String value) {
-        if (value == null)
-            properties.remove(key);
-        else
-            properties.setProperty(key, value);
+        super.setProperty(key, value);
         if (!propertySet(key, properties.getProperty(key)))
             sessionChanged();   // Give individual handlers a chance.
     }
 
     protected void setProperties(Properties properties) {
-        this.properties = properties;
+        super.setProperties(properties);
         for (String key : properties.stringPropertyNames()) {
             propertySet(key, properties.getProperty(key));
         }
@@ -119,6 +94,12 @@ public abstract class ServerSessionBase implements ServerSession
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void setDefaultSchemaName(String defaultSchemaName) {
+        super.setDefaultSchemaName(defaultSchemaName);
+        sessionChanged();
     }
 
     protected abstract void sessionChanged();
@@ -149,27 +130,6 @@ public abstract class ServerSessionBase implements ServerSession
         return session;
     }
 
-    @Override
-    public String getDefaultSchemaName() {
-        return defaultSchemaName;
-    }
-
-    @Override
-    public void setDefaultSchemaName(String defaultSchemaName) {
-        this.defaultSchemaName = defaultSchemaName;
-        sessionChanged();
-    }
-
-    @Override
-    public AkibanInformationSchema getAIS() {
-        return ais;
-    }
-
-    @Override
-    public SQLParser getParser() {
-        return parser;
-    }
-    
     @Override
     public Properties getCompilerProperties() {
         if (compilerProperties == null)

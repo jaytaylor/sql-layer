@@ -35,9 +35,7 @@ import com.akiban.sql.server.ServerTransaction;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.ParameterNode;
-import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserException;
-import com.akiban.sql.parser.SQLParserFeature;
 import com.akiban.sql.parser.StatementNode;
 
 import com.akiban.ais.model.UserTable;
@@ -639,21 +637,7 @@ public class PostgresServerConnection extends ServerSessionBase
     }
 
     protected void rebuildCompiler() {
-        parser = new SQLParser();
-        Set<SQLParserFeature> parserFeatures = new HashSet<SQLParserFeature>();
-        // TODO: Others that are on by defaults could have override to turn them
-        // off, but they are pretty harmless.
-        if (Boolean.parseBoolean(getProperty("parserInfixBit", "false")))
-            parserFeatures.add(SQLParserFeature.INFIX_BIT_OPERATORS);
-        if (Boolean.parseBoolean(getProperty("parserInfixLogical", "false")))
-            parserFeatures.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
-        if (Boolean.parseBoolean(getProperty("columnAsFunc", "false")))
-            parserFeatures.add(SQLParserFeature.MYSQL_COLUMN_AS_FUNCS);
-        if ("string".equals(getProperty("parserDoubleQuoted", "identifier")))
-            parserFeatures.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
-        parser.getFeatures().addAll(parserFeatures);
-        defaultSchemaName = getProperty("database");
-        // TODO: Any way / need to ask AIS if schema exists and report error?
+        Object parserKeys = initParser();
 
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
@@ -676,7 +660,7 @@ public class PostgresServerConnection extends ServerSessionBase
                                 reqs.config()));
         // Statement cache depends on some connection settings.
         statementCache = server.getStatementCache(Arrays.asList(format,
-                                                                parserFeatures,
+                                                                parserKeys,
                                                                 Boolean.valueOf(getProperty("cbo"))),
                                                   aisTimestamp);
         unparsedGenerators = new PostgresStatementParser[] {
