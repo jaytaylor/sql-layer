@@ -96,6 +96,12 @@ public class AISBinder implements Visitor
         com.akiban.ais.model.TableName key = new com.akiban.ais.model.TableName(schemaName, name.getTableName());
         if (views.get(key) != null)
             throw new DuplicateViewException(key);
+        try {
+            bind(view.getSubquery());
+        } 
+        catch (StandardException e) {
+            throw new ViewHasBadSubqueryException(name.toString(), e.getMessage());
+        }
         views.put(key, view);
     }
 
@@ -108,7 +114,7 @@ public class AISBinder implements Visitor
             throw new UndefinedViewException(key);
     }
 
-    public void bind(StatementNode stmt) throws StandardException {
+    public void bind(QueryTreeNode stmt) throws StandardException {
         visited = new HashSet<QueryTreeNode>();
         bindingContexts = new ArrayDeque<BindingContext>();
         havingClauses = new HashSet<ValueNode>();
@@ -428,7 +434,7 @@ public class AISBinder implements Visitor
         ViewDefinition view = views.get(new com.akiban.ais.model.TableName(schemaName, tableName));
         if (view != null) {
             try {
-                return fromTable(view.getSubquery(this), false);
+                return fromTable(view.copySubquery(view.getSubquery().getParserContext()), false);
             } 
             catch (StandardException e) {
                 throw new ViewHasBadSubqueryException(view.getName().toString(), e.getMessage());
