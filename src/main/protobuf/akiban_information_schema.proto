@@ -106,11 +106,27 @@ message Table {
                                         // For AIS tables.
 }
 
+message Property {
+    optional string key = 1;
+    optional string value = 2;
+}
+
+message View {
+    optional string  viewName     = 1;  // name of view
+    repeated Column  columns      = 2;  // list of columns in the view
+    optional string  definition   = 3;  // text of CREATE VIEW
+    repeated Property definitionProperties = 4; // environment in which that was parsed
+    repeated TableName references = 5;  // tables used in view
+    optional string  description  = 6;  // View comment holder
+    optional bool    protected    = 7;  // View can not be altered
+}
+
 message Schema {
     optional string schemaName   = 1;
     repeated Table  tables       = 2;  // list of user tables in the schema
     repeated Group  groups       = 3;  // list of groups in the schema
     optional CharCollation charColl = 4; // schema default character set & collation 
+    repeated View   views        = 5;  // list of views in the schema
 }
 
 message AkibanInformationSchema {

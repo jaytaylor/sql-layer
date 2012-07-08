@@ -57,6 +57,10 @@ public class Schema {
         userTables.remove(tableName);
     }
 
+    public Map<String, View> getViews() {
+        return views;
+    }
+
     public View getView(String viewName) {
         return views.get(viewName);
     }
