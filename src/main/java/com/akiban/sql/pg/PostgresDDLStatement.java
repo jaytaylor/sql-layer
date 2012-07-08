@@ -39,6 +39,7 @@ import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateSchemaNode;
+import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.DropSchemaNode;
@@ -109,16 +110,12 @@ public class PostgresDDLStatement implements PostgresStatement
                 TableDDL.dropTable(ddlFunctions, session, schema, (DropTableNode)ddl);
                 break;
             case NodeTypes.CREATE_VIEW_NODE:
-                // TODO: Need to store persistently in AIS (or its extension).
-                try {
-                    server.getBinderContext().addView(new ViewDefinition(ddl, server.getParser()));
-                } 
-                catch (StandardException ex) {
-                    throw new SQLParserInternalException(ex);
-                }
+                ViewDDL.createView(ddlFunctions, session, schema, (CreateViewNode)ddl,
+                                   server.getBinderContext());
                 break;
             case NodeTypes.DROP_VIEW_NODE:
-                server.getBinderContext().removeView(((DropViewNode)ddl).getObjectName());
+                ViewDDL.dropView(ddlFunctions, session, schema, (DropViewNode)ddl,
+                                 server.getBinderContext());
                 break;
             case NodeTypes.CREATE_INDEX_NODE:
                 IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);

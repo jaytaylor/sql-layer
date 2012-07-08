@@ -28,6 +28,7 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.compiler.TypeComputer;
+import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.FromSubquery;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserFeature;
@@ -138,7 +139,7 @@ public class AISBinderContext
     public ViewDefinition getView(String schemaName, String tableName) {
         if (schemaName == null)
             schemaName = defaultSchemaName;
-        return views.get(new TableName(schemaName, tableName));
+        return views.get(TableName.create(schemaName, tableName));
     }
 
     public FromSubquery viewSubquery(ViewDefinition view) {
@@ -151,11 +152,12 @@ public class AISBinderContext
         }
     }
 
+    // Only used by tests.
     public void addView(ViewDefinition view) {
         String schemaName = view.getName().getSchemaName();
         if (schemaName == null)
             schemaName = defaultSchemaName;
-        TableName tableName = new TableName(schemaName, view.getName().getTableName());
+        TableName tableName = TableName.create(schemaName, view.getName().getTableName());
         if (views.get(tableName) != null) {
             throw new DuplicateViewException(tableName);
         }
@@ -171,11 +173,34 @@ public class AISBinderContext
         views.put(tableName, view);
     }
 
-    public void removeView(com.akiban.sql.parser.TableName name) {
-        String schemaName = name.getSchemaName();
+    public ViewDefinition getViewDefinition(CreateViewNode ddl) {
+        try {
+            ViewDefinition view = new ViewDefinition(ddl, parser);
+            binder.bind(view.getSubquery());
+            if (typeComputer != null)
+                view.getSubquery().accept(typeComputer);
+            return view;
+        }
+        catch (StandardException ex) {
+            throw new ViewHasBadSubqueryException(ddl.getObjectName().toString(), 
+                                                  ex.getMessage());
+        }
+    }
+
+    public void addView(String schemaName, String viewName, ViewDefinition view) {
         if (schemaName == null)
             schemaName = defaultSchemaName;
-        TableName key = new TableName(schemaName, name.getTableName());
+        TableName tableName = TableName.create(schemaName, viewName);
+        if (views.get(tableName) != null) {
+            throw new DuplicateViewException(tableName);
+        }
+        views.put(tableName, view);
+    }
+
+    public void removeView(String schemaName, String viewName) {
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        TableName key = TableName.create(schemaName, viewName);
         if (views.remove(key) == null)
             throw new UndefinedViewException(key);
     }
