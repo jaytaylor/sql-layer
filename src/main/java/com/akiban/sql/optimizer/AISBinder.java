@@ -28,7 +28,6 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.server.error.AmbiguousColumNameException;
 import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.JoinNodeAdditionException;
 import com.akiban.server.error.MultipleJoinsToTableException;
 import com.akiban.server.error.NoSuchColumnException;
@@ -37,11 +36,9 @@ import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
 import com.akiban.server.error.TableIsBadSubqueryException;
-import com.akiban.server.error.UndefinedViewException;
-import com.akiban.server.error.ViewHasBadSubqueryException;
-import com.akiban.sql.parser.*;
 
 import com.akiban.sql.StandardException;
+import com.akiban.sql.parser.*;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -55,7 +52,6 @@ public class AISBinder implements Visitor
 {
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
-    private Map<com.akiban.ais.model.TableName,ViewDefinition> views;
     private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
     private boolean allowSubqueryMultipleColumns;
@@ -65,7 +61,6 @@ public class AISBinder implements Visitor
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
         this.ais = ais;
         this.defaultSchemaName = defaultSchemaName;
-        this.views = new HashMap<com.akiban.ais.model.TableName,ViewDefinition>();
     }
 
     public String getDefaultSchemaName() {
@@ -84,34 +79,12 @@ public class AISBinder implements Visitor
         this.allowSubqueryMultipleColumns = allowSubqueryMultipleColumns;
     }
 
+    public AISBinderContext getContext() {
+        return context;
+    }
+
     protected void setContext(AISBinderContext context) {
         this.context = context;
-    }
-
-    public void addView(ViewDefinition view) {
-        TableName name = view.getName();
-        String schemaName = name.getSchemaName();
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        com.akiban.ais.model.TableName key = new com.akiban.ais.model.TableName(schemaName, name.getTableName());
-        if (views.get(key) != null)
-            throw new DuplicateViewException(key);
-        try {
-            bind(view.getSubquery());
-        } 
-        catch (StandardException e) {
-            throw new ViewHasBadSubqueryException(name.toString(), e.getMessage());
-        }
-        views.put(key, view);
-    }
-
-    public void removeView(TableName name) {
-        String schemaName = name.getSchemaName();
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        com.akiban.ais.model.TableName key = new com.akiban.ais.model.TableName(schemaName, name.getTableName());
-        if (views.remove(key) == null)
-            throw new UndefinedViewException(key);
     }
 
     public void bind(QueryTreeNode stmt) throws StandardException {
@@ -431,13 +404,10 @@ public class AISBinder implements Visitor
         if (schemaName == null)
             schemaName = defaultSchemaName;
         String tableName = origName.getTableName();
-        ViewDefinition view = views.get(new com.akiban.ais.model.TableName(schemaName, tableName));
-        if (view != null) {
-            try {
-                return fromTable(view.copySubquery(view.getSubquery().getParserContext()), false);
-            } 
-            catch (StandardException e) {
-                throw new ViewHasBadSubqueryException(view.getName().toString(), e.getMessage());
+        if (context != null) {
+            ViewDefinition view = context.getView(schemaName, tableName);
+            if (view != null) {
+                return fromTable(context.viewSubquery(view), false);
             }
         }
         Table table = lookupTableName(origName, schemaName, tableName);

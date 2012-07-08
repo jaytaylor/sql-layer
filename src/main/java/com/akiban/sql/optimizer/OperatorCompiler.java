@@ -107,7 +107,7 @@ public class OperatorCompiler extends SchemaRulesContext
     }
 
     public void addView(ViewDefinition view) throws StandardException {
-        binder.addView(view);
+        binder.getContext().addView(view);
     }
 
     /** Compile a statement into an operator tree. */

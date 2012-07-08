@@ -26,9 +26,18 @@
 
 package com.akiban.sql.optimizer;
 
-import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.sql.StandardException;
+import com.akiban.sql.parser.FromSubquery;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserFeature;
+import com.akiban.sql.views.ViewDefinition;
+
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
+
+import com.akiban.server.error.DuplicateViewException;
+import com.akiban.server.error.UndefinedViewException;
+import com.akiban.server.error.ViewHasBadSubqueryException;
 
 import java.util.*;
 
@@ -43,6 +52,7 @@ public class AISBinderContext
     protected SQLParser parser;
     protected String defaultSchemaName;
     protected AISBinder binder;
+    protected Map<TableName,ViewDefinition> views;
 
     public Properties getProperties() {
         return properties;
@@ -113,11 +123,56 @@ public class AISBinderContext
     public void setBinder(AISBinder binder) {
         this.binder = binder;
         binder.setContext(this);
+        this.views = new HashMap<com.akiban.ais.model.TableName,ViewDefinition>();
     }
 
     protected void initBinder() {
         assert (binder == null);
         setBinder(new AISBinder(ais, defaultSchemaName));
+    }
+
+    // TODO: Replace with AIS.
+    public ViewDefinition getView(String schemaName, String tableName) {
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        return views.get(new TableName(schemaName, tableName));
+    }
+
+    public FromSubquery viewSubquery(ViewDefinition view) {
+        try {
+            return view.copySubquery(parser);
+        } 
+        catch (StandardException ex) {
+            throw new ViewHasBadSubqueryException(view.getName().toString(), 
+                                                  ex.getMessage());
+        }
+    }
+
+    public void addView(ViewDefinition view) {
+        String schemaName = view.getName().getSchemaName();
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        TableName tableName = new TableName(schemaName, view.getName().getTableName());
+        if (views.get(tableName) != null) {
+            throw new DuplicateViewException(tableName);
+        }
+        try {
+            binder.bind(view.getSubquery());
+        } 
+        catch (StandardException ex) {
+            throw new ViewHasBadSubqueryException(view.getName().toString(), 
+                                                  ex.getMessage());
+        }
+        views.put(tableName, view);
+    }
+
+    public void removeView(com.akiban.sql.parser.TableName name) {
+        String schemaName = name.getSchemaName();
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        TableName key = new TableName(schemaName, name.getTableName());
+        if (views.remove(key) == null)
+            throw new UndefinedViewException(key);
     }
 
 }

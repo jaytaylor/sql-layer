@@ -99,7 +99,7 @@ public class OptimizerTestBase extends ASTTransformTestBase
 
     protected void loadView(File view) throws Exception {
         String sql = fileContents(view);
-        binder.addView(new ViewDefinition(sql, parser));
+        binder.getContext().addView(new ViewDefinition(sql, parser));
     }
 
 }
