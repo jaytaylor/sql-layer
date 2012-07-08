@@ -477,6 +477,9 @@ public class ProtobufReader {
     private static void hasRequiredFields(AISProtobuf.View pbView) {
         requireAllFieldsExcept(
                 pbView,
+                AISProtobuf.View.COLUMNS_FIELD_NUMBER,
+                AISProtobuf.View.DEFINITIONPROPERTIES_FIELD_NUMBER,
+                AISProtobuf.View.REFERENCES_FIELD_NUMBER,
                 AISProtobuf.View.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.View.PROTECTED_FIELD_NUMBER
         );
