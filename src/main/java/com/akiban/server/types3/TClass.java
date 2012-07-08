@@ -35,6 +35,15 @@ import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.ArgumentValidation;
+import com.google.common.primitives.Booleans;
+import com.google.common.primitives.Chars;
+import com.google.common.primitives.Doubles;
+import com.google.common.primitives.Floats;
+import com.google.common.primitives.Longs;
+import com.google.common.primitives.Shorts;
+
+import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.regex.Pattern;
 
@@ -43,6 +52,48 @@ public abstract class TClass {
     public abstract TFactory factory();
 
     public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
+
+    public int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
+        if (sourceA.isNull())
+            return sourceB.isNull() ? 0 : -1;
+        if (sourceB.isNull())
+            return 1;
+
+        if (sourceA.hasCacheValue() && sourceB.hasCacheValue()) {
+            Object objectA = sourceA.getObject();
+            if (objectA instanceof Comparable<?>) {
+                // assume objectA and objectB are of the same class. If it's comparable, use that
+                Comparable comparableA = (Comparable<?>) objectA;
+                return comparableA.compareTo(sourceB.getObject());
+            }
+        }
+        switch (sourceA.getUnderlyingType()) {
+        case BOOL:
+            return Booleans.compare(sourceA.getBoolean(), sourceB.getBoolean());
+        case INT_8:
+            return sourceA.getInt8() - sourceB.getInt8();
+        case INT_16:
+            return sourceA.getInt16() - sourceB.getInt16();
+        case UINT_16:
+            return sourceA.getUInt16() - sourceB.getUInt16();
+        case INT_32:
+            return sourceA.getInt32() - sourceB.getInt32();
+        case INT_64:
+            return Longs.compare(sourceA.getInt64(), sourceB.getInt64());
+        case FLOAT:
+            return Floats.compare(sourceA.getFloat(), sourceB.getFloat());
+        case DOUBLE:
+            return Doubles.compare(sourceA.getDouble(), sourceB.getDouble());
+        case BYTES:
+            ByteBuffer bbA = ByteBuffer.wrap(sourceA.getBytes());
+            ByteBuffer bbB = ByteBuffer.wrap(sourceB.getBytes());
+            return bbA.compareTo(bbB);
+        case STRING:
+            return sourceA.getString().compareTo(sourceB.getString());
+        default:
+            throw new AssertionError(sourceA.getUnderlyingType());
+        }
+    }
 
     public void writeCanonical(PValueSource in, TInstance typeInstance, PValueTarget out) {
         PValueTargets.copyFrom(in, out, cacher(), typeInstance);
