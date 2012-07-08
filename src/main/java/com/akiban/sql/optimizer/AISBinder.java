@@ -36,6 +36,7 @@ import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
 import com.akiban.server.error.TableIsBadSubqueryException;
+import com.akiban.server.error.ViewHasBadSubqueryException;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
@@ -57,6 +58,7 @@ public class AISBinder implements Visitor
     private boolean allowSubqueryMultipleColumns;
     private Set<ValueNode> havingClauses;
     private AISBinderContext context;
+    private boolean expandViews;
 
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
         this.ais = ais;
@@ -87,12 +89,17 @@ public class AISBinder implements Visitor
         this.context = context;
     }
 
-    public void bind(QueryTreeNode stmt) throws StandardException {
+    public void bind(StatementNode stmt) throws StandardException {
+        bind(stmt, true);
+    }
+
+    public void bind(QueryTreeNode node, boolean expandViews) throws StandardException {
+        this.expandViews = expandViews;
         visited = new HashSet<QueryTreeNode>();
         bindingContexts = new ArrayDeque<BindingContext>();
         havingClauses = new HashSet<ValueNode>();
         try {
-            stmt.accept(this);
+            node.accept(this);
         }
         finally {
             visited = null;
@@ -405,9 +412,18 @@ public class AISBinder implements Visitor
             schemaName = defaultSchemaName;
         String tableName = origName.getTableName();
         if (context != null) {
+            // TODO: Honor expandViews once there is a way to refer to AIS view.
             ViewDefinition view = context.getView(schemaName, tableName);
             if (view != null) {
-                return fromTable(context.viewSubquery(view), false);
+                FromSubquery viewSubquery;
+                try {
+                    viewSubquery = view.copySubquery(fromBaseTable.getParserContext());
+                } 
+                catch (StandardException ex) {
+                    throw new ViewHasBadSubqueryException(origName.toString(),
+                                                          ex.getMessage());
+                }
+                return fromTable(viewSubquery, false);
             }
         }
         Table table = lookupTableName(origName, schemaName, tableName);

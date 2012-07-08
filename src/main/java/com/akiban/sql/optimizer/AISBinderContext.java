@@ -41,6 +41,8 @@ import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.error.ViewHasBadSubqueryException;
 
+import com.akiban.server.service.functions.FunctionsRegistryImpl;
+
 import java.util.*;
 
 /** An Akiban schema, parser and binder with various client properties.
@@ -56,6 +58,20 @@ public class AISBinderContext
     protected AISBinder binder;
     protected TypeComputer typeComputer;
     protected Map<TableName,ViewDefinition> views;
+
+    /** When context is part of a larger object, such as a server session. */
+    protected AISBinderContext() {
+    }
+
+    /** Standalone context used for loading views in tests and bootstrapping. */
+    public AISBinderContext(AkibanInformationSchema ais, String defaultSchemaName) {
+        this.ais = ais;
+        this.defaultSchemaName = defaultSchemaName;
+        properties = new Properties();
+        properties.put("database", defaultSchemaName);
+        setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName),
+                                 new FunctionsTypeComputer(new FunctionsRegistryImpl()));
+    }
 
     public Properties getProperties() {
         return properties;
@@ -107,7 +123,29 @@ public class AISBinderContext
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
         return parserFeatures;
-}
+    }
+
+    /** Get the non-default properties that were used to parse a view
+     * definition, for example. 
+     * @see #initParser
+     */
+    protected Properties getParserProperties() {
+        Properties properties = new Properties();
+        properties.put("database", defaultSchemaName);
+        String prop = getProperty("parserInfixBit", "false");
+        if (!"false".equals(prop))
+            properties.put("parserInfixBit", prop);
+        prop = getProperty("parserInfixLogical", "false");
+        if (!"false".equals(prop))
+            properties.put("parserInfixLogical", prop);
+        prop = getProperty("columnAsFunc", "false");
+        if (!"false".equals(prop))
+            properties.put("columnAsFunc", prop);
+        prop = getProperty("parserDoubleQuoted", "identifier");
+        if (!"identifier".equals(prop))
+            properties.put("parserDoubleQuoted", prop);
+        return properties;
+    }
 
     public String getDefaultSchemaName() {
         return defaultSchemaName;
@@ -142,17 +180,7 @@ public class AISBinderContext
         return views.get(TableName.create(schemaName, tableName));
     }
 
-    public FromSubquery viewSubquery(ViewDefinition view) {
-        try {
-            return view.copySubquery(parser);
-        } 
-        catch (StandardException ex) {
-            throw new ViewHasBadSubqueryException(view.getName().toString(), 
-                                                  ex.getMessage());
-        }
-    }
-
-    // Only used by tests.
+    // TODO: Only used by tests. Remove when they go through ViewDDL.
     public void addView(ViewDefinition view) {
         String schemaName = view.getName().getSchemaName();
         if (schemaName == null)
@@ -162,7 +190,7 @@ public class AISBinderContext
             throw new DuplicateViewException(tableName);
         }
         try {
-            binder.bind(view.getSubquery());
+            binder.bind(view.getSubquery(), false);
             if (typeComputer != null)
                 view.getSubquery().accept(typeComputer);
         }
@@ -173,10 +201,27 @@ public class AISBinderContext
         views.put(tableName, view);
     }
 
+    /** When reloading a view from AIS, we need to parse the
+     * definition text again in the same parser environment as it was
+     * originally defined. Also the present binder is in the middle of
+     * something so we need a separate one.
+     */
+    protected static class ViewReloader extends AISBinderContext {
+        // TODO: Take the actual AIS view object rather than AIS and properties.
+        public ViewReloader(AkibanInformationSchema ais, Properties viewProperties,
+                            AISBinderContext parent) {
+            this.ais = ais;
+            this.properties = viewProperties;
+            initParser();
+            setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName),
+                                     parent.typeComputer);
+        }
+    }
+
     public ViewDefinition getViewDefinition(CreateViewNode ddl) {
         try {
             ViewDefinition view = new ViewDefinition(ddl, parser);
-            binder.bind(view.getSubquery());
+            binder.bind(view.getSubquery(), true);
             if (typeComputer != null)
                 view.getSubquery().accept(typeComputer);
             return view;
