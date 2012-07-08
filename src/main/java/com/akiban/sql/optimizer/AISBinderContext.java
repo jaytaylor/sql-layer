@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer;
 
 import com.akiban.sql.StandardException;
+import com.akiban.sql.compiler.TypeComputer;
 import com.akiban.sql.parser.FromSubquery;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserFeature;
@@ -52,6 +53,7 @@ public class AISBinderContext
     protected SQLParser parser;
     protected String defaultSchemaName;
     protected AISBinder binder;
+    protected TypeComputer typeComputer;
     protected Map<TableName,ViewDefinition> views;
 
     public Properties getProperties() {
@@ -120,15 +122,16 @@ public class AISBinderContext
         return binder;
     }
 
-    public void setBinder(AISBinder binder) {
+    public void setBinderAndTypeComputer(AISBinder binder, TypeComputer typeComputer) {
         this.binder = binder;
         binder.setContext(this);
+        this.typeComputer = typeComputer;
         this.views = new HashMap<com.akiban.ais.model.TableName,ViewDefinition>();
     }
 
     protected void initBinder() {
         assert (binder == null);
-        setBinder(new AISBinder(ais, defaultSchemaName));
+        setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName), null);
     }
 
     // TODO: Replace with AIS.
@@ -158,7 +161,9 @@ public class AISBinderContext
         }
         try {
             binder.bind(view.getSubquery());
-        } 
+            if (typeComputer != null)
+                view.getSubquery().accept(typeComputer);
+        }
         catch (StandardException ex) {
             throw new ViewHasBadSubqueryException(view.getName().toString(), 
                                                   ex.getMessage());

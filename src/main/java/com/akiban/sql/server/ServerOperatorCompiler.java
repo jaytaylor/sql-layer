@@ -54,7 +54,7 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         else
             initCostEstimator(null, false);
         
-        server.getBinderContext().setBinder(binder);
+        server.getBinderContext().setBinderAndTypeComputer(binder, typeComputer);
 
         server.setAttribute("compiler", this);
 

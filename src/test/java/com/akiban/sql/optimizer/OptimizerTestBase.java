@@ -98,17 +98,17 @@ public class OptimizerTestBase extends ASTTransformTestBase
     }
 
     protected static class TestBinderContext extends AISBinderContext {
-        public TestBinderContext(SQLParser parser, AISBinder binder) {
+        public TestBinderContext(SQLParser parser, AISBinder binder, TypeComputer typeComputer) {
             this.parser = parser;
             this.defaultSchemaName = DEFAULT_SCHEMA;
-            setBinder(binder);
+            setBinderAndTypeComputer(binder, typeComputer);
         }
     }
 
     protected void loadView(File view) throws Exception {
         String sql = fileContents(view);
         if (binder.getContext() == null)
-            new TestBinderContext(parser, binder);
+            new TestBinderContext(parser, binder, typeComputer);
         binder.getContext().addView(new ViewDefinition(sql, parser));
     }
 
