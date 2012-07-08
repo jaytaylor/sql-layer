@@ -32,6 +32,17 @@ import com.akiban.ais.model.validation.AISInvariants;
 
 public class View extends Columnar
 {
+    public static View create(AkibanInformationSchema ais,
+                              String schemaName, String viewName,
+                              String definition, Properties definitionProperties,
+                              Collection<Columnar> tableReferences) {
+        View view = new View(ais, schemaName, viewName);
+        view.setDefinition(definition, definitionProperties);
+        view.setTableReferences(tableReferences);
+        ais.addView(view);
+        return view;
+    }
+
     @Override
     public boolean isView() {
         return false;
@@ -50,7 +61,7 @@ public class View extends Columnar
         return definitionProperties;
     }
 
-    public void setDefinition(String definition, Properties definitionProperties) {
+    protected void setDefinition(String definition, Properties definitionProperties) {
         this.definition = definition;
         this.definitionProperties = definitionProperties;
     }
@@ -59,7 +70,7 @@ public class View extends Columnar
         return tableReferences;
     }
 
-    public void setTableReferences(Collection<Columnar> tableReferences) {
+    protected void setTableReferences(Collection<Columnar> tableReferences) {
         this.tableReferences = tableReferences;
     }
 

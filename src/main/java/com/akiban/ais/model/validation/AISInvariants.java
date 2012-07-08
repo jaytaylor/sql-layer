@@ -55,7 +55,7 @@ public class AISInvariants {
     
     public static void checkDuplicateTables(AkibanInformationSchema ais, String schemaName, String tableName)
     {
-        if (ais.getTable(schemaName, tableName) != null) {
+        if (ais.getColumnar(schemaName, tableName) != null) {
             throw new DuplicateTableNameException (new TableName(schemaName, tableName));
         }
     }

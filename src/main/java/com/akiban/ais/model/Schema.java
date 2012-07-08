@@ -57,10 +57,23 @@ public class Schema {
         userTables.remove(tableName);
     }
 
+    public View getView(String viewName) {
+        return views.get(viewName);
+    }
+
+    void addView(View view) {
+        views.put(view.getName().getTableName(), view);
+    }
+
+    void removeView(String viewName) {
+        views.remove(viewName);
+    }
+
     Schema(String name) {
         this.name = name;
     }
 
     private final String name;
     private final Map<String, UserTable> userTables = new TreeMap<String, UserTable>();
+    private final Map<String, View> views = new TreeMap<String, View>();
 }
