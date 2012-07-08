@@ -44,7 +44,9 @@ import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.View;
 
 import java.util.*;
 
@@ -411,13 +413,14 @@ public class AISBinder implements Visitor
         if (schemaName == null)
             schemaName = defaultSchemaName;
         String tableName = origName.getTableName();
-        if (context != null) {
-            // TODO: Honor expandViews once there is a way to refer to AIS view.
-            ViewDefinition view = context.getView(schemaName, tableName);
-            if (view != null) {
+        Columnar table = null;
+        View view = ais.getView(schemaName, tableName);
+        if (view != null) {
+            if (expandViews) {
+                ViewDefinition viewdef = context.getViewDefinition(view);
                 FromSubquery viewSubquery;
                 try {
-                    viewSubquery = view.copySubquery(fromBaseTable.getParserContext());
+                    viewSubquery = viewdef.copySubquery(fromBaseTable.getParserContext());
                 } 
                 catch (StandardException ex) {
                     throw new ViewHasBadSubqueryException(origName.toString(),
@@ -425,8 +428,12 @@ public class AISBinder implements Visitor
                 }
                 return fromTable(viewSubquery, false);
             }
+            else {
+                table = view;   // Shallow reference within another view definition.
+            }
         }
-        Table table = lookupTableName(origName, schemaName, tableName);
+        if (table == null)
+            table = lookupTableName(origName, schemaName, tableName);
         origName.setUserData(table);
         fromBaseTable.setUserData(new TableBinding(table, nullable));
         return fromBaseTable;
@@ -672,14 +679,14 @@ public class AISBinder implements Visitor
                     FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
                     TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
                     assert (tableBinding != null) : "table not bound yet";
-                        Table table = tableBinding.getTable();
-                        if (table.getName().getSchemaName().equalsIgnoreCase(schemaName) &&
-                            table.getName().getTableName().equalsIgnoreCase(tableName)) {
-                            if (result != null)
-                                throw new DuplicateTableNameException (new com.akiban.ais.model.TableName(tableNameNode.getSchemaName(), tableNameNode.getTableName()));
-                            else
-                                result = fromBaseTable;
-                        }
+                    Columnar table = tableBinding.getTable();
+                    if (table.getName().getSchemaName().equalsIgnoreCase(schemaName) &&
+                        table.getName().getTableName().equalsIgnoreCase(tableName)) {
+                        if (result != null)
+                            throw new DuplicateTableNameException (new com.akiban.ais.model.TableName(tableNameNode.getSchemaName(), tableNameNode.getTableName()));
+                        else
+                            result = fromBaseTable;
+                    }
                 }
             }
         }
@@ -695,7 +702,7 @@ public class AISBinder implements Visitor
             FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
             TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
             assert (tableBinding != null) : "table not bound yet";
-            Table table = tableBinding.getTable();
+            Columnar table = tableBinding.getTable();
             for (Column column : table.getColumns()) {
                 ColumnBinding prev = bindings.put(column.getName().toLowerCase(),
                                                   new ColumnBinding(fromTable, column, 
@@ -725,7 +732,7 @@ public class AISBinder implements Visitor
             FromBaseTable fromBaseTable = (FromBaseTable)fromTable;
             TableBinding tableBinding = (TableBinding)fromBaseTable.getUserData();
             assert (tableBinding != null) : "table not bound yet";
-            Table table = tableBinding.getTable();
+            Columnar table = tableBinding.getTable();
             Column column = table.getColumn(columnName);
             if (column == null)
                 return null;
@@ -891,7 +898,7 @@ public class AISBinder implements Visitor
             nodeFactory.getNode(NodeTypes.RESULT_COLUMN_LIST,
                                 parserContext);
         TableBinding tableBinding = (TableBinding)fromTable.getUserData();
-        Table table = tableBinding.getTable();
+        Columnar table = tableBinding.getTable();
         for (Column column : table.getColumns()) {
             String columnName = column.getName();
             ValueNode valueNode = (ValueNode)

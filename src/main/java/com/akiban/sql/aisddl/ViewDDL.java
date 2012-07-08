@@ -42,9 +42,13 @@ import com.akiban.sql.views.ViewDefinition;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
+import com.akiban.ais.model.View;
+
+import java.util.Collection;
 
 /** DDL operations on Views */
 public class ViewDDL
@@ -62,7 +66,7 @@ public class ViewDDL
         String viewName = parserName.getTableName();
         ExistenceCheck condition = createView.getExistenceCheck();
 
-        if (binderContext.getView(schemaName, viewName) != null) {
+        if (ddlFunctions.getAIS(session).getView(schemaName, viewName) != null) {
             switch(condition) {
             case IF_NOT_EXISTS:
                 // view already exists. does nothing
@@ -74,8 +78,18 @@ public class ViewDDL
             }
         }
         
-        ViewDefinition view = binderContext.getViewDefinition(createView);
-        binderContext.addView(schemaName, viewName, view);
+        ViewDefinition viewdef = binderContext.getViewDefinition(createView);
+        Collection<Columnar> tableReferences = binderContext.getTableReferences(viewdef);
+        AISBuilder builder = new AISBuilder();
+        builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
+                     binderContext.getParserProperties(schemaName), tableReferences);
+        int colpos = 0;
+        for (ResultColumn rc : viewdef.getResultColumns()) {
+            TableDDL.addColumn(builder, schemaName, viewName, rc.getName(), colpos++,
+                               rc.getType(), false);
+        }
+        View view = builder.akibanInformationSchema().getView(schemaName, viewName);
+        ddlFunctions.createView(session, view);
     }
 
     public static void dropView (DDLFunctions ddlFunctions,
@@ -88,11 +102,12 @@ public class ViewDDL
         String viewName = parserName.getTableName();
         ExistenceCheck existenceCheck = dropView.getExistenceCheck();
 
-        if (binderContext.getView(schemaName, viewName) == null) {
+        if (ddlFunctions.getAIS(session).getView(schemaName, viewName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS)
                 return;
             throw new UndefinedViewException(schemaName, viewName);
         }
+        ddlFunctions.dropTable(session, TableName.create(schemaName, viewName));
     }
 
 }
