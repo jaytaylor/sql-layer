@@ -40,7 +40,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 public class Column
 {
-    public static Column create(Table table, String name, Integer position, Type type, Boolean nullable,
+    public static Column create(Columnar table, String name, Integer position, Type type, Boolean nullable,
                                 Long typeParameter1, Long typeParameter2, Long initialAutoIncValue,
                                 CharsetAndCollation charsetAndCollation)
     {
@@ -54,7 +54,7 @@ public class Column
         return column;
     }
 
-    public static Column create(Table table, String name, Integer position, Type type) {
+    public static Column create(Columnar table, String name, Integer position, Type type) {
         return create(table, name, position, type, null, null, null, null, null);
     }
 
@@ -226,9 +226,14 @@ public class Column
         return userColumn;
     }
 
-    public Table getTable()
+    public Columnar getColumnar()
     {
         return table;
+    }
+
+    public Table getTable()
+    {
+        return (Table) table;
     }
 
     public UserTable getUserTable()
@@ -347,7 +352,7 @@ public class Column
     }
 
     /**
-     * @return This column's CharsetAndCollation if it has one, otherwise the owning Table's
+     * @return This column's CharsetAndCollation if it has one, otherwise the owning Columnar's
      */
     public CharsetAndCollation getCharsetAndCollation()
     {
@@ -373,7 +378,7 @@ public class Column
         return fieldDef;
     }
 
-    private Column(Table table,
+    private Column(Columnar table,
                    String columnName,
                    Integer position,
                    Type type,
@@ -575,7 +580,7 @@ public class Column
 
     private final String columnName;
     private final Type type;
-    private final Table table;
+    private final Columnar table;
     private Boolean nullable;
     private Integer position;
     private Long typeParameter1;
