@@ -55,16 +55,17 @@ public class AISBinder implements Visitor
 {
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
-    private Map<TableName,ViewDefinition> views;
+    private Map<com.akiban.ais.model.TableName,ViewDefinition> views;
     private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
     private boolean allowSubqueryMultipleColumns;
     private Set<ValueNode> havingClauses;
+    private AISBinderContext context;
 
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
         this.ais = ais;
         this.defaultSchemaName = defaultSchemaName;
-        this.views = new HashMap<TableName,ViewDefinition>();
+        this.views = new HashMap<com.akiban.ais.model.TableName,ViewDefinition>();
     }
 
     public String getDefaultSchemaName() {
@@ -83,20 +84,28 @@ public class AISBinder implements Visitor
         this.allowSubqueryMultipleColumns = allowSubqueryMultipleColumns;
     }
 
+    protected void setContext(AISBinderContext context) {
+        this.context = context;
+    }
+
     public void addView(ViewDefinition view) {
         TableName name = view.getName();
-        /**
-           if (name.getSchemaName() == null)
-           name.setSchemaName(defaultSchemaName);
-        **/
-        if (views.get(name) != null)
-            throw new DuplicateViewException (view.getName().toString());
-        views.put(name, view);
+        String schemaName = name.getSchemaName();
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        com.akiban.ais.model.TableName key = new com.akiban.ais.model.TableName(schemaName, name.getTableName());
+        if (views.get(key) != null)
+            throw new DuplicateViewException(key);
+        views.put(key, view);
     }
 
     public void removeView(TableName name) {
-        if (views.remove(name) == null)
-            throw new UndefinedViewException (new com.akiban.ais.model.TableName(name.getSchemaName(), name.getTableName()));
+        String schemaName = name.getSchemaName();
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        com.akiban.ais.model.TableName key = new com.akiban.ais.model.TableName(schemaName, name.getTableName());
+        if (views.remove(key) == null)
+            throw new UndefinedViewException(key);
     }
 
     public void bind(StatementNode stmt) throws StandardException {
@@ -411,17 +420,22 @@ public class AISBinder implements Visitor
     }
 
     protected FromTable fromBaseTable(FromBaseTable fromBaseTable, boolean nullable)  {
-        TableName tableName = fromBaseTable.getOrigTableName();
-        ViewDefinition view = views.get(tableName);
-        if (view != null)
+        TableName origName = fromBaseTable.getOrigTableName();
+        String schemaName = origName.getSchemaName();
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        String tableName = origName.getTableName();
+        ViewDefinition view = views.get(new com.akiban.ais.model.TableName(schemaName, tableName));
+        if (view != null) {
             try {
                 return fromTable(view.getSubquery(this), false);
-            } catch (StandardException e) {
+            } 
+            catch (StandardException e) {
                 throw new ViewHasBadSubqueryException(view.getName().toString(), e.getMessage());
             }
-
-        Table table = lookupTableName(tableName);
-        tableName.setUserData(table);
+        }
+        Table table = lookupTableName(origName, schemaName, tableName);
+        origName.setUserData(table);
         fromBaseTable.setUserData(new TableBinding(table, nullable));
         return fromBaseTable;
     }
@@ -640,13 +654,10 @@ public class AISBinder implements Visitor
         columnReference.setUserData(columnBinding);
     }
 
-    protected Table lookupTableName(TableName tableName) {
-        String schemaName = tableName.getSchemaName();
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        Table result = ais.getUserTable(schemaName, tableName.getTableName());
+    protected Table lookupTableName(TableName origName, String schemaName, String tableName) {
+        Table result = ais.getUserTable(schemaName, tableName);
         if (result == null)
-            throw new NoSuchTableException(schemaName, tableName.getTableName(), tableName);
+            throw new NoSuchTableException(schemaName, tableName, origName);
         return result;
     }
 
@@ -976,7 +987,10 @@ public class AISBinder implements Visitor
 
     protected void dmlModStatementNode(DMLModStatementNode node) {
         TableName tableName = node.getTargetTableName();
-        Table table = lookupTableName(tableName);
+        String schemaName = tableName.getSchemaName();
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        Table table = lookupTableName(tableName, schemaName, tableName.getTableName());
         tableName.setUserData(table);
         
         ResultColumnList targetColumns = null;

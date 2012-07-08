@@ -132,6 +132,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
+    public AISBinderContext getBinderContext() {
+        return this;
+    }
+
+    @Override
     public Properties getCompilerProperties() {
         if (compilerProperties == null)
             compilerProperties = reqs.config().deriveProperties(COMPILER_PROPERTIES_PREFIX);

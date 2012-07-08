@@ -42,6 +42,7 @@ public class AISBinderContext
     protected long aisTimestamp = -1;
     protected SQLParser parser;
     protected String defaultSchemaName;
+    protected AISBinder binder;
 
     public Properties getProperties() {
         return properties;
@@ -101,6 +102,22 @@ public class AISBinderContext
 
     public void setDefaultSchemaName(String defaultSchemaName) {
         this.defaultSchemaName = defaultSchemaName;
+        if (binder != null)
+            binder.setDefaultSchemaName(defaultSchemaName);
     }
     
+    public AISBinder getBinder() {
+        return binder;
+    }
+
+    public void setBinder(AISBinder binder) {
+        this.binder = binder;
+        binder.setContext(this);
+    }
+
+    protected void initBinder() {
+        assert (binder == null);
+        setBinder(new AISBinder(ais, defaultSchemaName));
+    }
+
 }

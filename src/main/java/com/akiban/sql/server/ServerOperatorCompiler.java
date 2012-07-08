@@ -54,7 +54,8 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         else
             initCostEstimator(null, false);
         
-        server.setAttribute("aisBinder", binder);
+        server.getBinderContext().setBinder(binder);
+
         server.setAttribute("compiler", this);
 
         tracer = server.getSessionTracer();

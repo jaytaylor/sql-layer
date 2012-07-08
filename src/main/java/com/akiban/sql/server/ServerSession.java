@@ -28,6 +28,7 @@ package com.akiban.sql.server;
 
 import com.akiban.sql.parser.SQLParser;
 
+import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -89,6 +90,9 @@ public interface ServerSession
     
     /** Return a parser for SQL statements. */
     public SQLParser getParser();
+    
+    /** Return the binder context. */
+    public AISBinderContext getBinderContext();
     
     /** Return configured properties. */
     public Properties getCompilerProperties();

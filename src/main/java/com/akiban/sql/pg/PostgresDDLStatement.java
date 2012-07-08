@@ -111,14 +111,14 @@ public class PostgresDDLStatement implements PostgresStatement
             case NodeTypes.CREATE_VIEW_NODE:
                 // TODO: Need to store persistently in AIS (or its extension).
                 try {
-                    ((AISBinder)server.getAttribute("aisBinder")).addView(new ViewDefinition(ddl, server.getParser()));
+                    server.getBinderContext().getBinder().addView(new ViewDefinition(ddl, server.getParser()));
                 } 
                 catch (StandardException ex) {
                     throw new SQLParserInternalException(ex);
                 }
                 break;
             case NodeTypes.DROP_VIEW_NODE:
-                ((AISBinder)server.getAttribute("aisBinder")).removeView(((DropViewNode)ddl).getObjectName());
+                server.getBinderContext().getBinder().removeView(((DropViewNode)ddl).getObjectName());
                 break;
             case NodeTypes.CREATE_INDEX_NODE:
                 IndexDDL.createIndex(ddlFunctions, session, schema, (CreateIndexNode)ddl);
