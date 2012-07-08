@@ -28,19 +28,23 @@ package com.akiban.ais.model.aisb2;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.ais.model.validation.AISValidations;
 
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Properties;
 
 public class AISBBasedBuilder
 {
@@ -52,7 +56,7 @@ public class AISBBasedBuilder
         return new ActualBuilder().defaultSchema(defaultSchema);
     }
 
-    private static class ActualBuilder implements NewAISBuilder, NewUserTableBuilder, NewAkibanJoinBuilder {
+    private static class ActualBuilder implements NewAISBuilder, NewViewBuilder, NewAkibanJoinBuilder {
 
         // NewAISProvider interface
 
@@ -115,6 +119,25 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewViewBuilder view(String view) {
+            return view(defaultSchema, view);
+        }
+
+        @Override
+        public NewViewBuilder view(String schema, String view) {
+            checkUsable();
+            AISInvariants.checkDuplicateTables(aisb.akibanInformationSchema(), schema, view);
+            this.schema = schema;
+            this.userTable = view;
+            return this;
+        }
+
+        @Override
+        public NewViewBuilder view(TableName viewName) {
+            return view(viewName.getSchemaName(), viewName.getTableName());
+        }
+
+        @Override
         public NewAISGroupIndexStarter groupIndex(String indexName) {
             return groupIndex(indexName, null);
         }
@@ -127,7 +150,7 @@ public class AISBBasedBuilder
             return actual.groupIndex(indexName, joinType);
         }
 
-        // NewuserTableBuilder interface
+        // NewUserTableBuilder interface
 
         @Override
         public NewUserTableBuilder colLong(String name) {
@@ -288,6 +311,39 @@ public class AISBBasedBuilder
         @Override
         public NewAkibanJoinBuilder and(String childColumn, String parentColumn) {
             return on(childColumn, parentColumn);
+        }
+
+        // NewViewBuilder
+
+        @Override
+        public NewViewBuilder definition(String definition) {
+            Properties properties = new Properties();
+            properties.put("database", schema);
+            return definition(definition, properties);
+        }
+
+        @Override
+        public NewViewBuilder definition(String definition, Properties properties) {
+            aisb.view(schema, userTable,
+                      definition, properties, new HashSet<Columnar>());
+            return this;
+        }
+
+        @Override
+        public NewViewBuilder references(String table) {
+            return references(schema, table);
+        }
+
+        @Override
+        public NewViewBuilder references(String schema, String table) {
+            checkUsable();
+            View view = aisb.akibanInformationSchema().getView(this.schema, this.userTable);
+            Columnar ref = aisb.akibanInformationSchema().getColumnar(schema, table);
+            if (ref == null) {
+                throw new NoSuchElementException("no table " + schema + '.' + table);
+            }
+            view.getTableReferences().add(ref);
+            return this;
         }
 
         // ActualBuilder interface
