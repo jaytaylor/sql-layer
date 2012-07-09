@@ -37,14 +37,14 @@ resultSet:
 			name: x
 			tableName: null
 			isDefaultColumn: false
-			type: null
+			type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
 			[1]:			
 			com.akiban.sql.parser.ResultColumn@60961dff
 			exposedName: y
 			name: y
 			tableName: null
 			isDefaultColumn: false
-			type: null
+			type: DECIMAL(5,0)
 		subquery: 			
 			com.akiban.sql.parser.SelectNode@1f8b81e3
 			isDistinct: false
@@ -57,12 +57,12 @@ resultSet:
 				name: y
 				tableName: null
 				isDefaultColumn: false
-				type: null
+				type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
 				expression: 					
 					com.akiban.sql.parser.ColumnReference@9a082e2
 					columnName: y
 					tableName: null
-					type: null
+					type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
 					userData: t1.y from com.akiban.sql.parser.FromBaseTable@5cac6a45
 				[1]:				
 				com.akiban.sql.parser.ResultColumn@8f0c85e
@@ -70,12 +70,12 @@ resultSet:
 				name: z
 				tableName: null
 				isDefaultColumn: false
-				type: null
+				type: DECIMAL(5,0)
 				expression: 					
 					com.akiban.sql.parser.ColumnReference@77f297e7
 					columnName: z
 					tableName: null
-					type: null
+					type: DECIMAL(5,0)
 					userData: t1.z from com.akiban.sql.parser.FromBaseTable@5cac6a45
 			fromList: 				
 				com.akiban.sql.parser.FromList@57d2fc36
@@ -92,17 +92,17 @@ resultSet:
 				com.akiban.sql.parser.NotNode@3b75078b
 				operator: not
 				methodName: not
-				type: null
+				type: BOOLEAN NOT NULL
 				operand: 					
 					com.akiban.sql.parser.IsNullNode@42552c
 					operator: is null
 					methodName: isNull
-					type: null
+					type: BOOLEAN NOT NULL
 					operand: 						
 						com.akiban.sql.parser.ColumnReference@2e5bbd6
 						columnName: y
 						tableName: null
-						type: null
+						type: VARCHAR(7) CHARACTER SET utf8 COLLATE utf8_bin
 						userData: t1.y from com.akiban.sql.parser.FromBaseTable@5cac6a45
 	whereClause: 		
 		com.akiban.sql.parser.BinaryRelationalOperatorNode@7f70888e
