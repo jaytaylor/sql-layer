@@ -74,7 +74,22 @@ public class View extends Columnar
         this.tableColumnReferences = tableColumnReferences;
     }
 
-    // TODO: More convenience.
+    public Collection<Columnar> getTableReferences() {
+        return tableColumnReferences.keySet();
+    }
+
+    public Collection<Column> getTableColumnReferences(Columnar table) {
+        return tableColumnReferences.get(table);
+    }
+
+    public boolean referencesTable(Columnar table) {
+        return tableColumnReferences.containsKey(table);
+    }
+
+    public boolean referencesColumn(Column column) {
+        Collection<Column> entry = tableColumnReferences.get(column.getColumnar());
+        return ((entry != null) && entry.contains(column));
+    }
 
     // State
     private String definition;
