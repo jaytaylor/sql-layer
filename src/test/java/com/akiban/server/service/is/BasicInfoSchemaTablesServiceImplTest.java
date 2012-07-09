@@ -278,7 +278,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S tables", 10, skipped);
+        assertEquals("Skip I_S tables", 12, skipped);
     }
 
     @Test
@@ -298,7 +298,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 73, skipped);
+        assertEquals("Skipped I_S columns", 82, skipped);
     }
 
     @Test
