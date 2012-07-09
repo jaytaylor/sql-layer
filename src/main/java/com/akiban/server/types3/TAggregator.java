@@ -35,4 +35,5 @@ public interface TAggregator {
     void emptyValue(PValueTarget state);
     TInstance resultType(TPreptimeValue value);
     TClass getTypeClass();
+    String name();
 }
