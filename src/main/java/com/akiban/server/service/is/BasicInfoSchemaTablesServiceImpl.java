@@ -38,6 +38,7 @@ import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.qp.memoryadapter.BasicFactoryBase;
@@ -157,11 +158,13 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public long rowCount() {
-            return aisHolder.getAis().getUserTables().size();
+            return aisHolder.getAis().getUserTables().size() +
+                aisHolder.getAis().getViews().size() ;
         }
 
         private class Scan extends BaseScan {
-            final Iterator<UserTable> it = aisHolder.getAis().getUserTables().values().iterator();
+            final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            Iterator<View> viewIt = null;
 
             public Scan(RowType rowType) {
                 super(rowType);
@@ -169,22 +172,40 @@ public class BasicInfoSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                if(!it.hasNext()) {
-                    return null;
+                if(viewIt == null) {
+                    if(tableIt.hasNext()) {
+                        UserTable table = tableIt.next();
+                        final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
+                        return new ValuesRow(rowType,
+                                             table.getName().getSchemaName(),
+                                             table.getName().getTableName(),
+                                             tableType,
+                                             table.getTableId(),
+                                             table.hasMemoryTableFactory() ? null : table.getTreeName(),
+                                             CHARSET_SCHEMA,
+                                             table.getCharsetAndCollation().charset(),
+                                             COLLATION_SCHEMA,
+                                             table.getCharsetAndCollation().collation(),
+                                             ++rowCounter /*hidden pk*/);
+                    } else {
+                        viewIt = aisHolder.getAis().getViews().values().iterator();
+                    }
                 }
-                UserTable table = it.next();
-                final String tableType = table.hasMemoryTableFactory() ? "DICTIONARY VIEW" : "TABLE";
-                return new ValuesRow(rowType,
-                                     table.getName().getSchemaName(),
-                                     table.getName().getTableName(),
-                                     tableType,
-                                     table.getTableId(),
-                                     table.hasMemoryTableFactory() ? null : table.getTreeName(),
-                                     CHARSET_SCHEMA,
-                                     table.getCharsetAndCollation().charset(),
-                                     COLLATION_SCHEMA,
-                                     table.getCharsetAndCollation().collation(),
-                                     ++rowCounter /*hidden pk*/);
+                if(viewIt.hasNext()) {
+                    View view = viewIt.next();
+                    return new ValuesRow(rowType,
+                                         view.getName().getSchemaName(),
+                                         view.getName().getTableName(),
+                                         "VIEW",
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         null,
+                                         ++rowCounter /*hidden pk*/);
+                }
+                return null;
             }
         }
     }
@@ -205,11 +226,15 @@ public class BasicInfoSchemaTablesServiceImpl
             for(UserTable table : aisHolder.getAis().getUserTables().values()) {
                 count += table.getColumns().size();
             }
+            for(View view : aisHolder.getAis().getViews().values()) {
+                count += view.getColumns().size();
+            }
             return count;
         }
         
         private class Scan extends BaseScan {
             final Iterator<UserTable> tableIt = aisHolder.getAis().getUserTables().values().iterator();
+            Iterator<View> viewIt = null;
             Iterator<Column> columnIt;
 
             public Scan(RowType rowType) {
@@ -218,9 +243,17 @@ public class BasicInfoSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                if(columnIt == null || !columnIt.hasNext()) {
-                    if(tableIt.hasNext()) {
-                        columnIt = tableIt.next().getColumns().iterator();
+                while(columnIt == null || !columnIt.hasNext()) {
+                    if(viewIt == null) {
+                        if(tableIt.hasNext()) {
+                            columnIt = tableIt.next().getColumns().iterator();
+                            continue;
+                        } else {
+                            viewIt = aisHolder.getAis().getViews().values().iterator();
+                        }
+                    }
+                    if(viewIt.hasNext()) {
+                        columnIt = viewIt.next().getColumns().iterator();
                     } else {
                         return null;
                     }
