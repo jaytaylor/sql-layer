@@ -108,7 +108,7 @@ public class ViewDDL
                 return;
             throw new UndefinedViewException(schemaName, viewName);
         }
-        ddlFunctions.dropTable(session, TableName.create(schemaName, viewName));
+        ddlFunctions.dropView(session, TableName.create(schemaName, viewName));
     }
 
 }
