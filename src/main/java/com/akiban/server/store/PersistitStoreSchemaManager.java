@@ -70,6 +70,7 @@ import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
@@ -81,6 +82,7 @@ import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
 import com.akiban.server.error.TableNotInGroupException;
+import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
@@ -524,6 +526,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     @Override
     public void createView(Session session, View view) {
         final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(view.getName(), false);
+        if (oldAIS.getView(view.getName()) == null)
+            throw new DuplicateViewException(view.getName());
         final AkibanInformationSchema newAIS = copyAIS(oldAIS);
         final AISBuilder builder = new AISBuilder(newAIS);
         Collection<Columnar> newReferences = new HashSet<Columnar>();
@@ -555,6 +560,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     @Override
     public void dropView(Session session, TableName viewName) {
         final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(viewName, false);
+        if (oldAIS.getView(viewName) == null)
+            throw new UndefinedViewException(viewName);
         final AkibanInformationSchema newAIS = copyAIS(oldAIS);
         newAIS.removeView(viewName);
         final String schemaName = viewName.getSchemaName();
