@@ -37,6 +37,7 @@ public class DefaultRules
             new ASTStatementLoader(),
             new AggregateMapper(),
             new AggregateToDistinctMapper(),
+            new OverloadAndTInstanceResolver(),
             new OuterJoinPromoter(),
             new ColumnEquivalenceFinder(),
             new GroupJoinFinder(),

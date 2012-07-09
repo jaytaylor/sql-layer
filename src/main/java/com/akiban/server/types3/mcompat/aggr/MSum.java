@@ -141,4 +141,8 @@ public class MSum implements TAggregator {
         return sumType.typeClass;
     }
 
+    @Override
+    public String name() {
+        return "SUM";
+    }
 }

@@ -59,7 +59,77 @@ public final class PValueSources {
         final PValue value;
         final TInstance tInstance;
         if (object == null) {
-            throw new UnsupportedOperationException("can't infer type of null object");
+            if (akType == null)
+                throw new UnsupportedOperationException("can't infer type of null object");
+            TInstance tInstanceOverride = null;
+            TClass tClass = null;
+            switch (akType) {
+            case DATE:
+                tClass = MDatetimes.DATE;
+                break;
+            case DATETIME:
+                tClass = MDatetimes.DATETIME;
+                break;
+            case DECIMAL:
+                tClass = MNumeric.DECIMAL;
+                break;
+            case DOUBLE:
+                tClass = MApproximateNumber.DOUBLE;
+                break;
+            case FLOAT:
+                tClass = MApproximateNumber.FLOAT;
+                break;
+            case INT:
+                tClass = MNumeric.INT;
+                break;
+            case LONG:
+                tClass = MNumeric.BIGINT;
+                break;
+            case VARCHAR:
+                tInstanceOverride = MString.VARCHAR.instance(0);
+                break;
+            case TEXT:
+                tClass = MString.TEXT;
+                break;
+            case TIME:
+                tClass = MDatetimes.TIME;
+                break;
+            case TIMESTAMP:
+                tClass = MDatetimes.TIMESTAMP;
+                break;
+            case U_BIGINT:
+                tClass = MNumeric.BIGINT_UNSIGNED;
+                break;
+            case U_DOUBLE:
+                tClass = MApproximateNumber.DOUBLE_UNSIGNED;
+                break;
+            case U_FLOAT:
+                tClass = MApproximateNumber.FLOAT_UNSIGNED;
+                break;
+            case U_INT:
+                tClass = MNumeric.INT_UNSIGNED;
+                break;
+            case VARBINARY:
+                tInstanceOverride = MBinary.VARBINARY.instance(0);
+                break;
+            case YEAR:
+                tClass = MDatetimes.YEAR;
+                break;
+            case BOOL:
+                tInstanceOverride = MNumeric.TINYINT.instance(0);
+                break;
+            case INTERVAL_MILLIS:
+            case INTERVAL_MONTH:
+            case RESULT_SET:
+            case NULL:
+            case UNSUPPORTED:
+                throw new UnsupportedOperationException("can't infer type of null object: " + akType);
+            default:
+                throw new AssertionError(akType);
+            }
+            tInstance = (tClass == null) ? tInstanceOverride : tClass.instance();
+            assert tInstance != null;
+            value = new PValue(tInstance.typeClass().underlyingType());
         }
         else if (object instanceof Integer) {
             tInstance = MNumeric.INT.instance();

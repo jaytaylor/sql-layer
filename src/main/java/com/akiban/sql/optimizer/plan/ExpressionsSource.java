@@ -27,7 +27,9 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TPreptimeValue;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -44,6 +46,17 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
 
     public List<List<ExpressionNode>> getExpressions() {
         return expressions;
+    }
+
+    public List<TPreptimeValue> getPreptimeValues() {
+        if (expressions.isEmpty())
+            return Collections.emptyList();
+        List<ExpressionNode> nodes = expressions.get(0);
+        List<TPreptimeValue> result = new ArrayList<TPreptimeValue>(nodes.size());
+        for (ExpressionNode node : nodes) {
+            result.add(node.getPreptimeValue());
+        }
+        return result;
     }
 
     public AkType[] getFieldTypes() {
