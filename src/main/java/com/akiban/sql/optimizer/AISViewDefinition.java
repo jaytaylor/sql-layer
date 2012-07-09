@@ -99,7 +99,7 @@ public class AISViewDefinition extends ViewDefinition
                 if (columnBinding != null) {
                     Column column = columnBinding.getColumn();
                     if (column != null) {
-                        Columnar table = column.getTable();
+                        Columnar table = column.getColumnar();
                         Collection<Column> entry = references.get(table);
                         if (entry == null) {
                             entry = new HashSet<Column>();
