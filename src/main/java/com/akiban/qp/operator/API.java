@@ -389,6 +389,13 @@ public class API
     // Select
 
     public static Operator select_HKeyOrdered(Operator inputOperator,
+                                              RowType predicateRowType,
+                                              TPreparedExpression predicate)
+    {
+        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
+    }
+
+    public static Operator select_HKeyOrdered(Operator inputOperator,
                                                       RowType predicateRowType,
                                                       Expression predicate)
     {

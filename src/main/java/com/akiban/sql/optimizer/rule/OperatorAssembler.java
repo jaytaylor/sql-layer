@@ -822,10 +822,18 @@ public class OperatorAssembler extends BaseRule
                     rowType = tableRowType(table);
                     fieldOffsets = new ColumnSourceFieldOffsets(table, rowType);
                 }
-                stream.operator = API.select_HKeyOrdered(stream.operator,
-                                                         rowType,
-                                                         oldPartialAssembler.assembleExpression(condition,
-                                                                 fieldOffsets));
+                if (usePValues) {
+                    stream.operator = API.select_HKeyOrdered(stream.operator,
+                            rowType,
+                            newPartialAssembler.assembleExpression(condition,
+                                    fieldOffsets));
+                }
+                else {
+                    stream.operator = API.select_HKeyOrdered(stream.operator,
+                                                             rowType,
+                                                             oldPartialAssembler.assembleExpression(condition,
+                                                                     fieldOffsets));
+                }
             }
             return stream;
         }
