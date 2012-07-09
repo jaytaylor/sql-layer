@@ -50,11 +50,11 @@ public class SchemaDDLTest {
     public void before() throws Exception {
         parser = new SQLParser();
     }
-    
+
     @Test
     public void createSchemaEmpty () throws Exception
     {
-        String sql = "CREATE SCHEMA EMPTY";
+        String sql = "CREATE SCHEMA IF NOT EXISTS EMPTY";
         AkibanInformationSchema ais = new AkibanInformationSchema();
         
         StatementNode stmt = parser.parseStatement(sql);

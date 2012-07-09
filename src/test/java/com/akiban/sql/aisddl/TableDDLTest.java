@@ -26,6 +26,7 @@
 
 package com.akiban.sql.aisddl;
 
+import com.akiban.sql.StandardException;
 import java.util.Collection;
 import java.util.List;
 
@@ -50,6 +51,7 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.SQLParser;
@@ -124,6 +126,19 @@ public class TableDDLTest {
         assertTrue (stmt instanceof DropTableNode);
         TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);
     }
+    
+    @Test
+    public void createNewTable() throws StandardException
+    {
+        String sql = "CREATE TABLE desk (c1 INT)";
+        createTableSimpleGenerateAIS();
+        
+        StatementNode createNode = parser.parseStatement(sql);
+        assertTrue(createNode instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)createNode);
+        
+    }
+
     /*
     create table t1 (col1 int primary key)
     CREATE TABLE "MyMixedCaseTable" ("Col1" int primary key)
@@ -135,7 +150,7 @@ public class TableDDLTest {
     */    
     @Test
     public void createTableSimple() throws Exception {
-        String sql = "CREATE TABLE t1 (c1 INT)";
+        String sql = "CREATE TABLE d0 (c1 INT)";
         
         createTableSimpleGenerateAIS();
 
@@ -147,7 +162,7 @@ public class TableDDLTest {
     
     @Test
     public void createTablePK() throws Exception {
-        String sql = "CREATE TABLE t1 (c1 INT NOT NULL PRIMARY KEY)";
+        String sql = "CREATE TABLE d1 (c1 INT NOT NULL PRIMARY KEY)";
 
         createTablePKGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
@@ -157,7 +172,7 @@ public class TableDDLTest {
     
     @Test
     public void createTableUniqueKey() throws Exception {
-        String sql = "CREATE TABLE t1 (C1 int NOT NULL UNIQUE)";
+        String sql = "CREATE TABLE  d2 (C1 int NOT NULL UNIQUE)";
         createTableUniqueKeyGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -166,7 +181,7 @@ public class TableDDLTest {
 
     @Test (expected=DuplicateIndexException.class)
     public void createTable2PKs() throws Exception {
-        String sql = "CREATE TABLE test.t1 (c1 int primary key, c2 int NOT NULL, primary key (c2))";
+        String sql = "CREATE TABLE test.d3 (c1 int primary key, c2 int NOT NULL, primary key (c2))";
         
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -175,7 +190,7 @@ public class TableDDLTest {
     
     @Test
     public void createTableFKSimple() throws Exception {
-        String sql = "CREATE TABLE t2 (c1 int not null primary key, c2 int not null, grouping foreign key (c2) references t1)";
+        String sql = "CREATE TABLE if not exists test.t2 (c1 int not null primary key, c2 int not null, grouping foreign key (c2) references t1)";
         createTableFKSimpleGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -190,8 +205,7 @@ public class TableDDLTest {
         
         @Override
         public void createTable(Session session, UserTable table) {
-            
-            assertEquals(table.getName(), dropTable);
+
             for (Column col : table.getColumnsIncludingInternal()) {
                 assertNotNull (col.getName());
                 assertNotNull (ais.getUserTable(dropTable));
