@@ -283,8 +283,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
 
                 return new ValuesRow(rowType,
-                                     column.getTable().getName().getSchemaName(),
-                                     column.getTable().getName().getTableName(),
+                                     column.getColumnar().getName().getSchemaName(),
+                                     column.getColumnar().getName().getTableName(),
                                      column.getName(),
                                      column.getPosition(),
                                      column.getType().name(),
