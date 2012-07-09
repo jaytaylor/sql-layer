@@ -65,7 +65,6 @@ public class AISMerge {
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
         targetAIS = copyAIS(primaryAIS);
-        
         sourceTable = newTable;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
