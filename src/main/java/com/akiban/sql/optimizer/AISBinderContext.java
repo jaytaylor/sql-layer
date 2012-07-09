@@ -235,9 +235,5 @@ public class AISBinderContext
         assert (old == null);
     }
 
-    // TODO: Only used by tests. Remove when they go through ViewDDL.
-    public void addView(com.akiban.sql.views.ViewDefinition view) {
-        throw new UnsupportedOperationException();
-    }
 
 }
