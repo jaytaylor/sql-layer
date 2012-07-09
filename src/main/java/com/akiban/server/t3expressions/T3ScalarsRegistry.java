@@ -34,8 +34,6 @@ import java.util.List;
 public interface T3ScalarsRegistry {
     List<TValidatedOverload> getOverloads(String name);
 
-    OverloadResolutionResult get(String name, List<? extends TClass> inputClasses);
-
     /**
      * Find the registered cast going from source to taret.
      * @param source Type to cast from

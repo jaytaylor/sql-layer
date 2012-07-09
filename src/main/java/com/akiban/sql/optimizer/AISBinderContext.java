@@ -165,7 +165,7 @@ public class AISBinderContext
         this.binder = binder;
         binder.setContext(this);
         this.typeComputer = typeComputer;
-        this.views = new HashMap<com.akiban.ais.model.TableName,ViewDefinition>();
+        this.views = new HashMap<TableName,ViewDefinition>();
     }
 
     protected void initBinder() {

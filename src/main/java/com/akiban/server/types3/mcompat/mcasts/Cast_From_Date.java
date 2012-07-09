@@ -119,7 +119,7 @@ public class Cast_From_Date
         }
     };
     
-    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.DATETIME, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.DATE, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
     {
 
         @Override
@@ -137,7 +137,7 @@ public class Cast_From_Date
         }
     };
     
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATETIME, MString.VARCHAR, true, Constantness.UNKNOWN)
+    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
