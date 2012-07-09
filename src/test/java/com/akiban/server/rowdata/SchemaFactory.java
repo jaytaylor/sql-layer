@@ -30,11 +30,13 @@ import com.akiban.ais.metamodel.io.AISTarget;
 import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
@@ -178,8 +180,25 @@ public class SchemaFactory {
         }
 
         @Override
-        public void createView(Session session, View newView) {
-            throw new UnsupportedOperationException();
+        public void createView(Session session, View view) {
+            AkibanInformationSchema newAIS = AISMerge.copyAIS(ais);
+            View newView = View.create(newAIS,
+                                       view.getName().getSchemaName(),
+                                       view.getName().getTableName(),
+                                       view.getDefinition(),
+                                       view.getDefinitionProperties(),
+                                       view.getTableReferences());
+            for (Column col : view.getColumns()) {
+                Column.create(newView, col.getName(), col.getPosition(),
+                              col.getType(), col.getNullable(),
+                              col.getTypeParameter1(), col.getTypeParameter2(), 
+                              col.getInitialAutoIncrementValue(),
+                              col.getCharsetAndCollation());
+            }
+            newAIS.addView(newView);
+            newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+            newAIS.freeze();
+            ais = newAIS;
         }
 
         @Override
