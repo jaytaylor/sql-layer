@@ -204,6 +204,9 @@ public class AISBinderContext
     public AISViewDefinition getViewDefinition(CreateViewNode ddl) {
         try {
             AISViewDefinition view = new AISViewDefinition(ddl, parser);
+            // Just want the definition for result columns and table references.
+            // If the view uses another view, the inner one is treated
+            // like a table for those purposes.
             binder.bind(view.getSubquery(), false);
             if (typeComputer != null)
                 view.getSubquery().accept(typeComputer);
@@ -220,6 +223,8 @@ public class AISBinderContext
         AISViewDefinition view = null;
         try {
             view = new AISViewDefinition(ddl, parser);
+            // Want a subquery that can be spliced in.
+            // If the view uses another view, it gets expanded, too.
             binder.bind(view.getSubquery(), true);
             if (typeComputer != null)
                 view.getSubquery().accept(typeComputer);
@@ -232,11 +237,5 @@ public class AISBinderContext
         }
         return view;
     }
-
-    public void addViewDefinition(View view, AISViewDefinition viewDefinition) {
-        AISViewDefinition old = viewDefinitions.put(view, viewDefinition);
-        assert (old == null);
-    }
-
 
 }

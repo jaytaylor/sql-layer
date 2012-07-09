@@ -57,15 +57,6 @@ public class AISViewDefinition extends ViewDefinition
         super(parsed, parserContext);
     }
     
-    public Collection<Columnar> getTableReferences() {
-        return getTableColumnReferences().keySet();
-    }
-
-    public boolean referencesColumn(Column column) {
-        Collection<Column> columns = getTableColumnReferences().get(column.getTable());
-        return ((columns != null) && columns.contains(column));
-    }
-
     public Map<Columnar,Collection<Column>> getTableColumnReferences() {
         if (tableColumnReferences == null) {
             ReferenceCollector collector = new ReferenceCollector();
