@@ -225,11 +225,6 @@ public class OperatorAssembler extends BaseRule
                 arr[i] = result;
             }
 
-            @Override
-            public RowType valuesRowType(ExpressionsSource expressionsSource) {
-                throw new UnsupportedOperationException(); // TODO
-            }
-
             // Assemble a list of expressions from the given nodes.
             @Override
             public List<T> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
@@ -1425,6 +1420,7 @@ public class OperatorAssembler extends BaseRule
                 if (highComparand != null) {
                     oldPartialAssembler.assembleExpressionInto(highComparand, fieldOffsets, highKeys, hidx);
                     newPartialAssembler.assembleExpressionInto(highComparand, fieldOffsets, highPKeys, hidx);
+                    hidx++;
                     highInc = highInclusive;
                 }
                 int bounded = lidx > hidx ? lidx : hidx;
