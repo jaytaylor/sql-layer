@@ -80,6 +80,46 @@ public class TableDDLTest {
     }
     
     @Test
+    public void createTableIfNotExistsDoesNotExist() throws StandardException
+    {
+        String sql = "CREATE TABLE IF NOT EXISTS desk (c1 INT)";
+        createTableSimpleGenerateAIS();
+        StatementNode createNode = parser.parseStatement(sql);
+        assertTrue(createNode instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode) createNode);
+    }
+
+    @Test
+    public void createTableIfNotExistsDoesExist() throws StandardException
+    {
+        String sql = "CREATE TABLE IF NOT EXISTS " + DEFAULT_TABLE + "(c1 INT)";
+        createTableSimpleGenerateAIS(); // creates DEFAULT_SCHEMA.DEFAULT_TABLE
+        StatementNode createNode = parser.parseStatement(sql);
+        assertTrue(createNode instanceof CreateTableNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode) createNode);
+    }
+
+    @Test
+    public void dropExistingTableWithIfExists() throws StandardException
+    {
+        String sql = "DROP TABLE IF EXISTS " + DEFAULT_TABLE;
+        createTableSimpleGenerateAIS();
+        StatementNode node = parser.parseStatement(sql);
+        assertTrue(node instanceof DropTableNode);
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)node);
+    }
+    
+    @Test
+    public void dropNonExistingTableWithIfExists() throws StandardException
+    {
+        String sql = "DROP TABLE IF EXISTS chair";
+        createTableSimpleGenerateAIS();
+        StatementNode node = parser.parseStatement(sql);
+        assertTrue(node instanceof DropTableNode);
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)node);
+    }
+    
+    @Test
     public void dropTableSimple() throws Exception {
         String sql = "DROP TABLE t1";
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);

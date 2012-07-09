@@ -54,7 +54,7 @@ public class SchemaDDLTest {
     @Test
     public void createSchemaEmpty () throws Exception
     {
-        String sql = "CREATE SCHEMA IF NOT EXISTS EMPTY";
+        String sql = "CREATE SCHEMA EMPTY";
         AkibanInformationSchema ais = new AkibanInformationSchema();
         
         StatementNode stmt = parser.parseStatement(sql);
@@ -77,9 +77,23 @@ public class SchemaDDLTest {
         SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
     }
     
+      
+    @Test //(expected=DuplicateSchemaException.class)
+    public void createNonDuplicateSchemaWithIfNotExist() throws Exception
+    {
+        String sql = "CREATE SCHEMA IF NOT EXISTS SS";
+        AkibanInformationSchema ais = factory();
+        
+        assertNotNull(ais.getTable("s", "t"));
+        
+        StatementNode stmt = parser.parseStatement(sql);
+        assertTrue (stmt instanceof CreateSchemaNode);
+        
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
+    }
         
     @Test
-    public void createSchemaIfNotExist() throws Exception
+    public void createDuplicateSchemaWithIfNotExist() throws Exception
     {
         String sql = "CREATE SCHEMA IF NOT EXISTS S";
         AkibanInformationSchema ais = factory();
@@ -104,6 +118,20 @@ public class SchemaDDLTest {
         DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
         SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
+    }
+
+    @Test
+    public void dropNonExistingSchemaWithIfExists() throws Exception
+    {
+        String sql = "DROP SCHEMA IF EXISTS AA";
+        AkibanInformationSchema ais = new AkibanInformationSchema();
+        
+        StatementNode node = parser.parseStatement(sql);
+        assertTrue(node instanceof DropSchemaNode);
+        
+        DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
+        
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)node);
     }
 
     @Test
