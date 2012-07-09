@@ -31,13 +31,13 @@ import com.akiban.server.error.*;
 import com.akiban.server.service.session.Session;
 
 import com.akiban.sql.optimizer.AISBinderContext;
+import com.akiban.sql.optimizer.AISViewDefinition;
 import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -78,8 +78,8 @@ public class ViewDDL
             }
         }
         
-        ViewDefinition viewdef = binderContext.getViewDefinition(createView);
-        Collection<Columnar> tableReferences = binderContext.getTableReferences(viewdef);
+        AISViewDefinition viewdef = binderContext.getViewDefinition(createView);
+        Collection<Columnar> tableReferences = viewdef.getTableReferences();
         AISBuilder builder = new AISBuilder();
         builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
                      binderContext.getParserProperties(schemaName), tableReferences);
@@ -90,6 +90,7 @@ public class ViewDDL
         }
         View view = builder.akibanInformationSchema().getView(schemaName, viewName);
         ddlFunctions.createView(session, view);
+        binderContext.addViewDefinition(view, viewdef);
     }
 
     public static void dropView (DDLFunctions ddlFunctions,

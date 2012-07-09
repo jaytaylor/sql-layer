@@ -32,10 +32,8 @@ import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.FromSubquery;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.SQLParserFeature;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.View;
 
@@ -57,7 +55,7 @@ public class AISBinderContext
     protected String defaultSchemaName;
     protected AISBinder binder;
     protected TypeComputer typeComputer;
-    protected Map<View,ViewDefinition> viewDefinitions;
+    protected Map<View,AISViewDefinition> viewDefinitions;
 
     /** When context is part of a larger object, such as a server session. */
     protected AISBinderContext() {
@@ -166,7 +164,7 @@ public class AISBinderContext
         this.binder = binder;
         binder.setContext(this);
         this.typeComputer = typeComputer;
-        this.viewDefinitions = new HashMap<View,ViewDefinition>();
+        this.viewDefinitions = new HashMap<View,AISViewDefinition>();
     }
 
     protected void initBinder() {
@@ -175,8 +173,8 @@ public class AISBinderContext
     }
 
     /** Get view definition given the AIS view. */
-    public ViewDefinition getViewDefinition(View view) {
-        ViewDefinition viewdef = viewDefinitions.get(view);
+    public AISViewDefinition getViewDefinition(View view) {
+        AISViewDefinition viewdef = viewDefinitions.get(view);
         if (viewdef == null) {
             viewdef = new ViewReloader(view, this).getViewDefinition(view.getDefinition());
             viewDefinitions.put(view, viewdef);
@@ -200,9 +198,9 @@ public class AISBinderContext
     }
 
     /** Get view definition given the user's DDL. */
-    public ViewDefinition getViewDefinition(CreateViewNode ddl) {
+    public AISViewDefinition getViewDefinition(CreateViewNode ddl) {
         try {
-            ViewDefinition view = new ViewDefinition(ddl, parser);
+            AISViewDefinition view = new AISViewDefinition(ddl, parser);
             binder.bind(view.getSubquery(), false);
             if (typeComputer != null)
                 view.getSubquery().accept(typeComputer);
@@ -215,10 +213,10 @@ public class AISBinderContext
     }
 
     /** Get view definition using stored copy of original DDL. */
-    public ViewDefinition getViewDefinition(String ddl) {
-        ViewDefinition view = null;
+    public AISViewDefinition getViewDefinition(String ddl) {
+        AISViewDefinition view = null;
         try {
-            view = new ViewDefinition(ddl, parser);
+            view = new AISViewDefinition(ddl, parser);
             binder.bind(view.getSubquery(), true);
             if (typeComputer != null)
                 view.getSubquery().accept(typeComputer);
@@ -232,12 +230,13 @@ public class AISBinderContext
         return view;
     }
 
-    public Collection<Columnar> getTableReferences(ViewDefinition view) {
-        return Collections.emptySet();
+    public void addViewDefinition(View view, AISViewDefinition viewDefinition) {
+        AISViewDefinition old = viewDefinitions.put(view, viewDefinition);
+        assert (old == null);
     }
 
     // TODO: Only used by tests. Remove when they go through ViewDDL.
-    public void addView(ViewDefinition view) {
+    public void addView(com.akiban.sql.views.ViewDefinition view) {
         throw new UnsupportedOperationException();
     }
 
