@@ -136,6 +136,8 @@ public class OperatorAssembler extends BaseRule
         RowType valuesRowType(ExpressionsSource expressionsSource);
 
         void fillNulls(Index index, T[] keys);
+        List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+                                         ColumnExpressionToIndex fieldOffsets);
     }
 
     private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Object>() {
@@ -181,6 +183,12 @@ public class OperatorAssembler extends BaseRule
         public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
                                            List<String> names) {
             throw new AssertionError();
+        }
+
+        @Override
+        public List<Object> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+                                                ColumnExpressionToIndex fieldOffsets) {
+            return null;
         }
     };
 
@@ -324,6 +332,26 @@ public class OperatorAssembler extends BaseRule
                 else
                     throw new UnsupportedSQLException("Unknown subquery", sexpr.getSQLsource());
             }
+
+            @Override
+            public List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
+                                           ColumnExpressionToIndex fieldOffsets) {
+                List<T> updates = assembleExpressionsA(updateColumns, fieldOffsets);
+                // Have a list of expressions in the order specified.
+                // Want a list as wide as the target row with Java nulls
+                // for the gaps.
+                // TODO: It might be simpler to have an update function
+                // that knew about column offsets for ordered expressions.
+                T[] row = array(targetRowType.nFields());
+                for (int i = 0; i < updateColumns.size(); i++) {
+                    UpdateColumn column = updateColumns.get(i);
+                    row[column.getColumn().getPosition()] = updates.get(i);
+                }
+                updates = Arrays.asList(row);
+                return updates;
+            }
+
+            protected abstract T[] array(int size);
         }
 
         private class OldPartialAssembler extends BasePartialAssembler<Expression> {
@@ -379,6 +407,11 @@ public class OperatorAssembler extends BaseRule
             protected Expression field(RowType rowType, int position) {
                 return new FieldExpression(rowType, position);
             }
+
+            @Override
+            protected Expression[] array(int size) {
+                return new Expression[size];
+            }
         }
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
@@ -431,6 +464,11 @@ public class OperatorAssembler extends BaseRule
             @Override
             protected TPreparedExpression field(RowType rowType, int position) {
                 return new TPreparedField(rowType.typeInstanceAt(position), position);
+            }
+
+            @Override
+            protected TPreparedExpression[] array(int size) {
+                return new TPreparedExpression[size];
             }
         }
 
@@ -574,20 +612,12 @@ public class OperatorAssembler extends BaseRule
                 tableRowType(updateStatement.getTargetTable());
             assert (stream.rowType == targetRowType);
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<Expression> updates = oldPartialAssembler.assembleExpressionsA(updateColumns, stream.fieldOffsets);
-            // Have a list of expressions in the order specified.
-            // Want a list as wide as the target row with Java nulls
-            // for the gaps.
-            // TODO: It might be simpler to have an update function
-            // that knew about column offsets for ordered expressions.
-            Expression[] row = new Expression[targetRowType.nFields()];
-            for (int i = 0; i < updateColumns.size(); i++) {
-                UpdateColumn column = updateColumns.get(i);
-                row[column.getColumn().getPosition()] = updates.get(i);
-            }
-            updates = Arrays.asList(row);
+            List<Expression> updates = oldPartialAssembler.assembleUpdates(targetRowType, updateColumns,
+                    stream.fieldOffsets);
+            List<TPreparedExpression> updatesP = newPartialAssembler.assembleUpdates(targetRowType, updateColumns,
+                    stream.fieldOffsets);
             UpdateFunction updateFunction = 
-                new ExpressionRowUpdateFunction(updates, targetRowType);
+                new ExpressionRowUpdateFunction(updates, updatesP, targetRowType);
             UpdatePlannable plan = API.update_Default(stream.operator, updateFunction);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
