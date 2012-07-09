@@ -69,6 +69,7 @@ public class BasicInfoSchemaTablesServiceImpl
     static final TableName KEY_COLUMN_USAGE = new TableName(SCHEMA_NAME, "key_column_usage");
     static final TableName INDEXES = new TableName(SCHEMA_NAME, "indexes");
     static final TableName INDEX_COLUMNS = new TableName(SCHEMA_NAME, "index_columns");
+    static final TableName VIEWS = new TableName(SCHEMA_NAME, "views");
 
     private static final String CHARSET_SCHEMA = SCHEMA_NAME;
     private static final String COLLATION_SCHEMA = SCHEMA_NAME;
@@ -655,6 +656,44 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
+    private class ViewsFactory extends BasicFactoryBase {
+        public ViewsFactory(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return aisHolder.getAis().getViews().size() ;
+        }
+
+        private class Scan extends BaseScan {
+            final Iterator<View> it = aisHolder.getAis().getViews().values().iterator();
+
+            public Scan(RowType rowType) {
+                super(rowType);
+            }
+
+            @Override
+            public Row next() {
+                if(it.hasNext()) {
+                    View view = it.next();
+                    return new ValuesRow(rowType,
+                                         view.getName().getSchemaName(),
+                                         view.getName().getTableName(),
+                                         view.getDefinition(),
+                                         ++rowCounter /*hidden pk*/);
+                } else {
+                    return null;
+                }
+            }
+        }
+    }
+
     private static class TableConstraintsIteration {
         private final Iterator<UserTable> tableIt;
         private Iterator<? extends Index> indexIt;
@@ -863,6 +902,13 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (schema_name, column_table_name, column_name)
         //    references COLUMNS (schema_name, table_name, column_name)
 
+        builder.userTable(VIEWS)
+                .colString("schema_name", IDENT_MAX, false)
+                .colString("table_name", IDENT_MAX, false)
+                .colText("view_definition", false);
+        //primary key(schema_name, table_name)
+        //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
+
         return builder.ais(false);
     }
 
@@ -876,5 +922,6 @@ public class BasicInfoSchemaTablesServiceImpl
         attach(ais, doRegister, KEY_COLUMN_USAGE, KeyColumnUsageFactory.class);
         attach(ais, doRegister, INDEXES, IndexesFactory.class);
         attach(ais, doRegister, INDEX_COLUMNS, IndexColumnsFactory.class);
+        attach(ais, doRegister, VIEWS, ViewsFactory.class);
     }
 }
