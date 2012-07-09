@@ -36,6 +36,7 @@ import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
+import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
 
@@ -332,5 +333,35 @@ public class AISMerge {
             }
         }
         return treeNames;
+    }
+
+    public static AkibanInformationSchema mergeView(AkibanInformationSchema oldAIS,
+                                                    View view) {
+        AkibanInformationSchema newAIS = copyAIS(oldAIS);
+        Collection<Columnar> newReferences = new HashSet<Columnar>();
+        for (Columnar oldRef : view.getTableReferences()) {
+            Columnar newRef = newAIS.getColumnar(oldRef.getName());
+            if (newRef == null) {
+                throw new IllegalStateException("Duplicate of " + oldRef + " not found");
+            }
+            newReferences.add(newRef);
+        }
+        View newView = View.create(newAIS,
+                                   view.getName().getSchemaName(),
+                                   view.getName().getTableName(),
+                                   view.getDefinition(),
+                                   view.getDefinitionProperties(),
+                                   newReferences);
+        for (Column col : view.getColumns()) {
+            Column.create(newView, col.getName(), col.getPosition(),
+                          col.getType(), col.getNullable(),
+                          col.getTypeParameter1(), col.getTypeParameter2(), 
+                          col.getInitialAutoIncrementValue(),
+                          col.getCharsetAndCollation());
+        }
+        newAIS.addView(newView);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
     }
 }

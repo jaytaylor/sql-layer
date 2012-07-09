@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -51,7 +50,6 @@ import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
-import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -529,31 +527,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         checkAISSchema(view.getName(), false);
         if (oldAIS.getView(view.getName()) == null)
             throw new DuplicateViewException(view.getName());
-        final AkibanInformationSchema newAIS = copyAIS(oldAIS);
-        final AISBuilder builder = new AISBuilder(newAIS);
-        Collection<Columnar> newReferences = new HashSet<Columnar>();
-        for (Columnar oldRef : view.getTableReferences()) {
-            Columnar newRef = newAIS.getColumnar(oldRef.getName());
-            if (newRef == null) {
-                throw new IllegalStateException("Duplicate of " + oldRef + " not found");
-            }
-            newReferences.add(newRef);
-        }
+        AkibanInformationSchema newAIS = AISMerge.mergeView(oldAIS, view);
         final String schemaName = view.getName().getSchemaName();
-        final String viewName = view.getName().getTableName();
-        builder.view(schemaName, viewName,
-                     view.getDefinition(), new Properties(view.getDefinitionProperties()),
-                     newReferences);
-        for (Column col : view.getColumns()) {
-            CharsetAndCollation cac = col.getCharsetAndCollation();
-            builder.column(schemaName, viewName, 
-                           col.getName(), col.getPosition(), 
-                           col.getType().name(),
-                           col.getTypeParameter1(), col.getTypeParameter2(), 
-                           col.getNullable(), false,
-                           (cac == null) ? null : cac.charset(), 
-                           (cac == null) ? null : cac.collation());
-        }
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
     
