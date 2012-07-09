@@ -30,14 +30,11 @@ import com.akiban.ais.metamodel.io.AISTarget;
 import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
-import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
@@ -61,7 +58,6 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 
@@ -183,32 +179,7 @@ public class SchemaFactory {
 
         @Override
         public void createView(Session session, View view) {
-            AkibanInformationSchema newAIS = AISMerge.copyAIS(ais);
-            Collection<Columnar> newReferences = new HashSet<Columnar>();
-            for (Columnar oldRef : view.getTableReferences()) {
-                Columnar newRef = newAIS.getColumnar(oldRef.getName());
-                if (newRef == null) {
-                    throw new IllegalStateException("Duplicate of " + oldRef + " not found");
-                }
-                newReferences.add(newRef);
-            }
-            View newView = View.create(newAIS,
-                                       view.getName().getSchemaName(),
-                                       view.getName().getTableName(),
-                                       view.getDefinition(),
-                                       view.getDefinitionProperties(),
-                                       newReferences);
-            for (Column col : view.getColumns()) {
-                Column.create(newView, col.getName(), col.getPosition(),
-                              col.getType(), col.getNullable(),
-                              col.getTypeParameter1(), col.getTypeParameter2(), 
-                              col.getInitialAutoIncrementValue(),
-                              col.getCharsetAndCollation());
-            }
-            newAIS.addView(newView);
-            newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-            newAIS.freeze();
-            ais = newAIS;
+            ais = AISMerge.mergeView(ais, view);
         }
 
         @Override

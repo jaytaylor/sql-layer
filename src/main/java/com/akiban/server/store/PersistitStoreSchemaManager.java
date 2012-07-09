@@ -36,7 +36,6 @@ import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Properties;
 import java.util.Set;
 import java.util.SortedMap;
 import java.util.TreeMap;
@@ -51,7 +50,6 @@ import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
-import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
@@ -529,31 +527,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         checkAISSchema(view.getName(), false);
         if (oldAIS.getView(view.getName()) == null)
             throw new DuplicateViewException(view.getName());
-        final AkibanInformationSchema newAIS = copyAIS(oldAIS);
-        Collection<Columnar> newReferences = new HashSet<Columnar>();
-        for (Columnar oldRef : view.getTableReferences()) {
-            Columnar newRef = newAIS.getColumnar(oldRef.getName());
-            if (newRef == null) {
-                throw new IllegalStateException("Duplicate of " + oldRef + " not found");
-            }
-            newReferences.add(newRef);
-        }
-        View newView = View.create(newAIS,
-                                   view.getName().getSchemaName(),
-                                   view.getName().getTableName(),
-                                   view.getDefinition(),
-                                   view.getDefinitionProperties(),
-                                   newReferences);
-        for (Column col : view.getColumns()) {
-            Column.create(newView, col.getName(), col.getPosition(),
-                          col.getType(), col.getNullable(),
-                          col.getTypeParameter1(), col.getTypeParameter2(), 
-                          col.getInitialAutoIncrementValue(),
-                          col.getCharsetAndCollation());
-        }
-        newAIS.addView(newView);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-        newAIS.freeze();
+        AkibanInformationSchema newAIS = AISMerge.mergeView(oldAIS, view);
         final String schemaName = view.getName().getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
