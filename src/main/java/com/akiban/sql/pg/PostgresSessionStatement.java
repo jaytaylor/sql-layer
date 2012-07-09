@@ -31,7 +31,6 @@ import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
 import com.akiban.sql.parser.AccessMode;
-import com.akiban.sql.parser.AlterServerNode;
 import com.akiban.sql.parser.SetConfigurationNode;
 import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
@@ -65,7 +64,7 @@ public class PostgresSessionStatement implements PostgresStatement
     private Operation operation;
     private StatementNode statement;
     
-    public PostgresSessionStatement(Operation operation, StatementNode statement) {
+    protected PostgresSessionStatement(Operation operation, StatementNode statement) {
         this.operation = operation;
         this.statement = statement;
     }

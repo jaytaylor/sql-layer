@@ -29,16 +29,13 @@ import java.io.IOException;
 import java.lang.management.ManagementFactory;
 import java.util.Arrays;
 
-import javax.management.InstanceNotFoundException;
-import javax.management.MBeanException;
 import javax.management.MBeanServer;
-import javax.management.MalformedObjectNameException;
 import javax.management.ObjectName;
-import javax.management.ReflectionException;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.ConnectionTerminatedException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.UnsupportedConfigurationException;
@@ -48,7 +45,7 @@ public class PostgresServerStatement implements PostgresStatement {
     private static final Logger LOG = LoggerFactory.getLogger(PostgresServerStatement.class);
     private final AlterServerNode statement;
 
-    public PostgresServerStatement (AlterServerNode stmt) {
+    protected PostgresServerStatement (AlterServerNode stmt) {
         this.statement = stmt;
     }
     @Override
@@ -87,6 +84,7 @@ public class PostgresServerStatement implements PostgresStatement {
             else if (e instanceof InvalidOperationException) {
                 throw (InvalidOperationException)e;
             }
+            throw new AkibanInternalException ("PostgrsServerStatement execute failed.", e);
         }
         return 0;
     }
