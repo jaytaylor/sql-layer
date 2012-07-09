@@ -28,7 +28,6 @@ package com.akiban.sql.optimizer;
 
 import com.akiban.server.error.AmbiguousColumNameException;
 import com.akiban.server.error.DuplicateTableNameException;
-import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.JoinNodeAdditionException;
 import com.akiban.server.error.MultipleJoinsToTableException;
 import com.akiban.server.error.NoSuchColumnException;
@@ -37,11 +36,10 @@ import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
 import com.akiban.server.error.TableIsBadSubqueryException;
-import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.error.ViewHasBadSubqueryException;
-import com.akiban.sql.parser.*;
 
 import com.akiban.sql.StandardException;
+import com.akiban.sql.parser.*;
 import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
@@ -55,16 +53,16 @@ public class AISBinder implements Visitor
 {
     private AkibanInformationSchema ais;
     private String defaultSchemaName;
-    private Map<TableName,ViewDefinition> views;
     private Deque<BindingContext> bindingContexts;
     private Set<QueryTreeNode> visited;
     private boolean allowSubqueryMultipleColumns;
     private Set<ValueNode> havingClauses;
+    private AISBinderContext context;
+    private boolean expandViews;
 
     public AISBinder(AkibanInformationSchema ais, String defaultSchemaName) {
         this.ais = ais;
         this.defaultSchemaName = defaultSchemaName;
-        this.views = new HashMap<TableName,ViewDefinition>();
     }
 
     public String getDefaultSchemaName() {
@@ -83,28 +81,25 @@ public class AISBinder implements Visitor
         this.allowSubqueryMultipleColumns = allowSubqueryMultipleColumns;
     }
 
-    public void addView(ViewDefinition view) {
-        TableName name = view.getName();
-        /**
-           if (name.getSchemaName() == null)
-           name.setSchemaName(defaultSchemaName);
-        **/
-        if (views.get(name) != null)
-            throw new DuplicateViewException (view.getName().toString());
-        views.put(name, view);
+    public AISBinderContext getContext() {
+        return context;
     }
 
-    public void removeView(TableName name) {
-        if (views.remove(name) == null)
-            throw new UndefinedViewException (new com.akiban.ais.model.TableName(name.getSchemaName(), name.getTableName()));
+    protected void setContext(AISBinderContext context) {
+        this.context = context;
     }
 
     public void bind(StatementNode stmt) throws StandardException {
+        bind(stmt, true);
+    }
+
+    public void bind(QueryTreeNode node, boolean expandViews) throws StandardException {
+        this.expandViews = expandViews;
         visited = new HashSet<QueryTreeNode>();
         bindingContexts = new ArrayDeque<BindingContext>();
         havingClauses = new HashSet<ValueNode>();
         try {
-            stmt.accept(this);
+            node.accept(this);
         }
         finally {
             visited = null;
@@ -411,17 +406,28 @@ public class AISBinder implements Visitor
     }
 
     protected FromTable fromBaseTable(FromBaseTable fromBaseTable, boolean nullable)  {
-        TableName tableName = fromBaseTable.getOrigTableName();
-        ViewDefinition view = views.get(tableName);
-        if (view != null)
-            try {
-                return fromTable(view.getSubquery(this), false);
-            } catch (StandardException e) {
-                throw new ViewHasBadSubqueryException(view.getName().toString(), e.getMessage());
+        TableName origName = fromBaseTable.getOrigTableName();
+        String schemaName = origName.getSchemaName();
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        String tableName = origName.getTableName();
+        if (context != null) {
+            // TODO: Honor expandViews once there is a way to refer to AIS view.
+            ViewDefinition view = context.getView(schemaName, tableName);
+            if (view != null) {
+                FromSubquery viewSubquery;
+                try {
+                    viewSubquery = view.copySubquery(fromBaseTable.getParserContext());
+                } 
+                catch (StandardException ex) {
+                    throw new ViewHasBadSubqueryException(origName.toString(),
+                                                          ex.getMessage());
+                }
+                return fromTable(viewSubquery, false);
             }
-
-        Table table = lookupTableName(tableName);
-        tableName.setUserData(table);
+        }
+        Table table = lookupTableName(origName, schemaName, tableName);
+        origName.setUserData(table);
         fromBaseTable.setUserData(new TableBinding(table, nullable));
         return fromBaseTable;
     }
@@ -640,13 +646,10 @@ public class AISBinder implements Visitor
         columnReference.setUserData(columnBinding);
     }
 
-    protected Table lookupTableName(TableName tableName) {
-        String schemaName = tableName.getSchemaName();
-        if (schemaName == null)
-            schemaName = defaultSchemaName;
-        Table result = ais.getUserTable(schemaName, tableName.getTableName());
+    protected Table lookupTableName(TableName origName, String schemaName, String tableName) {
+        Table result = ais.getUserTable(schemaName, tableName);
         if (result == null)
-            throw new NoSuchTableException(schemaName, tableName.getTableName(), tableName);
+            throw new NoSuchTableException(schemaName, tableName, origName);
         return result;
     }
 
@@ -976,7 +979,10 @@ public class AISBinder implements Visitor
 
     protected void dmlModStatementNode(DMLModStatementNode node) {
         TableName tableName = node.getTargetTableName();
-        Table table = lookupTableName(tableName);
+        String schemaName = tableName.getSchemaName();
+        if (schemaName == null)
+            schemaName = defaultSchemaName;
+        Table table = lookupTableName(tableName, schemaName, tableName.getTableName());
         tableName.setUserData(table);
         
         ResultColumnList targetColumns = null;

@@ -24,55 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.row;
+package com.akiban.server.t3expressions;
 
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TAggregator;
 
-public class ValuesRow extends AbstractRow
-{
-    // Object interface
+import java.util.Collection;
 
-    @Override
-    public String toString()
-    {
-        return valuesHolder.toString();
-    }
-
-    // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        return valuesHolder.valueSourceAt(i);
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return null;
-    }
-
-    // ValuesRow interface
-
-    public ValuesRow(RowType rowType, Object... values)
-    {
-        this.rowType = rowType;
-        AkType[] akTypes = new AkType[rowType.nFields()];
-        for (int i = 0; i < akTypes.length; i++) {
-            akTypes[i] = rowType.typeAt(i);
-        }
-        this.valuesHolder = new RowValuesHolder(values, akTypes);
-    }
-
-    // Object state
-
-    private final RowType rowType;
-    private final RowValuesHolder valuesHolder;
+public interface T3AggregatesRegistry {
+    Collection<? extends TAggregator> getAggregates(String name);
 }

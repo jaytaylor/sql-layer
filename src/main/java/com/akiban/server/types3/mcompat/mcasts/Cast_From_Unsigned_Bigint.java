@@ -71,7 +71,7 @@ public class Cast_From_Unsigned_Bigint
     
     public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToInt64(MNumeric.BIGINT_UNSIGNED, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_INT = new FromInt64ToInt32(MNumeric.BIGINT_UNSIGNED, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_INT = new FromInt64ToInt32(MNumeric.BIGINT_UNSIGNED, MNumeric.INT, false, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_INT = new FromInt64ToInt64(MNumeric.BIGINT_UNSIGNED, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
     

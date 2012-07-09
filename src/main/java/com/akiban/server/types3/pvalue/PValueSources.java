@@ -26,13 +26,16 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.util.ByteSource;
@@ -43,18 +46,137 @@ import java.util.Arrays;
 
 public final class PValueSources {
 
-    public static TPreptimeValue fromObject(Object object) {
+    /**
+     * Reflectively creates a {@linkplain TPreptimeValue} from the given object, optionally consulting the given
+     * {@linkplain AkType} if that object is a <tt>Long</tt>. Most classes are fairly unambiguous as to what sort of
+     * TClass and TInstance they provide, but Longs can represent various type, so the <tt>AkType</tt> is used to
+     * a disambiguate. If it is <tt>null</tt>, the type class is assumed to be <tt>MCOMPAT_ BIGINT</tt>.
+     * @param object the object to convert into a TPreptimeValue
+     * @param akType the object's associated AkType, which only matters if the object is a Long
+     * @return the Object as a TPreptimeValue
+     */
+    public static TPreptimeValue fromObject(Object object, AkType akType) {
         final PValue value;
         final TInstance tInstance;
         if (object == null) {
-            throw new UnsupportedOperationException("can't infer type of null object");
+            if (akType == null)
+                throw new UnsupportedOperationException("can't infer type of null object");
+            TInstance tInstanceOverride = null;
+            TClass tClass = null;
+            switch (akType) {
+            case DATE:
+                tClass = MDatetimes.DATE;
+                break;
+            case DATETIME:
+                tClass = MDatetimes.DATETIME;
+                break;
+            case DECIMAL:
+                tClass = MNumeric.DECIMAL;
+                break;
+            case DOUBLE:
+                tClass = MApproximateNumber.DOUBLE;
+                break;
+            case FLOAT:
+                tClass = MApproximateNumber.FLOAT;
+                break;
+            case INT:
+                tClass = MNumeric.INT;
+                break;
+            case LONG:
+                tClass = MNumeric.BIGINT;
+                break;
+            case VARCHAR:
+                tInstanceOverride = MString.VARCHAR.instance(0);
+                break;
+            case TEXT:
+                tClass = MString.TEXT;
+                break;
+            case TIME:
+                tClass = MDatetimes.TIME;
+                break;
+            case TIMESTAMP:
+                tClass = MDatetimes.TIMESTAMP;
+                break;
+            case U_BIGINT:
+                tClass = MNumeric.BIGINT_UNSIGNED;
+                break;
+            case U_DOUBLE:
+                tClass = MApproximateNumber.DOUBLE_UNSIGNED;
+                break;
+            case U_FLOAT:
+                tClass = MApproximateNumber.FLOAT_UNSIGNED;
+                break;
+            case U_INT:
+                tClass = MNumeric.INT_UNSIGNED;
+                break;
+            case VARBINARY:
+                tInstanceOverride = MBinary.VARBINARY.instance(0);
+                break;
+            case YEAR:
+                tClass = MDatetimes.YEAR;
+                break;
+            case BOOL:
+                tInstanceOverride = MNumeric.TINYINT.instance(0);
+                break;
+            case INTERVAL_MILLIS:
+            case INTERVAL_MONTH:
+            case RESULT_SET:
+            case NULL:
+            case UNSUPPORTED:
+                throw new UnsupportedOperationException("can't infer type of null object: " + akType);
+            default:
+                throw new AssertionError(akType);
+            }
+            tInstance = (tClass == null) ? tInstanceOverride : tClass.instance();
+            assert tInstance != null;
+            value = new PValue(tInstance.typeClass().underlyingType());
         }
         else if (object instanceof Integer) {
             tInstance = MNumeric.INT.instance();
             value = new PValue((Integer)object);
         }
         else if (object instanceof Long) {
-            tInstance = MNumeric.BIGINT.instance();
+            if (akType == null) {
+                tInstance = MNumeric.BIGINT.instance();
+            }
+            else {
+                TClass tClass;
+                switch (akType) {
+                case DATE:
+                    tClass = MDatetimes.DATE;
+                    break;
+                case DATETIME:
+                    tClass = MDatetimes.DATETIME;
+                    break;
+                case INT:
+                    tClass = MNumeric.INT;
+                    break;
+                case LONG:
+                    tClass = MNumeric.BIGINT;
+                    break;
+                case TIME:
+                    tClass = MDatetimes.TIME;
+                    break;
+                case TIMESTAMP:
+                    tClass = MDatetimes.TIMESTAMP;
+                    break;
+                case U_BIGINT:
+                    tClass = MNumeric.BIGINT_UNSIGNED;
+                    break;
+                case U_INT:
+                    tClass = MNumeric.INT_UNSIGNED;
+                    break;
+                case YEAR:
+                    tClass = MDatetimes.YEAR;
+                    break;
+                case INTERVAL_MILLIS:
+                case INTERVAL_MONTH:
+                    throw new UnsupportedOperationException("interval literals not supported");
+                default:
+                    throw new IllegalArgumentException("can't convert longs of AkType " + akType);
+                }
+                tInstance = tClass.instance();
+            }
             value = new PValue((Long)object);
         }
         else if (object instanceof String) {

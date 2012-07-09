@@ -141,7 +141,9 @@ public abstract class PersistitKeyAppender {
         public void append(Object object, Column column) {
             TInstance tInstance = column.tInstance();
             TClass tClass = tInstance.typeClass();
-            tClass.writeCollating(PValueSources.fromObject(object).value(), tInstance, target.expectingType(column));
+            tClass.writeCollating(PValueSources.fromObject(object, column.getType().akType()).value(),
+                                  tInstance,
+                                  target.expectingType(column));
         }
 
         public void append(ValueSource source, Column column) {

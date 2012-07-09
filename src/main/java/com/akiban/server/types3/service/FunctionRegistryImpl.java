@@ -26,11 +26,17 @@
 
 package com.akiban.server.types3.service;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.functions.FunctionsRegistryImpl.FunctionsRegistryException;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.google.inject.Singleton;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -39,38 +45,81 @@ import java.util.List;
 @Singleton
 public class FunctionRegistryImpl implements FunctionRegistry
 {
-    // TODO : define aggregates here
-    private Collection<TOverload> scalars;
+    private static final Logger logger = LoggerFactory.getLogger(FunctionRegistryImpl.class);
+
+    private Collection<TValidatedOverload> scalars;
     private Collection<TClass> types;
     private Collection<TCast> casts;
+    private Collection<TAggregator> aggregators;
     
     private static final int SKIP = -1;
     private static final int FIELD = 0;
     private static final int ARRAY = 1;
     private static final int COLLECTION = 2;
 
-    FunctionRegistryImpl (ClassFinder overloadsClassFinder,
+    public FunctionRegistryImpl()
+    throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
+    {
+        this(new ConfigurableClassFinder("t3s.txt"));
+    }
+
+    public FunctionRegistryImpl(ClassFinder classFinder)
+    throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
+    {
+        this(classFinder, classFinder, classFinder);
+    }
+
+    public FunctionRegistryImpl (ClassFinder overloadsClassFinder,
                           ClassFinder typesClassFinder,
                           ClassFinder castsClassFinder) 
             throws IllegalArgumentException, IllegalAccessException, InvocationTargetException
     {
         // collect all scalar TOverload instances
-        scalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
+        Collection<TOverload> rawScalars = collectInstances(overloadsClassFinder.findClasses(),TOverload.class);
+        scalars = new ArrayList<TValidatedOverload>(rawScalars.size());
+        int errors = 0;
+        for (TOverload rawScalar : rawScalars) {
+            TValidatedOverload scalar;
+            try {
+                scalar = new TValidatedOverload(rawScalar);
+                scalars.add(scalar);
+            } catch (RuntimeException e) {
+                rejectTOverload(rawScalar, e);
+                ++errors;
+            } catch (AssertionError e) {
+                rejectTOverload(rawScalar, e);
+                ++errors;
+            }
+        }
+        if (errors > 0) {
+            StringBuilder sb = new StringBuilder("Found ").append(errors).append(" error");
+            if (errors != 1)
+                sb.append('s');
+            sb.append(" while collecting scalar functions. Check logs for details.");
+            throw new AkibanInternalException(sb.toString());
+        }
         
         // collect all TClass instances
         types = collectInstances(typesClassFinder.findClasses(), TClass.class);
         
         casts = collectInstances(castsClassFinder.findClasses(), TCast.class);
+
+        aggregators = collectInstances(overloadsClassFinder.findClasses(), TAggregator.class);
+    }
+
+    private void rejectTOverload(TOverload overload, Throwable e) {
+        logger.error("rejecting overload " + overload + " from " +  overload.getClass(), e);
     }
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
     {
         List<T> ret = new ArrayList<T>();
-        for (Class<?> cls : classes)
+        for (Class<?> cls : classes) {
             if (!Modifier.isPublic(cls.getModifiers()))
                 continue;
             else
                 doCollecting(ret, cls, target);
+        }
         return ret;
     }
 
@@ -88,14 +137,18 @@ public class FunctionRegistryImpl implements FunctionRegistry
                             putItem(ret, field.get(null), target);
                             break;
                         case ARRAY:
-                            for (Object item : (Object[])field.get(null))
-                                putItem(ret, item, target);
+                            for (Object item : (Object[])field.get(null)) {
+                                if (target.isInstance(item))
+                                    putItem(ret, item, target);
+                            }
                             break;
                         case COLLECTION:
                             try
                             {
-                                for (Object raw : (Collection<?>)field.get(null))
-                                    putItem(ret, raw, target);
+                                for (Object raw : (Collection<?>)field.get(null)) {
+                                    if (target.isInstance(raw))
+                                        putItem(ret, raw, target);
+                                }
                                 break;
                             }
                             catch (ClassCastException e) {/* fall thru */}
@@ -164,9 +217,12 @@ public class FunctionRegistryImpl implements FunctionRegistry
     {
         if (c.isArray() && target.isAssignableFrom(c.getComponentType()))
             return ARRAY;
-        else if (TOverload.class.isAssignableFrom(c))
+        else if (target.isAssignableFrom(c))
             return FIELD;
-        else return COLLECTION;
+        else if (Collection.class.isAssignableFrom(c))
+            return COLLECTION;
+        else
+            return SKIP;
     }
 
     private static <T> void putItem(Collection<T> list, Object item,  Class<T> targetClass)
@@ -178,15 +234,14 @@ public class FunctionRegistryImpl implements FunctionRegistry
     {
         return field.getAnnotation(DontRegister.class) == null;
     }
-    
+
     @Override
-    public FunctionKind getFunctionKind(String name)
-    {
-        throw new UnsupportedOperationException("not supported yet");
+    public Collection<? extends TAggregator> aggregators() {
+        return aggregators;
     }
 
     @Override
-    public Collection<TOverload> overloads()
+    public Collection<TValidatedOverload> overloads()
     {
         return scalars;
     }
