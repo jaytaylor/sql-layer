@@ -33,20 +33,37 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.Iterator;
 
 import static junit.framework.Assert.*;
 
 public class QueryCancelationIT extends PostgresServerITBase
 {
     private static final int N = 1000;
-    private static final int TRIALS = 5;
-
+    private static final int TRIALS = 3;
+    private static final String SELECT_COUNT = "select count(*) from t";
     @Test
     public void test() throws Exception
     {
         loadDB();
         queryThread = startQueryThread();
         cancelThread = startCancelThread(queryThread);
+        for (int i = 0; i < TRIALS; i++) {
+            System.out.println("trial " + i);
+            test(false);
+            test(true);
+        }
+        queryThread.terminate();
+        cancelThread.terminate();
+        queryThread.join();
+        cancelThread.join();
+    }
+    
+    @Test
+    public void testSQLcancel() throws Exception {
+        loadDB();
+        queryThread = startQueryThread();
+        cancelThread = startCancelSQLThread();
         for (int i = 0; i < TRIALS; i++) {
             System.out.println("trial " + i);
             test(false);
@@ -65,7 +82,7 @@ public class QueryCancelationIT extends PostgresServerITBase
         for (int id = 0; id < N; id++) {
             statement.execute(String.format("insert into t values(%s)", id));
         }
-        statement.execute("select count(*) from t");
+        statement.execute(SELECT_COUNT);
         ResultSet resultSet = statement.getResultSet();
         resultSet.next();
         System.out.println(String.format("Loaded %s rows", resultSet.getInt(1)));
@@ -108,6 +125,14 @@ public class QueryCancelationIT extends PostgresServerITBase
     private CancelThread startCancelThread(final QueryThread queryThread) throws Exception
     {
         CancelThread thread = new CancelThread(queryThread);
+        thread.setDaemon(false);
+        thread.start();
+        return thread;
+    }
+    
+    private CancelThread startCancelSQLThread() throws Exception
+    {
+        CancelSQLThread thread = new CancelSQLThread();
         thread.setDaemon(false);
         thread.start();
         return thread;
@@ -266,5 +291,42 @@ public class QueryCancelationIT extends PostgresServerITBase
         }
 
         private QueryThread victim;
+    }
+    
+    public class CancelSQLThread extends CancelThread
+    {
+        @Override
+        public void action() throws SQLException, InterruptedException {
+            statement.execute(String.format("ALTER SERVER INTERRUPT SESSION %s", sessionID));
+            sleep(5);
+        }
+
+        @Override
+        public void cleanup() throws Exception {
+            closeConnection(connection);
+        }
+
+        public CancelSQLThread () throws Exception
+        {
+            super(null);
+            
+            // This bit of magic is to make sure we select the correct session
+            // There are two sessions, one having done the load, 
+            // the other is the QueryThread. 
+            System.out.println (String.format("CancelSQLThread found %s sessions", server().getCurrentSessions().size()));
+            Iterator<Integer> i = server().getCurrentSessions().iterator();
+            sessionID = i.next();
+            if (server().getConnection(sessionID).getSqlString().equals(SELECT_COUNT)) {
+                sessionID = i.next();
+            }
+           
+            connection = openConnection();
+            statement = connection.createStatement();
+            setName ("CancelSQLThread");
+        }
+        private int sessionID;
+        private Connection connection;
+        volatile Statement statement;
+
     }
 }
