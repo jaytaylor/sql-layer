@@ -525,7 +525,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     public void createView(Session session, View view) {
         final AkibanInformationSchema oldAIS = getAis();
         checkAISSchema(view.getName(), false);
-        if (oldAIS.getView(view.getName()) == null)
+        if (oldAIS.getView(view.getName()) != null)
             throw new DuplicateViewException(view.getName());
         AkibanInformationSchema newAIS = AISMerge.mergeView(oldAIS, view);
         final String schemaName = view.getName().getSchemaName();
