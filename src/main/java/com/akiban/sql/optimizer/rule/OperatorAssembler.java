@@ -574,8 +574,7 @@ public class OperatorAssembler extends BaseRule
                 tableRowType(updateStatement.getTargetTable());
             assert (stream.rowType == targetRowType);
             List<UpdateColumn> updateColumns = updateStatement.getUpdateColumns();
-            List<Expression> updates = oldPartialAssembler.assembleExpressionsA(updateColumns,
-                    stream.fieldOffsets);
+            List<Expression> updates = oldPartialAssembler.assembleExpressionsA(updateColumns, stream.fieldOffsets);
             // Have a list of expressions in the order specified.
             // Want a list as wide as the target row with Java nulls
             // for the gaps.
@@ -1446,12 +1445,13 @@ public class OperatorAssembler extends BaseRule
          */
         protected IndexBound getIndexBound(Index index, Expression[] keys, TPreparedExpression[] pKeys,
                                            int nBoundKeys) {
-            if (keys == null)
+            if (keys == null && pKeys == null)
                 return null;
             Expression[] boundKeys;
             TPreparedExpression[] boundPKeys;
-            if (nBoundKeys < keys.length) {
-                boolean usePKeys = pKeys != null;
+            boolean usePKeys = pKeys != null;
+            int nkeys = usePKeys ? pKeys.length : keys.length;
+            if (nBoundKeys < nkeys) {
                 Object[] source, dest;
                 if (usePKeys) {
                     boundKeys = null;
@@ -1511,7 +1511,9 @@ public class OperatorAssembler extends BaseRule
         protected UnboundExpressions getIndexExpressionRow(Index index, 
                                                            Expression[] keys, TPreparedExpression[] pKeys) {
             RowType rowType = schema.indexRowType(index);
-            return new RowBasedUnboundExpressions(rowType, Arrays.asList(keys), Arrays.asList(pKeys));
+            List<Expression> expressions = keys == null ? null : Arrays.asList(keys);
+            List<TPreparedExpression> pExprs = pKeys == null ? null : Arrays.asList(pKeys);
+            return new RowBasedUnboundExpressions(rowType, expressions, pExprs);
         }
 
         // Get the required type for any parameters to the statement.

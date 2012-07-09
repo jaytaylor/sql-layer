@@ -43,7 +43,7 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
 
     @Override
     public String toString() {
-        return "UnboundExpressions" + expressions;
+        return "UnboundExpressions" + (expressions == null ? pExprs : expressions);
     }
 
     @Deprecated

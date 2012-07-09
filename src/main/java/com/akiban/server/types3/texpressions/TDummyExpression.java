@@ -26,69 +26,32 @@
 
 package com.akiban.server.types3.texpressions;
 
-import com.akiban.qp.operator.QueryContext;
-import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
-public final class TPreparedBoundField implements TPreparedExpression {
+/**
+ * A placeholder TPreparedExpression -- the equivalent of UnsupportedOperationException.
+ */
+@Deprecated
+public final class TDummyExpression implements TPreparedExpression {
     @Override
     public TPreptimeValue evaluateConstant() {
-        return new TPreptimeValue(resultType());
+        return new TPreptimeValue(resultType(), null);
     }
 
     @Override
     public TInstance resultType() {
-        return fieldExpression.resultType();
+        return MNumeric.INT.instance();
     }
 
     @Override
     public TEvaluatableExpression build() {
-        return new InnerEvaluation(fieldExpression.build(), rowPosition);
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override
     public String toString() {
-        return "Bound(" + rowPosition + ',' + fieldExpression + ')';
-    }
-
-    public TPreparedBoundField(RowType rowType, int rowPosition, int fieldPosition) {
-        fieldExpression = new TPreparedField(rowType.typeInstanceAt(fieldPosition), fieldPosition);
-        this.rowPosition = rowPosition;
-    }
-
-    private final TPreparedField fieldExpression;
-    private final int rowPosition;
-
-    private static class InnerEvaluation implements TEvaluatableExpression {
-
-        @Override
-        public PValueSource resultValue() {
-            return fieldEvaluation.resultValue();
-        }
-
-        @Override
-        public void evaluate() {
-            fieldEvaluation.evaluate();
-        }
-
-        @Override
-        public void with(Row row) {
-        }
-
-        @Override
-        public void with(QueryContext context) {
-            fieldEvaluation.with(context.getRow(rowPosition));
-        }
-
-        private InnerEvaluation(TEvaluatableExpression fieldEvaluation, int rowPosition) {
-            this.fieldEvaluation = fieldEvaluation;
-            this.rowPosition = rowPosition;
-        }
-
-        private final TEvaluatableExpression fieldEvaluation;
-        private final int rowPosition;
+        return "DummyExpression";
     }
 }

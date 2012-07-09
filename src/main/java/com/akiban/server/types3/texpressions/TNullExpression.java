@@ -61,6 +61,11 @@ public final class TNullExpression implements TPreparedExpression {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return "Literal(NULL)";
+    }
+
     private final TInstance tInstance;
 
     private static final EnumMap<PUnderlying,InnerEvaluation> evaluationsByUnderlying = createEvaluations();
