@@ -91,10 +91,11 @@ class Project_Default extends Operator
     @Override
     public String toString()
     {
+        List<?> activeProjections = (projections == null) ? pExpressions : projections;
         if (projectType.hasUserTable()) {
-            return String.format("project to table %s (%s)", projectType.userTable(), projections);
+            return String.format("project to table %s (%s)", projectType.userTable(), activeProjections);
         } else {
-            return String.format("project(%s)", projections);
+            return String.format("project(%s)", activeProjections);
         }
     }
 

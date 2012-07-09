@@ -68,6 +68,12 @@ public class ValuesRowType extends DerivedRowType
         this.tInstances = null;
     }
 
+    public ValuesRowType(DerivedTypesSchema schema, int typeId, TInstance... fields) {
+        super(schema, typeId);
+        this.types = null;
+        this.tInstances = fields;
+    }
+
     // Object state
 
     private final AkType[] types;

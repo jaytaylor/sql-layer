@@ -252,13 +252,14 @@ final class Aggregate_Partial extends Operator
 
     @Override
     public String toString() {
+        List<?> aggrsToString = (aggregatorFactories == null) ? pAggrs : aggregatorFactories;
         if (inputsIndex == 0) {
-            return String.format("Aggregation(without GROUP BY: %s)", aggregatorFactories);
+            return String.format("Aggregation(without GROUP BY: %s)", aggrsToString);
         }
         if (inputsIndex == 1) {
-            return String.format("Aggregation(GROUP BY 1 field, then: %s)", aggregatorFactories);
+            return String.format("Aggregation(GROUP BY 1 field, then: %s)", aggrsToString);
         }
-        return String.format("Aggregation(GROUP BY %d fields, then: %s)", inputsIndex, aggregatorFactories);
+        return String.format("Aggregation(GROUP BY %d fields, then: %s)", inputsIndex, aggrsToString);
     }
 
 

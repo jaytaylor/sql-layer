@@ -49,6 +49,11 @@ public final class TPreparedField implements TPreparedExpression {
         return new Evaluation(typeInstance.typeClass().underlyingType(), fieldIndex);
     }
 
+    @Override
+    public String toString() {
+        return "Field(" + fieldIndex + ')';
+    }
+
     public TPreparedField(TInstance typeInstance, int fieldIndex) {
         this.typeInstance = typeInstance;
         this.fieldIndex = fieldIndex;

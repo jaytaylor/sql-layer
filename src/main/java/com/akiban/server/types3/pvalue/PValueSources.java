@@ -39,12 +39,16 @@ import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.util.ByteSource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.Arrays;
 
 public final class PValueSources {
+
+    private static final Logger logger = LoggerFactory.getLogger(PValueSources.class);
 
     /**
      * Reflectively creates a {@linkplain TPreptimeValue} from the given object, optionally consulting the given
@@ -341,6 +345,62 @@ public final class PValueSources {
         PValue result = new PValue(pUnderlying);
         plainConverter.convert(null, source, result);
         return result;
+    }
+    
+    public static void toStringSimple(PValueSource source, StringBuilder out) {
+        if (!source.hasAnyValue()) {
+            out.append("<unset>");
+            return;
+        }
+        if (source.hasCacheValue()) {
+            out.append(source.getObject());
+            return;
+        }
+        
+        switch (source.getUnderlyingType()) {
+        case BOOL:
+            out.append(source.getBoolean());
+            break;
+        case INT_8:
+            out.append(source.getInt8());
+            break;
+        case INT_16:
+            out.append(source.getInt16());
+            break;
+        case UINT_16:
+            // display as int instead of char, to reinforce that it's not a char, it's an int with unsigned collation
+            out.append((int)source.getUInt16());
+            break;
+        case INT_32:
+            out.append(source.getInt32());
+            break;
+        case INT_64:
+            out.append(source.getInt64());
+            break;
+        case FLOAT:
+            out.append(source.getFloat());
+            break;
+        case DOUBLE:
+            out.append(source.getDouble());
+            break;
+        case BYTES:
+            out.append(Arrays.toString(source.getBytes()));
+            break;
+        case STRING:
+            out.append(source.getString());
+            break;
+        default:
+            // toStrings are non-critical, so let's not throw an error
+            logger.warn("unknown PValueSource underlying type: {} ({})", source.getUnderlyingType(), source);
+            out.append("<?>");
+            break;
+        }
+    }
+
+    public static String toStringSimple(PValueSource source) {
+        StringBuilder sb = new StringBuilder();
+        toStringSimple(source, sb);
+        return sb.toString();
     }
 
     public static abstract class ValueSourceConverter<T> {

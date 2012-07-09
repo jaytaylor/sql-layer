@@ -31,6 +31,7 @@ import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.std.CountOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -122,12 +123,15 @@ class Count_Default extends Operator
 
     // Count_Default interface
 
-    public Count_Default(Operator inputOperator, RowType countType)
+    public Count_Default(Operator inputOperator, RowType countType, boolean usePValues)
     {
         ArgumentValidation.notNull("countType", countType);
         this.inputOperator = inputOperator;
         this.countType = countType;
-        this.resultType = countType.schema().newValuesType(AkType.LONG);
+        this.usePValues = usePValues;
+        this.resultType = usePValues
+            ? countType.schema().newValuesType(AkType.LONG)
+            : countType.schema().newValuesType(MNumeric.BIGINT.instance());
     }
     
     // Class state
@@ -140,6 +144,7 @@ class Count_Default extends Operator
     private final Operator inputOperator;
     private final RowType countType;
     private final ValuesRowType resultType;
+    private final boolean usePValues;
 
     @Override
     public Explainer getExplainer()
