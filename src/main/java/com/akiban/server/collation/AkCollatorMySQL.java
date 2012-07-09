@@ -40,20 +40,29 @@ public class AkCollatorMySQL implements AkCollator {
     private final String collatorScheme;
 
     private final int[] weight = new int[256];
-    
-    private final int[] unweight = new int[256];
 
-    
     /**
-     * Create an AkCollator which may be used in across multiple threads. Each
-     * instance of AkCollator has a ThreadLocal which optionally contains a
-     * reference to a thread-private ICU4J Collator.
+     * Create an AkCollator which mimics single-byte case-insensitive MySQL
+     * collations such as latin1_swedish_ci. This class derives the sort key for
+     * collation by substituting weight values from the supplied table on a
+     * per--character basis. The table supplied here is acquired from a
+     * properties file:
+     * 
+     * src/main/resources/com/akiban/server/collation/collation_data_properties
+     * 
+     * See property keys such as "mysql_latin1_swedish_ci" for example.
+     * 
+     * This class is immutable and therefore does not supply or use a
+     * thread-local Collator.
      * 
      * @param name
-     *            Name given to AkCollatorFactory by which to look up the scheme
+     *            Name, e.g., latin1_swedish_ci
      * @param scheme
-     *            Formatted string containing Locale name, and collation string
-     *            strength.
+     *            Scheme name, which for AkCollatorMySQL is used as a property
+     *            name by which the supplied weight table is acquired.
+     * @param table
+     *            A table of byte values, formatted as a string consisting of
+     *            space-delimited hex values.
      */
     AkCollatorMySQL(final String name, final String scheme, final String table) {
         this.collatorName = name;
@@ -80,14 +89,13 @@ public class AkCollatorMySQL implements AkCollator {
             for (int i = 0; i < value.length(); i++) {
                 final int c = value.charAt(i);
                 assert c < 256;
-                sortBytes[i] = (byte)(weight[c] & 0xFF);
+                sortBytes[i] = (byte) (weight[c] & 0xFF);
             }
             byte[] keyBytes = key.getEncodedBytes();
             int size = key.getEncodedSize();
             if (size + sortBytes.length > key.getMaximumSize() + 1) {
                 throw new IllegalArgumentException("Too long: " + size + sortBytes.length);
             }
-            assert verifySortByteZeroes(sortBytes) : "expected to return a zero-terminated sort key";
             keyBytes[size] = TYPE_COLLATED_STRING;
             System.arraycopy(sortBytes, 0, keyBytes, size + 1, sortBytes.length);
             key.setEncodedSize(size + sortBytes.length + 1);
@@ -130,18 +138,19 @@ public class AkCollatorMySQL implements AkCollator {
         return false;
     }
 
-    private boolean verifySortByteZeroes(final byte[] a) {
-        for (int index = 0; index < a.length - 1; index++) {
-            if (a[index] == 0) {
-                return false;
-            }
-        }
-        if (a[a.length - 1] != 0) {
-            return false;
-        }
-        return true;
+    @Override
+    public String toString() {
+        return collatorName + "(" + collatorScheme + ")";
     }
-    
+
+    /**
+     * Parse the table supplied a string value to populate the weight table. The
+     * weight table provides a weight value for each of 256 characters. The
+     * derived weight table may not contain zeroes because the weights are
+     * directly substituted on a per-character basis to form sort keys.
+     * 
+     * @param table
+     */
     private void constructWeightTable(final String table) {
         final int[] elements = new int[256];
         int count = 0;
@@ -151,35 +160,35 @@ public class AkCollatorMySQL implements AkCollator {
             }
         }
         assert count == 256;
-        int hole = -1;
-        for (int i = 0; i < 256; i++) {
-            boolean found = false; 
-            for (int j = 0; j < 256; j++) {
-                if (elements[j] == i) {
+        /*
+         * Search for an unused weight value. There will always be at least one
+         * in a case-insensitive table. We'll deal with non-CI tables when
+         * necessary.
+         */
+        int hole = 0;
+        for (; hole < 256; hole++) {
+            boolean found = false;
+            for (int index = 0; index < 256; index++) {
+                if (elements[index] == hole) {
                     found = true;
                 }
             }
             if (!found) {
-                hole = i;
                 break;
             }
         }
-        assert hole != -1;
-        for (int i = 0; i < 256; i++) {
-            if (elements[i] < hole) {
-                elements[i]++;
+        assert hole < 256;
+        /*
+         * Having found the first hole, increment all the weights below it. This
+         * is how we ensure no zero-valued weights in the table.
+         */
+        for (int index = 0; index < 256; index++) {
+            if (elements[index] < hole) {
+                elements[index]++;
             }
         }
         for (int i = 0; i < 256; i++) {
             weight[i] = elements[i];
-            if (unweight[elements[i]] == 0) {
-                unweight[elements[i]] = i;
-            }
         }
-    }
-
-    @Override
-    public String toString() {
-        return collatorName + "(" + collatorScheme + ")";
     }
 }

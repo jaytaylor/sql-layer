@@ -33,7 +33,6 @@ import static org.junit.Assert.assertTrue;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
-import org.junit.Ignore;
 
 import com.ibm.icu.util.ULocale;
 
@@ -43,8 +42,8 @@ public class AkCollatorFactoryTest {
     
     @Test
     public void getAkCollator() throws Exception {
-        final AkCollator collator = AkCollatorFactory.getAkCollator("sv_SE");
-        assertEquals("sw", collator.getCollator().getLocale(ULocale.VALID_LOCALE).getName());
+        final AkCollator collator = AkCollatorFactory.getAkCollator("sv_se_ci");
+        assertEquals("sv_SE", collator.getCollator().getLocale(ULocale.VALID_LOCALE).getName());
     }
     
     @Test
@@ -56,7 +55,7 @@ public class AkCollatorFactoryTest {
             threads[i] = new Thread(new Runnable() {
                 public void run() {
                     int index = threadIndex.getAndIncrement();
-                    array[index] = AkCollatorFactory.getAkCollator("sv_SE");
+                    array[index] = AkCollatorFactory.getAkCollator("sv_se_ci");
                 }
             });
         }
@@ -77,6 +76,6 @@ public class AkCollatorFactoryTest {
     @Test
     public void makeMySQLCollator() throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
-        assertEquals("Collector should have correct name", "latin1_swedish_ci(mysql_latin1_swedish_ci)", collator.getName());
+        assertEquals("Collector should have correct name", "latin1_swedish_ci", collator.getName());
     }
 }

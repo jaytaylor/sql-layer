@@ -98,7 +98,7 @@ public class AkCollatorMySQLTest {
         assertTrue("Should collate after", collator.compare("BCD", "abc") > 0);
         assertTrue("Should collate before", collator.compare("abc", "BCD") < 0);
         assertTrue("Should collate after", collator.compare("BCD", "bc") > 0);
-        assertTrue("Should collate before", collator.compare("ABCD", "abc") < 0);
+        assertTrue("Should collate before", collator.compare("ABCD", "abcde") < 0);
     }
 
     @Test
@@ -140,8 +140,8 @@ public class AkCollatorMySQLTest {
 
     @Test
     public void randomStrings() throws Exception {
-        testRandomStringSequence("latin1_swedish_ci", 1000, LATIN1_SWEDISH_CI_SEQ);
-        testRandomStringSequence("latin1_general_ci", 1000, LATIN1_GENERAL_CI_SEQ);
+        testRandomStringSequence("latin1_swedish_ci", 10000, LATIN1_SWEDISH_CI_SEQ);
+        testRandomStringSequence("latin1_general_ci", 10000, LATIN1_GENERAL_CI_SEQ);
     }
 
     private void testRandomStringSequence(final String collation, final int count, final Integer[] table) throws Exception {
