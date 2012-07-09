@@ -26,6 +26,7 @@
 
 package com.akiban.server.collation;
 
+import java.io.IOException;
 import java.lang.ref.SoftReference;
 import java.util.HashMap;
 import java.util.Map;
@@ -46,6 +47,8 @@ public class AkCollatorFactory {
 
     public final static String UCS_BINARY = "UCS_BINARY";
 
+    public final static String MYSQL = "mysql_";
+
     public final static AkCollator UCS_BINARY_COLLATOR = new AkCollatorBinary();
 
     private final static Map<String, Collator> sourceMap = new HashMap<String, Collator>();
@@ -55,15 +58,22 @@ public class AkCollatorFactory {
     public final static boolean COLLATION_ENABLED = Boolean.parseBoolean(System.getProperty("akiban.collation.enabled",
             "true"));
 
-    private final static String DEFAULT_PROPERTIES_FILE_NAME = "collation_names.properties";
+    private final static String DEFAULT_PROPERTIES_FILE_NAME = "collation_data.properties";
 
     private final static String COLLATION_PROPERTIES_FILE_NAME_PROPERTY = "akiban.collation.properties";
 
     private final static Properties collationNameProperties = new Properties();
 
-    private final static long SANITY_RELOAD_INTERVAL = 10000;
-
-    private static volatile long lastReloadTime = Long.MIN_VALUE;
+    static {
+        try {
+            final String resourceName = System.getProperty(COLLATION_PROPERTIES_FILE_NAME_PROPERTY,
+                    DEFAULT_PROPERTIES_FILE_NAME);
+            collationNameProperties.clear();
+            collationNameProperties.load(AkCollatorFactory.class.getResourceAsStream(resourceName));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
 
     /**
      * 
@@ -74,7 +84,7 @@ public class AkCollatorFactory {
         if (!COLLATION_ENABLED || name == null || UCS_BINARY.equalsIgnoreCase(name)) {
             return UCS_BINARY_COLLATOR;
         }
-        
+
         final String scheme = schemeForName(name);
         if (scheme.startsWith(UCS_BINARY)) {
             return UCS_BINARY_COLLATOR;
@@ -92,7 +102,12 @@ public class AkCollatorFactory {
          * The result is that there will be an AkCollator in the map which is
          * sufficient.
          */
-        AkCollator akCollator = new AkCollatorICU(name, scheme);
+        final AkCollator akCollator;
+        if (scheme.startsWith(MYSQL)) {
+            akCollator = new AkCollatorMySQL(name, scheme, collationNameProperties.getProperty(scheme));
+        } else {
+            akCollator = new AkCollatorICU(name, scheme);
+        }
         collatorMap.put(name, new SoftReference<AkCollator>(akCollator));
         return akCollator;
     }
@@ -117,11 +132,6 @@ public class AkCollatorFactory {
      * akiban.collation.properties
      * </code>
      * </pre>
-     * 
-     * To support experimentation with new names this method will attempt
-     * to reload the properties file whenever asked to find a collation name
-     * that does not exist. Reloading is limited to once every 10 seconds for
-     * avoid a avenue for denial-of-service.
      * 
      * @param scheme
      * @return
@@ -148,34 +158,13 @@ public class AkCollatorFactory {
         return collator;
     }
 
-    private static String schemeForName(final String name) {
+    private synchronized static String schemeForName(final String name) {
         final String lcname = name.toLowerCase();
         String scheme = collationNameProperties.getProperty(lcname);
         if (scheme == null) {
-            reloadCollationProperties();
-            scheme = collationNameProperties.getProperty(lcname);
-            if (scheme == null) {
-                throw new IllegalArgumentException("Collation " + name + " is unknown");
-            }
+            throw new IllegalArgumentException("Collation " + name + " is unknown");
         }
         return scheme;
     }
-    
-    
-    private static void reloadCollationProperties() {
-        long now = System.currentTimeMillis();
-        if (now - SANITY_RELOAD_INTERVAL > lastReloadTime) {
-            lastReloadTime = now;
-            try {
-                final String resourceName = System.getProperty(COLLATION_PROPERTIES_FILE_NAME_PROPERTY,
-                        DEFAULT_PROPERTIES_FILE_NAME);
-                collationNameProperties.clear();
-                collationNameProperties.load(AkCollatorFactory.class.getResourceAsStream(resourceName));
-            } catch (Exception e) {
-
-            }
-        }
-    }
-
 
 }

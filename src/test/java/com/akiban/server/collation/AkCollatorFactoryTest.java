@@ -37,8 +37,7 @@ import org.junit.Ignore;
 
 import com.ibm.icu.util.ULocale;
 
-@Ignore
-public class CollationFactoryTest {
+public class AkCollatorFactoryTest {
 
     private final static int NTHREADS = 10;
     
@@ -73,5 +72,11 @@ public class CollationFactoryTest {
                 assertTrue("Not unique", array[i] != array[j]);
             }
         }
+    }
+    
+    @Test
+    public void makeMySQLCollator() throws Exception {
+        final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
+        assertEquals("Collector should have correct name", "latin1_swedish_ci(mysql_latin1_swedish_ci)", collator.getName());
     }
 }
