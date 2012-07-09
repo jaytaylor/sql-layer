@@ -105,11 +105,6 @@ public class AkCollatorICU implements AkCollator {
     }
 
     @Override
-    public Collator getCollator() {
-        return collator.get();
-    }
-
-    @Override
     public boolean isCaseSensitive() {
         return collator.get().getStrength() > Collator.SECONDARY;
     }

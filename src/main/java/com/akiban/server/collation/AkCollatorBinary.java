@@ -62,11 +62,6 @@ public class AkCollatorBinary implements AkCollator {
     }
 
     @Override
-    public Collator getCollator() {
-        return null;
-    }
-
-    @Override
     public boolean isCaseSensitive() {
         return true;
     }

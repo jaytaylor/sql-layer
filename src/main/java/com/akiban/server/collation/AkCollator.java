@@ -60,12 +60,6 @@ public interface AkCollator {
     public int compare(String string1, String string2);
 
     /**
-     * @return the underlying Collator instance, or null if there isn't one.
-     */
-
-    public Collator getCollator();
-
-    /**
      * @return whether the underlying collation scheme is case-sensitive
      */
     public boolean isCaseSensitive();

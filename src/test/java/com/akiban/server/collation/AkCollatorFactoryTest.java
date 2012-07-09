@@ -34,18 +34,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
-import com.ibm.icu.util.ULocale;
-
 public class AkCollatorFactoryTest {
 
     private final static int NTHREADS = 10;
     
-    @Test
-    public void getAkCollator() throws Exception {
-        final AkCollator collator = AkCollatorFactory.getAkCollator("sv_se_ci");
-        assertEquals("sv_SE", collator.getCollator().getLocale(ULocale.VALID_LOCALE).getName());
-    }
-    
+   
     @Test
     public void uniquePerThread() throws Exception {
         final AtomicInteger threadIndex = new AtomicInteger();
