@@ -60,7 +60,7 @@ public class DerivedTypesSchema {
         return new FlattenedRowType(this, nextTypeId(), parent, child);
     }
 
-    public synchronized ProjectedRowType newProjectType(List<Expression> columns, List<? extends TInstance> tInstances)
+    public synchronized ProjectedRowType newProjectType(List<? extends Expression> columns, List<? extends TInstance> tInstances)
     {
         return new ProjectedRowType(this, nextTypeId(), columns, tInstances);
     }

@@ -40,6 +40,8 @@ import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 
@@ -63,6 +65,16 @@ public class API
                         Aggregators.aggregatorIds(aggregatorNames, rowType, inputsIndex)
                 )
         );
+    }
+
+    public static Operator aggregate_Partial(Operator inputOperator,
+                                             RowType rowType,
+                                             int inputsIndex,
+                                             List<? extends TAggregator> aggregatorFactories,
+                                             List<? extends TInstance> aggregatorTypes
+                                             )
+    {
+        return new Aggregate_Partial(inputOperator, rowType, inputsIndex, aggregatorFactories, aggregatorTypes);
     }
 
     // Project

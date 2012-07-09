@@ -32,6 +32,7 @@ import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -127,6 +128,7 @@ public class OperatorAssembler extends BaseRule
         List<T> assembleExpressionsA(List<? extends AnnotatedExpression> expressions,
                                      ColumnExpressionToIndex fieldOffsets);
         T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets);
+        Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex, List<String> names);
     }
 
     private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Object>() {
@@ -150,6 +152,12 @@ public class OperatorAssembler extends BaseRule
         @Override
         public Object assembleSubqueryExpression(SubqueryExpression subqueryExpression) {
             return null;
+        }
+
+        @Override
+        public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
+                                           List<String> names) {
+            throw new AssertionError();
         }
     };
 
@@ -195,6 +203,13 @@ public class OperatorAssembler extends BaseRule
             public T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets) {
                 ColumnExpressionContext context = getColumnExpressionContext(fieldOffsets);
                 return expressionAssembler.assembleExpression(expr, context, this);
+            }
+
+            // Assemble an aggregate operator
+            @Override
+            public Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex,
+                                               List<String> names) {
+                return expressionAssembler.assembleAggregates(inputOperator, inputRowType, inputsIndex, names);
             }
 
             protected abstract T existsExpression(Operator operator, RowType outerRowType,
@@ -319,8 +334,7 @@ public class OperatorAssembler extends BaseRule
 
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
             private NewPartialAssembler(RulesContext context) {
-                super(null); // TODO
-                assert false;
+                super(new NewExpressionAssembler(context));
             }
 
             @Override
@@ -1017,10 +1031,9 @@ public class OperatorAssembler extends BaseRule
                              API.SortOption.PRESERVE_DUPLICATES);
                 break;
             }
-            stream.operator = API.aggregate_Partial(stream.operator, stream.rowType, 
-                                                    nkeys,
-                                                    rulesContext.getFunctionsRegistry(),
-                                                    aggregateSource.getAggregateFunctions());
+            PartialAssembler<?> partialAssembler = usePValues ? newPartialAssembler : oldPartialAssembler;
+            stream.operator = partialAssembler.assembleAggregates(stream.operator, stream.rowType, nkeys,
+                    aggregateSource.getAggregateFunctions());
             stream.rowType = stream.operator.rowType();
             stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource,
                                                                stream.rowType);
@@ -1177,7 +1190,7 @@ public class OperatorAssembler extends BaseRule
             List<Expression> oldProjections;
             List<? extends TPreparedExpression> pExpressions;
             if (usePValues) {
-                pExpressions = null; // TODO
+                pExpressions = newPartialAssembler.assembleExpressions(project.getFields(), stream.fieldOffsets);
                 oldProjections = null;
             }
             else {

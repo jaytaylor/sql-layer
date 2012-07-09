@@ -96,11 +96,6 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public OverloadResolutionResult get(String name, List<? extends TClass> inputClasses) {
-            throw new UnsupportedOperationException();
-        }
-
-        @Override
         public TCast cast(TClass source, TClass target) {
             Map<TClass,TCast> map = castMap.get(source);
             if(map != null) {
