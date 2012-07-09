@@ -33,6 +33,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
@@ -56,6 +57,8 @@ import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -108,7 +111,24 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     protected TPreparedExpression assembleCastExpression(CastExpression castExpression,
                                                          ColumnExpressionContext columnContext,
                                                          SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
-        return new TDummyExpression(); // TODO this is totally wrong, but hopefully will get some unit tests passing!
+        ExpressionNode operand = castExpression.getOperand();
+        TPreparedExpression expr = assembleExpression(operand, columnContext, subqueryAssembler);
+        TInstance toType = castExpression.getPreptimeValue().instance();
+        if (toType == null) return expr;
+        if (!toType.equals(operand.getPreptimeValue().instance()))
+        {
+            // Do type conversion.
+            TypeId id = castExpression.getSQLtype().getTypeId();
+            if (id.isIntervalTypeId()) {
+                throw new UnsupportedOperationException(); // TODO
+//                expr = new IntervalCastExpression(expr, id);
+            }
+            else {
+                TCast tcast = overloadResolver.getTCast(operand.getPreptimeValue().instance(), toType);
+                expr = new TCastExpression(expr, tcast, toType);
+            }
+        }
+        return expr;
     }
 
     @Override
