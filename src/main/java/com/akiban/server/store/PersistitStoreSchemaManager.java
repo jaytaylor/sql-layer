@@ -1195,13 +1195,12 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     private static AkibanInformationSchema copyAIS(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS, Writer writer) {
         writer.save(curAIS);
+        AISMerge.copyViews(curAIS, newAIS);
         preserveExtraInfo(newAIS, curAIS);
         return newAIS;
     }
 
     private static void preserveExtraInfo(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS) {
-        AISMerge.copyViews(curAIS, newAIS);
-
         Schema schema = curAIS.getSchema(TableName.INFORMATION_SCHEMA);
         if(schema == null) {
             return;
