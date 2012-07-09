@@ -45,6 +45,12 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.server.types3.pvalue.PValue;
+import com.akiban.server.types3.texpressions.TPreparedBoundField;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -266,13 +272,14 @@ public class Map_NestedLoopsIT extends OperatorITBase
     public void testIndexScanUnderMapNestedLoopsUsedAsInnerLoopOfAnotherMapNestedLoops()
     {
         RowType cidValueRowType = schema.newValuesType(AkType.INT);
+        List<Expression> expressions = Arrays.asList((Expression) new BoundFieldExpression(
+                1,
+                new FieldExpression(cidValueRowType, 0)));
+        List<TPreparedExpression> pExpressions = Arrays.asList((TPreparedExpression) new TPreparedBoundField(
+                cidValueRowType, 1, 0));
         IndexBound cidBound =
             new IndexBound(
-                new RowBasedUnboundExpressions(
-                    customerCidIndexRowType,
-                    Arrays.asList((Expression) new BoundFieldExpression(
-                        1,
-                        new FieldExpression(cidValueRowType, 0)))),
+                new RowBasedUnboundExpressions(customerCidIndexRowType, expressions, pExpressions),
                 new SetColumnSelector(0));
         IndexKeyRange cidRange = IndexKeyRange.bounded(customerCidIndexRowType, cidBound, true, cidBound, true);
         Operator plan =
@@ -301,8 +308,18 @@ public class Map_NestedLoopsIT extends OperatorITBase
 
     private Row intRow(RowType rowType, int x)
     {
-        return new ExpressionRow(rowType, queryContext,
-                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
+        List<Expression> expressions;
+        List<TPreparedExpression> pExpressions;
+        if (Types3Switch.ON) {
+            expressions = null;
+            pExpressions = Arrays.asList((TPreparedExpression) new TPreparedLiteral(
+                    MNumeric.INT.instance(), new PValue(x)));
+        }
+        else {
+            expressions = Arrays.asList((Expression) new LiteralExpression(AkType.INT, x));
+            pExpressions = null;
+        }
+        return new ExpressionRow(rowType, queryContext, expressions, pExpressions);
     }
 
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {

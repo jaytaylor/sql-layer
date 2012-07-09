@@ -599,10 +599,4 @@ public class IndexScanIT extends OperatorITBase
     {
         return String.format("{1,(long)%s,2,(long)%s,3,(long)%s}", cid, oid, iid);
     }
-
-    private Row intRow(RowType rowType, int x)
-    {
-        return new ExpressionRow(rowType, queryContext,
-                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
-    }
 }

@@ -48,7 +48,8 @@ public abstract class BindableRow {
         return of(rowType,  expressions, null);
     }
 
-    public static BindableRow of(RowType rowType, List<? extends Expression> expressions, List<? extends TPreparedExpression> pExpressions) {
+    public static BindableRow of(RowType rowType, List<? extends Expression> expressions,
+                                 List<? extends TPreparedExpression> pExpressions) {
         Iterator<? extends ValueSource> oldVals;
         Iterator<? extends PValueSource> newVals;
         if (pExpressions != null) {
@@ -67,7 +68,7 @@ public abstract class BindableRow {
             ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", expressions.size());
             for (Expression expression : expressions) {
                 if (!expression.isConstant())
-                    return new BindingExpressions(rowType, expressions);
+                    return new BindingExpressions(rowType, expressions, null);
             }
             // all expressions are const; put them into a ImmutableRow
             newVals = null;
@@ -107,15 +108,21 @@ public abstract class BindableRow {
     private static class BindingExpressions extends BindableRow {
         @Override
         public Row bind(QueryContext context) {
-            return new ExpressionRow(rowType, context, expressions);
+            return new ExpressionRow(rowType, context, expressions, pExprs);
         }
 
-        private BindingExpressions(RowType rowType, List<? extends Expression> expressions) {
+        private BindingExpressions(RowType rowType, List<? extends Expression> expressions,
+                                   List<? extends TPreparedExpression> pExprs)
+        {
             this.rowType = rowType;
             this.expressions = expressions;
-            for (Expression expression : expressions) {
-                if (expression.needsRow()) {
-                    throw new IllegalArgumentException("expression " + expression + " needs a row");
+            this.pExprs = pExprs;
+            if (expressions != null) {
+                // TODO do we need an equivalent for pexprs?
+                for (Expression expression : expressions) {
+                    if (expression.needsRow()) {
+                        throw new IllegalArgumentException("expression " + expression + " needs a row");
+                    }
                 }
             }
         }
@@ -129,6 +136,7 @@ public abstract class BindableRow {
         }
 
         private final List<? extends Expression> expressions;
+        private final List<? extends TPreparedExpression> pExprs;
         private final RowType rowType;
     }
 

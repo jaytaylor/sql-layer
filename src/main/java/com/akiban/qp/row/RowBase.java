@@ -29,12 +29,9 @@ package com.akiban.qp.row;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
 
 public interface RowBase extends BoundExpressions
 {
-    PValueSource pvalue(int index);
     RowType rowType();
     HKey hKey();
     HKey ancestorHKey(UserTable table);
