@@ -27,6 +27,7 @@
 package com.akiban.qp.row;
 
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 
 public class ValuesRow extends AbstractRow
@@ -63,7 +64,11 @@ public class ValuesRow extends AbstractRow
     public ValuesRow(RowType rowType, Object... values)
     {
         this.rowType = rowType;
-        this.valuesHolder = new RowValuesHolder(values);
+        AkType[] akTypes = new AkType[rowType.nFields()];
+        for (int i = 0; i < akTypes.length; i++) {
+            akTypes[i] = rowType.typeAt(i);
+        }
+        this.valuesHolder = new RowValuesHolder(values, akTypes);
     }
 
     // Object state
