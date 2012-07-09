@@ -90,11 +90,21 @@ public class OptimizerTestBase extends ASTTransformTestBase
     protected AkibanInformationSchema loadSchema(List<File> ddl) throws Exception {
         AkibanInformationSchema ais = parseSchema(ddl);
         binder = new AISBinder(ais, DEFAULT_SCHEMA);
+        if (!ais.getViews().isEmpty())
+            new TestBinderContext(parser, binder, typeComputer);
         return ais;
     }
 
     protected AkibanInformationSchema loadSchema(File ddl) throws Exception {
         return loadSchema(Collections.singletonList(ddl));
+    }
+
+    protected static class TestBinderContext extends AISBinderContext {
+        public TestBinderContext(SQLParser parser, AISBinder binder, TypeComputer typeComputer) {
+            this.parser = parser;
+            this.defaultSchemaName = DEFAULT_SCHEMA;
+            setBinderAndTypeComputer(binder, typeComputer);
+        }
     }
 
 }

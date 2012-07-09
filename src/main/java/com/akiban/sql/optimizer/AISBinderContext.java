@@ -67,6 +67,7 @@ public class AISBinderContext
         this.defaultSchemaName = defaultSchemaName;
         properties = new Properties();
         properties.put("database", defaultSchemaName);
+        initParser();        
         setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName),
                                  new FunctionsTypeComputer(new FunctionsRegistryImpl()));
     }
@@ -192,6 +193,8 @@ public class AISBinderContext
             ais = view.getAIS();
             properties = view.getDefinitionProperties();
             initParser();
+            if (defaultSchemaName == null)
+                defaultSchemaName = view.getName().getSchemaName();
             setBinderAndTypeComputer(new AISBinder(ais, defaultSchemaName),
                                      parent.typeComputer);
         }

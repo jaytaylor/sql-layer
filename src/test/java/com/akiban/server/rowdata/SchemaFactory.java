@@ -30,11 +30,13 @@ import com.akiban.ais.metamodel.io.AISTarget;
 import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
+import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
@@ -67,8 +69,6 @@ import java.util.Map;
 public class SchemaFactory {
     private final static String DEFAULT_DEFAULT_SCHEMA = "test";
     private final String defaultSchema;
-
-    private AISBinderContext viewBinderContext;
 
     public SchemaFactory() {
         this(DEFAULT_DEFAULT_SCHEMA);
@@ -117,11 +117,8 @@ public class SchemaFactory {
             } else if (stmt instanceof CreateIndexNode) {
                 IndexDDL.createIndex(ddlFunctions, null, defaultSchema, (CreateIndexNode) stmt);
             } else if (stmt instanceof CreateViewNode) {
-                if (viewBinderContext == null) {
-                    viewBinderContext = new AISBinderContext(baseAIS, defaultSchema);
-                }
                 ViewDDL.createView(ddlFunctions, null, defaultSchema, (CreateViewNode) stmt,
-                                   viewBinderContext);
+                                   new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema));
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
@@ -188,8 +185,25 @@ public class SchemaFactory {
         }
 
         @Override
-        public void createView(Session session, View newView) {
-            ais.addView(newView);
+        public void createView(Session session, View view) {
+            AkibanInformationSchema newAIS = AISMerge.copyAIS(ais);
+            View newView = View.create(newAIS,
+                                       view.getName().getSchemaName(),
+                                       view.getName().getTableName(),
+                                       view.getDefinition(),
+                                       view.getDefinitionProperties(),
+                                       view.getTableReferences());
+            for (Column col : view.getColumns()) {
+                Column.create(newView, col.getName(), col.getPosition(),
+                              col.getType(), col.getNullable(),
+                              col.getTypeParameter1(), col.getTypeParameter2(), 
+                              col.getInitialAutoIncrementValue(),
+                              col.getCharsetAndCollation());
+            }
+            newAIS.addView(newView);
+            newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+            newAIS.freeze();
+            ais = newAIS;
         }
 
         @Override

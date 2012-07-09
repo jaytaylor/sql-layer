@@ -64,15 +64,19 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
-        targetAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(targetAIS)).save(primaryAIS);
-        
+        targetAIS = copyAIS(primaryAIS);
         sourceTable = newTable;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
                 setDefaultTreeNames(computeTreeNames(targetAIS));
     }
     
+    public static AkibanInformationSchema copyAIS(AkibanInformationSchema oldAIS) {
+        AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(oldAIS);
+        return newAIS;
+    }
+
     /**
      * Returns the final, updated AkibanInformationSchema. This AIS has been fully 
      * validated and is frozen (no more changes), hence ready for update into the
