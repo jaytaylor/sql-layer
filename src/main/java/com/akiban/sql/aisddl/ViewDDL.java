@@ -49,6 +49,7 @@ import com.akiban.ais.model.Types;
 import com.akiban.ais.model.View;
 
 import java.util.Collection;
+import java.util.Map;
 
 /** DDL operations on Views */
 public class ViewDDL
@@ -79,10 +80,10 @@ public class ViewDDL
         }
         
         AISViewDefinition viewdef = binderContext.getViewDefinition(createView);
-        Collection<Columnar> tableReferences = viewdef.getTableReferences();
+        Map<Columnar,Collection<Column>> tableColumnReferences = viewdef.getTableColumnReferences();
         AISBuilder builder = new AISBuilder();
         builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
-                     binderContext.getParserProperties(schemaName), tableReferences);
+                     binderContext.getParserProperties(schemaName), tableColumnReferences);
         int colpos = 0;
         for (ResultColumn rc : viewdef.getResultColumns()) {
             TableDDL.addColumn(builder, schemaName, viewName, rc.getName(), colpos++,
@@ -90,7 +91,6 @@ public class ViewDDL
         }
         View view = builder.akibanInformationSchema().getView(schemaName, viewName);
         ddlFunctions.createView(session, view);
-        binderContext.addViewDefinition(view, viewdef);
     }
 
     public static void dropView (DDLFunctions ddlFunctions,

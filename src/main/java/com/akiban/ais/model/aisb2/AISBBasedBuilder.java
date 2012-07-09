@@ -28,6 +28,7 @@ package com.akiban.ais.model.aisb2;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
@@ -40,6 +41,7 @@ import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.ais.model.validation.AISValidationResults;
 import com.akiban.ais.model.validation.AISValidations;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -336,7 +338,8 @@ public class AISBBasedBuilder
         @Override
         public NewViewBuilder definition(String definition, Properties properties) {
             aisb.view(schema, userTable,
-                      definition, properties, new HashSet<Columnar>());
+                      definition, properties, 
+                      new HashMap<Columnar,Collection<Column>>());
             return this;
         }
 
@@ -346,14 +349,25 @@ public class AISBBasedBuilder
         }
 
         @Override
-        public NewViewBuilder references(String schema, String table) {
+        public NewViewBuilder references(String schema, String table, String... columns) {
             checkUsable();
             View view = aisb.akibanInformationSchema().getView(this.schema, this.userTable);
-            Columnar ref = aisb.akibanInformationSchema().getColumnar(schema, table);
-            if (ref == null) {
+            Columnar columnar = aisb.akibanInformationSchema().getColumnar(schema, table);
+            if (columnar == null) {
                 throw new NoSuchElementException("no table " + schema + '.' + table);
             }
-            view.getTableReferences().add(ref);
+            Collection<Column> entry = view.getTableColumnReferences().get(columnar);
+            if (entry == null) {
+                entry = new HashSet<Column>();
+                view.getTableColumnReferences().put(columnar, entry);
+            }
+            for (String colname : columns) {
+                Column column = columnar.getColumn(colname);
+                if (column == null) {
+                    throw new NoSuchElementException("no column " + columnar + '.' + colname);
+                }
+                entry.add(column);
+            }
             return this;
         }
 
