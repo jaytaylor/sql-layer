@@ -997,7 +997,8 @@ public class OperatorAssembler extends BaseRule
                         stream = assembleStream(aggregateSource.getInput());
                         // TODO: Could be removed, since aggregate_Partial works as well.
                         stream.operator = API.count_Default(stream.operator, 
-                                                            stream.rowType);
+                                                            stream.rowType,
+                                                            usePValues);
                     }
                     else {
                         stream = new RowStream();

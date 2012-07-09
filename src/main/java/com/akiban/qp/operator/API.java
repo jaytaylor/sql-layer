@@ -429,7 +429,14 @@ public class API
     public static Operator count_Default(Operator input,
                                          RowType countType)
     {
-        return new Count_Default(input, countType);
+        return new Count_Default(input, countType, Types3Switch.ON);
+    }
+
+    public static Operator count_Default(Operator input,
+                                         RowType countType,
+                                         boolean usePValues)
+    {
+        return new Count_Default(input, countType, usePValues);
     }
 
     public static Operator count_TableStatus(RowType tableType)
