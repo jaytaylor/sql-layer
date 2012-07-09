@@ -441,7 +441,13 @@ public class API
 
     public static Operator count_TableStatus(RowType tableType)
     {
-        return new Count_TableStatus(tableType);
+        return count_TableStatus(tableType, Types3Switch.ON);
+    }
+
+
+    public static Operator count_TableStatus(RowType tableType, boolean usePValues)
+    {
+        return new Count_TableStatus(tableType, usePValues);
     }
 
     // Sort
@@ -499,9 +505,15 @@ public class API
 
     // Union
 
-    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType) 
+    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType)
     {
-        return new UnionAll_Default(input1, input1RowType, input2, input2RowType);
+        return unionAll(input1, input1RowType, input2, input2RowType, Types3Switch.ON);
+    }
+
+    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType,
+                                    boolean usePvalues)
+    {
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, usePvalues);
     }
     
     // Intersect

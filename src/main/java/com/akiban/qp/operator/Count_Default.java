@@ -130,8 +130,8 @@ class Count_Default extends Operator
         this.countType = countType;
         this.usePValues = usePValues;
         this.resultType = usePValues
-            ? countType.schema().newValuesType(AkType.LONG)
-            : countType.schema().newValuesType(MNumeric.BIGINT.instance());
+            ? countType.schema().newValuesType(MNumeric.BIGINT.instance())
+            : countType.schema().newValuesType(AkType.LONG);
     }
     
     // Class state

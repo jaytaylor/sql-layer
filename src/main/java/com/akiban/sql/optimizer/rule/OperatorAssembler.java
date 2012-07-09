@@ -129,6 +129,8 @@ public class OperatorAssembler extends BaseRule
                                      ColumnExpressionToIndex fieldOffsets);
         T assembleExpression(ExpressionNode expr, ColumnExpressionToIndex fieldOffsets);
         Operator assembleAggregates(Operator inputOperator, RowType inputRowType, int inputsIndex, List<String> names);
+
+        RowType valuesRowType(ExpressionsSource expressionsSource);
     }
 
     private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Object>() {
@@ -136,6 +138,11 @@ public class OperatorAssembler extends BaseRule
         public List<Object> assembleExpressions(List<ExpressionNode> expressions,
                                                 ColumnExpressionToIndex fieldOffsets) {
             return null;
+        }
+
+        @Override
+        public RowType valuesRowType(ExpressionsSource expressionsSource) {
+            throw new UnsupportedOperationException(); // only the active assembler should be called for this
         }
 
         @Override
@@ -298,6 +305,12 @@ public class OperatorAssembler extends BaseRule
             }
 
             @Override
+            public RowType valuesRowType(ExpressionsSource expressionsSource) {
+                AkType[] types = expressionsSource.getFieldTypes();
+                return schema.newValuesType(types);
+            }
+
+            @Override
             protected Expression existsExpression(Operator operator, RowType outerRowType, RowType innerRowType,
                                                   int bindingPosition) {
                 return new ExistsSubqueryExpression(operator, outerRowType, innerRowType, bindingPosition);
@@ -335,6 +348,12 @@ public class OperatorAssembler extends BaseRule
         private class NewPartialAssembler extends BasePartialAssembler<TPreparedExpression> {
             private NewPartialAssembler(RulesContext context) {
                 super(new NewExpressionAssembler(context));
+            }
+
+            @Override
+            public RowType valuesRowType(ExpressionsSource expressionsSource) {
+                TInstance[] types = expressionsSource.getFieldTInstances();
+                return schema.newValuesType(types);
             }
 
             @Override
@@ -376,6 +395,7 @@ public class OperatorAssembler extends BaseRule
         private boolean usePValues;
         private final PartialAssembler<Expression> oldPartialAssembler;
         private final PartialAssembler<TPreparedExpression> newPartialAssembler;
+        private final PartialAssembler<?> partialAssembler;
 
         public Assembler(PlanContext planContext, boolean usePValues) {
             this.usePValues = usePValues;
@@ -385,10 +405,12 @@ public class OperatorAssembler extends BaseRule
             if (usePValues) {
                 newPartialAssembler = new NewPartialAssembler(rulesContext);
                 oldPartialAssembler = nullAssembler();
+                partialAssembler = newPartialAssembler;
             }
             else {
                 newPartialAssembler = nullAssembler();
                 oldPartialAssembler = new OldPartialAssembler(rulesContext);
+                partialAssembler = oldPartialAssembler;
             }
             computeBindingsOffsets();
         }
@@ -698,7 +720,7 @@ public class OperatorAssembler extends BaseRule
                                                             usePValues);
                     }
                     else {
-                        stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType);
+                        stream.operator = API.unionAll(stream.operator, stream.rowType, scan, indexRowType, usePValues);
                         stream.rowType = stream.operator.rowType();
                     }
                 }
@@ -753,7 +775,7 @@ public class OperatorAssembler extends BaseRule
 
         protected RowStream assembleExpressionsSource(ExpressionsSource expressionsSource) {
             RowStream stream = new RowStream();
-            stream.rowType = valuesRowType(expressionsSource.getFieldTypes());
+            stream.rowType = partialAssembler.valuesRowType(expressionsSource);
             List<BindableRow> bindableRows = new ArrayList<BindableRow>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = oldPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
@@ -1002,7 +1024,7 @@ public class OperatorAssembler extends BaseRule
                     }
                     else {
                         stream = new RowStream();
-                        stream.operator = API.count_TableStatus(tableRowType(aggregateSource.getTable()));
+                        stream.operator = API.count_TableStatus(tableRowType(aggregateSource.getTable()), usePValues);
                     }
                     stream.rowType = stream.operator.rowType();
                     stream.fieldOffsets = new ColumnSourceFieldOffsets(aggregateSource, 
