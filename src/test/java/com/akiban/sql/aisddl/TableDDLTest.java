@@ -51,7 +51,6 @@ import com.akiban.ais.model.UserTable;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.DuplicateIndexException;
-import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.SQLParser;
@@ -80,7 +79,7 @@ public class TableDDLTest {
     }
     
     @Test
-    public void createTableIfNotExistsDoesNotExist() throws StandardException
+    public void createNewTableWihtIfNotExists() throws StandardException
     {
         String sql = "CREATE TABLE IF NOT EXISTS desk (c1 INT)";
         createTableSimpleGenerateAIS();
@@ -90,7 +89,7 @@ public class TableDDLTest {
     }
 
     @Test
-    public void createTableIfNotExistsDoesExist() throws StandardException
+    public void createDuplicateTableWiithIfNotExists() throws StandardException
     {
         String sql = "CREATE TABLE IF NOT EXISTS " + DEFAULT_TABLE + "(c1 INT)";
         createTableSimpleGenerateAIS(); // creates DEFAULT_SCHEMA.DEFAULT_TABLE
