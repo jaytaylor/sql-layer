@@ -528,6 +528,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         if (oldAIS.getView(view.getName()) != null)
             throw new DuplicateViewException(view.getName());
         AkibanInformationSchema newAIS = AISMerge.mergeView(oldAIS, view);
+        preserveExtraInfo(newAIS, oldAIS);
         final String schemaName = view.getName().getSchemaName();
         saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
@@ -1228,7 +1229,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 saveMetaModel(ex, buffer, newAIS, getVolumeForSchemaTree(schema));
             break;
             default:
-                throw new IllegalStateException("Cannon serialize as " + serializationType);
+                throw new IllegalStateException("Cannot serialize as " + serializationType);
         }
     }
 
