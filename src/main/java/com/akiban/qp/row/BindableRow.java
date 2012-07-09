@@ -31,6 +31,9 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 
 import java.util.Collection;
@@ -42,26 +45,61 @@ public abstract class BindableRow {
     // BindableRow class interface
 
     public static BindableRow of(RowType rowType, List<? extends Expression> expressions) {
-        ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", expressions.size());
-        for (Expression expression : expressions) {
-            if (!expression.isConstant())
-                return new BindingExpressions(rowType, expressions);
+        return of(rowType,  expressions, null);
+    }
+
+    public static BindableRow of(RowType rowType, List<? extends Expression> expressions, List<? extends TPreparedExpression> pExpressions) {
+        Iterator<? extends ValueSource> oldVals;
+        Iterator<? extends PValueSource> newVals;
+        if (pExpressions != null) {
+            assert expressions == null : "can't have both style of expressions";
+            ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", pExpressions.size());
+            // TODO build constants
+//        for (TPreparedExpression expression : expressions) {
+//            if (!expression.isConstant())
+//                return new BindingExpressions(rowType, expressions);
+//        }
+            // all expressions are const; put them into a ImmutableRow
+            newVals = new PExpressionEvaluator(pExpressions);
+            oldVals = null;
         }
-        // all expressions are const; put them into a ImmutableRow
-        ImmutableRow holderRow = new ImmutableRow(rowType, new ExpressionEvaluator(expressions));
+        else if (expressions != null) {
+            ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", expressions.size());
+            for (Expression expression : expressions) {
+                if (!expression.isConstant())
+                    return new BindingExpressions(rowType, expressions);
+            }
+            // all expressions are const; put them into a ImmutableRow
+            newVals = null;
+            oldVals =  new ExpressionEvaluator(expressions);
+        }
+        else {
+            throw new AssertionError("both expression types can't be null");
+        }
+        ImmutableRow holderRow = new ImmutableRow(rowType, oldVals, newVals);
         return new Delegating(holderRow);
     }
 
-    public static BindableRow of(Row row) {
-        return new Delegating(strictCopy(row));
+    public static BindableRow of(Row row, boolean usePValues) {
+        return new Delegating(strictCopy(row, usePValues));
     }
 
     // BindableRow instance interface
 
     public abstract Row bind(QueryContext context);
 
-    private static Row strictCopy(Row input) {
-        return new ImmutableRow(input.rowType(), new RowCopier(input));
+    private static Row strictCopy(Row input, boolean usePValues) {
+        RowCopier oldCopier;
+        RowPCopier newCopier;
+        if (usePValues) {
+            newCopier = new RowPCopier(input);
+            oldCopier = null;
+        }
+        else {
+            newCopier = null;
+            oldCopier = new RowCopier(input);
+        }
+        return new ImmutableRow(input.rowType(), oldCopier, newCopier);
     }
 
     // nested classes
@@ -119,6 +157,31 @@ public abstract class BindableRow {
         private int i = 0;
     }
 
+    private static class RowPCopier implements Iterator<PValueSource>  {
+
+        @Override
+        public boolean hasNext() {
+            return i < sourceRow.rowType().nFields();
+        }
+
+        @Override
+        public PValueSource next() {
+            return sourceRow.pvalue(i++);
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        private RowPCopier(Row sourceRow) {
+            this.sourceRow = sourceRow;
+        }
+
+        private final Row sourceRow;
+        private int i = 0;
+    }
+
     private static class ExpressionEvaluator implements Iterator<ValueSource> {
 
         @Override
@@ -138,11 +201,41 @@ public abstract class BindableRow {
             throw new UnsupportedOperationException();
         }
 
-        private ExpressionEvaluator(Collection<? extends Expression> expressions) {
+        private ExpressionEvaluator(Collection<? extends Expression> expressions)
+        {
             this.expressions = expressions.iterator();
         }
 
         private final Iterator<? extends Expression> expressions;
+    }
+
+    private static class PExpressionEvaluator implements Iterator<PValueSource> {
+
+        @Override
+        public boolean hasNext() {
+            return expressions.hasNext();
+        }
+
+        @Override
+        public PValueSource next() {
+            TPreparedExpression expression = expressions.next();
+//            assert expression.isConstant() : "not constant: " + expression; TODO
+            TEvaluatableExpression eval = expression.build();
+            eval.evaluate();
+            return eval.resultValue();
+        }
+
+        @Override
+        public void remove() {
+            throw new UnsupportedOperationException();
+        }
+
+        private PExpressionEvaluator(Collection<? extends TPreparedExpression> expressions)
+        {
+            this.expressions = expressions.iterator();
+        }
+
+        private final Iterator<? extends TPreparedExpression> expressions;
     }
 
     private static class Delegating extends BindableRow {

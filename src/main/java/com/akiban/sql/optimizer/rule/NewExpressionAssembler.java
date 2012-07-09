@@ -38,6 +38,7 @@ import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TComparisonExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
@@ -119,7 +120,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     protected TPreparedExpression compare(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
-        throw new UnsupportedOperationException(); // TODO
+        return new TComparisonExpression(left, comparison, right);
     }
 
     @Override

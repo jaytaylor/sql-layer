@@ -605,12 +605,4 @@ public class IndexScanIT extends OperatorITBase
         return new ExpressionRow(rowType, queryContext,
                                  Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
     }
-
-    private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
-        List<BindableRow> result = new ArrayList<BindableRow>();
-        for (Row row : rows) {
-            result.add(BindableRow.of(row));
-        }
-        return result;
-    }
 }

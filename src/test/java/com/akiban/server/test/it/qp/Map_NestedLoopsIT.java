@@ -44,6 +44,7 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -307,7 +308,7 @@ public class Map_NestedLoopsIT extends OperatorITBase
     private Collection<? extends BindableRow> bindableExpressions(Row... rows) {
         List<BindableRow> result = new ArrayList<BindableRow>();
         for (Row row : rows) {
-            result.add(BindableRow.of(row));
+            result.add(BindableRow.of(row, Types3Switch.ON));
         }
         return result;
     }

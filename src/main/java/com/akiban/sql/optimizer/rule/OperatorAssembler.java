@@ -468,9 +468,8 @@ public class OperatorAssembler extends BaseRule
             if (projectFields != null) {
                 // In the common case, we can project into a wider row
                 // of the correct type directly.
-                inserts = usePValues
-                        ? null
-                        : oldPartialAssembler.assembleExpressions(projectFields, stream.fieldOffsets);
+                insertsP = newPartialAssembler.assembleExpressions(projectFields, stream.fieldOffsets);
+                inserts = oldPartialAssembler.assembleExpressions(projectFields, stream.fieldOffsets);
             }
             else {
                 // VALUES just needs each field, which will get rearranged below.
@@ -519,7 +518,7 @@ public class OperatorAssembler extends BaseRule
                 }
             }
             stream.operator = API.project_Table(stream.operator, stream.rowType,
-                                                targetRowType, inserts, null);
+                                                targetRowType, inserts, insertsP);
             UpdatePlannable plan = API.insert_Default(stream.operator);
             return new PhysicalUpdate(plan, getParameterTypes());
         }
@@ -779,7 +778,8 @@ public class OperatorAssembler extends BaseRule
             List<BindableRow> bindableRows = new ArrayList<BindableRow>();
             for (List<ExpressionNode> exprs : expressionsSource.getExpressions()) {
                 List<Expression> expressions = oldPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
-                bindableRows.add(BindableRow.of(stream.rowType, expressions));
+                List<TPreparedExpression> tExprs = newPartialAssembler.assembleExpressions(exprs, stream.fieldOffsets);
+                bindableRows.add(BindableRow.of(stream.rowType, expressions, tExprs));
             }
             stream.operator = API.valuesScan_Default(bindableRows, stream.rowType);
             stream.fieldOffsets = new ColumnSourceFieldOffsets(expressionsSource, 
