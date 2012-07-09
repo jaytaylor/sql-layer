@@ -35,5 +35,5 @@ public interface NewViewBuilder extends NewUserTableBuilder {
 
     NewViewBuilder references(String table);
 
-    NewViewBuilder references(String schema, String table);
+    NewViewBuilder references(String schema, String table, String... columns);
 }

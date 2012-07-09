@@ -35,10 +35,10 @@ public class View extends Columnar
     public static View create(AkibanInformationSchema ais,
                               String schemaName, String viewName,
                               String definition, Properties definitionProperties,
-                              Collection<Columnar> tableReferences) {
+                              Map<Columnar,Collection<Column>> tableColumnReferences) {
         View view = new View(ais, schemaName, viewName);
         view.setDefinition(definition, definitionProperties);
-        view.setTableReferences(tableReferences);
+        view.setTableColumnReferences(tableColumnReferences);
         ais.addView(view);
         return view;
     }
@@ -66,16 +66,18 @@ public class View extends Columnar
         this.definitionProperties = definitionProperties;
     }
 
-    public Collection<Columnar> getTableReferences() {
-        return tableReferences;
+    public Map<Columnar,Collection<Column>> getTableColumnReferences() {
+        return tableColumnReferences;
     }
 
-    protected void setTableReferences(Collection<Columnar> tableReferences) {
-        this.tableReferences = tableReferences;
+    protected void setTableColumnReferences(Map<Columnar,Collection<Column>> tableColumnReferences) {
+        this.tableColumnReferences = tableColumnReferences;
     }
+
+    // TODO: More convenience.
 
     // State
     private String definition;
     private Properties definitionProperties;
-    private Collection<Columnar> tableReferences;
+    private Map<Columnar,Collection<Column>> tableColumnReferences;
 }

@@ -54,8 +54,10 @@ import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -280,7 +282,7 @@ public class ProtobufReader {
                     pbView.getViewName(),
                     pbView.getDefinition(),
                     loadProperties(pbView.getDefinitionPropertiesList()),
-                    new HashSet<Columnar>()
+                    new HashMap<Columnar,Collection<Column>>()
             );
             loadColumns(view, pbView.getColumnsList());
         }
@@ -289,17 +291,35 @@ public class ProtobufReader {
     private void loadViewReferences(String schema, Collection<AISProtobuf.View> pbViews) {
         for(AISProtobuf.View pbView : pbViews) {
             View view = destAIS.getView(schema, pbView.getViewName());
-            Collection<Columnar> refs = view.getTableReferences();
-            for(AISProtobuf.TableName pbReference : pbView.getReferencesList()) {
-                Columnar ref = destAIS.getColumnar(pbReference.getSchemaName(), pbReference.getTableName());
-                if (ref == null) {
+            Map<Columnar,Collection<Column>> refs = view.getTableColumnReferences();
+            for(AISProtobuf.ColumnReference pbReference : pbView.getReferencesList()) {
+                hasRequiredFields(pbReference);
+                AISProtobuf.TableName pbTable = pbReference.getTable();
+                hasRequiredFields(pbTable);
+                Columnar table = destAIS.getColumnar(pbTable.getSchemaName(), pbTable.getTableName());
+                if (table == null) {
                     throw new ProtobufReadException(
                             pbView.getDescriptorForType().getFullName(),
                             String.format("%s has unknown reference %s.%s", view.getName(),
-                                          pbReference.getSchemaName(), pbReference.getTableName())
+                                          pbTable.getSchemaName(), pbTable.getTableName())
                     );
                 }
-                refs.add(ref);
+                Collection<Column> columns = refs.get(table);
+                if (columns == null) {
+                    columns = new HashSet<Column>();
+                    refs.put(table, columns);
+                }
+                for(String colname : pbReference.getColumnsList()) {
+                    Column column = table.getColumn(colname);
+                    if (column == null) {
+                        throw new ProtobufReadException(
+                                pbView.getDescriptorForType().getFullName(),
+                                String.format("%s has unknown reference %s.%s", view.getName(),
+                                              table, colname)
+                        );
+                    }
+                    columns.add(column);
+                }
             }
         }
     }
@@ -523,6 +543,13 @@ public class ProtobufReader {
     private static void hasRequiredFields(AISProtobuf.Property pbProperty) {
         requireAllFieldsExcept(
                 pbProperty
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.ColumnReference pbReference) {
+        requireAllFieldsExcept(
+                pbReference,
+                AISProtobuf.ColumnReference.COLUMNS_FIELD_NUMBER
         );
     }
 

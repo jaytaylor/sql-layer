@@ -48,6 +48,8 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.MessageLite;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
 public class ProtobufWriter {
     public static interface TableSelector {
@@ -266,11 +268,17 @@ public class ProtobufWriter {
                                                 build());
         }
         
-        for(Columnar ref : view.getTableReferences()) {
-            viewBuilder.addReferences(AISProtobuf.TableName.newBuilder().
-                                      setSchemaName(ref.getName().getSchemaName()).
-                                      setTableName(ref.getName().getTableName()).
-                                      build());
+        for(Map.Entry<Columnar,Collection<Column>> entry : view.getTableColumnReferences().entrySet()) {
+            AISProtobuf.ColumnReference.Builder referenceBuilder = 
+                AISProtobuf.ColumnReference.newBuilder().
+                setTable(AISProtobuf.TableName.newBuilder().
+                         setSchemaName(entry.getKey().getName().getSchemaName()).
+                         setTableName(entry.getKey().getName().getTableName()).
+                         build());
+            for (Column column : entry.getValue()) {
+                referenceBuilder.addColumns(column.getName());
+            }
+            viewBuilder.addReferences(referenceBuilder.build());
         }
 
         schemaBuilder.addViews(viewBuilder.build());

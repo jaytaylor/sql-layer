@@ -37,7 +37,9 @@ import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -75,6 +77,8 @@ public class AISMerge {
     public static AkibanInformationSchema copyAIS(AkibanInformationSchema oldAIS) {
         AkibanInformationSchema newAIS = new AkibanInformationSchema();
         new Writer(new AISTarget(newAIS)).save(oldAIS);
+        // Copy stuff that old serialization didn't handle.
+        copyViews(oldAIS, newAIS);
         return newAIS;
     }
 
@@ -338,21 +342,45 @@ public class AISMerge {
     public static AkibanInformationSchema mergeView(AkibanInformationSchema oldAIS,
                                                     View view) {
         AkibanInformationSchema newAIS = copyAIS(oldAIS);
-        Collection<Columnar> newReferences = new HashSet<Columnar>();
-        for (Columnar oldRef : view.getTableReferences()) {
-            Columnar newRef = newAIS.getColumnar(oldRef.getName());
-            if (newRef == null) {
-                throw new IllegalStateException("Duplicate of " + oldRef + " not found");
+        copyView(oldAIS, newAIS, view);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
+
+    public static void copyViews(AkibanInformationSchema oldAIS, 
+                                 AkibanInformationSchema newAIS) {
+        for (View view : oldAIS.getViews().values()) {
+            copyView(oldAIS, newAIS, view);
+        }
+    }
+
+    public static void copyView(AkibanInformationSchema oldAIS, 
+                                AkibanInformationSchema newAIS,
+                                View oldView) {
+        Map<Columnar,Collection<Column>> newReferences = 
+            new HashMap<Columnar,Collection<Column>>();
+        for (Map.Entry<Columnar,Collection<Column>> entry : oldView.getTableColumnReferences().entrySet()) {
+            Columnar newTable = newAIS.getColumnar(entry.getKey().getName());
+            if (newTable == null) {
+                throw new IllegalStateException("Duplicate of " + entry.getKey() + " not found");
             }
-            newReferences.add(newRef);
+            Collection<Column> newCols = new HashSet<Column>();
+            for (Column oldColumn : entry.getValue()) {
+                Column newColumn = newTable.getColumn(oldColumn.getName());
+                if (newColumn == null) {
+                    throw new IllegalStateException("Duplicate of " + oldColumn + " not found");
+                }
+            }
+            newReferences.put(newTable, newCols);
         }
         View newView = View.create(newAIS,
-                                   view.getName().getSchemaName(),
-                                   view.getName().getTableName(),
-                                   view.getDefinition(),
-                                   view.getDefinitionProperties(),
+                                   oldView.getName().getSchemaName(),
+                                   oldView.getName().getTableName(),
+                                   oldView.getDefinition(),
+                                   oldView.getDefinitionProperties(),
                                    newReferences);
-        for (Column col : view.getColumns()) {
+        for (Column col : oldView.getColumns()) {
             Column.create(newView, col.getName(), col.getPosition(),
                           col.getType(), col.getNullable(),
                           col.getTypeParameter1(), col.getTypeParameter2(), 
@@ -360,8 +388,5 @@ public class AISMerge {
                           col.getCharsetAndCollation());
         }
         newAIS.addView(newView);
-        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
-        newAIS.freeze();
-        return newAIS;
     }
 }
