@@ -365,14 +365,15 @@ public class AISMerge {
             if (newTable == null) {
                 throw new IllegalStateException("Duplicate of " + entry.getKey() + " not found");
             }
-            Collection<Column> newCols = new HashSet<Column>();
+            Collection<Column> newColumns = new HashSet<Column>();
             for (Column oldColumn : entry.getValue()) {
                 Column newColumn = newTable.getColumn(oldColumn.getName());
                 if (newColumn == null) {
                     throw new IllegalStateException("Duplicate of " + oldColumn + " not found");
                 }
+                newColumns.add(newColumn);
             }
-            newReferences.put(newTable, newCols);
+            newReferences.put(newTable, newColumns);
         }
         View newView = View.create(newAIS,
                                    oldView.getName().getSchemaName(),
