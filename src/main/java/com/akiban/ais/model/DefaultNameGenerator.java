@@ -162,13 +162,18 @@ public class DefaultNameGenerator implements NameGenerator {
             pkColNames.add(col.getParent().getName());
             fkColNames.add(col.getChild().getName());
         }
+        return generateJoinName(parentTable, childTable, pkColNames, fkColNames);
+    }
+
+    @Override
+    public String generateJoinName(TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames) {
         String ret = String.format("%s/%s/%s/%s/%s/%s",
-                parentTable.getSchemaName(),
-                parentTable.getTableName(),
-                Strings.join(pkColNames, ","),
-                childTable.getSchemaName(),
-                childTable, // TODO: This shold be getTableName(), but preserve old behavior for test existing output
-                Strings.join(fkColNames, ","));
+                                   parentTable.getSchemaName(),
+                                   parentTable.getTableName(),
+                                   Strings.join(pkColNames, ","),
+                                   childTable.getSchemaName(),
+                                   childTable, // TODO: This shold be getTableName(), but preserve old behavior for test existing output
+                                   Strings.join(fkColNames, ","));
         return ret.toLowerCase().replace(',', '_');
     }
 
