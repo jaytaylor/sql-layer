@@ -20,8 +20,8 @@ ArchitecturesInstallIn64BitMode=x64 ia64
 
 [Tasks]
 Name: "installsvc"; Description: "Run as Windows Service"; Flags: unchecked
-Name: "installsvc\system"; Description: "Run as System account"
-Name: "installsvc\auto"; Description: "Start with Windows"
+Name: "installsvc\system"; Description: "Run as System account"; Flags: unchecked
+Name: "installsvc\auto"; Description: "Start with Windows"; Flags: unchecked
 Name: "start"; Description: "Start now"
 
 [Dirs]
