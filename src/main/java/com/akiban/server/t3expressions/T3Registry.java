@@ -31,14 +31,23 @@ import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.service.FunctionRegistry;
+import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.util.DagChecker;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -70,33 +79,37 @@ public final class T3Registry {
         @Override
         public TCast cast(TClass source, TClass target) {
             TCast result = null;
-            Map<TClass,TCast> castsBySource = castsByTarget.get(target);
-            if (castsBySource != null)
-                result = castsBySource.get(source);
-            if (result == null)
-                throw new AkibanInternalException("no cast defined from " + source + " to " + target);
+            Map<TClass,TCast> castsByTarget = castsBySource.get(source);
+            if (castsByTarget != null)
+                result = castsByTarget.get(target);
             return result;
         }
 
         @Override
         public Set<TClass> stronglyCastableTo(TClass tClass) {
-            Map<TClass, TCast> castsFrom = castsByTarget.get(tClass);
+            Map<TClass, TCast> castsFrom = strongCastsBySource.get(tClass);
             return castsFrom.keySet();
         }
 
         private InternalScalarsRegistry(FunctionRegistry finder) {
-            overloads = new ArrayList<TValidatedOverload>(finder.overloads());
-            Collection<? extends TClass> tClasses = finder.tclasses();
-            castsByTarget = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
+            Set<? extends TClass> tClasses = new HashSet<TClass>(finder.tclasses());
+            castsBySource = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
+
+            // First, define the self casts
+            for (TClass tClass : tClasses) {
+                Map<TClass, TCast> map = new HashMap<TClass, TCast>();
+                map.put(tClass, new SelfCast(tClass));
+                castsBySource.put(tClass, map);
+            }
+
+            // Now the registered casts
             for (TCast cast : finder.casts()) {
                 TClass source = cast.sourceClass();
                 TClass target = cast.targetClass();
-                Map<TClass,TCast> castsBySource_ = castsByTarget.get(target);
-                if (castsBySource_ == null) {
-                    castsBySource_ = new HashMap<TClass, TCast>();
-                    castsByTarget.put(source, castsBySource_);
-                }
-                TCast old = castsBySource_.put(source, cast);
+                if (source.equals(target))
+                    continue; // TODO remove me!
+                Map<TClass,TCast> castsByTarget = castsBySource.get(source);
+                TCast old = castsByTarget.put(target, cast);
                 if (old != null) {
                     logger.error("CAST({} AS {}): {} replaced by {} ", new Object[]{
                             source, target,  old.getClass(), cast.getClass()
@@ -104,16 +117,47 @@ public final class T3Registry {
                     throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
                 }
             }
-            // each TClass is must be
-            for (TClass tClass : tClasses) {
-                Map<TClass, TCast> castsFrom = castsByTarget.get(tClass);
-                if (castsFrom == null || !castsFrom.containsKey(tClass))
-                    throw new AkibanInternalException("no self-cast defined for " + tClass);
-            }
-        }
 
-        private final List<TValidatedOverload> overloads;
-        private final Map<TClass,Map<TClass,TCast>> castsByTarget;
+            strongCastsBySource = createStrongCastsMap(castsBySource);
+            checkDag(strongCastsBySource);
+        }
+        private final Map<TClass,Map<TClass,TCast>> castsBySource;
+        private final Map<TClass,Map<TClass,TCast>> strongCastsBySource;
+    }
+
+    private static void checkDag(final Map<TClass, Map<TClass, TCast>> castsBySource) {
+        DagChecker<TClass> checker = new DagChecker<TClass>() {
+            @Override
+            protected Set<? extends TClass> initialNodes() {
+                return castsBySource.keySet();
+            }
+
+            @Override
+            protected Set<? extends TClass> nodesFrom(TClass starting) {
+                Set<TClass> result = new HashSet<TClass>(castsBySource.get(starting).keySet());
+                result.remove(starting);
+                return result;
+            }
+        };
+        if (!checker.isDag()) {
+            throw new AkibanInternalException("non-DAG detected involving " + checker.getBadNodePath());
+        }
+    }
+
+
+    private static Map<TClass,Map<TClass,TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource) {
+        Map<TClass,Map<TClass,TCast>> result = new HashMap<TClass, Map<TClass, TCast>>();
+        for (Map.Entry<TClass, Map<TClass,TCast>> origEntry : castsBySource.entrySet()) {
+            Map<TClass, TCast> strongs = new HashMap<TClass, TCast>();
+            for (Map.Entry<TClass,TCast> castByTarget : origEntry.getValue().entrySet()) {
+                TCast cast = castByTarget.getValue();
+                if (cast.isAutomatic())
+                    strongs.put(castByTarget.getKey(), cast);
+            }
+            assert ! strongs.isEmpty() : origEntry; // self-casts are strong, so there should be at least one entry
+            result.put(origEntry.getKey(), strongs);
+        }
+        return result;
     }
 
     private static class InternalAggregatesRegistry implements T3AggregatesRegistry {
@@ -145,4 +189,45 @@ public final class T3Registry {
     }
 
     private static final Logger logger = LoggerFactory.getLogger(T3Registry.class);
+
+    private static class SelfCast implements TCast {
+
+        @Override
+        public boolean isAutomatic() {
+            return true;
+        }
+
+        @Override
+        public Constantness constness() {
+            return Constantness.UNKNOWN;
+        }
+
+        @Override
+        public TClass sourceClass() {
+            return tClass;
+        }
+
+        @Override
+        public TClass targetClass() {
+            return tClass;
+        }
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target) {
+            TInstance srcInst = context.inputTInstanceAt(0);
+            TInstance dstInst = context.outputTInstance();
+            tClass.selfCast(context, srcInst, source,  dstInst, target);
+        }
+
+        SelfCast(TClass tClass) {
+            this.tClass = tClass;
+        }
+
+        private final TClass tClass;
+    }
 }
