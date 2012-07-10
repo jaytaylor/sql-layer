@@ -159,12 +159,22 @@ public class TableDDL
     
     private static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn, 
             final String schemaName, final String tableName, int colpos) {
-        DataTypeDescriptor type = cdn.getType();
+        boolean autoIncrement = cdn.isAutoincrementColumn();
+        addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
+                  cdn.getType(), autoIncrement);
+        if (autoIncrement) {
+            builder.userTableInitialAutoIncrement(schemaName, tableName, 
+                                                  cdn.getAutoincrementStart());
+        }
+    }
+
+    protected static void addColumn(final AISBuilder builder, 
+                                    final String schemaName, final String tableName, final String columnName, 
+                                    int colpos, DataTypeDescriptor type, boolean autoIncrement) {
         Long typeParameter1 = null, typeParameter2 = null;
-        
         Type builderType = typeMap.get(type.getTypeId());
         if (builderType == null) {
-            throw new UnsupportedDataTypeException (new TableName(schemaName, tableName), cdn.getColumnName(), type.getTypeName());
+            throw new UnsupportedDataTypeException(new TableName(schemaName, tableName), columnName, type.getTypeName());
         }
         
         if (builderType.nTypeParameters() == 1) {
@@ -179,18 +189,13 @@ public class TableDDL
             charset = type.getCharacterAttributes().getCharacterSet();
             collation = type.getCharacterAttributes().getCollation();
         }
-        builder.column(schemaName, tableName, 
-                cdn.getColumnName(), 
-                Integer.valueOf(colpos), 
-                builderType.name(), 
-                typeParameter1, typeParameter2, 
-                type.isNullable(), 
-                cdn.isAutoincrementColumn(),
-                charset, collation);
-        if (cdn.isAutoincrementColumn()) {
-            builder.userTableInitialAutoIncrement(schemaName, tableName, 
-                    cdn.getAutoincrementStart());
-        }
+        builder.column(schemaName, tableName, columnName, 
+                       Integer.valueOf(colpos), 
+                       builderType.name(), 
+                       typeParameter1, typeParameter2, 
+                       type.isNullable(), 
+                       autoIncrement,
+                       charset, collation);
     }
 
     public static void addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn, 
