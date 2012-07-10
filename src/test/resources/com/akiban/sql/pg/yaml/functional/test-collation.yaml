@@ -10,9 +10,9 @@
 ---
 - Statement: SELECT id FROM t WHERE s = 'Charlie'
 - output_ordered: [[2]]
-#--- Needs collation passed to SortTree's temporary tree.
-#- Statement: SELECT * FROM t ORDER BY s
-#- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, 'Ångström']]
+---
+- Statement: SELECT * FROM t ORDER BY s
+- output: [[0, null], [1, 'alfa'], [3, 'BRAVO'], [2, 'charlie'], [5, 'Zulu'], [4, 'Ångström']]
 ---
 - Statement: CREATE INDEX t_s ON t(s)
 ---
