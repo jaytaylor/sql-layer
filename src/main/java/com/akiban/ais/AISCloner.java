@@ -30,6 +30,9 @@ import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
+import com.akiban.ais.model.Schema;
+import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.AISProtobuf;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
@@ -50,6 +53,16 @@ public class AISCloner {
         AISProtobuf.AkibanInformationSchema pbAIS = writer.save(srcAIS);
         ProtobufReader reader = new ProtobufReader(destAIS, pbAIS.toBuilder());
         reader.loadAIS();
+        // Preserve the memory table factories for any I_S tables
+        Schema schema = destAIS.getSchema(TableName.INFORMATION_SCHEMA);
+        if(schema != null) {
+            for(UserTable newTable : schema.getUserTables().values()) {
+                UserTable oldTable = srcAIS.getUserTable(newTable.getName());
+                if(oldTable != null) {
+                    newTable.setMemoryTableFactory(oldTable.getMemoryTableFactory());
+                }
+            }
+        }
         // TODO: Limp along GroupTables, again. The rest of this can go away when they do.
         AISBuilder builder = new AISBuilder(destAIS);
         builder.basicSchemaIsComplete();

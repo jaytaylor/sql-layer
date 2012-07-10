@@ -813,14 +813,15 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables() throws InvalidOperationException {
-        Set<String> groupNames = new HashSet<String>();
+        // Note: Group names, being derived, can change across DDL. Save root names instead.
+        Set<TableName> groupRoots = new HashSet<TableName>();
         for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
             if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
-                groupNames.add(table.getGroup().getName());
+                groupRoots.add(table.getName());
             }
         }
-        for(String groupName : groupNames) {
-            ddl().dropGroup(session(), groupName);
+        for(TableName groupName : groupRoots) {
+            ddl().dropGroup(session(), getUserTable(groupName).getGroup().getName());
         }
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {

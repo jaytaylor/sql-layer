@@ -41,12 +41,11 @@ import java.util.SortedMap;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicLong;
 
-import com.akiban.ais.metamodel.io.AISTarget;
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.metamodel.io.MessageSource;
 import com.akiban.ais.metamodel.io.MessageTarget;
 import com.akiban.ais.metamodel.io.Reader;
 import com.akiban.ais.metamodel.io.TableSubsetWriter;
-import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AISTableNameChanger;
@@ -57,7 +56,6 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
-import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
@@ -244,7 +242,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         checkTableName(currentName, true, false);
         checkTableName(newName, false, false);
 
-        final AkibanInformationSchema newAIS = copyAIS(getAis());
+        final AkibanInformationSchema newAIS = AISCloner.clone(getAis());
         final UserTable newTable = newAIS.getUserTable(currentName);
         
         AISTableNameChanger nameChanger = new AISTableNameChanger(newTable);
@@ -393,7 +391,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     @Override
     public Collection<Index> createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
         final Set<String> schemas = new HashSet<String>();
-        final AkibanInformationSchema newAIS = copyAIS(getAis());
+        final AkibanInformationSchema newAIS = AISCloner.clone(getAis());
 
         Collection<Index> newIndexes = createIndexes(newAIS, indexesToAdd);
         for(Index index : newIndexes) {
@@ -406,7 +404,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     @Override
     public void dropIndexes(Session session, Collection<Index> indexesToDrop) {
-        final AkibanInformationSchema newAIS = copyAIS(getAis());
+        final AkibanInformationSchema newAIS = AISCloner.clone(getAis());
         final AISBuilder builder = new AISBuilder(newAIS);
         final Set<String> schemas = new HashSet<String>();
 
@@ -533,12 +531,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * @return A completely new AIS.
      */
     private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames) {
-        AkibanInformationSchema newAis = new AkibanInformationSchema();
-        copyAIS(newAis,
+        AkibanInformationSchema newAis = AISCloner.clone(
                 getAis(),
-                new TableSubsetWriter(new AISTarget(newAis)) {
+                new ProtobufWriter.TableSelector() {
                     @Override
-                    public boolean shouldSaveTable(Table table) {
+                    public boolean isSelected(UserTable table) {
                         return !tableNames.contains(table.getName());
                     }
                 }
@@ -1126,7 +1123,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         final TableName newName = newTable.getName();
         checkTableName(newName, false, isInternal);
         AISMerge merge = new AISMerge(getAis(), newTable);
-        preserveExtraInfo(merge.getAIS(), getAis());
         merge.merge();
         UserTable mergedTable = merge.getAIS().getUserTable(newName);
         if(factory != null) {
@@ -1157,35 +1153,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
         if(!shouldExist && tableExists) {
             throw new DuplicateTableNameException(tableName);
-        }
-    }
-
-    private static AkibanInformationSchema copyAIS(AkibanInformationSchema curAIS) {
-        AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        return copyAIS(newAIS, curAIS, new Writer(new AISTarget(newAIS)));
-    }
-
-    private static AkibanInformationSchema copyAIS(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS, Writer writer) {
-        writer.save(curAIS);
-        preserveExtraInfo(newAIS, curAIS);
-        return newAIS;
-    }
-
-    private static void preserveExtraInfo(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS) {
-        Schema schema = curAIS.getSchema(TableName.INFORMATION_SCHEMA);
-        if(schema == null) {
-            return;
-        }
-        for(UserTable table : schema.getUserTables().values()) {
-            UserTable newTable = newAIS.getUserTable(table.getName());
-            if(newTable != null) {
-                if(table.hasMemoryTableFactory()) {
-                    newTable.setMemoryTableFactory(table.getMemoryTableFactory());
-                }
-                if(table.hasVersion()) {
-                    newTable.setVersion(table.getVersion());
-                }
-            }
         }
     }
 
