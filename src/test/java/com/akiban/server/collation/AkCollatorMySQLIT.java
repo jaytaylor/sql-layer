@@ -37,16 +37,13 @@ import java.util.TreeMap;
 
 import org.junit.Test;
 
-import com.akiban.server.test.ApiTestBase;
+import com.akiban.server.test.it.ITBase;
 import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;
 
-public class AkCollatorMySQLTest extends ApiTestBase {
+public class AkCollatorMySQLIT extends ITBase {
 
-    public AkCollatorMySQLTest() {
-        super("");
-    }
 
     /**
      * Sequences generated from MySQL on InnoDB engine using a script like this:

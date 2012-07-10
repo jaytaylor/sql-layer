@@ -47,7 +47,7 @@ import com.ibm.icu.util.ULocale;
  */
 public class AkCollatorFactory {
 
-    private final static Pattern schemaPattern = Pattern.compile("(\\d+):(\\w+)(?:,(\\d+))?");
+    private final static Pattern schemaPattern = Pattern.compile("(\\d+):(\\w+(?:,\\d+)?)");
 
     private final static int MAX_COLLATION_ID = 126;
 
@@ -174,7 +174,7 @@ public class AkCollatorFactory {
                 locale = pieces[0];
                 strength = Integer.parseInt(pieces[1]);
             } catch (Exception e) {
-                throw new IllegalStateException("Malformed property for name " + scheme);
+                throw new IllegalStateException("Malformed property for name " + scheme + ": " + e);
             }
 
             collator = Collator.getInstance(new ULocale(locale));
