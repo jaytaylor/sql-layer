@@ -1422,6 +1422,7 @@ public class OperatorAssembler extends BaseRule
                 }
                 else if (highComparand != null) {
                     highKeys = keys;
+                    highPKeys = pkeys;
                 }
                 if (lowComparand != null) {
                     oldPartialAssembler.assembleExpressionInto(lowComparand, fieldOffsets, lowKeys, lidx);
