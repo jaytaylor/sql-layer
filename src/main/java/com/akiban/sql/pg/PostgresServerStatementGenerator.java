@@ -23,17 +23,28 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.sql.pg;
 
-package com.akiban.server.error;
+import java.util.List;
 
-import com.akiban.ais.model.TableName;
+import com.akiban.sql.parser.AlterServerNode;
+import com.akiban.sql.parser.NodeTypes;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 
-public class UndefinedViewException extends InvalidOperationException {
-    public UndefinedViewException(TableName viewName) {
-        super(ErrorCode.UNDEFINED_VIEW, viewName.getSchemaName(), viewName.getTableName());
+public class PostgresServerStatementGenerator extends
+        PostgresBaseStatementGenerator {
+
+    public PostgresServerStatementGenerator (PostgresServerSession server) {
+    }
+    
+    @Override
+    public PostgresStatement generate(PostgresServerSession server,
+            StatementNode stmt, List<ParameterNode> params, int[] paramTypes) {
+        
+        if (stmt.getNodeType() != NodeTypes.ALTER_SERVER_NODE) 
+            return null;
+        return new PostgresServerStatement ((AlterServerNode)stmt);
     }
 
-    public UndefinedViewException(String schemaName, String viewName) {
-        super(ErrorCode.UNDEFINED_VIEW, schemaName, viewName);
-    }
 }

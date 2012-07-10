@@ -85,6 +85,7 @@ public enum ErrorCode {
         // SubClass 004 - SQL-server rejected establishment of SQL-connection
         // SubClass 006 - connection failure
         // SubClass 007 - transaction resolution unknown    
+    CONNECTION_TERMINATED   ("08", "500", Importance.ERROR, ConnectionTerminatedException.class),
     // Class 09 - triggered action exception
     // Class 0A - feature not supported
     UNSUPPORTED_SQL         ("0A", "500", Importance.ERROR, UnsupportedSQLException.class),

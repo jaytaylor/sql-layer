@@ -159,7 +159,11 @@ public class ServerSchemaTablesServiceImpl
                 if (!sessions.hasNext()) {
                     return null;
                 }
-                int sessionID = sessions.next();
+                int sessionID = 0;
+                do {
+                    sessionID = sessions.next();
+                } while (manager.getServer().getConnection(sessionID) == null);
+                
                 SessionTracer trace = manager.getServer().getConnection(sessionID).getSessionTracer();
                 
                 ValuesRow row = new ValuesRow (rowType,
@@ -167,6 +171,8 @@ public class ServerSchemaTablesServiceImpl
                         trace.getStartTime().getTime(),
                         boolResult(trace.isEnabled()),
                         trace.getCurrentEvents().length > 0 ? trace.getCurrentEvents()[0] : null,
+                        trace.getRemoteAddress(),
+                        trace.getCurrentStatement(),
                         ++rowCounter);
                 ((FromObjectValueSource)row.eval(1)).setExplicitly(trace.getStartTime().getTime()/1000, AkType.TIMESTAMP);
                 return row;
@@ -222,7 +228,9 @@ public class ServerSchemaTablesServiceImpl
             .colBigInt("session_id", false)
             .colTimestamp("start_time", false)
             .colString("instrumentation_enabled", YES_NO_MAX, false)
-            .colString("session_status", DESCRIPTOR_MAX, true);
+            .colString("session_status", DESCRIPTOR_MAX, true)
+            .colString("remote_address", DESCRIPTOR_MAX, true)
+            .colString("last_sql_executed", PATH_MAX, true);
         
         builder.userTable(ERROR_CODES)
             .colString("code", 5, false)
