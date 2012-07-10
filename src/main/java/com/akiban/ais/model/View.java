@@ -35,7 +35,7 @@ public class View extends Columnar
     public static View create(AkibanInformationSchema ais,
                               String schemaName, String viewName,
                               String definition, Properties definitionProperties,
-                              Map<Columnar,Collection<Column>> tableColumnReferences) {
+                              Map<TableName,Collection<String>> tableColumnReferences) {
         View view = new View(ais, schemaName, viewName);
         view.setDefinition(definition, definitionProperties);
         view.setTableColumnReferences(tableColumnReferences);
@@ -66,33 +66,39 @@ public class View extends Columnar
         this.definitionProperties = definitionProperties;
     }
 
-    public Map<Columnar,Collection<Column>> getTableColumnReferences() {
+    public Map<TableName,Collection<String>> getTableColumnReferences() {
         return tableColumnReferences;
     }
 
-    protected void setTableColumnReferences(Map<Columnar,Collection<Column>> tableColumnReferences) {
+    protected void setTableColumnReferences(Map<TableName,Collection<String>> tableColumnReferences) {
         this.tableColumnReferences = tableColumnReferences;
     }
 
-    public Collection<Columnar> getTableReferences() {
+    public Collection<TableName> getTableReferences() {
         return tableColumnReferences.keySet();
     }
 
     public Collection<Column> getTableColumnReferences(Columnar table) {
-        return tableColumnReferences.get(table);
+        Collection<String> colnames = tableColumnReferences.get(table.getName());
+        if (colnames == null) return null;
+        Collection<Column> columns = new HashSet<Column>();
+        for (String colname : colnames) {
+            columns.add(table.getColumn(colname));
+        }
+        return columns;
     }
 
     public boolean referencesTable(Columnar table) {
-        return tableColumnReferences.containsKey(table);
+        return tableColumnReferences.containsKey(table.getName());
     }
 
     public boolean referencesColumn(Column column) {
-        Collection<Column> entry = tableColumnReferences.get(column.getColumnar());
-        return ((entry != null) && entry.contains(column));
+        Collection<String> entry = tableColumnReferences.get(column.getColumnar().getName());
+        return ((entry != null) && entry.contains(column.getName()));
     }
 
     // State
     private String definition;
     private Properties definitionProperties;
-    private Map<Columnar,Collection<Column>> tableColumnReferences;
+    private Map<TableName,Collection<String>> tableColumnReferences;
 }
