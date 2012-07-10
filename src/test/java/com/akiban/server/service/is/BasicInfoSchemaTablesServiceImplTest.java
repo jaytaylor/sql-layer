@@ -44,8 +44,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import static com.akiban.server.types.AkType.*;
@@ -185,6 +188,18 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 index.setTreeName(index.getIndexName().getName() + "_tree");
             }
         }
+
+        {
+        String schema = "test";
+        String view = "voo";
+        Map<TableName,Collection<String>> refs = new HashMap<TableName,Collection<String>>();
+        refs.put(TableName.create(schema, "foo"), Arrays.asList("c1", "c2"));
+        builder.view(schema, view,
+                     "CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo", new Properties(),
+                     refs);
+        builder.column(schema, view, "c1", 0, "DOUBLE", null, null, true, false, null, null);
+        builder.column(schema, view, "c2", 1, "INT", null, null, false, false, null, null);
+        }
     }
 
     private MemoryTableFactory getFactory(TableName name) {
@@ -275,6 +290,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "zap", "pow", "TABLE", LONG, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "zzz", "zzz1", "TABLE", LONG, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "zzz", "zzz2", "TABLE", LONG, "zzz2_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "voo", "VIEW", null, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
@@ -295,10 +311,12 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "zzz", "zzz1", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
                 { "zzz", "zzz2", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
                 { "zzz", "zzz2", "one_id", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "voo", "c1", 0L, "double", true, 8L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "voo", "c2", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 82, skipped);
+        assertEquals("Skipped I_S columns", 83, skipped);
     }
 
     @Test
