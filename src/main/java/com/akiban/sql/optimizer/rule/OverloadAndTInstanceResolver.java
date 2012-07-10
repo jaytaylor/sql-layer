@@ -326,6 +326,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 expression.setLeft(left);
                 expression.setRight(right);
             }
+
             return boolExpr(expression);
         }
 
@@ -395,7 +396,10 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 return expression;
             TInstance instance = targetClass.instance();
             instance.setNullable(expression.getSQLtype().isNullable());
-            return new CastExpression(expression, instance.dataTypeDescriptor(), expression.getSQLsource());
+            CastExpression result
+                    = new CastExpression(expression, instance.dataTypeDescriptor(), expression.getSQLsource());
+            result.setPreptimeValue(new TPreptimeValue(instance));
+            return result;
         }
 
         private static TClass tclass(ExpressionNode operand) {
@@ -471,6 +475,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     }
 
     private static ExpressionNode boolExpr(ExpressionNode expression) {
+        expression.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
         return expression;
     }
 }
