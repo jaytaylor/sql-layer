@@ -23,64 +23,70 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.server.collation;
 
-import com.akiban.server.types.ValueSource;
-import com.persistit.Key;
+/**
+ * TODO: Prototype
+ * 
+ * Represent a String and an ICU4J Collator. Instances can be presented to the
+ * {@link com.persistit.Key#append(Object)} method for encoding because Akiban
+ * Server registers a {@link com.persistit.encoding.KeyRenderer} for this class.
+ * The actual conversion from String to stored bytes is performed by the
+ * Collator.
+ * 
+ * 
+ * @author peter
+ * 
+ */
+public class CString {
 
-public class AkCollatorBinary extends AkCollator {
+    private String string;
 
-    public AkCollatorBinary() {
-        super(AkCollatorFactory.UCS_BINARY, AkCollatorFactory.UCS_BINARY, 0);
+    private int collationId;
+
+    /**
+     * Construct an instance containing the original source string. This
+     * instance may be used for encoding.
+     * 
+     * @param string
+     * @param collator
+     */
+    public CString(final String string, final int collationId) {
+        this.string = string;
+        this.collationId = collationId;
+    }
+    
+    public CString() {
+        
+    }
+
+    public String getString() {
+        return string;
+    }
+
+    /**
+     * @param string
+     *            the string to set
+     */
+    public void setString(String string) {
+        this.string = string;
+    }
+
+    public int getCollationId() {
+        return collationId;
+    }
+
+    /**
+     * @param collationId
+     *            the collationId to set
+     */
+    public void setCollationId(int collationId) {
+        this.collationId = collationId;
     }
     
     @Override
-    public boolean isRecoverable() {
-        return true;
-    }
-
-    @Override
-    public void append(Key key, String value) {
-        key.append(value);
-    }
-
-    @Override
-    public String decode(Key key) {
-        return key.decodeString();
-    }
-
-    /**
-     * Append the given value to the given key.
-     */
-    public byte[] encodeSortKeyBytes(String value) {
-        throw new UnsupportedOperationException("No sort key encoding for binary collation");
-    }
-
-    /**
-     * Recover the value or throw an unsupported exception.
-     */
-    public String decodeSortKeyBytes(byte[] bytes, int index, int length) {
-        throw new UnsupportedOperationException("No sort key encoding for binary collation");
-    }
-
-
-    @Override
-    public int compare(ValueSource value1, ValueSource value2) {
-        return compare(value1.getString(), value2.getString());
-    }
-
-    @Override
-    public int compare(String string1, String string2) {
-        return string1.compareTo(string2);
-    }
-
-    @Override
-    public boolean isCaseSensitive() {
-        return true;
-    }
-
-    @Override
     public String toString() {
-        return getName();
+        return getString();
     }
 }

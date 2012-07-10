@@ -32,6 +32,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import com.ibm.icu.text.Collator;
 import com.ibm.icu.util.ULocale;
@@ -45,6 +47,10 @@ import com.ibm.icu.util.ULocale;
  */
 public class AkCollatorFactory {
 
+    private final static Pattern schemaPattern = Pattern.compile("(\\d+):(\\w+)(?:,(\\d+))?");
+
+    private final static int MAX_COLLATION_ID = 126;
+
     public final static String UCS_BINARY = "UCS_BINARY";
 
     public final static String MYSQL = "mysql_";
@@ -54,6 +60,8 @@ public class AkCollatorFactory {
     private final static Map<String, Collator> sourceMap = new HashMap<String, Collator>();
 
     private final static Map<String, SoftReference<AkCollator>> collatorMap = new ConcurrentHashMap<String, SoftReference<AkCollator>>();
+
+    private final static Map<Integer, SoftReference<AkCollator>> collationIdMap = new ConcurrentHashMap<Integer, SoftReference<AkCollator>>();
 
     public final static boolean COLLATION_ENABLED = Boolean.parseBoolean(System.getProperty("akiban.collation.enabled",
             "true"));
@@ -76,7 +84,6 @@ public class AkCollatorFactory {
     }
 
     /**
-     * 
      * @param name
      * @return an AkCollator
      */
@@ -84,8 +91,12 @@ public class AkCollatorFactory {
         if (!COLLATION_ENABLED || name == null || UCS_BINARY.equalsIgnoreCase(name)) {
             return UCS_BINARY_COLLATOR;
         }
-
-        final String scheme = schemeForName(name);
+        final String idAndScheme = schemeForName(name);
+        final Matcher matcher = schemaPattern.matcher(idAndScheme);
+        if (!matcher.matches()) {
+            throw new IllegalArgumentException("collation name " + name + " has malformed value " + idAndScheme);
+        }
+        final String scheme = matcher.group(2);
         if (scheme.startsWith(UCS_BINARY)) {
             return UCS_BINARY_COLLATOR;
         }
@@ -97,19 +108,35 @@ public class AkCollatorFactory {
                 return akCollator;
             }
         }
-        /*
-         * Note that another thread may win a race here, but it doesn't matter.
-         * The result is that there will be an AkCollator in the map which is
-         * sufficient.
-         */
-        final AkCollator akCollator;
-        if (scheme.startsWith(MYSQL)) {
-            akCollator = new AkCollatorMySQL(name, scheme, collationNameProperties.getProperty(scheme));
-        } else {
-            akCollator = new AkCollatorICU(name, scheme);
+
+        synchronized (collatorMap) {
+            final int collationId;
+            try {
+                collationId = Integer.parseInt(matcher.group(1));
+                if (collationId < 0 || collationId > MAX_COLLATION_ID) {
+                    throw new IllegalArgumentException("collation name " + name + " has invalid ID " + collationId);
+                }
+            } catch (Exception e) {
+                throw new IllegalArgumentException("collation name " + name + " has malformed value " + idAndScheme);
+            }
+            
+            final AkCollator akCollator;
+            if (scheme.startsWith(MYSQL)) {
+                akCollator = new AkCollatorMySQL(name, scheme, collationId, collationNameProperties.getProperty(scheme));
+            } else {
+                akCollator = new AkCollatorICU(name, scheme, collationId);
+            }
+
+            ref = new SoftReference<AkCollator>(akCollator);
+            collatorMap.put(name, ref);
+            collationIdMap.put(collationId, ref);
+            return akCollator;
         }
-        collatorMap.put(name, new SoftReference<AkCollator>(akCollator));
-        return akCollator;
+    }
+
+    public static AkCollator getAkCollator(final int collatorId) {
+        final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
+        return ref == null ? null : ref.get();
     }
 
     /**

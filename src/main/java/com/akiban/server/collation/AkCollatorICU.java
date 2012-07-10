@@ -29,19 +29,11 @@ import com.akiban.server.types.ValueSource;
 import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 
-public class AkCollatorICU implements AkCollator {
-    /*
-     * TODO - reserve this in the Persistit Key class.
-     */
-    private final static byte TYPE_COLLATED_STRING = 127;
-
-    private final String collatorName;
-
-    private final String collatorScheme;
+public class AkCollatorICU extends AkCollator {
 
     ThreadLocal<Collator> collator = new ThreadLocal<Collator>() {
         protected Collator initialValue() {
-            return AkCollatorFactory.forScheme(collatorScheme);
+            return AkCollatorFactory.forScheme(getScheme());
         }
     };
 
@@ -56,14 +48,8 @@ public class AkCollatorICU implements AkCollator {
      *            Formatted string containing Locale name, and collation string
      *            strength.
      */
-    AkCollatorICU(final String name, final String scheme) {
-        this.collatorName = name;
-        this.collatorScheme = scheme;
-    }
-
-    @Override
-    public String getName() {
-        return collatorName;
+    AkCollatorICU(final String name, final String scheme, final int collationId) {
+        super(name, scheme, collationId);
     }
 
     @Override
@@ -76,17 +62,26 @@ public class AkCollatorICU implements AkCollator {
         if (value == null) {
             key.append(null);
         } else {
-            byte[] sortBytes = collator.get().getCollationKey(value).toByteArray();
-            byte[] keyBytes = key.getEncodedBytes();
-            int size = key.getEncodedSize();
-            if (size + sortBytes.length > key.getMaximumSize() + 1) {
-                throw new IllegalArgumentException("Too long: " + size + sortBytes.length);
-            }
-            assert verifySortByteZeroes(sortBytes) : "ICU4J is expected to return a zero-terminated sort key";
-            keyBytes[size] = TYPE_COLLATED_STRING;
-            System.arraycopy(sortBytes, 0, keyBytes, size + 1, sortBytes.length);
-            key.setEncodedSize(size + sortBytes.length + 1);
+            key.append(new CString(value, getCollationId()));
         }
+    }
+
+    /**
+     * Construct the sort key bytes for the given String value
+     * 
+     * @param value
+     *            the String
+     * @return sort key bytes, last byte only is zero
+     */
+    public byte[] encodeSortKeyBytes(String value) {
+        return collator.get().getCollationKey(value).toByteArray();
+    }
+
+    /**
+     * Recover the value or throw an unsupported exception.
+     */
+    public String decodeSortKeyBytes(byte[] bytes, int index, int length) {
+        throw new UnsupportedOperationException("Unable to decode ICU4J sort key");
     }
 
     @Override
@@ -109,20 +104,4 @@ public class AkCollatorICU implements AkCollator {
         return collator.get().getStrength() > Collator.SECONDARY;
     }
 
-    private boolean verifySortByteZeroes(final byte[] a) {
-        for (int index = 0; index < a.length - 1; index++) {
-            if (a[index] == 0) {
-                return false;
-            }
-        }
-        if (a[a.length - 1] != 0) {
-            return false;
-        }
-        return true;
-    }
-
-    @Override
-    public String toString() {
-        return collatorName + "(" + collatorScheme + ")";
-    }
 }

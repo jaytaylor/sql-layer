@@ -26,41 +26,98 @@
 package com.akiban.server.collation;
 
 import com.akiban.server.types.ValueSource;
-import com.ibm.icu.text.Collator;
 import com.persistit.Key;
 
-public interface AkCollator {
-    /** Get the name of this collator. */
-    public String getName();
+public abstract class AkCollator {
+
+    private final String collatorName;
+
+    private final String collatorScheme;
+
+    private final int collationId;
+
+    protected AkCollator(final String collatorName, final String collatorScheme, final int collationId) {
+        this.collatorName = collatorName;
+        this.collatorScheme = collatorScheme;
+        this.collationId = collationId;
+    }
 
     /**
      * @return true if this collator is capable of recovering the key string
      *         from a key segment.
      */
-    public boolean isRecoverable();
+    abstract public boolean isRecoverable();
 
     /**
-     * Append the given value to the given key.
+     * Append a String to a Key
+     * 
+     * @param key
+     * @param value
      */
-    public void append(Key key, String value);
+    abstract public void append(Key key, String value);
+
+    /**
+     * Decode a String from a Key segment
+     * 
+     * @param key
+     * @return the decoded String
+     */
+    abstract public String decode(Key key);
+
+    /**
+     * Construct the sort key bytes for the given String value
+     * 
+     * @param value
+     *            the String
+     * @return sort key bytes, last byte only must be zero
+     */
+    abstract public byte[] encodeSortKeyBytes(String value);
 
     /**
      * Recover the value or throw an unsupported exception.
+     * 
+     * @param bytes
+     *            the sort key bytes
+     * @param index
+     *            index within array of first sorted key byte
+     * @param length
+     *            number of sorted key bytes
+     * @return the decoded String value
+     * @throws UnsupportedOperationException
+     *             if unable to decode sort keys
      */
-    public String decode(Key key);
+    abstract public String decodeSortKeyBytes(byte[] bytes, int index, int length);
 
     /**
      * Compare two string values: Comparable<ValueSource>
      */
-    public int compare(ValueSource value1, ValueSource value2);
+    abstract public int compare(ValueSource value1, ValueSource value2);
 
     /**
      * Compare two string objects: Comparable<String>
      */
-    public int compare(String string1, String string2);
+    abstract public int compare(String string1, String string2);
 
     /**
      * @return whether the underlying collation scheme is case-sensitive
      */
-    public boolean isCaseSensitive();
+    abstract public boolean isCaseSensitive();
+
+    @Override
+    public String toString() {
+        return collatorName + "(" + collatorScheme + ")";
+    }
+
+    public int getCollationId() {
+        return collationId;
+    }
+
+    public String getName() {
+        return collatorName;
+    }
+
+    public String getScheme() {
+        return collatorScheme;
+    }
+
 }
