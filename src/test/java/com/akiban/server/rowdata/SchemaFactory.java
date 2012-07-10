@@ -34,6 +34,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
@@ -173,6 +174,16 @@ public class SchemaFactory {
 
         @Override
         public void dropTable(Session session, TableName tableName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createView(Session session, View view) {
+            ais = AISMerge.mergeView(ais, view);
+        }
+
+        @Override
+        public void dropView(Session session, TableName viewName) {
             throw new UnsupportedOperationException();
         }
 

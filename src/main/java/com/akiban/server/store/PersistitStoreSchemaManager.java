@@ -59,6 +59,7 @@ import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
@@ -67,6 +68,7 @@ import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
@@ -78,6 +80,7 @@ import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
 import com.akiban.server.error.TableNotInGroupException;
+import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
@@ -516,6 +519,30 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             }
         }
         return result;
+    }
+
+    @Override
+    public void createView(Session session, View view) {
+        final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(view.getName(), false);
+        if (oldAIS.getView(view.getName()) != null)
+            throw new DuplicateViewException(view.getName());
+        AkibanInformationSchema newAIS = AISMerge.mergeView(oldAIS, view);
+        preserveExtraInfo(newAIS, oldAIS);
+        final String schemaName = view.getName().getSchemaName();
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+    }
+    
+    @Override
+    public void dropView(Session session, TableName viewName) {
+        final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(viewName, false);
+        if (oldAIS.getView(viewName) == null)
+            throw new UndefinedViewException(viewName);
+        final AkibanInformationSchema newAIS = copyAIS(oldAIS);
+        newAIS.removeView(viewName);
+        final String schemaName = viewName.getSchemaName();
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
     }
 
     @Override
@@ -1168,6 +1195,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
     private static AkibanInformationSchema copyAIS(AkibanInformationSchema newAIS, AkibanInformationSchema curAIS, Writer writer) {
         writer.save(curAIS);
+        AISMerge.copyViews(curAIS, newAIS);
         preserveExtraInfo(newAIS, curAIS);
         return newAIS;
     }
@@ -1202,7 +1230,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 saveMetaModel(ex, buffer, newAIS, getVolumeForSchemaTree(schema));
             break;
             default:
-                throw new IllegalStateException("Cannon serialize as " + serializationType);
+                throw new IllegalStateException("Cannot serialize as " + serializationType);
         }
     }
 

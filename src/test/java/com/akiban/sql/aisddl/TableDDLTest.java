@@ -48,6 +48,7 @@ import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.DuplicateIndexException;
@@ -302,6 +303,16 @@ public class TableDDLTest {
         @Override
         public void dropGroupIndexes(Session session, String groupName,
                 Collection<String> indexesToDrop) {}
+
+        @Override
+        public void createView(Session session, View newView) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropView(Session session, TableName viewName) {
+            throw new UnsupportedOperationException();
+        }
 
         @Override
         public void dropSchema(Session session, String schemaName) {}

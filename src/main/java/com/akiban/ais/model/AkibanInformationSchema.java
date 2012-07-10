@@ -623,6 +623,14 @@ public class AkibanInformationSchema implements Traversable
         invalidateTableIdMap();
     }
 
+    public void removeView(TableName name) {
+        views.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeTable(name.getTableName());
+        }
+    }
+
     // State
 
     private static String defaultCharset = "utf8";
