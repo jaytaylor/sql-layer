@@ -36,6 +36,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Schema;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 
@@ -171,6 +172,11 @@ public class ProtobufWriter {
                 writeTable(schemaBuilder, table);
                 isEmpty = false;
             }
+        }
+        
+        for (Sequence sequence : schema.getSequences().values()) {
+            writeSequence(schemaBuilder, sequence);
+            isEmpty = false;
         }
 
         if(!isEmpty) {
@@ -323,5 +329,19 @@ public class ProtobufWriter {
                 setCharacterSetName(charAndColl.charset()).
                 setCollationOrderName(charAndColl.collation()).
                 build();
+    }
+    
+    private static void writeSequence (AISProtobuf.Schema.Builder schemaBuilder, Sequence sequence) {
+        AISProtobuf.Sequence.Builder sequenceBuilder = AISProtobuf.Sequence.newBuilder()
+                .setSequenceName(sequence.getSequenceName().getTableName())
+                .setStart(sequence.getStartsWith())
+                .setIncrement(sequence.getIncrement())
+                .setMinValue(sequence.getMinValue())
+                .setMaxValue(sequence.getMaxValue())
+                .setIsCycle(sequence.isCycle());
+        if (sequence.getTreeName() != null) {
+            sequenceBuilder.setTreeName(sequence.getTreeName()).setAccumulator(sequence.getAccumIndex());
+        }
+        schemaBuilder.addSequences (sequenceBuilder.build());
     }
 }

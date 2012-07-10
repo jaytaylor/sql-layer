@@ -23,40 +23,13 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
-package com.akiban.ais.model.aisb2;
+package com.akiban.server.error;
 
 import com.akiban.ais.model.TableName;
 
-public interface NewAISBuilder extends NewAISProvider {
-    /**
-     * Sets the default schema
-     * @param schema the new default schema name; like SQL's {@code USING}.
-     * @return {@code this}
-     */
-    NewAISBuilder defaultSchema(String schema);
+public class DuplicateSequenceNameException extends InvalidOperationException {
 
-    /**
-     * Starts creating a new table using the default schema.
-     * @param table the table's name
-     * @return the new table's builder
-     */
-    NewUserTableBuilder userTable(String table);
-
-    /**
-     * Starts creating a new table using the given schema
-     * @param schema the new table's schema
-     * @param table the new table's table name
-     * @return the new table's builder
-     */
-    NewUserTableBuilder userTable(String schema, String table);
-
-    NewUserTableBuilder userTable(TableName tableName);
-    
-    /**
-     * create a new sequence
-     * The 
-     */
-    NewAISBuilder sequence (String name);
-    NewAISBuilder sequence (String name, long start, long increment, boolean isCycle);
+    public DuplicateSequenceNameException(TableName name) {
+        super(ErrorCode.DUPLICATE_SEQUENCE, name.getSchemaName(), name.getTableName());
+    }
 }

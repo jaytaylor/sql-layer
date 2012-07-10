@@ -38,6 +38,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -142,6 +143,8 @@ public class ProtobufReader {
 
             // Requires no tables, does not load indexes
             loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
+            
+            loadSequences (pbSchema.getSchemaName(), pbSchema.getSequencesList());
         }
 
         // Assume no ordering of schemas or tables, load joins second
@@ -229,6 +232,27 @@ public class ProtobufReader {
             }
             loadColumns(userTable, pbTable.getColumnsList());
             loadTableIndexes(userTable, pbTable.getIndexesList());
+        }
+    }
+    
+    private void loadSequences (String schema, Collection<AISProtobuf.Sequence> pbSequences) {
+        for (AISProtobuf.Sequence pbSequence : pbSequences) {
+            hasRequiredFields(pbSequence);
+            Sequence sequence = Sequence.create(
+                    destAIS, 
+                    schema,
+                    pbSequence.getSequenceName(),
+                    pbSequence.getStart(),
+                    pbSequence.getIncrement(),
+                    pbSequence.getMinValue(),
+                    pbSequence.getMaxValue(),
+                    pbSequence.getIsCycle());
+            if (pbSequence.hasTreeName() ) {
+                sequence.setTreeName(pbSequence.getTreeName());
+            }
+            if (pbSequence.hasAccumulator()) {
+                sequence.setAccumIndex(pbSequence.getAccumulator());
+            }
         }
     }
 
@@ -407,7 +431,8 @@ public class ProtobufReader {
                 pbSchema,
                 AISProtobuf.Schema.TABLES_FIELD_NUMBER,
                 AISProtobuf.Schema.GROUPS_FIELD_NUMBER,
-                AISProtobuf.Schema.CHARCOLL_FIELD_NUMBER
+                AISProtobuf.Schema.CHARCOLL_FIELD_NUMBER,
+                AISProtobuf.Schema.SEQUENCES_FIELD_NUMBER
         );
     }
 
@@ -459,7 +484,15 @@ public class ProtobufReader {
                 AISProtobuf.IndexColumn.TABLENAME_FIELD_NUMBER
         );
     }
-
+    
+    private static void hasRequiredFields (AISProtobuf.Sequence pbSequence) {
+        requireAllFieldsExcept(
+                pbSequence,
+                AISProtobuf.Sequence.TREENAME_FIELD_NUMBER,
+                AISProtobuf.Sequence.ACCUMULATOR_FIELD_NUMBER
+        );
+    }
+    
     private static void requireAllFieldsExcept(AbstractMessage message, int... fieldNumbersNotRequired) {
         Collection<Descriptors.FieldDescriptor> required = new ArrayList<Descriptors.FieldDescriptor>(message.getDescriptorForType().getFields());
         Collection<Descriptors.FieldDescriptor> actual = message.getAllFields().keySet();

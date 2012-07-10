@@ -35,6 +35,7 @@ import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateGroupNameException;
 import com.akiban.server.error.DuplicateIndexColumnException;
 import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NameIsNullException;
 
@@ -56,6 +57,13 @@ public class AISInvariants {
     {
         if (ais.getTable(schemaName, tableName) != null) {
             throw new DuplicateTableNameException (new TableName(schemaName, tableName));
+        }
+    }
+    
+    public static void checkDuplicateSequence(AkibanInformationSchema ais, String schemaName, String sequenceName)
+    {
+        if (ais.getSequence(new TableName (schemaName, sequenceName)) != null) {
+            throw new DuplicateSequenceNameException (new TableName(schemaName, sequenceName));
         }
     }
     
