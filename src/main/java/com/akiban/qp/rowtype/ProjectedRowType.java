@@ -48,7 +48,7 @@ public class ProjectedRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return projections.size();
+        return projections == null ? tInstances.size() : projections.size();
     }
 
     @Override

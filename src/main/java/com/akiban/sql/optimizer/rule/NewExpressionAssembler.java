@@ -27,30 +27,79 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.collation.AkCollator;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedField;
+import com.akiban.server.types3.texpressions.TPreparedFunction;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
+import com.akiban.sql.optimizer.plan.FunctionExpression;
+import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedExpression> {
+    private static final Logger logger = LoggerFactory.getLogger(NewExpressionAssembler.class);
+
+    private static final TValidatedOverload ifElseValidated = new TValidatedOverload(AkIfElse.INSTANCE);
+
+    private OverloadResolver overloadResolver;
+
+    public NewExpressionAssembler(RulesContext rulesContext) {
+        this.overloadResolver = ((SchemaRulesContext)rulesContext).getOverloadResolver();
+    }
+
     @Override
     protected TPreparedExpression assembleFunction(ExpressionNode functionNode, String functionName,
                                                    List<ExpressionNode> argumentNodes,
                                                    ColumnExpressionContext columnContext,
                                                    SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
-        throw new UnsupportedOperationException(); // TODO
-    }
 
-    @Override
-    protected TPreparedExpression assembleColumnExpression(ColumnExpression column,
-                                                           ColumnExpressionContext columnContext) {
-        throw new UnsupportedOperationException(); // TODO
+        List<TPreparedExpression> arguments = assembleExpressions(argumentNodes, columnContext, subqueryAssembler);
+        TValidatedOverload overload;
+        if (functionNode instanceof FunctionExpression) {
+            FunctionExpression fexpr = (FunctionExpression) functionNode;
+            overload = fexpr.getOverload();
+        }
+        else if (functionNode instanceof BooleanOperationExpression) {
+            BooleanOperationExpression bexpr = (BooleanOperationExpression) functionNode;
+            List<TPreptimeValue> inputPreptimeValues = new ArrayList<TPreptimeValue>(argumentNodes.size());
+            for (ExpressionNode argument : argumentNodes) {
+                inputPreptimeValues.add(argument.getPreptimeValue());
+            }
+            OverloadResult overloadResult = overloadResolver.get(functionName, inputPreptimeValues);
+            overload = overloadResult.getOverload();
+        }
+        else if (functionNode instanceof IfElseExpression) {
+            overload = ifElseValidated;
+        }
+        else {
+            throw new AssertionError(functionNode);
+        }
+        TInstance resultInstance = functionNode.getPreptimeValue().instance();
+        return new TPreparedFunction(overload, resultInstance, arguments);
     }
 
     @Override
@@ -61,15 +110,9 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     }
 
     @Override
-    protected List<TPreparedExpression> assembleExpressions(List<ExpressionNode> expressions,
-                                                            ColumnExpressionContext columnContext,
-                                                            SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
-    @Override
     protected TPreparedExpression literal(ConstantExpression expression) {
-        throw new UnsupportedOperationException(); // TODO
+        TPreptimeValue ptval = expression.getPreptimeValue();
+        return new TPreparedLiteral(ptval.instance(), ptval.value());
     }
 
     @Override
@@ -95,5 +138,42 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     @Override
     protected TPreparedExpression in(TPreparedExpression lhs, List<TPreparedExpression> rhs) {
         throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected TPreparedExpression assembleFieldExpression(RowType rowType, int fieldIndex) {
+        return new TPreparedField(rowType.typeInstanceAt(fieldIndex), fieldIndex);
+    }
+
+    @Override
+    protected TPreparedExpression assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex) {
+        return new TPreparedBoundField(rowType, rowIndex, fieldIndex);
+    }
+
+    @Override
+    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names) {
+        int naggrs = names.size();
+        List<TAggregator> aggregators = new ArrayList<TAggregator>(naggrs);
+        List<TInstance> outputInstances = new ArrayList<TInstance>(naggrs);
+        for (int i = 0; i < naggrs; ++i) {
+            int inputIndex = nkeys + i;
+            TInstance inputInstance = rowType.typeInstanceAt(inputIndex);
+            TAggregator aggr = overloadResolver.getAggregation(names.get(i), inputInstance.typeClass());
+            TPreptimeValue preptimeValue = new TPreptimeValue(inputInstance);
+            TInstance outputInstance = aggr.resultType(preptimeValue);
+            aggregators.add(aggr);
+            outputInstances.add(outputInstance);
+        }
+        return API.aggregate_Partial(
+                inputOperator,
+                rowType,
+                nkeys,
+                aggregators,
+                outputInstances);
+    }
+
+    @Override
+    protected Logger logger() {
+        return logger;
     }
 }

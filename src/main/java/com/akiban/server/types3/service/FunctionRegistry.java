@@ -28,7 +28,5 @@ package com.akiban.server.types3.service;
 
 public interface FunctionRegistry extends ExpressionRegistry
 {
-    public static enum FunctionKind {SCALAR, AGGREGATE}
-    
-    public FunctionKind getFunctionKind(String name);
+    // TODO merge this with ExpressionRegistry
 }

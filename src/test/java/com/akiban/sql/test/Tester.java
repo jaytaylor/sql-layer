@@ -202,7 +202,7 @@ public class Tester
     public void addView(String sql) throws Exception {
         ViewDefinition view = new ViewDefinition(sql, parser);
         if (binder != null)
-            binder.addView(view);
+            binder.getContext().addView(view);
         if (operatorCompiler != null)
             operatorCompiler.addView(view);
     }

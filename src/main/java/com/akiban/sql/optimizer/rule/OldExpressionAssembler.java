@@ -26,7 +26,11 @@
 
 package com.akiban.sql.optimizer.rule;
 
+
 import com.akiban.server.collation.AkCollator;
+import com.akiban.qp.operator.API;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.InExpression;
@@ -88,31 +92,6 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     }
 
     @Override
-    protected Expression assembleColumnExpression(ColumnExpression column,
-                                               ColumnExpressionContext columnContext) {
-        ColumnExpressionToIndex currentRow = columnContext.getCurrentRow();
-        if (currentRow != null) {
-            int fieldIndex = currentRow.getIndex(column);
-            if (fieldIndex >= 0)
-                return field(currentRow.getRowType(), fieldIndex);
-        }
-        
-        List<ColumnExpressionToIndex> boundRows = columnContext.getBoundRows();
-        for (int rowIndex = boundRows.size() - 1; rowIndex >= 0; rowIndex--) {
-            ColumnExpressionToIndex boundRow = boundRows.get(rowIndex);
-            if (boundRow == null) continue;
-            int fieldIndex = boundRow.getIndex(column);
-            if (fieldIndex >= 0) {
-                rowIndex += columnContext.getLoopBindingsOffset();
-                return boundField(boundRow.getRowType(), rowIndex, fieldIndex);
-            }
-        }
-        logger.debug("Did not find {} from {} in {}", 
-                     new Object[] { column, column.getTable(), boundRows });
-        throw new AkibanInternalException("Column not found " + column);
-    }
-
-    @Override
     protected Expression assembleCastExpression(CastExpression castExpression,
                                                 ColumnExpressionContext columnContext,
                                                 SubqueryOperatorAssembler<Expression> subqueryAssembler) {
@@ -154,17 +133,6 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
             break;
         }
         return expr;
-    }
-
-    @Override
-    protected List<Expression> assembleExpressions(List<ExpressionNode> expressions,
-                                                   ColumnExpressionContext columnContext,
-                                                   SubqueryOperatorAssembler<Expression> subqueryAssembler) {
-        List<Expression> result = new ArrayList<Expression>(expressions.size());
-        for (ExpressionNode expr : expressions) {
-            result.add(assembleExpression(expr, columnContext, subqueryAssembler));
-        }
-        return result;
     }
 
     public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
@@ -221,5 +189,30 @@ public class OldExpressionAssembler extends ExpressionAssembler<Expression>
     @Override
     protected Expression in(Expression lhs, List<Expression> rhs) {
         return new InExpression(lhs, rhs);
+    }
+
+    @Override
+    protected Expression assembleFieldExpression(RowType rowType, int fieldIndex) {
+        return field(rowType, fieldIndex);
+    }
+
+    @Override
+    protected Expression assembleBoundFieldExpression(RowType rowType, int rowIndex, int fieldIndex) {
+        return boundField(rowType, rowIndex, fieldIndex);
+    }
+
+    @Override
+    public Operator assembleAggregates(Operator inputOperator, RowType rowType, int nkeys, List<String> names) {
+        return API.aggregate_Partial(
+                inputOperator,
+                rowType,
+                nkeys,
+                functionsRegistry,
+                names);
+    }
+
+    @Override
+    protected Logger logger() {
+        return logger;
     }
 }
