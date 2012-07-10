@@ -26,7 +26,6 @@
 
 package com.akiban.qp.rowtype;
 
-import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
@@ -53,12 +52,6 @@ public class ValuesRowType extends DerivedRowType
     @Override
     public AkType typeAt(int index) {
         return types[index];
-    }
-
-    @Override
-    public AkCollator collatorAt(int index) {
-        // TODO - probably incorrect
-        return null;
     }
 
     @Override
