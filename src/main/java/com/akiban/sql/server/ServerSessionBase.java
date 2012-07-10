@@ -36,6 +36,7 @@ import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
 
@@ -204,6 +205,11 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     @Override
     public FunctionsRegistry functionsRegistry() {
         return reqs.functionsRegistry();
+    }
+
+    @Override
+    public OverloadResolver overloadResolver() {
+        return reqs.overloadResolver();
     }
 
     @Override

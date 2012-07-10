@@ -26,6 +26,7 @@
 
 package com.akiban.sql.server;
 
+import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.sql.parser.SQLParser;
 
 import com.akiban.sql.optimizer.AISBinderContext;
@@ -144,4 +145,7 @@ public interface ServerSession
 
     /** Get the index cost estimator. */
     public CostEstimator costEstimator(ServerOperatorCompiler compiler);
+
+    /** Get the overload resolver */
+    public OverloadResolver overloadResolver();
 }
