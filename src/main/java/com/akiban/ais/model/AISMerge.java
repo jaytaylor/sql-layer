@@ -358,22 +358,11 @@ public class AISMerge {
     public static void copyView(AkibanInformationSchema oldAIS, 
                                 AkibanInformationSchema newAIS,
                                 View oldView) {
-        Map<Columnar,Collection<Column>> newReferences = 
-            new HashMap<Columnar,Collection<Column>>();
-        for (Map.Entry<Columnar,Collection<Column>> entry : oldView.getTableColumnReferences().entrySet()) {
-            Columnar newTable = newAIS.getColumnar(entry.getKey().getName());
-            if (newTable == null) {
-                throw new IllegalStateException("Duplicate of " + entry.getKey() + " not found");
-            }
-            Collection<Column> newColumns = new HashSet<Column>();
-            for (Column oldColumn : entry.getValue()) {
-                Column newColumn = newTable.getColumn(oldColumn.getName());
-                if (newColumn == null) {
-                    throw new IllegalStateException("Duplicate of " + oldColumn + " not found");
-                }
-                newColumns.add(newColumn);
-            }
-            newReferences.put(newTable, newColumns);
+        Map<TableName,Collection<String>> newReferences = 
+            new HashMap<TableName,Collection<String>>();
+        for (Map.Entry<TableName,Collection<String>> entry : oldView.getTableColumnReferences().entrySet()) {
+            newReferences.put(entry.getKey(),
+                              new HashSet<String>(entry.getValue()));
         }
         View newView = View.create(newAIS,
                                    oldView.getName().getSchemaName(),

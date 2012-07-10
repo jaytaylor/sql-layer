@@ -28,8 +28,6 @@ package com.akiban.ais.model.aisb2;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
@@ -339,7 +337,7 @@ public class AISBBasedBuilder
         public NewViewBuilder definition(String definition, Properties properties) {
             aisb.view(schema, userTable,
                       definition, properties, 
-                      new HashMap<Columnar,Collection<Column>>());
+                      new HashMap<TableName,Collection<String>>());
             return this;
         }
 
@@ -352,21 +350,14 @@ public class AISBBasedBuilder
         public NewViewBuilder references(String schema, String table, String... columns) {
             checkUsable();
             View view = aisb.akibanInformationSchema().getView(this.schema, this.userTable);
-            Columnar columnar = aisb.akibanInformationSchema().getColumnar(schema, table);
-            if (columnar == null) {
-                throw new NoSuchElementException("no table " + schema + '.' + table);
-            }
-            Collection<Column> entry = view.getTableColumnReferences().get(columnar);
+            TableName tableName = TableName.create(schema, table);
+            Collection<String> entry = view.getTableColumnReferences().get(tableName);
             if (entry == null) {
-                entry = new HashSet<Column>();
-                view.getTableColumnReferences().put(columnar, entry);
+                entry = new HashSet<String>();
+                view.getTableColumnReferences().put(tableName, entry);
             }
             for (String colname : columns) {
-                Column column = columnar.getColumn(colname);
-                if (column == null) {
-                    throw new NoSuchElementException("no column " + columnar + '.' + colname);
-                }
-                entry.add(column);
+                entry.add(colname);
             }
             return this;
         }
