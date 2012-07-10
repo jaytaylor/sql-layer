@@ -69,6 +69,7 @@ public abstract class DagChecker<T> {
         }
         T removed = badNodes.removeLast();
         assert removed == starting : "expected " + starting + " but saw " + removed;
+        seen.remove(starting);
         return true;
     }
 

@@ -140,7 +140,17 @@ public final class T3Registry {
             }
         };
         if (!checker.isDag()) {
-            throw new AkibanInternalException("non-DAG detected involving " + checker.getBadNodePath());
+            List<TClass> badPath = checker.getBadNodePath();
+            // create a List<String> where everything is lowercase except for the first and last instances
+            // of the offending node
+            List<String> names = new ArrayList<String>(badPath.size());
+            for (TClass tClass : badPath)
+                names.add(tClass.toString().toLowerCase());
+            String lastName = names.get(names.size() - 1);
+            String lastNameUpper = lastName.toUpperCase();
+            names.set(names.size() - 1, lastNameUpper);
+            names.set(names.indexOf(lastName), lastNameUpper);
+            throw new AkibanInternalException("non-DAG detected involving " + names);
         }
     }
 
