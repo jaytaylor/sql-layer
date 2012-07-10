@@ -209,7 +209,8 @@ public class IndexDDL
     private static Index buildTableIndex (AkibanInformationSchema ais, TableName tableName, CreateIndexNode index) {
         final String indexName = index.getObjectName().getTableName();
 
-        if (ais.getUserTable(tableName) == null) {
+        UserTable table = ais.getUserTable(tableName);
+        if (table == null) {
             throw new NoSuchTableException (tableName);
         }
 
@@ -218,10 +219,10 @@ public class IndexDDL
         }
 
         AISBuilder builder = new AISBuilder();
-        addTable (builder, ais, tableName);
+        addGroup (builder, ais, table.getGroup().getName());
         
         builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.getUniqueness(),
-                index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
+                      index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
 
         int i = 0;
         for (IndexColumn col : index.getColumnList()) {
@@ -320,24 +321,10 @@ public class IndexDDL
         AISCloner.clone(
                 builder.akibanInformationSchema(),
                 ais,
-                new ProtobufWriter.TableSelector() {
+                new ProtobufWriter.TableAllIndexSelector() {
                     @Override
                     public boolean isSelected(UserTable table) {
                         return table.getGroup().getName().equalsIgnoreCase(groupName);
-                    }
-                }
-        );
-    }
-    
-    private static void addTable (AISBuilder builder, AkibanInformationSchema ais, TableName tableName) {
-        final UserTable userTable = ais.getUserTable(tableName);
-        AISCloner.clone(
-                builder.akibanInformationSchema(),
-                ais,
-                new ProtobufWriter.TableSelector() {
-                    @Override
-                    public boolean isSelected(UserTable table) {
-                        return table == userTable;
                     }
                 }
         );

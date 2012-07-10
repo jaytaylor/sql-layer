@@ -39,16 +39,16 @@ import com.akiban.ais.protobuf.ProtobufWriter;
 
 public class AISCloner {
     public static AkibanInformationSchema clone(AkibanInformationSchema ais) {
-        return clone(ais, ProtobufWriter.ALL_TABLES_SELECTOR);
+        return clone(ais, ProtobufWriter.ALL_SELECTOR);
     }
 
-    public static AkibanInformationSchema clone(AkibanInformationSchema ais, ProtobufWriter.TableSelector selector) {
+    public static AkibanInformationSchema clone(AkibanInformationSchema ais, ProtobufWriter.WriteSelector selector) {
         AkibanInformationSchema newAIS = new AkibanInformationSchema();
         clone(newAIS, ais, selector);
         return newAIS;
     }
 
-    public static void clone(AkibanInformationSchema destAIS, AkibanInformationSchema srcAIS, ProtobufWriter.TableSelector selector) {
+    public static void clone(AkibanInformationSchema destAIS, AkibanInformationSchema srcAIS, ProtobufWriter.WriteSelector selector) {
         ProtobufWriter writer = new ProtobufWriter(selector);
         AISProtobuf.AkibanInformationSchema pbAIS = writer.save(srcAIS);
         ProtobufReader reader = new ProtobufReader(destAIS, pbAIS.toBuilder());

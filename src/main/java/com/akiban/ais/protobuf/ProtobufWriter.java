@@ -48,21 +48,35 @@ import com.google.protobuf.MessageLite;
 import java.io.IOException;
 
 public class ProtobufWriter {
-    public static interface TableSelector {
+    public static interface WriteSelector {
         boolean isSelected(UserTable table);
+        /** Called for all GroupIndexes and all table indexes where isSelected(UserTable) is true **/
+        boolean isSelected(Index index);
     }
 
-    public static TableSelector ALL_TABLES_SELECTOR = new TableSelector() {
+    public static WriteSelector ALL_SELECTOR = new WriteSelector() {
         @Override
         public boolean isSelected(UserTable table) {
             return true;
         }
+
+        @Override
+        public boolean isSelected(Index index) {
+            return true;
+        }
     };
 
-    public static class SchemaSelector implements TableSelector {
+    public static abstract class TableAllIndexSelector implements WriteSelector {
+        @Override
+        public boolean isSelected(Index index) {
+            return true;
+        }
+    }
+
+    public static class SingleSchemaSelector implements WriteSelector {
         private final String schemaName;
 
-        public SchemaSelector(String schemaName) {
+        public SingleSchemaSelector(String schemaName) {
             this.schemaName = schemaName;
         }
 
@@ -74,27 +88,32 @@ public class ProtobufWriter {
         public boolean isSelected(UserTable table) {
             return schemaName.equals(table.getName().getSchemaName());
         }
+
+        @Override
+        public boolean isSelected(Index index) {
+            return true;
+        }
     }
 
 
     private static final GrowableByteBuffer NO_BUFFER = new GrowableByteBuffer(0);
     private final GrowableByteBuffer buffer;
     private AISProtobuf.AkibanInformationSchema pbAIS;
-    private final TableSelector selector;
+    private final WriteSelector selector;
 
     public ProtobufWriter() {
         this(NO_BUFFER);
     }
 
     public ProtobufWriter(GrowableByteBuffer buffer) {
-        this(buffer, ALL_TABLES_SELECTOR);
+        this(buffer, ALL_SELECTOR);
     }
 
-    public ProtobufWriter(TableSelector selector) {
+    public ProtobufWriter(WriteSelector selector) {
         this(NO_BUFFER, selector);
     }
 
-    public ProtobufWriter(GrowableByteBuffer buffer, TableSelector selector) {
+    public ProtobufWriter(GrowableByteBuffer buffer, WriteSelector selector) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
         this.selector = selector;
@@ -104,13 +123,13 @@ public class ProtobufWriter {
         AISProtobuf.AkibanInformationSchema.Builder aisBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
 
         // Write top level proto messages and recurse down as needed
-        if(selector == ALL_TABLES_SELECTOR) {
+        if(selector == ALL_SELECTOR) {
             for(Type type : ais.getTypes()) {
                 writeType(aisBuilder, type);
             }
         }
-        if(selector instanceof SchemaSelector) {
-            Schema schema = ais.getSchema(((SchemaSelector) selector).getSchemaName());
+        if(selector instanceof SingleSchemaSelector) {
+            Schema schema = ais.getSchema(((SingleSchemaSelector) selector).getSchemaName());
             if(schema != null) {
                 writeSchema(aisBuilder, schema, selector);
             }
@@ -161,7 +180,7 @@ public class ProtobufWriter {
         aisBuilder.addTypes(pbType);
     }
 
-    private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema, TableSelector selector) {
+    private static void writeSchema(AISProtobuf.AkibanInformationSchema.Builder aisBuilder, Schema schema, WriteSelector selector) {
         AISProtobuf.Schema.Builder schemaBuilder = AISProtobuf.Schema.newBuilder();
         schemaBuilder.setSchemaName(schema.getName());
         boolean isEmpty = true;
@@ -169,17 +188,10 @@ public class ProtobufWriter {
         // Write groups into same schema as root table
         for(UserTable table : schema.getUserTables().values()) {
             if(selector.isSelected(table)) {
-                boolean withJoin = false;
-                if(table.getParentJoin() == null) {
-                    if(table.getGroup() != null) {
-                        writeGroup(schemaBuilder, table.getGroup());
-                    }
-                } else {
-                    if(selector.isSelected(table.getParentJoin().getParent())) {
-                        withJoin = true;
-                    }
+                if(table.getParentJoin() == null && table.getGroup() != null) {
+                    writeGroup(schemaBuilder, table.getGroup(), selector);
                 }
-                writeTable(schemaBuilder, table, withJoin);
+                writeTable(schemaBuilder, table, selector);
                 isEmpty = false;
             }
         }
@@ -189,20 +201,22 @@ public class ProtobufWriter {
         }
     }
 
-    private static void writeGroup(AISProtobuf.Schema.Builder schemaBuilder, Group group) {
+    private static void writeGroup(AISProtobuf.Schema.Builder schemaBuilder, Group group, WriteSelector selector) {
         final UserTable rootTable = group.getGroupTable().getRoot();
         AISProtobuf.Group.Builder groupBuilder = AISProtobuf.Group.newBuilder().
                 setRootTableName(rootTable.getName().getTableName()).
                 setTreeName(rootTable.getTreeName());
 
         for(Index index : group.getIndexes()) {
-            writeGroupIndex(groupBuilder, index);
+            if(selector.isSelected(index)) {
+                writeGroupIndex(groupBuilder, index);
+            }
         }
 
         schemaBuilder.addGroups(groupBuilder.build());
     }
 
-    private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, UserTable table, boolean withJoin) {
+    private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, UserTable table, WriteSelector selector) {
         AISProtobuf.Table.Builder tableBuilder = AISProtobuf.Table.newBuilder();
         tableBuilder.
                 setTableName(table.getName().getTableName()).
@@ -219,11 +233,13 @@ public class ProtobufWriter {
         }
 
         for(Index index : table.getIndexesIncludingInternal()) {
-            writeTableIndex(tableBuilder, index);
+            if(selector.isSelected(index)) {
+                writeTableIndex(tableBuilder, index);
+            }
         }
 
         Join join = table.getParentJoin();
-        if(withJoin && join != null) {
+        if(join != null) {
             final UserTable parent = join.getParent();
             AISProtobuf.Join.Builder joinBuilder = AISProtobuf.Join.newBuilder();
             joinBuilder.setParentTable(AISProtobuf.TableName.newBuilder().
