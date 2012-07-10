@@ -43,8 +43,8 @@ public abstract class AkCollator {
     }
 
     /**
-     * @return true if this collator is capable of recovering the key string
-     *         from a key segment.
+     * @return true if this collator is capable of precisely recovering the key
+     *         string from a key segment.
      */
     abstract public boolean isRecoverable();
 
@@ -61,32 +61,11 @@ public abstract class AkCollator {
      * 
      * @param key
      * @return the decoded String
+     * @throws UnsupportedOperationException
+     *             for collations in which a precise transformation is
+     *             impossible. See {@link #isRecoverable()}.
      */
     abstract public String decode(Key key);
-
-    /**
-     * Construct the sort key bytes for the given String value
-     * 
-     * @param value
-     *            the String
-     * @return sort key bytes, last byte only must be zero
-     */
-    abstract public byte[] encodeSortKeyBytes(String value);
-
-    /**
-     * Recover the value or throw an unsupported exception.
-     * 
-     * @param bytes
-     *            the sort key bytes
-     * @param index
-     *            index within array of first sorted key byte
-     * @param length
-     *            number of sorted key bytes
-     * @return the decoded String value
-     * @throws UnsupportedOperationException
-     *             if unable to decode sort keys
-     */
-    abstract public String decodeSortKeyBytes(byte[] bytes, int index, int length);
 
     /**
      * Compare two string values: Comparable<ValueSource>
@@ -119,5 +98,34 @@ public abstract class AkCollator {
     public String getScheme() {
         return collatorScheme;
     }
+
+    /**
+     * Construct the sort key bytes for the given String value. This method is
+     * intended for use only by {@link CStringKeyCoder} and is therefore
+     * package-private.
+     * 
+     * @param value
+     *            the String
+     * @return sort key bytes, last byte only must be zero
+     */
+    abstract byte[] encodeSortKeyBytes(String value);
+
+    /**
+     * Recover a String value which may be approximate. For example The string
+     * may be spelled with incorrect case and not correctly represent some
+     * characters. This method is intended for use only by
+     * {@link CStringKeyCoder} and is therefore package-private.
+     * 
+     * @param bytes
+     *            the sort key bytes
+     * @param index
+     *            index within array of first sorted key byte
+     * @param length
+     *            number of sorted key bytes
+     * @return the decoded String value
+     * @throws UnsupportedOperationException
+     *             if unable to decode sort keys
+     */
+    abstract String decodeSortKeyBytes(byte[] bytes, int index, int length);
 
 }

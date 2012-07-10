@@ -28,6 +28,7 @@ package com.akiban.server.collation;
 import com.akiban.server.types.ValueSource;
 import com.ibm.icu.text.Collator;
 import com.persistit.Key;
+import com.persistit.util.Util;
 
 public class AkCollatorICU extends AkCollator {
 
@@ -66,24 +67,7 @@ public class AkCollatorICU extends AkCollator {
         }
     }
 
-    /**
-     * Construct the sort key bytes for the given String value
-     * 
-     * @param value
-     *            the String
-     * @return sort key bytes, last byte only is zero
-     */
-    public byte[] encodeSortKeyBytes(String value) {
-        return collator.get().getCollationKey(value).toByteArray();
-    }
-
-    /**
-     * Recover the value or throw an unsupported exception.
-     */
-    public String decodeSortKeyBytes(byte[] bytes, int index, int length) {
-        throw new UnsupportedOperationException("Unable to decode ICU4J sort key");
-    }
-
+   
     @Override
     public String decode(Key key) {
         throw new UnsupportedOperationException("Unable to decode a collator sort key");
@@ -103,5 +87,37 @@ public class AkCollatorICU extends AkCollator {
     public boolean isCaseSensitive() {
         return collator.get().getStrength() > Collator.SECONDARY;
     }
+
+    /**
+     * Construct the sort key bytes for the given String value
+     * 
+     * @param value
+     *            the String
+     * @return sort key bytes, last byte only is zero
+     */
+    @Override
+    byte[] encodeSortKeyBytes(String value) {
+        return collator.get().getCollationKey(value).toByteArray();
+    }
+
+    /**
+     * Decode the value to a string of hex digits. For ICU4J collations that's
+     * the best we can do. This method is used by the
+     * {@link CStringKeyCoder#displayKeySegment} method.
+     * 
+     * @param bytes
+     *            Bytes to decode
+     * @param index
+     *            starting index
+     * @param length
+     *            number of bytes to decode
+     */
+    @Override
+    String decodeSortKeyBytes(byte[] bytes, int index, int length) {
+        StringBuilder sb = new StringBuilder();
+        Util.bytesToHex(sb, bytes, index, length);
+        return sb.toString();
+    }
+
 
 }

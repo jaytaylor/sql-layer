@@ -27,22 +27,27 @@
 package com.akiban.server.collation;
 
 /**
- * TODO: Prototype
+ * Holds a String and a collationId. Akiban Server registers a custom KeyCoder
+ * instance to handle serializing and deserializing instances of this class in a
+ * Persistit Key.
  * 
- * Represent a String and an ICU4J Collator. Instances can be presented to the
- * {@link com.persistit.Key#append(Object)} method for encoding because Akiban
- * Server registers a {@link com.persistit.encoding.KeyRenderer} for this class.
- * The actual conversion from String to stored bytes is performed by the
- * Collator.
- * 
+ * This class is not immutable because the CStringKeyCoder decoding methods are
+ * designed to populate a hollow instance. However, the mutators should be used
+ * only by the CStringKeyCoder and are therefore package-private.
  * 
  * @author peter
  * 
  */
 public class CString {
 
+    /**
+     * String value
+     */
     private String string;
 
+    /**
+     * Small integer handle that identifies the collation scheme.
+     */
     private int collationId;
 
     /**
@@ -56,9 +61,9 @@ public class CString {
         this.string = string;
         this.collationId = collationId;
     }
-    
+
     public CString() {
-        
+
     }
 
     public String getString() {
@@ -69,7 +74,7 @@ public class CString {
      * @param string
      *            the string to set
      */
-    public void setString(String string) {
+    void setString(String string) {
         this.string = string;
     }
 
@@ -81,10 +86,10 @@ public class CString {
      * @param collationId
      *            the collationId to set
      */
-    public void setCollationId(int collationId) {
+    void setCollationId(int collationId) {
         this.collationId = collationId;
     }
-    
+
     @Override
     public String toString() {
         return getString();

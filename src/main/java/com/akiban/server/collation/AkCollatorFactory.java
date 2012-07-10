@@ -136,7 +136,19 @@ public class AkCollatorFactory {
 
     public static AkCollator getAkCollator(final int collatorId) {
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
-        return ref == null ? null : ref.get();
+        AkCollator collator =  (ref == null ? null : ref.get());
+        if (collator == null) {
+            if (collatorId == 0) {
+                return UCS_BINARY_COLLATOR;
+            }
+            for (Map.Entry<Object, Object> entry : collationNameProperties.entrySet()) {
+                final Matcher matcher = schemaPattern.matcher(entry.getValue().toString());
+                if (matcher.matches() && matcher.group(1).equals(Integer.toString(collatorId))) {
+                    return getAkCollator(entry.getKey().toString());
+                }
+            }
+        }
+        return collator;
     }
 
     /**

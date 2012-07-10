@@ -82,37 +82,6 @@ public class AkCollatorMySQL extends AkCollator {
         throw new UnsupportedOperationException("Unable to decode a collator sort key");
     }
 
-    /**
-     * Construct the sort key bytes for the given String value
-     * @param value the String
-     * @return sort key bytes, last byte only is zero
-     */
-    public byte[] encodeSortKeyBytes(String value) {
-        byte[] sortBytes = new byte[value.length() + 1];
-        for (int i = 0; i < value.length(); i++) {
-            final int c = value.charAt(i);
-            assert c < 256;
-            int w = (byte) (weightTable[c] & 0xFF);
-            assert w != 0;
-            sortBytes[i] = (byte) w;
-        }
-        return sortBytes;
-    }
-
-    /**
-     * Recover the approximate value. This method is used only in the
-     * {@link CStringKeyCoder#renderKeySegment(Key, Object, Class, com.persistit.encoding.CoderContext)}
-     * method. It supports the UI and makes approximate (case-incorrect)
-     * decodings visible to within tools.
-     */
-    public String decodeSortKeyBytes(byte[] bytes, int index, int length) {
-        StringBuilder sb = new StringBuilder(length);
-        for (int i =index; i < index + length; i++) {
-            sb.append((char)(decodeTable[bytes[i]]));
-        }
-        return sb.toString();
-    }
-
     @Override
     public int compare(ValueSource value1, ValueSource value2) {
         return compare(value1.getString(), value2.getString());
@@ -137,6 +106,39 @@ public class AkCollatorMySQL extends AkCollator {
     @Override
     public boolean isCaseSensitive() {
         return false;
+    }
+
+    /**
+     * Construct the sort key bytes for the given String value
+     * 
+     * @param value
+     *            the String
+     * @return sort key bytes, last byte only is zero
+     */
+    byte[] encodeSortKeyBytes(String value) {
+        byte[] sortBytes = new byte[value.length() + 1];
+        for (int i = 0; i < value.length(); i++) {
+            final int c = value.charAt(i);
+            assert c < 256;
+            int w = (byte) (weightTable[c] & 0xFF);
+            assert w != 0;
+            sortBytes[i] = (byte) w;
+        }
+        return sortBytes;
+    }
+
+    /**
+     * Recover the approximate value. This method is used only in the
+     * {@link CStringKeyCoder#renderKeySegment(Key, Object, Class, com.persistit.encoding.CoderContext)}
+     * method. It supports the UI and makes approximate (case-incorrect)
+     * decodings visible to within tools.
+     */
+    String decodeSortKeyBytes(byte[] bytes, int index, int length) {
+        StringBuilder sb = new StringBuilder(length);
+        for (int i = index; i < index + length; i++) {
+            sb.append((char) (decodeTable[bytes[i]]));
+        }
+        return sb.toString();
     }
 
     /**

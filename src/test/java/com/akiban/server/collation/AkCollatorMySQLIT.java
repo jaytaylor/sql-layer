@@ -42,8 +42,7 @@ import com.persistit.Key;
 import com.persistit.KeyState;
 import com.persistit.Persistit;
 
-public class AkCollatorMySQLIT extends ITBase {
-
+public class AkCollatorMySqlIT extends ITBase {
 
     /**
      * Sequences generated from MySQL on InnoDB engine using a script like this:
@@ -96,7 +95,7 @@ public class AkCollatorMySQLIT extends ITBase {
     private Persistit getDb() {
         return treeService().getDb();
     }
-    
+
     @Test
     public void keyComparisons() throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
@@ -124,15 +123,13 @@ public class AkCollatorMySQLIT extends ITBase {
         collator.append(key2.clear(), "de");
         assertTrue("First key should be less", key1.compareTo(key2) > 0);
     }
-    
+
     @Test
     public void keyDecoding() throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
         final Key key = new Key(getDb());
-        key.append(new CString("aBcDe123!@#$%^&*(()", 2));
-        CString cs = new CString();
-        key.decode(cs);
-        assertEquals("ABCDE123!@#$%^&*(()", cs.toString());
+        key.append(new CString("aBcDe123!@#$%^&*(()", collator.getCollationId()));
+        assertEquals("Incorrect display form", "{(com.akiban.server.collation.CString)ABCDE123!@#$%^&*(()}", key.toString());
     }
 
     @Test
@@ -161,7 +158,8 @@ public class AkCollatorMySQLIT extends ITBase {
         testRandomStringSequence("latin1_general_ci", 10000, LATIN1_GENERAL_CI_SEQ);
     }
 
-    private void testRandomStringSequence(final String collation, final int count, final Integer[] table) throws Exception {
+    private void testRandomStringSequence(final String collation, final int count, final Integer[] table)
+            throws Exception {
         final AkCollator collator = AkCollatorFactory.getAkCollator(collation);
         final Map<String, Integer> map1 = new TreeMap<String, Integer>(new Comparator<String>() {
             @Override

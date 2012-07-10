@@ -42,7 +42,20 @@ import com.persistit.util.Util;
  */
 public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
 
-    
+    /**
+     * Append an encoded form of the supplied Object which must be a
+     * {@link #CString} to the supplied Key. The encoded form is created by a
+     * collator; it represents the weight of the string for collation and
+     * usually does not include enough information to faithful decode the
+     * string.
+     * 
+     * @param Key
+     *            the key
+     * @param Object
+     *            the CString to append
+     * @param CoderContext
+     *            not used
+     */
     @Override
     public void appendKeySegment(Key key, Object object, CoderContext context) throws ConversionException {
         if (object instanceof CString) {
@@ -54,7 +67,7 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
             if (size + sortBytes.length + 1 > key.getMaximumSize()) {
                 throw new IllegalArgumentException("Too long: " + size + sortBytes.length);
             }
-            assert cs.getCollationId() >0 && cs.getCollationId() < 126;
+            assert cs.getCollationId() > 0 && cs.getCollationId() < 126;
             Util.putByte(keyBytes, size, cs.getCollationId());
             System.arraycopy(sortBytes, 0, keyBytes, size + 1, sortBytes.length - 1);
             key.setEncodedSize(size + sortBytes.length);
@@ -63,40 +76,48 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
         }
     }
 
+    /**
+     * @throws ConversionException
+     *             because in general CStrings cannot be decoded
+     */
     @Override
     public Object decodeKeySegment(Key key, Class<?> clazz, CoderContext context) throws ConversionException {
         throw new ConversionException("Collated key cannot be decoded");
     }
 
+    /**
+     * Attempts to make an approximate representation of the encoded string for
+     * human-readable displays.  For case-insensitive collations the case of the
+     * result is likely to be wrong, and for ICU4J collations the result is
+     * displayed in hex.
+     */
     @Override
     public void displayKeySegment(Key key, Appendable target, Class<?> clazz, CoderContext context)
             throws ConversionException {
         CString cs = new CString();
-        renderKeySegment(key, cs, clazz, context);
+        byte[] rawBytes = key.getEncodedBytes();
+        int index = key.getIndex();
+        int size = key.getEncodedSize();
+        int end = index;
+        for (; end < size && rawBytes[end] != 0; end++) {
+        }
+        if (end - index < 1) {
+            throw new ConversionException("CString cannot be decoded");
+        }
+        cs.setCollationId(rawBytes[index] & 0xFF);
+        AkCollator collator = AkCollatorFactory.getAkCollator(cs.getCollationId());
+        cs.setString(collator.decodeSortKeyBytes(rawBytes, index + 1, end - index - 1));
         Util.append(target, cs.getString());
     }
 
+    /**
+     * @throws ConversionException
+     *             because in general CStrings cannot be decoded
+     */
     @Override
     public void renderKeySegment(Key key, Object object, Class<?> clazz, CoderContext context)
             throws ConversionException {
-        if (object instanceof CString) {
-            CString cs = (CString) object;
-            byte[] rawBytes = key.getEncodedBytes();
-            int index = key.getIndex();
-            int size = key.getEncodedSize();
-            int end = index;
-            for (; end < size && rawBytes[end] != 0; end ++) {
-            }
-            if (end - index < 1) {
-                throw new ConversionException("CString cannot be decoded");
-            }
-            cs.setCollationId(rawBytes[index] & 0xFF);
-            AkCollator collator = AkCollatorFactory.getAkCollator(cs.getCollationId());
-            cs.setString(collator.decodeSortKeyBytes(rawBytes, index + 1, end - index - 1));
-        } else {
-            throw new ConversionException("Wrong object type: " + (object == null ? null : object.getClass()));
-        }
-
+        throw new ConversionException("Collated key cannot be decoded");
     }
 
 }
