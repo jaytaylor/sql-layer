@@ -721,7 +721,7 @@ public class BasicInfoSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             final Iterator<View> viewIt = aisHolder.getAis().getViews().values().iterator();
             View view;
-            Iterator<Columnar> tableIt = null;
+            Iterator<TableName> tableIt = null;
 
             public Scan(RowType rowType) {
                 super(rowType);
@@ -735,12 +735,12 @@ public class BasicInfoSchemaTablesServiceImpl
                     view = viewIt.next();
                     tableIt = view.getTableReferences().iterator();
                 }
-                Columnar table = tableIt.next();
+                TableName table = tableIt.next();
                 return new ValuesRow(rowType,
                                      view.getName().getSchemaName(),
                                      view.getName().getTableName(),
-                                     table.getName().getSchemaName(),
-                                     table.getName().getTableName(),
+                                     table.getSchemaName(),
+                                     table.getTableName(),
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -760,7 +760,7 @@ public class BasicInfoSchemaTablesServiceImpl
         public long rowCount() {
             long count = 0;
             for (View view : aisHolder.getAis().getViews().values()) {
-                for (Collection<Column> columns : view.getTableColumnReferences().values()) {
+                for (Collection<String> columns : view.getTableColumnReferences().values()) {
                     count += columns.size();
                 }
             }
@@ -770,9 +770,9 @@ public class BasicInfoSchemaTablesServiceImpl
         private class Scan extends BaseScan {
             final Iterator<View> viewIt = aisHolder.getAis().getViews().values().iterator();
             View view;
-            Iterator<Map.Entry<Columnar,Collection<Column>>> tableIt = null;
-            Columnar table;
-            Iterator<Column> columnIt = null;
+            Iterator<Map.Entry<TableName,Collection<String>>> tableIt = null;
+            TableName table;
+            Iterator<String> columnIt = null;
 
             public Scan(RowType rowType) {
                 super(rowType);
@@ -787,17 +787,17 @@ public class BasicInfoSchemaTablesServiceImpl
                         view = viewIt.next();
                         tableIt = view.getTableColumnReferences().entrySet().iterator();
                     }
-                    Map.Entry<Columnar,Collection<Column>> entry = tableIt.next();
+                    Map.Entry<TableName,Collection<String>> entry = tableIt.next();
                     table = entry.getKey();
                     columnIt = entry.getValue().iterator();
                 }
-                Column column = columnIt.next();
+                String column = columnIt.next();
                 return new ValuesRow(rowType,
                                      view.getName().getSchemaName(),
                                      view.getName().getTableName(),
-                                     table.getName().getSchemaName(),
-                                     table.getName().getTableName(),
-                                     column.getName(),
+                                     table.getSchemaName(),
+                                     table.getTableName(),
+                                     column,
                                      ++rowCounter /*hidden pk*/);
             }
         }

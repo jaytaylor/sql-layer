@@ -154,7 +154,6 @@ public class ProtobufReader {
         // Assume no ordering of schemas or tables, load joins and view refs second
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             loadTableJoins(pbSchema.getSchemaName(), pbSchema.getTablesList());
-            loadViewReferences(pbSchema.getSchemaName(), pbSchema.getViewsList());
         }
 
         // Hook up groups, create group tables and indexes after all in place
@@ -276,51 +275,30 @@ public class ProtobufReader {
     private void loadViews(String schema, Collection<AISProtobuf.View> pbViews) {
         for(AISProtobuf.View pbView : pbViews) {
             hasRequiredFields(pbView);
+            Map<TableName,Collection<String>> refs = 
+                new HashMap<TableName,Collection<String>>();
+            for(AISProtobuf.ColumnReference pbReference : pbView.getReferencesList()) {
+                hasRequiredFields(pbReference);
+                AISProtobuf.TableName pbTableName = pbReference.getTable();
+                hasRequiredFields(pbTableName);
+                TableName tableName = TableName.create(pbTableName.getSchemaName(), pbTableName.getTableName());
+                Collection<String> columns = new HashSet<String>();
+                Collection<String> old = refs.put(tableName, columns);
+                assert (old == null);
+                for(String colname : pbReference.getColumnsList()) {
+                    boolean added = columns.add(colname);
+                    assert added;
+                }
+            }
             View view = View.create(
                     destAIS,
                     schema,
                     pbView.getViewName(),
                     pbView.getDefinition(),
                     loadProperties(pbView.getDefinitionPropertiesList()),
-                    new HashMap<Columnar,Collection<Column>>()
+                    refs
             );
             loadColumns(view, pbView.getColumnsList());
-        }
-    }
-
-    private void loadViewReferences(String schema, Collection<AISProtobuf.View> pbViews) {
-        for(AISProtobuf.View pbView : pbViews) {
-            View view = destAIS.getView(schema, pbView.getViewName());
-            Map<Columnar,Collection<Column>> refs = view.getTableColumnReferences();
-            for(AISProtobuf.ColumnReference pbReference : pbView.getReferencesList()) {
-                hasRequiredFields(pbReference);
-                AISProtobuf.TableName pbTable = pbReference.getTable();
-                hasRequiredFields(pbTable);
-                Columnar table = destAIS.getColumnar(pbTable.getSchemaName(), pbTable.getTableName());
-                if (table == null) {
-                    throw new ProtobufReadException(
-                            pbView.getDescriptorForType().getFullName(),
-                            String.format("%s has unknown reference %s.%s", view.getName(),
-                                          pbTable.getSchemaName(), pbTable.getTableName())
-                    );
-                }
-                Collection<Column> columns = refs.get(table);
-                if (columns == null) {
-                    columns = new HashSet<Column>();
-                    refs.put(table, columns);
-                }
-                for(String colname : pbReference.getColumnsList()) {
-                    Column column = table.getColumn(colname);
-                    if (column == null) {
-                        throw new ProtobufReadException(
-                                pbView.getDescriptorForType().getFullName(),
-                                String.format("%s has unknown reference %s.%s", view.getName(),
-                                              table, colname)
-                        );
-                    }
-                    columns.add(column);
-                }
-            }
         }
     }
 

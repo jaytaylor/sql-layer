@@ -81,7 +81,7 @@ public class ViewDDL
         }
         
         AISViewDefinition viewdef = binderContext.getViewDefinition(createView);
-        Map<Columnar,Collection<Column>> tableColumnReferences = viewdef.getTableColumnReferences();
+        Map<TableName,Collection<String>> tableColumnReferences = viewdef.getTableColumnReferences();
         AISBuilder builder = new AISBuilder();
         builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
                      binderContext.getParserProperties(schemaName), tableColumnReferences);

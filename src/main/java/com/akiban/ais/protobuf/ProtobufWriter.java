@@ -268,15 +268,15 @@ public class ProtobufWriter {
                                                 build());
         }
         
-        for(Map.Entry<Columnar,Collection<Column>> entry : view.getTableColumnReferences().entrySet()) {
+        for(Map.Entry<TableName,Collection<String>> entry : view.getTableColumnReferences().entrySet()) {
             AISProtobuf.ColumnReference.Builder referenceBuilder = 
                 AISProtobuf.ColumnReference.newBuilder().
                 setTable(AISProtobuf.TableName.newBuilder().
-                         setSchemaName(entry.getKey().getName().getSchemaName()).
-                         setTableName(entry.getKey().getName().getTableName()).
+                         setSchemaName(entry.getKey().getSchemaName()).
+                         setTableName(entry.getKey().getTableName()).
                          build());
-            for (Column column : entry.getValue()) {
-                referenceBuilder.addColumns(column.getName());
+            for (String column : entry.getValue()) {
+                referenceBuilder.addColumns(column);
             }
             viewBuilder.addReferences(referenceBuilder.build());
         }

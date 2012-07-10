@@ -100,7 +100,7 @@ public class
 
     public void view(String schemaName, String tableName,
                      String definition, Properties definitionProperties,
-                     Map<Columnar,Collection<Column>> tableColumnReferences) {
+                     Map<TableName,Collection<String>> tableColumnReferences) {
         LOG.info("view: " + schemaName + "." + tableName);
         View.create(ais, schemaName, tableName, 
                     definition, definitionProperties, tableColumnReferences);
