@@ -254,6 +254,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
                     assertEquals(msg, expected, actual.getLong());
                 } else if(expected instanceof Boolean) {
                     assertEquals(msg, (Boolean)expected ? "YES" : "NO", actual.getString());
+                } else if(expected instanceof Text) {
+                    assertEquals(msg, ((Text)expected).getText(), actual.getText());
                 } else {
                     fail("Unsupported type: " + expected.getClass());
                 }
@@ -268,6 +270,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
         return skippedRows;
     }
 
+    static class Text {
+        private String text;
+        public Text(String text) {
+            this.text = text;
+        }
+        public String getText() {
+            return text;
+        }
+    }
 
     @Test
     public void schemataScan() {
@@ -399,4 +410,36 @@ public class BasicInfoSchemaTablesServiceImplTest {
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S index_columns", 0, skipped);
     }
+
+    @Test
+    public void viewsScan() {
+        final Object[][] expected = {
+                { "test", "voo", new Text("CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo"), false, LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEWS).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S views", 0, skipped);
+    }
+
+    @Test
+    public void viewTableUsageScan() {
+        final Object[][] expected = {
+                { "test", "voo", "test", "foo", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_TABLE_USAGE).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S views", 0, skipped);
+    }
+
+    @Test
+    public void viewColumnUsageScan() {
+        final Object[][] expected = {
+                { "test", "voo", "test", "foo", "c1", LONG },
+                { "test", "voo", "test", "foo", "c2", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_COLUMN_USAGE).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S views", 0, skipped);
+    }
+
 }
