@@ -100,15 +100,15 @@ public class ViewDDL
                                  AISBinderContext binderContext) {
         com.akiban.sql.parser.TableName parserName = dropView.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        String viewName = parserName.getTableName();
+        TableName viewName = TableName.create(schemaName, parserName.getTableName());
         ExistenceCheck existenceCheck = dropView.getExistenceCheck();
 
-        if (ddlFunctions.getAIS(session).getView(schemaName, viewName) == null) {
+        if (ddlFunctions.getAIS(session).getView(viewName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS)
                 return;
-            throw new UndefinedViewException(schemaName, viewName);
+            throw new UndefinedViewException(viewName);
         }
-        ddlFunctions.dropView(session, TableName.create(schemaName, viewName));
+        ddlFunctions.dropView(session, viewName);
     }
 
 }
