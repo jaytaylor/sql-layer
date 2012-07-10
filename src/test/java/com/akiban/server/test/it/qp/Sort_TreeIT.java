@@ -558,10 +558,4 @@ public class Sort_TreeIT extends OperatorITBase
         }
         return ordering;
     }
-
-    private Row intRow(RowType rowType, int x)
-    {
-        return new ExpressionRow(rowType, queryContext,
-                                 Arrays.asList((Expression) new LiteralExpression(AkType.INT, x)));
-    }
 }

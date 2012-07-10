@@ -32,6 +32,7 @@ import java.util.Collection;
 import com.akiban.qp.row.BindableRow;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types3.Types3Switch;
 
 
 public final class TestOperator extends ValuesScan_Default {
@@ -47,7 +48,7 @@ public final class TestOperator extends ValuesScan_Default {
     private static Collection<? extends BindableRow> bindableRows(Collection<? extends Row> rows) {
         Collection<BindableRow> result = new ArrayList<BindableRow>();
         for (Row row : rows) {
-            result.add(BindableRow.of(row));
+            result.add(BindableRow.of(row, Types3Switch.ON));
         }
         return result;
     }

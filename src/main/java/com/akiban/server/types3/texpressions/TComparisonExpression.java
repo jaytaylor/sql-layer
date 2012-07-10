@@ -65,12 +65,17 @@ public final class TComparisonExpression implements TPreparedExpression {
 
     @Override
     public TInstance resultType() {
-        return MNumeric.INT.instance();
+        return AkBool.INSTANCE.instance();
     }
 
     @Override
     public TEvaluatableExpression build() {
         return new InnerEvaluation(left.resultType(), left.build(), comparison, right.resultType(), right.build());
+    }
+
+    @Override
+    public String toString() {
+        return left + " " + comparison + ' ' + right;
     }
 
     public TComparisonExpression(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {

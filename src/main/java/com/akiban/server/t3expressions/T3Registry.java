@@ -111,6 +111,7 @@ public final class T3Registry {
     private static class InternalAggregatesRegistry implements T3AggregatesRegistry {
         @Override
         public Collection<? extends TAggregator> getAggregates(String name) {
+            name = name.toLowerCase();
             Collection<? extends TAggregator> aggrs = aggregatorsByName.get(name);
             if (aggrs == null)
                 throw new NoSuchFunctionException(name);
@@ -121,7 +122,7 @@ public final class T3Registry {
             Collection<? extends TAggregator> aggrs = finder.aggregators();
             aggregatorsByName = new HashMap<String, Collection<TAggregator>>(aggrs.size());
             for (TAggregator aggr : aggrs) {
-                String name = aggr.name();
+                String name = aggr.name().toLowerCase();
                 Collection<TAggregator> values = aggregatorsByName.get(name);
                 if (values == null) {
                     values = new ArrayList<TAggregator>(2); // most aggrs don't have many overloads

@@ -165,6 +165,16 @@ public final class TInstance {
         this.enumClass = enumClass;
     }
 
+    public TInstance(TInstance copyFrom) {
+        this.tclass = copyFrom.tclass;
+        this.attr0 = copyFrom.attr0;
+        this.attr1 = copyFrom.attr1;
+        this.attr2 = copyFrom.attr2;
+        this.attr3 = copyFrom.attr3;
+        this.enumClass = copyFrom.enumClass;
+        this.isNullable = copyFrom.isNullable;
+    }
+
     private final TClass tclass;
     private final int attr0, attr1, attr2, attr3;
     private Boolean isNullable;

@@ -26,60 +26,80 @@
 
 package com.akiban.server.types3.texpressions;
 
+import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.server.types3.pvalue.PValueSources;
 
-public final class TPreparedField implements TPreparedExpression {
+import java.util.EnumMap;
+
+public final class TNullExpression implements TPreparedExpression {
+
+    public TNullExpression (TInstance tInstance) {
+        this.tInstance = new TInstance(tInstance);
+        this.tInstance.setNullable(true);
+    }
+
     @Override
     public TPreptimeValue evaluateConstant() {
-        return null;
+        TEvaluatableExpression eval = build();
+        return new TPreptimeValue(tInstance, eval.resultValue());
     }
 
     @Override
     public TInstance resultType() {
-        return typeInstance;
+        return tInstance;
     }
 
     @Override
     public TEvaluatableExpression build() {
-        return new Evaluation(typeInstance.typeClass().underlyingType(), fieldIndex);
+        TEvaluatableExpression result = evaluationsByUnderlying.get(tInstance.typeClass().underlyingType());
+        assert result != null : tInstance;
+        return result;
     }
 
     @Override
     public String toString() {
-        return "Field(" + fieldIndex + ')';
+        return "Literal(NULL)";
     }
 
-    public TPreparedField(TInstance typeInstance, int fieldIndex) {
-        this.typeInstance = typeInstance;
-        this.fieldIndex = fieldIndex;
+    private final TInstance tInstance;
+
+    private static final EnumMap<PUnderlying,InnerEvaluation> evaluationsByUnderlying = createEvaluations();
+
+    private static EnumMap<PUnderlying, InnerEvaluation> createEvaluations() {
+        EnumMap<PUnderlying, InnerEvaluation> result = new EnumMap<PUnderlying, InnerEvaluation>(PUnderlying.class);
+        for (PUnderlying underlying : PUnderlying.values()) {
+            result.put(underlying, new InnerEvaluation(underlying));
+        }
+        return result;
     }
 
-    private final TInstance typeInstance;
-    private final int fieldIndex;
-    
-    private static class Evaluation extends ContextualEvaluation<Row> {
+    private static class InnerEvaluation implements TEvaluatableExpression {
         @Override
-        protected void evaluate(Row context, PValueTarget target) {
-            PValueSource rowSource = null;
-//            rowSource = context.rowEval(fieldIndex);
-            target.putValueSource(rowSource);
+        public PValueSource resultValue() {
+            return valueSource;
+        }
+
+        @Override
+        public void evaluate() {
         }
 
         @Override
         public void with(Row row) {
-            setContext(row);
         }
 
-        private Evaluation(PUnderlying underlyingType, int fieldIndex) {
-            super(underlyingType);
-            this.fieldIndex = fieldIndex;
+        @Override
+        public void with(QueryContext context) {
         }
 
-        private int fieldIndex;
+        private InnerEvaluation(PUnderlying underlying) {
+            this.valueSource = PValueSources.getNullSource(underlying);
+        }
+
+        private final PValueSource valueSource;
     }
 }

@@ -49,6 +49,11 @@ public final class TPreparedBoundField implements TPreparedExpression {
         return new InnerEvaluation(fieldExpression.build(), rowPosition);
     }
 
+    @Override
+    public String toString() {
+        return "Bound(" + rowPosition + ',' + fieldExpression + ')';
+    }
+
     public TPreparedBoundField(RowType rowType, int rowPosition, int fieldPosition) {
         fieldExpression = new TPreparedField(rowType.typeInstanceAt(fieldPosition), fieldPosition);
         this.rowPosition = rowPosition;
