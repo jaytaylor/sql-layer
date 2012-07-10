@@ -39,6 +39,7 @@ import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
+import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
@@ -108,7 +109,23 @@ public class ViewDDL
                 return;
             throw new UndefinedViewException(viewName);
         }
+        checkDropTable(ddlFunctions, session, viewName);
         ddlFunctions.dropView(session, viewName);
+    }
+
+    public static void checkDropTable(DDLFunctions ddlFunctions, Session session, 
+                                      TableName name) {
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+        Columnar table = ais.getColumnar(name);
+        if (table == null) return;
+        for (View view : ais.getViews().values()) {
+            if (view.referencesTable(table)) {
+                throw new ViewReferencesExist(view.getName().getSchemaName(),
+                                              view.getName().getTableName(),
+                                              table.getName().getSchemaName(),
+                                              table.getName().getTableName());
+            }
+        }
     }
 
 }

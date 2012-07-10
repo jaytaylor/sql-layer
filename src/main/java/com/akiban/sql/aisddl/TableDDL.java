@@ -77,6 +77,7 @@ public class TableDDL
                 ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
             throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
+        ViewDDL.checkDropTable(ddlFunctions, session, tableName);
         ddlFunctions.dropTable(session, tableName);
     }
     
