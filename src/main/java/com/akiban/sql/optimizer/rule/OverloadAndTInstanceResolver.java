@@ -266,10 +266,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TInstance thenType = tinst(thenExpr);
             TInstance elseType = tinst(elseExpr);
 
-            TClassPossibility commonPossibility = resolver.commonTClass(thenType.typeClass(), elseType.typeClass());
-            if (commonPossibility.isAny() || commonPossibility.isNone())
+            TClass commonClass = resolver.commonTClass(thenType.typeClass(), elseType.typeClass());
+            if (commonClass == null)
                 throw error("couldn't determine a type for CASE expression");
-            TClass commonClass = commonPossibility.get();
             thenExpr = castTo(thenExpr, commonClass);
             elseExpr = castTo(elseExpr, commonClass);
             TInstance resultInstance = commonClass.pickInstance(tinst(thenExpr), tinst(elseExpr));

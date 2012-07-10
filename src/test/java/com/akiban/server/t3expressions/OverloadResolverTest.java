@@ -53,6 +53,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 import static org.junit.Assert.assertSame;
@@ -105,8 +106,8 @@ public class OverloadResolverTest {
         }
 
         @Override
-        public TClassPossibility commonTClass(TClass one, TClass two) {
-            return T3ScalarsRegistry.NO_COMMON;
+        public Set<TClass> stronglyCastableTo(TClass tClass) {
+            throw new UnsupportedOperationException();
         }
 
         public TValidatedOverload validated(TOverload overload) {

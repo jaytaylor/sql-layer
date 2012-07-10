@@ -41,6 +41,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public final class T3Registry {
 
@@ -69,32 +70,33 @@ public final class T3Registry {
         @Override
         public TCast cast(TClass source, TClass target) {
             TCast result = null;
-            Map<TClass,TCast> castsByTarget = castsBySource.get(source);
-            if (castsByTarget != null)
-                result = castsByTarget.get(target);
+            Map<TClass,TCast> castsBySource = castsByTarget.get(target);
+            if (castsBySource != null)
+                result = castsBySource.get(source);
             if (result == null)
                 throw new AkibanInternalException("no cast defined from " + source + " to " + target);
             return result;
         }
 
         @Override
-        public TClassPossibility commonTClass(TClass one, TClass two) {
-            throw new UnsupportedOperationException(); // TODO
+        public Set<TClass> stronglyCastableTo(TClass tClass) {
+            Map<TClass, TCast> castsFrom = castsByTarget.get(tClass);
+            return castsFrom.keySet();
         }
 
         private InternalScalarsRegistry(FunctionRegistry finder) {
             overloads = new ArrayList<TValidatedOverload>(finder.overloads());
             Collection<? extends TClass> tClasses = finder.tclasses();
-            castsBySource = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
+            castsByTarget = new HashMap<TClass, Map<TClass, TCast>>(tClasses.size());
             for (TCast cast : finder.casts()) {
                 TClass source = cast.sourceClass();
                 TClass target = cast.targetClass();
-                Map<TClass,TCast> castsByTarget = castsBySource.get(source);
-                if (castsByTarget == null) {
-                    castsByTarget = new HashMap<TClass, TCast>();
-                    castsBySource.put(source, castsByTarget);
+                Map<TClass,TCast> castsBySource_ = castsByTarget.get(target);
+                if (castsBySource_ == null) {
+                    castsBySource_ = new HashMap<TClass, TCast>();
+                    castsByTarget.put(source, castsBySource_);
                 }
-                TCast old = castsByTarget.put(target, cast);
+                TCast old = castsBySource_.put(source, cast);
                 if (old != null) {
                     logger.error("CAST({} AS {}): {} replaced by {} ", new Object[]{
                             source, target,  old.getClass(), cast.getClass()
@@ -102,10 +104,16 @@ public final class T3Registry {
                     throw new AkibanInternalException("multiple casts defined from " + source + " to " + target);
                 }
             }
+            // each TClass is must be
+            for (TClass tClass : tClasses) {
+                Map<TClass, TCast> castsFrom = castsByTarget.get(tClass);
+                if (castsFrom == null || !castsFrom.containsKey(tClass))
+                    throw new AkibanInternalException("no self-cast defined for " + tClass);
+            }
         }
 
         private final List<TValidatedOverload> overloads;
-        private final Map<TClass,Map<TClass,TCast>> castsBySource;
+        private final Map<TClass,Map<TClass,TCast>> castsByTarget;
     }
 
     private static class InternalAggregatesRegistry implements T3AggregatesRegistry {
