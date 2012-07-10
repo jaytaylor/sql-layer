@@ -172,6 +172,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleCastExpression(CastExpression expression) {
+            DataTypeDescriptor dtd = expression.getSQLtype();
+            TInstance instance = tinst(dtd);
+            expression.setPreptimeValue(new TPreptimeValue(instance));
             return expression;
         }
 
