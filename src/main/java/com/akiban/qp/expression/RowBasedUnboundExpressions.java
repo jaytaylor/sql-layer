@@ -54,6 +54,7 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
     public RowBasedUnboundExpressions(RowType rowType, List<Expression> expressions, List<TPreparedExpression> pExprs)
     {
         if (expressions != null) {
+            assert pExprs == null : "both can't be non-null";
             for (Expression expression : expressions) {
                 if (expression == null) {
                     throw new IllegalArgumentException();
@@ -67,6 +68,8 @@ public final class RowBasedUnboundExpressions implements UnboundExpressions {
                 }
             }
         }
+        else
+            assert false : "both can't be null";
         this.expressions = expressions;
         this.pExprs = pExprs;
         this.rowType = rowType;

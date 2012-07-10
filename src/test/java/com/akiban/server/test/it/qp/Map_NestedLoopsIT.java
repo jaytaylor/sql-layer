@@ -272,11 +272,19 @@ public class Map_NestedLoopsIT extends OperatorITBase
     public void testIndexScanUnderMapNestedLoopsUsedAsInnerLoopOfAnotherMapNestedLoops()
     {
         RowType cidValueRowType = schema.newValuesType(AkType.INT);
-        List<Expression> expressions = Arrays.asList((Expression) new BoundFieldExpression(
-                1,
-                new FieldExpression(cidValueRowType, 0)));
-        List<TPreparedExpression> pExpressions = Arrays.asList((TPreparedExpression) new TPreparedBoundField(
-                cidValueRowType, 1, 0));
+        List<Expression> expressions;
+        List<TPreparedExpression> pExpressions;
+        if (Types3Switch.ON) {
+            pExpressions = Arrays.asList((TPreparedExpression) new TPreparedBoundField(
+                    cidValueRowType, 1, 0));
+            expressions = null;
+        }
+        else {
+            pExpressions = null;
+            expressions = Arrays.asList((Expression) new BoundFieldExpression(
+                    1,
+                    new FieldExpression(cidValueRowType, 0)));
+        }
         IndexBound cidBound =
             new IndexBound(
                 new RowBasedUnboundExpressions(customerCidIndexRowType, expressions, pExpressions),
