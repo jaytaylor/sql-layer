@@ -39,6 +39,9 @@ public enum Label
     OPERAND(Category.CHILD), // function operand, operands in general
     PROJECTION(Category.CHILD), // list of a expressions
     PREDICATE(Category.CHILD),
+    LEFT(Category.CHILD),
+    RIGHT(Category.CHILD),
+    NUM_COMPARE(Category.CHILD),
     
     
     // COST

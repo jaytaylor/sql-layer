@@ -63,7 +63,7 @@ public class FormatterTest {
     }
 
     /**
-     * Test of describe method, of class Formatter.
+     * Test of Describe method, of class Formatter.
      */
     @Test
     public void testDescribe_Explainer() {
@@ -112,12 +112,12 @@ public class FormatterTest {
         Explainer explainer = substr.getExplainer();
         Formatter instance = new Formatter();
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \"%Y-%m-%d\"), 9 + 10, 11)";
-        String result = instance.describe(explainer);
+        String result = instance.Describe(explainer);
         assertEquals(expResult, result);
         
         explainer = substr_.getExplainer();
         expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \"%Y-%m-%d\"), 9 + 10, 11)";
-        result = instance.describe(explainer);
+        result = instance.Describe(explainer);
         assertEquals(expResult, result);
     }
 

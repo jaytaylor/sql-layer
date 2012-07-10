@@ -36,7 +36,7 @@ import com.akiban.qp.util.HKeyCache;
 import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.std.RankExpression;
-import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Set;
 
 import static java.lang.Math.min;
+import java.math.BigDecimal;
 
 /**
  <h1>Overview</h1>
@@ -150,6 +151,9 @@ class HKeyUnion_Ordered extends Operator
         ArgumentValidation.notNull("outputHKeyTableRowType", outputHKeyTableRowType);
         this.left = left;
         this.right = right;
+        this.leftFields = leftOrderingFields;
+        this.rightFields = rightOrderingFields;
+        this.compareFields = comparisonFields;
         this.advanceLeftOnMatch = leftOrderingFields >= rightOrderingFields;
         this.advanceRightOnMatch = rightOrderingFields >= leftOrderingFields;
         this.outputHKeyTableRowType = outputHKeyTableRowType;
@@ -184,10 +188,20 @@ class HKeyUnion_Ordered extends Operator
     private final UserTableRowType outputHKeyTableRowType;
     private final HKeyRowType outputHKeyRowType;
     private final int outputHKeySegments;
+    private final int leftFields;
+    private final int rightFields;
+    private final int compareFields;
 
     @Override
     public Explainer getExplainer() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Attributes atts = new Attributes();
+        
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("HKeyUnion"));
+        atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFields));
+        atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFields));
+        atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(compareFields));
+        atts.put(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputHKeyTableRowType));
+        return new OperationExplainer(Type.ORDERED, atts);
     }
 
     // Inner classes

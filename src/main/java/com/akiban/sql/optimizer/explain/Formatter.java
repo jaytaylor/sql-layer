@@ -31,17 +31,17 @@ import java.util.Map;
 
 public class Formatter {
 
-    String describe(Explainer explainer) {
+    public String Describe(Explainer explainer) {
         StringBuilder sb = new StringBuilder("");
         describe(explainer, sb);
         return sb.toString();
     }
     
-    void describe(Explainer explainer, StringBuilder sb) {
+    private void describe(Explainer explainer, StringBuilder sb) {
         describe(explainer, sb, false, null);
     }
 
-    void describe(Explainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
+    protected void describe(Explainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         if (explainer.hasAttributes())
         {
             OperationExplainer opEx = (OperationExplainer) explainer;
@@ -57,7 +57,7 @@ public class Formatter {
         }
     }
 
-    void describeExpression(OperationExplainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
+    protected void describeExpression(OperationExplainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         
         Attributes atts = (Attributes) explainer.get().clone();
         
@@ -78,9 +78,8 @@ public class Formatter {
         }
         else
         {
-            sb.append(atts.get(Label.NAME).get(0).get());
+            sb.append(atts.get(Label.NAME).get(0).get()).append("(");
             atts.remove(Label.NAME);
-            sb.append("(");
             for (Map.Entry<Label, Explainer> entry : atts.valuePairs())
             {
                 describe(entry.getValue(), sb);
@@ -91,7 +90,7 @@ public class Formatter {
         }
     }
 
-    void describePrimitive(PrimitiveExplainer explainer, StringBuilder sb) {
+    protected void describePrimitive(PrimitiveExplainer explainer, StringBuilder sb) {
         if (explainer.getType()==Type.STRING)
         {
             sb.append("\"").append(explainer.get()).append("\"");
@@ -102,16 +101,143 @@ public class Formatter {
         }
     }
 
-    void describeOperator(OperationExplainer opEx, StringBuilder sb) {
-        Type type = opEx.getType();
+    protected void describeOperator(OperationExplainer explainer, StringBuilder sb) {
+        
+        Attributes atts = (Attributes) explainer.get().clone();
+        String name = atts.get(Label.NAME).get(0).get().toString();
+        
+        sb.append(name).append("(");
+        
+        Type type = explainer.getType();
         switch (type) 
         {
             case SELECT_HKEY:
+                describe(atts.get(Label.PREDICATE).get(0),sb);
                 break;
             case PROJECT:
+                for (Explainer projection : atts.get(Label.PROJECTION))
+                {
+                    describe(projection, sb);
+                    sb.append(", ");
+                }
+                sb.setLength(sb.length()-2);
+                break;
+            case SCAN_OPERATOR:
+                if (name.equals("Values Scan"))
+                {
+                    for (Explainer row : atts.get(Label.ROWTYPE))
+                    {
+                        describe(row, sb);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length()-2);
+                }
+                else if (name.equals("Group Scan"))
+                {
+                    describe(atts.get(Label.GROUP_TABLE).get(0), sb);
+                }
+                else if (name.equals("Index Scan"))
+                {
+                    // TODO
+                }
+                break;
+            case LOOKUP_OPERATOR:
+                if (name.equals("Ancestor Lookup Default"))
+                {
+                    describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                    sb.append(" -> ");
+                    for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                    {
+                        describe(table, sb);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length()-2);
+                }
+                else if (name.equals("Ancestor Lookup Nested"))
+                {
+                    describe(atts.get(Label.BINDING_POSITION).get(0), sb);
+                    sb.append(" -> ");
+                    for (Explainer table : atts.get(Label.ANCESTOR_TYPE))
+                    {
+                        describe(table, sb);
+                        sb.append(", ");
+                    }
+                    sb.setLength(sb.length()-2);
+                }
+                else if (name.equals("Branch Lookup Default"))
+                {
+                    describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                    sb.append(" -> ");
+                    describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
+                    sb.append(" (via ");
+                    describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
+                    sb.append(")");
+                }
+                else if (name.equals("Branch Lookup Nested"))
+                {
+                    describe(atts.get(Label.BINDING_POSITION).get(0), sb);
+                    sb.append(" -> ");
+                    describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
+                    sb.append(" (via ");
+                    describe(atts.get(Label.ANCESTOR_TYPE).get(0), sb);
+                    sb.append(")");
+                }
+                break;
+            case COUNT_OPERATOR:
+                if (name.equals("Count Default"))
+                {
+                    sb.append("*");
+                }
+                else if (name.equals("Count TableStatus"));
+                {
+                    sb.append("* FROM ");
+                    describe(atts.get(Label.INPUT_TYPE).get(0), sb);
+                }
+                break;
+            case FILTER:
+                for (Explainer rowtype : atts.get(Label.KEEP_TYPE))
+                {
+                    describe(rowtype, sb);
+                    sb.append(" - ");
+                }
+                sb.setLength(sb.length()-3);
+                break;
+            case FLATTEN_OPERATOR: // Eventually may want to implement associativity for this
+                describe(atts.get(Label.PARENT_TYPE).get(0), sb);
+                sb.append(" ");
+                describe(atts.get(Label.JOIN_OPTION).get(0), sb);
+                sb.append(" ");
+                describe(atts.get(Label.CHILD_TYPE).get(0), sb);
+                break;
+            case ORDERED:
+                sb.append("skip ");
+                describe(atts.get(Label.LEFT).get(0), sb);
+                sb.append(" left, skip ");
+                describe(atts.get(Label.RIGHT).get(0), sb);
+                sb.append(" right, compare ");
+                describe(atts.get(Label.NUM_COMPARE).get(0), sb);
+                if (name.equals("HKeyUnion"))
+                {
+                    sb.append(", shorten to ");
+                    describe(atts.get(Label.OUTPUT_TYPE).get(0), sb);
+                }
+                else if (name.equals("Intersect"))
+                {
+                    sb.append(", USING ");
+                    describe(atts.get(Label.JOIN_OPTION).get(0), sb);
+                }
+                break;
+            case IF_EMPTY:
+                for (Explainer expression : atts.get(Label.OPERAND))
+                {
+                    describe(expression, sb);
+                    sb.append(", ");
+                }
+                sb.setLength(sb.length() - 2);
                 break;
             default:
-                throw new UnsupportedOperationException("Not yet implemented");
+                throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
         }
+        sb.append(")");
     }
 }

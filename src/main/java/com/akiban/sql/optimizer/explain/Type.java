@@ -58,13 +58,14 @@ public enum Type
     FLATTEN_OPERATOR(GeneralType.OPERATOR),
     LIMIT_OPERATOR(GeneralType.OPERATOR),
     NESTED_LOOPS(GeneralType.OPERATOR),
-    IF_ELSE(GeneralType.OPERATOR),
+    IF_EMPTY(GeneralType.OPERATOR),
     UNION_ALL(GeneralType.OPERATOR),
     SORT(GeneralType.OPERATOR),
     FILTER(GeneralType.OPERATOR),
     PROJECT(GeneralType.OPERATOR),
     SELECT_HKEY(GeneralType.OPERATOR),
     PHYSICAL_OPERATOR(GeneralType.OPERATOR), // could be broken down to scan_operator, sort operator, etc?
+    ORDERED(GeneralType.OPERATOR),
     
     // ROWTYPE    
     //--------------------------------------------------------------------------

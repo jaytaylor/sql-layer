@@ -53,7 +53,7 @@ import static java.lang.Math.min;
 
  <h1>Overview</h1>
 
- Given an index row or group row, BranchLookup_Default locates a
+ Given an index row or group row, BranchLookup_Nested locates a
  related branch, i.e., a related row and all of its descendents.
  Branches are located 
  using the hkey in a row of the current query's QueryContext.
@@ -287,7 +287,8 @@ public class BranchLookup_Nested extends Operator
     public Explainer getExplainer()
     {
         OperationExplainer ex =  new LookUpOperatorExplainer("Branch Lookup Nested", groupTable, inputRowType, keepInput, null);
-        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType));
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable()));
+        ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor));
         return ex;
     }
 

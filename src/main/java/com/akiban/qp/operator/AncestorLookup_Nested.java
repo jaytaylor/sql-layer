@@ -239,6 +239,7 @@ class AncestorLookup_Nested extends Operator
        OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Nested", groupTable, rowType, (Boolean)null, null);
        for (UserTable table : ancestors)
            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table));
+       ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
        return ex;
     }
 

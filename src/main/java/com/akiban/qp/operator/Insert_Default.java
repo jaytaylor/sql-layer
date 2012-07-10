@@ -148,7 +148,7 @@ class Insert_Default extends OperatorExecutionBase implements UpdatePlannable {
     @Override
     public Explainer getExplainer()
     {
-        return new DUIOperatorExplainer("INSERT", inputOperator);
+        return new DUIOperatorExplainer("Insert", inputOperator);
     }
 
 }
