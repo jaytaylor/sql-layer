@@ -29,7 +29,6 @@ package com.akiban.sql.optimizer.rule;
 import com.akiban.ais.model.Column;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
-import com.akiban.server.t3expressions.TClassPossibility;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TClass;
@@ -44,7 +43,6 @@ import com.akiban.server.types3.common.types.StringFactory.Charset;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
 import com.akiban.sql.optimizer.plan.AggregateSource;
@@ -315,6 +313,19 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleComparisonCondition(ComparisonCondition expression) {
+            ExpressionNode left = expression.getLeft();
+            ExpressionNode right = expression.getRight();
+            TClass leftTClass = tclass(left);
+            TClass rightTClass = tclass(right);
+            if (!leftTClass.equals(rightTClass)) {
+                TClass common = resolver.commonTClass(leftTClass, rightTClass);
+                if (common == null)
+                    throw error("no common type found for comparison of " + expression);
+                left = castTo(left, common);
+                right = castTo(right, common);
+                expression.setLeft(left);
+                expression.setRight(right);
+            }
             return boolExpr(expression);
         }
 

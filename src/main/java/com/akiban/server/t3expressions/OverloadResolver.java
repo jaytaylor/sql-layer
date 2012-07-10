@@ -105,7 +105,11 @@ public final class OverloadResolver {
         if (tClass2 == null)
             return tClass1;
 
-        // Alright, neither is null.
+        // If they're the same class, this is a really easy question to answer.
+        if (tClass1.equals(tClass2))
+            return tClass1;
+
+        // Alright, neither is null and they're both different. Try the hard way.
         Set<TClass> t1Targets = registry.stronglyCastableTo(tClass1);
         Set<TClass> t2Targets = registry.stronglyCastableTo(tClass2);
 
