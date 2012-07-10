@@ -33,7 +33,6 @@ import com.akiban.qp.operator.API.JoinType;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
-import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -138,6 +137,7 @@ public class OperatorAssembler extends BaseRule
         void fillNulls(Index index, T[] keys);
         List<T> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
                                          ColumnExpressionToIndex fieldOffsets);
+        T[] createNulls(Index index, int nkeys);
     }
 
     private static final PartialAssembler<?> NULL_PARTIAL_ASSEMBLER = new PartialAssembler<Object>() {
@@ -188,6 +188,11 @@ public class OperatorAssembler extends BaseRule
         @Override
         public List<Object> assembleUpdates(UserTableRowType targetRowType, List<UpdateColumn> updateColumns,
                                                 ColumnExpressionToIndex fieldOffsets) {
+            return null;
+        }
+
+        @Override
+        public Object[] createNulls(Index index, int nkeys) {
             return null;
         }
     };
@@ -344,6 +349,13 @@ public class OperatorAssembler extends BaseRule
                 }
                 updates = Arrays.asList(row);
                 return updates;
+            }
+
+            @Override
+            public T[] createNulls(Index index, int nkeys) {
+                T[] arr = array(nkeys);
+                fillNulls(index, arr);
+                return arr;
             }
 
             protected abstract T[] array(int size);
@@ -1507,14 +1519,8 @@ public class OperatorAssembler extends BaseRule
          * @param nkeys number of keys actually in use
          */
         protected IndexBound getNullIndexBound(Index index, int nkeys) {
-            Expression[] keys = new Expression[nkeys];
-            Arrays.fill(keys, LiteralExpression.forNull());
-            TPreparedExpression[] pKeys = new TPreparedExpression[nkeys];
-            List<IndexColumn> indexCols = index.getAllColumns();
-            for (int i = 0; i < nkeys; ++i) {
-                TInstance instance = indexCols.get(i).getColumn().tInstance();
-                pKeys[i] = new TNullExpression(instance);
-            }
+            Expression[] keys = oldPartialAssembler.createNulls(index, nkeys);
+            TPreparedExpression[] pKeys = newPartialAssembler.createNulls(index, nkeys);
             return new IndexBound(getIndexExpressionRow(index, keys, pKeys),
                                   getIndexColumnSelector(index, nkeys));
         }
