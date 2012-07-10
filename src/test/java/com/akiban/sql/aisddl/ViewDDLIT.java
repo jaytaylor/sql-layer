@@ -107,4 +107,11 @@ public class ViewDDLIT extends PostgresServerITBase {
         stmt.executeUpdate("DROP TABLE t");
     }
 
+    @Test(expected=SQLException.class)
+    public void testDropViewReferenced() throws Exception {
+        stmt.executeUpdate("CREATE VIEW v1 AS SELECT * FROM t");
+        stmt.executeUpdate("CREATE VIEW v2 AS SELECT * FROM v1");
+        stmt.executeUpdate("DROP VIEW v1");
+    }
+
 }
