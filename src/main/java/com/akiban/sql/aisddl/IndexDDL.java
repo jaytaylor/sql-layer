@@ -31,7 +31,8 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.akiban.ais.model.*;
+import com.akiban.ais.AISCloner;
+import com.akiban.ais.protobuf.ProtobufWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,14 +54,11 @@ import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.IndexColumn;
 import com.akiban.sql.parser.RenameNode;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.TableSubsetWriter;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 
@@ -319,23 +317,29 @@ public class IndexDDL
     }
 
     private static void addGroup (AISBuilder builder, AkibanInformationSchema ais, final String groupName) {
-
-        new TableSubsetWriter(new AISTarget(builder.akibanInformationSchema())) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                return table.getGroup().getName().equalsIgnoreCase(groupName);
-            }
-        }.save(ais);
+        AISCloner.clone(
+                builder.akibanInformationSchema(),
+                ais,
+                new ProtobufWriter.TableSelector() {
+                    @Override
+                    public boolean isSelected(UserTable table) {
+                        return table.getGroup().getName().equalsIgnoreCase(groupName);
+                    }
+                }
+        );
     }
     
     private static void addTable (AISBuilder builder, AkibanInformationSchema ais, TableName tableName) {
         final UserTable userTable = ais.getUserTable(tableName);
-        final GroupTable groupTable = userTable.getGroup().getGroupTable();
-        new TableSubsetWriter(new AISTarget(builder.akibanInformationSchema())) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                return table == userTable || table == groupTable;
-            }
-        }.save(ais);
+        AISCloner.clone(
+                builder.akibanInformationSchema(),
+                ais,
+                new ProtobufWriter.TableSelector() {
+                    @Override
+                    public boolean isSelected(UserTable table) {
+                        return table == userTable;
+                    }
+                }
+        );
     }
 }

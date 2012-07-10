@@ -169,10 +169,17 @@ public class ProtobufWriter {
         // Write groups into same schema as root table
         for(UserTable table : schema.getUserTables().values()) {
             if(selector.isSelected(table)) {
-                if(table.getParentJoin() == null && table.getGroup() != null) {
-                    writeGroup(schemaBuilder, table.getGroup());
+                boolean withJoin = false;
+                if(table.getParentJoin() == null) {
+                    if(table.getGroup() != null) {
+                        writeGroup(schemaBuilder, table.getGroup());
+                    }
+                } else {
+                    if(selector.isSelected(table.getParentJoin().getParent())) {
+                        withJoin = true;
+                    }
                 }
-                writeTable(schemaBuilder, table);
+                writeTable(schemaBuilder, table, withJoin);
                 isEmpty = false;
             }
         }
@@ -195,7 +202,7 @@ public class ProtobufWriter {
         schemaBuilder.addGroups(groupBuilder.build());
     }
 
-    private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, UserTable table) {
+    private static void writeTable(AISProtobuf.Schema.Builder schemaBuilder, UserTable table, boolean withJoin) {
         AISProtobuf.Table.Builder tableBuilder = AISProtobuf.Table.newBuilder();
         tableBuilder.
                 setTableName(table.getName().getTableName()).
@@ -216,7 +223,7 @@ public class ProtobufWriter {
         }
 
         Join join = table.getParentJoin();
-        if(join != null) {
+        if(withJoin && join != null) {
             final UserTable parent = join.getParent();
             AISProtobuf.Join.Builder joinBuilder = AISProtobuf.Join.newBuilder();
             joinBuilder.setParentTable(AISProtobuf.TableName.newBuilder().
