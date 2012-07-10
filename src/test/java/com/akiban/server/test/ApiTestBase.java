@@ -815,6 +815,10 @@ public class ApiTestBase {
 
     protected final void dropAllTables() throws InvalidOperationException {
         for(View view : ddl().getAIS(session()).getViews().values()) {
+            // In case one view references another, avoid having to delete in proper order.
+            view.getTableColumnReferences().clear();
+        }
+        for(View view : ddl().getAIS(session()).getViews().values()) {
             ddl().dropView(session(), view.getName());
         }
         Set<String> groupNames = new HashSet<String>();
