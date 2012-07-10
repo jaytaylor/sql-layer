@@ -1,6 +1,6 @@
 # test conditonal create
 ---
-- CreateTable: t1 IF NOT EXISTS (ff double);
+- CreateTable:  IF NOT EXISTS t1 (ff double);
 ---
 - CreateTable: t1(ff double);
 - error: [50006]
