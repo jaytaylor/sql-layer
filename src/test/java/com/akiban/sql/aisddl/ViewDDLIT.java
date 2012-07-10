@@ -32,7 +32,9 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 
@@ -137,6 +139,16 @@ public class ViewDDLIT extends PostgresServerITBase {
         stmt.executeUpdate("CREATE VIEW v AS SELECT table_name FROM information_schema.tables WHERE table_schema <> 'information_schema'");
         forgetConnection();
         safeRestartTestServices();
+        serviceManager().getServiceByClass(BasicInfoSchemaTablesService.class);
+        stmt = getConnection().createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM v");
+        boolean found = false;
+        while (rs.next()) {
+            String s = rs.getString(1);
+            if ("v".equals(s))
+                found = true;
+        }
+        assertTrue(found);
     }
 
 }
