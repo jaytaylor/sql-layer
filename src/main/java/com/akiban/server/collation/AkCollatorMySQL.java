@@ -136,7 +136,7 @@ public class AkCollatorMySQL extends AkCollator {
     String decodeSortKeyBytes(byte[] bytes, int index, int length) {
         StringBuilder sb = new StringBuilder(length);
         for (int i = index; i < index + length; i++) {
-            sb.append((char) (decodeTable[bytes[i]]));
+            sb.append((char) (decodeTable[bytes[i] & 0xFF]));
         }
         return sb.toString();
     }
