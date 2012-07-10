@@ -96,6 +96,10 @@ public abstract class StoreAdapter
         this.config = config;
     }
 
+    // Class state
+
+    public static final Session.Key<StoreAdapter> STORE_ADAPTER_KEY = Session.Key.named("STORE_ADAPTER");
+
     // Object state
 
     protected final Schema schema;

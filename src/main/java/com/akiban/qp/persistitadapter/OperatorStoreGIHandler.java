@@ -57,7 +57,7 @@ class OperatorStoreGIHandler {
 
         Exchange exchange = adapter.takeExchange(groupIndex);
         try {
-            PersistitIndexRowBuffer indexRow = new PersistitIndexRowBuffer(exchange.getKey(), exchange.getValue());
+            PersistitIndexRowBuffer indexRow = adapter.newIndexRow(groupIndex, exchange.getKey(), exchange.getValue());
             IndexRowComposition irc = groupIndex.indexRowComposition();
             for(int i=0, LEN = irc.getLength(); i < LEN; ++i) {
                 assert irc.isInRowData(i);
@@ -67,6 +67,7 @@ class OperatorStoreGIHandler {
                 ValueSource source = row.eval(flattenedIndex);
                 indexRow.append(column, source);
             }
+            indexRow.close();
             indexRow.tableBitmap(tableBitmap(groupIndex, row));
             switch (action) {
             case STORE:

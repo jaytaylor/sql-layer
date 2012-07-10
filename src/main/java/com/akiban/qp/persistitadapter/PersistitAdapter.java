@@ -57,6 +57,7 @@ import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
+import com.persistit.Value;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
@@ -216,9 +217,9 @@ public class PersistitAdapter extends StoreAdapter
         return PersistitGroupRow.newPersistitGroupRow(this);
     }
 
-    public PersistitIndexRowBuffer newIndexRow(Index index, Key key)
+    public PersistitIndexRowBuffer newIndexRow(Index index, Key key, Value value)
     {
-        return new PersistitIndexRowBuffer(key);
+        return PersistitIndexRowBuffer.createEmpty(this, index, key, value);
     }
 
     public PersistitIndexRow newIndexRow(IndexRowType indexRowType)
@@ -306,6 +307,7 @@ public class PersistitAdapter extends StoreAdapter
         assert this.persistit != null : store;
         this.treeService = treeService;
         this.withStepChanging = withStepChanging;
+        session.put(STORE_ADAPTER_KEY, this);
     }
     
     // Object state
