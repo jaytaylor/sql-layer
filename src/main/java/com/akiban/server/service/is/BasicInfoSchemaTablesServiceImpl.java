@@ -691,6 +691,7 @@ public class BasicInfoSchemaTablesServiceImpl
                                          view.getName().getSchemaName(),
                                          view.getName().getTableName(),
                                          view.getDefinition(),
+                                         boolResult(false),
                                          ++rowCounter /*hidden pk*/);
                 } else {
                     return null;
@@ -1014,7 +1015,8 @@ public class BasicInfoSchemaTablesServiceImpl
         builder.userTable(VIEWS)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
-                .colText("view_definition", false);
+                .colText("view_definition", false)
+                .colString("is_updatable", YES_NO_MAX, false);
         //primary key(schema_name, table_name)
         //foreign key(schema_name, table_name) references TABLES (schema_name, table_name)
 
