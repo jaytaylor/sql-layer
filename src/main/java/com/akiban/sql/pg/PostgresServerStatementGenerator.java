@@ -23,56 +23,28 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.sql.pg;
 
-package com.akiban.qp.row;
+import java.util.List;
 
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
+import com.akiban.sql.parser.AlterServerNode;
+import com.akiban.sql.parser.NodeTypes;
+import com.akiban.sql.parser.ParameterNode;
+import com.akiban.sql.parser.StatementNode;
 
-public class ValuesRow extends AbstractRow
-{
-    // Object interface
+public class PostgresServerStatementGenerator extends
+        PostgresBaseStatementGenerator {
 
+    public PostgresServerStatementGenerator (PostgresServerSession server) {
+    }
+    
     @Override
-    public String toString()
-    {
-        return valuesHolder.toString();
+    public PostgresStatement generate(PostgresServerSession server,
+            StatementNode stmt, List<ParameterNode> params, int[] paramTypes) {
+        
+        if (stmt.getNodeType() != NodeTypes.ALTER_SERVER_NODE) 
+            return null;
+        return new PostgresServerStatement ((AlterServerNode)stmt);
     }
 
-    // Row interface
-
-    @Override
-    public RowType rowType()
-    {
-        return rowType;
-    }
-
-    @Override
-    public ValueSource eval(int i) {
-        return valuesHolder.valueSourceAt(i);
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return null;
-    }
-
-    // ValuesRow interface
-
-    public ValuesRow(RowType rowType, Object... values)
-    {
-        this.rowType = rowType;
-        AkType[] akTypes = new AkType[rowType.nFields()];
-        for (int i = 0; i < akTypes.length; i++) {
-            akTypes[i] = rowType.typeAt(i);
-        }
-        this.valuesHolder = new RowValuesHolder(values, akTypes);
-    }
-
-    // Object state
-
-    private final RowType rowType;
-    private final RowValuesHolder valuesHolder;
 }
