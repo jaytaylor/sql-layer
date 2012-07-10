@@ -42,9 +42,26 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.View;
 import com.akiban.sql.pg.PostgresServerITBase;
 
+import com.akiban.server.service.config.Property;
+import com.akiban.server.service.is.BasicInfoSchemaTablesService;
+import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
+
 import java.util.Collection;
 
 public class ViewDDLIT extends PostgresServerITBase {
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bind(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
+;
+    }
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
     private Statement stmt;
 
     @Before
@@ -112,6 +129,14 @@ public class ViewDDLIT extends PostgresServerITBase {
         stmt.executeUpdate("CREATE VIEW v1 AS SELECT * FROM t");
         stmt.executeUpdate("CREATE VIEW v2 AS SELECT * FROM v1");
         stmt.executeUpdate("DROP VIEW v1");
+    }
+
+    @Test
+    public void testSystemView() throws Exception {
+        serviceManager().getServiceByClass(BasicInfoSchemaTablesService.class);
+        stmt.executeUpdate("CREATE VIEW v AS SELECT table_name FROM information_schema.tables WHERE table_schema <> 'information_schema'");
+        forgetConnection();
+        safeRestartTestServices();
     }
 
 }
