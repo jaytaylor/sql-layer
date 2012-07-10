@@ -52,4 +52,10 @@ public interface NewAISBuilder extends NewAISProvider {
     NewUserTableBuilder userTable(String schema, String table);
 
     NewUserTableBuilder userTable(TableName tableName);
+
+    NewViewBuilder view(String view);
+
+    NewViewBuilder view(String schema, String view);
+
+    NewViewBuilder view(TableName viewName);
 }

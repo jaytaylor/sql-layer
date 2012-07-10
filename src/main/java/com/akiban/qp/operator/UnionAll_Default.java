@@ -35,6 +35,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TInstance;
 import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Label;
@@ -115,12 +116,12 @@ final class UnionAll_Default extends Operator {
         return new Execution(context);
     }
 
-    UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type) {
+    UnionAll_Default(Operator input1, RowType input1Type, Operator input2, RowType input2Type, boolean usePValues) {
         ArgumentValidation.notNull("first input", input1);
         ArgumentValidation.notNull("first input type", input1Type);
         ArgumentValidation.notNull("second input", input2);
         ArgumentValidation.notNull("second input type", input2Type);
-        this.outputRowType = rowType(input1Type, input2Type);
+        this.outputRowType = rowType(input1Type, input2Type, usePValues);
         this.inputs = Arrays.asList(input1, input2);
         this.inputTypes = Arrays.asList(input1Type, input2Type);
         ArgumentValidation.isEQ("inputs.size", inputs.size(), "inputTypes.size", inputTypes.size());
@@ -128,11 +129,28 @@ final class UnionAll_Default extends Operator {
 
     // for use in this package (in ctor and unit tests)
 
-    static RowType rowType(RowType rowType1, RowType rowType2) {
+    static RowType rowType(RowType rowType1, RowType rowType2, boolean usePValues) {
         if (rowType1 == rowType2)
             return rowType1;
         if (rowType1.nFields() != rowType2.nFields())
             throw notSameShape(rowType1, rowType2);
+        return usePValues ? rowTypeNew(rowType1, rowType2) : rowTypeOld(rowType1, rowType2);
+    }
+
+    private static RowType rowTypeNew(RowType rowType1, RowType rowType2) {
+        TInstance[] types = new TInstance[rowType1.nFields()];
+        for(int i=0; i<types.length; ++i) {
+            TInstance tInst1 = rowType1.typeInstanceAt(i);
+            TInstance tInst2 = rowType2.typeInstanceAt(i);
+            if (tInst1.equals(tInst2))
+                types[i] = tInst1;
+            else
+                throw notSameShape(rowType1, rowType2);
+        }
+        return rowType1.schema().newValuesType(types);
+    }
+
+    private static RowType rowTypeOld(RowType rowType1, RowType rowType2) {
         AkType[] types = new AkType[rowType1.nFields()];
         for(int i=0; i<types.length; ++i) {
             AkType akType1 = rowType1.typeAt(i);

@@ -81,6 +81,10 @@ public final class OverloadResolver {
         this.aggregatesRegistry = aggregatesRegistry;
     }
 
+    public TCast getTCast(TInstance source, TInstance target) {
+        return registry.cast(source.typeClass(), target.typeClass());
+    }
+
     public TClassPossibility commonTClass(TClass tClass1, TClass tClass2) {
         return registry.commonTClass(tClass1, tClass2);
     }

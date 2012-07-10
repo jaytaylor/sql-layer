@@ -32,7 +32,6 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-import java.sql.SQLException;
 
 import org.junit.Ignore;
 import org.junit.Test;
@@ -219,6 +218,38 @@ public class IndexDDLIT extends PostgresServerITBase {
         assertNotNull (table);
         assertNull (table.getIndex("test114"));
     }
+     
+    
+    @Test(expected=PSQLException.class)
+    public void dropNonExistingIndexError() throws Exception 
+    {
+        String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
+        createTable();
+        
+        getConnection().createStatement().execute(sql);
+        String sql1 = "DROP INDEX test114b";
+        
+        getConnection().createStatement().execute(sql1);
+        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        assertNotNull (table);
+        assertNull (table.getIndex("test114b"));
+    }
+    
+    @Test
+    public void dropNonExistingIndex() throws Exception 
+    {
+        String sql = "CREATE INDEX test114 on test.t1 (test.t1.c1, t1.c2, c3)";
+        createTable();
+        
+        getConnection().createStatement().execute(sql);
+        String sql1 = "DROP INDEX IF EXISTS test114b";
+        
+        getConnection().createStatement().execute(sql1);
+        UserTable table = ddlServer().getAIS(session()).getUserTable("test", "t1");
+        assertNotNull (table);
+        assertNull (table.getIndex("test114b"));
+    }
+    
     
     @Test @Ignore // - disabled because the SET SCHEMA doesn't work? 
     public void dropIndexTable() throws Exception {

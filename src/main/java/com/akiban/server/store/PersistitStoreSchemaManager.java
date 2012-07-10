@@ -57,6 +57,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.ais.protobuf.ProtobufReader;
 import com.akiban.ais.protobuf.ProtobufWriter;
@@ -65,6 +66,7 @@ import com.akiban.server.error.AISTooLargeException;
 import com.akiban.server.error.BranchingGroupIndexException;
 import com.akiban.server.error.DuplicateIndexException;
 import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.server.error.DuplicateViewException;
 import com.akiban.server.error.ISTableVersionMismatchException;
 import com.akiban.server.error.IndexLacksColumnsException;
 import com.akiban.server.error.JoinColumnTypesMismatchException;
@@ -76,6 +78,7 @@ import com.akiban.server.error.ProtectedIndexException;
 import com.akiban.server.error.ProtectedTableDDLException;
 import com.akiban.server.error.ReferencedTableException;
 import com.akiban.server.error.TableNotInGroupException;
+import com.akiban.server.error.UndefinedViewException;
 import com.akiban.server.rowdata.RowDefCache;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.SessionService;
@@ -89,6 +92,7 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Table;
@@ -408,7 +412,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 getAis(),
                 new ProtobufWriter.WriteSelector() {
                     @Override
-                    public boolean isSelected(UserTable table) {
+                    public boolean isSelected(Columnar columnar) {
                         return true;
                     }
 
@@ -508,6 +512,29 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     }
 
     @Override
+    public void createView(Session session, View view) {
+        final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(view.getName(), false);
+        if (oldAIS.getView(view.getName()) != null)
+            throw new DuplicateViewException(view.getName());
+        AkibanInformationSchema newAIS = AISMerge.mergeView(oldAIS, view);
+        final String schemaName = view.getName().getSchemaName();
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+    }
+    
+    @Override
+    public void dropView(Session session, TableName viewName) {
+        final AkibanInformationSchema oldAIS = getAis();
+        checkAISSchema(viewName, false);
+        if (oldAIS.getView(viewName) == null)
+            throw new UndefinedViewException(viewName);
+        final AkibanInformationSchema newAIS = AISCloner.clone(oldAIS);
+        newAIS.removeView(viewName);
+        final String schemaName = viewName.getSchemaName();
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(schemaName));
+    }
+
+    @Override
     public AkibanInformationSchema getAis(Session session) {
         return getAis();
     }
@@ -527,8 +554,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 getAis(),
                 new ProtobufWriter.WriteSelector() {
                     @Override
-                    public boolean isSelected(UserTable table) {
-                        return !tableNames.contains(table.getName());
+                    public boolean isSelected(Columnar columnar) {
+                        return !tableNames.contains(columnar.getName());
                     }
 
                     @Override
@@ -888,9 +915,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         if(TableName.INFORMATION_SCHEMA.equals(schema)) {
             selector = new ProtobufWriter.SingleSchemaSelector(schema) {
                 @Override
-                public boolean isSelected(UserTable table) {
+                public boolean isSelected(Columnar table) {
                     return !legacyISTables.contains(table.getName()) &&
-                           !table.hasMemoryTableFactory();
+                           !(table.isTable() && ((UserTable)table).hasMemoryTableFactory());
                 }
             };
         } else {
@@ -1157,7 +1184,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 saveMetaModel(ex, buffer, newAIS, getVolumeForSchemaTree(schema));
             break;
             default:
-                throw new IllegalStateException("Cannon serialize as " + serializationType);
+                throw new IllegalStateException("Cannot serialize as " + serializationType);
         }
     }
 

@@ -49,6 +49,7 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.Types3Switch;
 import com.persistit.Transaction;
 import com.persistit.exception.PersistitException;
 import com.akiban.util.Strings;
@@ -449,7 +450,7 @@ public class OperatorITBase extends ITBase
             } else if(type != newType) {
                 fail("Multiple row types: " + type + " vs " + newType);
             }
-            bindableRows.add(BindableRow.of(row));
+            bindableRows.add(BindableRow.of(row, Types3Switch.ON));
         }
         return API.valuesScan_Default(bindableRows, type);
     }

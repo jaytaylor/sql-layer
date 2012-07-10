@@ -33,11 +33,17 @@ import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.texpressions.TCastExpression;
+import com.akiban.server.types3.texpressions.TComparisonExpression;
+import com.akiban.server.types3.texpressions.TDummyExpression;
+import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
@@ -51,6 +57,8 @@ import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.types.DataTypeDescriptor;
+import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,7 +111,24 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     protected TPreparedExpression assembleCastExpression(CastExpression castExpression,
                                                          ColumnExpressionContext columnContext,
                                                          SubqueryOperatorAssembler<TPreparedExpression> subqueryAssembler) {
-        throw new UnsupportedOperationException(); // TODO
+        ExpressionNode operand = castExpression.getOperand();
+        TPreparedExpression expr = assembleExpression(operand, columnContext, subqueryAssembler);
+        TInstance toType = castExpression.getPreptimeValue().instance();
+        if (toType == null) return expr;
+        if (!toType.equals(operand.getPreptimeValue().instance()))
+        {
+            // Do type conversion.
+            TypeId id = castExpression.getSQLtype().getTypeId();
+            if (id.isIntervalTypeId()) {
+                throw new UnsupportedOperationException(); // TODO
+//                expr = new IntervalCastExpression(expr, id);
+            }
+            else {
+                TCast tcast = overloadResolver.getTCast(operand.getPreptimeValue().instance(), toType);
+                expr = new TCastExpression(expr, tcast, toType);
+            }
+        }
+        return expr;
     }
 
     @Override
@@ -119,7 +144,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     protected TPreparedExpression compare(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
-        throw new UnsupportedOperationException(); // TODO
+        return new TComparisonExpression(left, comparison, right);
     }
 
     @Override

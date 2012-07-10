@@ -70,6 +70,11 @@ public class DerivedTypesSchema {
         return new ProductRowType(this, nextTypeId(), leftType, branchType, rightType);
     }
 
+    public synchronized ValuesRowType newValuesType(TInstance... fields)
+    {
+        return new ValuesRowType(this, nextTypeId(), fields);
+    }
+
     public synchronized ValuesRowType newValuesType(AkType... fields)
     {
         return new ValuesRowType(this, nextTypeId(), fields);

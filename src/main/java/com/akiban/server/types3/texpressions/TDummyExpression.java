@@ -24,18 +24,34 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.row;
+package com.akiban.server.types3.texpressions;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 
-public interface RowBase extends BoundExpressions
-{
-    RowType rowType();
-    HKey hKey();
-    HKey ancestorHKey(UserTable table);
-    boolean ancestorOf(RowBase that);
-    boolean containsRealRowOf(UserTable userTable);
-    Row subRow(RowType subRowType);
+/**
+ * A placeholder TPreparedExpression -- the equivalent of UnsupportedOperationException.
+ */
+@Deprecated
+public final class TDummyExpression implements TPreparedExpression {
+    @Override
+    public TPreptimeValue evaluateConstant() {
+        return new TPreptimeValue(resultType(), null);
+    }
+
+    @Override
+    public TInstance resultType() {
+        return MNumeric.INT.instance();
+    }
+
+    @Override
+    public TEvaluatableExpression build() {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    public String toString() {
+        return "DummyExpression";
+    }
 }

@@ -32,6 +32,7 @@ import java.util.LinkedList;
 import java.util.List;
 
 import com.akiban.ais.AISCloner;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -61,6 +62,8 @@ import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.sql.parser.ExistenceCheck;
 
 /** DDL operations on Indices */
 public class IndexDDL
@@ -69,12 +72,27 @@ public class IndexDDL
     private IndexDDL() {
     }
 
+    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error)
+    {
+        switch(condition)
+        {
+            case IF_EXISTS:
+                    // doesn't exist, does nothing
+                return true;
+            case NO_CONDITION:
+                throw error;
+            default:
+                throw new IllegalStateException("Unexpected condition in DROP INDEX: " + condition);
+        }
+    }
+
     public static void dropIndex (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,
                                     DropIndexNode dropIndex) {
         String groupName = null;
         TableName tableName = null;
+        ExistenceCheck condition = dropIndex.getExistenceCheck();
 
         final String indexSchemaName = dropIndex.getObjectName() != null && dropIndex.getObjectName().getSchemaName() != null ?
                 dropIndex.getObjectName().getSchemaName() :
@@ -90,7 +108,8 @@ public class IndexDDL
             tableName = TableName.create(indexSchemaName == null ? defaultSchemaName : indexSchemaName, indexTableName);
             UserTable table = ddlFunctions.getAIS(session).getUserTable(tableName);
             if (table == null) {
-                throw new NoSuchTableException(tableName);
+                if(returnHere(condition, new NoSuchTableException(tableName)))
+                    return;
             }
             // if we can't find the index, set tableName to null
             // to flag not a user table index. 
@@ -140,10 +159,11 @@ public class IndexDDL
         } else if (tableName != null) {
             ddlFunctions.dropTableIndexes(session, tableName, indexesToDrop);
         } else {
-            throw new NoSuchIndexException (indexName);
+            if(returnHere(condition, new NoSuchIndexException (indexName)))
+                return;
         }
     }
-    
+
     public static void renameIndex (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName, 
@@ -152,7 +172,7 @@ public class IndexDDL
     }
     
     public static void createIndex(DDLFunctions ddlFunctions,
-                                    Session session,
+                                   Session session,
                                    String defaultSchemaName,
                                    CreateIndexNode createIndex)  {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
@@ -176,7 +196,7 @@ public class IndexDDL
             return buildGroupIndex (ais, tableName, index);
         }
     }
-    
+
     /**
      * Check if the index specification is for a table index or a group index. We distinguish between 
      * them by checking the columns specified in the index, if they all belong to the table 
@@ -323,7 +343,11 @@ public class IndexDDL
                 ais,
                 new ProtobufWriter.TableAllIndexSelector() {
                     @Override
-                    public boolean isSelected(UserTable table) {
+                    public boolean isSelected(Columnar columnar) {
+                        if(!columnar.isTable()) {
+                            return false;
+                        }
+                        UserTable table = (UserTable)columnar;
                         return table.getGroup().getName().equalsIgnoreCase(groupName);
                     }
                 }

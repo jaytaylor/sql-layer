@@ -89,4 +89,9 @@ public class MMinMax implements TAggregator {
     public String name() {
         return mType.name();
     }
+
+    @Override
+    public String toString() {
+        return name().toLowerCase();
+    }
 }

@@ -50,7 +50,7 @@ public abstract class MCount implements TAggregator {
 
             @Override
             public String name() {
-                return "COUNT(*)";
+                return "count(*)";
             }
         },
         // COUNT
@@ -67,7 +67,7 @@ public abstract class MCount implements TAggregator {
 
             @Override
             public String name() {
-                return "COUNT";
+                return "count";
             }
         }
     };
@@ -85,5 +85,10 @@ public abstract class MCount implements TAggregator {
     @Override
     public TInstance resultType(TPreptimeValue value) {
         return MNumeric.BIGINT.instance();
+    }
+
+    @Override
+    public String toString() {
+        return name();
     }
 }

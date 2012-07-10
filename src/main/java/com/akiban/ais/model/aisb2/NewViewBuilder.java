@@ -24,18 +24,16 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.row;
+package com.akiban.ais.model.aisb2;
 
-import com.akiban.ais.model.UserTable;
-import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.qp.rowtype.RowType;
+import java.util.Properties;
 
-public interface RowBase extends BoundExpressions
-{
-    RowType rowType();
-    HKey hKey();
-    HKey ancestorHKey(UserTable table);
-    boolean ancestorOf(RowBase that);
-    boolean containsRealRowOf(UserTable userTable);
-    Row subRow(RowType subRowType);
+public interface NewViewBuilder extends NewUserTableBuilder {
+    NewViewBuilder definition(String definition);
+
+    NewViewBuilder definition(String definition, Properties properties);
+
+    NewViewBuilder references(String table);
+
+    NewViewBuilder references(String schema, String table, String... columns);
 }
