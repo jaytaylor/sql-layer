@@ -68,20 +68,19 @@ public class TableDDLTest {
     private static final String    JOIN_NAME = "test/t1/test/t2";
     protected SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
-    private static AkibanInformationSchema ais;
     private AISBuilder builder;
+
     @Before
     public void before() throws Exception {
         parser = new SQLParser();
-        ais = new AkibanInformationSchema();
-        builder = new AISBuilder(ais);
-        ddlFunctions = new DDLFunctionsMock(ais);
+        builder = new AISBuilder();
+        ddlFunctions = new DDLFunctionsMock(builder.akibanInformationSchema());
     }
     
     @Test
-    public void createNewTableWihtIfNotExists() throws StandardException
+    public void createNewTableWithIfNotExists() throws StandardException
     {
-        String sql = "CREATE TABLE IF NOT EXISTS desk (c1 INT)";
+        String sql = "CREATE TABLE IF NOT EXISTS t1 (c1 INT)";
         createTableSimpleGenerateAIS();
         StatementNode createNode = parser.parseStatement(sql);
         assertTrue(createNode instanceof CreateTableNode);
@@ -89,7 +88,7 @@ public class TableDDLTest {
     }
 
     @Test
-    public void createDuplicateTableWiithIfNotExists() throws StandardException
+    public void createDuplicateTableWithIfNotExists() throws StandardException
     {
         String sql = "CREATE TABLE IF NOT EXISTS " + DEFAULT_TABLE + "(c1 INT)";
         createTableSimpleGenerateAIS(); // creates DEFAULT_SCHEMA.DEFAULT_TABLE
@@ -165,34 +164,12 @@ public class TableDDLTest {
         assertTrue (stmt instanceof DropTableNode);
         TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);
     }
-    
-    @Test
-    public void createNewTable() throws StandardException
-    {
-        String sql = "CREATE TABLE desk (c1 INT)";
-        createTableSimpleGenerateAIS();
-        
-        StatementNode createNode = parser.parseStatement(sql);
-        assertTrue(createNode instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)createNode);
-        
-    }
 
-    /*
-    create table t1 (col1 int primary key)
-    CREATE TABLE "MyMixedCaseTable" ("Col1" int primary key)
-    create table test.t1 (col1 integer, primary key (col1))
-    CREATE TABLE t1 (col1 int primary key, foreign key (col1) references t2 (col2))
-    create table t1 (col1 integer, 
-    primary key (col1), 
-    grouping foreign key (col1) references t2 (col1))
-    */    
     @Test
     public void createTableSimple() throws Exception {
-        String sql = "CREATE TABLE d0 (c1 INT)";
-        
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 (c1 INT)";
         createTableSimpleGenerateAIS();
-
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
         TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt);
@@ -201,8 +178,8 @@ public class TableDDLTest {
     
     @Test
     public void createTablePK() throws Exception {
-        String sql = "CREATE TABLE d1 (c1 INT NOT NULL PRIMARY KEY)";
-
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 (c1 INT NOT NULL PRIMARY KEY)";
         createTablePKGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -211,7 +188,8 @@ public class TableDDLTest {
     
     @Test
     public void createTableUniqueKey() throws Exception {
-        String sql = "CREATE TABLE  d2 (C1 int NOT NULL UNIQUE)";
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t1 (C1 int NOT NULL UNIQUE)";
         createTableUniqueKeyGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -220,7 +198,7 @@ public class TableDDLTest {
 
     @Test (expected=DuplicateIndexException.class)
     public void createTable2PKs() throws Exception {
-        String sql = "CREATE TABLE test.d3 (c1 int primary key, c2 int NOT NULL, primary key (c2))";
+        String sql = "CREATE TABLE test.t1 (c1 int primary key, c2 int NOT NULL, primary key (c2))";
         
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -229,7 +207,8 @@ public class TableDDLTest {
     
     @Test
     public void createTableFKSimple() throws Exception {
-        String sql = "CREATE TABLE if not exists test.t2 (c1 int not null primary key, c2 int not null, grouping foreign key (c2) references t1)";
+        makeSeparateAIS();
+        String sql = "CREATE TABLE t2 (c1 int not null primary key, c2 int not null, grouping foreign key (c2) references t1)";
         createTableFKSimpleGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
@@ -237,32 +216,42 @@ public class TableDDLTest {
     }
     
     public static class DDLFunctionsMock implements DDLFunctions {
-        private AkibanInformationSchema internalAIS = null;
-        public DDLFunctionsMock() {}
-        
-        public DDLFunctionsMock(AkibanInformationSchema ais) { this.internalAIS = ais; }
+        private final AkibanInformationSchema internalAIS;
+        private final AkibanInformationSchema externalAIS;
+
+        public DDLFunctionsMock(AkibanInformationSchema ais) {
+            this.internalAIS = ais;
+            this.externalAIS = ais;
+        }
+
+        public DDLFunctionsMock(AkibanInformationSchema internal, AkibanInformationSchema external) {
+            this.internalAIS = internal;
+            this.externalAIS = external;
+        }
         
         @Override
         public void createTable(Session session, UserTable table) {
 
+            assertEquals(table.getName(), dropTable);
+
+            final UserTable dropUserTable = internalAIS.getUserTable(dropTable);
             for (Column col : table.getColumnsIncludingInternal()) {
                 assertNotNull (col.getName());
-                assertNotNull (ais.getUserTable(dropTable));
-                assertNotNull (ais.getUserTable(dropTable).getColumn(col.getName()));
-                assertEquals (col.getNullable(), ais.getUserTable(dropTable).getColumn(col.getName()).getNullable());
+                assertNotNull (dropUserTable);
+                assertNotNull (dropUserTable.getColumn(col.getName()));
+                assertEquals (col.getNullable(), dropUserTable.getColumn(col.getName()).getNullable());
             }
-            for (Column col : ais.getTable(dropTable).getColumnsIncludingInternal()) {
+            for (Column col : internalAIS.getTable(dropTable).getColumnsIncludingInternal()) {
                 assertNotNull (col.getName());
                 assertNotNull (table.getColumn(col.getName()));
             }
             
-            checkIndexes (table, ais.getUserTable(dropTable));
-            checkIndexes (ais.getUserTable(dropTable), table);
+            checkIndexes (table, dropUserTable);
+            checkIndexes (dropUserTable, table);
             
             if (table.getParentJoin() != null) {
-                checkJoin (table.getParentJoin(), ais.getJoin(JOIN_NAME));
+                checkJoin (table.getParentJoin(), internalAIS.getJoin(JOIN_NAME));
             }
-            
         }
 
         @Override
@@ -280,6 +269,7 @@ public class TableDDLTest {
                 }
             }
         }
+
         private void checkJoin (Join sourceJoin, Join checkJoin) {
             assertEquals (sourceJoin.getName(), checkJoin.getName()); 
             assertEquals (sourceJoin.getJoinColumns().size(), checkJoin.getJoinColumns().size());
@@ -299,7 +289,7 @@ public class TableDDLTest {
         
         @Override
         public AkibanInformationSchema getAIS(Session session) {
-            return internalAIS;
+            return externalAIS;
         }
 
         @Override
@@ -375,6 +365,11 @@ public class TableDDLTest {
         }
     } // END class DDLFunctionsMock
 
+    private void makeSeparateAIS() {
+        AkibanInformationSchema external = new AkibanInformationSchema();
+        ddlFunctions = new DDLFunctionsMock(builder.akibanInformationSchema(), external);
+    }
+
     /*"CREATE TABLE t1 (c1 INT)";*/
     private void createTableSimpleGenerateAIS () {
         dropTable = TableName.create(DEFAULT_SCHEMA, DEFAULT_TABLE);
@@ -411,18 +406,23 @@ public class TableDDLTest {
     private void createTableFKSimpleGenerateAIS() {
         dropTable = TableName.create(DEFAULT_SCHEMA, JOIN_TABLE);
 
+        AISBuilder builders[] = { builder, new AISBuilder(ddlFunctions.externalAIS) };
+
         // Re-gen the DDLFunctions to have the AIS for internal references. 
-        ddlFunctions = new DDLFunctionsMock(ais);
-        // table t1:
-        builder.userTable(DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
-        builder.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "int", (long)0, (long)0, false, false, null, null);
-        builder.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
-        builder.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", "c1", 0, true, 0);
-        builder.basicSchemaIsComplete();
-        builder.createGroup("t1", DEFAULT_SCHEMA, "_akiban_t1");
-        builder.addTableToGroup("t1", DEFAULT_SCHEMA, DEFAULT_TABLE);
-        builder.groupingIsComplete();
+        ddlFunctions = new DDLFunctionsMock(builder.akibanInformationSchema(), ddlFunctions.externalAIS);
+        // Need t1 in both internal and external
+        for(AISBuilder b : builders) {
+            // table t1:
+            b.userTable(DEFAULT_SCHEMA, DEFAULT_TABLE);
+            b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c1", 0, "int", (long)0, (long)0, false, false, null, null);
+            b.column(DEFAULT_SCHEMA, DEFAULT_TABLE, "c2", 1, "int", (long)0, (long)0, false, false, null, null);
+            b.index(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", true, Index.PRIMARY_KEY_CONSTRAINT);
+            b.indexColumn(DEFAULT_SCHEMA, DEFAULT_TABLE, "pk", "c1", 0, true, 0);
+            b.basicSchemaIsComplete();
+            b.createGroup("t1", DEFAULT_SCHEMA, "_akiban_t1");
+            b.addTableToGroup("t1", DEFAULT_SCHEMA, DEFAULT_TABLE);
+            b.groupingIsComplete();
+        }
         
         // table t2:
         builder.userTable(DEFAULT_SCHEMA, JOIN_TABLE);
