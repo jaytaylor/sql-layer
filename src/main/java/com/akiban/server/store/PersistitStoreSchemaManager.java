@@ -91,6 +91,7 @@ import org.slf4j.LoggerFactory;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Table;
@@ -902,9 +903,9 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         if(TableName.INFORMATION_SCHEMA.equals(schema)) {
             selector = new ProtobufWriter.SchemaSelector(schema) {
                 @Override
-                public boolean isSelected(UserTable table) {
+                public boolean isSelected(Columnar table) {
                     return !legacyISTables.contains(table.getName()) &&
-                           !table.hasMemoryTableFactory();
+                           !(table.isTable() && ((UserTable)table).hasMemoryTableFactory());
                 }
             };
         } else {

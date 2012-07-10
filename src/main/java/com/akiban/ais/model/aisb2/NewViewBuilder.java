@@ -26,36 +26,14 @@
 
 package com.akiban.ais.model.aisb2;
 
-import com.akiban.ais.model.TableName;
+import java.util.Properties;
 
-public interface NewAISBuilder extends NewAISProvider {
-    /**
-     * Sets the default schema
-     * @param schema the new default schema name; like SQL's {@code USING}.
-     * @return {@code this}
-     */
-    NewAISBuilder defaultSchema(String schema);
+public interface NewViewBuilder extends NewUserTableBuilder {
+    NewViewBuilder definition(String definition);
 
-    /**
-     * Starts creating a new table using the default schema.
-     * @param table the table's name
-     * @return the new table's builder
-     */
-    NewUserTableBuilder userTable(String table);
+    NewViewBuilder definition(String definition, Properties properties);
 
-    /**
-     * Starts creating a new table using the given schema
-     * @param schema the new table's schema
-     * @param table the new table's table name
-     * @return the new table's builder
-     */
-    NewUserTableBuilder userTable(String schema, String table);
+    NewViewBuilder references(String table);
 
-    NewUserTableBuilder userTable(TableName tableName);
-
-    NewViewBuilder view(String view);
-
-    NewViewBuilder view(String schema, String view);
-
-    NewViewBuilder view(TableName viewName);
+    NewViewBuilder references(String schema, String table, String... columns);
 }
