@@ -58,7 +58,7 @@ import java.util.Set;
 
 public class ProtobufReader {
     private final AkibanInformationSchema destAIS;
-    private final AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
+    private final AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder;
     private final NameGenerator nameGenerator = new DefaultNameGenerator();
 
     public ProtobufReader() {
@@ -66,7 +66,12 @@ public class ProtobufReader {
     }
 
     public ProtobufReader(AkibanInformationSchema destAIS) {
+        this(destAIS, AISProtobuf.AkibanInformationSchema.newBuilder());
+    }
+
+    public ProtobufReader(AkibanInformationSchema destAIS, AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder) {
         this.destAIS = destAIS;
+        this.pbAISBuilder = pbAISBuilder;
     }
 
     public AkibanInformationSchema getAIS() {

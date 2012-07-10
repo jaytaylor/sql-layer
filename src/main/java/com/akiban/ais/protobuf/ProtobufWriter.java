@@ -90,6 +90,10 @@ public class ProtobufWriter {
         this(buffer, ALL_TABLES_SELECTOR);
     }
 
+    public ProtobufWriter(TableSelector selector) {
+        this(NO_BUFFER, selector);
+    }
+
     public ProtobufWriter(GrowableByteBuffer buffer, TableSelector selector) {
         assert buffer.hasArray() : buffer;
         this.buffer = buffer;
