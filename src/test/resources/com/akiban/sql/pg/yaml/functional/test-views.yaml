@@ -22,4 +22,9 @@
 ---
 - Statement: SELECT * FROM v3
 - output_ordered: [['barbar'],['foofoo']]
+---
+- Statement: CREATE VIEW v0(a,b) AS VALUES(1,10),(2,20),(3,30)
+---
+- Statement: SELECT * FROM v0 WHERE a > 1
+- output: [[2,20],[3,30]]
 ...
