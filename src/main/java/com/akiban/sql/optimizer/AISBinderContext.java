@@ -121,6 +121,8 @@ public class AISBinderContext
         defaultSchemaName = getProperty("database");
         // TODO: Any way / need to ask AIS if schema exists and report error?
 
+        BindingNodeFactory.wrap(parser);
+
         return parserFeatures;
     }
 
