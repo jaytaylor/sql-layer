@@ -40,28 +40,32 @@ import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import com.akiban.ais.model.*;
-import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
-import com.akiban.server.*;
-import com.akiban.server.api.dml.scan.ScanLimit;
-import com.akiban.server.rowdata.CorruptRowDataException;
-import com.akiban.server.rowdata.FieldDef;
-import com.akiban.server.rowdata.IndexDef;
-import com.akiban.server.rowdata.RowData;
-import com.akiban.server.rowdata.RowDef;
-import com.akiban.server.rowdata.RowDefCache;
-import com.akiban.server.service.config.ConfigurationService;
-import com.akiban.server.service.tree.TreeLink;
-import com.akiban.util.tap.InOutTap;
-import com.akiban.util.tap.PointTap;
-import com.persistit.exception.PersistitInterruptedException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.GroupIndex;
+import com.akiban.ais.model.HKeyColumn;
+import com.akiban.ais.model.HKeySegment;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexRowComposition;
+import com.akiban.ais.model.IndexToHKey;
+import com.akiban.ais.model.Table;
+import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.UserTable;
+import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
+import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.AkServerUtil;
+import com.akiban.server.TableStatistics;
+import com.akiban.server.TableStatus;
+import com.akiban.server.TableStatusCache;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.api.dml.scan.ScanLimit;
+import com.akiban.server.collation.CString;
+import com.akiban.server.collation.CStringKeyCoder;
 import com.akiban.server.error.CursorCloseBadException;
 import com.akiban.server.error.CursorIsUnknownException;
 import com.akiban.server.error.DisplayFilterSetException;
@@ -70,20 +74,33 @@ import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchRowException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.RowDataCorruptionException;
+import com.akiban.server.rowdata.CorruptRowDataException;
+import com.akiban.server.rowdata.FieldDef;
+import com.akiban.server.rowdata.IndexDef;
+import com.akiban.server.rowdata.RowData;
+import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.rowdata.RowDefCache;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.util.tap.InOutTap;
+import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.KeyFilter;
 import com.persistit.KeyState;
+import com.persistit.Management;
 import com.persistit.Management.DisplayFilter;
 import com.persistit.Persistit;
 import com.persistit.Tree;
 import com.persistit.Value;
+import com.persistit.encoding.CoderManager;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 import com.persistit.exception.RollbackException;
 
 public class PersistitStore implements Store {
@@ -152,10 +169,12 @@ public class PersistitStore implements Store {
         tableStatusCache = treeService.getTableStatusCache();
         rowDefCache = new RowDefCache(tableStatusCache);
         try {
-            getDb().getCoderManager().registerValueCoder(RowData.class, new RowDataValueCoder(this));
-            originalDisplayFilter = getDb().getManagement().getDisplayFilter();
-            getDb().getManagement().setDisplayFilter(
-                    new RowDataDisplayFilter(originalDisplayFilter));
+            CoderManager cm = getDb().getCoderManager();
+            Management m = getDb().getManagement();
+            cm.registerValueCoder(RowData.class, new RowDataValueCoder(this));
+            cm.registerKeyCoder(CString.class, new CStringKeyCoder());
+            originalDisplayFilter = m.getDisplayFilter();
+            m.setDisplayFilter(new RowDataDisplayFilter(originalDisplayFilter));
         } catch (RemoteException e) {
             throw new DisplayFilterSetException (e.getMessage());
         }

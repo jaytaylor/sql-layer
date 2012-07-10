@@ -165,7 +165,6 @@ public class TreeServiceImpl
         } catch (PersistitException e1) {
             throw new PersistitAdapterException(e1);
         }
-        db.getCoderManager().registerKeyCoder(CString.class, new CStringKeyCoder());
         buildSchemaMap();
 
         if (LOG.isDebugEnabled()) {
