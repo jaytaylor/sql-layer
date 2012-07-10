@@ -47,9 +47,9 @@ import com.ibm.icu.util.ULocale;
  */
 public class AkCollatorFactory {
 
-    private final static Pattern schemaPattern = Pattern.compile("(\\d+):(\\w+(?:,\\d+)?)");
+    private final static Pattern SCHEMA_PATTERN = Pattern.compile("(\\d+):(\\w+(?:,\\d+)?)");
 
-    private final static int MAX_COLLATION_ID = 126;
+    public final static int MAX_COLLATION_ID = 126;
 
     public final static String UCS_BINARY = "UCS_BINARY";
 
@@ -92,7 +92,7 @@ public class AkCollatorFactory {
             return UCS_BINARY_COLLATOR;
         }
         final String idAndScheme = schemeForName(name);
-        final Matcher matcher = schemaPattern.matcher(idAndScheme);
+        final Matcher matcher = SCHEMA_PATTERN.matcher(idAndScheme);
         if (!matcher.matches()) {
             throw new IllegalArgumentException("collation name " + name + " has malformed value " + idAndScheme);
         }
@@ -142,7 +142,7 @@ public class AkCollatorFactory {
                 return UCS_BINARY_COLLATOR;
             }
             for (Map.Entry<Object, Object> entry : collationNameProperties.entrySet()) {
-                final Matcher matcher = schemaPattern.matcher(entry.getValue().toString());
+                final Matcher matcher = SCHEMA_PATTERN.matcher(entry.getValue().toString());
                 if (matcher.matches() && matcher.group(1).equals(Integer.toString(collatorId))) {
                     return getAkCollator(entry.getKey().toString());
                 }

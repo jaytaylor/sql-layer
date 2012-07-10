@@ -67,7 +67,7 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
             if (size + sortBytes.length + 1 > key.getMaximumSize()) {
                 throw new IllegalArgumentException("Too long: " + size + sortBytes.length);
             }
-            assert cs.getCollationId() > 0 && cs.getCollationId() < 126;
+            assert cs.getCollationId() > 0 && cs.getCollationId() < AkCollatorFactory.MAX_COLLATION_ID;
             Util.putByte(keyBytes, size, cs.getCollationId());
             System.arraycopy(sortBytes, 0, keyBytes, size + 1, sortBytes.length - 1);
             key.setEncodedSize(size + sortBytes.length);

@@ -26,11 +26,12 @@
 
 package com.akiban.server.collation;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import org.junit.Test;
 
-import com.google.inject.Exposed;
 import com.persistit.Key;
 import com.persistit.Persistit;
 import com.persistit.exception.ConversionException;
