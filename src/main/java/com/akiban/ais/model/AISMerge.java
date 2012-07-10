@@ -26,11 +26,10 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.ais.AISCloner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
@@ -64,9 +63,8 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
-        targetAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(targetAIS)).save(primaryAIS);
-        
+        targetAIS = AISCloner.clone(primaryAIS);
+
         sourceTable = newTable;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
