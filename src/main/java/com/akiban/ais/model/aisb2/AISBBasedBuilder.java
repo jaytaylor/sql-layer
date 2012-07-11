@@ -242,6 +242,17 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewUserTableBuilder colText(String name) {
+            return colText(name, NULLABLE_DEFAULT);
+        }
+
+        @Override
+        public NewUserTableBuilder colText(String name, boolean nullable) {
+            aisb.column(schema, userTable, name, uTableColumnPos++, "TEXT", null, null, nullable, false, null, null);
+            return this;
+        }
+
+        @Override
         public NewUserTableBuilder pk(String... columns) {
             return key(PRIMARY, columns, true, Index.PRIMARY_KEY_CONSTRAINT);
         }
