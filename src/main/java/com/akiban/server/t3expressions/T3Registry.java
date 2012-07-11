@@ -76,7 +76,7 @@ public final class T3Registry {
     private static class InternalScalarsRegistry implements T3ScalarsRegistry {
         @Override
         public Collection<TValidatedOverload> getOverloads(String name) {
-            return overloadsByName.get(name);
+            return overloadsByName.get(name.toLowerCase());
         }
 
         @Override

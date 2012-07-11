@@ -75,6 +75,11 @@ public final class TPreparedFunction implements TPreparedExpression {
                 preptimeContext.createExecutionContext());
     }
 
+    @Override
+    public String toString() {
+        return overload.toString();
+    }
+
     public TPreparedFunction(TValidatedOverload overload,
                              TInstance resultType,
                              List<? extends TPreparedExpression> inputs)
