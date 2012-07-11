@@ -111,7 +111,7 @@ class SortCursorUnidirectional extends SortCursor
     protected SortCursorUnidirectional(QueryContext context,
                                        IterationHelper iterationHelper,
                                        IndexKeyRange keyRange,
-                                       API.Ordering orderingbzr )
+                                       API.Ordering ordering)
     {
         super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.

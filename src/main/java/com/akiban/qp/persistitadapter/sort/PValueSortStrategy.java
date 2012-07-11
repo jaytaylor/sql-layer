@@ -27,44 +27,49 @@
 package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.server.PersistitKeyValueTarget;
-import com.akiban.server.expression.Expression;
+import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.expression.std.Comparison;
-import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types.ValueSource;
-import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTargets;
+import com.akiban.server.types3.texpressions.TComparisonExpression;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
-class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
-
+public final class PValueSortStrategy implements SortStrategy<PValueSource> {
     @Override
     public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f) {
-        ValueSource loValueSource = loExpressions.eval(f);
-        ValueSource hiValueSource = hiExpressions.eval(f);
+        PValueSource loValueSource = loExpressions.pvalue(f);
+        PValueSource hiValueSource = hiExpressions.pvalue(f);
         if (loValueSource.isNull() && hiValueSource.isNull()) {
             // OK, they're equal
         } else if (loValueSource.isNull() || hiValueSource.isNull()) {
             throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
         } else {
-            Expression loEQHi =
-                    Expressions.compare(Expressions.valueSource(loValueSource),
+            TPreparedExpression loEQHi =
+                    new TComparisonExpression(
+                            new TPreparedLiteral(null, loValueSource),
                             Comparison.EQ,
-                            Expressions.valueSource(hiValueSource));
-            if (!loEQHi.evaluation().eval().getBool()) {
+                            new TPreparedLiteral(null, hiValueSource)
+                    );
+            TEvaluatableExpression eval = loEQHi.build();
+            eval.evaluate();
+            if (!eval.resultValue().getBoolean()) {
                 throw new IllegalArgumentException();
             }
         }
     }
 
     @Override
-    public ValueSource[] createSourceArray(int size) {
-        return new ValueSource[size];
+    public PValueSource[] createSourceArray(int size) {
+        return new PValueSource[size];
     }
 
     @Override
-    public ValueSource get(BoundExpressions boundExpressions, int f) {
-        return boundExpressions.eval(f);
+    public PValueSource get(BoundExpressions boundExpressions, int f) {
+        return boundExpressions.pvalue(f);
     }
 
     @Override
@@ -78,25 +83,25 @@ class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
     }
 
     @Override
-    public void appendToStartKey(ValueSource source, AkType akType) {
+    public void appendToStartKey(PValueSource source, AkType akType) {
         appendTo(startKeyTarget, source, akType);
     }
 
     @Override
-    public void appendToEndKey(ValueSource source, AkType akType) {
+    public void appendToEndKey(PValueSource source, AkType akType) {
         appendTo(endKeyTarget, source, akType);
     }
 
     @Override
-    public boolean isNull(ValueSource source) {
+    public boolean isNull(PValueSource source) {
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyValueTarget target, ValueSource source, AkType type) {
-        target.expectingType(type);
-        Converters.convert(source, target);
+    private void appendTo(PersistitKeyPValueTarget target, PValueSource source, AkType type) {
+        target.expectingType(source.getUnderlyingType());
+        PValueTargets.copyFrom(source, target);
     }
 
-    protected final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
-    protected final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
+    protected final PersistitKeyPValueTarget startKeyTarget = new PersistitKeyPValueTarget();
+    protected final PersistitKeyPValueTarget endKeyTarget = new PersistitKeyPValueTarget();
 }
