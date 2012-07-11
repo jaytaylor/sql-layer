@@ -84,6 +84,7 @@ public class TableDDL
                 return;
             throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
+        ViewDDL.checkDropTable(ddlFunctions, session, tableName);
         ddlFunctions.dropTable(session, tableName);
     }
 

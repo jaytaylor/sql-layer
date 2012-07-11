@@ -445,6 +445,41 @@ public class AISMergeTest {
         assertEquals (1000, identityGenerator.getMaxValue());
     }
 
+    /*
+     * Not really behavior that needs preserved, but at least one data set observed
+     * to contain IDs outside of what we assume the valid UserTable range to be.
+     */
+    @Test
+    public void userTableIDUniqueIncludingIS() {
+        AISBuilder tb = new AISBuilder(t);
+        tb.setTableIdOffset(AISMerge.AIS_TABLE_ID_OFFSET);
+
+        tb.userTable(SCHEMA, "bar");
+        tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("bar", SCHEMA, "akiban_bar");
+        tb.addTableToGroup("bar", SCHEMA, "bar");
+
+        tb.userTable(TableName.INFORMATION_SCHEMA, "foo");
+        tb.column(TableName.INFORMATION_SCHEMA, "foo", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("foo", TableName.INFORMATION_SCHEMA, "akiban_foo");
+        tb.addTableToGroup("foo", TableName.INFORMATION_SCHEMA, "foo");
+
+        tb.basicSchemaIsComplete();
+        tb.groupingIsComplete();
+        t.freeze();
+
+        UserTable barTable = tb.akibanInformationSchema().getUserTable(SCHEMA, "bar");
+        assertNotNull("bar table", barTable);
+        UserTable fooTable = t.getUserTable(TableName.INFORMATION_SCHEMA, "foo");
+        assertNotNull("foo table", fooTable);
+
+        b.userTable(SCHEMA, "zap");
+        b.column(SCHEMA, "zap", "id", 0, "INT", null, null, false, false, null, null);
+        
+        AISMerge merge = new AISMerge(t, s.getUserTable(SCHEMA, "zap"));
+        t = merge.merge().getAIS();
+    }
+
     private void checkColumns(List<Column> actual, String ... expected)
     {
         assertEquals(expected.length, actual.size());
