@@ -702,13 +702,13 @@ public class AggregatePT extends ApiTestBase {
     }
 
     class ParallelCursor extends OperatorExecutionBase implements Cursor {
-        private QueryContext context;
         private RowQueue queue;
         private List<WorkerThread> threads;
         private int nrunning;
         private Row heldRow;
 
         public ParallelCursor(QueryContext context, Operator inputOperator, ValuesRowType valuesType, List<ValuesRow> valuesRows, int bindingPosition) {
+            super(context);
             this.context = context;
             int nthreads = valuesRows.size();
             queue = new RowQueue(Thread.currentThread());
