@@ -102,7 +102,7 @@ public final class PValue implements PValueSource, PValueTarget {
     @Override
     public void putString(String value) {
         checkUnderlying(PUnderlying.STRING);
-        setRawValues(State.CACHE_ONLY, -1, null, value);
+        setRawValues(State.VAL_ONLY, -1, null, value);
     }
 
     @Override

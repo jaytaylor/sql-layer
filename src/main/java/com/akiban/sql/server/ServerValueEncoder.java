@@ -36,8 +36,11 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MString;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ByteSource;
 
@@ -78,7 +81,8 @@ public class ServerValueEncoder
     private PrintWriter printWriter;
     private AkibanAppender appender;
     private FromObjectValueSource objectSource;
-    private PValue pSource;
+    private AppenderPValueTarget appenderTarget;
+    private PValue stringPValue;
 
     public ServerValueEncoder(String encoding) {
         this.encoding = encoding;
@@ -96,6 +100,7 @@ public class ServerValueEncoder
             appender = AkibanAppender.of(byteStream, printWriter);
         else
             appender = AkibanAppender.of(printWriter);
+        appenderTarget = new AppenderPValueTarget(appender);
     }
 
     public ServerValueEncoder(String encoding, ZeroDateTimeBehavior zeroDateTimeBehavior) {
@@ -162,15 +167,14 @@ public class ServerValueEncoder
             case EXCEPTION:
                 throw new ZeroDateTimeException();
             case ROUND:
-                if (pSource == null)
-                    pSource = new PValue(type.getInstance().typeClass().underlyingType());
-                else {
-                    if (type.getInstance().typeClass() == MDatetimes.DATETIME)
-                        pSource.putInt64(ROUND_ZERO_DATETIME_VAL);
-                    else
-                        pSource.putInt32(ROUND_ZERO_DATE_VAL);
-                }  
-                value = pSource;
+                if (stringPValue == null)
+                    stringPValue = new PValue(PUnderlying.STRING);
+                stringPValue.putString(
+                        (type.getInstance().typeClass() == MDatetimes.DATETIME)
+                                ? ROUND_ZERO_DATETIME
+                                : ROUND_ZERO_DATE
+                );
+                value = stringPValue;
                 break;
             case CONVERT_TO_NULL:
                 return null;
@@ -235,9 +239,7 @@ public class ServerValueEncoder
             getByteStream().write(value.getBytes());
         else {
             assert !binary : "expecting VARBINARY";
-            String input = (String) value.getObject();
-            String curr = (String) pSource.getObject();
-            pSource.putObject(curr.concat(input));
+            appenderTarget.putValueSource(value);
         }
     }
     
@@ -266,9 +268,8 @@ public class ServerValueEncoder
             return;
         }
 
-        // TODO: fix, specifically put value into source based on its type
-        pSource.putObject(value);
-        appendPValue(pSource, type, binary);
+        PValueSource source = PValueSources.fromObject(objectSource, type.getAkType()).value();
+        appendPValue(source, type, binary);
     }
     
     public void appendString(String string) throws IOException {
