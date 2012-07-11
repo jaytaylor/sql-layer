@@ -79,7 +79,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         private final QueryContext context;
         private UserTable rootTable;
         private Cursor cursor;
-        private Map<UserTable,Boolean> includeTables;
+        private Map<UserTable,Integer> tableSizes;
         private StringBuilder buffer;
         private GroupRowFormatter formatter;
         private int messagesSent;
@@ -104,7 +104,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             cursor = context.getStore(rootTable)
                 .newGroupCursor(rootTable.getGroup().getGroupTable());
             cursor.open();
-            includeTables = new HashMap<UserTable,Boolean>();
+            tableSizes = new HashMap<UserTable,Integer>();
             buffer = new StringBuilder();
             formatter = new SQLRowFormatter(buffer, currentSchema);
             messagesSent = 0;
@@ -124,10 +124,11 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
                 }
                 RowType rowType = row.rowType();
                 UserTable rowTable = rowType.userTable();
-                if (!includeTable(rowTable))
+                int size = tableSize(rowTable);
+                if (size < 0)
                     continue;
                 try {
-                    formatter.appendRow(rowType, row);
+                    formatter.appendRow(rowType, row, size);
                 }
                 catch (IOException ex) {
                     throw new AkibanInternalException("formatting error", ex);
@@ -153,13 +154,16 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             }
         }
 
-        private boolean includeTable(UserTable table) {
-            Boolean include = includeTables.get(table);
-            if (include == null) {
-                include = table.isDescendantOf(rootTable);
-                includeTables.put(table, include);
+        private int tableSize(UserTable table) {
+            Integer size = tableSizes.get(table);
+            if (size == null) {
+                if (table.isDescendantOf(rootTable))
+                    size = table.getColumns().size(); // Not ...IncludingInternal()...
+                else
+                    size = -1;
+                tableSizes.put(table, size);
             }
-            return include;
+            return size;
         }
     }
 
@@ -172,7 +176,7 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
             this.currentSchema = currentSchema;
         }
 
-        public abstract void appendRow(RowType rowType, Row row) throws IOException;
+        public abstract void appendRow(RowType rowType, Row row, int ncols) throws IOException;
     }
 
     public static class SQLRowFormatter extends GroupRowFormatter {
@@ -185,11 +189,12 @@ public class DumpGroupLoadablePlan extends LoadableDirectObjectPlan
         }
 
         @Override
-        public void appendRow(RowType rowType, Row row) throws IOException {
+        public void appendRow(RowType rowType, Row row, int ncols) throws IOException {
             buffer.append("INSERT INTO ");
             buffer.append(tableName(rowType.userTable()));
             buffer.append(" VALUES(");
-            for (int i = 0; i < rowType.nFields(); i++) {
+            ncols = Math.min(ncols, rowType.nFields());
+            for (int i = 0; i < ncols; i++) {
                 if (i > 0) buffer.append(", ");
                 literalFormatter.append(row.eval(i), rowType.typeAt(i));
             }

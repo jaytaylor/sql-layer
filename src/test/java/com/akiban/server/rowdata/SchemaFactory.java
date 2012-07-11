@@ -34,6 +34,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.MemoryOnlyTableStatusCache;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.NoSuchTableException;
@@ -46,8 +47,11 @@ import com.akiban.server.store.PersistitStoreSchemaManager;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.aisddl.IndexDDL;
 import com.akiban.sql.aisddl.TableDDL;
+import com.akiban.sql.aisddl.ViewDDL;
+import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.parser.CreateIndexNode;
 import com.akiban.sql.parser.CreateTableNode;
+import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.util.Strings;
@@ -63,7 +67,6 @@ import java.util.Map;
 public class SchemaFactory {
     private final static String DEFAULT_DEFAULT_SCHEMA = "test";
     private final String defaultSchema;
-
 
     public SchemaFactory() {
         this(DEFAULT_DEFAULT_SCHEMA);
@@ -111,6 +114,9 @@ public class SchemaFactory {
                 TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt);
             } else if (stmt instanceof CreateIndexNode) {
                 IndexDDL.createIndex(ddlFunctions, null, defaultSchema, (CreateIndexNode) stmt);
+            } else if (stmt instanceof CreateViewNode) {
+                ViewDDL.createView(ddlFunctions, null, defaultSchema, (CreateViewNode) stmt,
+                                   new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema));
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
@@ -173,6 +179,16 @@ public class SchemaFactory {
 
         @Override
         public void dropTable(Session session, TableName tableName) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createView(Session session, View view) {
+            ais = AISMerge.mergeView(ais, view);
+        }
+
+        @Override
+        public void dropView(Session session, TableName viewName) {
             throw new UnsupportedOperationException();
         }
 

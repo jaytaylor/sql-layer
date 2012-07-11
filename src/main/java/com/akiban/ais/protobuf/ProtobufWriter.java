@@ -29,6 +29,7 @@ package com.akiban.ais.protobuf;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -39,6 +40,7 @@ import com.akiban.ais.model.Schema;
 import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
+import com.akiban.ais.model.View;
 
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.ProtobufWriteException;
@@ -47,15 +49,17 @@ import com.google.protobuf.CodedOutputStream;
 import com.google.protobuf.MessageLite;
 
 import java.io.IOException;
+import java.util.Collection;
+import java.util.Map;
 
 public class ProtobufWriter {
     public static interface TableSelector {
-        boolean isSelected(UserTable table);
+        boolean isSelected(Columnar table);
     }
 
     public static TableSelector ALL_TABLES_SELECTOR = new TableSelector() {
         @Override
-        public boolean isSelected(UserTable table) {
+        public boolean isSelected(Columnar table) {
             return true;
         }
     };
@@ -72,7 +76,7 @@ public class ProtobufWriter {
         }
 
         @Override
-        public boolean isSelected(UserTable table) {
+        public boolean isSelected(Columnar table) {
             return schemaName.equals(table.getName().getSchemaName());
         }
     }
@@ -179,6 +183,13 @@ public class ProtobufWriter {
             isEmpty = false;
         }
 
+        for(View view : schema.getViews().values()) {
+            if(selector.isSelected(view)) {
+                writeView(schemaBuilder, view);
+                isEmpty = false;
+            }
+        }
+
         if(!isEmpty) {
             aisBuilder.addSchemas(schemaBuilder.build());
         }
@@ -242,6 +253,48 @@ public class ProtobufWriter {
     }
 
     private static void writeColumn(AISProtobuf.Table.Builder tableBuilder, Column column) {
+        tableBuilder.addColumns(writeColumnCommon(column));
+    }
+
+    private static void writeView(AISProtobuf.Schema.Builder schemaBuilder, View view) {
+        AISProtobuf.View.Builder viewBuilder = AISProtobuf.View.newBuilder();
+        viewBuilder.
+                setViewName(view.getName().getTableName()).
+                setDefinition(view.getDefinition());
+               // Not yet in AIS: description, protected
+
+        for(Column column : view.getColumnsIncludingInternal()) {
+            writeColumn(viewBuilder, column);
+        }
+
+        for(String key : view.getDefinitionProperties().stringPropertyNames()) {
+            String value = view.getDefinitionProperties().getProperty(key);
+            viewBuilder.addDefinitionProperties(AISProtobuf.Property.newBuilder().
+                                                setKey(key).setValue(value).
+                                                build());
+        }
+        
+        for(Map.Entry<TableName,Collection<String>> entry : view.getTableColumnReferences().entrySet()) {
+            AISProtobuf.ColumnReference.Builder referenceBuilder = 
+                AISProtobuf.ColumnReference.newBuilder().
+                setTable(AISProtobuf.TableName.newBuilder().
+                         setSchemaName(entry.getKey().getSchemaName()).
+                         setTableName(entry.getKey().getTableName()).
+                         build());
+            for (String column : entry.getValue()) {
+                referenceBuilder.addColumns(column);
+            }
+            viewBuilder.addReferences(referenceBuilder.build());
+        }
+
+        schemaBuilder.addViews(viewBuilder.build());
+    }
+
+    private static void writeColumn(AISProtobuf.View.Builder viewBuilder, Column column) {
+        viewBuilder.addColumns(writeColumnCommon(column));
+    }
+
+    private static AISProtobuf.Column writeColumnCommon(Column column) {
         AISProtobuf.Column.Builder columnBuilder = AISProtobuf.Column.newBuilder().
                 setColumnName(column.getName()).
                 setTypeName(column.getType().name()).
@@ -258,8 +311,7 @@ public class ProtobufWriter {
         if(column.getInitialAutoIncrementValue() != null) {
             columnBuilder.setInitAutoInc(column.getInitialAutoIncrementValue());
         }
-        
-        tableBuilder.addColumns(columnBuilder.build());
+        return columnBuilder.build();
     }
 
     private static AISProtobuf.Index writeIndexCommon(Index index, boolean withTableName) {

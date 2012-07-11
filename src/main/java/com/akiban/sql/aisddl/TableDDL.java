@@ -56,6 +56,8 @@ import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
+import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.sql.parser.ExistenceCheck;
 
 /** DDL operations on Tables */
 public class TableDDL
@@ -72,14 +74,19 @@ public class TableDDL
         
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName tableName = TableName.create(schemaName, parserName.getTableName());
+        ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ddlFunctions.getAIS(session).getUserTable(tableName) == null && 
+        if (ais.getUserTable(tableName) == null && 
                 ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
+            if (existenceCheck == ExistenceCheck.IF_EXISTS)
+                return;
             throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
         ddlFunctions.dropTable(session, tableName);
     }
-    
+
     public static void renameTable (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,
@@ -98,9 +105,23 @@ public class TableDDL
         com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String tableName = parserName.getTableName();
-        
+        ExistenceCheck condition = createTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+
+        if (ais.getUserTable(schemaName, tableName) != null)
+            switch(condition)
+            {
+                case IF_NOT_EXISTS:
+                    // table already exists. does nothing
+                    return;
+                case NO_CONDITION:
+                    throw new DuplicateTableNameException(schemaName, tableName);
+                default:
+                    throw new IllegalStateException("Unexpected condition: " + condition);
+            }
+
         AISBuilder builder = new AISBuilder();
-        
         builder.userTable(schemaName, tableName);
 
         int colpos = 0;
@@ -138,12 +159,22 @@ public class TableDDL
     
     private static void addColumn (final AISBuilder builder, final ColumnDefinitionNode cdn, 
             final String schemaName, final String tableName, int colpos) {
-        DataTypeDescriptor type = cdn.getType();
+        boolean autoIncrement = cdn.isAutoincrementColumn();
+        addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
+                  cdn.getType(), autoIncrement);
+        if (autoIncrement) {
+            builder.userTableInitialAutoIncrement(schemaName, tableName, 
+                                                  cdn.getAutoincrementStart());
+        }
+    }
+
+    protected static void addColumn(final AISBuilder builder, 
+                                    final String schemaName, final String tableName, final String columnName, 
+                                    int colpos, DataTypeDescriptor type, boolean autoIncrement) {
         Long typeParameter1 = null, typeParameter2 = null;
-        
         Type builderType = typeMap.get(type.getTypeId());
         if (builderType == null) {
-            throw new UnsupportedDataTypeException (new TableName(schemaName, tableName), cdn.getColumnName(), type.getTypeName());
+            throw new UnsupportedDataTypeException(new TableName(schemaName, tableName), columnName, type.getTypeName());
         }
         
         if (builderType.nTypeParameters() == 1) {
@@ -158,18 +189,13 @@ public class TableDDL
             charset = type.getCharacterAttributes().getCharacterSet();
             collation = type.getCharacterAttributes().getCollation();
         }
-        builder.column(schemaName, tableName, 
-                cdn.getColumnName(), 
-                Integer.valueOf(colpos), 
-                builderType.name(), 
-                typeParameter1, typeParameter2, 
-                type.isNullable(), 
-                cdn.isAutoincrementColumn(),
-                charset, collation);
-        if (cdn.isAutoincrementColumn()) {
-            builder.userTableInitialAutoIncrement(schemaName, tableName, 
-                    cdn.getAutoincrementStart());
-        }
+        builder.column(schemaName, tableName, columnName, 
+                       Integer.valueOf(colpos), 
+                       builderType.name(), 
+                       typeParameter1, typeParameter2, 
+                       type.isNullable(), 
+                       autoIncrement,
+                       charset, collation);
     }
 
     public static void addIndex (final AISBuilder builder, final ConstraintDefinitionNode cdn, 
@@ -281,7 +307,7 @@ public class TableDDL
         if (parentTable == null) {
             throw new NoSuchTableException (parentSchemaName, parentTableName);
         }
-        
+
         builder.userTable(parentSchemaName, parentTableName);
         
         builder.index(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);

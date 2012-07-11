@@ -60,7 +60,7 @@ public class DerivedTypesSchema {
         return new FlattenedRowType(this, nextTypeId(), parent, child);
     }
 
-    public synchronized ProjectedRowType newProjectType(List<Expression> columns, List<? extends TInstance> tInstances)
+    public synchronized ProjectedRowType newProjectType(List<? extends Expression> columns, List<? extends TInstance> tInstances)
     {
         return new ProjectedRowType(this, nextTypeId(), columns, tInstances);
     }
@@ -68,6 +68,11 @@ public class DerivedTypesSchema {
     public ProductRowType newProductType(RowType leftType, UserTableRowType branchType, RowType rightType)
     {
         return new ProductRowType(this, nextTypeId(), leftType, branchType, rightType);
+    }
+
+    public synchronized ValuesRowType newValuesType(TInstance... fields)
+    {
+        return new ValuesRowType(this, nextTypeId(), fields);
     }
 
     public synchronized ValuesRowType newValuesType(AkType... fields)

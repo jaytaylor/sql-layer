@@ -54,6 +54,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.View;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -813,6 +814,13 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables() throws InvalidOperationException {
+        for(View view : ddl().getAIS(session()).getViews().values()) {
+            // In case one view references another, avoid having to delete in proper order.
+            view.getTableColumnReferences().clear();
+        }
+        for(View view : ddl().getAIS(session()).getViews().values()) {
+            ddl().dropView(session(), view.getName());
+        }
         Set<String> groupNames = new HashSet<String>();
         for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
             if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {

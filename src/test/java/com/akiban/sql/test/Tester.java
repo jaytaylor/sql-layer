@@ -199,14 +199,6 @@ public class Tester
         statsFile = file;
     }
 
-    public void addView(String sql) throws Exception {
-        ViewDefinition view = new ViewDefinition(sql, parser);
-        if (binder != null)
-            binder.addView(view);
-        if (operatorCompiler != null)
-            operatorCompiler.addView(view);
-    }
-
     public void defaultPlanRules() throws Exception {
         planRules = DEFAULT_RULES_CBO;
     }
@@ -289,8 +281,6 @@ public class Tester
                     tester.setSchema(maybeFile(args[i++]));
                 else if ("-index-stats".equals(arg))
                     tester.setIndexStatistics(new File(args[i++]));
-                else if ("-view".equals(arg))
-                    tester.addView(maybeFile(args[i++]));
                 else if ("-types".equals(arg))
                     tester.addAction(Action.COMPUTE_TYPES);
                 else if ("-boolean".equals(arg))

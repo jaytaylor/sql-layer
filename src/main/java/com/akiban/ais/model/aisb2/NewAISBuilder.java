@@ -52,11 +52,21 @@ public interface NewAISBuilder extends NewAISProvider {
     NewUserTableBuilder userTable(String schema, String table);
 
     NewUserTableBuilder userTable(TableName tableName);
-    
+   
     /**
      * create a new sequence
-     * The 
      */
     NewAISBuilder sequence (String name);
     NewAISBuilder sequence (String name, long start, long increment, boolean isCycle);
+
+    /**
+     * create a new view 
+     * @param view
+     * @return
+     */
+    NewViewBuilder view(String view);
+
+    NewViewBuilder view(String schema, String view);
+
+    NewViewBuilder view(TableName viewName);
 }

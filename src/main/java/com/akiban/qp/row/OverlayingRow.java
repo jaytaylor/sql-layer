@@ -30,15 +30,29 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
 public final class OverlayingRow extends AbstractRow {
     private final Row underlying;
     private final ValueHolder[] overlays;
+    protected final PValue[] pOverlays;
 
     public OverlayingRow(Row underlying) {
+        this(underlying, Types3Switch.ON);
+    }
+
+    public OverlayingRow(Row underlying, boolean usePValues) {
         this.underlying = underlying;
-        this.overlays = new ValueHolder[underlying.rowType().nFields()];
+        if (usePValues) {
+            this.overlays = null;
+            this.pOverlays = new PValue[underlying.rowType().nFields()];
+        }
+        else {
+            this.overlays = new ValueHolder[underlying.rowType().nFields()];
+            this.pOverlays = null;
+        }
     }
 
     public OverlayingRow overlay(int index, ValueSource object) {
@@ -49,6 +63,18 @@ public final class OverlayingRow extends AbstractRow {
             if (overlays[index] == null)
                 overlays[index] = new ValueHolder();
             overlays[index].copyFrom(object);
+        }
+        return this;
+    }
+
+    public OverlayingRow overlay(int index, PValueSource object) {
+        if (object == null) {
+            pOverlays[index] = null;
+        }
+        else {
+            if (pOverlays[index] == null)
+                pOverlays[index] = new PValue(underlying.rowType().typeInstanceAt(index).typeClass().underlyingType());
+            pOverlays[index].putValueSource(object);
         }
         return this;
     }
@@ -69,9 +95,8 @@ public final class OverlayingRow extends AbstractRow {
 
     @Override
     public PValueSource pvalue(int i) {
-        if (overlays[i] == null)
-            return underlying.pvalue(i);
-        throw new UnsupportedOperationException("overlaying pvaluesources not supported");
+        return pOverlays[i] == null ? underlying.pvalue(i) : pOverlays[i];
+
     }
 
     @Override

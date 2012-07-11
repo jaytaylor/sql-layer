@@ -85,6 +85,20 @@ public class ProtobufReaderWriterTest {
     }
 
     @Test
+    public void caoiWithView() {
+        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder(SCHEMA);
+        builder.view("recent_orders").
+            definition("CREATE VIEW recent_order AS SELECT * FROM order WHERE order_date > CURRENT_DATE - INTERVAL '30' DAY").
+            references(CAOIBuilderFiller.ORDER_TABLE).
+            colBigInt("order_id", false).
+            colBigInt("customer_id", false).
+            colLong("order_date", false);
+        final AkibanInformationSchema inAIS = builder.ais();
+        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        compareAndAssert(inAIS, outAIS, false);
+    }
+
+    @Test
     public void nonDefaultCharsetAndCollations() {
         // AIS char/col not serialized (will be on Schema when that exists)
         final AkibanInformationSchema inAIS = CAOIBuilderFiller.createAndFillBuilder(SCHEMA).ais(false);

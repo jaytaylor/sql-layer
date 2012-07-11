@@ -40,6 +40,8 @@ import com.akiban.server.aggregation.Aggregators;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 
@@ -63,6 +65,16 @@ public class API
                         Aggregators.aggregatorIds(aggregatorNames, rowType, inputsIndex)
                 )
         );
+    }
+
+    public static Operator aggregate_Partial(Operator inputOperator,
+                                             RowType rowType,
+                                             int inputsIndex,
+                                             List<? extends TAggregator> aggregatorFactories,
+                                             List<? extends TInstance> aggregatorTypes
+                                             )
+    {
+        return new Aggregate_Partial(inputOperator, rowType, inputsIndex, aggregatorFactories, aggregatorTypes);
     }
 
     // Project
@@ -377,6 +389,13 @@ public class API
     // Select
 
     public static Operator select_HKeyOrdered(Operator inputOperator,
+                                              RowType predicateRowType,
+                                              TPreparedExpression predicate)
+    {
+        return new Select_HKeyOrdered(inputOperator, predicateRowType, predicate);
+    }
+
+    public static Operator select_HKeyOrdered(Operator inputOperator,
                                                       RowType predicateRowType,
                                                       Expression predicate)
     {
@@ -417,12 +436,25 @@ public class API
     public static Operator count_Default(Operator input,
                                          RowType countType)
     {
-        return new Count_Default(input, countType);
+        return new Count_Default(input, countType, Types3Switch.ON);
+    }
+
+    public static Operator count_Default(Operator input,
+                                         RowType countType,
+                                         boolean usePValues)
+    {
+        return new Count_Default(input, countType, usePValues);
     }
 
     public static Operator count_TableStatus(RowType tableType)
     {
-        return new Count_TableStatus(tableType);
+        return count_TableStatus(tableType, Types3Switch.ON);
+    }
+
+
+    public static Operator count_TableStatus(RowType tableType, boolean usePValues)
+    {
+        return new Count_TableStatus(tableType, usePValues);
     }
 
     // Sort
@@ -480,9 +512,15 @@ public class API
 
     // Union
 
-    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType) 
+    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType)
     {
-        return new UnionAll_Default(input1, input1RowType, input2, input2RowType);
+        return unionAll(input1, input1RowType, input2, input2RowType, Types3Switch.ON);
+    }
+
+    public static Operator unionAll(Operator input1, RowType input1RowType, Operator input2, RowType input2RowType,
+                                    boolean usePvalues)
+    {
+        return new UnionAll_Default(input1, input1RowType, input2, input2RowType, usePvalues);
     }
     
     // Intersect

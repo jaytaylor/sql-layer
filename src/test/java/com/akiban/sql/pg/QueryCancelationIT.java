@@ -41,7 +41,7 @@ public class QueryCancelationIT extends PostgresServerITBase
 {
     private static final int N = 1000;
     private static final int TRIALS = 3;
-
+    private static final String SELECT_COUNT = "select count(*) from t";
     @Test
     public void test() throws Exception
     {
@@ -82,7 +82,7 @@ public class QueryCancelationIT extends PostgresServerITBase
         for (int id = 0; id < N; id++) {
             statement.execute(String.format("insert into t values(%s)", id));
         }
-        statement.execute("select count(*) from t");
+        statement.execute(SELECT_COUNT);
         ResultSet resultSet = statement.getResultSet();
         resultSet.next();
         System.out.println(String.format("Loaded %s rows", resultSet.getInt(1)));
@@ -310,11 +310,16 @@ public class QueryCancelationIT extends PostgresServerITBase
         {
             super(null);
             
+            // This bit of magic is to make sure we select the correct session
+            // There are two sessions, one having done the load, 
+            // the other is the QueryThread. 
             System.out.println (String.format("CancelSQLThread found %s sessions", server().getCurrentSessions().size()));
             Iterator<Integer> i = server().getCurrentSessions().iterator();
-            i.next();
             sessionID = i.next();
-            
+            if (SELECT_COUNT.equals(server().getConnection(sessionID).getSqlString())) {
+                sessionID = i.next();
+            }
+           
             connection = openConnection();
             statement = connection.createStatement();
             setName ("CancelSQLThread");

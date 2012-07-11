@@ -26,6 +26,9 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.T3Registry;
+import com.akiban.server.types3.service.FunctionRegistryImpl;
 import com.akiban.sql.optimizer.OptimizerTestBase;
 import com.akiban.sql.optimizer.rule.cost.TestCostEstimator;
 
@@ -46,13 +49,15 @@ public class RulesTestContext extends SchemaRulesContext
                                           File statsFile, boolean statsIgnoreMissingIndexes,
                                           List<? extends BaseRule> rules, 
                                           Properties properties)
-            throws IOException {
+            throws Exception {
         RulesTestContext context = new RulesTestContext();
         context.initProperties(properties);
         context.initRules(rules);
         RulesTestHelper.ensureRowDefs(ais);
         context.initAIS(ais);
         context.initFunctionsRegistry(new FunctionsRegistryImpl());
+        T3Registry t3Registry = new T3Registry(new FunctionRegistryImpl());
+        context.initOverloadResolver(new OverloadResolver(t3Registry.scalars(), t3Registry.aggregates()));
         context.initCostEstimator(new TestCostEstimator(ais, context.getSchema(), 
                                                         statsFile, statsIgnoreMissingIndexes,
                                                         properties), false);
