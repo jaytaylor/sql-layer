@@ -71,4 +71,13 @@ public class AkCollatorFactoryTest {
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
         assertEquals("Collector should have correct name", "latin1_swedish_ci", collator.getName());
     }
+    
+    @Test
+    public void collatorById() throws Exception {
+        AkCollator collator = AkCollatorFactory.getAkCollator(0);
+        assertEquals("Should be the AkCollatorBinary singleton", AkCollatorFactory.UCS_BINARY_COLLATOR, collator);
+        
+        collator = AkCollatorFactory.getAkCollator(1);
+        assertEquals("Should be the latin1_general_ci collator", "latin1_general_ci", collator.getName());
+    }
 }
