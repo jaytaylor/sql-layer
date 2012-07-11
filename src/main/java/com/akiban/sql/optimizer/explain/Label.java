@@ -52,7 +52,7 @@ public enum Label
     //--------------------------------------------------------------------------
     BINDING_POSITION(Category.DESCRIPTION),
     EXTRA_TAG(Category.DESCRIPTION), // extra info
-    INFIX(Category.DESCRIPTION),
+    REPRESENTATION_MODE(Category.DESCRIPTION),
     ASSOCIATIVE(Category.DESCRIPTION),
     
     // IDENTIFIER

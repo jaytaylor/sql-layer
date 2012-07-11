@@ -60,18 +60,22 @@ public class Format {
     protected static void describeExpression(OperationExplainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         
         Attributes atts = (Attributes) explainer.get().clone();
+        Explainer TRUE = PrimitiveExplainer.getInstance(true);
+        Explainer INFIX = PrimitiveExplainer.getInstance("INFIX");
         
-        if (explainer.get().containsKey(Label.INFIX))
+        if (atts.get(Label.REPRESENTATION_MODE) == INFIX)
         {
             Explainer leftExplainer = atts.valuePairs().get(0).getValue();
             Explainer rightExplainer = atts.valuePairs().get(1).getValue();
             String name = atts.get(Label.NAME).get(0).get().toString();
-            if (name.equals(parentName) && atts.get(Label.ASSOCIATIVE).get(0).get() == (Object)true)
+            if (name.equals(parentName) && atts.get(Label.ASSOCIATIVE) == TRUE)
                 needsParens = false;
             if (needsParens)
                 sb.append("(");
             describe(leftExplainer, sb, true, name);
-            sb.append(" ").append(name).append(" ");
+            sb.append(" ");
+            describe(atts.get(Label.REPRESENTATION_MODE).get(0), sb);
+            sb.append(" ");
             describe(rightExplainer, sb, true, name);
             if (needsParens)
                 sb.append(")");
