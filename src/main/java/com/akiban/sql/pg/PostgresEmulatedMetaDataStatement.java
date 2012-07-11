@@ -67,7 +67,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                          "AND n.nspname <> 'information_schema'\\s+)?" +
                          "AND n.nspname !~ '\\^pg_toast'\\s+" +
                          "(AND c.relname ~ '(.+)'\\s+)?" +
-                         "AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+" +
+                         "(AND n.nspname ~ '(.+)'\\s+)?" +
+                         "(AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
                          "ORDER BY 1,2;?", true);
 
         private String sql;
@@ -256,14 +257,21 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names.addAll(ais.getUserTables().keySet());
         if (types.contains("'v'"))
             names.addAll(ais.getViews().keySet());
-        Pattern pattern = null;
+        boolean noIS = (groups.get(2) != null);
+        Pattern schemaPattern = null, tablePattern = null;
         if (groups.get(3) != null)
-            pattern = Pattern.compile(groups.get(4));
+            tablePattern = Pattern.compile(groups.get(4));
+        if (groups.get(5) != null)
+            schemaPattern = Pattern.compile(groups.get(6));
         Iterator<TableName> iter = names.iterator();
         while (iter.hasNext()) {
             TableName name = iter.next();
-            if (name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ||
-                ((pattern != null) && !pattern.matcher(name.getTableName()).matches()))
+            if ((noIS &&
+                 name.getSchemaName().equals(TableName.INFORMATION_SCHEMA)) ||
+                ((schemaPattern != null) && 
+                 !schemaPattern.matcher(name.getSchemaName()).matches()) ||
+                ((tablePattern != null) && 
+                 !tablePattern.matcher(name.getTableName()).matches()))
                 iter.remove();
         }
         Collections.sort(names);
