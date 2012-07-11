@@ -31,6 +31,8 @@ import com.akiban.sql.pg.PostgresEmulatedMetaDataStatement.Query;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.regex.Pattern;
 
 /** Handle known system table queries from tools directly.  At some
@@ -57,10 +59,11 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
                                    String sql, int[] paramTypes)  {
         if (!possiblePattern.matcher(sql).find())
             return null;
+        List<String> groups = new ArrayList<String>();
         for (Query query : Query.values()) {
-            if (sql.equalsIgnoreCase(query.getSQL())) {
+            if (query.matches(sql, groups)) {
                 logger.debug("Emulated: {}", query);
-                return new PostgresEmulatedMetaDataStatement(query);
+                return new PostgresEmulatedMetaDataStatement(query, groups);
             }
         }
         return null;

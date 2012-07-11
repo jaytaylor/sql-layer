@@ -34,6 +34,8 @@ import com.akiban.sql.server.ServerValueEncoder;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
+import java.util.List;
+import java.util.regex.*;
 
 /**
  * Canned handling for fixed SQL text that comes from tools that
@@ -47,22 +49,48 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // SEQUEL 3.33.0 (http://sequel.rubyforge.org/) sends this when opening a new connection
         SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'");
 
-        // TODO: May need regex for some cases.
         private String sql;
+        private Pattern pattern;
 
         Query(String sql) {
             this.sql = sql;
         }
 
-        public String getSQL() {
-            return sql;
+        Query(String str, boolean regexp) {
+            if (regexp) {
+                pattern = Pattern.compile(sql);
+            }
+            else {
+                sql = str;
+            }
+        }
+
+        public boolean matches(String sql, List<String> groups) {
+            if (pattern == null) {
+                if (sql.equalsIgnoreCase(this.sql)) {
+                    groups.add(sql);
+                    return true;
+                }
+            }
+            else {
+                Matcher matcher = pattern.matcher(sql);
+                if (matcher.matches()) {
+                    for (int i = 0; i <= matcher.groupCount(); i++) {
+                        groups.add(matcher.group(i));
+                    }
+                    return true;
+                }
+            }
+            return false;
         }
     }
 
     private Query query;
+    private List<String> groups;
 
-    protected PostgresEmulatedMetaDataStatement(Query query) {
+    protected PostgresEmulatedMetaDataStatement(Query query, List<String> groups) {
         this.query = query;
+        this.groups = groups;
     }
 
     static final PostgresType OID_PG_TYPE = 
