@@ -55,12 +55,11 @@ public abstract class BindableRow {
         if (pExpressions != null) {
             assert expressions == null : "can't have both style of expressions";
             ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", pExpressions.size());
-            // TODO build constants
-//        for (TPreparedExpression expression : expressions) {
-//            if (!expression.isConstant())
-//                return new BindingExpressions(rowType, expressions);
-//        }
-            // all expressions are const; put them into a ImmutableRow
+            for (TPreparedExpression expression : pExpressions) {
+                TPreptimeValue tpv = expression.evaluateConstant();
+                if (tpv.value() == null)
+                    return new BindingExpressions(rowType, null, pExpressions);
+            }
             newVals = new PExpressionEvaluator(pExpressions);
             oldVals = null;
         }
@@ -132,7 +131,7 @@ public abstract class BindableRow {
 
         @Override
         public String toString() {
-            return "Bindable" + expressions;
+            return "Bindable" + (expressions == null ? pExprs : expressions);
         }
 
         private final List<? extends Expression> expressions;
