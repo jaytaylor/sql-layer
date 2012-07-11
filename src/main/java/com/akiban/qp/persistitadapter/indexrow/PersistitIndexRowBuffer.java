@@ -202,7 +202,6 @@ public class PersistitIndexRowBuffer extends IndexRow
 
     protected void constructHKeyFromIndexKey(Key hKey, IndexToHKey indexToHKey)
     {
-        Key indexRowKey = pKey;
         hKey.clear();
         for (int i = 0; i < indexToHKey.getLength(); ++i) {
             if (indexToHKey.isOrdinal(i)) {

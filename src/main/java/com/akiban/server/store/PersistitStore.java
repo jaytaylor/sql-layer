@@ -32,7 +32,6 @@ import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.IndexRow;
-import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -211,6 +210,7 @@ public class PersistitStore implements Store {
         IndexToHKey indexToHKey = null;
         int i2hPosition = 0;
         Exchange parentPKExchange = null;
+        PersistitIndexRowBuffer parentPKIndexRow = null;
         // Nested loop over hkey metadata: All the segments of an hkey, and all
         // the columns of a segment.
         List<HKeySegment> hKeySegments = table.hKey().segments();
@@ -220,7 +220,6 @@ public class PersistitStore implements Store {
             // Write the ordinal for this segment
             RowDef segmentRowDef = rowDefCache.getRowDef(hKeySegment.table().getTableId());
             hKeyAppender.append(segmentRowDef.getOrdinal());
-            PersistitIndexRowBuffer parentPKIndexRow = null;
             // Iterate over the segment's columns
             List<HKeyColumn> hKeyColumns = hKeySegment.columns();
             int c = 0;
@@ -350,11 +349,13 @@ public class PersistitStore implements Store {
         }
         exchange.fetch();
         PersistitIndexRowBuffer indexRow =
-            PersistitIndexRowBuffer.createInitialized(adapter,
-                                                      pkIndex,
-                                                      exchange.getKey(),
-                                                      exchange.getValue());
-        return exchange.getValue().isDefined() ? indexRow : null;
+            exchange.getValue().isDefined()
+            ? PersistitIndexRowBuffer.createInitialized(adapter,
+                                                        pkIndex,
+                                                        exchange.getKey(),
+                                                        exchange.getValue())
+            : null;
+        return indexRow;
     }
 
 
@@ -1068,10 +1069,10 @@ public class PersistitStore implements Store {
     private void checkUniqueness(Index index, RowData rowData, Exchange iEx)
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
-            Key key = iEx.getKey();
-            key.setDepth(index.indexDef().getIndexKeySegmentCount());
             try {
-                if (hasChildren(iEx)) {
+                Key key = iEx.getKey();
+                key.setDepth(index.indexDef().getIndexKeySegmentCount());
+                if (keyExistsInIndex(index, iEx)) {
                     throw new DuplicateKeyException(index.getIndexName().getName(), key);
                 }
             } catch (PersistitException e) {
@@ -1080,7 +1081,28 @@ public class PersistitStore implements Store {
         }
     }
 
-    void putAllDeferredIndexKeys(final Session session) {
+    private boolean keyExistsInIndex(Index index, Exchange exchange) throws PersistitException
+    {
+        boolean keyExistsInIndex;
+        // Passing -1 as the last argument of traverse leaves the exchange's key and value unmodified.
+        // (0 would leave just the value unmodified.)
+        if (index.isUnique()) {
+            // The Persistit Key stores exactly the index key, so just check whether the key exists.
+            // TODO:
+            // The right thing to do is traverse(EQ, false, -1) but that returns true, even when the
+            // tree is empty. Peter says this is a bug (1023549)
+            keyExistsInIndex = exchange.traverse(Key.Direction.EQ, true, -1);
+        } else {
+            // Check for children by traversing forward from the current key. That can change the key, so
+            // we have to make a copy and then restore the original key later, as the caller depends on the
+            // exchange's state. Copying/restoring the value is not necessary, because passing 0 as the last
+            // argument of traverse causes the value not to be retrieved, leaving the current value in place.
+            keyExistsInIndex = exchange.traverse(Key.Direction.GTEQ, true, -1);
+        }
+        return keyExistsInIndex;
+    }
+
+    private void putAllDeferredIndexKeys(final Session session) {
         synchronized (deferredIndexKeys) {
             for (final Map.Entry<Tree, SortedSet<KeyState>> entry : deferredIndexKeys
                     .entrySet()) {
@@ -1425,19 +1447,6 @@ public class PersistitStore implements Store {
         }
         return ts;
     }
-
-    private boolean hasChildren(Exchange exchange) throws PersistitException
-    {
-        // Check for children by traversing forward from the current key. That can change the key, so
-        // we have to make a copy and they restore the original key later, as the caller depends on the
-        // exchange's state. Copying/restoring the value is not necessary, because passing 0 as the last
-        // argument of traverse causes the value not to be retrieved, leaving the current value in place.
-        KeyState keyCopy = new KeyState(exchange.getKey());
-        boolean hasChildren = exchange.traverse(Key.Direction.GTEQ, true, 0);
-        keyCopy.copyTo(exchange.getKey());
-        return hasChildren;
-    }
-
 
     private static PersistitAdapter adapter(Session session)
     {
