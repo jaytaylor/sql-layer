@@ -282,8 +282,10 @@ public class Column
         return identityGenerator;
      }
 
+    /** @deprecated Needs updated for types3, only computed on creation, and {@link #getStoredMaxStorageSize()} made canonical **/
     public Long getMaxStorageSize()
     {
+        // TODO: types3, delegate to TClass#getMaxStorageSize(TIstance)
         long maxStorageSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
             long maxCharacters = paramCheck(typeParameter1);
@@ -343,6 +345,7 @@ public class Column
         }
     }
 
+    /** @deprecated Needs updated for types3, only computed on creation, and {@link #getStoredPrefixSize()} made canonical **/
     public Integer getPrefixSize()
     {
         int prefixSize;
@@ -412,6 +415,26 @@ public class Column
     public Object getFieldDef()
     {
         return fieldDef;
+    }
+
+    /** Set the storedMaxStorage size, should generally come from {@link #getMaxStorageSize()} **/
+    public void setStoredMaxStorageSize(Long maxStorageSize) {
+        storedMaxStorageSize = maxStorageSize;
+    }
+
+    /** Set the storedPrefixSize size, should generally come from {@link #getPrefixSize()} **/
+    public void setStoredPrefixSize(Integer prefixSize) {
+        storedPrefixSize = prefixSize;
+    }
+
+    /** Get maximum storage size from when the column was created, null if never set **/
+    public Long getStoredMaxStorageSize() {
+        return storedMaxStorageSize;
+    }
+
+    /** Get prefix size from when the column was created, null if never set **/
+    public Integer getStoredPrefixSize() {
+        return storedPrefixSize;
     }
 
     private Column(Columnar table,
@@ -629,5 +652,7 @@ public class Column
     private Column userColumn; // Non-null iff this is a group table column
     private /*FieldDef*/ Object fieldDef;
     private Boolean defaultIdentity;
-    private Sequence identityGenerator; 
+    private Sequence identityGenerator;
+    private Long storedMaxStorageSize;
+    private Integer storedPrefixSize;
 }

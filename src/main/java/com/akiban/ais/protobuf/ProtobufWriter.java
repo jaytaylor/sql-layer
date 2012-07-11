@@ -349,6 +349,12 @@ public class ProtobufWriter {
                     .setTableName(column.getIdentityGenerator().getSequenceName().getTableName())
                     .build());
         }
+        if(column.getStoredMaxStorageSize() != null) {
+            columnBuilder.setMaxStorageSize(column.getStoredMaxStorageSize());
+        }
+        if(column.getStoredPrefixSize() != null) {
+            columnBuilder.setPrefixSize(column.getStoredPrefixSize());
+        }
         return columnBuilder.build();
     }
 

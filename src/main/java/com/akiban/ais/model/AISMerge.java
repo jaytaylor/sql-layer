@@ -170,10 +170,13 @@ public class AISMerge {
                     column.getInitialAutoIncrementValue() != null, 
                     column.getCharsetAndCollation().charset(), 
                     column.getCharsetAndCollation().collation());
+            Column newColumn = targetTable.getColumn(column.getPosition());
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {
-                targetTable.getColumn(column.getPosition()).setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
+                newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
             }
+            newColumn.setStoredMaxStorageSize(newColumn.getMaxStorageSize());
+            newColumn.setStoredPrefixSize(newColumn.getPrefixSize());
         }
         
         // indexes/constraints

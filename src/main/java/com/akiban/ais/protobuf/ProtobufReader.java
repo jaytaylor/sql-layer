@@ -352,7 +352,7 @@ public class ProtobufReader {
                     columnar,
                     pbColumn.getColumnName(),
                     pbColumn.getPosition(),
-                    destAIS.getType(pbColumn.getTypeName()),
+                    destAIS.getType(pbColumn.getTypeName()), // TODO: types3, need to decide based on bundle
                     pbColumn.getIsNullable(),
                     pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
                     pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
@@ -367,6 +367,14 @@ public class ProtobufReader {
                 Sequence identityGenerator = getAIS().getSequence(sequenceName);
                 column.setIdentityGenerator(identityGenerator);
             }
+            if (pbColumn.hasMaxStorageSize()) {
+                column.setStoredMaxStorageSize(pbColumn.getMaxStorageSize());
+            }
+            if (pbColumn.hasPrefixSize()) {
+                column.setStoredPrefixSize(pbColumn.getPrefixSize());
+            }
+            // TODO: types3, pbColumn.getTypeBundleUUID()
+            // TODO: types3, pbColumn.getTypeVersion()
         }
     }
     

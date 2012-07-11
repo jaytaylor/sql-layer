@@ -101,7 +101,7 @@ message Column {
     optional TableName sequence   = 11;  // Sequence used for identity generation. 
                                          // links to Schema.schemaName & Sequence.sequenceName
                                          // null if not an identity column
-    optional int32  maxStorageSize = 12; // maximum number of bytes needed to store this column
+    optional int64  maxStorageSize = 12; // maximum number of bytes needed to store this column
     optional int32  prefixSize     = 13; // number of bytes to describe maxStorageSize
     optional string typeBundleUUID = 14; // bundle UUID of type. null if old style type
     optional int32  typeVersion    = 15; // serialization version of type. null if old style type
