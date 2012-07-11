@@ -79,6 +79,10 @@ public class ConstantFolder extends BaseRule
             this.expressionAssembler = new OldExpressionAssembler(planContext.getRulesContext());
         }
 
+        public void setFoldingState() {
+            this.state = State.FOLDING;
+        }
+
         /** Return <code>true</code> if substantial enough changes were made that
          * need to be run again.
          */

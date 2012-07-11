@@ -104,6 +104,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ResolvingVistor(PlanContext context) {
             folder = new Folder(context);
+            folder.setFoldingState();
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             resolver = src.getOverloadResolver();
         }
