@@ -61,7 +61,7 @@ message IndexColumn {
     optional bool      isAscending = 2;  // sort order of the column
     optional int32     position    = 3;  // order of the column in the index
     optional TableName tableName   = 4;  // can be set to override owner name (group index has columns from multiple)
-    optional int32     prefixSize  = 5;  // bytes from column used in index (null if entire column is used)
+    optional int32     indexedLength = 5; // number of bytes from column used in index (null if entire column is used)
 }
 
 message Index {

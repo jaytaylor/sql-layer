@@ -388,6 +388,10 @@ public class ProtobufWriter {
                 setColumnName(indexColumn.getColumn().getName()).
                 setIsAscending(indexColumn.isAscending()).
                 setPosition(indexColumn.getPosition());
+
+        if(indexColumn.getIndexedLength() != null) {
+            indexColumnBuilder.setIndexedLength(indexColumn.getIndexedLength());
+        }
         
         if(withTableName) {
             TableName tableName = indexColumn.getColumn().getTable().getName();

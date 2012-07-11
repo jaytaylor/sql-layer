@@ -414,12 +414,16 @@ public class ProtobufReader {
                 hasRequiredFields(pbIndexColumn.getTableName());
                 table = destAIS.getUserTable(convertTableNameOrNull(true, pbIndexColumn.getTableName()));
             }
+            Integer indexedLength = null;
+            if(pbIndexColumn.hasIndexedLength()) {
+                indexedLength = pbIndexColumn.getIndexedLength();
+            }
             IndexColumn.create(
                     index,
                     table != null ? table.getColumn(pbIndexColumn.getColumnName()) : null,
                     pbIndexColumn.getPosition(),
                     pbIndexColumn.getIsAscending(),
-                    null /* indexedLength not in proto */
+                    indexedLength
             );
         }
     }
@@ -535,7 +539,11 @@ public class ProtobufReader {
                 AISProtobuf.Column.CHARCOLL_FIELD_NUMBER,
                 AISProtobuf.Column.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Column.DEFAULTIDENTITY_FIELD_NUMBER,
-                AISProtobuf.Column.SEQUENCE_FIELD_NUMBER
+                AISProtobuf.Column.SEQUENCE_FIELD_NUMBER,
+                AISProtobuf.Column.MAXSTORAGESIZE_FIELD_NUMBER,
+                AISProtobuf.Column.PREFIXSIZE_FIELD_NUMBER,
+                AISProtobuf.Column.TYPEBUNDLEUUID_FIELD_NUMBER,
+                AISProtobuf.Column.TYPEVERSION_FIELD_NUMBER
         );
     }
 
@@ -559,7 +567,8 @@ public class ProtobufReader {
     private static void hasRequiredFields(AISProtobuf.IndexColumn pbIndexColumn) {
         requireAllFieldsExcept(
                 pbIndexColumn,
-                AISProtobuf.IndexColumn.TABLENAME_FIELD_NUMBER
+                AISProtobuf.IndexColumn.TABLENAME_FIELD_NUMBER,
+                AISProtobuf.IndexColumn.INDEXEDLENGTH_FIELD_NUMBER
         );
     }
     

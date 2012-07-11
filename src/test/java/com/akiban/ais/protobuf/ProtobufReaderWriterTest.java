@@ -411,11 +411,30 @@ public class ProtobufReaderWriterTest {
         assertNotNull(outAIS.getSequence(sequenceName));
         Column outColumn = outAIS.getTable(new TableName(SCHEMA, "customers")).getColumn(0);
         assertNotNull (outColumn.getDefaultIdentity());
-        assertTrue (outColumn.getDefaultIdentity().booleanValue());
+        assertTrue (outColumn.getDefaultIdentity());
         assertNotNull (outColumn.getIdentityGenerator());
         assertSame (outColumn.getIdentityGenerator(), outAIS.getSequence(sequenceName));
-        
+    }
 
+    @Test
+    public void indexColumnIndexedLength() {
+        final String TABLE = "t";
+        final Integer INDEXED_LENGTH = 16;
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, TABLE);
+        builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", 32L, null, false, false, null, null);
+        builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, INDEXED_LENGTH);
+        builder.createGroup(TABLE, SCHEMA, "_akiban"+TABLE);
+        builder.addTableToGroup(TABLE, SCHEMA, TABLE);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+        AkibanInformationSchema outAIS = writeAndRead(builder.akibanInformationSchema());
+        UserTable table = outAIS.getUserTable(SCHEMA, TABLE);
+        assertNotNull("found table", table);
+        assertNotNull("has v index", table.getIndex("v"));
+        assertEquals("v indexed length", INDEXED_LENGTH, table.getIndex("v").getKeyColumns().get(0).getIndexedLength());
     }
     
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
