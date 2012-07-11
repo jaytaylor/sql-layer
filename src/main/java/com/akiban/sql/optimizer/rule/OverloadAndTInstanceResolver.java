@@ -232,9 +232,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             }
             overload.finishPreptimePhase(context);
 
-            // TODO should this be in Folder?
-            // -----------------------------------------------------------
-            TPreptimeValue result = overload.evaluateConstant(context, new LazyListBase<TPreptimeValue>() {
+            // Put the preptime value, possibly including nullness, into the expression. The constant folder
+            // will use it.
+            TPreptimeValue preptimeValue = overload.evaluateConstant(context, new LazyListBase<TPreptimeValue>() {
                 @Override
                 public TPreptimeValue get(int i) {
                     return operandValues.get(i);
@@ -245,13 +245,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     return operandValues.size();
                 }
             });
-            if (result != null && result.value() != null) {
-                assert false : "create constant expression" ; // TODO
-            }
-            // -----------------------------------------------------------
+            if (preptimeValue == null)
+                preptimeValue = new TPreptimeValue(resultInstance);
+            else
+                assert resultInstance.equals(preptimeValue.instance())
+                        : resultInstance + " != " + preptimeValue.instance();
 
-            TPreptimeValue preptimeValue = new TPreptimeValue(resultInstance);
             expression.setPreptimeValue(preptimeValue);
+
             return expression;
         }
 

@@ -39,6 +39,7 @@ import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.util.ByteSource;
+import com.akiban.util.WrappingByteSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -258,6 +259,58 @@ public final class PValueSources {
         }
 
         return new TPreptimeValue(tInstance, value);
+    }
+
+    public static Object toObject(PValueSource valueSource, AkType akType) {
+        if (valueSource.isNull())
+            return null;
+
+        switch (akType.underlyingType()) {
+        case BOOLEAN_AKTYPE:
+            return valueSource.getBoolean();
+        case LONG_AKTYPE:
+            long v;
+            switch (valueSource.getUnderlyingType()) {
+            case INT_8:
+                v = valueSource.getInt8();
+                break;
+            case INT_16:
+                v = valueSource.getInt16();
+                break;
+            case UINT_16:
+                v = valueSource.getUInt16();
+                break;
+            case INT_32:
+                v = valueSource.getInt32();
+                break;
+            case INT_64:
+                v = valueSource.getInt64();
+                break;
+            case BOOL:
+            case FLOAT:
+            case DOUBLE:
+            case BYTES:
+            case STRING:
+                throw new UnsupportedOperationException("couldn't convert " + valueSource + " to long as " + akType);
+            default:
+                throw new AssertionError(valueSource.getUnderlyingType());
+            }
+            return v;
+        case FLOAT_AKTYPE:
+            return valueSource.getFloat();
+        case DOUBLE_AKTYPE:
+            return valueSource.getObject();
+        case OBJECT_AKTYPE:
+            if (valueSource.getUnderlyingType() == PUnderlying.STRING)
+                return valueSource.getString();
+            if (akType == AkType.VARBINARY)
+                return new WrappingByteSource(valueSource.getBytes());
+            if (valueSource.hasCacheValue())
+                return valueSource.getObject();
+            throw new UnsupportedOperationException("couldn't convert " + valueSource + " to object as " + akType);
+        default:
+            throw new AssertionError(akType + " with underlying " + akType.underlyingType());
+        }
     }
 
     public static boolean areEqual(PValueSource one, PValueSource two) {
