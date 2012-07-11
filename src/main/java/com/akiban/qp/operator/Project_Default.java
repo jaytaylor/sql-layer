@@ -129,12 +129,19 @@ class Project_Default extends Operator
     public Project_Default(Operator inputOperator, RowType rowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("rowType", rowType);
-        ArgumentValidation.notEmpty("projections", projections);
+        if (projections == null && pExpressions == null)
+            throw new IllegalArgumentException("either projections or pExpressions must be present");
+        if (projections == null)
+            ArgumentValidation.isGT("pExpressions.size()", pExpressions.size(), 0);
+        else if (pExpressions == null)
+            ArgumentValidation.isGT("projections.size()", projections.size(), 0);
+        else
+            throw new IllegalArgumentException("only one of projections or pExpressions must be present");
         this.inputOperator = inputOperator;
         this.rowType = rowType;
-        this.projections = new ArrayList<Expression>(projections);
-        projectType = rowType.schema().newProjectType(this.projections, tInstances(pExpressions));
         this.pExpressions = pExpressions;
+        this.projections = projections;
+        projectType = rowType.schema().newProjectType(this.projections, tInstances(pExpressions));
     }
 
     private List<TInstance> tInstances(List<? extends TPreparedExpression> pExpressions) {
@@ -151,11 +158,17 @@ class Project_Default extends Operator
             RowType projectTableRowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
-        ArgumentValidation.notEmpty("projections", projections);
+        if (pExpressions != null)
+            ArgumentValidation.notEmpty("new projections", pExpressions);
+        else if (projections != null)
+            ArgumentValidation.notEmpty("new projections", projections);
+        else
+            throw new IllegalArgumentException("both expressions lists can't be null");
+        assert (projections == null) || (pExpressions == null) : "both expressions lists can't be non-null";
         
         this.inputOperator = inputOperator;
         this.rowType = inputRowType;
-        this.projections = new ArrayList<Expression>(projections);
+        this.projections = projections;
         
         ArgumentValidation.notNull("projectRowType", projectTableRowType);
         ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
@@ -163,7 +176,7 @@ class Project_Default extends Operator
                                                     projectTableRowType.userTable(),
                                                     projections,
                                                     tInstances(pExpressions));
-        this.pExpressions = pExpressions;
+        this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
     }
 
 
@@ -176,7 +189,7 @@ class Project_Default extends Operator
 
     protected final Operator inputOperator;
     protected final RowType rowType;
-    protected final List<Expression> projections;
+    protected final List<? extends Expression> projections;
     private final List<? extends TPreparedExpression> pExpressions;
     protected ProjectedRowType projectType;
 

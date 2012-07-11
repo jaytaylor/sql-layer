@@ -26,11 +26,12 @@
 
 package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.t3expressions.OverloadResolutionResult;
+import com.akiban.ais.model.Column;
 import com.akiban.server.t3expressions.OverloadResolver;
-import com.akiban.server.t3expressions.T3ScalarsRegistry;
+import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.t3expressions.TClassPossibility;
 import com.akiban.server.types3.LazyListBase;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverloadResult;
@@ -38,35 +39,41 @@ import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
-import com.akiban.server.types3.aksql.aktypes.AkString;
 import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.AggregateFunctionExpression;
+import com.akiban.sql.optimizer.plan.AggregateSource;
 import com.akiban.sql.optimizer.plan.AnyCondition;
 import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ColumnExpression;
+import com.akiban.sql.optimizer.plan.ColumnSource;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExistsCondition;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.ExpressionRewriteVisitor;
+import com.akiban.sql.optimizer.plan.ExpressionsSource;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.InListCondition;
+import com.akiban.sql.optimizer.plan.NullSource;
 import com.akiban.sql.optimizer.plan.ParameterCondition;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
 import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.optimizer.plan.PlanNode;
 import com.akiban.sql.optimizer.plan.PlanVisitor;
+import com.akiban.sql.optimizer.plan.Project;
 import com.akiban.sql.optimizer.plan.SubqueryResultSetExpression;
+import com.akiban.sql.optimizer.plan.SubquerySource;
 import com.akiban.sql.optimizer.plan.SubqueryValueExpression;
+import com.akiban.sql.optimizer.plan.TableSource;
 import com.akiban.sql.optimizer.rule.ConstantFolder.Folder;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
@@ -93,11 +100,12 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         private Folder folder;
         private OverloadResolver resolver;
-        private T3ScalarsRegistry registry;
 
 
         ResolvingVistor(PlanContext context) {
             folder = new Folder(context);
+            SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
+            resolver = src.getOverloadResolver();
         }
 
         public void resolve(PlanNode root) {
@@ -171,19 +179,21 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ExpressionNode handleFunctionExpression(FunctionExpression expression) {
             List<ExpressionNode> operands = expression.getOperands();
-            List<TClass> operandClasses = new ArrayList<TClass>(operands.size());
+            List<TPreptimeValue> operandClasses = new ArrayList<TPreptimeValue>(operands.size());
             for (ExpressionNode operand : operands)
-                operandClasses.add(tclass(operand));
+                operandClasses.add(operand.getPreptimeValue());
 
-            OverloadResolutionResult resolutionResult = registry.get(expression.getFunction(), operandClasses);
+            OverloadResult resolutionResult = resolver.get(expression.getFunction(), operandClasses);
 
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
-                ExpressionNode operand = castTo(operands.get(i), resolutionResult.tClass(i));
+
+                ExpressionNode operand = castTo(operands.get(i), resolutionResult.getTypeInstance(i));
                 operands.set(i, operand);
             }
 
-            TValidatedOverload overload = resolutionResult.overload();
+            TValidatedOverload overload = resolutionResult.getOverload();
+            expression.setOverload(overload);
 
             final List<TPreptimeValue> operandValues = new ArrayList<TPreptimeValue>(operands.size());
             List<TInstance> operandInstances = new ArrayList<TInstance>(operands.size());
@@ -208,7 +218,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 resultInstance = overloadResultStrategy.fixed();
                 break;
             case PICKING:
-                resultInstance = resolutionResult.pickingType();
+                resultInstance = resolutionResult.getPickedInstance();
                 break;
             default:
                 throw new AssertionError(overloadResultStrategy.category());
@@ -256,7 +266,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             TInstance thenType = tinst(thenExpr);
             TInstance elseType = tinst(elseExpr);
 
-            TClassPossibility commonPossibility = registry.commonTClass(thenType.typeClass(), elseType.typeClass());
+            TClassPossibility commonPossibility = resolver.commonTClass(thenType.typeClass(), elseType.typeClass());
             if (commonPossibility.isAny() || commonPossibility.isNone())
                 throw error("couldn't determine a type for CASE expression");
             TClass commonClass = commonPossibility.get();
@@ -268,7 +278,25 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleAggregateFunctionExpression(AggregateFunctionExpression expression) {
-            throw new UnsupportedOperationException(); // TODO
+            ExpressionNode operand = expression.getOperand();
+            TInstance resultType;
+            if (operand == null) {
+                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), null);
+                resultType = tAggregator.resultType(null);
+                expression.setPreptimeValue(new TPreptimeValue(resultType));
+            }
+            else {
+                TClass inputTClass = tclass(operand);
+                TAggregator tAggregator = resolver.getAggregation(expression.getFunction(), inputTClass);
+                TClass aggrTypeClass = tAggregator.getTypeClass();
+                if (aggrTypeClass != null && !aggrTypeClass.equals(inputTClass)) {
+                    operand = castTo(operand, aggrTypeClass);
+                    expression.setOperand(operand);
+                }
+                resultType = tAggregator.resultType(operand.getPreptimeValue());
+            }
+            expression.setPreptimeValue(new TPreptimeValue(resultType));
+            return expression;
         }
 
         ExpressionNode handleExistsCondition(ExistsCondition expression) {
@@ -292,7 +320,38 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleColumnExpression(ColumnExpression expression) {
-            expression.setPreptimeValue(new TPreptimeValue(expression.getColumn().tInstance()));
+            Column column = expression.getColumn();
+            ColumnSource columnSource = expression.getTable();
+            if (column != null) {
+                assert columnSource instanceof TableSource : columnSource;
+                expression.setPreptimeValue(new TPreptimeValue(column.tInstance()));
+            }
+            else if (columnSource instanceof AggregateSource) {
+                AggregateSource aggTable = (AggregateSource) columnSource;
+                TPreptimeValue ptv = aggTable.getField(expression.getPosition()).getPreptimeValue();
+                expression.setPreptimeValue(ptv);
+            }
+            else if (columnSource instanceof SubquerySource) {
+                SubquerySource subTable = (SubquerySource) columnSource;
+                throw new UnsupportedOperationException(); // TODO
+            }
+            else if (columnSource instanceof NullSource) {
+                NullSource nsTable = (NullSource) columnSource;
+                throw new UnsupportedOperationException(); // TODO
+            }
+            else if (columnSource instanceof Project) {
+                Project pTable = (Project) columnSource;
+                TPreptimeValue ptv = pTable.getFields().get(expression.getPosition()).getPreptimeValue();
+                expression.setPreptimeValue(ptv);
+            }
+            else if (columnSource instanceof ExpressionsSource) {
+                ExpressionsSource exprsTable = (ExpressionsSource) columnSource;
+                TPreptimeValue ptv = exprsTable.getPreptimeValues().get(expression.getPosition());
+                expression.setPreptimeValue(ptv);
+            }
+            else {
+                throw new AssertionError(columnSource + "(" + columnSource.getClass() + ")");
+            }
             return expression;
         }
 
@@ -317,35 +376,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleConstantExpression(ConstantExpression expression) {
-            // TODO temporary bridge between AkType world and types3 world
-            TInstance instance = tinst(expression.getSQLtype());
-            Object ovalue = expression.getValue();
-            PValue pvalue = new PValue(instance.typeClass().underlyingType());
-            if (ovalue == null) {
-                pvalue.putNull();
-            }
-            else {
-                switch (expression.getAkType().underlyingType()) {
-                case BOOLEAN_AKTYPE:
-                    pvalue.putBool((Boolean)ovalue);
-                    break;
-                case LONG_AKTYPE:
-                    pvalue.putInt64((Long)ovalue);
-                    break;
-                case FLOAT_AKTYPE:
-                    pvalue.putFloat((Float)ovalue);
-                    break;
-                case DOUBLE_AKTYPE:
-                    pvalue.putDouble((Double)ovalue);
-                    break;
-                case OBJECT_AKTYPE:
-                    if (ovalue instanceof String) {
-                        assert AkString.VARCHAR.equals(instance.typeClass()) : instance;
-                        pvalue.putObject(ovalue);
-                    }
-                    break;
-                }
-            }
+            // will be lazily loaded as necessary
             return expression;
         }
 
@@ -430,7 +461,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     }
 
     private static ExpressionNode boolExpr(ExpressionNode expression) {
-        expression.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
         return expression;
     }
 }

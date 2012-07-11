@@ -31,6 +31,8 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -62,6 +64,16 @@ public class ConstantExpression extends BaseExpression
 
     public ConstantExpression(Object value, AkType type) {
         this(value, null, type, null);
+    }
+
+    @Override
+    public TPreptimeValue getPreptimeValue() {
+        TPreptimeValue result = super.getPreptimeValue();
+        if (result == null) {
+            result = PValueSources.fromObject(value, getAkType());
+            setPreptimeValue(result);
+        }
+        return result;
     }
 
     @Override

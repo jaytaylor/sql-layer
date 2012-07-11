@@ -86,7 +86,6 @@ public class PostgresOperatorCompiler extends ServerOperatorCompiler
 
     @Override
     public void sessionChanged(PostgresServerSession server) {
-        binder.setDefaultSchemaName(server.getDefaultSchemaName());
     }
 
     static class PostgresResultColumn extends PhysicalResultColumn {

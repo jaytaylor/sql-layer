@@ -44,6 +44,7 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.rowdata.RowDef;
@@ -449,6 +450,18 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             logger.error("while checking/fixing " + index, e);
             return new IndexCheckResult(index.getIndexName(), -1, -1, -1);
         }
+    }
+
+    @Override
+    public void createView(Session session, View view)
+    {
+        schemaManager().createView(session, view);
+    }
+
+    @Override
+    public void dropView(Session session, TableName viewName)
+    {
+        schemaManager().dropView(session, viewName);
     }
 
     private void checkCursorsForDDLModification(Session session, Table table) {

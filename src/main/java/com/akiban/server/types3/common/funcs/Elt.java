@@ -52,17 +52,18 @@ public class Elt extends TOverloadBase
     {
         // ELT(<INT>, <T> ....)
         // argc >= 2
-        builder.covers(intType, 0).pickingVararg(type, 1).pickingVararg(type);
+        builder.covers(intType, 0).pickingVararg(type, 1);
     }
 
     @Override
     protected void doEvaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output)
     {
         int index = inputs.get(0).getInt32();
-        if (index < 1 || index > inputs.size())
+        int nvarargs = inputs.size() - 1;
+        if (index < 1 || index > nvarargs)
             output.putNull();
         else
-            output.putValueSource(inputs.get(index));
+            output.putValueSource(inputs.get(index+1));
     }
        
      

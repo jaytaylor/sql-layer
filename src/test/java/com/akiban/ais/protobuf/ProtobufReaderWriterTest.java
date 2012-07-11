@@ -44,7 +44,6 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.error.ProtobufWriteException;
 import com.akiban.util.GrowableByteBuffer;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.ais.AISComparator.compareAndAssert;
@@ -79,6 +78,20 @@ public class ProtobufReaderWriterTest {
                 on(CAOIBuilderFiller.ITEM_TABLE, "unit_price").
                 and(CAOIBuilderFiller.ORDER_TABLE, "order_date");
         
+        final AkibanInformationSchema inAIS = builder.ais();
+        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        compareAndAssert(inAIS, outAIS, false);
+    }
+
+    @Test
+    public void caoiWithView() {
+        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder(SCHEMA);
+        builder.view("recent_orders").
+            definition("CREATE VIEW recent_order AS SELECT * FROM order WHERE order_date > CURRENT_DATE - INTERVAL '30' DAY").
+            references(CAOIBuilderFiller.ORDER_TABLE).
+            colBigInt("order_id", false).
+            colBigInt("customer_id", false).
+            colLong("order_date", false);
         final AkibanInformationSchema inAIS = builder.ais();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, false);
@@ -256,7 +269,7 @@ public class ProtobufReaderWriterTest {
         GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
         for(int i = 0; i < COUNT; ++i) {
             bbs[i] = createByteBuffer();
-            new ProtobufWriter(bbs[i], new ProtobufWriter.SchemaSelector(SCHEMA+i)).save(inAIS);
+            new ProtobufWriter(bbs[i], new ProtobufWriter.SingleSchemaSelector(SCHEMA+i)).save(inAIS);
         }
 
         AkibanInformationSchema outAIS = new AkibanInformationSchema();
@@ -337,7 +350,7 @@ public class ProtobufReaderWriterTest {
         if(restrictSchema == null) {
             writer = new ProtobufWriter(bb);
         } else {
-            writer = new ProtobufWriter(bb, new ProtobufWriter.SchemaSelector(restrictSchema));
+            writer = new ProtobufWriter(bb, new ProtobufWriter.SingleSchemaSelector(restrictSchema));
         }
         writer.save(inAIS);
 

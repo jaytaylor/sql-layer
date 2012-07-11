@@ -167,6 +167,39 @@ public class AkibanInformationSchema implements Traversable
         return groupTablesById.get(tableId);
     }
 
+    public Map<TableName, View> getViews()
+    {
+        return views;
+    }
+
+    public View getView(final String schemaName, final String tableName)
+    {
+        return getView(new TableName(schemaName, tableName));
+    }
+
+    public View getView(final TableName tableName)
+    {
+        return views.get(tableName);
+    }
+
+    public Columnar getColumnar(String schemaName, String tableName)
+    {
+        Columnar columnar = getTable(schemaName, tableName);
+        if (columnar == null) {
+            columnar = getView(schemaName, tableName);
+        }
+        return columnar;
+    }
+
+    public Columnar getColumnar(TableName tableName)
+    {
+        Columnar columnar = getTable(tableName);
+        if (columnar == null) {
+            columnar = getView(tableName);
+        }
+        return columnar;
+    }
+
     public Collection<Type> getTypes()
     {
         return types.values();
@@ -296,6 +329,19 @@ public class AkibanInformationSchema implements Traversable
     public void addGroupTable(GroupTable table)
     {
         groupTables.put(table.getName(), table);
+    }
+
+    public void addView(View view)
+    {
+        TableName viewName = view.getName();
+        views.put(viewName, view);
+
+        Schema schema = getSchema(viewName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(viewName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addView(view);
     }
 
     public void addType(Type type)
@@ -577,6 +623,14 @@ public class AkibanInformationSchema implements Traversable
         invalidateTableIdMap();
     }
 
+    public void removeView(TableName name) {
+        views.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeView(name.getTableName());
+        }
+    }
+
     // State
 
     private static String defaultCharset = "utf8";
@@ -585,6 +639,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<String, Group> groups = new TreeMap<String, Group>();
     private final Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
     private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
+    private final Map<TableName, View> views = new TreeMap<TableName, View>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();
     private final Map<String, Schema> schemas = new TreeMap<String, Schema>();

@@ -27,9 +27,11 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.akiban.ais.gwtutils.GwtLogger;
 import com.akiban.ais.gwtutils.GwtLogging;
@@ -96,12 +98,20 @@ public class
         table.setInitialAutoIncrementValue(initialAutoIncrementValue);
     }
 
+    public void view(String schemaName, String tableName,
+                     String definition, Properties definitionProperties,
+                     Map<TableName,Collection<String>> tableColumnReferences) {
+        LOG.info("view: " + schemaName + "." + tableName);
+        View.create(ais, schemaName, tableName, 
+                    definition, definitionProperties, tableColumnReferences);
+    }
+
     public void column(String schemaName, String tableName, String columnName,
             Integer position, String typeName, Long typeParameter1,
             Long typeParameter2, Boolean nullable, Boolean autoIncrement,
             String charset, String collation) {
         LOG.info("column: " + schemaName + "." + tableName + "." + columnName);
-        UserTable table = ais.getUserTable(schemaName, tableName);
+        Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
                 concat(schemaName, tableName));
         Type type = ais.getType(typeName);

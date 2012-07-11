@@ -26,7 +26,7 @@
 
 package com.akiban.sql.optimizer.plan;
 
-import com.akiban.server.types.AkType;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -38,6 +38,7 @@ public class FunctionExpression extends BaseExpression
 {
     private String function;
     private List<ExpressionNode> operands;
+    private TValidatedOverload overload;
     
     public FunctionExpression(String function,
                               List<ExpressionNode> operands,
@@ -52,6 +53,13 @@ public class FunctionExpression extends BaseExpression
     }
     public List<ExpressionNode> getOperands() {
         return operands;
+    }
+
+    public TValidatedOverload getOverload() {
+        return overload;
+    }
+    public void setOverload(TValidatedOverload overload) {
+        this.overload = overload;
     }
 
     @Override
