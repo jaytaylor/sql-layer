@@ -43,7 +43,7 @@ public class CStringKeyCoderTest {
     public void appendKeySegment() throws Exception {
         final CStringKeyCoder coder = new CStringKeyCoder();
         final AkCollator akCollator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
-        final Key key = new Key((Persistit) null);
+        final Key key = new TestKeyCreator().createKey();
         try {
             coder.appendKeySegment(key, "Not a CString", null);
             fail("Expected exception");
@@ -70,7 +70,7 @@ public class CStringKeyCoderTest {
     @Test
     public void decodeKeySegment() throws Exception {
         final CStringKeyCoder coder = new CStringKeyCoder();
-        final Key key = new Key((Persistit) null);
+        final Key key = new TestKeyCreator().createKey();
         try {
             coder.decodeKeySegment(key, CString.class, null);
             fail("Expected exception");
@@ -89,7 +89,7 @@ public class CStringKeyCoderTest {
     public void displayKeySegment() throws Exception {
         final CStringKeyCoder coder = new CStringKeyCoder();
         final AkCollator akCollator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
-        final Key key = new Key((Persistit) null);
+        final Key key = new TestKeyCreator().createKey();
         clear(key);
         coder.appendKeySegment(key, new CString("abcde", akCollator.getCollationId()), null);
         StringBuilder sb = new StringBuilder();
