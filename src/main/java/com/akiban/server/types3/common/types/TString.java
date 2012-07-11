@@ -67,7 +67,7 @@ public abstract class TString extends TClass
     @Override
     public TInstance instance(int charsetId, int collationId) {
         return fixedLength < 0
-                ? super.instance(charsetId, collationId)
+                ? super.instance(charsetId, StringFactory.DEFAULT_CHARSET.ordinal(), collationId)
                 : super.instance(fixedLength, charsetId, collationId);
     }
 

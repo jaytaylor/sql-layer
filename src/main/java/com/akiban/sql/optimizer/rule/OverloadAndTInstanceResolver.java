@@ -380,6 +380,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
+            TInstance tinst = tinst(expression.getSQLtype());
+            expression.setPreptimeValue(new TPreptimeValue(tinst));
             return expression;
         }
 
@@ -433,7 +435,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 break;
             case TypeId.FormatIds.VARCHAR_TYPE_ID:
             case TypeId.FormatIds.CHAR_TYPE_ID:
-                Charset charset = StringFactory.Charset.valueOf(descriptor.getCharacterAttributes().getCharacterSet());
+                Charset charset = StringFactory.Charset.of(descriptor.getCharacterAttributes().getCharacterSet());
                 result = MString.VARCHAR.instance(descriptor.getMaximumWidth(), charset.ordinal());
                 break;
             case TypeId.FormatIds.DECIMAL_TYPE_ID:
