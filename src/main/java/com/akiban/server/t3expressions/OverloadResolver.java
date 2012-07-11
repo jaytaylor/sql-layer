@@ -61,8 +61,8 @@ public final class OverloadResolver {
             return pickedInstance;
         }
 
-        public TClass getTypeInstance(int inputIndex) {
-            throw new UnsupportedOperationException(); // TODO
+        public TClass getTypeClass(int inputIndex) {
+            return overload.inputSetAt(inputIndex).targetType();
         }
     }
 

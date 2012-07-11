@@ -191,7 +191,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
 
-                ExpressionNode operand = castTo(operands.get(i), resolutionResult.getTypeInstance(i));
+                ExpressionNode operand = castTo(operands.get(i), resolutionResult.getTypeClass(i));
                 operands.set(i, operand);
             }
 
@@ -245,7 +245,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     return operandValues.size();
                 }
             });
-            if (result.value() != null) {
+            if (result != null && result.value() != null) {
                 assert false : "create constant expression" ; // TODO
             }
             // -----------------------------------------------------------
