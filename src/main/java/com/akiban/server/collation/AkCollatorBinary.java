@@ -23,67 +23,64 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.collation;
 
-package com.akiban.qp.rowtype;
+import com.akiban.server.types.ValueSource;
+import com.persistit.Key;
 
-import com.akiban.ais.model.HKey;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+public class AkCollatorBinary extends AkCollator {
 
-public class HKeyRowType extends DerivedRowType
-{
-    // Object interface
-
-    @Override
-    public String toString()
-    {
-        return "HKey";
-    }
-
-    // RowType interface
-
-    @Override
-    public int nFields()
-    {
-        return nFields;
-    }
-
-    @Override
-    public TInstance typeInstanceAt(int index) {
-        return hKey().column(index).tInstance();
-    }
-
-    @Override
-    public AkType typeAt(int index)
-    {
-        return hKey().columnType(index);
+    public AkCollatorBinary() {
+        super(AkCollatorFactory.UCS_BINARY, AkCollatorFactory.UCS_BINARY, 0);
     }
     
     @Override
-    public AkCollator collatorAt(int index)
-    {
-        // TODO - probably not correct
-        return null;
+    public boolean isRecoverable() {
+        return true;
     }
 
     @Override
-    public HKey hKey()
-    {
-        return hKey;
+    public void append(Key key, String value) {
+        key.append(value);
     }
 
-    // HKeyRowType interface
-    
-    public HKeyRowType(DerivedTypesSchema schema, HKey hKey)
-    {
-        super(schema, schema.nextTypeId());
-        this.hKey = hKey;
-        this.nFields = hKey.nColumns();
+    @Override
+    public String decode(Key key) {
+        return key.decodeString();
     }
 
-    // Object state
+    /**
+     * Append the given value to the given key.
+     */
+    public byte[] encodeSortKeyBytes(String value) {
+        throw new UnsupportedOperationException("No sort key encoding for binary collation");
+    }
 
-    private final int nFields;
-    private HKey hKey;
+    /**
+     * Recover the value or throw an unsupported exception.
+     */
+    public String decodeSortKeyBytes(byte[] bytes, int index, int length) {
+        throw new UnsupportedOperationException("No sort key encoding for binary collation");
+    }
+
+
+    @Override
+    public int compare(ValueSource value1, ValueSource value2) {
+        return compare(value1.getString(), value2.getString());
+    }
+
+    @Override
+    public int compare(String string1, String string2) {
+        return string1.compareTo(string2);
+    }
+
+    @Override
+    public boolean isCaseSensitive() {
+        return true;
+    }
+
+    @Override
+    public String toString() {
+        return getName();
+    }
 }

@@ -284,7 +284,7 @@ public class PersistitStoreIndexStatistics
             throws PersistitException {
         long indexRowCount = indexStatsService.countEntries(session, index);
         PersistitIndexStatisticsVisitor visitor = 
-            new PersistitIndexStatisticsVisitor(index, indexRowCount);
+            new PersistitIndexStatisticsVisitor(index, indexRowCount, treeService);
         visitor.init();
         store.traverse(session, index, visitor);
         visitor.finish();

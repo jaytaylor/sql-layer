@@ -97,7 +97,7 @@ public class LikeExpressionTest extends ComposedExpressionTestBase
         
         
         //select '-A-abx' like '%-Ab%';
-        param(pb, LikeExpression.LIKE_COMPOSER, "-A-abx", "%-Ab%", "\\", true, false, false);
+        param(pb, LikeExpression.ILIKE_COMPOSER, "-A-abx", "%-Ab%", "\\", true, false, false);
         
         //'xxxA-AAbx' LIKE '%-AAb%' (duplicate characters in pattern)
         param(pb, LikeExpression.LIKE_COMPOSER, "xxxA-AAbx", "%-AAb%", "\\", true, false, false);

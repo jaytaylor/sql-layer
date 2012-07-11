@@ -24,66 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.rowtype;
+package com.akiban.server.collation;
 
-import com.akiban.ais.model.HKey;
-import com.akiban.server.collation.AkCollator;
-import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.service.tree.KeyCreator;
+import com.persistit.Key;
+import com.persistit.Persistit;
 
-public class HKeyRowType extends DerivedRowType
-{
-    // Object interface
+public class TestKeyCreator implements KeyCreator {
 
-    @Override
-    public String toString()
-    {
-        return "HKey";
+    public Key createKey() {
+        return new Key((Persistit) null);
     }
-
-    // RowType interface
-
-    @Override
-    public int nFields()
-    {
-        return nFields;
-    }
-
-    @Override
-    public TInstance typeInstanceAt(int index) {
-        return hKey().column(index).tInstance();
-    }
-
-    @Override
-    public AkType typeAt(int index)
-    {
-        return hKey().columnType(index);
-    }
-    
-    @Override
-    public AkCollator collatorAt(int index)
-    {
-        // TODO - probably not correct
-        return null;
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return hKey;
-    }
-
-    // HKeyRowType interface
-    
-    public HKeyRowType(DerivedTypesSchema schema, HKey hKey)
-    {
-        super(schema, schema.nextTypeId());
-        this.hKey = hKey;
-        this.nFields = hKey.nColumns();
-    }
-
-    // Object state
-
-    private final int nFields;
-    private HKey hKey;
 }

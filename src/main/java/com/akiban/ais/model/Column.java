@@ -38,6 +38,8 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 
 import java.util.concurrent.atomic.AtomicReference;
 
+import com.akiban.server.collation.AkCollator;
+
 public class Column
 {
     public static Column create(Columnar table, String name, Integer position, Type type, Boolean nullable,
@@ -396,6 +398,16 @@ public class Column
             charsetAndCollation == null
             ? table.getCharsetAndCollation()
             : charsetAndCollation;
+    }
+
+    public AkCollator getCollator() {
+        if (type.usesCollator()) {
+            CharsetAndCollation cac = getCharsetAndCollation();
+            if (cac != null) {
+                return cac.getCollator();
+            }
+        }
+        return null;
     }
 
     // Note: made public for AISBuilder -- peter.  TODO remove this comment.

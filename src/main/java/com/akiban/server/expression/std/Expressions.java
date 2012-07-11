@@ -33,6 +33,7 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -48,6 +49,11 @@ public class Expressions
     public static Expression compare(Expression left, Comparison comparison, Expression right)
     {
         return new CompareExpression(left, comparison, right);
+    }
+
+    public static Expression collate(Expression left, Comparison comparison, Expression right, AkCollator collator)
+    {
+        return new CompareExpression(left, comparison, right, collator);
     }
 
     public static Expression field(RowType rowType, int position)

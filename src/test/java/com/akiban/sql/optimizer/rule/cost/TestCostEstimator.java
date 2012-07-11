@@ -31,6 +31,7 @@ import com.akiban.sql.optimizer.OptimizerTestBase;
 
 import com.akiban.qp.rowtype.Schema;
 
+import com.akiban.server.collation.TestKeyCreator;
 import com.akiban.server.store.statistics.IndexStatistics;
 import com.akiban.server.store.statistics.IndexStatisticsYamlLoader;
 
@@ -49,12 +50,12 @@ public class TestCostEstimator extends CostEstimator
                              File statsFile, boolean statsIgnoreMissingIndexes,
                              Properties properties)
             throws IOException {
-        super(schema, properties);
+        super(schema, properties, new TestKeyCreator());
         this.ais = ais;
         if (statsFile == null)
             stats = Collections.<Index,IndexStatistics>emptyMap();
         else
-            stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA)
+            stats = new IndexStatisticsYamlLoader(ais, OptimizerTestBase.DEFAULT_SCHEMA, new TestKeyCreator())
                 .load(statsFile, statsIgnoreMissingIndexes);
     }
 
