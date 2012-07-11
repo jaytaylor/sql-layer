@@ -193,10 +193,8 @@ public class PersistitStoreIndexStatistics
     public void storeIndexStatistics(Session session, Index index, IndexStatistics indexStatistics)
             throws PersistitException {
         IndexDef indexDef = index.indexDef();
-        RowDef indexStatisticsRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_TABLE_NAME);
-        RowDef indexStatisticsEntryRowDef = store.getRowDefCache()
-            .getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
+        RowDef indexStatisticsRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_TABLE_NAME);
+        RowDef indexStatisticsEntryRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
         Exchange exchange = store.getExchange(session, indexStatisticsRowDef);
         Transaction transaction = exchange.getTransaction();
 
@@ -205,16 +203,8 @@ public class PersistitStoreIndexStatistics
             RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
 
             // First delete any old entries.
-            rowData.createRow(indexStatisticsRowDef, new Object[] {
-                                  indexDef.getRowDef().getRowDefId(),
-                                  index.getIndexId() 
-                              });
-            store.constructHKey(session, exchange, 
-                                indexStatisticsRowDef, rowData, false);
-            boolean removed = exchange.remove(Key.GTEQ);
-            // TODO: Need to get a count back from
-            // exchange.remove() in order to tell the row count in
-            // treeService.getTableStatusCache() what changed.
+            // TODO: Figure out how index_statistics and index_statistics_entry row counts change.
+            store.truncateGroup(session, indexStatisticsRowDef.getRowDefId());
 
             // Parent header row.
             rowData.createRow(indexStatisticsRowDef, new Object[] {
