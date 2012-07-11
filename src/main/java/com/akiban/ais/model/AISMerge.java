@@ -26,11 +26,10 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.ais.AISCloner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.Writer;
 import com.akiban.ais.model.validation.AISValidations;
 import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
@@ -53,12 +52,12 @@ import java.util.Set;
  */
 public class AISMerge {
     private static final int AIS_TABLE_ID_OFFSET = 1000000000;
+    private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
 
     /* state */
-    private AkibanInformationSchema targetAIS;
-    private UserTable sourceTable;
-    private NameGenerator nameGenerator;
-    private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
+    private final AkibanInformationSchema targetAIS;
+    private final UserTable sourceTable;
+    private final NameGenerator nameGenerator;
 
     /**
      * Creates an AISMerger with the starting values. 
@@ -75,11 +74,7 @@ public class AISMerge {
     }
     
     public static AkibanInformationSchema copyAIS(AkibanInformationSchema oldAIS) {
-        AkibanInformationSchema newAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(newAIS)).save(oldAIS);
-        // Copy stuff that old serialization didn't handle.
-        copyViews(oldAIS, newAIS);
-        return newAIS;
+        return AISCloner.clone(oldAIS);
     }
 
     /**
@@ -342,21 +337,13 @@ public class AISMerge {
     public static AkibanInformationSchema mergeView(AkibanInformationSchema oldAIS,
                                                     View view) {
         AkibanInformationSchema newAIS = copyAIS(oldAIS);
-        copyView(oldAIS, newAIS, view);
+        copyView(newAIS, view);
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;
     }
 
-    public static void copyViews(AkibanInformationSchema oldAIS, 
-                                 AkibanInformationSchema newAIS) {
-        for (View view : oldAIS.getViews().values()) {
-            copyView(oldAIS, newAIS, view);
-        }
-    }
-
-    public static void copyView(AkibanInformationSchema oldAIS, 
-                                AkibanInformationSchema newAIS,
+    public static void copyView(AkibanInformationSchema newAIS,
                                 View oldView) {
         Map<TableName,Collection<String>> newReferences = 
             new HashMap<TableName,Collection<String>>();
