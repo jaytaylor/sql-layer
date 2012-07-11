@@ -59,6 +59,7 @@ public class ViewDDLIT extends PostgresServerITBase {
         stmt.close();
     }
 
+    @Test
     public void testCreate() throws Exception {
         stmt.executeUpdate("CREATE VIEW v AS SELECT * FROM t");
         View v = ddl().getAIS(session()).getView(SCHEMA_NAME, "v");

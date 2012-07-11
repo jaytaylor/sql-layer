@@ -24,20 +24,30 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model;
+package com.akiban.server.util;
 
-import java.util.List;
+import static com.persistit.util.ThreadSequencer.allocate;
+import static com.persistit.util.ThreadSequencer.array;
 
-public interface NameGenerator
+/**
+ * COPIED FROM com.persistit.util.SequencerConstants
+ *
+ * Constants used in the implementation of internal tests on
+ * concurrent behavior.
+ * @author peter
+ *
+ */
+public interface SequencerConstants
 {
-    String generateColumnName(Column column);
-    String generateGroupTableIndexName(TableIndex userTableIndex);
-    String generateGroupName (UserTable userTable);
-    String generateGroupName (String tableName);
-    String generateGroupTableName (String groupName);
-    String generateIndexName (String indexName, String columnName, String constraint);
-    String generateJoinName (TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName (TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateGroupTreeName (Group group);
-    String generateIndexTreeName (Index index);
+    /*
+     * Used in testing a race condition between Checkpoint and Transaction commit, bug 937877
+     */
+    int BEFORE_GET_CONTEXT_THREAD_1 = allocate("BEFORE_GET_CONTEXT_THREAD_1");
+    int BEFORE_GET_CONTEXT_THREAD_2 = allocate("BEFORE_GET_CONTEXT_THREAD_2");
+    int AFTER_GET_CONTEXT_THREAD_1 = allocate("AFTER_GET_CONTEXT_THREAD_1");
+
+    int[][] UPDATE_GET_CONTEXT_SCHEDULE = new int[][] {
+            array(BEFORE_GET_CONTEXT_THREAD_1, BEFORE_GET_CONTEXT_THREAD_2), array(BEFORE_GET_CONTEXT_THREAD_1),
+            array(AFTER_GET_CONTEXT_THREAD_1, BEFORE_GET_CONTEXT_THREAD_2), array(BEFORE_GET_CONTEXT_THREAD_2),
+    };
 }

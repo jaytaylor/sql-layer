@@ -112,6 +112,9 @@ public interface NewUserTableBuilder extends NewAISBuilder {
     NewUserTableBuilder colVarBinary(String name, int length);
     NewUserTableBuilder colVarBinary(String name, int length, boolean nullable);
     
+    NewUserTableBuilder colText(String name);
+    NewUserTableBuilder colText(String name, boolean nullable);
+
     /**
      * Adds a PK
      * @param columns the columns that are in the PK

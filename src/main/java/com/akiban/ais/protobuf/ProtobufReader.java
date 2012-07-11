@@ -64,7 +64,7 @@ import java.util.Set;
 
 public class ProtobufReader {
     private final AkibanInformationSchema destAIS;
-    private final AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder = AISProtobuf.AkibanInformationSchema.newBuilder();
+    private final AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder;
     private final NameGenerator nameGenerator = new DefaultNameGenerator();
 
     public ProtobufReader() {
@@ -72,7 +72,12 @@ public class ProtobufReader {
     }
 
     public ProtobufReader(AkibanInformationSchema destAIS) {
+        this(destAIS, AISProtobuf.AkibanInformationSchema.newBuilder());
+    }
+
+    public ProtobufReader(AkibanInformationSchema destAIS, AISProtobuf.AkibanInformationSchema.Builder pbAISBuilder) {
         this.destAIS = destAIS;
+        this.pbAISBuilder = pbAISBuilder;
     }
 
     public AkibanInformationSchema getAIS() {
@@ -279,11 +284,17 @@ public class ProtobufReader {
                     );
                 }
 
-
-                String joinName = parentTable.getName() + "/" + childTable.getName();
-                Join join = Join.create(destAIS, joinName, parentTable, childTable);
+                List<String> parentColNames = new ArrayList<String>();
+                List<String> childColNames = new ArrayList<String>();
                 for(AISProtobuf.JoinColumn pbJoinColumn : pbJoin.getColumnsList()) {
                     hasRequiredFields(pbJoinColumn);
+                    parentColNames.add(pbJoinColumn.getParentColumn());
+                    childColNames.add(pbJoinColumn.getChildColumn());
+                }
+
+                String joinName = nameGenerator.generateJoinName(parentTable.getName(), childTable.getName(), parentColNames, childColNames);
+                Join join = Join.create(destAIS, joinName, parentTable, childTable);
+                for(AISProtobuf.JoinColumn pbJoinColumn : pbJoin.getColumnsList()) {
                     JoinColumn.create(
                             join,
                             parentTable.getColumn(pbJoinColumn.getParentColumn()),

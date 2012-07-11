@@ -24,20 +24,31 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.ais.model;
+package com.akiban.qp.operator;
 
-import java.util.List;
+import com.akiban.ais.model.UserTable;
 
-public interface NameGenerator
+public abstract class ExecutionBase
 {
-    String generateColumnName(Column column);
-    String generateGroupTableIndexName(TableIndex userTableIndex);
-    String generateGroupName (UserTable userTable);
-    String generateGroupName (String tableName);
-    String generateGroupTableName (String groupName);
-    String generateIndexName (String indexName, String columnName, String constraint);
-    String generateJoinName (TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName (TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateGroupTreeName (Group group);
-    String generateIndexTreeName (Index index);
+    protected StoreAdapter adapter()
+    {
+        return context.getStore();
+    }
+
+    protected StoreAdapter adapter(UserTable name)
+    {
+        return context.getStore(name);
+    }
+
+    protected void checkQueryCancelation()
+    {
+        context.checkQueryCancelation();
+    }
+
+    public ExecutionBase(QueryContext context)
+    {
+        this.context = context;
+    }
+
+    protected QueryContext context;
 }
