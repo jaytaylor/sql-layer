@@ -30,7 +30,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
 
@@ -58,7 +57,8 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
         super(context, iterationHelper, keyRange, ordering);
     }
 
-    protected void evaluateBoundaries(QueryContext context)
+    @Override
+    protected <S> void evaluateBoundaries(QueryContext context, SortStrategy<S> strategy)
     {
         BoundExpressions startExpressions = null;
         if (startBoundColumns == 0 || start == null) {
@@ -66,11 +66,11 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
         } else {
             startExpressions = start.boundExpressions(context);
             startKey.clear();
-            startKeyTarget.attach(startKey);
+            strategy.attachToStartKey(startKey);
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
-                    startKeyTarget.expectingType(types[f]);
-                    Converters.convert(startExpressions.eval(f), startKeyTarget);
+                    S source = strategy.get(startExpressions, f);
+                    strategy.appendToStartKey(source,types[f]);
                 }
             }
         }
@@ -80,15 +80,14 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
         } else {
             endExpressions = end.boundExpressions(context);
             endKey.clear();
-            endKeyTarget.attach(endKey);
+            strategy.attachToEndKey(endKey);
             for (int f = 0; f < endBoundColumns; f++) {
                 if (end.columnSelector().includesColumn(f)) {
-                    ValueSource valueSource = endExpressions.eval(f);
-                    if (valueSource.isNull() && startExpressions != null && !startExpressions.eval(f).isNull()) {
+                    S source = strategy.get(endExpressions, f);
+                    if (strategy.isNull(source) && startExpressions != null && !startExpressions.eval(f).isNull()) {
                         endKey.append(Key.AFTER);
                     } else {
-                        endKeyTarget.expectingType(types[f]);
-                        Converters.convert(valueSource, endKeyTarget);
+                        strategy.appendToEndKey(source, types[f]);
                     }
                 } else {
                     endKey.append(Key.AFTER);
