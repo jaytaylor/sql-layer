@@ -77,12 +77,17 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
     }
 
     /**
+     * TODO
+     * Temporarily returns an approximate version of the string.
+     * This is necessary for now to support the Index Histogram code.
+     * 
      * @throws ConversionException
      *             because in general CStrings cannot be decoded
      */
     @Override
     public Object decodeKeySegment(Key key, Class<?> clazz, CoderContext context) throws ConversionException {
-        throw new ConversionException("Collated key cannot be decoded");
+        //throw new ConversionException("Collated key cannot be decoded");
+        return decodeApproximateString(key);
     }
 
     /**
@@ -94,20 +99,7 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
     @Override
     public void displayKeySegment(Key key, Appendable target, Class<?> clazz, CoderContext context)
             throws ConversionException {
-        CString cs = new CString();
-        byte[] rawBytes = key.getEncodedBytes();
-        int index = key.getIndex();
-        int size = key.getEncodedSize();
-        int end = index;
-        for (; end < size && rawBytes[end] != 0; end++) {
-        }
-        if (end - index < 1) {
-            throw new ConversionException("CString cannot be decoded");
-        }
-        cs.setCollationId(rawBytes[index] & 0xFF);
-        AkCollator collator = AkCollatorFactory.getAkCollator(cs.getCollationId());
-        cs.setString(collator.decodeSortKeyBytes(rawBytes, index + 1, end - index - 1));
-        Util.append(target, cs.getString());
+        Util.append(target, decodeApproximateString(key));
     }
 
     /**
@@ -120,4 +112,26 @@ public class CStringKeyCoder implements KeyDisplayer, KeyRenderer {
         throw new ConversionException("Collated key cannot be decoded");
     }
 
+    /**
+     * Decode the a String from a key segment based on reverse translation of
+     * its sort key weights.
+     * 
+     * @param key
+     * @return
+     */
+    private String decodeApproximateString(Key key) {
+        byte[] rawBytes = key.getEncodedBytes();
+        int index = key.getIndex();
+        int size = key.getEncodedSize();
+        int end = index;
+        for (; end < size && rawBytes[end] != 0; end++) {
+        }
+        if (end - index < 1) {
+            throw new ConversionException("CString cannot be decoded");
+        }
+        int collationId = rawBytes[index] & 0xFF;
+        AkCollator collator = AkCollatorFactory.getAkCollator(collationId);
+        return collator.decodeSortKeyBytes(rawBytes, index + 1, end - index - 1);
+
+    }
 }
