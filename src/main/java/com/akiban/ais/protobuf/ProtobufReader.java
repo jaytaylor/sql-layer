@@ -475,7 +475,7 @@ public class ProtobufReader {
                 pbSchema,
                 AISProtobuf.Schema.TABLES_FIELD_NUMBER,
                 AISProtobuf.Schema.GROUPS_FIELD_NUMBER,
-                AISProtobuf.Schema.SEQUENCES_FIELD_NUMBER
+                AISProtobuf.Schema.SEQUENCES_FIELD_NUMBER,
                 AISProtobuf.Schema.VIEWS_FIELD_NUMBER,
                 AISProtobuf.Schema.CHARCOLL_FIELD_NUMBER
         );
