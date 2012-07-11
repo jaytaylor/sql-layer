@@ -34,12 +34,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
 
@@ -91,11 +86,7 @@ class Project_Default extends Operator
     @Override
     public String toString()
     {
-        if (projectType.hasUserTable()) {
-            return String.format("project to table %s (%s)", projectType.userTable(), projections);
-        } else {
-            return String.format("project(%s)", projections);
-        }
+        return Format.Describe(this.getExplainer());
     }
 
     // Operator interface
@@ -194,7 +185,7 @@ class Project_Default extends Operator
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("PROJECT DEFAULT"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("PROJECT"));
         if (projectType.hasUserTable())
             att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());

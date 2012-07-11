@@ -28,7 +28,7 @@ package com.akiban.sql.optimizer.explain.std;
 
 import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Formatter;
+import com.akiban.sql.optimizer.explain.Format;
 import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;

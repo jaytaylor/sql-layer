@@ -40,6 +40,7 @@ import com.akiban.server.types.extract.LongExtractor;
 import com.akiban.server.types.util.AbstractArithValueSource;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.ArgumentValidation;
@@ -273,13 +274,13 @@ public class ArithExpression extends AbstractBinaryExpression
     }
     
     @Override
-    public Explainer getExplainer ()
+    public Explainer getExplainer()
     {
         ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
         if (op.isInfix())
             explainer.addAttribute(Label.INFIX, explainer);
         if (op.isAssociative())
-            explainer.addAttribute(Label.ASSOCIATIVE, explainer);
+            explainer.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
         return explainer;
     }
     

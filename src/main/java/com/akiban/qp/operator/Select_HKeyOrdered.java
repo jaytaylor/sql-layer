@@ -31,12 +31,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.extract.Extractors;
-import com.akiban.sql.optimizer.explain.Attributes;
-import com.akiban.sql.optimizer.explain.Explainer;
-import com.akiban.sql.optimizer.explain.Label;
-import com.akiban.sql.optimizer.explain.OperationExplainer;
-import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
-import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
@@ -97,7 +92,7 @@ class Select_HKeyOrdered extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s, %s)", getClass().getSimpleName(), predicateRowType, predicate);
+        return Format.Describe(this.getExplainer());
     }
 
     // Operator interface
@@ -156,7 +151,7 @@ class Select_HKeyOrdered extends Operator
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("SELECT HKEY ORDERED"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("SELECT"));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
         att.put(Label.PREDICATE, predicate.getExplainer());
         return new OperationExplainer(Type.SELECT_HKEY, att);

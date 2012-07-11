@@ -63,7 +63,7 @@ public class FormatterTest {
     }
 
     /**
-     * Test of Describe method, of class Formatter.
+     * Test of Describe method, of class Format.
      */
     @Test
     public void testDescribe_Explainer() {
@@ -110,7 +110,7 @@ public class FormatterTest {
         Expression substr_ = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1_, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         
         Explainer explainer = substr.getExplainer();
-        Formatter instance = new Formatter();
+        Format instance = new Format();
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \"%Y-%m-%d\"), 9 + 10, 11)";
         String result = instance.Describe(explainer);
         assertEquals(expResult, result);
@@ -128,7 +128,7 @@ public class FormatterTest {
         PrimitiveExplainer explainer2 = PrimitiveExplainer.getInstance("27");
         StringBuilder sb1 = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
-        Formatter instance = new Formatter();
+        Format instance = new Format();
         instance.describePrimitive(explainer1, sb1);
         instance.describePrimitive(explainer2, sb2);
         assertEquals(sb1.toString(),"27");
