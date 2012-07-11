@@ -97,6 +97,12 @@ message Column {
     optional CharCollation charColl = 8; // column defined character set
                                          // and collation
     optional string  description  = 9;   // column comment holder
+    optional bool    default_identity = 10; // true if column is identity by default,
+                                            // false if column is identity always, 
+                                            // null if column is not an identity column
+    optional TableName sequence   = 11;  // Sequence used for identity generation. 
+                                         // links to Schema.schemaName & Sequence.sequenceName
+                                         // null if not an identity column                                              
 }
 
 // UserTable.  

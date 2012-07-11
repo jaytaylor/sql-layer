@@ -31,6 +31,7 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -191,4 +192,5 @@ public interface DDLFunctions {
     void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate);
 
     IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex);
+
 }

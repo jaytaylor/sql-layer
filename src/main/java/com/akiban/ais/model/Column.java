@@ -108,7 +108,15 @@ public class Column
     {
         this.initialAutoIncrementValue = autoIncrement ? 1L /* mysql default */ : null;
     }
-    
+
+    public final void setDefaultIdentity(Boolean defaultIdentity) {
+        this.defaultIdentity = defaultIdentity;
+    }
+
+    public final void setIdentityGenerator(Sequence identityGenerator) {
+        this.identityGenerator = identityGenerator;
+    }
+
     public void setTypeParameter1(Long typeParameter1)
     {
         if(typeParameter1 != null) {
@@ -239,6 +247,14 @@ public class Column
     public Long getInitialAutoIncrementValue()
     {
         return initialAutoIncrementValue;
+    }
+
+    public final Boolean getDefaultIdentity() {
+        return defaultIdentity;
+    }
+
+    public final Sequence getIdentityGenerator() {
+        return identityGenerator;
     }
 
     public Long getMaxStorageSize()
@@ -587,4 +603,6 @@ public class Column
     private Column groupColumn; // Non-null iff this is a user table column
     private Column userColumn; // Non-null iff this is a group table column
     private /*FieldDef*/ Object fieldDef;
+    private Boolean defaultIdentity;
+    private Sequence identityGenerator; 
 }
