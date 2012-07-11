@@ -238,7 +238,7 @@ public class ServerValueEncoder
         if (type.getInstance().typeClass() == MBinary.VARBINARY)
             getByteStream().write(value.getBytes());
         else {
-            assert !binary : "expecting VARBINARY";
+            assert !binary : "can only binary encode VARBINARY";
             appenderTarget.putValueSource(value);
         }
     }
