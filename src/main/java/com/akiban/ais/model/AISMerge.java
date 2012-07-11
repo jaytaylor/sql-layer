@@ -52,12 +52,12 @@ import java.util.Set;
  */
 public class AISMerge {
     private static final int AIS_TABLE_ID_OFFSET = 1000000000;
+    private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
 
     /* state */
-    private AkibanInformationSchema targetAIS;
-    private UserTable sourceTable;
-    private NameGenerator nameGenerator;
-    private static final Logger LOG = LoggerFactory.getLogger(AISMerge.class);
+    private final AkibanInformationSchema targetAIS;
+    private final UserTable sourceTable;
+    private final NameGenerator nameGenerator;
 
     /**
      * Creates an AISMerger with the starting values. 
@@ -67,6 +67,10 @@ public class AISMerge {
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
         targetAIS = copyAIS(primaryAIS);
+        sourceTable = newTable;
+        nameGenerator = new DefaultNameGenerator().
+                setDefaultGroupNames(targetAIS.getGroups().keySet()).
+                setDefaultTreeNames(computeTreeNames(targetAIS));
     }
     
     public static AkibanInformationSchema copyAIS(AkibanInformationSchema oldAIS) {
@@ -333,14 +337,13 @@ public class AISMerge {
     public static AkibanInformationSchema mergeView(AkibanInformationSchema oldAIS,
                                                     View view) {
         AkibanInformationSchema newAIS = copyAIS(oldAIS);
-        copyView(oldAIS, newAIS, view);
+        copyView(newAIS, view);
         newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
         newAIS.freeze();
         return newAIS;
     }
-    
-    public static void copyView(AkibanInformationSchema oldAIS, 
-                                AkibanInformationSchema newAIS,
+
+    public static void copyView(AkibanInformationSchema newAIS,
                                 View oldView) {
         Map<TableName,Collection<String>> newReferences = 
             new HashMap<TableName,Collection<String>>();
