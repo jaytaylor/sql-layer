@@ -45,7 +45,7 @@ public class View extends Columnar
 
     @Override
     public boolean isView() {
-        return false;
+        return true;
     }
 
     public View(AkibanInformationSchema ais, String schemaName, String viewName)

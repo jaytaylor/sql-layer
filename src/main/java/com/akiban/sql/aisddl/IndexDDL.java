@@ -31,7 +31,9 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import com.akiban.ais.model.*;
+import com.akiban.ais.AISCloner;
+import com.akiban.ais.model.Columnar;
+import com.akiban.ais.protobuf.ProtobufWriter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,14 +55,11 @@ import com.akiban.sql.parser.DropIndexNode;
 import com.akiban.sql.parser.IndexColumn;
 import com.akiban.sql.parser.RenameNode;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.TableSubsetWriter;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
-import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
@@ -230,7 +229,8 @@ public class IndexDDL
     private static Index buildTableIndex (AkibanInformationSchema ais, TableName tableName, CreateIndexNode index) {
         final String indexName = index.getObjectName().getTableName();
 
-        if (ais.getUserTable(tableName) == null) {
+        UserTable table = ais.getUserTable(tableName);
+        if (table == null) {
             throw new NoSuchTableException (tableName);
         }
 
@@ -239,10 +239,10 @@ public class IndexDDL
         }
 
         AISBuilder builder = new AISBuilder();
-        addTable (builder, ais, tableName);
+        addGroup (builder, ais, table.getGroup().getName());
         
         builder.index(tableName.getSchemaName(), tableName.getTableName(), indexName, index.getUniqueness(),
-                index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
+                      index.getUniqueness() ? Index.UNIQUE_KEY_CONSTRAINT : Index.KEY_CONSTRAINT);
 
         int i = 0;
         for (IndexColumn col : index.getColumnList()) {
@@ -338,23 +338,19 @@ public class IndexDDL
     }
 
     private static void addGroup (AISBuilder builder, AkibanInformationSchema ais, final String groupName) {
-
-        new TableSubsetWriter(new AISTarget(builder.akibanInformationSchema())) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                return table.getGroup().getName().equalsIgnoreCase(groupName);
-            }
-        }.save(ais);
-    }
-    
-    private static void addTable (AISBuilder builder, AkibanInformationSchema ais, TableName tableName) {
-        final UserTable userTable = ais.getUserTable(tableName);
-        final GroupTable groupTable = userTable.getGroup().getGroupTable();
-        new TableSubsetWriter(new AISTarget(builder.akibanInformationSchema())) {
-            @Override
-            public boolean shouldSaveTable(Table table) {
-                return table == userTable || table == groupTable;
-            }
-        }.save(ais);
+        AISCloner.clone(
+                builder.akibanInformationSchema(),
+                ais,
+                new ProtobufWriter.TableAllIndexSelector() {
+                    @Override
+                    public boolean isSelected(Columnar columnar) {
+                        if(!columnar.isTable()) {
+                            return false;
+                        }
+                        UserTable table = (UserTable)columnar;
+                        return table.getGroup().getName().equalsIgnoreCase(groupName);
+                    }
+                }
+        );
     }
 }

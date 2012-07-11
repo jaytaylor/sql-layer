@@ -252,6 +252,16 @@ public class AkibanInformationSchema implements Traversable
         return schemas.get(schema);
     }
 
+    public Map<TableName, Sequence> getSequences()
+    {
+        return sequences;
+    }
+    
+    public Sequence getSequence (final TableName sequenceName)
+    {
+        return sequences.get(sequenceName);
+    }
+    
     public CharsetAndCollation getCharsetAndCollation()
     {
         return charsetAndCollation;
@@ -374,6 +384,20 @@ public class AkibanInformationSchema implements Traversable
         schemas.put(schema.getName(), schema);
     }
 
+    public void addSequence (Sequence seq)
+    {
+        TableName sequenceName = seq.getSequenceName();
+        sequences.put(sequenceName, seq);
+
+        // TODO: Create on demand until Schema is more of a first class citizen
+        Schema schema = getSchema(sequenceName.getSchemaName());
+        if (schema == null) {
+            schema = new Schema(sequenceName.getSchemaName());
+            addSchema(schema);
+        }
+        schema.addSequence(seq);
+    }
+    
     public void deleteGroupAndGroupTable(Group group)
     {
         Group removedGroup = groups.remove(group.getName());
@@ -622,12 +646,20 @@ public class AkibanInformationSchema implements Traversable
         }
         invalidateTableIdMap();
     }
+    
+    void removeSequence (TableName name) {
+        sequences.remove(name);
+        Schema schema = getSchema(name.getSchemaName());
+        if (schema != null) {
+            schema.removeSequence(name.getTableName());
+        }
+    }
 
     public void removeView(TableName name) {
         views.remove(name);
         Schema schema = getSchema(name.getSchemaName());
         if (schema != null) {
-            schema.removeTable(name.getTableName());
+            schema.removeView(name.getTableName());
         }
     }
 
@@ -639,6 +671,7 @@ public class AkibanInformationSchema implements Traversable
     private final Map<String, Group> groups = new TreeMap<String, Group>();
     private final Map<TableName, UserTable> userTables = new TreeMap<TableName, UserTable>();
     private final Map<TableName, GroupTable> groupTables = new TreeMap<TableName, GroupTable>();
+    private final Map<TableName, Sequence> sequences = new TreeMap<TableName, Sequence>();
     private final Map<TableName, View> views = new TreeMap<TableName, View>();
     private final Map<String, Join> joins = new TreeMap<String, Join>();
     private final Map<String, Type> types = new TreeMap<String, Type>();

@@ -41,6 +41,11 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Table;
 
+
+/**
+ * @deprecated Does not preserve all AIS objects, only those that exist in MetaModel
+ */
+@Deprecated
 public class AISTarget extends Target
 {
     private final AkibanInformationSchema ais;

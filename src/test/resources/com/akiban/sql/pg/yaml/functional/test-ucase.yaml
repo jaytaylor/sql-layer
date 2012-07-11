@@ -9,8 +9,8 @@
 - Statement: SELECT UCASE(varchar_field) from all_types;
 - output: [['ONE'], ['TWO'], ['THREE'], [''], [null], ['A']]
 --- #test UCASE() in WHERE clause
-- Statement: SELECT double_field FROM all_types WHERE UCASE(varchar_field) = varchar_field;
-- output: [[2.5], [3.5], [0.0]] # null is not listed because null = null returns NULL (as opposed to TRUE). Could be a bug?
+- Statement: SELECT double_field FROM all_types WHERE UCASE(varchar_field) = (varchar_field COLLATE UCS_BINARY);
+- output: [[2.5], [3.5], [0.0]] # null is not listed because null = null returns UNKNOWN (as opposed to TRUE).
 --- #test UCASE in SELECT clause
 - Statement: SELECT UCASE(double_field) from all_types;
 - output: [[1.5], [2.5], [3.5], [0.0], [null], [4.0]]

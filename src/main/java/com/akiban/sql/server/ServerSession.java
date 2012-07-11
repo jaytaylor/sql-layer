@@ -42,6 +42,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
 
 import java.io.IOException;
@@ -137,14 +138,14 @@ public interface ServerSession
     /** Get query timeout in seconds or <code>null</code> if it has not been set. */
     public Long getQueryTimeoutSec();
 
-    /** Get compatibilty mode for MySQL zero dates. */
+    /** Get compatibility mode for MySQL zero dates. */
     public ServerValueEncoder.ZeroDateTimeBehavior getZeroDateTimeBehavior();
 
     /** Send a warning message to the client. */
     public void notifyClient(QueryContext.NotificationLevel level, ErrorCode errorCode, String message) throws IOException;
 
     /** Get the index cost estimator. */
-    public CostEstimator costEstimator(ServerOperatorCompiler compiler);
+    public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator);
 
     /** Get the overload resolver */
     public OverloadResolver overloadResolver();

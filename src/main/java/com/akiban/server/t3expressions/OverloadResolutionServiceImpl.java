@@ -66,7 +66,7 @@ public class OverloadResolutionServiceImpl implements OverloadResolutionService,
         T3Registry t3Registry = new T3Registry(finder);
         OverloadResolver resolver = new OverloadResolver(t3Registry.scalars(), t3Registry.aggregates());
         if (resolverRef.compareAndSet(null, resolver))
-            logger.warn("tried to set logger when one already existed");
+            logger.warn("tried to set resolver when one already existed");
     }
 
     @Override

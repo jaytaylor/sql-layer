@@ -32,7 +32,9 @@ import org.junit.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
+import java.sql.ResultSet;
 import java.sql.Statement;
 import java.sql.SQLException;
 
@@ -42,9 +44,26 @@ import com.akiban.ais.model.Table;
 import com.akiban.ais.model.View;
 import com.akiban.sql.pg.PostgresServerITBase;
 
+import com.akiban.server.service.config.Property;
+import com.akiban.server.service.is.BasicInfoSchemaTablesService;
+import com.akiban.server.service.is.BasicInfoSchemaTablesServiceImpl;
+import com.akiban.server.service.servicemanager.GuicedServiceManager;
+
 import java.util.Collection;
 
 public class ViewDDLIT extends PostgresServerITBase {
+    @Override
+    protected GuicedServiceManager.BindingsConfigurationProvider serviceBindingsProvider() {
+        return super.serviceBindingsProvider()
+                .bind(BasicInfoSchemaTablesService.class, BasicInfoSchemaTablesServiceImpl.class)
+;
+    }
+
+    @Override
+    protected Collection<Property> startupConfigProperties() {
+        return uniqueStartupConfigProperties(getClass());
+    }
+
     private Statement stmt;
 
     @Before
@@ -59,6 +78,7 @@ public class ViewDDLIT extends PostgresServerITBase {
         stmt.close();
     }
 
+    @Test
     public void testCreate() throws Exception {
         stmt.executeUpdate("CREATE VIEW v AS SELECT * FROM t");
         View v = ddl().getAIS(session()).getView(SCHEMA_NAME, "v");
@@ -100,4 +120,36 @@ public class ViewDDLIT extends PostgresServerITBase {
         stmt.executeUpdate("DROP VIEW IF EXISTS v");
         assertNull(ddl().getAIS(session()).getView(SCHEMA_NAME, "v"));
     }
+
+    @Test(expected=SQLException.class)
+    public void testDropTableReferenced() throws Exception {
+        stmt.executeUpdate("CREATE VIEW v AS SELECT * FROM t");
+        stmt.executeUpdate("DROP TABLE t");
+    }
+
+    @Test(expected=SQLException.class)
+    public void testDropViewReferenced() throws Exception {
+        stmt.executeUpdate("CREATE VIEW v1 AS SELECT * FROM t");
+        stmt.executeUpdate("CREATE VIEW v2 AS SELECT * FROM v1");
+        stmt.executeUpdate("DROP VIEW v1");
+    }
+
+    @Test
+    public void testSystemView() throws Exception {
+        serviceManager().getServiceByClass(BasicInfoSchemaTablesService.class);
+        stmt.executeUpdate("CREATE VIEW v AS SELECT table_name FROM information_schema.tables WHERE table_schema <> 'information_schema'");
+        forgetConnection();
+        safeRestartTestServices();
+        serviceManager().getServiceByClass(BasicInfoSchemaTablesService.class);
+        stmt = getConnection().createStatement();
+        ResultSet rs = stmt.executeQuery("SELECT * FROM v");
+        boolean found = false;
+        while (rs.next()) {
+            String s = rs.getString(1);
+            if ("v".equals(s))
+                found = true;
+        }
+        assertTrue(found);
+    }
+
 }

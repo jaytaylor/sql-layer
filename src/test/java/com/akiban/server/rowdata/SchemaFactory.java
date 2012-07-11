@@ -26,8 +26,7 @@
 
 package com.akiban.server.rowdata;
 
-import com.akiban.ais.metamodel.io.AISTarget;
-import com.akiban.ais.metamodel.io.Writer;
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISMerge;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
@@ -254,8 +253,7 @@ public class SchemaFactory {
 
         @Override
         public void createIndexes(Session session, Collection<? extends Index> indexesToAdd) {
-            AkibanInformationSchema newAIS = new AkibanInformationSchema();
-            new Writer(new AISTarget(newAIS)).save(ais);
+            AkibanInformationSchema newAIS = AISCloner.clone(ais);
             PersistitStoreSchemaManager.createIndexes(newAIS, indexesToAdd);
             ais = newAIS;
         }
