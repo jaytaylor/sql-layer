@@ -1376,7 +1376,7 @@ public class OperatorAssembler extends BaseRule
             IndexRowType indexRowType = getIndexRowType(index);
             if ((equalityComparands == null) &&
                     (lowComparand == null) && (highComparand == null))
-                return IndexKeyRange.unbounded(indexRowType);
+                return IndexKeyRange.unbounded(indexRowType, usePValues);
 
             int nkeys = 0;
             if (equalityComparands != null)

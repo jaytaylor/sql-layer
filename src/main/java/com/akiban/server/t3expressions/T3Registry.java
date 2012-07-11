@@ -41,6 +41,9 @@ import com.akiban.server.types3.service.FunctionRegistry;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.DagChecker;
+import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.Multimap;
+import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -72,8 +75,8 @@ public final class T3Registry {
 
     private static class InternalScalarsRegistry implements T3ScalarsRegistry {
         @Override
-        public List<TValidatedOverload> getOverloads(String name) {
-            throw new UnsupportedOperationException(); // TODO
+        public Collection<TValidatedOverload> getOverloads(String name) {
+            return overloadsByName.get(name);
         }
 
         @Override
@@ -120,9 +123,16 @@ public final class T3Registry {
 
             strongCastsBySource = createStrongCastsMap(castsBySource);
             checkDag(strongCastsBySource);
+
+            Multimap<String, TValidatedOverload> localOverloadsByName = ArrayListMultimap.create();
+            for (TValidatedOverload overload : finder.overloads()) {
+                localOverloadsByName.put(overload.overloadName().toLowerCase(), overload);
+            }
+            overloadsByName = Multimaps.unmodifiableMultimap(localOverloadsByName);
         }
         private final Map<TClass,Map<TClass,TCast>> castsBySource;
         private final Map<TClass,Map<TClass,TCast>> strongCastsBySource;
+        private final Multimap<String, TValidatedOverload> overloadsByName;
     }
 
     private static void checkDag(final Map<TClass, Map<TClass, TCast>> castsBySource) {

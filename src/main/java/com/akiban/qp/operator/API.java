@@ -277,7 +277,8 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType)
     {
-        return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType));
+        boolean usePValues = Types3Switch.ON;
+        return indexScan_Default(indexType, false, IndexKeyRange.unbounded(indexType, usePValues), usePValues);
     }
 
     /**
@@ -292,9 +293,14 @@ public class API
     @SuppressWarnings("deprecation")
     public static Operator indexScan_Default(IndexRowType indexType, boolean reverse)
     {
-        return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType));
+        boolean usePValues = Types3Switch.ON;
+        return indexScan_Default(indexType, reverse, IndexKeyRange.unbounded(indexType, usePValues), usePValues);
     }
 
+    public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
+    {
+        return indexScan_Default(indexType, reverse, indexKeyRange, Types3Switch.ON);
+    }
     /**
      * Creates a scan operator for the given index, using LEFT JOIN semantics after the indexType's tableType.
      * @param indexType the index to scan
@@ -305,10 +311,10 @@ public class API
      */
     @Deprecated
     @SuppressWarnings("deprecation")
-    public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange)
+    public static Operator indexScan_Default(IndexRowType indexType, boolean reverse, IndexKeyRange indexKeyRange, boolean usePValues)
     {
         if (indexKeyRange == null) {
-            indexKeyRange = IndexKeyRange.unbounded(indexType);
+            indexKeyRange = IndexKeyRange.unbounded(indexType, usePValues);
         }
         return indexScan_Default(indexType, reverse, indexKeyRange, indexType.tableType());
     }

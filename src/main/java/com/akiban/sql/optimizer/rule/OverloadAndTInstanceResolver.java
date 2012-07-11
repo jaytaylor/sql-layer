@@ -322,7 +322,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             ExpressionNode right = expression.getRight();
             TClass leftTClass = tclass(left);
             TClass rightTClass = tclass(right);
-            if (!leftTClass.equals(rightTClass)) {
+            if (leftTClass != rightTClass) {
                 TClass common = resolver.commonTClass(leftTClass, rightTClass);
                 if (common == null)
                     throw error("no common type found for comparison of " + expression);
@@ -413,7 +413,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         private static TInstance tinst(ExpressionNode node) {
-            return node.getPreptimeValue().instance();
+            TPreptimeValue ptv = node.getPreptimeValue();
+            return ptv == null ? null : ptv.instance();
         }
 
         private static PValueSource pval(ExpressionNode expression) {
