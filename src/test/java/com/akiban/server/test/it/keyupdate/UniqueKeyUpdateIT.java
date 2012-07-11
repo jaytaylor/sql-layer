@@ -308,4 +308,20 @@ public final class UniqueKeyUpdateIT extends ITBase {
                 createNewRow(tableId, 12L, null)
         );
     }
+
+    @Test
+    public void pkEnforcement() throws InvalidOperationException {
+        final String tableName = "t1";
+        final String schemaName = "s1";
+        final int tableId;
+        try {
+            tableId = createTable(schemaName, tableName, "cid int not null primary key, cx int");
+            writeRows(
+                createNewRow(tableId, 1, 1),
+                createNewRow(tableId, 1, 2)
+                     );
+        } catch (InvalidOperationException e) {
+            throw new TestException(e);
+        }
+    }
 }

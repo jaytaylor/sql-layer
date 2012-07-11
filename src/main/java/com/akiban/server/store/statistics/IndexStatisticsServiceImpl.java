@@ -29,9 +29,13 @@ package com.akiban.server.store.statistics;
 import com.akiban.ais.model.*;
 import com.akiban.ais.model.aisb2.AISBBasedBuilder;
 import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.qp.persistitadapter.PersistitAdapter;
+import com.akiban.qp.util.SchemaCache;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLTransactionHook;
 import com.akiban.server.service.jmx.JmxManageable;
 import com.akiban.server.service.session.Session;
@@ -67,17 +71,22 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     // Following couple only used by JMX method, where there is no context.
     private final SchemaManager schemaManager;
     private final SessionService sessionService;
+    private final ConfigurationService configurationService;
 
     private PersistitStoreIndexStatistics storeStats;
     private Map<Index,IndexStatistics> cache;
 
     @Inject
-    public IndexStatisticsServiceImpl(Store store, TreeService treeService,
-                                      SchemaManager schemaManager, SessionService sessionService) {
+    public IndexStatisticsServiceImpl(Store store,
+                                      TreeService treeService,
+                                      SchemaManager schemaManager,
+                                      SessionService sessionService,
+                                      ConfigurationService configurationService) {
         this.store = store.getPersistitStore();
         this.treeService = treeService;
         this.schemaManager = schemaManager;
         this.sessionService = sessionService;
+        this.configurationService = configurationService;
     }
     
     /* Service */
@@ -215,6 +224,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
     @Override
     public void updateIndexStatistics(Session session, 
                                       Collection<? extends Index> indexes) {
+        ensureAdapter(session);
         final Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics> (indexes.size());
 
         if (indexes.size() > 0) {
@@ -233,7 +243,7 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
             }
         });
     }
-    
+
     private Map<Index,IndexStatistics> updatePersistitTableIndexStatistics (Session session, Collection<? extends Index> indexes) {
         Map<Index,IndexStatistics> updates = new HashMap<Index, IndexStatistics>(indexes.size());
         for (Index index : indexes) {
@@ -346,6 +356,20 @@ public class IndexStatisticsServiceImpl implements IndexStatisticsService, Servi
         return new JmxObjectInfo("IndexStatistics", 
                                  new JmxBean(), 
                                  IndexStatisticsMXBean.class);
+    }
+
+    private void ensureAdapter(Session session)
+    {
+        PersistitAdapter adapter = (PersistitAdapter) session.get(StoreAdapter.STORE_ADAPTER_KEY);
+        if (adapter == null) {
+            adapter = new PersistitAdapter(SchemaCache.globalSchema(schemaManager.getAis(session)),
+                                           store,
+                                           treeService,
+                                           session,
+                                           configurationService,
+                                           true);
+            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
+        }
     }
 
     class JmxBean implements IndexStatisticsMXBean {

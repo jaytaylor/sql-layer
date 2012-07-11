@@ -211,7 +211,7 @@ public class PersistitStoreIndexStatistics
                               });
             store.constructHKey(session, exchange, 
                                 indexStatisticsRowDef, rowData, false);
-            exchange.remove(Key.GTEQ);
+            boolean removed = exchange.remove(Key.GTEQ);
             // TODO: Need to get a count back from
             // exchange.remove() in order to tell the row count in
             // treeService.getTableStatusCache() what changed.

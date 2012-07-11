@@ -126,10 +126,10 @@ public class PersistitIndexRowBuffer extends IndexRow
     @Override
     public void close()
     {
-        // If necessary, copy pValueAppender state into value
+        // If necessary, copy pValue state into value. (Check pValueAppender, because that is non-null only in
+        // a writeable PIRB.)
         if (pValueAppender != null) {
             value.clear();
-            Key pValue = pValueAppender.key();
             value.putByteArray(pValue.getEncodedBytes(), 0, pValue.getEncodedSize());
         }
     }

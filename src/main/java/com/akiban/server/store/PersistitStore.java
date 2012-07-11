@@ -32,6 +32,7 @@ import com.akiban.qp.persistitadapter.OperatorBasedRowCollector;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.persistitadapter.indexrow.PersistitIndexRowBuffer;
 import com.akiban.qp.row.IndexRow;
+import com.akiban.qp.util.PersistitKey;
 import com.akiban.server.*;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.scan.LegacyRowWrapper;
@@ -210,7 +211,6 @@ public class PersistitStore implements Store {
         IndexToHKey indexToHKey = null;
         int i2hPosition = 0;
         Exchange parentPKExchange = null;
-        boolean parentExists = false;
         // Nested loop over hkey metadata: All the segments of an hkey, and all
         // the columns of a segment.
         List<HKeySegment> hKeySegments = table.hKey().segments();
@@ -218,9 +218,9 @@ public class PersistitStore implements Store {
         while (s < hKeySegments.size()) {
             HKeySegment hKeySegment = hKeySegments.get(s++);
             // Write the ordinal for this segment
-            RowDef segmentRowDef = rowDefCache.getRowDef(hKeySegment.table()
-                    .getTableId());
+            RowDef segmentRowDef = rowDefCache.getRowDef(hKeySegment.table().getTableId());
             hKeyAppender.append(segmentRowDef.getOrdinal());
+            PersistitIndexRowBuffer parentPKIndexRow = null;
             // Iterate over the segment's columns
             List<HKeyColumn> hKeyColumns = hKeySegment.columns();
             int c = 0;
@@ -235,19 +235,13 @@ public class PersistitStore implements Store {
                         assert parentPK != null : parentRowDef;
                         indexToHKey = parentPK.indexToHKey();
                         parentPKExchange = getExchange(session, parentPK);
-                        constructParentPKIndexKey(adapter, parentPKExchange, rowDef, rowData, parentPK);
-                        parentExists = hasChildren(parentPKExchange);
+                        parentPKIndexRow = readPKIndexRow(adapter, parentPK, parentPKExchange, rowDef, rowData);
                     }
                     if(indexToHKey.isOrdinal(i2hPosition)) {
                         assert indexToHKey.getOrdinal(i2hPosition) == segmentRowDef.getOrdinal() : hKeyColumn;
                         ++i2hPosition;
                     }
-                    if (parentExists) {
-                        PersistitIndexRowBuffer parentPKIndexRow =
-                            PersistitIndexRowBuffer.createInitialized(adapter,
-                                                                      parentPK,
-                                                                      parentPKExchange.getKey(),
-                                                                      parentPKExchange.getValue());
+                    if (parentPKIndexRow != null) {
                         parentPKIndexRow.appendFieldTo(indexToHKey.getIndexRowPosition(i2hPosition), hKeyAppender);
                     } else {
                         hKeyAppender.appendNull(); // orphan row
@@ -324,7 +318,7 @@ public class PersistitStore implements Store {
         indexRow.close();
     }
 
-    void constructParentPKIndexKey(PersistitAdapter adapter,
+    private void constructParentPKIndexKey(PersistitAdapter adapter,
                                    Exchange parentPKExchange,
                                    RowDef rowDef,
                                    RowData rowData,
@@ -341,6 +335,28 @@ public class PersistitStore implements Store {
         }
         indexRow.close();
     }
+
+    private PersistitIndexRowBuffer readPKIndexRow(PersistitAdapter adapter,
+                                                   Index pkIndex,
+                                                   Exchange exchange,
+                                                   RowDef rowDef,
+                                                   RowData rowData) throws PersistitException
+    {
+        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey());
+        int[] fields = rowDef.getParentJoinFields();
+        for (int fieldIndex = 0; fieldIndex < fields.length; fieldIndex++) {
+            FieldDef fieldDef = rowDef.getFieldDef(fields[fieldIndex]);
+            keyAppender.append(fieldDef, rowData);
+        }
+        exchange.fetch();
+        PersistitIndexRowBuffer indexRow =
+            PersistitIndexRowBuffer.createInitialized(adapter,
+                                                      pkIndex,
+                                                      exchange.getKey(),
+                                                      exchange.getValue());
+        return exchange.getValue().isDefined() ? indexRow : null;
+    }
+
 
     // --------------------- Implement Store interface --------------------
 
@@ -1052,18 +1068,15 @@ public class PersistitStore implements Store {
     private void checkUniqueness(Index index, RowData rowData, Exchange iEx)
     {
         if (index.isUnique() && !hasNullIndexSegments(rowData, index)) {
-            final Key key = iEx.getKey();
-            KeyState ks = new KeyState(key);
+            Key key = iEx.getKey();
             key.setDepth(index.indexDef().getIndexKeySegmentCount());
             try {
-                if (iEx.hasChildren()) {
-                    ks.copyTo(key);
+                if (hasChildren(iEx)) {
                     throw new DuplicateKeyException(index.getIndexName().getName(), key);
                 }
             } catch (PersistitException e) {
                 throw new PersistitAdapterException(e);
             }
-            ks.copyTo(key);
         }
     }
 
@@ -1415,7 +1428,14 @@ public class PersistitStore implements Store {
 
     private boolean hasChildren(Exchange exchange) throws PersistitException
     {
-        return exchange.traverse(Key.Direction.GTEQ, true);
+        // Check for children by traversing forward from the current key. That can change the key, so
+        // we have to make a copy and they restore the original key later, as the caller depends on the
+        // exchange's state. Copying/restoring the value is not necessary, because passing 0 as the last
+        // argument of traverse causes the value not to be retrieved, leaving the current value in place.
+        KeyState keyCopy = new KeyState(exchange.getKey());
+        boolean hasChildren = exchange.traverse(Key.Direction.GTEQ, true, 0);
+        keyCopy.copyTo(exchange.getKey());
+        return hasChildren;
     }
 
 
