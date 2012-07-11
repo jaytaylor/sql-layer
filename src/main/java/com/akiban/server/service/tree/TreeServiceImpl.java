@@ -586,6 +586,11 @@ public class TreeServiceImpl
     public String getDataPath() {
         return getDb().getProperty("datapath");
     }
+    
+    @Override
+    public Key createKey() {
+        return new Key(getDb());
+    }
 
     void buildSchemaMap() {
         final Properties properties = configService.deriveProperties("akserver.");

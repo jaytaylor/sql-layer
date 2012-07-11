@@ -36,6 +36,7 @@ import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.statistics.IndexStatistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
 
@@ -63,17 +64,17 @@ public abstract class CostEstimator implements TableRowCounts
     private final PersistitKeyValueTarget keyTarget;
     private final Comparator<byte[]> bytesComparator;
 
-    protected CostEstimator(Schema schema, Properties properties) {
+    protected CostEstimator(Schema schema, Properties properties, KeyCreator keyCreator) {
         this.schema = schema;
         this.properties = properties;
         model = CostModel.newCostModel(schema, this);
-        key = new Key((Persistit)null);
+        key = keyCreator.createKey();
         keyTarget = new PersistitKeyValueTarget();
         bytesComparator = UnsignedBytes.lexicographicalComparator();
     }
 
-    protected CostEstimator(SchemaRulesContext rulesContext) {
-        this(rulesContext.getSchema(), rulesContext.getProperties());
+    protected CostEstimator(SchemaRulesContext rulesContext, KeyCreator keyCreator) {
+        this(rulesContext.getSchema(), rulesContext.getProperties(), keyCreator);
     }
 
     @Override

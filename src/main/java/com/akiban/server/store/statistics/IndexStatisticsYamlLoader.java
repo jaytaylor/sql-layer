@@ -35,12 +35,12 @@ import com.akiban.ais.model.TableName;
 
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
-import com.persistit.Persistit;
 
 import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.NoSuchIndexException;
@@ -58,7 +58,7 @@ public class IndexStatisticsYamlLoader
     private AkibanInformationSchema ais;
     private String defaultSchema;
 
-    private final Key key = new Key((Persistit)null);
+    private final Key key;
     private final PersistitKeyValueSource keySource = new PersistitKeyValueSource();
     private final PersistitKeyValueTarget keyTarget = new PersistitKeyValueTarget();
     
@@ -83,8 +83,9 @@ public class IndexStatisticsYamlLoader
         }
     };
 
-    public IndexStatisticsYamlLoader(AkibanInformationSchema ais, String defaultSchema) {
+    public IndexStatisticsYamlLoader(AkibanInformationSchema ais, String defaultSchema, KeyCreator keyCreator) {
         this.ais = ais;
+        key = keyCreator.createKey();
         this.defaultSchema = defaultSchema;
     }
     

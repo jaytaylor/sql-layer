@@ -1048,7 +1048,7 @@ public class PersistitStore implements Store {
         IndexDef indexDef = index.indexDef();
         RowDef indexRowDef = indexDef.getRowDef();
         TableStatistics.Histogram toHistogram = new TableStatistics.Histogram(index.getIndexId());
-        Key key = new Key((Persistit)null);
+        Key key = treeService.createKey();
         RowData indexRowData = new RowData(new byte[4096]);
         Object[] indexValues = new Object[indexRowDef.getFieldCount()];
         long count = 0;
