@@ -35,6 +35,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -44,7 +45,6 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.server.error.ProtobufWriteException;
 import com.akiban.util.GrowableByteBuffer;
-import org.junit.Before;
 import org.junit.Test;
 
 import static com.akiban.ais.AISComparator.compareAndAssert;
@@ -79,6 +79,20 @@ public class ProtobufReaderWriterTest {
                 on(CAOIBuilderFiller.ITEM_TABLE, "unit_price").
                 and(CAOIBuilderFiller.ORDER_TABLE, "order_date");
         
+        final AkibanInformationSchema inAIS = builder.ais();
+        final AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        compareAndAssert(inAIS, outAIS, false);
+    }
+
+    @Test
+    public void caoiWithView() {
+        NewAISBuilder builder = CAOIBuilderFiller.createAndFillBuilder(SCHEMA);
+        builder.view("recent_orders").
+            definition("CREATE VIEW recent_order AS SELECT * FROM order WHERE order_date > CURRENT_DATE - INTERVAL '30' DAY").
+            references(CAOIBuilderFiller.ORDER_TABLE).
+            colBigInt("order_id", false).
+            colBigInt("customer_id", false).
+            colLong("order_date", false);
         final AkibanInformationSchema inAIS = builder.ais();
         final AkibanInformationSchema outAIS = writeAndRead(inAIS);
         compareAndAssert(inAIS, outAIS, false);
@@ -256,7 +270,7 @@ public class ProtobufReaderWriterTest {
         GrowableByteBuffer bbs[] = new GrowableByteBuffer[COUNT];
         for(int i = 0; i < COUNT; ++i) {
             bbs[i] = createByteBuffer();
-            new ProtobufWriter(bbs[i], new ProtobufWriter.SchemaSelector(SCHEMA+i)).save(inAIS);
+            new ProtobufWriter(bbs[i], new ProtobufWriter.SingleSchemaSelector(SCHEMA+i)).save(inAIS);
         }
 
         AkibanInformationSchema outAIS = new AkibanInformationSchema();
@@ -325,7 +339,85 @@ public class ProtobufReaderWriterTest {
         AkibanInformationSchema inAIS = builder.ais();
         writeAndRead(inAIS);
     }
+    
+    @Test
+    public void sequenceSimple () {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("Sequence-1");
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "Sequence-1")));
+        Sequence sequence = outAIS.getSequence(new TableName(SCHEMA, "Sequence-1"));
+        assertEquals(1, sequence.getStartsWith());
+        assertEquals(1, sequence.getIncrement());
+        assertEquals(Long.MIN_VALUE, sequence.getMinValue());
+        assertEquals(Long.MAX_VALUE, sequence.getMaxValue());
+        assertTrue(!sequence.isCycle());
+        assertNull (sequence.getTreeName());
+        assertNull (sequence.getAccumIndex());
+    }
+    
+    @Test
+    public void sequenceComplex() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("sequence-2", 42, -2, true);
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "sequence-2")));
+        Sequence sequence = outAIS.getSequence(new TableName(SCHEMA, "sequence-2"));
+        assertEquals(42, sequence.getStartsWith());
+        assertEquals(-2, sequence.getIncrement());
+        assertTrue(sequence.isCycle());
+        assertNull (sequence.getTreeName());
+        assertNull (sequence.getAccumIndex());
+    }
+    
+    @Test
+    public void sequenceTree() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        TableName seqName = new TableName (SCHEMA, "sequence-3");
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("sequence-3", 42, -2, true);
+        AkibanInformationSchema inAIS = builder.ais();
+        Sequence inSeq = inAIS.getSequence(seqName);
+        inSeq.setTreeName("sequence-3.tree");
+        inSeq.setAccumIndex(3);
+        
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(seqName));
+        Sequence sequence = outAIS.getSequence(seqName);
+        assertEquals ("sequence-3.tree", sequence.getTreeName());
+        assertEquals (new Integer(3), sequence.getAccumIndex());
+    }
+    
+    @Test 
+    public void columnSequence() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        TableName sequenceName = new TableName (SCHEMA, "sequence-4");
+        builder.sequence(sequenceName.getTableName());
+        builder.userTable("customers").
+            colBigInt("customer_id", false).
+            colString("customer_name", 100, false).
+            pk("customer_id");
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Column idColumn = inAIS.getTable(new TableName (SCHEMA, "customers")).getColumn(0);
+        idColumn.setDefaultIdentity(true);
+        idColumn.setIdentityGenerator(inAIS.getSequence(sequenceName));
+        
+        AkibanInformationSchema outAIS = writeAndRead(builder.ais());
+        
+        assertNotNull(outAIS.getSequence(sequenceName));
+        Column outColumn = outAIS.getTable(new TableName(SCHEMA, "customers")).getColumn(0);
+        assertNotNull (outColumn.getDefaultIdentity());
+        assertTrue (outColumn.getDefaultIdentity().booleanValue());
+        assertNotNull (outColumn.getIdentityGenerator());
+        assertSame (outColumn.getIdentityGenerator(), outAIS.getSequence(sequenceName));
+        
 
+    }
+    
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }
@@ -337,7 +429,7 @@ public class ProtobufReaderWriterTest {
         if(restrictSchema == null) {
             writer = new ProtobufWriter(bb);
         } else {
-            writer = new ProtobufWriter(bb, new ProtobufWriter.SchemaSelector(restrictSchema));
+            writer = new ProtobufWriter(bb, new ProtobufWriter.SingleSchemaSelector(restrictSchema));
         }
         writer.save(inAIS);
 

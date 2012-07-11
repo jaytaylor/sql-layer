@@ -461,7 +461,6 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
     }
 
     private static ExpressionNode boolExpr(ExpressionNode expression) {
-        expression.setPreptimeValue(new TPreptimeValue(AkBool.INSTANCE.instance()));
         return expression;
     }
 }

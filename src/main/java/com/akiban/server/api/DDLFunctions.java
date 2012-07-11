@@ -31,9 +31,11 @@ import java.util.List;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.NoSuchTableIdException;
@@ -191,4 +193,17 @@ public interface DDLFunctions {
     void updateTableStatistics(Session session, TableName tableName, Collection<String> indexesToUpdate);
 
     IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex);
+
+    /**
+     * 
+     * @param session the session to run the Create under
+     * @param view - new view to add to the existing system
+     */
+    void createView(Session session, View view);
+
+    /**
+     * Drops a view if it exists.
+     * @param viewName the name of the view to drop
+     */
+    void dropView(Session session, TableName viewName);
 }

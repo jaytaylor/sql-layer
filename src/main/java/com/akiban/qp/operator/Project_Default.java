@@ -91,10 +91,11 @@ class Project_Default extends Operator
     @Override
     public String toString()
     {
+        List<?> activeProjections = (projections == null) ? pExpressions : projections;
         if (projectType.hasUserTable()) {
-            return String.format("project to table %s (%s)", projectType.userTable(), projections);
+            return String.format("project to table %s (%s)", projectType.userTable(), activeProjections);
         } else {
-            return String.format("project(%s)", projections);
+            return String.format("project(%s)", activeProjections);
         }
     }
 
@@ -167,11 +168,17 @@ class Project_Default extends Operator
             RowType projectTableRowType, List<? extends Expression> projections, List<? extends TPreparedExpression> pExpressions)
     {
         ArgumentValidation.notNull("inputRowType", inputRowType);
-        ArgumentValidation.notEmpty("projections", projections);
+        if (pExpressions != null)
+            ArgumentValidation.notEmpty("new projections", pExpressions);
+        else if (projections != null)
+            ArgumentValidation.notEmpty("new projections", projections);
+        else
+            throw new IllegalArgumentException("both expressions lists can't be null");
+        assert (projections == null) || (pExpressions == null) : "both expressions lists can't be non-null";
         
         this.inputOperator = inputOperator;
         this.rowType = inputRowType;
-        this.projections = new ArrayList<Expression>(projections);
+        this.projections = projections;
         
         ArgumentValidation.notNull("projectRowType", projectTableRowType);
         ArgumentValidation.isTrue("RowType has UserTable", projectTableRowType.hasUserTable());
@@ -179,7 +186,7 @@ class Project_Default extends Operator
                                                     projectTableRowType.userTable(),
                                                     projections,
                                                     tInstances(pExpressions));
-        this.pExpressions = pExpressions;
+        this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
     }
 
 

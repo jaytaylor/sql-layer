@@ -27,6 +27,7 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
@@ -35,6 +36,7 @@ import com.akiban.server.error.DuplicateColumnNameException;
 import com.akiban.server.error.DuplicateGroupNameException;
 import com.akiban.server.error.DuplicateIndexColumnException;
 import com.akiban.server.error.DuplicateIndexException;
+import com.akiban.server.error.DuplicateSequenceNameException;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.NameIsNullException;
 
@@ -54,18 +56,25 @@ public class AISInvariants {
     
     public static void checkDuplicateTables(AkibanInformationSchema ais, String schemaName, String tableName)
     {
-        if (ais.getTable(schemaName, tableName) != null) {
+        if (ais.getColumnar(schemaName, tableName) != null) {
             throw new DuplicateTableNameException (new TableName(schemaName, tableName));
         }
     }
     
-    public static void checkDuplicateColumnsInTable(Table table, String columnName)
+    public static void checkDuplicateSequence(AkibanInformationSchema ais, String schemaName, String sequenceName)
+    {
+        if (ais.getSequence(new TableName (schemaName, sequenceName)) != null) {
+            throw new DuplicateSequenceNameException (new TableName(schemaName, sequenceName));
+        }
+    }
+    
+    public static void checkDuplicateColumnsInTable(Columnar table, String columnName)
     {
         if (table.getColumn(columnName) != null) {
             throw new DuplicateColumnNameException(table.getName(), columnName);
         }
     }
-    public static void checkDuplicateColumnPositions(Table table, Integer position) {
+    public static void checkDuplicateColumnPositions(Columnar table, Integer position) {
         if (position < table.getColumnsIncludingInternal().size() && 
                 table.getColumn(position) != null &&
                 table.getColumn(position).getPosition() == position) {

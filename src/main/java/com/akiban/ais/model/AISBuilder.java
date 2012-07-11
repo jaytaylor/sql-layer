@@ -27,9 +27,11 @@
 package com.akiban.ais.model;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 import com.akiban.ais.gwtutils.GwtLogger;
 import com.akiban.ais.gwtutils.GwtLogging;
@@ -81,6 +83,13 @@ public class
         this.indexIdGenerator = offset;
     }
 
+    public void sequence (String schemaName, String sequenceName,
+            long start, long increment,
+            long minValue, long maxValue, boolean cycle) {
+        LOG.info("sequence: " + schemaName + "." + sequenceName);
+        Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
+    }
+    
     public void userTable(String schemaName, String tableName) {
         LOG.info("userTable: " + schemaName + "." + tableName);
         UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
@@ -96,12 +105,20 @@ public class
         table.setInitialAutoIncrementValue(initialAutoIncrementValue);
     }
 
+    public void view(String schemaName, String tableName,
+                     String definition, Properties definitionProperties,
+                     Map<TableName,Collection<String>> tableColumnReferences) {
+        LOG.info("view: " + schemaName + "." + tableName);
+        View.create(ais, schemaName, tableName, 
+                    definition, definitionProperties, tableColumnReferences);
+    }
+
     public void column(String schemaName, String tableName, String columnName,
             Integer position, String typeName, Long typeParameter1,
             Long typeParameter2, Boolean nullable, Boolean autoIncrement,
             String charset, String collation) {
         LOG.info("column: " + schemaName + "." + tableName + "." + columnName);
-        UserTable table = ais.getUserTable(schemaName, tableName);
+        Columnar table = ais.getColumnar(schemaName, tableName);
         checkFound(table, "creating column", "user table",
                 concat(schemaName, tableName));
         Type type = ais.getType(typeName);

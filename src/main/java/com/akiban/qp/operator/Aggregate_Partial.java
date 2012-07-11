@@ -36,6 +36,7 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.mcompat.aggr.MCount;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -253,14 +254,32 @@ final class Aggregate_Partial extends Operator
     @Override
     public String toString() {
         if (inputsIndex == 0) {
-            return String.format("Aggregation(without GROUP BY: %s)", aggregatorFactories);
+            return String.format("Aggregation(without GROUP BY: %s)", aggrsToString());
         }
         if (inputsIndex == 1) {
-            return String.format("Aggregation(GROUP BY 1 field, then: %s)", aggregatorFactories);
+            return String.format("Aggregation(GROUP BY 1 field, then: %s)", aggrsToString());
         }
-        return String.format("Aggregation(GROUP BY %d fields, then: %s)", inputsIndex, aggregatorFactories);
+        return String.format("Aggregation(GROUP BY %d fields, then: %s)", inputsIndex, aggrsToString());
     }
 
+    private String aggrsToString() {
+        if (aggregatorFactories != null)
+            return String.valueOf(aggregatorFactories);
+        int pAggersLen = pAggrs.size();
+        StringBuilder sb = new StringBuilder(pAggersLen * 6); // guess at the size, doesn't matter much
+        sb.append('[');
+        for (int i = 0; i < pAggersLen; ++i) {
+            TAggregator aggregator = pAggrs.get(i);
+            sb.append(aggregator);
+            if (! (aggregator instanceof MCount)) {
+                sb.append(rowType().typeInstanceAt(i+inputsIndex).typeClass().name().unqualifiedName());
+            }
+            if ( (i+1) < pAggersLen)
+                sb.append(", ");
+        }
+        sb.append(']');
+        return sb.toString();
+    }
 
     // package-private (for testing)
     @Deprecated

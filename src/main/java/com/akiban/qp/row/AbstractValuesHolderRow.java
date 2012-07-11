@@ -30,6 +30,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 
@@ -114,22 +115,46 @@ class AbstractValuesHolderRow extends AbstractRow {
      * @deprecated implies usePValues == false, which is going away
      */
     @Deprecated
-    AbstractValuesHolderRow(RowType rowType, boolean isMutable, Iterator<? extends ValueSource> initialValues) {
-        this(rowType, isMutable, false);
+    AbstractValuesHolderRow(RowType rowType, boolean isMutable,
+                            Iterator<? extends ValueSource> initialValues,
+                            Iterator<? extends PValueSource> initialPValues)
+    {
+        this(rowType, isMutable, initialPValues != null);
         int i = 0;
-        while(initialValues.hasNext()) {
-            if (i >= values.size())
-                throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
-            ValueSource nextValue = initialValues.next();
-            AkType nextValueType = nextValue.getConversionType();
-            if (nextValueType != AkType.NULL && nextValueType != rowType.typeAt(i))
-                throw new IllegalArgumentException(
-                        "value at index " + i + " expected type " + rowType.typeAt(i)
-                                + ", was " + nextValueType + ": " + nextValue);
-            values.get(i++).copyFrom(nextValue);
+        if (initialValues != null) {
+            assert initialPValues == null : "can't have both old and new expressions";
+            while(initialValues.hasNext()) {
+                if (i >= values.size())
+                    throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
+                ValueSource nextValue = initialValues.next();
+                AkType nextValueType = nextValue.getConversionType();
+                if (nextValueType != AkType.NULL && nextValueType != rowType.typeAt(i))
+                    throw new IllegalArgumentException(
+                            "value at index " + i + " expected type " + rowType.typeAt(i)
+                                    + ", was " + nextValueType + ": " + nextValue);
+                values.get(i++).copyFrom(nextValue);
+            }
+            if (i != values.size())
+                throw new IllegalArgumentException("not enough initial values: required " + values.size() + " but saw " + i);
         }
-        if (i != values.size())
-            throw new IllegalArgumentException("not enough initial values: required " + values.size() + " but saw " + i);
+        else if (initialPValues != null) {
+            while(initialPValues.hasNext()) {
+                if (i >= pValues.size())
+                    throw new IllegalArgumentException("too many initial values: reached limit of " + values.size());
+                PValueSource nextValue = initialPValues.next();
+                PUnderlying nextValueType = nextValue.getUnderlyingType();
+                if (nextValueType != rowType.typeInstanceAt(i).typeClass().underlyingType())
+                    throw new IllegalArgumentException(
+                            "value at index " + i + " expected type " + rowType.typeInstanceAt(i)
+                                    + ", but PUnderlying was " + nextValueType + ": " + nextValue);
+                pValues.get(i++).putValueSource(nextValue);
+            }
+            if (i != pValues.size())
+                throw new IllegalArgumentException("not enough initial values: required " + values.size() + " but saw " + i);
+        }
+        else {
+            throw new IllegalArgumentException("both expression inputs were null");
+        }
     }
 
     void clear() {

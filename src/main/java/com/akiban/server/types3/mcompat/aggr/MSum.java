@@ -143,6 +143,11 @@ public class MSum implements TAggregator {
 
     @Override
     public String name() {
-        return "SUM";
+        return "sum";
+    }
+
+    @Override
+    public String toString() {
+        return name();
     }
 }
