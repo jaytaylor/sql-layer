@@ -32,8 +32,14 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.server.ServerValueEncoder;
 
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.TableName;
+
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.*;
 
@@ -114,6 +120,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG, MNumeric.BIGINT.instance());
     static final PostgresType TYPNAME_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)255, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+    static final PostgresType IDENT_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)128, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+    static final PostgresType LIST_TYPE_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)13, -1, AkType.VARCHAR, MString.VARCHAR.instance());
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -136,6 +146,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             ncols = 2;
             names = new String[] { "oid", "typname" };
             types = new PostgresType[] { OID_PG_TYPE, TYPNAME_PG_TYPE };
+            break;
+        case PSQL_LIST_TABLES:
+            ncols = 4;
+            names = new String[] { "Schema", "Name", "Type", "Owner" };
+            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, IDENT_PG_TYPE };
             break;
         default:
             return;
@@ -175,6 +190,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case SEQUEL_B_TYPE_QUERY:
             nrows = sequelBTypeQuery(messenger, maxrows, usePVals);
             break;
+        case PSQL_LIST_TABLES:
+            nrows = psqlListTablesQuery(server, messenger, maxrows, usePVals);
+            break;
         }
         {        
           messenger.beginMessage(PostgresMessages.COMMAND_COMPLETE_TYPE.code());
@@ -188,6 +206,24 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return 0;
     }
 
+    protected void writeColumn(PostgresMessenger messenger, ServerValueEncoder encoder, boolean usePVals,
+                               Object value, PostgresType type) throws IOException {
+        ByteArrayOutputStream bytes;
+        if (usePVals) {
+            bytes = encoder.encodePObject(value, type, false);
+        }
+        else {
+            bytes = encoder.encodeObject(value, type, false);
+        }
+        if (bytes == null) {
+            messenger.writeInt(-1);
+        } 
+        else {
+            messenger.writeInt(bytes.size());
+            messenger.writeByteStream(bytes);
+        }
+    }
+
     private int sequelBTypeQuery(PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
@@ -195,28 +231,48 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if (pgtype.getType() == PostgresType.TypeOid.TypType.BASE) {
                 messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
                 messenger.writeShort(2); // 2 columns for this query
-                ByteArrayOutputStream bytes;
-                if (usePVals) bytes = encoder.encodePObject(pgtype.getOid(), OID_PG_TYPE, false);
-                else bytes = encoder.encodeObject(pgtype.getOid(), OID_PG_TYPE, false);
-                if (bytes == null) {
-                    messenger.writeInt(-1);
-                } else {
-                    messenger.writeInt(bytes.size());
-                    messenger.writeByteStream(bytes);
-                }
-                if (usePVals) bytes = encoder.encodePObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
-                else bytes = encoder.encodeObject(pgtype.getName(), TYPNAME_PG_TYPE, false);
-                if (bytes == null) {
-                    messenger.writeInt(-1);
-                } else {
-                    messenger.writeInt(bytes.size());
-                    messenger.writeByteStream(bytes);
-                }
+                writeColumn(messenger, encoder, usePVals, 
+                            pgtype.getOid(), OID_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, 
+                            pgtype.getName(), TYPNAME_PG_TYPE);
                 messenger.sendMessage();
                 nrows++;
                 if ((maxrows > 0) && (nrows >= maxrows)) {
                     break;
                 }
+            }
+        }
+        return nrows;
+    }
+
+    private int psqlListTablesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        List<String> types = Arrays.asList(groups.get(1).split(","));
+        List<TableName> names = new ArrayList<TableName>();
+        AkibanInformationSchema ais = server.getAIS();
+        if (types.contains("'r'"))
+            names.addAll(ais.getUserTables().keySet());
+        if (types.contains("'v'"))
+            names.addAll(ais.getViews().keySet());
+        Collections.sort(names);
+    	for (TableName name : names) {
+            if (name.getSchemaName().equals(TableName.INFORMATION_SCHEMA)) continue;
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(4); // 4 columns for this query
+            writeColumn(messenger, encoder, usePVals, 
+                        name.getSchemaName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        name.getTableName(), IDENT_PG_TYPE);
+            String type = (ais.getColumnar(name).isView()) ? "view" : "table";
+            writeColumn(messenger, encoder, usePVals, 
+                        type, LIST_TYPE_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        null, IDENT_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
             }
         }
         return nrows;
