@@ -72,16 +72,16 @@ public final class TPreparedParameter implements TPreparedExpression {
 
         @Override
         public void evaluate() {
-            pValue.putValueSource(row.pvalue(position));
+            pValue.putValueSource(context.getPValue(position));
         }
 
         @Override
         public void with(Row row) {
-            this.row = row;
         }
 
         @Override
         public void with(QueryContext context) {
+            this.context = context;
         }
 
         private InnerEvaluation(int position, TInstance tInstance) {
@@ -91,6 +91,6 @@ public final class TPreparedParameter implements TPreparedExpression {
 
         private final int position;
         private final PValue pValue;
-        private Row row;
+        private QueryContext context;
     }
 }
