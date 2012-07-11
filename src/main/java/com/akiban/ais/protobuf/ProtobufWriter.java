@@ -37,6 +37,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Schema;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.View;
@@ -199,6 +200,11 @@ public class ProtobufWriter {
                 isEmpty = false;
             }
         }
+        
+        for (Sequence sequence : schema.getSequences().values()) {
+            writeSequence(schemaBuilder, sequence);
+            isEmpty = false;
+        }
 
         for(View view : schema.getViews().values()) {
             if(selector.isSelected(view)) {
@@ -332,6 +338,17 @@ public class ProtobufWriter {
         if(column.getInitialAutoIncrementValue() != null) {
             columnBuilder.setInitAutoInc(column.getInitialAutoIncrementValue());
         }
+        
+        if (column.getDefaultIdentity() != null) {
+            columnBuilder.setDefaultIdentity (column.getDefaultIdentity());
+        }
+        
+        if (column.getIdentityGenerator() != null) {
+            columnBuilder.setSequence(AISProtobuf.TableName.newBuilder()
+                    .setSchemaName(column.getIdentityGenerator().getSequenceName().getSchemaName())
+                    .setTableName(column.getIdentityGenerator().getSequenceName().getTableName())
+                    .build());
+        }
         return columnBuilder.build();
     }
 
@@ -402,5 +419,19 @@ public class ProtobufWriter {
                 setCharacterSetName(charAndColl.charset()).
                 setCollationOrderName(charAndColl.collation()).
                 build();
+    }
+    
+    private static void writeSequence (AISProtobuf.Schema.Builder schemaBuilder, Sequence sequence) {
+        AISProtobuf.Sequence.Builder sequenceBuilder = AISProtobuf.Sequence.newBuilder()
+                .setSequenceName(sequence.getSequenceName().getTableName())
+                .setStart(sequence.getStartsWith())
+                .setIncrement(sequence.getIncrement())
+                .setMinValue(sequence.getMinValue())
+                .setMaxValue(sequence.getMaxValue())
+                .setIsCycle(sequence.isCycle());
+        if (sequence.getTreeName() != null) {
+            sequenceBuilder.setTreeName(sequence.getTreeName()).setAccumulator(sequence.getAccumIndex());
+        }
+        schemaBuilder.addSequences (sequenceBuilder.build());
     }
 }

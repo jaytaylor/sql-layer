@@ -47,6 +47,17 @@ message Join {
     repeated JoinColumn columns     = 2;  // list of columns for this join
 }
 
+message Sequence {
+    optional string sequenceName    = 1; 
+    optional string treeName 	    = 2; // storage system tree name
+    optional int32  accumulator     = 3; // storage system accumulator index
+    optional int64  start           = 4; // Starting value
+    optional int64  increment       = 5; // increment by value
+    optional int64  minValue        = 6; // minimum value
+    optional int64  maxValue        = 7; // maximum value
+    optional bool   isCycle         = 8; // cycle values
+}
+
 message IndexColumn {
     optional string    columnName  = 1;  // links to Column.columnName 
     optional bool      isAscending = 2;  // sort order of the column
@@ -86,6 +97,12 @@ message Column {
     optional CharCollation charColl = 8; // column defined character set
                                          // and collation
     optional string  description  = 9;   // column comment holder
+    optional bool    default_identity = 10; // true if column is identity by default,
+                                            // false if column is identity always, 
+                                            // null if column is not an identity column
+    optional TableName sequence   = 11;  // Sequence used for identity generation. 
+                                         // links to Schema.schemaName & Sequence.sequenceName
+                                         // null if not an identity column                                              
 }
 
 // UserTable.  
@@ -129,9 +146,10 @@ message View {
 message Schema {
     optional string schemaName   = 1;
     repeated Table  tables       = 2;  // list of user tables in the schema
-    repeated Group  groups       = 3;  // list of groups in the schema
-    optional CharCollation charColl = 4; // schema default character set & collation 
+    repeated Group  groups       = 3;  // list of groups in the schema 
+    optional CharCollation charColl = 4; // schema default character set & collation
     repeated View   views        = 5;  // list of views in the schema
+    repeated Sequence sequences  = 6;  // list of sequences 
 }
 
 message AkibanInformationSchema {
