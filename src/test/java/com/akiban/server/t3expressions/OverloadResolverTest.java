@@ -313,7 +313,7 @@ public class OverloadResolverTest {
     }
 
     // input resolution, no casts
-    @Test
+    @Test(expected = OverloadException.class)
     public void mulIntMulBigIntWithIntsNoCasts() {
         init(MUL_INTS, MUL_BIGINTS);
         checkResolved("INT*INT", null, MUL_NAME, prepVals(TINT, TINT));
@@ -352,11 +352,16 @@ public class OverloadResolverTest {
         checkResolved("BIGINT*INT", MUL_BIGINTS, MUL_NAME, prepVals(TBIGINT, TINT));
         // 1 survives filtering
         checkResolved("DATE*INT", MUL_DATE_INT, MUL_NAME, prepVals(TDATE, TINT));
-        // 3 survive filtering, 1 less specific, 2 candidates
-        checkResolved("?*INT", null, MUL_NAME, prepVals(null, TINT));
+        try {
+            // 3 survive filtering, 1 less specific, 2 candidates
+            checkResolved("?*INT", null, MUL_NAME, prepVals(null, TINT));
+            fail("expected OverloadException");
+        } catch (OverloadException e) {
+            // expected
+        }
     }
 
-    @Test
+    @Test(expected = OverloadException.class)
     public void conflictingOverloads() {
         final String NAME = "foo";
         // Overloads aren't valid and should(?) be rejected by real registry,
