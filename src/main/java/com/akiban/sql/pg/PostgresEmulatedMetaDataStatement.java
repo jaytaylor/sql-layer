@@ -47,7 +47,21 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // ODBC driver sends this at the start; returning no rows is fine (and normal).
         ODBC_LO_TYPE_QUERY("select oid, typbasetype from pg_type where typname = 'lo'"),
         // SEQUEL 3.33.0 (http://sequel.rubyforge.org/) sends this when opening a new connection
-        SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'");
+        SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'"),
+        // PSQL \d[S+]
+        PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
+                         "c.relname as \"Name\",\\s*" +
+                         "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' WHEN 'f' THEN 'foreign table' END as \"Type\",\\s+" +
+                         "pg_catalog.pg_get_userbyid\\(c.relowner\\) as \"Owner\"\\s+" +
+                         "FROM pg_catalog.pg_class c\\s+" +
+                         "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
+                         "WHERE c.relkind IN \\((.+)\\)\\s+" +
+                         "(AND n.nspname <> 'pg_catalog'\\s+" +
+                         "AND n.nspname <> 'information_schema'\\s+)" +
+                         "AND n.nspname !~ '\\^pg_toast'\\s+" +
+                         "(AND c.relname ~ '(.+)'\\s+)?" +
+                         "AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+" +
+                         "ORDER BY 1,2;?", true);
 
         private String sql;
         private Pattern pattern;
@@ -58,7 +72,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
         Query(String str, boolean regexp) {
             if (regexp) {
-                pattern = Pattern.compile(sql);
+                pattern = Pattern.compile(str);
             }
             else {
                 sql = str;
@@ -91,6 +105,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     protected PostgresEmulatedMetaDataStatement(Query query, List<String> groups) {
         this.query = query;
         this.groups = groups;
+        for (int i = 0; i < groups.size(); i++) {
+            System.out.println("[" + i + "]: " + groups.get(i));
+        }
     }
 
     static final PostgresType OID_PG_TYPE = 
