@@ -148,12 +148,13 @@ public class ProtobufReader {
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             hasRequiredFields(pbSchema);
 
+            loadSequences (pbSchema.getSchemaName(), pbSchema.getSequencesList());
+
             List<NewGroupInfo> newGroups = loadGroups(pbSchema.getSchemaName(), pbSchema.getGroupsList());
             allNewGroups.add(newGroups);
 
             // Requires no tables, does not load indexes
             loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
-            loadSequences (pbSchema.getSchemaName(), pbSchema.getSequencesList());
             loadViews(pbSchema.getSchemaName(), pbSchema.getViewsList());
         }
 
@@ -347,7 +348,7 @@ public class ProtobufReader {
     private void loadColumns(Columnar columnar, Collection<AISProtobuf.Column> pbColumns) {
         for(AISProtobuf.Column pbColumn : pbColumns) {
             hasRequiredFields(pbColumn);
-            Column.create(
+            Column column = Column.create(
                     columnar,
                     pbColumn.getColumnName(),
                     pbColumn.getPosition(),
@@ -358,6 +359,14 @@ public class ProtobufReader {
                     pbColumn.hasInitAutoInc() ? pbColumn.getInitAutoInc() : null,
                     getCharColl(pbColumn.hasCharColl(), pbColumn.getCharColl())
             );
+            if (pbColumn.hasDefaultIdentity()) {
+                column.setDefaultIdentity(pbColumn.getDefaultIdentity());
+            }
+            if (pbColumn.hasSequence()) {
+                TableName sequenceName = new TableName (pbColumn.getSequence().getSchemaName(), pbColumn.getSequence().getTableName());
+                Sequence identityGenerator = getAIS().getSequence(sequenceName);
+                column.setIdentityGenerator(identityGenerator);
+            }
         }
     }
     
@@ -524,7 +533,9 @@ public class ProtobufReader {
                 AISProtobuf.Column.TYPEPARAM2_FIELD_NUMBER,
                 AISProtobuf.Column.INITAUTOINC_FIELD_NUMBER,
                 AISProtobuf.Column.CHARCOLL_FIELD_NUMBER,
-                AISProtobuf.Column.DESCRIPTION_FIELD_NUMBER
+                AISProtobuf.Column.DESCRIPTION_FIELD_NUMBER,
+                AISProtobuf.Column.DEFAULT_IDENTITY_FIELD_NUMBER,
+                AISProtobuf.Column.SEQUENCE_FIELD_NUMBER
         );
     }
 

@@ -338,6 +338,17 @@ public class ProtobufWriter {
         if(column.getInitialAutoIncrementValue() != null) {
             columnBuilder.setInitAutoInc(column.getInitialAutoIncrementValue());
         }
+        
+        if (column.getDefaultIdentity() != null) {
+            columnBuilder.setDefaultIdentity (column.getDefaultIdentity());
+        }
+        
+        if (column.getIdentityGenerator() != null) {
+            columnBuilder.setSequence(AISProtobuf.TableName.newBuilder()
+                    .setSchemaName(column.getIdentityGenerator().getSequenceName().getSchemaName())
+                    .setTableName(column.getIdentityGenerator().getSequenceName().getTableName())
+                    .build());
+        }
         return columnBuilder.build();
     }
 

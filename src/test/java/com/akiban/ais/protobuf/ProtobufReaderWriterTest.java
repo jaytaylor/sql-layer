@@ -392,6 +392,32 @@ public class ProtobufReaderWriterTest {
         assertEquals (new Integer(3), sequence.getAccumIndex());
     }
     
+    @Test 
+    public void columnSequence() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        TableName sequenceName = new TableName (SCHEMA, "sequence-4");
+        builder.sequence(sequenceName.getTableName());
+        builder.userTable("customers").
+            colBigInt("customer_id", false).
+            colString("customer_name", 100, false).
+            pk("customer_id");
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Column idColumn = inAIS.getTable(new TableName (SCHEMA, "customers")).getColumn(0);
+        idColumn.setDefaultIdentity(true);
+        idColumn.setIdentityGenerator(inAIS.getSequence(sequenceName));
+        
+        AkibanInformationSchema outAIS = writeAndRead(builder.ais());
+        
+        assertNotNull(outAIS.getSequence(sequenceName));
+        Column outColumn = outAIS.getTable(new TableName(SCHEMA, "customers")).getColumn(0);
+        assertNotNull (outColumn.getDefaultIdentity());
+        assertTrue (outColumn.getDefaultIdentity().booleanValue());
+        assertNotNull (outColumn.getIdentityGenerator());
+        assertSame (outColumn.getIdentityGenerator(), outAIS.getSequence(sequenceName));
+        
+
+    }
+    
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }
