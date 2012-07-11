@@ -56,7 +56,7 @@ public class AISCollationValidationTest {
         Assert.assertEquals(0, builder.akibanInformationSchema().validate(validations).failures().size());
     }
 
-    @Test(expected = UnsupportedCollationException.class)
+    @Test
     public void testUnsupportedCollation() {
         builder = new AISBuilder();
         builder.userTable("test", "t1");
