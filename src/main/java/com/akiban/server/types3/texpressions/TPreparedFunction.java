@@ -77,7 +77,16 @@ public final class TPreparedFunction implements TPreparedExpression {
 
     @Override
     public String toString() {
-        return overload.toString();
+        StringBuilder sb = new StringBuilder(overload.overloadName());
+        sb.append('(');
+        for (int i = 0, len = inputs.size(); i < len; ++i) {
+            sb.append(inputs.get(i));
+            if (i+1 < len)
+                sb.append(", ");
+        }
+        sb.append(") => ");
+        sb.append(resultType);
+        return sb.toString();
     }
 
     public TPreparedFunction(TValidatedOverload overload,

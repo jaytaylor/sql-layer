@@ -90,7 +90,7 @@ public final class T3Registry {
 
         @Override
         public Set<TClass> stronglyCastableTo(TClass tClass) {
-            Map<TClass, TCast> castsFrom = strongCastsBySource.get(tClass);
+            Map<TClass, TCast> castsFrom = strongCastsByTarget.get(tClass);
             return castsFrom.keySet();
         }
 
@@ -121,8 +121,8 @@ public final class T3Registry {
                 }
             }
 
-            strongCastsBySource = createStrongCastsMap(castsBySource);
-            checkDag(strongCastsBySource);
+            strongCastsByTarget = createStrongCastsMap(castsBySource);
+            checkDag(strongCastsByTarget);
 
             Multimap<String, TValidatedOverload> localOverloadsByName = ArrayListMultimap.create();
             for (TValidatedOverload overload : finder.overloads()) {
@@ -131,7 +131,7 @@ public final class T3Registry {
             overloadsByName = Multimaps.unmodifiableMultimap(localOverloadsByName);
         }
         private final Map<TClass,Map<TClass,TCast>> castsBySource;
-        private final Map<TClass,Map<TClass,TCast>> strongCastsBySource;
+        private final Map<TClass,Map<TClass,TCast>> strongCastsByTarget;
         private final Multimap<String, TValidatedOverload> overloadsByName;
     }
 
