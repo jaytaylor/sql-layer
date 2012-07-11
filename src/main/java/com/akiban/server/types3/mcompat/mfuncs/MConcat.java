@@ -90,7 +90,7 @@ public class MConcat extends TOverloadBase {
 
     @Override
     public String overloadName() {
-        return "CONCAT";
+        return "concatenate";
     }
 
     @Override

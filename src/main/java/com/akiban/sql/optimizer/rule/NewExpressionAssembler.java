@@ -104,7 +104,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         else {
             throw new AssertionError(functionNode);
         }
-        TInstance resultInstance = functionNode.getPreptimeValue().instance();
+         TInstance resultInstance = functionNode.getPreptimeValue().instance();
         return new TPreparedFunction(overload, resultInstance, arguments);
     }
 

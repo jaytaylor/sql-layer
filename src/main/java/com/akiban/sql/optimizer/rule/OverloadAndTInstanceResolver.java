@@ -37,9 +37,9 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -445,17 +445,17 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 result = MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
                 break;
             case TypeId.FormatIds.DOUBLE_TYPE_ID:
-                result = AkNumeric.DOUBLE.instance();
+                result = MApproximateNumber.DOUBLE.instance();
                 break;
             case TypeId.FormatIds.INT_TYPE_ID:
-                result = AkNumeric.INT.instance();
+                result = MNumeric.INT.instance();
                 break;
             case TypeId.FormatIds.TINYINT_TYPE_ID:
             case TypeId.FormatIds.SMALLINT_TYPE_ID:
-                result = AkNumeric.SMALLINT.instance();
+                result = MNumeric.SMALLINT.instance();
                 break;
             case TypeId.FormatIds.LONGINT_TYPE_ID:
-                result = AkNumeric.BIGINT.instance();
+                result = MNumeric.BIGINT.instance();
                 break;
             case TypeId.FormatIds.DATE_TYPE_ID:
                 result = MDatetimes.DATE.instance();
