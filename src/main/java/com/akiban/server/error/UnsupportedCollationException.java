@@ -27,7 +27,7 @@
 package com.akiban.server.error;
 
 public final class UnsupportedCollationException extends InvalidOperationException {
-    public UnsupportedCollationException (String schemaName, String tableName, String charsetName) {
-        super(ErrorCode.UNSUPPORTED_CHARSET, schemaName, tableName, charsetName);
+    public UnsupportedCollationException (String schemaName, String tableName, String collation) {
+        super(ErrorCode.UNSUPPORTED_COLLATION, schemaName, tableName, collation);
     }
 }
