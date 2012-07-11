@@ -534,7 +534,7 @@ public class ProtobufReader {
                 AISProtobuf.Column.INITAUTOINC_FIELD_NUMBER,
                 AISProtobuf.Column.CHARCOLL_FIELD_NUMBER,
                 AISProtobuf.Column.DESCRIPTION_FIELD_NUMBER,
-                AISProtobuf.Column.DEFAULT_IDENTITY_FIELD_NUMBER,
+                AISProtobuf.Column.DEFAULTIDENTITY_FIELD_NUMBER,
                 AISProtobuf.Column.SEQUENCE_FIELD_NUMBER
         );
     }

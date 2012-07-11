@@ -66,9 +66,6 @@ public class Sequence {
     public final TableName getSequenceName() {
         return sequenceName;
     }
-    public final void setSequenceName(TableName sequenceName) {
-        this.sequenceName = sequenceName;
-    }
     public final String getTreeName() {
         return treeName;
     }
@@ -96,19 +93,16 @@ public class Sequence {
     public final boolean isCycle() {
         return cycle;
     }
-    public final void setStartsWith(long startsWith) {
-        this.startsWith = startsWith;
-    }
 
     // State
 
-    protected TableName sequenceName;
+    final protected TableName sequenceName;
     protected String treeName;
     private Integer accumIndex;
 
-    private long startsWith;
-    private long increment;
-    private long minValue;
-    private long maxValue;
-    private boolean cycle;
+    final private long startsWith;
+    final private long increment;
+    final private long minValue;
+    final private long maxValue;
+    final private boolean cycle;
 }
