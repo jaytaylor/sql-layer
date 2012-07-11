@@ -40,6 +40,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Iterator;
 import java.util.List;
 import java.util.regex.*;
 
@@ -63,7 +64,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                          "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
                          "WHERE c.relkind IN \\((.+)\\)\\s+" +
                          "(AND n.nspname <> 'pg_catalog'\\s+" +
-                         "AND n.nspname <> 'information_schema'\\s+)" +
+                         "AND n.nspname <> 'information_schema'\\s+)?" +
                          "AND n.nspname !~ '\\^pg_toast'\\s+" +
                          "(AND c.relname ~ '(.+)'\\s+)?" +
                          "AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+" +
@@ -255,9 +256,18 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names.addAll(ais.getUserTables().keySet());
         if (types.contains("'v'"))
             names.addAll(ais.getViews().keySet());
+        Pattern pattern = null;
+        if (groups.get(3) != null)
+            pattern = Pattern.compile(groups.get(4));
+        Iterator<TableName> iter = names.iterator();
+        while (iter.hasNext()) {
+            TableName name = iter.next();
+            if (name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ||
+                ((pattern != null) && !pattern.matcher(name.getTableName()).matches()))
+                iter.remove();
+        }
         Collections.sort(names);
     	for (TableName name : names) {
-            if (name.getSchemaName().equals(TableName.INFORMATION_SCHEMA)) continue;
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(4); // 4 columns for this query
             writeColumn(messenger, encoder, usePVals, 
