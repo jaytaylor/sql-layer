@@ -133,6 +133,15 @@ public class
         column.finishCreating();
     }
 
+    public void columnAsIdentity (String schemaName, String tableName, String columnName,
+            String sequenceName, Boolean defaultIdentity) {
+        LOG.info("column as identity: " + schemaName + "." + tableName + "." + columnName + ": " + sequenceName);
+        Column column = ais.getTable(schemaName, tableName).getColumn(columnName);
+        column.setDefaultIdentity(defaultIdentity);
+        Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
+        column.setIdentityGenerator(identityGenerator);
+    }
+
     public void index(String schemaName, String tableName, String indexName,
             Boolean unique, String constraint) {
         LOG.info("index: " + schemaName + "." + tableName + "." + indexName);
@@ -338,6 +347,8 @@ public class
         checkGroupAddition(group, table.getGroup(),
                 concat(schemaName, tableName));
         setTablesGroup(table, group);
+        
+        
         // group table columns
         generateGroupTableColumns(group);
     }
@@ -707,6 +718,12 @@ public class
             userColumn.setGroupColumn(groupColumn);
             groupColumn.setUserColumn(userColumn);
             groupColumn.finishCreating();
+            
+            if (userColumn.getIdentityGenerator() != null) {
+                userColumn.getIdentityGenerator().setTreeName(groupTable.getTreeName());
+                // TODO Generate stable index ids.
+                userColumn.getIdentityGenerator().setAccumIndex(3);
+            }
         }
         for (Join join : userTable.getChildJoins()) {
             generateGroupTableColumns(groupTable, join.getChild());
