@@ -40,6 +40,8 @@ import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
+import com.akiban.server.types3.mcompat.mtypes.MBinary;
+import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -450,18 +452,30 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             case TypeId.FormatIds.LONGINT_TYPE_ID:
                 result = AkNumeric.BIGINT.instance();
                 break;
-
-            case TypeId.FormatIds.BIT_TYPE_ID:
             case TypeId.FormatIds.DATE_TYPE_ID:
+                result = MDatetimes.DATE.instance();
+                break;
+            case TypeId.FormatIds.TIME_TYPE_ID:
+                result = MDatetimes.TIME.instance();
+                break;
+            case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
+                result = MDatetimes.TIMESTAMP.instance();
+                break;
+            case TypeId.FormatIds.BIT_TYPE_ID:
+                result = MBinary.BINARY.instance(descriptor.getMaximumWidth());
+                break;
+            case TypeId.FormatIds.VARBIT_TYPE_ID:
+                result = MBinary.VARBINARY.instance(descriptor.getMaximumWidth());
+                break;
+            case TypeId.FormatIds.BLOB_TYPE_ID:
+                result = MBinary.BLOB.instance();
+                break;
+
             case TypeId.FormatIds.LONGVARBIT_TYPE_ID:
             case TypeId.FormatIds.LONGVARCHAR_TYPE_ID:
             case TypeId.FormatIds.REAL_TYPE_ID:
             case TypeId.FormatIds.REF_TYPE_ID:
-            case TypeId.FormatIds.TIME_TYPE_ID:
-            case TypeId.FormatIds.TIMESTAMP_TYPE_ID:
             case TypeId.FormatIds.USERDEFINED_TYPE_ID:
-            case TypeId.FormatIds.VARBIT_TYPE_ID:
-            case TypeId.FormatIds.BLOB_TYPE_ID:
             case TypeId.FormatIds.CLOB_TYPE_ID:
             case TypeId.FormatIds.XML_TYPE_ID:
             case TypeId.FormatIds.ROW_MULTISET_TYPE_ID_IMPL:
