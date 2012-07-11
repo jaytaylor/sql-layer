@@ -26,6 +26,7 @@
 
 package com.akiban.qp.rowtype;
 
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
@@ -53,6 +54,12 @@ public class ProjectedRowType extends DerivedRowType
     @Override
     public AkType typeAt(int index) {
         return projections.get(index).valueType();
+    }
+
+    @Override
+    public AkCollator collatorAt(int index) {
+        // TODO - probably incorrect
+        return null;
     }
 
     @Override

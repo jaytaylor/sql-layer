@@ -27,6 +27,7 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.HKey;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
@@ -57,6 +58,13 @@ public class HKeyRowType extends DerivedRowType
     public AkType typeAt(int index)
     {
         return hKey().columnType(index);
+    }
+    
+    @Override
+    public AkCollator collatorAt(int index)
+    {
+        // TODO - probably not correct
+        return null;
     }
 
     @Override

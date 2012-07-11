@@ -98,7 +98,7 @@ import java.util.List;
 
 */
 
-class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
+class Update_Default implements UpdatePlannable {
 
     // Object interface
 
@@ -120,30 +120,7 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
 
     @Override
     public UpdateResult run(QueryContext context) {
-        context(context);
-        int seen = 0, modified = 0;
-        Cursor inputCursor = null;
-        UPDATE_TAP.in();
-        try {
-            inputCursor = inputOperator.cursor(context);
-            inputCursor.open();
-            Row oldRow;
-            while ((oldRow = inputCursor.next()) != null) {
-                checkQueryCancelation();
-                ++seen;
-                if (updateFunction.rowIsSelected(oldRow)) {
-                    Row newRow = updateFunction.evaluate(oldRow, context);
-                    adapter().updateRow(oldRow, newRow);
-                    ++modified;
-                }
-            }
-        } finally {
-            if (inputCursor != null) {
-                inputCursor.close();
-            }
-            UPDATE_TAP.out();
-        }
-        return new StandardUpdateResult(seen, modified);
+        return new Execution(context, inputOperator.cursor(context)).run();
     }
 
     // Plannable interface
@@ -177,5 +154,42 @@ class Update_Default extends OperatorExecutionBase implements UpdatePlannable {
         ex.addAttribute(Label.EXTRA_TAG, PrimitiveExplainer.getInstance(updateFunction.toString()));
         return ex;
     }
-    
+
+    // Inner classes
+
+    private class Execution extends ExecutionBase
+    {
+        public UpdateResult run()
+        {
+            int seen = 0, modified = 0;
+            UPDATE_TAP.in();
+            try {
+                input.open();
+                Row oldRow;
+                while ((oldRow = input.next()) != null) {
+                    checkQueryCancelation();
+                    ++seen;
+                    if (updateFunction.rowIsSelected(oldRow)) {
+                        Row newRow = updateFunction.evaluate(oldRow, context);
+                        adapter().updateRow(oldRow, newRow);
+                        ++modified;
+                    }
+                }
+            } finally {
+                if (input != null) {
+                    input.close();
+                }
+                UPDATE_TAP.out();
+            }
+            return new StandardUpdateResult(seen, modified);
+        }
+
+        public Execution(QueryContext queryContext, Cursor input)
+        {
+            super(queryContext);
+            this.input = input;
+        }
+
+        private final Cursor input;
+    }
 }

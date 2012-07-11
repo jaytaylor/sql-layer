@@ -565,7 +565,7 @@ public class Intersect_OrderedIT extends OperatorITBase
             row(parentXIndexRowType, 44L, 4001L),
             row(parentXIndexRowType, 44L, 4002L),
         };
-        // compareRows(expected, cursor(intersectPxPy(44, true, false), queryContext));
+        // compareRows(expected, cursor(intersectPxPy(44, true, false), context));
         compareRows(expected, cursor(intersectPxPy(44, true, true), queryContext));
         reverse(expected);
         compareRows(expected, cursor(intersectPxPy(44, false, false), queryContext));

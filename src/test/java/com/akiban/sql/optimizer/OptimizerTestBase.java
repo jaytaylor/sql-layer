@@ -90,6 +90,8 @@ public class OptimizerTestBase extends ASTTransformTestBase
     protected AkibanInformationSchema loadSchema(List<File> ddl) throws Exception {
         AkibanInformationSchema ais = parseSchema(ddl);
         binder = new AISBinder(ais, DEFAULT_SCHEMA);
+        if (!ais.getViews().isEmpty())
+            new TestBinderContext(parser, binder, typeComputer);
         return ais;
     }
 
@@ -103,13 +105,6 @@ public class OptimizerTestBase extends ASTTransformTestBase
             this.defaultSchemaName = DEFAULT_SCHEMA;
             setBinderAndTypeComputer(binder, typeComputer);
         }
-    }
-
-    protected void loadView(File view) throws Exception {
-        String sql = fileContents(view);
-        if (binder.getContext() == null)
-            new TestBinderContext(parser, binder, typeComputer);
-        binder.getContext().addView(new ViewDefinition(sql, parser));
     }
 
 }

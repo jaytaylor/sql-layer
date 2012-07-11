@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.Comparison;
@@ -81,7 +82,7 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
             more = true;
         }
         if (more) {
-            keyTarget.expectingType(fieldValue.getConversionType());
+            keyTarget.expectingType(fieldValue.getConversionType(), collator);
             Converters.convert(fieldValue, keyTarget);
             more = cursor.exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, false) && !pastEnd();
             if (!more) {
@@ -123,6 +124,7 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
         this.loInclusive = loInclusive;
         this.hiInclusive = hiInclusive;
         this.singleValue = singleValue;
+        this.collator = cursor.collators()[field];
         if (singleValue) {
             assert !loNull;
             assert !hiNull;
@@ -178,7 +180,7 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
                 cursor.exchange.append(null);
                 direction = Key.GT;
             } else {
-                keyTarget.expectingType(loSource.getConversionType());
+                keyTarget.expectingType(loSource.getConversionType(), collator);
                 Converters.convert(loSource, keyTarget);
                 direction = loInclusive ? Key.GTEQ : Key.GT;
             }
@@ -195,7 +197,7 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
                 }
                 direction = Key.LT;
             } else {
-                keyTarget.expectingType(hiSource.getConversionType());
+                keyTarget.expectingType(hiSource.getConversionType(), collator);
                 Converters.convert(hiSource, keyTarget);
                 direction = hiInclusive ? Key.LTEQ : Key.LT;
             }
@@ -241,6 +243,7 @@ class MixedOrderScanStateSingleSegment extends MixedOrderScanState
     private boolean hiInclusive;
     private Expression endComparison;
     private AkType fieldType;
+    private AkCollator collator;
     // singleValue is true if this scan state represents a key segment constrained to be a single value,
     // singleValue is false otherwise. This can only happen in the last bound of an index scan. E.g.
     // if we have an index on (a, b), and the index scan is (a = 1, 0 < b < 10), then singleValue is

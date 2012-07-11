@@ -28,6 +28,7 @@ package com.akiban.server.message;
 
 import static org.junit.Assert.assertEquals;
 
+import com.akiban.server.collation.TestKeyCreator;
 import com.akiban.server.rowdata.RowData;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.rowdata.RowDefCache;
@@ -62,7 +63,6 @@ public class TableStatisticsMessageTest {
         ts.setRowCount(12345678);
         ts.setUpdateTime(99999);
         final TableStatistics.Histogram hs = new TableStatistics.Histogram(456);
-        final Key key = new Key((Persistit) null);
         for (int i = 1; i <= 10; i++) {
             final RowData rowData = new RowData(new byte[256]);
             rowData.createRow(rowDef, new Object[] { null, i, null });

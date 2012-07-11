@@ -58,6 +58,7 @@ public final class AISValidations {
     public static final AISValidation TREE_NAMES_NOT_NULL = new TreeNamesAreNotNull();
     public static final AISValidation MEMORY_TABLES_NOT_MIXED = new MemoryTablesNotMixed();
     public static final AISValidation MEMORY_TABLES_SINGLE = new MemoryTableSingleTableGroup();
+    public static final AISValidation VIEW_REFERENCES = new ViewReferences();
 
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
@@ -88,6 +89,7 @@ public final class AISValidations {
                 TREE_NAMES_NOT_NULL,
                 MEMORY_TABLES_NOT_MIXED,
                 MEMORY_TABLES_SINGLE
+                //VIEW_REFERENCES
                 //CHARACTER_SET_SUPPORTED
                 ));
     }

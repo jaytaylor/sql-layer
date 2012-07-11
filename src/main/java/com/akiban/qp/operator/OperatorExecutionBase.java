@@ -31,7 +31,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.error.QueryCanceledException;
 
-public abstract class OperatorExecutionBase implements RowOrientedCursorBase<Row>
+public abstract class OperatorExecutionBase extends ExecutionBase implements RowOrientedCursorBase<Row>
 {
     @Override
     public void destroy()
@@ -81,22 +81,6 @@ public abstract class OperatorExecutionBase implements RowOrientedCursorBase<Row
         throw new UnsupportedOperationException(getClass().getName());
     }
 
-    // Operators that implement cursors have a context at construction time
-    protected OperatorExecutionBase(QueryContext context)
-    {
-        this.context = context;
-    }
-
-    // Update operators don't get the context until later
-    protected OperatorExecutionBase()
-    {
-    }
-
-    protected void context(QueryContext context)
-    {
-        this.context = context;
-    }
-
     protected void checkQueryCancelation()
     {
         try {
@@ -107,13 +91,8 @@ public abstract class OperatorExecutionBase implements RowOrientedCursorBase<Row
         }
     }
 
-    protected StoreAdapter adapter() {
-        return context.getStore();
+    protected OperatorExecutionBase(QueryContext context)
+    {
+        super(context);
     }
-    
-    protected StoreAdapter adapter (UserTable name) {
-        return context.getStore(name);
-    }
-
-    protected QueryContext context;
 }
