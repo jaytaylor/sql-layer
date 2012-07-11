@@ -155,7 +155,7 @@ public final class T3Registry {
     }
 
 
-    private static Map<TClass,Map<TClass,TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource) {
+    static Map<TClass,Map<TClass,TCast>> createStrongCastsMap(Map<TClass, Map<TClass, TCast>> castsBySource) {
         Map<TClass,Map<TClass,TCast>> result = new HashMap<TClass, Map<TClass, TCast>>();
         for (Map.Entry<TClass, Map<TClass,TCast>> origEntry : castsBySource.entrySet()) {
             Map<TClass, TCast> strongs = new HashMap<TClass, TCast>();

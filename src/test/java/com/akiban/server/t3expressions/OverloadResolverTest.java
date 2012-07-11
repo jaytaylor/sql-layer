@@ -27,6 +27,7 @@ package com.akiban.server.t3expressions;
 
 import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
+import com.akiban.server.t3expressions.OverloadResolver.OverloadException;
 import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
@@ -51,6 +52,7 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -107,7 +109,12 @@ public class OverloadResolverTest {
 
         @Override
         public Set<TClass> stronglyCastableTo(TClass tClass) {
-            throw new UnsupportedOperationException();
+            Map<TClass, TCast> map = T3Registry.createStrongCastsMap(castMap).get(tClass);
+            Set<TClass> results = (map == null)
+                    ? new HashSet<TClass>(1)
+                    : new HashSet<TClass>(map.keySet());
+            results.add(tClass);
+            return results;
         }
 
         public TValidatedOverload validated(TOverload overload) {
@@ -377,7 +384,7 @@ public class OverloadResolverTest {
     public void onePosAndRemainingWithPickingSet() {
         final String NAME = "coalesce";
         TestGetBase coalesce = new TestGetBase(NAME, TVARCHAR);
-        coalesce.builder().covers(null, 0).pickingVararg(null);
+        coalesce.builder().pickingVararg(null, 0);
         init(coalesce);
 
         try {
@@ -388,19 +395,36 @@ public class OverloadResolverTest {
         }
 
         checkResolved(NAME+"(INT)", coalesce, NAME, prepVals(TINT));
-        checkResolved(NAME+"(INT,BIGINT)", coalesce, NAME, prepVals(TINT, TBIGINT));
-        checkResolved(NAME+"(null,DATE,INT)", coalesce, NAME, prepVals(null, TDATE, TINT));
+        registry.setCasts(C_INT_BIGINT);
+        checkResolved(NAME+"(null,INT,BIGINT)", coalesce, NAME, prepVals(null, TINT, TBIGINT));
+        try {
+            checkResolved(NAME+"(null,DATE,INT)", coalesce, NAME, prepVals(null, TDATE, TINT));
+            fail("expected overload exception");
+        } catch (OverloadException e) {
+            // There is no common type between date and int
+        }
     }
 
     @Test
     public void onlyPickingRemaining() {
         final String NAME = "first";
         TestGetBase first = new TestGetBase(NAME, null);
-        first.builder.pickingVararg(null);
+        first.builder.pickingVararg(null, 0);
         init(first);
-        checkResolved(NAME+"()", first, NAME, prepVals());
         checkResolved(NAME+"(INT)", first, NAME, prepVals(TINT));
-        checkResolved(NAME+"(null)", first, NAME, Arrays.asList(prepVal(null)));
-        checkResolved(NAME+"(BIGINT,DATE)", first, NAME, prepVals(TBIGINT,TDATE));
+        registry.setCasts(C_INT_BIGINT);
+        checkResolved(NAME+"(BIGINT,INT)", first, NAME, prepVals(TBIGINT,TINT));
+        try {
+            checkResolved(NAME+"()", first, NAME, prepVals());
+            fail("expected overload exception");
+        } catch (WrongExpressionArityException e) {
+            // can't resolve overload if nargs is wrong
+        }
+        try {
+            checkResolved(NAME+"(null)", first, NAME, Arrays.asList(prepVal(null)));
+            fail("expected overload exception");
+        } catch (OverloadException e) {
+            // can't find picking type for first if it's null
+        }
     }
 }

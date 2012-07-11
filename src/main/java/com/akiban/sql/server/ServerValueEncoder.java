@@ -268,6 +268,7 @@ public class ServerValueEncoder
             return;
         }
 
+        // TODO this is inefficient, but I want to get it working. I created a task to fix it in pivotal.
         PValueSource source = PValueSources.fromObject(objectSource, type.getAkType()).value();
         appendPValue(source, type, binary);
     }

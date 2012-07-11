@@ -255,7 +255,7 @@ public final class OverloadResolver {
             return null;
         }
         TClass common = null; // TODO change to TInstance, so we can more precisely pick instances
-        for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i)) {
+        for (int i = pickingSet.firstPosition(); i >=0 ; i = pickingSet.nextPosition(i+1)) {
             TInstance instance = inputs.get(i).instance();
             if (instance != null) {
                 common = commonTClass(common, instance.typeClass());
@@ -351,7 +351,7 @@ public final class OverloadResolver {
     }
 
     // TODO replace with InvalidOperationExceptions
-    private static class OverloadException extends RuntimeException {
+    static class OverloadException extends RuntimeException {
         private OverloadException(String message) {
             super(message);
         }
