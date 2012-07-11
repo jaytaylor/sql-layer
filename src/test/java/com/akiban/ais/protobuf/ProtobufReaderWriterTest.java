@@ -35,6 +35,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -338,7 +339,85 @@ public class ProtobufReaderWriterTest {
         AkibanInformationSchema inAIS = builder.ais();
         writeAndRead(inAIS);
     }
+    
+    @Test
+    public void sequenceSimple () {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("Sequence-1");
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "Sequence-1")));
+        Sequence sequence = outAIS.getSequence(new TableName(SCHEMA, "Sequence-1"));
+        assertEquals(1, sequence.getStartsWith());
+        assertEquals(1, sequence.getIncrement());
+        assertEquals(Long.MIN_VALUE, sequence.getMinValue());
+        assertEquals(Long.MAX_VALUE, sequence.getMaxValue());
+        assertTrue(!sequence.isCycle());
+        assertNull (sequence.getTreeName());
+        assertNull (sequence.getAccumIndex());
+    }
+    
+    @Test
+    public void sequenceComplex() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("sequence-2", 42, -2, true);
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "sequence-2")));
+        Sequence sequence = outAIS.getSequence(new TableName(SCHEMA, "sequence-2"));
+        assertEquals(42, sequence.getStartsWith());
+        assertEquals(-2, sequence.getIncrement());
+        assertTrue(sequence.isCycle());
+        assertNull (sequence.getTreeName());
+        assertNull (sequence.getAccumIndex());
+    }
+    
+    @Test
+    public void sequenceTree() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        TableName seqName = new TableName (SCHEMA, "sequence-3");
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("sequence-3", 42, -2, true);
+        AkibanInformationSchema inAIS = builder.ais();
+        Sequence inSeq = inAIS.getSequence(seqName);
+        inSeq.setTreeName("sequence-3.tree");
+        inSeq.setAccumIndex(3);
+        
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(seqName));
+        Sequence sequence = outAIS.getSequence(seqName);
+        assertEquals ("sequence-3.tree", sequence.getTreeName());
+        assertEquals (new Integer(3), sequence.getAccumIndex());
+    }
+    
+    @Test 
+    public void columnSequence() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        TableName sequenceName = new TableName (SCHEMA, "sequence-4");
+        builder.sequence(sequenceName.getTableName());
+        builder.userTable("customers").
+            colBigInt("customer_id", false).
+            colString("customer_name", 100, false).
+            pk("customer_id");
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Column idColumn = inAIS.getTable(new TableName (SCHEMA, "customers")).getColumn(0);
+        idColumn.setDefaultIdentity(true);
+        idColumn.setIdentityGenerator(inAIS.getSequence(sequenceName));
+        
+        AkibanInformationSchema outAIS = writeAndRead(builder.ais());
+        
+        assertNotNull(outAIS.getSequence(sequenceName));
+        Column outColumn = outAIS.getTable(new TableName(SCHEMA, "customers")).getColumn(0);
+        assertNotNull (outColumn.getDefaultIdentity());
+        assertTrue (outColumn.getDefaultIdentity().booleanValue());
+        assertNotNull (outColumn.getIdentityGenerator());
+        assertSame (outColumn.getIdentityGenerator(), outAIS.getSequence(sequenceName));
+        
 
+    }
+    
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }

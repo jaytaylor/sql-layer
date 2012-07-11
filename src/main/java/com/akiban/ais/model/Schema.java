@@ -57,6 +57,22 @@ public class Schema {
         userTables.remove(tableName);
     }
 
+    public Map<String, Sequence> getSequences() {
+        return sequences;
+    }
+    
+    public Sequence getSequence (String sequenceName) {
+        return sequences.get(sequenceName);
+    }
+    
+    void addSequence (Sequence sequence) {
+        sequences.put(sequence.getSequenceName().getTableName(), sequence);
+    }
+    
+    void removeSequence (String sequenceName) {
+        sequences.remove(sequenceName);
+    }
+    
     public Map<String, View> getViews() {
         return views;
     }
@@ -79,5 +95,6 @@ public class Schema {
 
     private final String name;
     private final Map<String, UserTable> userTables = new TreeMap<String, UserTable>();
+    private final Map<String, Sequence> sequences = new TreeMap<String, Sequence>();
     private final Map<String, View> views = new TreeMap<String, View>();
 }
