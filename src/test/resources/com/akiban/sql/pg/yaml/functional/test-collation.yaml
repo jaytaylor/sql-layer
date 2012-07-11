@@ -55,7 +55,7 @@
 - Statement: INSERT INTO t1(id, s)
     VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
 ---
-- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE ucs2_general_ci)
+- CreateTable: t2 (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) COLLATE en_US_ci)
 ---
 - Statement: INSERT INTO t2(id, s)
     VALUES (1, 'alfa'), (2, 'charlie'), (3, 'BRAVO'), (4, 'Delta'), (5, 'echo')
