@@ -157,6 +157,7 @@ public final class PValueSources {
                 throw new UnsupportedOperationException("can't infer type of null object");
             tInstance = fromAkType(akType, 0);
             value = new PValue(tInstance.typeClass().underlyingType());
+            value.putNull();
         }
         else if (object instanceof Integer) {
             tInstance = MNumeric.INT.instance();
@@ -423,6 +424,10 @@ public final class PValueSources {
     }
     
     public static void toStringSimple(PValueSource source, StringBuilder out) {
+        if (source.isNull()) {
+            out.append("NULL");
+            return;
+        }
         if (!source.hasAnyValue()) {
             out.append("<unset>");
             return;

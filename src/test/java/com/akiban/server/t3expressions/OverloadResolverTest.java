@@ -95,7 +95,7 @@ public class OverloadResolverTest {
 
         @Override
         public List<TValidatedOverload> getOverloads(String name) {
-            return validatedMap.get(name);
+            return validatedMap.get(name.toLowerCase());
         }
 
         @Override
