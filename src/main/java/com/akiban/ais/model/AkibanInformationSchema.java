@@ -627,7 +627,7 @@ public class AkibanInformationSchema implements Traversable
         views.remove(name);
         Schema schema = getSchema(name.getSchemaName());
         if (schema != null) {
-            schema.removeTable(name.getTableName());
+            schema.removeView(name.getTableName());
         }
     }
 

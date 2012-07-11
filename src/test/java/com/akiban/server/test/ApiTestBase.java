@@ -54,6 +54,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
+import com.akiban.ais.model.View;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
@@ -813,6 +814,15 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables() throws InvalidOperationException {
+        for(View view : ddl().getAIS(session()).getViews().values()) {
+            // In case one view references another, avoid having to delete in proper order.
+            view.getTableColumnReferences().clear();
+        }
+        for(View view : ddl().getAIS(session()).getViews().values()) {
+            System.err.println("Dropping view: " + view.getName());
+            ddl().dropView(session(), view.getName());
+        }
+
         // Note: Group names, being derived, can change across DDL. Save root names instead.
         Set<TableName> groupRoots = new HashSet<TableName>();
         for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
@@ -823,13 +833,18 @@ public class ApiTestBase {
         for(TableName rootName : groupRoots) {
             ddl().dropGroup(session(), getUserTable(rootName).getGroup().getName());
         }
+
+        // Now sanity check
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
             if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
             }
         }
-        Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
+        Assert.assertEquals("user table count", Collections.<TableName>emptySet(), uTables);
+
+        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session()).getViews().keySet());
+        Assert.assertEquals("user table count", Collections.<TableName>emptySet(), views);
     }
 
     protected static <T> void assertEqualLists(String message, List<? extends T> expected, List<? extends T> actual) {
