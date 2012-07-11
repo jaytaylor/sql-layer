@@ -101,4 +101,11 @@ public class ViewDDLIT extends PostgresServerITBase {
         stmt.executeUpdate("DROP VIEW IF EXISTS v");
         assertNull(ddl().getAIS(session()).getView(SCHEMA_NAME, "v"));
     }
+
+    @Test(expected=SQLException.class)
+    public void testDropTableReferenced() throws Exception {
+        stmt.executeUpdate("CREATE VIEW v AS SELECT * FROM t");
+        stmt.executeUpdate("DROP TABLE t");
+    }
+
 }
