@@ -31,8 +31,8 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 
@@ -227,10 +227,10 @@ public abstract class BindableRow {
         @Override
         public PValueSource next() {
             TPreparedExpression expression = expressions.next();
-//            assert expression.isConstant() : "not constant: " + expression; TODO
-            TEvaluatableExpression eval = expression.build();
-            eval.evaluate();
-            return eval.resultValue();
+            TPreptimeValue ptv = expression.evaluateConstant();
+            assert ptv != null && ptv.value() != null
+                    : "not constant: " + expression + " with prepare-time value of " + ptv;
+            return ptv.value();
         }
 
         @Override
