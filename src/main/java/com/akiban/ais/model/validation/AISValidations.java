@@ -33,6 +33,7 @@ import java.util.Collections;
 public final class AISValidations {
     //public static final AISValidation NO_NULL_IDENTIFIERS;
     public static final AISValidation CHARACTER_SET_SUPPORTED = new CharacterSetSupported();
+    public static final AISValidation COLLATION_SUPPORTED = new CollationSupported();
     public static final AISValidation COLUMN_POSITION_DENSE = new ColumnPositionDense();
     public static final AISValidation GROUP_INDEX_NOT_UNIQUE = new GroupIndexesNotUnique();
     public static final AISValidation GROUP_TABLE_SINGLE_ROOT = new GroupTableSingleRoot();
@@ -88,9 +89,10 @@ public final class AISValidations {
                 GROUP_INDEX_DEPTH,
                 TREE_NAMES_NOT_NULL,
                 MEMORY_TABLES_NOT_MIXED,
-                MEMORY_TABLES_SINGLE
+                MEMORY_TABLES_SINGLE,
                 //VIEW_REFERENCES
                 //CHARACTER_SET_SUPPORTED
+                COLLATION_SUPPORTED
                 ));
     }
     
