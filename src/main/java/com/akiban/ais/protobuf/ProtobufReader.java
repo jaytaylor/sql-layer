@@ -29,6 +29,7 @@ package com.akiban.ais.protobuf;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.DefaultNameGenerator;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.GroupIndex;
@@ -43,6 +44,7 @@ import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 import com.akiban.server.error.ProtobufReadException;
 import com.akiban.util.GrowableByteBuffer;
 import com.google.protobuf.AbstractMessage;
@@ -52,8 +54,11 @@ import com.google.protobuf.Descriptors;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 public class ProtobufReader {
@@ -142,9 +147,11 @@ public class ProtobufReader {
 
             // Requires no tables, does not load indexes
             loadTables(pbSchema.getSchemaName(), pbSchema.getTablesList());
+
+            loadViews(pbSchema.getSchemaName(), pbSchema.getViewsList());
         }
 
-        // Assume no ordering of schemas or tables, load joins second
+        // Assume no ordering of schemas or tables, load joins and view refs second
         for(AISProtobuf.Schema pbSchema : pbSchemas) {
             loadTableJoins(pbSchema.getSchemaName(), pbSchema.getTablesList());
         }
@@ -265,11 +272,50 @@ public class ProtobufReader {
         }
     }
     
-    private void loadColumns(UserTable userTable, Collection<AISProtobuf.Column> pbColumns) {
+    private void loadViews(String schema, Collection<AISProtobuf.View> pbViews) {
+        for(AISProtobuf.View pbView : pbViews) {
+            hasRequiredFields(pbView);
+            Map<TableName,Collection<String>> refs = 
+                new HashMap<TableName,Collection<String>>();
+            for(AISProtobuf.ColumnReference pbReference : pbView.getReferencesList()) {
+                hasRequiredFields(pbReference);
+                AISProtobuf.TableName pbTableName = pbReference.getTable();
+                hasRequiredFields(pbTableName);
+                TableName tableName = TableName.create(pbTableName.getSchemaName(), pbTableName.getTableName());
+                Collection<String> columns = new HashSet<String>();
+                Collection<String> old = refs.put(tableName, columns);
+                assert (old == null);
+                for(String colname : pbReference.getColumnsList()) {
+                    boolean added = columns.add(colname);
+                    assert added;
+                }
+            }
+            View view = View.create(
+                    destAIS,
+                    schema,
+                    pbView.getViewName(),
+                    pbView.getDefinition(),
+                    loadProperties(pbView.getDefinitionPropertiesList()),
+                    refs
+            );
+            loadColumns(view, pbView.getColumnsList());
+        }
+    }
+
+    private Properties loadProperties(Collection<AISProtobuf.Property> pbProperties) {
+        Properties properties = new Properties();
+        for(AISProtobuf.Property pbProperty : pbProperties) {
+            hasRequiredFields(pbProperty);
+            properties.put(pbProperty.getKey(), pbProperty.getValue());
+        }
+        return properties;
+    }
+
+    private void loadColumns(Columnar columnar, Collection<AISProtobuf.Column> pbColumns) {
         for(AISProtobuf.Column pbColumn : pbColumns) {
             hasRequiredFields(pbColumn);
             Column.create(
-                    userTable,
+                    columnar,
                     pbColumn.getColumnName(),
                     pbColumn.getPosition(),
                     destAIS.getType(pbColumn.getTypeName()),
@@ -407,6 +453,7 @@ public class ProtobufReader {
                 pbSchema,
                 AISProtobuf.Schema.TABLES_FIELD_NUMBER,
                 AISProtobuf.Schema.GROUPS_FIELD_NUMBER,
+                AISProtobuf.Schema.VIEWS_FIELD_NUMBER,
                 AISProtobuf.Schema.CHARCOLL_FIELD_NUMBER
         );
     }
@@ -422,6 +469,17 @@ public class ProtobufReader {
                 AISProtobuf.Table.DESCRIPTION_FIELD_NUMBER,
                 AISProtobuf.Table.PROTECTED_FIELD_NUMBER,
                 AISProtobuf.Table.VERSION_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.View pbView) {
+        requireAllFieldsExcept(
+                pbView,
+                AISProtobuf.View.COLUMNS_FIELD_NUMBER,
+                AISProtobuf.View.DEFINITIONPROPERTIES_FIELD_NUMBER,
+                AISProtobuf.View.REFERENCES_FIELD_NUMBER,
+                AISProtobuf.View.DESCRIPTION_FIELD_NUMBER,
+                AISProtobuf.View.PROTECTED_FIELD_NUMBER
         );
     }
 
@@ -457,6 +515,19 @@ public class ProtobufReader {
         requireAllFieldsExcept(
                 pbIndexColumn,
                 AISProtobuf.IndexColumn.TABLENAME_FIELD_NUMBER
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.Property pbProperty) {
+        requireAllFieldsExcept(
+                pbProperty
+        );
+    }
+
+    private static void hasRequiredFields(AISProtobuf.ColumnReference pbReference) {
+        requireAllFieldsExcept(
+                pbReference,
+                AISProtobuf.ColumnReference.COLUMNS_FIELD_NUMBER
         );
     }
 

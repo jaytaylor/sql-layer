@@ -61,7 +61,6 @@ public class ViewTest extends OptimizerTestBase
     @Before
     public void loadDDL() throws Exception {
         loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
-        loadView(new File(RESOURCE_DIR, "view-1.ddl"));
     }
 
     @Test

@@ -31,20 +31,25 @@ import com.akiban.server.error.*;
 import com.akiban.server.service.session.Session;
 
 import com.akiban.sql.optimizer.AISBinderContext;
+import com.akiban.sql.optimizer.AISViewDefinition;
 import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
+import com.akiban.ais.model.View;
+
+import java.util.Collection;
+import java.util.Map;
 
 /** DDL operations on Views */
 public class ViewDDL
@@ -62,7 +67,7 @@ public class ViewDDL
         String viewName = parserName.getTableName();
         ExistenceCheck condition = createView.getExistenceCheck();
 
-        if (binderContext.getView(schemaName, viewName) != null) {
+        if (ddlFunctions.getAIS(session).getView(schemaName, viewName) != null) {
             switch(condition) {
             case IF_NOT_EXISTS:
                 // view already exists. does nothing
@@ -74,8 +79,18 @@ public class ViewDDL
             }
         }
         
-        ViewDefinition view = binderContext.getViewDefinition(createView);
-        binderContext.addView(schemaName, viewName, view);
+        AISViewDefinition viewdef = binderContext.getViewDefinition(createView);
+        Map<TableName,Collection<String>> tableColumnReferences = viewdef.getTableColumnReferences();
+        AISBuilder builder = new AISBuilder();
+        builder.view(schemaName, viewName, viewdef.getQueryExpression(), 
+                     binderContext.getParserProperties(schemaName), tableColumnReferences);
+        int colpos = 0;
+        for (ResultColumn rc : viewdef.getResultColumns()) {
+            TableDDL.addColumn(builder, schemaName, viewName, rc.getName(), colpos++,
+                               rc.getType(), false);
+        }
+        View view = builder.akibanInformationSchema().getView(schemaName, viewName);
+        ddlFunctions.createView(session, view);
     }
 
     public static void dropView (DDLFunctions ddlFunctions,
@@ -85,14 +100,15 @@ public class ViewDDL
                                  AISBinderContext binderContext) {
         com.akiban.sql.parser.TableName parserName = dropView.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        String viewName = parserName.getTableName();
+        TableName viewName = TableName.create(schemaName, parserName.getTableName());
         ExistenceCheck existenceCheck = dropView.getExistenceCheck();
 
-        if (binderContext.getView(schemaName, viewName) == null) {
+        if (ddlFunctions.getAIS(session).getView(viewName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS)
                 return;
-            throw new UndefinedViewException(schemaName, viewName);
+            throw new UndefinedViewException(viewName);
         }
+        ddlFunctions.dropView(session, viewName);
     }
 
 }

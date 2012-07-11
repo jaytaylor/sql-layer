@@ -36,7 +36,10 @@ import com.akiban.server.error.JoinToMultipleParentsException;
 import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.JoinToWrongColumnsException;
 
+import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Set;
 
 /**
@@ -64,15 +67,21 @@ public class AISMerge {
      * @param newTable - UserTable to merge into the primaryAIS
      */
     public AISMerge (AkibanInformationSchema primaryAIS, UserTable newTable) {
-        targetAIS = new AkibanInformationSchema();
-        new Writer(new AISTarget(targetAIS)).save(primaryAIS);
-        
+        targetAIS = copyAIS(primaryAIS);
         sourceTable = newTable;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
                 setDefaultTreeNames(computeTreeNames(targetAIS));
     }
     
+    public static AkibanInformationSchema copyAIS(AkibanInformationSchema oldAIS) {
+        AkibanInformationSchema newAIS = new AkibanInformationSchema();
+        new Writer(new AISTarget(newAIS)).save(oldAIS);
+        // Copy stuff that old serialization didn't handle.
+        copyViews(oldAIS, newAIS);
+        return newAIS;
+    }
+
     /**
      * Returns the final, updated AkibanInformationSchema. This AIS has been fully 
      * validated and is frozen (no more changes), hence ready for update into the
@@ -328,5 +337,46 @@ public class AISMerge {
             }
         }
         return treeNames;
+    }
+
+    public static AkibanInformationSchema mergeView(AkibanInformationSchema oldAIS,
+                                                    View view) {
+        AkibanInformationSchema newAIS = copyAIS(oldAIS);
+        copyView(oldAIS, newAIS, view);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }
+
+    public static void copyViews(AkibanInformationSchema oldAIS, 
+                                 AkibanInformationSchema newAIS) {
+        for (View view : oldAIS.getViews().values()) {
+            copyView(oldAIS, newAIS, view);
+        }
+    }
+
+    public static void copyView(AkibanInformationSchema oldAIS, 
+                                AkibanInformationSchema newAIS,
+                                View oldView) {
+        Map<TableName,Collection<String>> newReferences = 
+            new HashMap<TableName,Collection<String>>();
+        for (Map.Entry<TableName,Collection<String>> entry : oldView.getTableColumnReferences().entrySet()) {
+            newReferences.put(entry.getKey(),
+                              new HashSet<String>(entry.getValue()));
+        }
+        View newView = View.create(newAIS,
+                                   oldView.getName().getSchemaName(),
+                                   oldView.getName().getTableName(),
+                                   oldView.getDefinition(),
+                                   oldView.getDefinitionProperties(),
+                                   newReferences);
+        for (Column col : oldView.getColumns()) {
+            Column.create(newView, col.getName(), col.getPosition(),
+                          col.getType(), col.getNullable(),
+                          col.getTypeParameter1(), col.getTypeParameter2(), 
+                          col.getInitialAutoIncrementValue(),
+                          col.getCharsetAndCollation());
+        }
+        newAIS.addView(newView);
     }
 }
