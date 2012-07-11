@@ -56,6 +56,8 @@ import com.akiban.ais.model.Type;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
+import com.akiban.server.error.DuplicateTableNameException;
+import com.akiban.sql.parser.ExistenceCheck;
 
 /** DDL operations on Tables */
 public class TableDDL
@@ -72,14 +74,19 @@ public class TableDDL
         
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         TableName tableName = TableName.create(schemaName, parserName.getTableName());
+        ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         
-        if (ddlFunctions.getAIS(session).getUserTable(tableName) == null && 
+        if (ais.getUserTable(tableName) == null && 
                 ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
+            if (existenceCheck == ExistenceCheck.IF_EXISTS)
+                return;
             throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
         ddlFunctions.dropTable(session, tableName);
     }
-    
+
     public static void renameTable (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,
@@ -98,9 +105,23 @@ public class TableDDL
         com.akiban.sql.parser.TableName parserName = createTable.getObjectName();
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
         String tableName = parserName.getTableName();
-        
+        ExistenceCheck condition = createTable.getExistenceCheck();
+
+        AkibanInformationSchema ais = ddlFunctions.getAIS(session);
+
+        if (ais.getUserTable(schemaName, tableName) != null)
+            switch(condition)
+            {
+                case IF_NOT_EXISTS:
+                    // table already exists. does nothing
+                    return;
+                case NO_CONDITION:
+                    throw new DuplicateTableNameException(schemaName, tableName);
+                default:
+                    throw new IllegalStateException("Unexpected condition: " + condition);
+            }
+
         AISBuilder builder = new AISBuilder();
-        
         builder.userTable(schemaName, tableName);
 
         int colpos = 0;
@@ -281,7 +302,7 @@ public class TableDDL
         if (parentTable == null) {
             throw new NoSuchTableException (parentSchemaName, parentTableName);
         }
-        
+
         builder.userTable(parentSchemaName, parentTableName);
         
         builder.index(parentSchemaName, parentTableName, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
