@@ -820,8 +820,8 @@ public class ApiTestBase {
                 groupRoots.add(table.getName());
             }
         }
-        for(TableName groupName : groupRoots) {
-            ddl().dropGroup(session(), getUserTable(groupName).getGroup().getName());
+        for(TableName rootName : groupRoots) {
+            ddl().dropGroup(session(), getUserTable(rootName).getGroup().getName());
         }
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
