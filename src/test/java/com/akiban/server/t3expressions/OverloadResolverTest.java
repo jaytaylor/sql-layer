@@ -409,7 +409,7 @@ public class OverloadResolverTest {
     public void onlyPickingRemaining() {
         final String NAME = "first";
         TestGetBase first = new TestGetBase(NAME, null);
-        first.builder.pickingVararg(null, 0);
+        first.builder.pickingVararg(null);
         init(first);
         checkResolved(NAME+"(INT)", first, NAME, prepVals(TINT));
         registry.setCasts(C_INT_BIGINT);
@@ -417,8 +417,8 @@ public class OverloadResolverTest {
         try {
             checkResolved(NAME+"()", first, NAME, prepVals());
             fail("expected overload exception");
-        } catch (WrongExpressionArityException e) {
-            // can't resolve overload if nargs is wrong
+        } catch (OverloadException e) {
+            // can't find picking type for first if there's no inputs
         }
         try {
             checkResolved(NAME+"(null)", first, NAME, Arrays.asList(prepVal(null)));
