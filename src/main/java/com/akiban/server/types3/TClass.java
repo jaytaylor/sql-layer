@@ -53,6 +53,11 @@ public abstract class TClass {
 
     public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
 
+    public void selfCast(TExecutionContext context,
+                         TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {
+        target.putValueSource(source); // TODO make abstract
+    }
+
     public int compare(TInstance instanceA, PValueSource sourceA, TInstance instanceB, PValueSource sourceB) {
         if (sourceA.isNull())
             return sourceB.isNull() ? 0 : -1;

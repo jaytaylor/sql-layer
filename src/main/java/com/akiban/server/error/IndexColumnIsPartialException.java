@@ -23,25 +23,13 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+package com.akiban.server.error;
 
-import java.util.List;
-import java.util.Set;
+import com.akiban.ais.model.TableName;
 
-public interface T3ScalarsRegistry {
-    List<TValidatedOverload> getOverloads(String name);
-
-    /**
-     * Find the registered cast going from source to taret.
-     * @param source Type to cast from
-     * @param target Type to cast to
-     * @return Return matching cast or <tt>null</tt> if none
-     */
-    TCast cast(TClass source, TClass target);
-
-    Set<TClass> stronglyCastableTo(TClass tClass);
+public class IndexColumnIsPartialException extends InvalidOperationException {
+    public IndexColumnIsPartialException(TableName table, String indexName, int indexPosition) {
+        super(ErrorCode.INDEX_COLUMN_IS_PARTIAL, table.getSchemaName(), table.getTableName(), indexName, indexPosition);
+    }
 }

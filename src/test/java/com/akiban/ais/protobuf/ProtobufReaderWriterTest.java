@@ -411,13 +411,58 @@ public class ProtobufReaderWriterTest {
         assertNotNull(outAIS.getSequence(sequenceName));
         Column outColumn = outAIS.getTable(new TableName(SCHEMA, "customers")).getColumn(0);
         assertNotNull (outColumn.getDefaultIdentity());
-        assertTrue (outColumn.getDefaultIdentity().booleanValue());
+        assertTrue (outColumn.getDefaultIdentity());
         assertNotNull (outColumn.getIdentityGenerator());
         assertSame (outColumn.getIdentityGenerator(), outAIS.getSequence(sequenceName));
-        
-
     }
-    
+
+    @Test
+    public void indexColumnIndexedLength() {
+        final String TABLE = "t";
+        final Integer INDEXED_LENGTH = 16;
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, TABLE);
+        builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", 32L, null, false, false, null, null);
+        builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, INDEXED_LENGTH);
+        builder.createGroup(TABLE, SCHEMA, "_akiban"+TABLE);
+        builder.addTableToGroup(TABLE, SCHEMA, TABLE);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+        AkibanInformationSchema outAIS = writeAndRead(builder.akibanInformationSchema());
+        UserTable table = outAIS.getUserTable(SCHEMA, TABLE);
+        assertNotNull("found table", table);
+        assertNotNull("has v index", table.getIndex("v"));
+        assertEquals("v indexed length", INDEXED_LENGTH, table.getIndex("v").getKeyColumns().get(0).getIndexedLength());
+    }
+
+    @Test
+    public void maxStorageSizeAndPrefixSize() {
+        final String TABLE = "t";
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(TABLE).colBigInt("id");
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+
+        // Note: If storage* methods go away, or are non-null by default, that is *good* and these can go away
+        Column inCol = inAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertNull("storedMaxStorageSize null by default", inCol.getMaxStorageSizeWithoutComputing());
+        assertNull("storedPrefixSize null by default", inCol.getPrefixSizeWithoutComputing());
+
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        Column outCol = outAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertNull("storedMaxStorageSize null preserved", outCol.getMaxStorageSizeWithoutComputing());
+        assertNull("storedPrefixSize null preserved", outCol.getPrefixSizeWithoutComputing());
+
+        inCol.getMaxStorageSize();
+        inCol.getPrefixSize();
+
+        outAIS = writeAndRead(inAIS);
+        outCol = outAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertEquals("storedMaxStorageSize", Long.valueOf(8L), outCol.getMaxStorageSizeWithoutComputing());
+        assertEquals("storedPrefixSize", Integer.valueOf(0), outCol.getPrefixSizeWithoutComputing());
+    }
+
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {
         return writeAndRead(inAIS, null);
     }

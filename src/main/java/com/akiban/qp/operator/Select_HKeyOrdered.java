@@ -271,7 +271,8 @@ class Select_HKeyOrdered extends Operator
             if (!isDestroyed()) {
                 close();
                 input.destroy();
-                evaluation.destroy();
+                if (evaluation != null)
+                    evaluation.destroy();
             }
         }
 

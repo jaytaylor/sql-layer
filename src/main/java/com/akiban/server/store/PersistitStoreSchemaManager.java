@@ -56,6 +56,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
@@ -420,6 +421,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                     public boolean isSelected(Index index) {
                         return !indexesToDrop.contains(index);
                     }
+                    
+                    @Override 
+                    public boolean isSelected (Sequence sequence) {
+                        return true;
+                    }
         });
 
         final Set<String> schemas = new HashSet<String>();
@@ -465,12 +471,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         final Set<String> schemas = new HashSet<String>();
         final List<Integer> tableIDs = new ArrayList<Integer>();
+        final Set<TableName> sequences = new HashSet<TableName>();
         for(TableName name : tables) {
             schemas.add(name.getSchemaName());
             tableIDs.add(getAis().getTable(name).getTableId());
+            for (Column column : getAis().getTable(name).getColumns()) {
+                if (column.getIdentityGenerator() != null) {
+                    sequences.add(column.getIdentityGenerator().getSequenceName());
+                }
+            }
         }
 
-        final AkibanInformationSchema newAIS = removeTablesFromAIS(tables);
+        final AkibanInformationSchema newAIS = removeTablesFromAIS(tables, sequences);
         try {
             saveAISChangeWithRowDefs(session, newAIS, schemas);
             // Success, remaining cleanup
@@ -549,7 +561,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * @param tableNames List of tables to exclude from new AIS.
      * @return A completely new AIS.
      */
-    private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames) {
+    private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames, final Set<TableName> sequences) {
         return AISCloner.clone(
                 getAis(),
                 new ProtobufWriter.WriteSelector() {
@@ -570,6 +582,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                             }
                         }
                         return true;
+                    }
+                    @Override 
+                    public boolean isSelected(Sequence sequence) {
+                        return !sequences.contains(sequence.getSequenceName());
                     }
                 }
         );
@@ -657,6 +673,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 }
             }
 
+            newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+
             transactionally(sessionService.createSession(), new ThrowingRunnable() {
                 @Override
                 public void run(Session session) throws PersistitException {
@@ -730,7 +748,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         builder.column(SCHEMA, ENTRY,       "index_id", col++,       "int",  null, null, false, false, null, null);
         builder.column(SCHEMA, ENTRY,   "column_count", col++,       "int",  null, null, false, false, null, null);
         builder.column(SCHEMA, ENTRY,    "item_number", col++,       "int",  null, null, false, false, null, null);
-        builder.column(SCHEMA, ENTRY,     "key_string", col++,   "varchar", 2048L, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,     "key_string", col++,   "varchar", 2048L, null,  true, false, "latin1", null);
         builder.column(SCHEMA, ENTRY,      "key_bytes", col++, "varbinary", 4096L, null,  true, false, null, null);
         builder.column(SCHEMA, ENTRY,       "eq_count", col++,    "bigint",  null, null,  true, false, null, null);
         builder.column(SCHEMA, ENTRY,       "lt_count", col++,    "bigint",  null, null,  true, false, null, null);
@@ -769,6 +787,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         entryTable.getIndex(PRIMARY).setTreeName(ENTRY_PK_TREE);
         entryTable.getIndex(FK_NAME).setTreeName(ENTRY_FK_TREE);
         entryTable.setVersion(TABLE_VERSION);
+
+        for(UserTable table : new UserTable[]{statsTable, entryTable}) {
+            for(Column column : table.getColumnsIncludingInternal()) {
+                column.getMaxStorageSize();
+                column.getPrefixSize();
+            }
+        }
 
         // Legacy behavior for group table ID
         GroupTable statsGroupTable = ais.getGroupTable(SCHEMA, GROUP_TABLE);

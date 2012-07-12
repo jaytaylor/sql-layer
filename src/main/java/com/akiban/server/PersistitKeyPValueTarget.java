@@ -89,35 +89,35 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     @Override
     public void putInt8(byte value) {
         assert type == PUnderlying.INT_8 : type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
     @Override
     public void putInt16(short value) {
         assert type == PUnderlying.INT_16: type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
     @Override
     public void putUInt16(char value) {
         assert type == PUnderlying.UINT_16 : type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
     @Override
     public void putInt32(int value) {
         assert type == PUnderlying.INT_32 : type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
     @Override
     public void putInt64(long value) {
         assert type == PUnderlying.INT_64 : type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
