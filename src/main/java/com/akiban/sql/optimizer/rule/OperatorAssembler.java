@@ -1193,7 +1193,7 @@ public class OperatorAssembler extends BaseRule
             for (OrderByExpression orderBy : sort.getOrderBy()) {
                 Expression expr = oldPartialAssembler.assembleExpression(orderBy.getExpression(),
                         stream.fieldOffsets);
-                ordering.append(expr, orderBy.isAscending());
+                ordering.append(expr, orderBy.isAscending(), orderBy.getCollator());
             }
             assembleSort(stream, ordering, sort.getInput(), output, sortOption);
             return stream;

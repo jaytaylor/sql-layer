@@ -26,7 +26,7 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.server.types3.pvalue.PBasicValueTarget;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -118,7 +118,7 @@ public final class AppenderPValueTarget implements PValueTarget {
     }
 
     @Override
-    public void putString(String value) {
+    public void putString(String value, AkCollator collator) {
         appender.append(value);
     }
 

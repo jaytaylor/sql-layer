@@ -24,32 +24,33 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.sql.optimizer.plan.PlanContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public interface PBasicValueTarget {
-    PUnderlying getUnderlyingType();
+public final class ConditionalOverloadAndTInstanceResolver extends BaseRule {
 
-    void putNull();
+    private static final Logger logger = LoggerFactory.getLogger(ConditionalOverloadAndTInstanceResolver.class);
 
-    void putBool(boolean value);
+    @Override
+    protected Logger getLogger() {
+        return logger;
+    }
 
-    void putInt8(byte value);
+    @Override
+    public void apply(PlanContext plan) {
+        if (delegate != null)
+            delegate.apply(plan);
+    }
 
-    void putInt16(short value);
+    public ConditionalOverloadAndTInstanceResolver() {
+        delegate = Types3Switch.ON
+                ? new OverloadAndTInstanceResolver()
+                : null;
+    }
 
-    void putUInt16(char value);
-
-    void putInt32(int value);
-
-    void putInt64(long value);
-
-    void putFloat(float value);
-
-    void putDouble(double value);
-
-    void putBytes(byte[] value);
-
-    void putString(String value, AkCollator collator);
+    private final BaseRule delegate;
 }

@@ -169,11 +169,10 @@ public class ServerValueEncoder
             case ROUND:
                 if (stringPValue == null)
                     stringPValue = new PValue(PUnderlying.STRING);
-                stringPValue.putString(
-                        (type.getInstance().typeClass() == MDatetimes.DATETIME)
-                                ? ROUND_ZERO_DATETIME
-                                : ROUND_ZERO_DATE
-                );
+                String zeroString = (type.getInstance().typeClass() == MDatetimes.DATETIME)
+                        ? ROUND_ZERO_DATETIME
+                        : ROUND_ZERO_DATE;
+                stringPValue.putString(zeroString, null);
                 value = stringPValue;
                 break;
             case CONVERT_TO_NULL:

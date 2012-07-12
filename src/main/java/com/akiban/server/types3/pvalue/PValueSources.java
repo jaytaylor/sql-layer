@@ -608,7 +608,7 @@ public final class PValueSources {
                     out.putBytes((byte[])oval); // ensured by "oval.getClass() != byte[].class" above
                     break;
                 case STRING:
-                    out.putString((String)(oval));
+                    out.putString((String)(oval), null);
                     break;
                 default:
                     throw new AssertionError(out.getUnderlyingType());
