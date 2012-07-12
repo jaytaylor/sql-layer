@@ -35,7 +35,6 @@ import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.IndexVisitor;
-import com.akiban.server.store.PersistitKeyAppender;
 import com.akiban.server.store.PersistitStore;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -247,17 +246,13 @@ public class PersistitStoreIndexStatistics
     private void removeStatistics(Session session, Index index, Exchange exchange)
         throws PersistitException
     {
-        // Why not just do EQ traversals? Because termination of such iterations has been problematic.
-        // See bug 1023549.
         RowData rowData = new RowData(new byte[INITIAL_ROW_SIZE]);
         RowDef indexStatisticsRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_TABLE_NAME);
         RowDef indexStatisticsEntryRowDef = store.getRowDefCache().getRowDef(INDEX_STATISTICS_ENTRY_TABLE_NAME);
         int tableId = index.indexDef().getRowDef().getRowDefId();
         int indexId = index.getIndexId();
         // Delete index_statistics_entry rows.
-        PersistitKeyAppender keyAppender = PersistitKeyAppender.create(exchange.getKey());
-        keyAppender.append(tableId);
-        keyAppender.append(indexId);
+        exchange.append(Key.BEFORE);
         while (exchange.traverse(Key.Direction.GT, true)) {
             store.expandRowData(exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsEntryRowDef.getRowDefId() &&
@@ -266,9 +261,7 @@ public class PersistitStoreIndexStatistics
             }
         }
         // Delete only the parent index_statistics row
-        keyAppender = PersistitKeyAppender.create(exchange.getKey().clear());
-        keyAppender.append(tableId);
-        keyAppender.append(indexId);
+        exchange.clear().append(Key.BEFORE);
         while (exchange.traverse(Key.Direction.GT, true)) {
             store.expandRowData(exchange, rowData);
             if (rowData.getRowDefId() == indexStatisticsRowDef.getRowDefId() &&

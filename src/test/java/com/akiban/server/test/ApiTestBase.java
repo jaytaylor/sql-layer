@@ -56,6 +56,7 @@ import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.SimpleQueryContext;
+import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.AkServerInterface;
@@ -813,6 +814,7 @@ public class ApiTestBase {
     }
 
     protected final void dropAllTables() throws InvalidOperationException {
+        ensureAdapter();
         Set<String> groupNames = new HashSet<String>();
         for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
             if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
@@ -1002,5 +1004,15 @@ public class ApiTestBase {
                 return null;
             }
         });
+    }
+
+    private void ensureAdapter()
+    {
+        Session session = session();
+        if (session.get(StoreAdapter.STORE_ADAPTER_KEY) == null) {
+            Schema schema = new Schema(sm.getSchemaManager().getAis(session));
+            PersistitAdapter adapter = persistitAdapter(schema);
+            session.put(StoreAdapter.STORE_ADAPTER_KEY, adapter);
+        }
     }
 }
