@@ -428,7 +428,7 @@
                                 <configuration>
                                     <tasks>
                                         <copy todir="${setup.staging.dir}">
-                                            <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
+                                            <fileset dir="${basedir}" includes="bin/*.cmd,${akiban.license},doc/**" />
                                             <fileset dir="${basedir}/windows" />
                                             <fileset dir="${akiban.client.project}" includes="bin/*.cmd" />
                                         </copy>
@@ -483,6 +483,7 @@
                 <setup.appversion>${project.version}</setup.appversion>
                 <setup.jarfile>${project.build.finalName}-jar-with-dependencies.jar</setup.jarfile>
                 <setup.output>${project.build.finalName}-installer</setup.output>
+                <akiban.license>LICENSE.txt</akiban.license>
                 <akiban.client.project>${basedir}/../client-latest</akiban.client.project>
             </properties>
         </profile>
