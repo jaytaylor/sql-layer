@@ -26,6 +26,7 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
@@ -53,6 +54,8 @@ import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
+import com.akiban.sql.optimizer.plan.ColumnExpression;
+import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
@@ -146,6 +149,16 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     @Override
     protected TPreparedExpression compare(TPreparedExpression left, Comparison comparison, TPreparedExpression right) {
         return new TComparisonExpression(left, comparison, right);
+    }
+
+    @Override
+    protected TPreparedExpression collate(TPreparedExpression left, Comparison comparison, TPreparedExpression right, AkCollator collator) {
+        throw new UnsupportedOperationException(); // TODO
+    }
+
+    @Override
+    protected AkCollator collator(ComparisonCondition cond, TPreparedExpression left, TPreparedExpression right) {
+        throw new UnsupportedOperationException(); // TODO
     }
 
     @Override

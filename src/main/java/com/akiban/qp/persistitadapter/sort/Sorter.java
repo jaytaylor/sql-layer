@@ -167,7 +167,7 @@ public class Sorter
             ExpressionEvaluation evaluation = evaluations.get(i);
             evaluation.of(row);
             ValueSource keySource = evaluation.eval();
-            keyTarget.expectingType(orderingTypes[i]);
+            keyTarget.expectingType(orderingTypes[i], row.rowType().collatorAt(i));
             Converters.convert(keySource, keyTarget);
         }
         if (preserveDuplicates) {

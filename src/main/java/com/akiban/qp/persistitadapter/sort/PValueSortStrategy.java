@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.server.PersistitKeyPValueTarget;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -83,13 +84,13 @@ public final class PValueSortStrategy implements SortStrategy<PValueSource> {
     }
 
     @Override
-    public void appendToStartKey(PValueSource source, AkType akType) {
-        appendTo(startKeyTarget, source, akType);
+    public void appendToStartKey(PValueSource source, AkType akType, AkCollator collator) {
+        appendTo(startKeyTarget, source);
     }
 
     @Override
-    public void appendToEndKey(PValueSource source, AkType akType) {
-        appendTo(endKeyTarget, source, akType);
+    public void appendToEndKey(PValueSource source, AkType akType, AkCollator collator) {
+        appendTo(endKeyTarget, source);
     }
 
     @Override
@@ -97,7 +98,7 @@ public final class PValueSortStrategy implements SortStrategy<PValueSource> {
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyPValueTarget target, PValueSource source, AkType type) {
+    private void appendTo(PersistitKeyPValueTarget target, PValueSource source) {
         target.expectingType(source.getUnderlyingType());
         PValueTargets.copyFrom(source, target);
     }

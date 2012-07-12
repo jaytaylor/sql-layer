@@ -96,6 +96,10 @@ public final class OverloadResolver {
      * @throws IllegalArgumentException if both inputs are <tt>null</tt>
      */
     public TClass commonTClass(TClass tClass1, TClass tClass2) {
+        // NOTE:
+        // This method shares some concepts with #reduceToMinimalCastGroups, but the two methods seem different enough
+        // that they're best implemented without much common code. But this could be an opportunity for refactoring.
+
         // handle easy cases where one or the other is null
         if (tClass1 == null) {
             if (tClass2 == null)
@@ -288,6 +292,9 @@ public final class OverloadResolver {
      * is discarded as a possible overload.
      */
     private List<List<TValidatedOverload>> reduceToMinimalCastGroups(List<TValidatedOverload> candidates) {
+        // NOTE:
+        // This method shares some concepts with #commonTClass. See that method for a note about possible refactoring
+        // opportunities (tl;dr is the two methods don't share code right now, but they might be able to.)
         List<List<TValidatedOverload>> castGroups = new ArrayList<List<TValidatedOverload>>();
 
         for(TValidatedOverload B : candidates) {

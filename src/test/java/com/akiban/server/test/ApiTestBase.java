@@ -819,24 +819,32 @@ public class ApiTestBase {
             view.getTableColumnReferences().clear();
         }
         for(View view : ddl().getAIS(session()).getViews().values()) {
+            System.err.println("Dropping view: " + view.getName());
             ddl().dropView(session(), view.getName());
         }
-        Set<String> groupNames = new HashSet<String>();
+
+        // Note: Group names, being derived, can change across DDL. Save root names instead.
+        Set<TableName> groupRoots = new HashSet<TableName>();
         for(UserTable table : ddl().getAIS(session()).getUserTables().values()) {
             if(table.getParentJoin() == null && !TableName.INFORMATION_SCHEMA.equals(table.getName().getSchemaName())) {
-                groupNames.add(table.getGroup().getName());
+                groupRoots.add(table.getName());
             }
         }
-        for(String groupName : groupNames) {
-            ddl().dropGroup(session(), groupName);
+        for(TableName rootName : groupRoots) {
+            ddl().dropGroup(session(), getUserTable(rootName).getGroup().getName());
         }
+
+        // Now sanity check
         Set<TableName> uTables = new HashSet<TableName>(ddl().getAIS(session()).getUserTables().keySet());
         for (Iterator<TableName> iter = uTables.iterator(); iter.hasNext();) {
             if (TableName.INFORMATION_SCHEMA.equals(iter.next().getSchemaName())) {
                 iter.remove();
             }
         }
-        Assert.assertEquals("user tables", Collections.<TableName>emptySet(), uTables);
+        Assert.assertEquals("user table count", Collections.<TableName>emptySet(), uTables);
+
+        Set<TableName> views = new HashSet<TableName>(ddl().getAIS(session()).getViews().keySet());
+        Assert.assertEquals("user table count", Collections.<TableName>emptySet(), views);
     }
 
     protected static <T> void assertEqualLists(String message, List<? extends T> expected, List<? extends T> actual) {

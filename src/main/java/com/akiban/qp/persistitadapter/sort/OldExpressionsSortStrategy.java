@@ -28,6 +28,7 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.server.PersistitKeyValueTarget;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
@@ -78,13 +79,13 @@ class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
     }
 
     @Override
-    public void appendToStartKey(ValueSource source, AkType akType) {
-        appendTo(startKeyTarget, source, akType);
+    public void appendToStartKey(ValueSource source, AkType akType, AkCollator collator) {
+        appendTo(startKeyTarget, source, akType, collator);
     }
 
     @Override
-    public void appendToEndKey(ValueSource source, AkType akType) {
-        appendTo(endKeyTarget, source, akType);
+    public void appendToEndKey(ValueSource source, AkType akType, AkCollator collator) {
+        appendTo(endKeyTarget, source, akType, collator);
     }
 
     @Override
@@ -92,8 +93,8 @@ class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyValueTarget target, ValueSource source, AkType type) {
-        target.expectingType(type);
+    private void appendTo(PersistitKeyValueTarget target, ValueSource source, AkType type, AkCollator collator) {
+        target.expectingType(type, collator);
         Converters.convert(source, target);
     }
 

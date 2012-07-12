@@ -26,12 +26,15 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.ValueSource;
 import com.persistit.exception.PersistitException;
 
@@ -213,6 +216,13 @@ class SortCursorMixedOrder extends SortCursor
         } else {
             keyColumns = keyRange.indexRowType().index().indexRowComposition().getLength();
             boundColumns = keyRange.boundColumns();
+
+            collators = new AkCollator[boundColumns];
+            List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
+            for (int f = 0; f < boundColumns; f++) {
+                Column column = indexColumns.get(f).getColumn();
+                this.collators[f] = column.getCollator();
+            }
         }
     }
 
@@ -275,6 +285,9 @@ class SortCursorMixedOrder extends SortCursor
         return (MixedOrderScanStateSingleSegment) scanStates.get(field);
     }
 
+    public AkCollator[] collators() {
+        return collators;
+    }
     // Object state
 
     protected final IndexKeyRange keyRange;
@@ -284,4 +297,5 @@ class SortCursorMixedOrder extends SortCursor
     private final int boundColumns;
     private boolean more;
     private boolean justOpened;
+    private AkCollator[] collators;
 }

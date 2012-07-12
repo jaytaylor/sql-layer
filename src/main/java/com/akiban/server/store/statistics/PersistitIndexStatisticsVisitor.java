@@ -29,6 +29,7 @@ package com.akiban.server.store.statistics;
 import static com.akiban.server.store.statistics.IndexStatistics.*;
 
 import com.akiban.ais.model.Index;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.store.IndexVisitor;
 
 import com.akiban.server.store.statistics.histograms.Bucket;
@@ -55,16 +56,18 @@ public class PersistitIndexStatisticsVisitor extends IndexVisitor
     private int columnCount;
     private long timestamp;
     private int rowCount;
+    private final KeyCreator keyCreator;
     private Sampler<Key> keySampler;
     private Flywheel<Key> keysFlywheel = new Flywheel<Key>() {
         @Override
         protected Key createNew() {
-            return new Key((Persistit)null);
+            return keyCreator.createKey();
         }
     };
 
-    public PersistitIndexStatisticsVisitor(Index index, long indexRowCount) {
+    public PersistitIndexStatisticsVisitor(Index index, long indexRowCount, KeyCreator keyCreator) {
         this.index = index;
+        this.keyCreator = keyCreator;
         
         columnCount = index.getKeyColumns().size();
         timestamp = System.currentTimeMillis();
