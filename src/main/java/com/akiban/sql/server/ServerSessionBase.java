@@ -35,6 +35,7 @@ import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
@@ -222,8 +223,8 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
-    public CostEstimator costEstimator(ServerOperatorCompiler compiler) {
-        return new ServerCostEstimator(this, reqs, compiler);
+    public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator) {
+        return new ServerCostEstimator(this, reqs, compiler, keyCreator);
     }
 
     /** Prepare to execute given statement.

@@ -26,34 +26,39 @@
 
 package com.akiban.server;
 
+import java.math.BigDecimal;
+import java.math.BigInteger;
+
+import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
 import com.akiban.qp.operator.Cursor;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSourceHelper;
 import com.akiban.server.types.ValueTarget;
 import com.akiban.util.ByteSource;
 import com.persistit.Key;
 
-import java.math.BigDecimal;
-import java.math.BigInteger;
-
 public final class PersistitKeyValueTarget implements ValueTarget {
 
+    private AkCollator collator = null;
+    
     // PersistitKeyValueTarget interface
 
     public void attach(Key key) {
         this.key = key;
     }
-
-    public PersistitKeyValueTarget expectingType(AkType type) {
+    
+    public PersistitKeyValueTarget expectingType(AkType type, AkCollator collator) {
         if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
             throw new UnsupportedOperationException();
         this.type = type;
+        this.collator = collator;
         return this;
     }
 
     public PersistitKeyValueTarget expectingType(Column column) {
-        return expectingType(column.getType().akType());
+        return expectingType(column.getType().akType(), column.getCollator());
     }
     
     // ValueTarget interface
@@ -117,14 +122,22 @@ public final class PersistitKeyValueTarget implements ValueTarget {
     @Override
     public void putString(String value) {
         checkState(AkType.VARCHAR);
-        key.append(value);
+        // TODO: Can remove this when there is always a collator for a string.
+        if (collator == null)
+            key.append(value);
+        else
+            collator.append(key, value);
         invalidate();
     }
 
     @Override
     public void putText(String value) {
         checkState(AkType.TEXT);
-        key.append(value);
+        // TODO: Can remove this when there is always a collator for a string.
+        if (collator == null)
+            key.append(value);
+        else
+            collator.append(key, value);
         invalidate();
     }
 

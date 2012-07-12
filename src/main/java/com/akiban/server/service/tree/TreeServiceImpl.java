@@ -42,8 +42,10 @@ import java.util.regex.Pattern;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.server.TableStatusCache;
 import com.akiban.server.PersistitAccumulatorTableStatusCache;
+import com.akiban.server.TableStatusCache;
+import com.akiban.server.collation.CString;
+import com.akiban.server.collation.CStringKeyCoder;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistitAdapterException;
@@ -583,6 +585,11 @@ public class TreeServiceImpl
     @Override
     public String getDataPath() {
         return getDb().getProperty("datapath");
+    }
+    
+    @Override
+    public Key createKey() {
+        return new Key(getDb());
     }
 
     void buildSchemaMap() {

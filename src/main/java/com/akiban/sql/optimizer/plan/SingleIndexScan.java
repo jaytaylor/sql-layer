@@ -234,8 +234,13 @@ public final class SingleIndexScan extends IndexScan {
     }
 
     @Override
-    protected boolean isAscendingAt(int i) {
+    public boolean isAscendingAt(int i) {
         return index.getAllColumns().get(i).isAscending();
+    }
+
+    @Override
+    public boolean isRecoverableAt(int i) {
+        return index.getAllColumns().get(i).isRecoverable();
     }
 
     @Override
