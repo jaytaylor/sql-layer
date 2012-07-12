@@ -73,7 +73,7 @@ public class GroupIndexCreator {
      * Helper function for converting a simple group index specification into an
      * actual GroupIndex. This can then be passed to DDLFunctions.createGroupIndex().
      *
-     * @param srcAIS AIS that contains referenced group and tables.
+     * @param ais AIS that contains referenced group and tables.
      * @param groupName Name of the group to add index too
      * @param indexName Name of the new index to create
      * @param unique whether the group index is UNIQUE
@@ -81,9 +81,11 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    private static GroupIndex createIndex(AkibanInformationSchema srcAIS, String groupName, String indexName,
+    private static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
                                          boolean unique, String tableColumnList, Index.JoinType joinType) {
-        final AkibanInformationSchema ais = AISCloner.clone(srcAIS);
+        if(ais.isFrozen()) {
+            ais = AISCloner.clone(ais);
+        }
         final Group group = ais.getGroup(groupName);
         if(group == null) {
             throw new NoSuchGroupException (groupName);
