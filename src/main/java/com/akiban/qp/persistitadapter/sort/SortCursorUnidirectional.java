@@ -38,6 +38,7 @@ import com.akiban.qp.row.Row;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 import com.persistit.exception.PersistitException;
 
@@ -179,8 +180,8 @@ class SortCursorUnidirectional extends SortCursor
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                strategy.appendToStartKey(startValues[f], types[f], collators[f]);
-                strategy.appendToEndKey(startValues[f], types[f], collators[f]);
+                strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
+                strategy.appendToEndKey(startValues[f], types[f], tInstances[f], collators[f]);
                 f++;
             }
             // For the last column:
@@ -203,13 +204,13 @@ class SortCursorUnidirectional extends SortCursor
             //
             if (direction == FORWARD) {
                 // Start values
-                strategy.appendToStartKey(startValues[f], types[f], collators[f]);
+                strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
                 // End values
                 if (strategy.isNull(endValues[f])) {
                     if (endInclusive) {
                         if (startInclusive && strategy.isNull(startValues[f])) {
                             // Case 10:
-                            strategy.appendToEndKey(endValues[f], types[f], collators[f]);
+                            strategy.appendToEndKey(endValues[f], types[f], tInstances[f], collators[f]);
                         } else {
                             // Cases 2, 6, 14:
                             throw new IllegalArgumentException();
@@ -220,18 +221,18 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToEndKey(endValues[f], types[f], collators[f]);
+                    strategy.appendToEndKey(endValues[f], types[f], tInstances[f], collators[f]);
                 }
             } else {
                 // Same as above, swapping start and end
                 // End values
-                strategy.appendToEndKey(endValues[f], types[f], collators[f]);
+                strategy.appendToEndKey(endValues[f], types[f], tInstances[f], collators[f]);
                 // Start values
                 if (strategy.isNull(startValues[f])) {
                     if (startInclusive) {
                         if (endInclusive && strategy.isNull(endValues[f])) {
                             // Case 10:
-                            strategy.appendToStartKey(startValues[f], types[f], collators[f]);
+                            strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
                         } else {
                             // Cases 2, 6, 14:
                             throw new IllegalArgumentException();
@@ -242,7 +243,7 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToStartKey(startValues[f], types[f], collators[f]);
+                    strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
                 }
             }
         }
@@ -266,24 +267,24 @@ class SortCursorUnidirectional extends SortCursor
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                strategy.appendToStartKey(startValues[f], types[f], collators[f]);
+                strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
                 f++;
             }
             if (direction == FORWARD) {
-                strategy.appendToStartKey(startValues[f], types[f], collators[f]);
+                strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
             } else {
                 if (strategy.isNull(startValues[f])) {
                     if (startInclusive) {
                         // Assume case 10, the only valid choice here. On evaluateBoundaries, cases 2, 6, 14
                         // would have thrown IllegalArgumentException.
-                        strategy.appendToStartKey(startValues[f], types[f], collators[f]);
+                        strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
                     } else {
                         // Cases 0, 4, 8, 12
                         startKey.append(Key.AFTER);
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToStartKey(startValues[f], types[f], collators[f]);
+                    strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
                 }
             }
         }
@@ -335,12 +336,14 @@ class SortCursorUnidirectional extends SortCursor
         }
         this.startKey = adapter.newKey();
         this.types = new AkType[startBoundColumns];
+        this.tInstances = new TInstance[startBoundColumns];
         this.collators = new AkCollator[startBoundColumns];
         List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
         for (int f = 0; f < startBoundColumns; f++) {
             Column column = indexColumns.get(f).getColumn();
             this.types[f] = column.getType().akType();
             this.collators[f] = column.getCollator();
+            this.tInstances[f] = column.tInstance();
         }
     }
 
@@ -406,6 +409,7 @@ class SortCursorUnidirectional extends SortCursor
     protected int startBoundColumns;
     protected int endBoundColumns;
     protected AkType[] types;
+    protected TInstance[] tInstances;
     protected AkCollator[] collators;
     protected IndexBound lo;
     protected IndexBound hi;

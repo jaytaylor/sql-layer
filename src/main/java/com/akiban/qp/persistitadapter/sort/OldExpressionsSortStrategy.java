@@ -35,6 +35,7 @@ import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
+import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
 class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
@@ -79,12 +80,12 @@ class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
     }
 
     @Override
-    public void appendToStartKey(ValueSource source, AkType akType, AkCollator collator) {
+    public void appendToStartKey(ValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
         appendTo(startKeyTarget, source, akType, collator);
     }
 
     @Override
-    public void appendToEndKey(ValueSource source, AkType akType, AkCollator collator) {
+    public void appendToEndKey(ValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
         appendTo(endKeyTarget, source, akType, collator);
     }
 

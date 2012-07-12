@@ -31,6 +31,8 @@ import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
@@ -84,13 +86,13 @@ public final class PValueSortStrategy implements SortStrategy<PValueSource> {
     }
 
     @Override
-    public void appendToStartKey(PValueSource source, AkType akType, AkCollator collator) {
-        appendTo(startKeyTarget, source);
+    public void appendToStartKey(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
+        appendTo(startKeyTarget, source, tInstance);
     }
 
     @Override
-    public void appendToEndKey(PValueSource source, AkType akType, AkCollator collator) {
-        appendTo(endKeyTarget, source);
+    public void appendToEndKey(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
+        appendTo(endKeyTarget, source, tInstance);
     }
 
     @Override
@@ -98,9 +100,10 @@ public final class PValueSortStrategy implements SortStrategy<PValueSource> {
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyPValueTarget target, PValueSource source) {
+    private void appendTo(PersistitKeyPValueTarget target, PValueSource source, TInstance tInstance) {
         target.expectingType(source.getUnderlyingType());
-        PValueTargets.copyFrom(source, target);
+        TClass tClass = tInstance.typeClass();
+        tClass.writeCollating(source, tInstance, target);
     }
 
     protected final PersistitKeyPValueTarget startKeyTarget = new PersistitKeyPValueTarget();

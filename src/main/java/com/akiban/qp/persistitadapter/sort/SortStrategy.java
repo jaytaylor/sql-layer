@@ -29,6 +29,7 @@ package com.akiban.qp.persistitadapter.sort;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
 interface SortStrategy<S> {
@@ -40,8 +41,8 @@ interface SortStrategy<S> {
     void attachToStartKey(Key key);
     void attachToEndKey(Key key);
 
-    void appendToStartKey(S source, AkType akType, AkCollator collator);
-    void appendToEndKey(S source, AkType akType, AkCollator collator);
+    void appendToStartKey(S source, AkType akType, TInstance tInstance, AkCollator collator);
+    void appendToEndKey(S source, AkType akType, TInstance tInstance, AkCollator collator);
 
     boolean isNull(S source);
 }
