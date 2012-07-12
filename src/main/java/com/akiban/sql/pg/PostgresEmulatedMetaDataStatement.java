@@ -452,8 +452,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                         column.getTypeDescription(), TYPNAME_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, 
                         null, CHAR0_PG_TYPE);
+            // This should use BOOL_PG_TYPE, except that does true/false, not t/f.
             writeColumn(messenger, encoder, usePVals, 
-                        column.getNullable(), BOOL_PG_TYPE);
+                        column.getNullable() ? "f" : "t", CHAR1_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, 
                         column.getPosition(), INT2_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, 
