@@ -351,7 +351,7 @@
                         <exclude>redhat/*</exclude>
                         <exclude>macosx/**</exclude>
                         <exclude>windows/**</exclude>
-                        <exclude>LICENSE.txt</exclude>
+                        <exclude>**/LICENSE*.txt</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
                         <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
