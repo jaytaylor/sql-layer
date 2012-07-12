@@ -425,6 +425,25 @@ public class BasicInfoSchemaTablesServiceImpl
                 return null;
             }
 
+            private String buildPath(UserTable table)
+            {
+                // TODO: "path" to what?
+                // This looks wrong.
+
+                String schema = table.getName().getSchemaName();
+                String group = table.getGroup().getName();
+                String tb = table.getName().getTableName();
+              
+                StringBuilder bd = new StringBuilder();
+                if (schema != null)
+                    bd.append(schema).append("/");
+                if (group != null)
+                    bd.append(group).append("/");
+                if (tb != null)
+                    bd.append(tb);
+                return bd.toString();
+            }
+
             @Override
             public Row next() {
                 UserTable table = advance();
@@ -433,6 +452,9 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
                 Join join = table.getParentJoin();
                 return new ValuesRow(rowType,
+                                     table.getGroup().getName(),
+                                     buildPath(table),
+                                     Long.class.cast(table.getDepth()),
                                      table.getName().getSchemaName(),
                                      table.getName().getTableName(),
                                      join.getName(),
@@ -804,6 +826,40 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
+    private class GroupTablesFactory extends BasicFactoryBase
+    {
+        public GroupTablesFactory(TableName sourceTable)
+        {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter)
+        {
+            return new Scan(getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount()
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+        
+        private class Scan extends BaseScan
+        {
+            public Scan(RowType rowType)
+            {
+                super(rowType);
+            }
+
+            @Override
+            public Row next()
+            {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }   
+        }
+    }
+    
     private static class TableConstraintsIteration {
         private final Iterator<UserTable> tableIt;
         private Iterator<? extends Index> indexIt;
@@ -898,6 +954,7 @@ public class BasicInfoSchemaTablesServiceImpl
             return curTable;
         }
     }
+    
 
     //
     // Package, for testing
@@ -965,6 +1022,9 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(GROUPING_CONSTRAINTS)
+            .colString("group_name", IDENT_MAX, false)
+            .colString("path", IDENT_MAX, false)
+            .colLong("depth", false)
             .colString("constraint_schema_name", IDENT_MAX, false)
             .colString("constraint_table_name", IDENT_MAX, false)
             .colString("constraint_name", IDENT_MAX, false)
