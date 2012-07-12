@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.collation.AkCollator;
@@ -39,6 +40,27 @@ import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
 class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
+
+    @Override
+    public AkType[] createAkTypes(int size) {
+        return new AkType[size];
+    }
+
+    @Override
+    public AkCollator[] createAkCollators(int size) {
+        return new AkCollator[size];
+    }
+
+    @Override
+    public TInstance[] createTInstances(int size) {
+        return null;
+    }
+
+    @Override
+    public void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators, TInstance[] tInstances) {
+        akTypes[f] = column.getType().akType();
+        collators[f] = column.getCollator();
+    }
 
     @Override
     public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f) {
@@ -80,13 +102,13 @@ class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
     }
 
     @Override
-    public void appendToStartKey(ValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
-        appendTo(startKeyTarget, source, akType, collator);
+    public void appendToStartKey(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
+        appendTo(startKeyTarget, source, akTypes[f], collators[f]);
     }
 
     @Override
-    public void appendToEndKey(ValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
-        appendTo(endKeyTarget, source, akType, collator);
+    public void appendToEndKey(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
+        appendTo(endKeyTarget, source, akTypes[f], collators[f]);
     }
 
     @Override

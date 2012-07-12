@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.collation.AkCollator;
@@ -34,7 +35,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
@@ -42,6 +42,28 @@ import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
 public final class PValueSortStrategy implements SortStrategy<PValueSource> {
+
+    @Override
+    public AkType[] createAkTypes(int size) {
+        return null;
+    }
+
+    @Override
+    public AkCollator[] createAkCollators(int size) {
+        return null;
+    }
+
+    @Override
+    public TInstance[] createTInstances(int size) {
+        return new TInstance[size];
+    }
+
+    @Override
+    public void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators,
+                                  TInstance[] tInstances) {
+        tInstances[f] = column.tInstance();
+    }
+
     @Override
     public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f) {
         PValueSource loValueSource = loExpressions.pvalue(f);
@@ -86,13 +108,13 @@ public final class PValueSortStrategy implements SortStrategy<PValueSource> {
     }
 
     @Override
-    public void appendToStartKey(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
-        appendTo(startKeyTarget, source, tInstance);
+    public void appendToStartKey(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
+        appendTo(startKeyTarget, source, tInstances[f]);
     }
 
     @Override
-    public void appendToEndKey(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
-        appendTo(endKeyTarget, source, tInstance);
+    public void appendToEndKey(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
+        appendTo(endKeyTarget, source, tInstances[f]);
     }
 
     @Override

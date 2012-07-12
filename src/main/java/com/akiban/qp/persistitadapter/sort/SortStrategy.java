@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
@@ -33,6 +34,11 @@ import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
 interface SortStrategy<S> {
+    AkType[] createAkTypes(int size);
+    AkCollator[] createAkCollators(int size);
+    TInstance[] createTInstances(int size);
+    void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators, TInstance[] tInstances);
+
     void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f);
 
     S[] createSourceArray(int size);
@@ -41,8 +47,8 @@ interface SortStrategy<S> {
     void attachToStartKey(Key key);
     void attachToEndKey(Key key);
 
-    void appendToStartKey(S source, AkType akType, TInstance tInstance, AkCollator collator);
-    void appendToEndKey(S source, AkType akType, TInstance tInstance, AkCollator collator);
+    void appendToStartKey(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
+    void appendToEndKey(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
 
     boolean isNull(S source);
 }

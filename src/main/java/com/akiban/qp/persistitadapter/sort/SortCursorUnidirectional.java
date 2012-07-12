@@ -122,8 +122,8 @@ class SortCursorUnidirectional extends SortCursor
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
         this.endKey = endBoundColumns == 0 ? null : adapter.newKey();
-        initializeCursor(keyRange, ordering);
         this.sortStrategy = usePValues ? new PValueSortStrategy() : new OldExpressionsSortStrategy();
+        initializeCursor(keyRange, ordering);
     }
 
     protected <S> void evaluateBoundaries(QueryContext context, SortStrategy<S> strategy)
@@ -180,8 +180,8 @@ class SortCursorUnidirectional extends SortCursor
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
-                strategy.appendToEndKey(startValues[f], types[f], tInstances[f], collators[f]);
+                strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                strategy.appendToEndKey(startValues[f], f, types, tInstances,collators);
                 f++;
             }
             // For the last column:
@@ -204,13 +204,13 @@ class SortCursorUnidirectional extends SortCursor
             //
             if (direction == FORWARD) {
                 // Start values
-                strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
+                strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
                 // End values
                 if (strategy.isNull(endValues[f])) {
                     if (endInclusive) {
                         if (startInclusive && strategy.isNull(startValues[f])) {
                             // Case 10:
-                            strategy.appendToEndKey(endValues[f], types[f], tInstances[f], collators[f]);
+                            strategy.appendToEndKey(endValues[f], f, types, tInstances,collators);
                         } else {
                             // Cases 2, 6, 14:
                             throw new IllegalArgumentException();
@@ -221,18 +221,18 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToEndKey(endValues[f], types[f], tInstances[f], collators[f]);
+                    strategy.appendToEndKey(endValues[f], f, types, tInstances,collators);
                 }
             } else {
                 // Same as above, swapping start and end
                 // End values
-                strategy.appendToEndKey(endValues[f], types[f], tInstances[f], collators[f]);
+                strategy.appendToEndKey(endValues[f], f, types, tInstances,collators);
                 // Start values
                 if (strategy.isNull(startValues[f])) {
                     if (startInclusive) {
                         if (endInclusive && strategy.isNull(endValues[f])) {
                             // Case 10:
-                            strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
+                            strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
                         } else {
                             // Cases 2, 6, 14:
                             throw new IllegalArgumentException();
@@ -243,7 +243,7 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
+                    strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
                 }
             }
         }
@@ -267,24 +267,24 @@ class SortCursorUnidirectional extends SortCursor
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
+                strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
                 f++;
             }
             if (direction == FORWARD) {
-                strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
+                strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
             } else {
                 if (strategy.isNull(startValues[f])) {
                     if (startInclusive) {
                         // Assume case 10, the only valid choice here. On evaluateBoundaries, cases 2, 6, 14
                         // would have thrown IllegalArgumentException.
-                        strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
+                        strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
                     } else {
                         // Cases 0, 4, 8, 12
                         startKey.append(Key.AFTER);
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToStartKey(startValues[f], types[f], tInstances[f], collators[f]);
+                    strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
                 }
             }
         }
@@ -335,15 +335,13 @@ class SortCursorUnidirectional extends SortCursor
             assert false : ordering;
         }
         this.startKey = adapter.newKey();
-        this.types = new AkType[startBoundColumns];
-        this.tInstances = new TInstance[startBoundColumns];
-        this.collators = new AkCollator[startBoundColumns];
+        this.types = sortStrategy.createAkTypes(startBoundColumns);
+        this.collators = sortStrategy.createAkCollators(startBoundColumns);
+        this.tInstances = sortStrategy.createTInstances(startBoundColumns);
         List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
         for (int f = 0; f < startBoundColumns; f++) {
             Column column = indexColumns.get(f).getColumn();
-            this.types[f] = column.getType().akType();
-            this.collators[f] = column.getCollator();
-            this.tInstances[f] = column.tInstance();
+            sortStrategy.setColumnMetadata(column, f, types, collators, tInstances);
         }
     }
 

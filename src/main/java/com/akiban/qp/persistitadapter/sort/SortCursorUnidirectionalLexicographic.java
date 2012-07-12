@@ -71,7 +71,7 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
                     S source = strategy.get(startExpressions, f);
-                    strategy.appendToStartKey(source,types[f], tInstances[f], collators[f]);
+                    strategy.appendToStartKey(source, f, types, tInstances, collators);
                 }
             }
         }
@@ -88,7 +88,7 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
                     if (strategy.isNull(source) && startExpressions != null && !startExpressions.eval(f).isNull()) {
                         endKey.append(Key.AFTER);
                     } else {
-                        strategy.appendToEndKey(source, types[f], tInstances[f], collators[f]);
+                        strategy.appendToEndKey(source, f, types, tInstances, collators);
                     }
                 } else {
                     endKey.append(Key.AFTER);
