@@ -30,7 +30,6 @@ import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types.conversion.Converters;
 import com.persistit.Key;
 
 // For a lexicographic (mysqlish) index scan
@@ -42,9 +41,10 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
     public static SortCursorUnidirectionalLexicographic create(QueryContext context,
                                                                IterationHelper iterationHelper,
                                                                IndexKeyRange keyRange,
-                                                               API.Ordering ordering)
+                                                               API.Ordering ordering,
+                                                               boolean usePValues)
     {
-        return new SortCursorUnidirectionalLexicographic(context, iterationHelper, keyRange, ordering);
+        return new SortCursorUnidirectionalLexicographic(context, iterationHelper, keyRange, ordering, usePValues);
     }
 
     // For use by this class
@@ -52,9 +52,10 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
     private SortCursorUnidirectionalLexicographic(QueryContext context,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
-                                                  API.Ordering ordering)
+                                                  API.Ordering ordering,
+                                                  boolean usePValues)
     {
-        super(context, iterationHelper, keyRange, ordering);
+        super(context, iterationHelper, keyRange, ordering, usePValues);
     }
 
     @Override

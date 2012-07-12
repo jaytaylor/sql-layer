@@ -100,13 +100,14 @@ public abstract class SortCursor implements Cursor
     public static SortCursor create(QueryContext context,
                                     IndexKeyRange keyRange,
                                     API.Ordering ordering,
-                                    IterationHelper iterationHelper)
+                                    IterationHelper iterationHelper,
+                                    boolean usePValues)
     {
         return
             ordering.allAscending() || ordering.allDescending()
             ? (keyRange != null && keyRange.lexicographic()
-               ? SortCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering)
-               : SortCursorUnidirectional.create(context, iterationHelper, keyRange, ordering))
+               ? SortCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, usePValues)
+               : SortCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, usePValues))
             : SortCursorMixedOrder.create(context, iterationHelper, keyRange, ordering);
     }
 

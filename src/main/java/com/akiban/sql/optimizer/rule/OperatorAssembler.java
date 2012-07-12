@@ -759,7 +759,8 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.indexScan_Default(indexRowType,
                                                         assembleIndexKeyRange(indexScan, null),
                                                         assembleIndexOrdering(indexScan, indexRowType),
-                                                        selector);
+                                                        selector,
+                                                        usePValues);
                 stream.rowType = indexRowType;
             }
             else {
@@ -780,7 +781,8 @@ public class OperatorAssembler extends BaseRule
                     Operator scan = API.indexScan_Default(indexRowType,
                                                           assembleIndexKeyRange(indexScan, null, rangeSegment),
                                                           assembleIndexOrdering(indexScan, indexRowType),
-                                                          selector);
+                                                          selector,
+                                                          usePValues);
                     if (stream.operator == null) {
                         stream.operator = scan;
                         stream.rowType = indexRowType;
@@ -1218,7 +1220,7 @@ public class OperatorAssembler extends BaseRule
                 stream.operator = API.sort_InsertionLimited(stream.operator, stream.rowType,
                                                             ordering, sortOption, maxrows);
             else
-                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption);
+                stream.operator = API.sort_Tree(stream.operator, stream.rowType, ordering, sortOption, usePValues);
         }
 
         protected void assembleSort(RowStream stream, int nkeys, PlanNode input,

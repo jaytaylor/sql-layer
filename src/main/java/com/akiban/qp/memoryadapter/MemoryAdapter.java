@@ -68,7 +68,7 @@ public class MemoryAdapter extends StoreAdapter {
     @Override
     public Cursor newIndexCursor(QueryContext context, Index index,
             IndexKeyRange keyRange, Ordering ordering,
-            IndexScanSelector scanSelector) {
+            IndexScanSelector scanSelector, boolean usePValues) {
         
         Table table = index.rootMostTable();
         if (table.isUserTable()) {
@@ -88,7 +88,7 @@ public class MemoryAdapter extends StoreAdapter {
 
     @Override
     public Cursor sort(QueryContext context, Cursor input, RowType rowType,
-            Ordering ordering, SortOption sortOption, InOutTap loadTap) {
+            Ordering ordering, SortOption sortOption, InOutTap loadTap, boolean usePValues) {
         throw new UnsupportedOperationException();
     }
 

@@ -98,12 +98,13 @@ class SortCursorUnidirectional extends SortCursor
     public static SortCursorUnidirectional create(QueryContext context,
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
-                                                  API.Ordering ordering)
+                                                  API.Ordering ordering,
+                                                  boolean usePValues)
     {
         return
             keyRange == null // occurs if we're doing a Sort_Tree
-            ? new SortCursorUnidirectional(context, iterationHelper, ordering)
-            : new SortCursorUnidirectional(context, iterationHelper, keyRange, ordering);
+            ? new SortCursorUnidirectional(context, iterationHelper, ordering, usePValues)
+            : new SortCursorUnidirectional(context, iterationHelper, keyRange, ordering, usePValues);
     }
 
     // For use by this subclasses
@@ -111,14 +112,15 @@ class SortCursorUnidirectional extends SortCursor
     protected SortCursorUnidirectional(QueryContext context,
                                        IterationHelper iterationHelper,
                                        IndexKeyRange keyRange,
-                                       API.Ordering ordering)
+                                       API.Ordering ordering,
+                                       boolean usePValues)
     {
         super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
         this.endKey = endBoundColumns == 0 ? null : adapter.newKey();
         initializeCursor(keyRange, ordering);
-        this.sortStrategy = new OldExpressionsSortStrategy();
+        this.sortStrategy = usePValues ? new PValueSortStrategy() : new OldExpressionsSortStrategy();
     }
 
     protected <S> void evaluateBoundaries(QueryContext context, SortStrategy<S> strategy)
@@ -357,7 +359,8 @@ class SortCursorUnidirectional extends SortCursor
 
     private SortCursorUnidirectional(QueryContext context,
                                      IterationHelper iterationHelper,
-                                     API.Ordering ordering)
+                                     API.Ordering ordering,
+                                     boolean usePValues)
     {
         super(context, iterationHelper);
         this.keyRange = null;
@@ -377,7 +380,7 @@ class SortCursorUnidirectional extends SortCursor
         this.endKey = null;
         this.startBoundColumns = 0;
         this.endBoundColumns = 0;
-        this.sortStrategy = new OldExpressionsSortStrategy();
+        this.sortStrategy = usePValues ? new PValueSortStrategy() : new OldExpressionsSortStrategy();
     }
 
     // Class state
