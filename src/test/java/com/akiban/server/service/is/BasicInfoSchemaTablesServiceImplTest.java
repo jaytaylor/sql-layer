@@ -360,6 +360,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "test", "bar2", "bar2/bar", "test", "bar", "PRIMARY", LONG },
                 { "zzz", "zzz2", "zzz2/zzz1", "zzz", "zzz1", "PRIMARY", LONG },
         };
+        
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S grouping_constraints", 0, skipped);
