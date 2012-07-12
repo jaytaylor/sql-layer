@@ -41,6 +41,7 @@ else
     license=LICENSE-CE.txt
 fi
 cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
+mv ${license} LICENSE.txt # Merge the top level LICENSE.txt for Windows (see pom.xml#inno-setup)
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
@@ -106,5 +107,8 @@ elif [ ${platform} == "macosx" ]; then
 else
     echo "Invalid Argument: ${platform}"
     echo "${usage}"
+    bzr revert # clean up in failure
     exit 1
 fi
+
+bzr revert # clean up on success
