@@ -33,17 +33,13 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashSet;
-import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public final class ConfigurableClassFinder implements ClassFinder {
 
@@ -85,26 +81,8 @@ public final class ConfigurableClassFinder implements ClassFinder {
         }
     }
 
-    private boolean isFile(String path) {
-        assert path != null : "null path";
-        int len = path.length();
-        return (len > 0) && (path.charAt(len - 1) == File.separatorChar);
-    }
-
-    // GlobularFunctionsClassFinder interface
-
-    public ConfigurableClassFinder() {
-        this("t3s.txt");
-    }
-
     ConfigurableClassFinder(String configFile) {
         this.configFile = configFile;
-    }
-
-    private static Pattern compilePattern(String from) {
-        from = from.replace("*", ".*");
-        from = "(" + from + ")" + Pattern.quote(".class");
-        return Pattern.compile(from);
     }
 
     // object state
