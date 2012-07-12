@@ -30,6 +30,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.collation.InvalidCollationException;
 import com.akiban.server.error.UnsupportedCollationException;
 
 /**
@@ -55,7 +56,7 @@ class CollationSupported implements AISValidation {
             final String columnName, AISValidationOutput output) {
         try {
             AkCollatorFactory.getAkCollator(collation);
-        } catch (Exception e) {
+        } catch (InvalidCollationException e) {
             output.reportFailure(new AISValidationFailure(new UnsupportedCollationException(schemaName, tableName,
                     columnName, collation)));
         }
