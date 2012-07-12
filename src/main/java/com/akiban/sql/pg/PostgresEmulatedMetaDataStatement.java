@@ -57,7 +57,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         ODBC_LO_TYPE_QUERY("select oid, typbasetype from pg_type where typname = 'lo'"),
         // SEQUEL 3.33.0 (http://sequel.rubyforge.org/) sends this when opening a new connection
         SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'"),
-        // PSQL \d[S+]
+        // PSQL \dn
+        PSQL_LIST_SCHEMAS("SELECT n.nspname AS \"Name\",\\s*" +
+                          "pg_catalog.pg_get_userbyid\\(n.nspowner\\) AS \"Owner\"\\s+" +
+                          "FROM pg_catalog.pg_namespace n\\s+" +
+                          "WHERE (?:(?:n.nspname !~ '\\^pg_' AND n.nspname <> 'information_schema')" + 
+                          "|(n.nspname ~ '(.+)'))\\s+" +
+                          "ORDER BY 1;?", true),
+        // PSQL \d, \dt, \dv
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
                          "c.relname as \"Name\",\\s*" +
                          "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' WHEN 'f' THEN 'foreign table' END as \"Type\",\\s+" +
@@ -72,18 +79,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                          "(AND n.nspname ~ '(.+)'\\s+)?" +
                          "(AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
                          "ORDER BY 1,2;?", true),
-        // PSQL \d[S+] NAME
-        PSQL_DESCRIBE_TABLES("SELECT c.oid,\\s*" +
-                             "n.nspname,\\s*" +
-                             "c.relname\\s+" +
-                             "FROM pg_catalog.pg_class c\\s+" +
-                             "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
-                             "WHERE " +
-                             "(c.relname ~ '(.+)'\\s+)?" +
-                             "((?:AND )?n.nspname ~ '(.+)'\\s+)?" +
-                             "(AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
-                             "ORDER BY 2, 3;?", true),
-
+        // PSQL \d NAME
+        PSQL_DESCRIBE_TABLES_1("SELECT c.oid,\\s*" +
+                               "n.nspname,\\s*" +
+                               "c.relname\\s+" +
+                               "FROM pg_catalog.pg_class c\\s+" +
+                               "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
+                               "WHERE " +
+                               "(c.relname ~ '(.+)'\\s+)?" +
+                               "((?:AND )?n.nspname ~ '(.+)'\\s+)?" +
+                               "(AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
+                               "ORDER BY 2, 3;?", true),
         PSQL_DESCRIBE_TABLES_2("SELECT c.relchecks, c.relkind, c.relhasindex, c.relhasrules, c.relhastriggers, c.relhasoids, '', c.reltablespace\\s+" +
                                "FROM pg_catalog.pg_class c\\s+" +
                                "LEFT JOIN pg_catalog.pg_class tc ON \\(c.reltoastrelid = tc.oid\\)\\s+" +
@@ -187,12 +193,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names = new String[] { "oid", "typname" };
             types = new PostgresType[] { OID_PG_TYPE, TYPNAME_PG_TYPE };
             break;
+        case PSQL_LIST_SCHEMAS:
+            ncols = 2;
+            names = new String[] { "Name", "Owner" };
+            types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE };
+            break;
         case PSQL_LIST_TABLES:
             ncols = 4;
             names = new String[] { "Schema", "Name", "Type", "Owner" };
             types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, IDENT_PG_TYPE };
             break;
-        case PSQL_DESCRIBE_TABLES:
+        case PSQL_DESCRIBE_TABLES_1:
             ncols = 3;
             names = new String[] { "oid", "nspname", "relname" };
             types = new PostgresType[] { OID_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE };
@@ -251,11 +262,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case SEQUEL_B_TYPE_QUERY:
             nrows = sequelBTypeQuery(messenger, maxrows, usePVals);
             break;
+        case PSQL_LIST_SCHEMAS:
+            nrows = psqlListSchemasQuery(server, messenger, maxrows, usePVals);
+            break;
         case PSQL_LIST_TABLES:
             nrows = psqlListTablesQuery(server, messenger, maxrows, usePVals);
             break;
-        case PSQL_DESCRIBE_TABLES:
-            nrows = psqlDescribeTablesQuery(server, messenger, maxrows, usePVals);
+        case PSQL_DESCRIBE_TABLES_1:
+            nrows = psqlDescribeTables1Query(server, messenger, maxrows, usePVals);
             break;
         case PSQL_DESCRIBE_TABLES_2:
             nrows = psqlDescribeTables2Query(server, messenger, maxrows, usePVals);
@@ -319,6 +333,39 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
+    private int psqlListSchemasQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        AkibanInformationSchema ais = server.getAIS();
+        List<String> names = new ArrayList<String>(ais.getSchemas().keySet());
+        Pattern pattern = null;
+        if (groups.get(1) != null)
+            pattern = Pattern.compile(groups.get(2));
+        Iterator<String> iter = names.iterator();
+        while (iter.hasNext()) {
+            String name = iter.next();
+            if ((pattern == null) ?
+                name.equals(TableName.INFORMATION_SCHEMA) :
+                !pattern.matcher(name).matches())
+                iter.remove();
+        }
+        Collections.sort(names);
+    	for (String name : names) {
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(2); // 2 columns for this query
+            writeColumn(messenger, encoder, usePVals, 
+                        name, IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        null, IDENT_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
+        return nrows;
+    }
+
     private int psqlListTablesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
@@ -368,7 +415,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         return nrows;
     }
 
-    private int psqlDescribeTablesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+    private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         List<TableName> names = new ArrayList<TableName>();
