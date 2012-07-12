@@ -26,19 +26,15 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.IllegalNameException;
-import com.akiban.server.types3.TAttributeValues;
-import com.akiban.server.types3.TAttributesDeclaration;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.*;
+import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.AkibanAppender;
 
 public final class MBinary extends SimpleDtdTClass {
 
@@ -107,9 +103,9 @@ public final class MBinary extends SimpleDtdTClass {
     }
     
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, Attrs.class, 1, 1, -1, PUnderlying.BYTES, typeId);
+        super(MBundle.INSTANCE.id(), name, Attrs.class, NumericFormatter.FORMAT.BYTES, 1, 1, -1, PUnderlying.BYTES, typeId);
         this.defaultLength = defaultLength;
     }
-    
+        
     private final int defaultLength;
 }

@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.TString;
@@ -34,6 +35,7 @@ import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.AkibanAppender;
 
 public class MString extends TString
 {

@@ -28,15 +28,13 @@ package com.akiban.server.types3.common.types;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.StringTruncationException;
-import com.akiban.server.types3.TBundle;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.AkibanAppender;
 
 public abstract class TString extends TClass
 {
@@ -50,12 +48,22 @@ public abstract class TString extends TClass
         super(bundle.id(),
                 name,
                 StringAttribute.class,
+                FORMAT.STRING,
                 1,
                 1,
                 serialisationSize,
                 PUnderlying.STRING);
         this.fixedLength = fixedLength;
         this.typeId = typeId;
+    }
+    
+    private static enum FORMAT implements TClassFormatter {
+        STRING {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(source.getObject());
+            }
+        }
     }
 
     @Override
@@ -131,6 +139,11 @@ public abstract class TString extends TClass
         int charsetId = instance.attribute(StringAttribute.CHARSET);
         int collaitonid = instance.attribute(StringAttribute.COLLATION);
         // TODO
+    }
+    
+    @Override
+    public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+        formatter.format(instance, source, out);
     }
     
     private final int fixedLength;
