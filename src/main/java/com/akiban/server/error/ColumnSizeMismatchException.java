@@ -24,32 +24,12 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.server.error;
 
-import com.akiban.server.collation.AkCollator;
+import com.akiban.ais.model.TableName;
 
-public interface PBasicValueTarget {
-    PUnderlying getUnderlyingType();
-
-    void putNull();
-
-    void putBool(boolean value);
-
-    void putInt8(byte value);
-
-    void putInt16(short value);
-
-    void putUInt16(char value);
-
-    void putInt32(int value);
-
-    void putInt64(long value);
-
-    void putFloat(float value);
-
-    void putDouble(double value);
-
-    void putBytes(byte[] value);
-
-    void putString(String value, AkCollator collator);
+public final class ColumnSizeMismatchException extends InvalidOperationException {
+    public ColumnSizeMismatchException(TableName table, String columnName, String sizeType, Number expected, Number actual) {
+        super(ErrorCode.COLUMN_SIZE_MISMATCH, table.getSchemaName(), table.getTableName(), columnName, sizeType, expected, actual);
+    }
 }

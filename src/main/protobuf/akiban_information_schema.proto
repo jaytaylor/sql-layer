@@ -4,10 +4,8 @@ package akiban_schema.protobuf;
 option java_package = "com.akiban.ais.protobuf";
 option java_outer_classname = "AISProtobuf";
 
-// The AIS Types are statically generated in akiban server in 
-// com.akiban.ais.model.Types. The AIS message needs to include the types
-// to send them to the Akiban Adapter, where they are used to create and 
-// parse Rows. 
+// This is the old, static AIS Types. Will be deprecated soon but
+// cannot delete the message until those volumes are unsupported.
 message Type {
    optional string typeName     = 1;  // name of the type
    optional int32  parameters   = 2;  // number of parameters used in the column
@@ -62,8 +60,8 @@ message IndexColumn {
     optional string    columnName  = 1;  // links to Column.columnName 
     optional bool      isAscending = 2;  // sort order of the column
     optional int32     position    = 3;  // order of the column in the index
-    optional TableName tableName   = 4;  // can be set to override owner name,
-                                         // GroupIndex has columns from multiple
+    optional TableName tableName   = 4;  // can be set to override owner name (group index has columns from multiple)
+    optional int32     indexedLength = 5; // number of bytes from column used in index (null if entire column is used)
 }
 
 message Index {
@@ -102,7 +100,11 @@ message Column {
                                             // null if column is not an identity column
     optional TableName sequence   = 11;  // Sequence used for identity generation. 
                                          // links to Schema.schemaName & Sequence.sequenceName
-                                         // null if not an identity column                                              
+                                         // null if not an identity column
+    optional int64  maxStorageSize = 12; // maximum number of bytes needed to store this column
+    optional int32  prefixSize     = 13; // number of bytes to describe maxStorageSize
+    optional string typeBundleUUID = 14; // bundle UUID of type. null if old style type
+    optional int32  typeVersion    = 15; // serialization version of type. null if old style type
 }
 
 // UserTable.  
