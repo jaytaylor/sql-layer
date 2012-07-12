@@ -28,9 +28,12 @@ package com.akiban.server.types3.common;
 
 import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
 import java.math.BigDecimal;
+import java.nio.charset.Charset;
 
 public class NumericFormatter {
 
@@ -68,7 +71,11 @@ public class NumericFormatter {
         BYTES {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-                out.append(source.getBytes().toString()); //TODO, make sure this is correct
+                int charsetId = instance.attribute(StringAttribute.CHARSET);
+                String charsetName = (StringFactory.Charset.values())[charsetId].name();
+                
+                Charset charset = Charset.forName(charsetName);
+                out.append(new String(source.getBytes(), charset));
             }
         }, 
         BIGDECIMAL{

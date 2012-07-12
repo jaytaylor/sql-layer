@@ -141,11 +141,6 @@ public abstract class TString extends TClass
         // TODO
     }
     
-    @Override
-    public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-        formatter.format(instance, source, out);
-    }
-    
     private final int fixedLength;
     private final TypeId typeId;
 }
