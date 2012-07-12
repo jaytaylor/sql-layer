@@ -62,7 +62,7 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
         List<String> groups = new ArrayList<String>();
         for (Query query : Query.values()) {
             if (query.matches(sql, groups)) {
-                logger.debug("Emulated: {}", query);
+                logger.debug("Emulated: {}{}", query, groups.subList(1, groups.size()));
                 return new PostgresEmulatedMetaDataStatement(query, groups);
             }
         }

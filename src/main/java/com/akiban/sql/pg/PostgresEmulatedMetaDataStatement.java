@@ -36,6 +36,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -153,9 +154,6 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     protected PostgresEmulatedMetaDataStatement(Query query, List<String> groups) {
         this.query = query;
         this.groups = groups;
-        for (int i = 0; i < groups.size(); i++) {
-            System.out.println("[" + i + "]: " + groups.get(i));
-        }
     }
 
     static final PostgresType BOOL_PG_TYPE = 
@@ -511,7 +509,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relind
                     "r", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasindex
-                    (table.isTable() && !((UserTable)table).getIndexesIncludingInternal().isEmpty()) ? "t" : "f", CHAR1_PG_TYPE);
+                    hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhastriggers
@@ -571,6 +569,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         UserTable table = (UserTable)columnar;
         Map<String,Index> indexes = new TreeMap<String,Index>();
         for (Index index : table.getIndexesIncludingInternal()) {
+            if (isAkibanPKIndex(index)) continue;
             indexes.put(index.getIndexName().getName(), index);
         }
         for (Index index : table.getGroup().getIndexes()) {
@@ -592,7 +591,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             writeColumn(messenger, encoder, usePVals, // indisvalid
                         "t", CHAR1_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // pg_get_indexdef
-                        "CREATE INDEX foo (a, b) BARF", INDEXDEF_PG_TYPE);
+                        formatIndexdef(index, table), INDEXDEF_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // constraintdef
                         null, CHAR0_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // contype
@@ -610,6 +609,51 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             }
         }
         return nrows;
+    }
+
+    private boolean hasIndexes(Columnar table) {
+        if (!table.isTable())
+            return false;
+        Collection<? extends Index> indexes = ((UserTable)table).getIndexes();
+        if (indexes.isEmpty())
+            return false;
+        if (indexes.size() > 1)
+            return true;
+        if (isAkibanPKIndex(indexes.iterator().next()))
+            return false;
+        return true;
+    }
+
+    private boolean isAkibanPKIndex(Index index) {
+        List<IndexColumn> indexColumns = index.getKeyColumns();
+        return ((indexColumns.size() == 1) && 
+                indexColumns.get(0).getColumn().isAkibanPKColumn());
+    }
+
+    private String formatIndexdef(Index index, UserTable table) {
+        StringBuilder str = new StringBuilder();
+        str.append(" USING btree ");
+        str.append("(");
+        boolean first = true;
+        for (IndexColumn icolumn : index.getKeyColumns()) {
+            Column column = icolumn.getColumn();
+            if (first) {
+                first = false;
+            }
+            else {
+                str.append(", ");
+            }
+            if (column.getTable() != table) {
+                str.append(column.getTable().getName().getTableName())
+                   .append(".");
+            }
+            str.append(column.getName());
+        }
+        str.append(")");
+        if (index.isGroupIndex()) {
+            str.append(" USING " + index.getJoinType() + " JOIN");
+        }
+        return str.toString();
     }
 
 }
