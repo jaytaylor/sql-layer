@@ -77,13 +77,13 @@ public class IndexColumn
     public static IndexColumn create(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength) {
         index.checkMutability();
         AISInvariants.checkNullField(column, "IndexColumn", "column", "Column");
-        AISInvariants.checkDuplicateColumnsInIndex(index, column.getName());
+        AISInvariants.checkDuplicateColumnsInIndex(index, column.getColumnar().getName(), column.getName());
         IndexColumn indexColumn = new IndexColumn(index, column, position, ascending, indexedLength);
         index.addColumn(indexColumn);
         return indexColumn;
     }
     
-    private IndexColumn(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength)
+    IndexColumn(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength)
     {
         this.index = index;
         this.column = column;

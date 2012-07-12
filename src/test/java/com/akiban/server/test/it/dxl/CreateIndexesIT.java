@@ -112,7 +112,7 @@ public final class CreateIndexesIT extends ITBase {
             Column refCol = Column.create(newTable, col.getName(), col.getPosition(), col.getType());
             refCol.setTypeParameter1(col.getTypeParameter1());
             refCol.setTypeParameter2(col.getTypeParameter2());
-            index.addColumn(IndexColumn.create(index, refCol, pos++, true, null));
+            IndexColumn.create(index, refCol, pos++, true, null);
         }
         return index;
     }
@@ -197,7 +197,7 @@ public final class CreateIndexesIT extends ITBase {
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", -1, false, "KEY");
         Column refCol = Column.create(table, "foo", 0, Types.INT);
-        index.addColumn(IndexColumn.create(index, refCol, 0, true, 0));
+        IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
     }
   
@@ -208,7 +208,7 @@ public final class CreateIndexesIT extends ITBase {
         Table table = ais.getTable("test", "t");
         Index index = TableIndex.create(ais, table, "id", -1, false, "KEY");
         Column refCol = Column.create(table, "id", 0, Types.BLOB);
-        index.addColumn(IndexColumn.create(index, refCol, 0, true, 0));
+        IndexColumn.create(index, refCol, 0, true, 0);
         ddl().createIndexes(session(), Arrays.asList(index));
     }
     

@@ -256,14 +256,12 @@ public final class DDLInvalidatesScansIT extends ITBase {
                 false,
                 "KEY"
         );
-        addIndex.addColumn(
-                IndexColumn.create(
-                        addIndex,
-                        customers.getColumn("has_played_for_bruins"),
-                        0,
-                        true,
-                        null
-                )
+        IndexColumn.create(
+                addIndex,
+                customers.getColumn("has_played_for_bruins"),
+                0,
+                true,
+                null
         );
         return addIndex;
     }

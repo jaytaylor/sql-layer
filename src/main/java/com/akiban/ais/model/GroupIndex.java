@@ -234,7 +234,7 @@ public class GroupIndex extends Index
                 if (!indexColumns.contains(undeclaredHKeyColumn)) {
                     toIndexRowBuilder.rowCompEntry(columnPosition(flattenedRowOffsets, undeclaredHKeyColumn), -1);
                     indexColumns.add(undeclaredHKeyColumn);
-                    allColumns.add(IndexColumn.create(this, undeclaredHKeyColumn, indexColumnPosition++, true, 0));
+                    allColumns.add(new IndexColumn(this, undeclaredHKeyColumn, indexColumnPosition++, true, 0));
                 }
             }
         }

@@ -93,7 +93,7 @@ public class TableIndex extends Index
                         toIndexRowBuilder.rowCompEntry(-1, hKeyColumn.positionInHKey());
                     }
                     indexColumns.add(column);
-                    hKeyColumns.add(IndexColumn.create(this, column, indexColumnPosition, true, 0));
+                    hKeyColumns.add(new IndexColumn(this, column, indexColumnPosition, true, 0));
                     indexColumnPosition++;
                 }
                 toHKeyBuilder.toHKeyEntry(-1, indexColumns.indexOf(column));

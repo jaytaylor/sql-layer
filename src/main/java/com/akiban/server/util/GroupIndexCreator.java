@@ -111,7 +111,7 @@ public class GroupIndexCreator {
                 if(column == null) {
                     throw new NoSuchColumnException (columnName);
                 }
-                tmpIndex.addColumn(IndexColumn.create(tmpIndex, column, pos++, true, null));
+                IndexColumn.create(tmpIndex, column, pos++, true, null);
             }
             complete = true;
         }
