@@ -30,6 +30,8 @@ import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
@@ -67,8 +69,9 @@ public class AlterTableDDL {
 
         if (alterTable.isUpdateStatistics()) {
             Collection<String> indexes = null;
-            if (!alterTable.isUpdateStatisticsAll())
+            if(!alterTable.isUpdateStatisticsAll()) {
                 indexes = Collections.singletonList(alterTable.getIndexNameForUpdateStatistics());
+            }
             ddlFunctions.updateTableStatistics(session, tableName, indexes);
             return;
         }
@@ -82,12 +85,21 @@ public class AlterTableDDL {
                 throw new UnsupportedSQLException("Cannot add non-leaf table to a group", null);
             }
 
+            com.akiban.sql.parser.TableName refTableName = fkNode.getRefTableName();
+            TableName refName = new TableName(refTableName.getSchemaName() != null ? refTableName.getSchemaName() : defaultSchemaName,
+                                              refTableName.getTableName());
+
+            final UserTable refTable = ddlFunctions.getAIS(session).getUserTable(refName);
+            if(refTable == null) {
+                throw new NoSuchTableException(refName);
+            }
+
             AkibanInformationSchema aisCopy = AISCloner.clone(
                     ddlFunctions.getAIS(session),
                     new ProtobufWriter.TableAllIndexSelector() {
                         @Override
                         public boolean isSelected(Columnar columnar) {
-                            return columnar == table;
+                            return (columnar == table) || (columnar == refTable);
                         }
                     }
             );
@@ -95,11 +107,25 @@ public class AlterTableDDL {
             TableName tempName1 = new TableName(schemaName, TEMP_TABLE_NAME_1);
             TableName tempName2 = new TableName(schemaName, TEMP_TABLE_NAME_2);
 
-            UserTable newTable = aisCopy.getUserTable(tableName);
-            AISTableNameChanger changer = new AISTableNameChanger(newTable, tableName.getSchemaName(), TEMP_TABLE_NAME_1);
+            UserTable newRefTable = aisCopy.getUserTable(refName);
+            UserTable newSourceTable = aisCopy.getUserTable(tableName);
+            AISTableNameChanger changer = new AISTableNameChanger(newSourceTable, tableName.getSchemaName(), TEMP_TABLE_NAME_1);
             changer.doChange();
 
-            ddlFunctions.createTable(session, newTable);
+            Join j = Join.create(aisCopy, "temp_name", newRefTable, newSourceTable);
+            j.setGroup(newRefTable.getGroup());
+            newSourceTable.setGroup(j.getGroup());
+
+            String[] sourceColumns = fkNode.getColumnList().getColumnNames();
+            String[] refColumns = fkNode.getRefResultColumnList().getColumnNames();
+
+            for(int i = 0; (i < refColumns.length) && (i < sourceColumns.length); ++i) {
+                JoinColumn.create(j, newRefTable.getColumn(refColumns[i]), newSourceTable.getColumn(sourceColumns[i]));
+                ++i;
+            }
+
+            newSourceTable.getParentJoin();
+            ddlFunctions.createTable(session, newSourceTable);
 
             // TODO: Copy data
 

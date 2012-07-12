@@ -101,6 +101,10 @@ public class AlterTableDDLTest {
         assertEquals("Rename order", list(rename1, rename2).toString(), ddlFunctions.renamedTables.toString());
 
         assertEquals("Drop order", list(TEMP_NAME_2), ddlFunctions.droppedTables);
+
+        assertEquals("Groups",
+                     ddlFunctions.ais.getUserTable("test","c").getGroup().getName(),
+                     ddlFunctions.ais.getUserTable("test","o").getGroup().getName());
     }
 
     private void parseAndRun(String sqlText) throws StandardException {
@@ -157,6 +161,8 @@ public class AlterTableDDLTest {
             renamedTables.add(new TableNamePair(currentName, newName));
             AISTableNameChanger changer = new AISTableNameChanger(currentTable, newName.getSchemaName(), newName.getTableName());
             changer.doChange();
+            ais.getUserTables().remove(currentName);
+            ais.getUserTables().put(newName, currentTable);
         }
 
         @Override
