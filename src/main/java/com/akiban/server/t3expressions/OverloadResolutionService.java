@@ -26,10 +26,6 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TClass;
-
-public interface TClassPossibility {
-    boolean isAny();
-    boolean isNone();
-    TClass get();
+public interface OverloadResolutionService {
+    OverloadResolver getResolver();
 }

@@ -24,14 +24,15 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.t3expressions;
+package com.akiban.server.collation;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.server.service.tree.KeyCreator;
+import com.persistit.Key;
+import com.persistit.Persistit;
 
-public interface OverloadResolutionResult {
-    TValidatedOverload overload();
-    TClass tClass(int index);
-    TInstance pickingType();
+public class TestKeyCreator implements KeyCreator {
+
+    public Key createKey() {
+        return new Key((Persistit) null);
+    }
 }

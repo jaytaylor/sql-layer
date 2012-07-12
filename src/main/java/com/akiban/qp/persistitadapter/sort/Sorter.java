@@ -34,6 +34,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.PersistitValueValueSource;
 import com.akiban.server.PersistitValueValueTarget;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.LiteralExpression;
@@ -90,8 +91,10 @@ public class Sorter
         int nsort = this.ordering.sortColumns();
         this.evaluations = new ArrayList<ExpressionEvaluation>(nsort);
         this.orderingTypes = new AkType[nsort];
+        this.orderingCollators = new AkCollator[nsort];
         for (int i = 0; i < nsort; i++) {
             orderingTypes[i] = this.ordering.type(i);
+            orderingCollators[i] = this.ordering.collator(i);
             ExpressionEvaluation evaluation = this.ordering.expression(i).evaluation();
             evaluation.of(context);
             evaluations.add(evaluation);
@@ -165,7 +168,7 @@ public class Sorter
             ExpressionEvaluation evaluation = evaluations.get(i);
             evaluation.of(row);
             ValueSource keySource = evaluation.eval();
-            keyTarget.expectingType(orderingTypes[i]);
+            keyTarget.expectingType(orderingTypes[i], orderingCollators[i]);
             Converters.convert(keySource, keyTarget);
         }
         if (preserveDuplicates) {
@@ -226,6 +229,7 @@ public class Sorter
     final PersistitValueValueTarget valueTarget;
     final int rowFields;
     final AkType fieldTypes[], orderingTypes[];
+    final AkCollator orderingCollators[];
     Exchange exchange;
     long rowCount = 0;
     private final InOutTap loadTap;

@@ -421,6 +421,64 @@ public class AISMergeTest {
         merge = new AISMerge(t, s.getUserTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
     }
+    
+    @Test
+    public void columnIdentity () {
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.sequence(SCHEMA, "seq-1", 5, 2, 0, 1000, false);
+        b.columnAsIdentity(SCHEMA, TABLE, "c1", "seq-1", true);
+        b.basicSchemaIsComplete();
+
+        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        
+        assertNotNull (t.getTable(TABLENAME).getColumn(0).getIdentityGenerator());
+        Sequence identityGenerator = t.getTable(TABLENAME).getColumn(0).getIdentityGenerator();
+        //assertEquals(t.getTable(TABLENAME).getTreeName(), identityGenerator.getTreeName());
+        assertEquals (5, identityGenerator.getStartsWith());
+        assertEquals (2, identityGenerator.getIncrement());
+        assertEquals (1000, identityGenerator.getMaxValue());
+    }
+
+    /*
+     * Not really behavior that needs preserved, but at least one data set observed
+     * to contain IDs outside of what we assume the valid UserTable range to be.
+     */
+    @Test
+    public void userTableIDUniqueIncludingIS() {
+        AISBuilder tb = new AISBuilder(t);
+        tb.setTableIdOffset(AISMerge.AIS_TABLE_ID_OFFSET);
+
+        tb.userTable(SCHEMA, "bar");
+        tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("bar", SCHEMA, "akiban_bar");
+        tb.addTableToGroup("bar", SCHEMA, "bar");
+
+        tb.userTable(TableName.INFORMATION_SCHEMA, "foo");
+        tb.column(TableName.INFORMATION_SCHEMA, "foo", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("foo", TableName.INFORMATION_SCHEMA, "akiban_foo");
+        tb.addTableToGroup("foo", TableName.INFORMATION_SCHEMA, "foo");
+
+        tb.basicSchemaIsComplete();
+        tb.groupingIsComplete();
+        t.freeze();
+
+        UserTable barTable = tb.akibanInformationSchema().getUserTable(SCHEMA, "bar");
+        assertNotNull("bar table", barTable);
+        UserTable fooTable = t.getUserTable(TableName.INFORMATION_SCHEMA, "foo");
+        assertNotNull("foo table", fooTable);
+
+        b.userTable(SCHEMA, "zap");
+        b.column(SCHEMA, "zap", "id", 0, "INT", null, null, false, false, null, null);
+        
+        AISMerge merge = new AISMerge(t, s.getUserTable(SCHEMA, "zap"));
+        t = merge.merge().getAIS();
+    }
 
     private void checkColumns(List<Column> actual, String ... expected)
     {

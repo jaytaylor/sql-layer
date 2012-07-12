@@ -35,6 +35,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
@@ -337,6 +338,129 @@ public class ProtobufReaderWriterTest {
         builder.userTable(SCHEMA+"2", "t").colLong("id", false).pk("id");
         AkibanInformationSchema inAIS = builder.ais();
         writeAndRead(inAIS);
+    }
+    
+    @Test
+    public void sequenceSimple () {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("Sequence-1");
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "Sequence-1")));
+        Sequence sequence = outAIS.getSequence(new TableName(SCHEMA, "Sequence-1"));
+        assertEquals(1, sequence.getStartsWith());
+        assertEquals(1, sequence.getIncrement());
+        assertEquals(Long.MIN_VALUE, sequence.getMinValue());
+        assertEquals(Long.MAX_VALUE, sequence.getMaxValue());
+        assertTrue(!sequence.isCycle());
+        assertNull (sequence.getTreeName());
+        assertNull (sequence.getAccumIndex());
+    }
+    
+    @Test
+    public void sequenceComplex() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("sequence-2", 42, -2, true);
+        AkibanInformationSchema inAIS = builder.ais();
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(new TableName(SCHEMA, "sequence-2")));
+        Sequence sequence = outAIS.getSequence(new TableName(SCHEMA, "sequence-2"));
+        assertEquals(42, sequence.getStartsWith());
+        assertEquals(-2, sequence.getIncrement());
+        assertTrue(sequence.isCycle());
+        assertNull (sequence.getTreeName());
+        assertNull (sequence.getAccumIndex());
+    }
+    
+    @Test
+    public void sequenceTree() {
+        NewAISBuilder builder = AISBBasedBuilder.create();
+        TableName seqName = new TableName (SCHEMA, "sequence-3");
+        builder.defaultSchema(SCHEMA);
+        builder.sequence("sequence-3", 42, -2, true);
+        AkibanInformationSchema inAIS = builder.ais();
+        Sequence inSeq = inAIS.getSequence(seqName);
+        inSeq.setTreeName("sequence-3.tree");
+        inSeq.setAccumIndex(3);
+        
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        assertNotNull(outAIS.getSequence(seqName));
+        Sequence sequence = outAIS.getSequence(seqName);
+        assertEquals ("sequence-3.tree", sequence.getTreeName());
+        assertEquals (new Integer(3), sequence.getAccumIndex());
+    }
+    
+    @Test 
+    public void columnSequence() {
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        TableName sequenceName = new TableName (SCHEMA, "sequence-4");
+        builder.sequence(sequenceName.getTableName());
+        builder.userTable("customers").
+            colBigInt("customer_id", false).
+            colString("customer_name", 100, false).
+            pk("customer_id");
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+        Column idColumn = inAIS.getTable(new TableName (SCHEMA, "customers")).getColumn(0);
+        idColumn.setDefaultIdentity(true);
+        idColumn.setIdentityGenerator(inAIS.getSequence(sequenceName));
+        
+        AkibanInformationSchema outAIS = writeAndRead(builder.ais());
+        
+        assertNotNull(outAIS.getSequence(sequenceName));
+        Column outColumn = outAIS.getTable(new TableName(SCHEMA, "customers")).getColumn(0);
+        assertNotNull (outColumn.getDefaultIdentity());
+        assertTrue (outColumn.getDefaultIdentity());
+        assertNotNull (outColumn.getIdentityGenerator());
+        assertSame (outColumn.getIdentityGenerator(), outAIS.getSequence(sequenceName));
+    }
+
+    @Test
+    public void indexColumnIndexedLength() {
+        final String TABLE = "t";
+        final Integer INDEXED_LENGTH = 16;
+        AISBuilder builder = new AISBuilder();
+        builder.userTable(SCHEMA, TABLE);
+        builder.column(SCHEMA, TABLE, "v", 0, "VARCHAR", 32L, null, false, false, null, null);
+        builder.index(SCHEMA, TABLE, "v", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn(SCHEMA, TABLE, "v", "v", 0, true, INDEXED_LENGTH);
+        builder.createGroup(TABLE, SCHEMA, "_akiban"+TABLE);
+        builder.addTableToGroup(TABLE, SCHEMA, TABLE);
+        builder.basicSchemaIsComplete();
+        builder.groupingIsComplete();
+
+        AkibanInformationSchema outAIS = writeAndRead(builder.akibanInformationSchema());
+        UserTable table = outAIS.getUserTable(SCHEMA, TABLE);
+        assertNotNull("found table", table);
+        assertNotNull("has v index", table.getIndex("v"));
+        assertEquals("v indexed length", INDEXED_LENGTH, table.getIndex("v").getKeyColumns().get(0).getIndexedLength());
+    }
+
+    @Test
+    public void maxStorageSizeAndPrefixSize() {
+        final String TABLE = "t";
+        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
+        builder.userTable(TABLE).colBigInt("id");
+        AkibanInformationSchema inAIS = builder.unvalidatedAIS();
+
+        // Note: If storage* methods go away, or are non-null by default, that is *good* and these can go away
+        Column inCol = inAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertNull("storedMaxStorageSize null by default", inCol.getMaxStorageSizeWithoutComputing());
+        assertNull("storedPrefixSize null by default", inCol.getPrefixSizeWithoutComputing());
+
+        AkibanInformationSchema outAIS = writeAndRead(inAIS);
+        Column outCol = outAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertNull("storedMaxStorageSize null preserved", outCol.getMaxStorageSizeWithoutComputing());
+        assertNull("storedPrefixSize null preserved", outCol.getPrefixSizeWithoutComputing());
+
+        inCol.getMaxStorageSize();
+        inCol.getPrefixSize();
+
+        outAIS = writeAndRead(inAIS);
+        outCol = outAIS.getTable(SCHEMA, TABLE).getColumn(0);
+        assertEquals("storedMaxStorageSize", Long.valueOf(8L), outCol.getMaxStorageSizeWithoutComputing());
+        assertEquals("storedPrefixSize", Integer.valueOf(0), outCol.getPrefixSizeWithoutComputing());
     }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {

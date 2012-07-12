@@ -26,6 +26,9 @@
 
 package com.akiban.ais.model;
 
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
+
 import java.util.HashMap;
 import java.util.Map;
 
@@ -50,6 +53,12 @@ public class CharsetAndCollation
     public String collation()
     {
         return collation;
+    }
+
+    // TODO It may be worth caching this here or inside cac,
+    // once it is thread-safe.
+    public AkCollator getCollator() {
+        return AkCollatorFactory.getAkCollator(collation);
     }
     
     @Override

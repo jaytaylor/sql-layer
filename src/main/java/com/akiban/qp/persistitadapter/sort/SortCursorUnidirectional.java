@@ -26,6 +26,7 @@
 
 package com.akiban.qp.persistitadapter.sort;
 
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.qp.expression.IndexBound;
@@ -36,6 +37,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
@@ -194,9 +196,9 @@ class SortCursorUnidirectional extends SortCursor
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                startKeyTarget.expectingType(types[f]);
+                startKeyTarget.expectingType(types[f], collators[f]);
                 Converters.convert(startValues[f], startKeyTarget);
-                endKeyTarget.expectingType(types[f]);
+                endKeyTarget.expectingType(types[f], collators[f]);
                 Converters.convert(endValues[f], endKeyTarget);
                 f++;
             }
@@ -220,14 +222,14 @@ class SortCursorUnidirectional extends SortCursor
             //
             if (direction == FORWARD) {
                 // Start values
-                startKeyTarget.expectingType(types[f]);
+                startKeyTarget.expectingType(types[f], collators[f]);
                 Converters.convert(startValues[f], startKeyTarget);
                 // End values
                 if (endValues[f].isNull()) {
                     if (endInclusive) {
                         if (startInclusive && startValues[f].isNull()) {
                             // Case 10:
-                            endKeyTarget.expectingType(types[f]);
+                            endKeyTarget.expectingType(types[f], collators[f]);
                             Converters.convert(endValues[f], endKeyTarget);
                         } else {
                             // Cases 2, 6, 14:
@@ -239,20 +241,20 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    endKeyTarget.expectingType(types[f]);
+                    endKeyTarget.expectingType(types[f], collators[f]);
                     Converters.convert(endValues[f], endKeyTarget);
                 }
             } else {
                 // Same as above, swapping start and end
                 // End values
-                endKeyTarget.expectingType(types[f]);
+                endKeyTarget.expectingType(types[f], collators[f]);
                 Converters.convert(endValues[f], endKeyTarget);
                 // Start values
                 if (startValues[f].isNull()) {
                     if (startInclusive) {
                         if (endInclusive && endValues[f].isNull()) {
                             // Case 10:
-                            startKeyTarget.expectingType(types[f]);
+                            startKeyTarget.expectingType(types[f], collators[f]);
                             Converters.convert(startValues[f], startKeyTarget);
                         } else {
                             // Cases 2, 6, 14:
@@ -264,7 +266,7 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    startKeyTarget.expectingType(types[f]);
+                    startKeyTarget.expectingType(types[f], collators[f]);
                     Converters.convert(startValues[f], startKeyTarget);
                 }
             }
@@ -289,19 +291,19 @@ class SortCursorUnidirectional extends SortCursor
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                startKeyTarget.expectingType(types[f]);
+                startKeyTarget.expectingType(types[f], collators[f]);
                 Converters.convert(startValues[f], startKeyTarget);
                 f++;
             }
             if (direction == FORWARD) {
-                startKeyTarget.expectingType(types[f]);
+                startKeyTarget.expectingType(types[f], collators[f]);
                 Converters.convert(startValues[f], startKeyTarget);
             } else {
                 if (startValues[f].isNull()) {
                     if (startInclusive) {
                         // Assume case 10, the only valid choice here. On evaluateBoundaries, cases 2, 6, 14
                         // would have thrown IllegalArgumentException.
-                        startKeyTarget.expectingType(types[f]);
+                        startKeyTarget.expectingType(types[f], collators[f]);
                         Converters.convert(startValues[f], startKeyTarget);
                     } else {
                         // Cases 0, 4, 8, 12
@@ -309,7 +311,7 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    startKeyTarget.expectingType(types[f]);
+                    startKeyTarget.expectingType(types[f], collators[f]);
                     Converters.convert(startValues[f], startKeyTarget);
                 }
             }
@@ -362,9 +364,12 @@ class SortCursorUnidirectional extends SortCursor
         }
         this.startKey = adapter.newKey();
         this.types = new AkType[startBoundColumns];
+        this.collators = new AkCollator[startBoundColumns];
         List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
         for (int f = 0; f < startBoundColumns; f++) {
-            this.types[f] = indexColumns.get(f).getColumn().getType().akType();
+            Column column = indexColumns.get(f).getColumn();
+            this.types[f] = column.getType().akType();
+            this.collators[f] = column.getCollator();
         }
     }
 
@@ -428,6 +433,7 @@ class SortCursorUnidirectional extends SortCursor
     protected int startBoundColumns;
     protected int endBoundColumns;
     protected AkType[] types;
+    protected AkCollator[] collators;
     protected IndexBound lo;
     protected IndexBound hi;
     protected IndexBound start;

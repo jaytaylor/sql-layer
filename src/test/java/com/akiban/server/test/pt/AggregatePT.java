@@ -363,7 +363,7 @@ public class AggregatePT extends ApiTestBase {
     static final AkType[] TYPES = { 
         AkType.LONG, AkType.LONG, AkType.LONG, AkType.LONG
     };
-
+    
     static final TInstance[] TINSTANCES = {
         MNumeric.INT.instance(),MNumeric.INT.instance() ,MNumeric.INT.instance() ,MNumeric.INT.instance()
     };

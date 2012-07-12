@@ -114,6 +114,19 @@ public class AISBBasedBuilder
         }
 
         @Override
+        public NewAISBuilder sequence (String name) {
+            return sequence (name, 1, 1, false);
+        }
+        
+        @Override
+        public NewAISBuilder sequence (String name, long start, long increment, boolean isCycle) {
+            checkUsable();
+            AISInvariants.checkDuplicateSequence(aisb.akibanInformationSchema(), defaultSchema, name);
+            aisb.sequence(defaultSchema, name, start, increment, Long.MIN_VALUE, Long.MAX_VALUE, isCycle);
+            return this;
+        }
+
+        @Override
         public NewUserTableBuilder userTable(TableName tableName) {
             return userTable(tableName.getSchemaName(), tableName.getTableName());
         }

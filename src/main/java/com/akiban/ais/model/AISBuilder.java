@@ -83,6 +83,13 @@ public class
         this.indexIdGenerator = offset;
     }
 
+    public void sequence (String schemaName, String sequenceName,
+            long start, long increment,
+            long minValue, long maxValue, boolean cycle) {
+        LOG.info("sequence: " + schemaName + "." + sequenceName);
+        Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
+    }
+    
     public void userTable(String schemaName, String tableName) {
         LOG.info("userTable: " + schemaName + "." + tableName);
         UserTable.create(ais, schemaName, tableName, tableIdGenerator++);
@@ -124,6 +131,15 @@ public class
         column.setCharset(charset);
         column.setCollation(collation);
         column.finishCreating();
+    }
+
+    public void columnAsIdentity (String schemaName, String tableName, String columnName,
+            String sequenceName, Boolean defaultIdentity) {
+        LOG.info("column as identity: " + schemaName + "." + tableName + "." + columnName + ": " + sequenceName);
+        Column column = ais.getTable(schemaName, tableName).getColumn(columnName);
+        column.setDefaultIdentity(defaultIdentity);
+        Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
+        column.setIdentityGenerator(identityGenerator);
     }
 
     public void index(String schemaName, String tableName, String indexName,
@@ -331,6 +347,8 @@ public class
         checkGroupAddition(group, table.getGroup(),
                 concat(schemaName, tableName));
         setTablesGroup(table, group);
+        
+        
         // group table columns
         generateGroupTableColumns(group);
     }
@@ -700,6 +718,14 @@ public class
             userColumn.setGroupColumn(groupColumn);
             groupColumn.setUserColumn(userColumn);
             groupColumn.finishCreating();
+            
+            // TODO : Remove the setting of the tree name 
+            // until we can resolve tree <-> sequence management
+            //if (userColumn.getIdentityGenerator() != null) {
+            //    userColumn.getIdentityGenerator().setTreeName(groupTable.getTreeName());
+                // TODO Generate stable index ids.
+            //    userColumn.getIdentityGenerator().setAccumIndex(3);
+            // }
         }
         for (Join join : userTable.getChildJoins()) {
             generateGroupTableColumns(groupTable, join.getChild());

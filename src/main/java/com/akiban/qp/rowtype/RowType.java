@@ -83,6 +83,7 @@ public abstract class RowType
     public abstract int nFields();
 
     public abstract AkType typeAt(int index);
+
     public abstract TInstance typeInstanceAt(int index);
 
     public HKey hKey()

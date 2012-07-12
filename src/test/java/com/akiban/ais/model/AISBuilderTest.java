@@ -26,6 +26,9 @@
 
 package com.akiban.ais.model;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+
 import java.util.Iterator;
 import java.util.List;
 
@@ -1382,5 +1385,28 @@ public class AISBuilderTest
             throw new RuntimeException(e);
         }
         builder.groupIndexColumn("coi", "name_date", "test", "a",  "address", 1);
+    }
+    
+    @Test
+    public void setIdentityValues() {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.sequence("test", "seq-1", 1, 1, 0, 1000, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.column("test", "t1", "name", 1, "varchar", 10L, 0L, false, false, null, null);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test", "coi");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        
+        UserTable table = builder.akibanInformationSchema().getUserTable("test", "t1");
+        Column column = table.getColumn(0);
+        assertNotNull (column.getDefaultIdentity());
+        assertNotNull (column.getIdentityGenerator());
+        //assertEquals (table.getTreeName(), column.getIdentityGenerator().getTreeName());
+        //assertEquals (new Integer(3), column.getIdentityGenerator().getAccumIndex());
+        
+        
     }
 }

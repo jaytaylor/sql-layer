@@ -37,6 +37,7 @@ import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Schema;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Type;
 import com.akiban.ais.model.View;
@@ -56,6 +57,7 @@ public class ProtobufWriter {
         boolean isSelected(Columnar columnar);
         /** Called for all GroupIndexes and all table indexes where isSelected(UserTable) is true **/
         boolean isSelected(Index index);
+        boolean isSelected(Sequence sequence);
     }
 
     public static WriteSelector ALL_SELECTOR = new WriteSelector() {
@@ -68,11 +70,19 @@ public class ProtobufWriter {
         public boolean isSelected(Index index) {
             return true;
         }
+        @Override
+        public boolean isSelected(Sequence sequence) {
+            return true;
+        }
     };
 
     public static abstract class TableAllIndexSelector implements WriteSelector {
         @Override
         public boolean isSelected(Index index) {
+            return true;
+        }
+        @Override 
+        public boolean isSelected(Sequence sequence) {
             return true;
         }
     }
@@ -96,6 +106,11 @@ public class ProtobufWriter {
         @Override
         public boolean isSelected(Index index) {
             return true;
+        }
+        
+        @Override 
+        public boolean isSelected(Sequence sequence) {
+            return schemaName.equals(sequence.getSequenceName().getSchemaName());
         }
     }
 
@@ -196,6 +211,13 @@ public class ProtobufWriter {
                     writeGroup(schemaBuilder, table.getGroup(), selector);
                 }
                 writeTable(schemaBuilder, table, selector);
+                isEmpty = false;
+            }
+        }
+        
+        for (Sequence sequence : schema.getSequences().values()) {
+            if (selector.isSelected (sequence)) { 
+                writeSequence(schemaBuilder, sequence);
                 isEmpty = false;
             }
         }
@@ -332,6 +354,25 @@ public class ProtobufWriter {
         if(column.getInitialAutoIncrementValue() != null) {
             columnBuilder.setInitAutoInc(column.getInitialAutoIncrementValue());
         }
+        
+        if (column.getDefaultIdentity() != null) {
+            columnBuilder.setDefaultIdentity (column.getDefaultIdentity());
+        }
+        
+        if (column.getIdentityGenerator() != null) {
+            columnBuilder.setSequence(AISProtobuf.TableName.newBuilder()
+                    .setSchemaName(column.getIdentityGenerator().getSequenceName().getSchemaName())
+                    .setTableName(column.getIdentityGenerator().getSequenceName().getTableName())
+                    .build());
+        }
+        Long maxStorage = column.getMaxStorageSizeWithoutComputing();
+        if(maxStorage != null) {
+            columnBuilder.setMaxStorageSize(maxStorage);
+        }
+        Integer prefix = column.getPrefixSizeWithoutComputing();
+        if(prefix != null) {
+            columnBuilder.setPrefixSize(prefix);
+        }
         return columnBuilder.build();
     }
 
@@ -371,6 +412,10 @@ public class ProtobufWriter {
                 setColumnName(indexColumn.getColumn().getName()).
                 setIsAscending(indexColumn.isAscending()).
                 setPosition(indexColumn.getPosition());
+
+        if(indexColumn.getIndexedLength() != null) {
+            indexColumnBuilder.setIndexedLength(indexColumn.getIndexedLength());
+        }
         
         if(withTableName) {
             TableName tableName = indexColumn.getColumn().getTable().getName();
@@ -402,5 +447,19 @@ public class ProtobufWriter {
                 setCharacterSetName(charAndColl.charset()).
                 setCollationOrderName(charAndColl.collation()).
                 build();
+    }
+    
+    private static void writeSequence (AISProtobuf.Schema.Builder schemaBuilder, Sequence sequence) {
+        AISProtobuf.Sequence.Builder sequenceBuilder = AISProtobuf.Sequence.newBuilder()
+                .setSequenceName(sequence.getSequenceName().getTableName())
+                .setStart(sequence.getStartsWith())
+                .setIncrement(sequence.getIncrement())
+                .setMinValue(sequence.getMinValue())
+                .setMaxValue(sequence.getMaxValue())
+                .setIsCycle(sequence.isCycle());
+        if (sequence.getTreeName() != null) {
+            sequenceBuilder.setTreeName(sequence.getTreeName()).setAccumulator(sequence.getAccumIndex());
+        }
+        schemaBuilder.addSequences (sequenceBuilder.build());
     }
 }

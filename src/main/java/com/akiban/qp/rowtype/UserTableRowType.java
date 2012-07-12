@@ -122,7 +122,8 @@ public class UserTableRowType extends AisRowType
         List<Column> columns = table.getColumnsIncludingInternal();
         akTypes = new AkType[columns.size()];
         for (int i = 0; i < columns.size(); i++) {
-            akTypes[i] = table.getColumnsIncludingInternal().get(i).getType().akType();
+            Column column = columns.get(i);
+            akTypes[i] = column.getType().akType();
         }
     }
 

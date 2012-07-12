@@ -27,6 +27,7 @@
 package com.akiban.server;
 
 import com.akiban.ais.model.Column;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -88,35 +89,35 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     @Override
     public void putInt8(byte value) {
         assert type == PUnderlying.INT_8 : type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
     @Override
     public void putInt16(short value) {
         assert type == PUnderlying.INT_16: type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
     @Override
     public void putUInt16(char value) {
         assert type == PUnderlying.UINT_16 : type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
     @Override
     public void putInt32(int value) {
         assert type == PUnderlying.INT_32 : type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
     @Override
     public void putInt64(long value) {
         assert type == PUnderlying.INT_64 : type;
-        key.append(value);
+        key.append((long)value);
         invalidate();
     }
 
@@ -142,9 +143,13 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     }
 
     @Override
-    public void putString(String value) {
+    public void putString(String value, AkCollator collator) {
         assert type == PUnderlying.STRING : type;
-        key.append(value);
+        if (collator == null) {
+            key.append(value);
+        } else {
+            collator.append(key, value);
+        }
         invalidate();
     }
 

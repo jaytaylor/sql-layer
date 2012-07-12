@@ -71,14 +71,14 @@ public class Cast_From_Unsigned_Mediumint
     
     public static final TCast TO_UNSIGNED_INT = new FromInt64ToInt64(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_BIGINT = new FromInt64ToInt64(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.BIGINT, true, Constantness.UNKNOWN);
+    public static final TCast TO_BIGINT = new FromInt64ToInt64(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.BIGINT, false, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt64ToInt64(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.MEDIUMINT_UNSIGNED, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.MEDIUMINT_UNSIGNED, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.MEDIUMINT_UNSIGNED, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_VARCHAR = new FromInt64ToString(MNumeric.MEDIUMINT_UNSIGNED, MString.VARCHAR, true, Constantness.UNKNOWN);
+    public static final TCast TO_VARCHAR = new FromInt64ToString(MNumeric.MEDIUMINT_UNSIGNED, MString.VARCHAR, false, Constantness.UNKNOWN);
 
 }
