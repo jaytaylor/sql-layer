@@ -46,6 +46,8 @@ import com.akiban.sql.views.ViewDefinition;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.Join;
+import com.akiban.ais.model.JoinColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
@@ -929,7 +931,7 @@ public class AISBinder implements Visitor
         }
         if (recursive && (table instanceof UserTable)) {
             for (Join child : ((UserTable)table).getChildJoins()) {
-                rcList.addResultColumn(add
+                rcList.addResultColumn(childJoinSubquery(fromTable, child));
             }
         }
         return rcList;
@@ -1001,6 +1003,72 @@ public class AISBinder implements Visitor
             rcList.add(resultColumn);
         }
         return rcList;
+    }
+
+    /** Make a nested result set for this child (and so on recursively). */
+    protected ResultColumn childJoinSubquery(FromBaseTable parentTable, Join child) 
+            throws StandardException {
+        NodeFactory nodeFactory = parentTable.getNodeFactory();
+        SQLParserContext parserContext = parentTable.getParserContext();
+        UserTable childUserTable = child.getChild();
+        Object childName = nodeFactory.getNode(NodeTypes.TABLE_NAME,
+                                               childUserTable.getName().getSchemaName(),
+                                               childUserTable.getName().getTableName(),
+                                               parserContext);
+        FromBaseTable childTable = (FromBaseTable)
+            nodeFactory.getNode(NodeTypes.FROM_BASE_TABLE,
+                                childName, childUserTable.getName().getTableName(),
+                                null,  null, null, parserContext);
+        childTable.setUserData(new TableBinding(childUserTable, false));
+        ValueNode whereClause = null;
+        for (JoinColumn join : child.getJoinColumns()) {
+            ColumnReference parentPK = (ColumnReference)
+                nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
+                                    join.getParent().getName(),
+                                    parentTable.getTableName(),
+                                    parserContext);
+            parentPK.setUserData(new ColumnBinding(parentTable, join.getParent(), false));
+            ColumnReference childFK = (ColumnReference)
+                nodeFactory.getNode(NodeTypes.COLUMN_REFERENCE,
+                                    join.getChild().getName(),
+                                    childName,
+                                    parserContext);
+            childFK.setUserData(new ColumnBinding(childTable, join.getChild(), false));
+            ValueNode equals = (ValueNode)
+                nodeFactory.getNode(NodeTypes.BINARY_EQUALS_OPERATOR_NODE,
+                                    parentPK,
+                                    childFK,
+                                    parserContext);
+            if (whereClause == null) {
+                whereClause = equals;
+            }
+            else {
+                whereClause = (ValueNode)
+                    nodeFactory.getNode(NodeTypes.AND_NODE,
+                                        whereClause, equals, 
+                                        parserContext);
+            }
+        }
+        FromList fromList = (FromList)
+            nodeFactory.getNode(NodeTypes.FROM_LIST,
+                                parserContext);
+        fromList.addFromTable(childTable);
+        ResultColumnList rcl = getAllResultColumns(null, childTable, true);
+        SelectNode selectNode = (SelectNode)
+            nodeFactory.getNode(NodeTypes.SELECT_NODE,
+                                rcl, null, fromList, whereClause, null, null, null,
+                                parserContext);
+        SubqueryNode subquery = (SubqueryNode)
+            nodeFactory.getNode(NodeTypes.SUBQUERY_NODE,
+                                selectNode, SubqueryNode.SubqueryType.EXPRESSION,
+                                null, null, null, null,
+                                parserContext);
+        ResultColumn resultColumn = (ResultColumn) 
+            nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
+                                childUserTable.getName().getTableName(),
+                                subquery,
+                                parserContext);
+        return resultColumn;
     }
 
     protected void dmlModStatementNode(DMLModStatementNode node) {
