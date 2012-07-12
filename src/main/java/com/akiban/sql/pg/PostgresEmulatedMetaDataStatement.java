@@ -35,8 +35,10 @@ import com.akiban.sql.server.ServerValueEncoder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
+import com.akiban.ais.model.UserTable;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -102,7 +104,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" +
                                "ORDER BY a.attnum;?", true),
         PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno;?", true),
-        PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true);
+        PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true),
+        PSQL_DESCRIBE_INDEXES("SELECT c2.relname, i.indisprimary, i.indisunique, i.indisclustered, i.indisvalid, pg_catalog.pg_get_indexdef\\(i.indexrelid, 0, true\\),\\s*" +
+                              "null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred, c2.reltablespace\\s+" +
+                              "FROM pg_catalog.pg_class c, pg_catalog.pg_class c2, pg_catalog.pg_index i\\s+" +
+                              "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" +
+                              "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true);
 
         private String sql;
         private Pattern pattern;
@@ -167,6 +174,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)0, -1, AkType.VARCHAR, MString.VARCHAR.instance());
     static final PostgresType CHAR1_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+    static final PostgresType INDEXDEF_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance());
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -220,6 +229,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             ncols = 1;
             names = new String[] { "oid" };
             types = new PostgresType[] { OID_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_INDEXES:
+            ncols = 11;
+            names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "indisvalid", "pg_get_indexdef", "constraintdef", "contype", "condeferrable", "condeferred", "reltablespace" };
+            types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE };
             break;
         default:
             return;
@@ -277,6 +291,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         case PSQL_DESCRIBE_TABLES_4A:
         case PSQL_DESCRIBE_TABLES_4B:
             nrows = psqlDescribeTables4Query(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_INDEXES:
+            nrows = psqlDescribeIndexesQuery(server, messenger, maxrows, usePVals);
             break;
         }
         {        
@@ -494,7 +511,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relind
                     "r", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasindex
-                    "f", CHAR1_PG_TYPE);
+                    (table.isTable() && !((UserTable)table).getIndexesIncludingInternal().isEmpty()) ? "t" : "f", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhastriggers
@@ -544,6 +561,55 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Columnar table = getTableById(server, groups.get(1));
         if (table == null) return 0;
         return 0;
+    }
+
+    private int psqlDescribeIndexesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Columnar columnar = getTableById(server, groups.get(1));
+        if ((columnar == null) || !columnar.isTable()) return 0;
+        UserTable table = (UserTable)columnar;
+        Map<String,Index> indexes = new TreeMap<String,Index>();
+        for (Index index : table.getIndexesIncludingInternal()) {
+            indexes.put(index.getIndexName().getName(), index);
+        }
+        for (Index index : table.getGroup().getIndexes()) {
+            if (table == index.leafMostTable()) {
+                indexes.put(index.getIndexName().getName(), index);
+            }
+        }
+        for (Index index : indexes.values()) {
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(11); // 11 columns for this query
+            writeColumn(messenger, encoder, usePVals, // relname
+                        index.getIndexName().getName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // indisprimary
+                        (index.getIndexName().getName().equals(Index.PRIMARY_KEY_CONSTRAINT)) ? "t" : "f", CHAR1_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // indisunique
+                        (index.isUnique()) ? "t" : "f", CHAR1_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // indisclustered
+                        false, BOOL_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // indisvalid
+                        "t", CHAR1_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // pg_get_indexdef
+                        "CREATE INDEX foo (a, b) BARF", INDEXDEF_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // constraintdef
+                        null, CHAR0_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // contype
+                        null, CHAR0_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // condeferragble
+                        false, BOOL_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // condeferred
+                        false, BOOL_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, // reltablespace
+                        0, OID_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
+        return nrows;
     }
 
 }
