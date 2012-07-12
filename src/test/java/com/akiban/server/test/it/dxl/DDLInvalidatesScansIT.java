@@ -257,7 +257,7 @@ public final class DDLInvalidatesScansIT extends ITBase {
                 "KEY"
         );
         addIndex.addColumn(
-                new IndexColumn(
+                IndexColumn.create(
                         addIndex,
                         customers.getColumn("has_played_for_bruins"),
                         0,

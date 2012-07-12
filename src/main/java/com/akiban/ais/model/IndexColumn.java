@@ -83,7 +83,7 @@ public class IndexColumn
         return indexColumn;
     }
     
-    public IndexColumn(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength)
+    private IndexColumn(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength)
     {
         this.index = index;
         this.column = column;

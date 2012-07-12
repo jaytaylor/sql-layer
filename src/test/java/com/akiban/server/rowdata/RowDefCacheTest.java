@@ -934,8 +934,8 @@ public class RowDefCacheTest
                                                  false,
                                                  Index.KEY_CONSTRAINT,
                                                  Index.JoinType.LEFT);
-            index.addColumn(new IndexColumn(index, customerTable.getColumn("name"), 0, true, null));
-            index.addColumn(new IndexColumn(index, ordersTable.getColumn("date"), 1, true, null));
+            index.addColumn(IndexColumn.create(index, customerTable.getColumn("name"), 0, true, null));
+            index.addColumn(IndexColumn.create(index, ordersTable.getColumn("date"), 1, true, null));
             rowDefCache = SCHEMA_FACTORY.rowDefCache(ais);
         }
 

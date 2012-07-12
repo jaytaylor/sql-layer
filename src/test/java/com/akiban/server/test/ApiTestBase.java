@@ -589,7 +589,7 @@ public class ApiTestBase {
         int pos = 0;
         for (String columnName : columns) {
             Column column = table.getColumn(columnName);
-            IndexColumn indexColumn = new IndexColumn(index, column, pos++, true, null);
+            IndexColumn indexColumn = IndexColumn.create(index, column, pos++, true, null);
             index.addColumn(indexColumn);
         }
         ddl().createIndexes(session(), Collections.singleton(index));

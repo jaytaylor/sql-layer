@@ -182,7 +182,7 @@ public class
         Index index = table.getIndex(indexName);
         checkFound(table, "creating index column", "index",
                 concat(schemaName, tableName, indexName));
-        index.addColumn(new IndexColumn(index, column, position, ascending,
+        index.addColumn(IndexColumn.create(index, column, position, ascending,
                 indexedLength));
     }
 
@@ -201,7 +201,7 @@ public class
         checkFound(table, "creating group index column", "table", concat(schemaName, tableName));
         Column column = table.getColumn(columnName);
         checkFound(column, "creating group index column", "column", concat(schemaName, tableName, columnName));
-        index.addColumn(new IndexColumn(index, column, position, true, null));
+        index.addColumn(IndexColumn.create(index, column, position, true, null));
     }
 
     public void joinTables(String joinName, String parentSchemaName,
@@ -616,7 +616,7 @@ public class
                 this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
                 this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes",
                                 "group column", userIndexColumn.getColumn().getName());
-                IndexColumn groupIndexColumn = new IndexColumn(
+                IndexColumn groupIndexColumn = IndexColumn.create(
                         groupIndex,
                         userIndexColumn.getColumn().getGroupColumn(),
                         position++,
