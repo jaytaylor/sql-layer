@@ -421,6 +421,29 @@ public class AISMergeTest {
         merge = new AISMerge(t, s.getUserTable(SCHEMA, "t2"));
         t = merge.merge().getAIS();
     }
+    
+    @Test
+    public void columnIdentity () {
+        b.userTable(SCHEMA, TABLE);
+        b.column(SCHEMA, TABLE, "c1", 0, "INT", (long)0, (long)0, false, false, null, null);
+        b.column(SCHEMA, TABLE, "c2", 1, "INT", (long)0, (long)0, false, false, null, null);
+        b.sequence(SCHEMA, "seq-1", 5, 2, 0, 1000, false);
+        b.columnAsIdentity(SCHEMA, TABLE, "c1", "seq-1", true);
+        b.basicSchemaIsComplete();
+
+        b.createGroup("FRED", SCHEMA, "_akiban_t1");
+        b.addTableToGroup("FRED", SCHEMA, TABLE);
+        b.groupingIsComplete();
+        AISMerge merge = new AISMerge (t,s.getUserTable(TABLENAME));
+        t = merge.merge().getAIS();
+        
+        assertNotNull (t.getTable(TABLENAME).getColumn(0).getIdentityGenerator());
+        Sequence identityGenerator = t.getTable(TABLENAME).getColumn(0).getIdentityGenerator();
+        //assertEquals(t.getTable(TABLENAME).getTreeName(), identityGenerator.getTreeName());
+        assertEquals (5, identityGenerator.getStartsWith());
+        assertEquals (2, identityGenerator.getIncrement());
+        assertEquals (1000, identityGenerator.getMaxValue());
+    }
 
     /*
      * Not really behavior that needs preserved, but at least one data set observed

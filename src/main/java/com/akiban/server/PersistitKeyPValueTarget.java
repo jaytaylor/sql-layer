@@ -27,6 +27,7 @@
 package com.akiban.server;
 
 import com.akiban.ais.model.Column;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -142,9 +143,13 @@ public class PersistitKeyPValueTarget implements PValueTarget {
     }
 
     @Override
-    public void putString(String value) {
+    public void putString(String value, AkCollator collator) {
         assert type == PUnderlying.STRING : type;
-        key.append(value);
+        if (collator == null) {
+            key.append(value);
+        } else {
+            collator.append(key, value);
+        }
         invalidate();
     }
 

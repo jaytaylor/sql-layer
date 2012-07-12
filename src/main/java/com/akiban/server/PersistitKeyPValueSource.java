@@ -166,7 +166,7 @@ public class PersistitKeyPValueSource implements PValueSource {
                     case FLOAT:     output.putFloat(key.decodeFloat());         break;
                     case DOUBLE:    output.putDouble(key.decodeDouble());       break;
                     case BYTES:     output.putBytes(key.decodeByteArray());     break;
-                    case STRING:    output.putString(key.decodeString());       break;
+                    case STRING:    output.putString(key.decodeString(), null);       break;
                     default: throw new UnsupportedOperationException(pUnderlying.name());
                 }
             }

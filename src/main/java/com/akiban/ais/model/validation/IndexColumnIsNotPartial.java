@@ -24,32 +24,31 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.ais.model.validation;
 
-import com.akiban.server.collation.AkCollator;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.UserTable;
+import com.akiban.server.error.IndexColumnIsPartialException;
 
-public interface PBasicValueTarget {
-    PUnderlying getUnderlyingType();
-
-    void putNull();
-
-    void putBool(boolean value);
-
-    void putInt8(byte value);
-
-    void putInt16(short value);
-
-    void putUInt16(char value);
-
-    void putInt32(int value);
-
-    void putInt64(long value);
-
-    void putFloat(float value);
-
-    void putDouble(double value);
-
-    void putBytes(byte[] value);
-
-    void putString(String value, AkCollator collator);
+/**
+ * Partially indexed columns, see {@link IndexColumn#indexedLength},
+ * are not currently supported by the server.
+ */
+public class IndexColumnIsNotPartial implements AISValidation {
+    @Override
+    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
+        for(UserTable table : ais.getUserTables().values()) {
+            for(Index index : table.getIndexesIncludingInternal()) {
+                for(IndexColumn indexColumn : index.getKeyColumns()) {
+                    if(indexColumn.getIndexedLength() != null) {
+                        output.reportFailure(new AISValidationFailure(
+                                new IndexColumnIsPartialException(table.getName(), index.getIndexName().getName(), indexColumn.getPosition())
+                        ));
+                    }
+                }
+            }
+        }
+    }
 }

@@ -37,6 +37,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.aggregation.AggregatorRegistry;
 import com.akiban.server.aggregation.Aggregators;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.types.AkType;
@@ -831,10 +832,22 @@ public class API
             return allDescending;
         }
 
+        public AkCollator collator(int i)
+        {
+            return collators.get(i);
+        }
+
         public void append(Expression expression, boolean ascending)
+        {
+            append(expression, ascending, null);
+        }
+
+        public void append(Expression expression, boolean ascending,
+                           AkCollator collator)
         {
             expressions.add(expression);
             directions.add(ascending);
+            collators.add(collator);
         }
 
         public Ordering copy()
@@ -842,12 +855,14 @@ public class API
             Ordering copy = new Ordering();
             copy.expressions.addAll(expressions);
             copy.directions.addAll(directions);
+            copy.collators.addAll(collators);
             return copy;
         }
 
         private final List<com.akiban.server.expression.Expression> expressions =
             new ArrayList<com.akiban.server.expression.Expression>();
         private final List<Boolean> directions = new ArrayList<Boolean>(); // true: ascending, false: descending
+        private final List<AkCollator> collators = new ArrayList<AkCollator>();
     }
 
     // Class state

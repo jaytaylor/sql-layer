@@ -26,6 +26,8 @@
 
 package com.akiban.server.types3.pvalue;
 
+import com.akiban.server.collation.AkCollator;
+
 public final class PValue implements PValueSource, PValueTarget {
 
     // PValueTarget interface
@@ -100,7 +102,7 @@ public final class PValue implements PValueSource, PValueTarget {
     }
 
     @Override
-    public void putString(String value) {
+    public void putString(String value, AkCollator collator) {
         checkUnderlying(PUnderlying.STRING);
         setRawValues(State.VAL_ONLY, -1, null, value);
     }
@@ -350,7 +352,7 @@ public final class PValue implements PValueSource, PValueTarget {
 
     public PValue(String val) {
         this(PUnderlying.STRING);
-        putString(val);
+        putString(val, null);
     }
 
     public PValue(boolean val) {
