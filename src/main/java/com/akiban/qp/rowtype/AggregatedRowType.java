@@ -47,7 +47,7 @@ public final class AggregatedRowType extends DerivedRowType {
         else
             return aggregatorFactories.get(index - inputsIndex).outputType();
     }
-
+    
     @Override
     public TInstance typeInstanceAt(int index) {
         if (index < inputsIndex)
