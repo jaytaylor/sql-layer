@@ -47,6 +47,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.qp.rowtype.ValuesRowType;
 import com.akiban.server.api.dml.SetColumnSelector;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionComposer;
@@ -363,6 +365,12 @@ public class AggregatePT extends ApiTestBase {
     static final AkType[] TYPES = { 
         AkType.LONG, AkType.LONG, AkType.LONG, AkType.LONG
     };
+    
+    static final AkCollator[] COLLATORS = {
+        AkCollatorFactory.UCS_BINARY_COLLATOR,  AkCollatorFactory.UCS_BINARY_COLLATOR, 
+        AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory.UCS_BINARY_COLLATOR,
+    };
+    
 
     static final TInstance[] TINSTANCES = {
         MNumeric.INT.instance(),MNumeric.INT.instance() ,MNumeric.INT.instance() ,MNumeric.INT.instance()
@@ -385,6 +393,10 @@ public class AggregatePT extends ApiTestBase {
         @Override
         public AkType typeAt(int index) {
             return TYPES[index];
+        }
+
+        public AkCollator collatorAt(int index) {
+            return COLLATORS[index];
         }
 
         @Override

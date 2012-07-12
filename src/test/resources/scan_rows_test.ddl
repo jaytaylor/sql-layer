@@ -3,7 +3,7 @@ create table a(
     a1 int not null,
     a2 int not null,
     a3 int not null,
-    a4 varchar(64) not null,
+    a4 varchar(64) not null collate latin1_swedish_ci,
     primary key(a1)
 );
 
@@ -12,7 +12,7 @@ create table aa(
     aa1 int not null,
     aa2 int not null,
     aa3 int not null,
-    aa4 varchar(64) not null,
+    aa4 varchar(64) not null collate latin1_swedish_ci,
     primary key(aa1),
     GROUPING FOREIGN KEY (a1) REFERENCES a (a1)
 );
@@ -25,7 +25,7 @@ create table aaa(
     aaa1 int not null,
     aaa2 int not null,
     aaa3 int not null,
-    aaa4 varchar(64) not null,
+    aaa4 varchar(64) not null collate latin1_swedish_ci,
     primary key(aaa1),
     GROUPING FOREIGN KEY (aa1) REFERENCES aa (aa1)
 );
@@ -38,7 +38,7 @@ create table aaaa(
     aaaa1 int not null,
     aaaa2 int not null,
     aaaa3 int not null,
-    aaaa4 varchar(64) not null,
+    aaaa4 varchar(64) not null collate latin1_swedish_ci,
     primary key(aaaa1),
     GROUPING FOREIGN KEY (aaa1) REFERENCES aaa (aaa1)
 );
@@ -51,7 +51,7 @@ create table aaaaa(
     aaaaa1 int not null,
     aaaaa2 int not null,
     aaaaa3 int not null,
-    aaaaa4 varchar(64) not null,
+    aaaaa4 varchar(64) not null collate latin1_swedish_ci,
     primary key(aaaaa1),
     GROUPING FOREIGN KEY (aaaa1) REFERENCES aaaa (aaaa1)
 );
@@ -61,7 +61,7 @@ create table aaaab(
     aaaab1 int not null,
     aaaab2 int not null,
     aaaab3 int not null,
-    aaaab4 varchar(64) not null,
+    aaaab4 varchar(64) not null collate latin1_swedish_ci,
     primary key(aaaab1),
     GROUPING FOREIGN KEY (aaaa1) REFERENCES aaaa (aaaa1)
 );
@@ -71,7 +71,7 @@ create table aaab(
     aaab1 int not null,
     aaab2 int not null,
     aaab3 int not null,
-    aaab4 varchar(64) not null,
+    aaab4 varchar(64) not null collate latin1_swedish_ci,
     primary key(aaab1),
     GROUPING FOREIGN KEY (aaa1) REFERENCES aaa (aaa1)
 );
@@ -86,7 +86,7 @@ create table aab(
     aab1 int not null,
     aab2 int not null,
     aab3 int not null,
-    aab4 varchar(64) not null,
+    aab4 varchar(64) not null collate latin1_swedish_ci,
     primary key(aab1),
     GROUPING FOREIGN KEY (aa1) REFERENCES aa (aa1)
 );
@@ -96,7 +96,7 @@ create table aac(
     aac1 int not null,
     aac2 int not null,
     aac3 int not null,
-    aac4 varchar(64) not null,
+    aac4 varchar(64) not null collate latin1_swedish_ci,
     primary key(aac1),
     GROUPING FOREIGN KEY (aa1) REFERENCES aa (aa1)
 );
@@ -106,14 +106,14 @@ create table ab(
     ab1 int not null,
     ab2 int not null,
     ab3 int not null,
-    ab4 varchar(64) not null,
+    ab4 varchar(64) not null collate latin1_swedish_ci,
     primary key(ab1),
     GROUPING FOREIGN KEY (a1) REFERENCES a (a1)
 );
 
 create table bug253(
     vid int not null,
-    type varchar(255) not null,
+    type varchar(255) not null collate latin1_swedish_ci,
     primary key (type, vid)
 );
 create index vid on bug253(vid);

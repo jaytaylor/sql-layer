@@ -151,6 +151,8 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     public abstract void visitComparands(ExpressionRewriteVisitor v);
     public abstract void visitComparands(ExpressionVisitor v);
     public abstract int getNEquality();
+    public abstract boolean isAscendingAt(int index);
+    public abstract boolean isRecoverableAt(int index);
     
     @Override
     public String summaryString() {
@@ -234,5 +236,4 @@ public abstract class IndexScan extends BaseScan implements IndexIntersectionNod
     protected abstract String summarizeIndex(int indentation);
     protected void describeConditionRange(StringBuilder output) {}
     protected void describeEqualityComparands(StringBuilder output) {}
-    protected abstract boolean isAscendingAt(int index);
 }

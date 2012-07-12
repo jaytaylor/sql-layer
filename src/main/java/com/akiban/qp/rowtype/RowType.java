@@ -31,6 +31,7 @@ package com.akiban.qp.rowtype;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
@@ -83,6 +84,9 @@ public abstract class RowType
     public abstract int nFields();
 
     public abstract AkType typeAt(int index);
+
+    public abstract AkCollator collatorAt(int index);
+
     public abstract TInstance typeInstanceAt(int index);
 
     public HKey hKey()

@@ -30,6 +30,7 @@ import com.akiban.ais.model.Column;
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.UserTable;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.akiban.util.FilteringIterator;
@@ -60,6 +61,11 @@ public class UserTableRowType extends AisRowType
     public AkType typeAt(int index)
     {
         return akTypes[index];
+    }
+
+    @Override
+    public AkCollator collatorAt(int index) {
+        return akCollators[index];
     }
 
     @Override
@@ -121,8 +127,12 @@ public class UserTableRowType extends AisRowType
         typeComposition(new SingleBranchTypeComposition(this, table));
         List<Column> columns = table.getColumnsIncludingInternal();
         akTypes = new AkType[columns.size()];
+        akCollators = new AkCollator[columns.size()];
         for (int i = 0; i < columns.size(); i++) {
-            akTypes[i] = table.getColumnsIncludingInternal().get(i).getType().akType();
+            Column column = columns.get(i);
+            akTypes[i] = column.getType().akType();
+            akCollators[i] = column.getCollator();
+ 
         }
     }
 
@@ -132,4 +142,5 @@ public class UserTableRowType extends AisRowType
     // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<IndexRowType>();
     private final AkType[] akTypes;
+    private final AkCollator[] akCollators;
 }
