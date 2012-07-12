@@ -26,6 +26,7 @@
 
 package com.akiban.server.util;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -72,7 +73,7 @@ public class GroupIndexCreator {
      * Helper function for converting a simple group index specification into an
      * actual GroupIndex. This can then be passed to DDLFunctions.createGroupIndex().
      *
-     * @param ais AIS that contains referenced group and tables.
+     * @param srcAIS AIS that contains referenced group and tables.
      * @param groupName Name of the group to add index too
      * @param indexName Name of the new index to create
      * @param unique whether the group index is UNIQUE
@@ -80,8 +81,9 @@ public class GroupIndexCreator {
      * @return GroupIndex representation of the requested
      * @throws GroupIndexCreatorException For any error
      */
-    private static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
+    private static GroupIndex createIndex(AkibanInformationSchema srcAIS, String groupName, String indexName,
                                          boolean unique, String tableColumnList, Index.JoinType joinType) {
+        final AkibanInformationSchema ais = AISCloner.clone(srcAIS);
         final Group group = ais.getGroup(groupName);
         if(group == null) {
             throw new NoSuchGroupException (groupName);
