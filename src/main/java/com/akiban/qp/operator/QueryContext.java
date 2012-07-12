@@ -79,8 +79,9 @@ public interface QueryContext
      * Bind a value to the given index.
      * @param index the index to set
      * @param value the value to assign
+     * @param usePValues
      */
-    public void setValue(int index, Object value, AkType type);
+    public void setValue(int index, Object value, AkType type, boolean usePValues);
 
     /**
      * Gets the row bound to the given index.
