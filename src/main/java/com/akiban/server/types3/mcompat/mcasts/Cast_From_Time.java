@@ -64,25 +64,25 @@ public class Cast_From_Time {
 
     public static final TCast TO_SMALLINT = new FromInt32ToInt16(MDatetimes.TIME, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_SMALLINT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN);
+    public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_INT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.INT, true, Constantness.UNKNOWN);
+    public static final TCast TO_INT = new FromInt32ToInt32(MDatetimes.TIME, MNumeric.INT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.BIGINT, true, Constantness.UNKNOWN);
+    public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.BIGINT, false, Constantness.UNKNOWN);
 
-    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.TIME, MNumeric.BIGINT_UNSIGNED, false, Constantness.UNKNOWN);
 
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.TIME, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.TIME, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
 
-    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIME, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIME, MString.VARCHAR, true, Constantness.UNKNOWN) {
+    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIME, MString.VARCHAR, false, Constantness.UNKNOWN) {
 
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget) {
@@ -95,7 +95,7 @@ public class Cast_From_Time {
         }
     };
     
-    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_DATETIME = new TCastBase(MDatetimes.TIME, MDatetimes.DATETIME, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -126,7 +126,7 @@ public class Cast_From_Time {
         }
     };
     
-    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.TIME, MDatetimes.TIMESTAMP, true, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MDatetimes.TIME, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
     {
 
         @Override

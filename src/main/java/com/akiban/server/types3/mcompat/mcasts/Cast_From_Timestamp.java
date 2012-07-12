@@ -54,19 +54,19 @@ public class Cast_From_Timestamp
     
     public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MDatetimes.TIMESTAMP, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MDatetimes.TIMESTAMP, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MDatetimes.TIMESTAMP, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_INT = new FromInt32ToInt32(MDatetimes.TIMESTAMP, MNumeric.INT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MDatetimes.TIMESTAMP, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MDatetimes.TIMESTAMP, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.TIMESTAMP, MNumeric.BIGINT, true, Constantness.UNKNOWN);
+    public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.TIMESTAMP, MNumeric.BIGINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.TIMESTAMP, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.TIMESTAMP, MNumeric.BIGINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.TIMESTAMP, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.TIMESTAMP, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIMESTAMP, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.TIMESTAMP, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
     public static final TCast TO_DATE = new TCastBase(MDatetimes.TIMESTAMP, MDatetimes.DATE, true, Constantness.UNKNOWN)
     {

@@ -117,7 +117,7 @@ public class ProjectedRow extends AbstractRow
         this.row = row;
         this.evaluations = createEvaluations(expressions, row, context);
         this.pEvals = createPEvals(pExpressions, row, context);
-        this.holders = new ValueHolder[expressions.size()];
+        this.holders = expressions == null ? null : new ValueHolder[expressions.size()];
     }
 
     /** Make sure all the <code>ValueHolder</code>s are full. */

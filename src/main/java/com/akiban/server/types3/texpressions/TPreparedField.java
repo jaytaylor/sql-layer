@@ -65,8 +65,7 @@ public final class TPreparedField implements TPreparedExpression {
     private static class Evaluation extends ContextualEvaluation<Row> {
         @Override
         protected void evaluate(Row context, PValueTarget target) {
-            PValueSource rowSource = null;
-//            rowSource = context.rowEval(fieldIndex);
+            PValueSource rowSource = context.pvalue(fieldIndex);
             target.putValueSource(rowSource);
         }
 
