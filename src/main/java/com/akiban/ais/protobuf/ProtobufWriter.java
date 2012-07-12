@@ -349,11 +349,13 @@ public class ProtobufWriter {
                     .setTableName(column.getIdentityGenerator().getSequenceName().getTableName())
                     .build());
         }
-        if(column.getStoredMaxStorageSize() != null) {
-            columnBuilder.setMaxStorageSize(column.getStoredMaxStorageSize());
+        Long maxStorage = column.getMaxStorageSizeWithoutComputing();
+        if(maxStorage != null) {
+            columnBuilder.setMaxStorageSize(maxStorage);
         }
-        if(column.getStoredPrefixSize() != null) {
-            columnBuilder.setPrefixSize(column.getStoredPrefixSize());
+        Integer prefix = column.getPrefixSizeWithoutComputing();
+        if(prefix != null) {
+            columnBuilder.setPrefixSize(prefix);
         }
         return columnBuilder.build();
     }

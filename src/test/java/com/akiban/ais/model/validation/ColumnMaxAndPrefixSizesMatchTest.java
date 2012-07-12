@@ -28,8 +28,7 @@ package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.aisb2.AISBBasedBuilder;
-import com.akiban.ais.model.aisb2.NewAISBuilder;
+import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.ColumnSizeMismatchException;
 import org.junit.Test;
 
@@ -39,13 +38,10 @@ public class ColumnMaxAndPrefixSizesMatchTest {
     private final static String SCHEMA = "test";
     private final static String TABLE = "t";
 
-    private static AkibanInformationSchema createAIS(Long storedMax, Integer storedPrefix) {
-        NewAISBuilder builder = AISBBasedBuilder.create(SCHEMA);
-        builder.userTable(TABLE).colBigInt("id");
-        AkibanInformationSchema ais = builder.unvalidatedAIS();
-        Column column = ais.getTable(SCHEMA, TABLE).getColumn("id");
-        column.setStoredMaxStorageSize(storedMax);
-        column.setStoredPrefixSize(storedPrefix);
+    private static AkibanInformationSchema createAIS(Long maxStorage, Integer prefix) {
+        AkibanInformationSchema ais = new AkibanInformationSchema();
+        UserTable table = UserTable.create(ais, SCHEMA, TABLE, 1);
+        Column.create(table, "id", 0, ais.getType("BIGINT"), false, null, null, null, null, maxStorage, prefix);
         return ais;
     }
 

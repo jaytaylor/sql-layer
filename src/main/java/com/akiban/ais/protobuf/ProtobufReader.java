@@ -348,6 +348,8 @@ public class ProtobufReader {
     private void loadColumns(Columnar columnar, Collection<AISProtobuf.Column> pbColumns) {
         for(AISProtobuf.Column pbColumn : pbColumns) {
             hasRequiredFields(pbColumn);
+            Long maxStorageSize = pbColumn.hasMaxStorageSize() ? pbColumn.getMaxStorageSize() : null;
+            Integer prefixSize = pbColumn.hasPrefixSize() ? pbColumn.getPrefixSize() : null;
             Column column = Column.create(
                     columnar,
                     pbColumn.getColumnName(),
@@ -357,7 +359,9 @@ public class ProtobufReader {
                     pbColumn.hasTypeParam1() ? pbColumn.getTypeParam1() : null,
                     pbColumn.hasTypeParam2() ? pbColumn.getTypeParam2() : null,
                     pbColumn.hasInitAutoInc() ? pbColumn.getInitAutoInc() : null,
-                    getCharColl(pbColumn.hasCharColl(), pbColumn.getCharColl())
+                    getCharColl(pbColumn.hasCharColl(), pbColumn.getCharColl()),
+                    maxStorageSize,
+                    prefixSize
             );
             if (pbColumn.hasDefaultIdentity()) {
                 column.setDefaultIdentity(pbColumn.getDefaultIdentity());
@@ -366,12 +370,6 @@ public class ProtobufReader {
                 TableName sequenceName = new TableName (pbColumn.getSequence().getSchemaName(), pbColumn.getSequence().getTableName());
                 Sequence identityGenerator = getAIS().getSequence(sequenceName);
                 column.setIdentityGenerator(identityGenerator);
-            }
-            if (pbColumn.hasMaxStorageSize()) {
-                column.setStoredMaxStorageSize(pbColumn.getMaxStorageSize());
-            }
-            if (pbColumn.hasPrefixSize()) {
-                column.setStoredPrefixSize(pbColumn.getPrefixSize());
             }
             // TODO: types3, pbColumn.getTypeBundleUUID()
             // TODO: types3, pbColumn.getTypeVersion()

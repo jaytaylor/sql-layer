@@ -446,20 +446,21 @@ public class ProtobufReaderWriterTest {
 
         // Note: If storage* methods go away, or are non-null by default, that is *good* and these can go away
         Column inCol = inAIS.getTable(SCHEMA, TABLE).getColumn(0);
-        assertNull("storedMaxStorageSize null by default", inCol.getStoredMaxStorageSize());
-        assertNull("storedPrefixSize null by default", inCol.getStoredPrefixSize());
+        assertNull("storedMaxStorageSize null by default", inCol.getMaxStorageSizeWithoutComputing());
+        assertNull("storedPrefixSize null by default", inCol.getPrefixSizeWithoutComputing());
 
         AkibanInformationSchema outAIS = writeAndRead(inAIS);
         Column outCol = outAIS.getTable(SCHEMA, TABLE).getColumn(0);
-        assertNull("storedMaxStorageSize null preserved", outCol.getStoredMaxStorageSize());
-        assertNull("storedPrefixSize null preserved", outCol.getStoredPrefixSize());
+        assertNull("storedMaxStorageSize null preserved", outCol.getMaxStorageSizeWithoutComputing());
+        assertNull("storedPrefixSize null preserved", outCol.getPrefixSizeWithoutComputing());
 
-        inCol.setStoredMaxStorageSize(10L);
-        inCol.setStoredPrefixSize(5);
+        inCol.getMaxStorageSize();
+        inCol.getPrefixSize();
+
         outAIS = writeAndRead(inAIS);
         outCol = outAIS.getTable(SCHEMA, TABLE).getColumn(0);
-        assertEquals("storedMaxStorageSize", Long.valueOf(10L), outCol.getStoredMaxStorageSize());
-        assertEquals("storedPrefixSize", Integer.valueOf(5), outCol.getStoredPrefixSize());
+        assertEquals("storedMaxStorageSize", Long.valueOf(8L), outCol.getMaxStorageSizeWithoutComputing());
+        assertEquals("storedPrefixSize", Integer.valueOf(0), outCol.getPrefixSizeWithoutComputing());
     }
 
     private AkibanInformationSchema writeAndRead(AkibanInformationSchema inAIS) {

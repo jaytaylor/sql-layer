@@ -44,12 +44,20 @@ public class Column
                                 Long typeParameter1, Long typeParameter2, Long initialAutoIncValue,
                                 CharsetAndCollation charsetAndCollation)
     {
+        return create(table, name, position, type, nullable, typeParameter1, typeParameter2, initialAutoIncValue,
+                      charsetAndCollation, null, null);
+    }
+
+    public static Column create(Columnar table, String name, Integer position, Type type, Boolean nullable,
+                                Long typeParameter1, Long typeParameter2, Long initialAutoIncValue,
+                                CharsetAndCollation charsetAndCollation, Long maxStorageSize, Integer prefixSize)
+    {
         table.checkMutability();
         AISInvariants.checkNullName(name, "column", "column name");
         AISInvariants.checkDuplicateColumnsInTable(table, name);
         AISInvariants.checkDuplicateColumnPositions(table, position);
         Column column = new Column(table, name, position, type, nullable, typeParameter1, typeParameter2,
-                                   initialAutoIncValue, charsetAndCollation);
+                                   initialAutoIncValue, charsetAndCollation, maxStorageSize, prefixSize);
         table.addColumn(column);
         return column;
     }
@@ -282,9 +290,26 @@ public class Column
         return identityGenerator;
      }
 
-    /** @deprecated Needs updated for types3, only computed on creation, and {@link #getStoredMaxStorageSize()} made canonical **/
-    public Long getMaxStorageSize()
-    {
+    public Long getMaxStorageSize() {
+        return getMaxStorageSize(true);
+    }
+
+    public Long getMaxStorageSizeWithoutComputing() {
+        return getMaxStorageSize(false);
+    }
+
+    private Long getMaxStorageSize(boolean compute) {
+        if(maxStorageSize == null && compute) {
+            synchronized(this) {
+                if(maxStorageSize == null) {
+                    maxStorageSize = computeMaxStorageSize();
+                }
+            }
+        }
+        return maxStorageSize;
+    }
+
+    public long computeMaxStorageSize() {
         // TODO: types3, delegate to TClass#getMaxStorageSize(TIstance)
         long maxStorageSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
@@ -345,9 +370,26 @@ public class Column
         }
     }
 
-    /** @deprecated Needs updated for types3, only computed on creation, and {@link #getStoredPrefixSize()} made canonical **/
-    public Integer getPrefixSize()
-    {
+    public Integer getPrefixSize() {
+        return getPrefixSize(true);
+    }
+
+    public Integer getPrefixSizeWithoutComputing() {
+        return getPrefixSize(false);
+    }
+
+    private Integer getPrefixSize(boolean compute) {
+        if((prefixSize == null) && compute) {
+            synchronized(this) {
+                if(prefixSize == null) {
+                    prefixSize = computePrefixSize();
+                }
+            }
+        }
+        return prefixSize;
+    }
+
+    public int computePrefixSize() {
         int prefixSize;
         if (type.equals(Types.VARCHAR) || type.equals(Types.CHAR)) {
             final long maxCharacters = paramCheck(typeParameter1);
@@ -417,26 +459,6 @@ public class Column
         return fieldDef;
     }
 
-    /** Set the storedMaxStorage size, should generally come from {@link #getMaxStorageSize()} **/
-    public void setStoredMaxStorageSize(Long maxStorageSize) {
-        storedMaxStorageSize = maxStorageSize;
-    }
-
-    /** Set the storedPrefixSize size, should generally come from {@link #getPrefixSize()} **/
-    public void setStoredPrefixSize(Integer prefixSize) {
-        storedPrefixSize = prefixSize;
-    }
-
-    /** Get maximum storage size from when the column was created, null if never set **/
-    public Long getStoredMaxStorageSize() {
-        return storedMaxStorageSize;
-    }
-
-    /** Get prefix size from when the column was created, null if never set **/
-    public Integer getStoredPrefixSize() {
-        return storedPrefixSize;
-    }
-
     private Column(Columnar table,
                    String columnName,
                    Integer position,
@@ -445,7 +467,9 @@ public class Column
                    Long typeParameter1,
                    Long typeParameter2,
                    Long initialAutoIncValue,
-                   CharsetAndCollation charsetAndCollation)
+                   CharsetAndCollation charsetAndCollation,
+                   Long maxStorageSize,
+                   Integer prefixSize)
     {
         this.table = table;
         this.columnName = columnName;
@@ -456,7 +480,8 @@ public class Column
         this.typeParameter2 = typeParameter2;
         this.initialAutoIncrementValue = initialAutoIncValue;
         this.charsetAndCollation = charsetAndCollation;
-
+        this.maxStorageSize = maxStorageSize;
+        this.prefixSize = prefixSize;
         fillInDefaultParams();
     }
 
@@ -648,11 +673,13 @@ public class Column
     private CharsetAndCollation charsetAndCollation;
     private final AtomicReference<TInstance> tInstanceRef = new AtomicReference<TInstance>();
 
+    // TODO: Should be final, but the multi-part construction of a valid Column needs to be cleaned up
+    private Long maxStorageSize;
+    private Integer prefixSize;
+
     private Column groupColumn; // Non-null iff this is a user table column
     private Column userColumn; // Non-null iff this is a group table column
     private /*FieldDef*/ Object fieldDef;
     private Boolean defaultIdentity;
     private Sequence identityGenerator;
-    private Long storedMaxStorageSize;
-    private Integer storedPrefixSize;
 }

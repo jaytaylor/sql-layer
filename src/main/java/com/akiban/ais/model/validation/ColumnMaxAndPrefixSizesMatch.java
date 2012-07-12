@@ -36,18 +36,17 @@ public class ColumnMaxAndPrefixSizesMatch implements AISValidation {
     public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
         for(UserTable table : ais.getUserTables().values()) {
             for(Column column : table.getColumnsIncludingInternal()) {
-                Long maxStorage = column.getStoredMaxStorageSize();
-                Long computedMaxStorage = column.getMaxStorageSize();
-                Integer prefix = column.getStoredPrefixSize();
-                Integer computedPrefix = column.getPrefixSize();
-                // TODO: We should make this non-null as a requirement for running, can rock the boat later
+                Long maxStorage = column.getMaxStorageSize();
+                Long computedMaxStorage = column.computeMaxStorageSize();
+                Integer prefix = column.getPrefixSize();
+                Integer computedPrefix = column.computePrefixSize();
                 if((maxStorage != null) && !maxStorage.equals(computedMaxStorage)) {
                     output.reportFailure(new AISValidationFailure(
                             new ColumnSizeMismatchException(table.getName(), column.getName(),
                                                             "maxStorageSize", maxStorage, computedMaxStorage)
                     ));
                 }
-                if((prefix != null) && (!prefix.equals(column.getPrefixSize()))) {
+                if((prefix != null) && !prefix.equals(computedPrefix)) {
                     output.reportFailure(new AISValidationFailure(
                             new ColumnSizeMismatchException(table.getName(), column.getName(),
                                                             "prefixSize", prefix, computedPrefix)

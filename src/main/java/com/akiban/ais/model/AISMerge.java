@@ -175,8 +175,9 @@ public class AISMerge {
             if (column.getInitialAutoIncrementValue() != null) {
                 newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
             }
-            newColumn.setStoredMaxStorageSize(newColumn.getMaxStorageSize());
-            newColumn.setStoredPrefixSize(newColumn.getPrefixSize());
+            // Proactively cache, can go away if Column ever cleans itself up
+            newColumn.getMaxStorageSize();
+            newColumn.getPrefixSize();
         }
         
         // indexes/constraints
