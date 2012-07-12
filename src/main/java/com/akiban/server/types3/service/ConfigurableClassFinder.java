@@ -130,6 +130,8 @@ public final class ConfigurableClassFinder implements ClassFinder {
                 assert file.exists() : "file doesn't exist: " + file;
                 if (file.isFile() && file.getName().endsWith(".class")) {
                     String filePath = file.getAbsolutePath();
+                    if (File.separatorChar != '/')
+                        filePath = filePath.replace(File.separatorChar, '/');
                     int basePrefix = filePath.indexOf(baseUrl);
                     if (basePrefix < 0)
                         throw new AkibanInternalException(filePath + " doesn't contain " + baseUrl);
