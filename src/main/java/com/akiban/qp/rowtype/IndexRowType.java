@@ -27,7 +27,6 @@
 package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.*;
-import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
@@ -63,11 +62,6 @@ public class IndexRowType extends AisRowType
     }
     
     @Override
-    public AkCollator collatorAt(int index) {
-        return akCollators[index];
-    }
-
-    @Override
     public HKey hKey()
     {
         return tableType.hKey();
@@ -101,11 +95,9 @@ public class IndexRowType extends AisRowType
         this.index = index;
         List<IndexColumn> indexColumns = index.getAllColumns();
         akTypes = new AkType[indexColumns.size()];
-        akCollators = new AkCollator[indexColumns.size()];
         for (int i = 0; i < indexColumns.size(); i++) {
             Column column = indexColumns.get(i).getColumn();
             akTypes[i] = column.getType().akType();
-            akCollators[i] = column.getCollator();
         }
     }
 
@@ -115,5 +107,4 @@ public class IndexRowType extends AisRowType
     private final UserTableRowType tableType;
     private final Index index;
     private final AkType[] akTypes;
-    private final AkCollator[] akCollators;
 }

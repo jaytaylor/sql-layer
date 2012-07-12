@@ -28,7 +28,6 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.ais.model.HKey;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 
@@ -80,13 +79,6 @@ public class FlattenedRowType extends DerivedRowType
         if (index < parent.nFields())
             return parent.typeAt(index);
         return child.typeAt(index - parent.nFields());
-    }
-
-    @Override
-    public AkCollator collatorAt(int index) {
-        if (index < parent.nFields())
-            return parent.collatorAt(index);
-        return child.collatorAt(index - parent.nFields());
     }
 
     @Override
