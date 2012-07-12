@@ -4,7 +4,7 @@ SOFTWARE, YOU ARE ACCEPTING ALL OF THE TERMS AND CONDITIONS OF THIS AGREEMENT,
 INCLUDING THE LIMITATIONS ON REMEDIES AND DAMAGES SET FORTH HEREIN. YOU AGREE 
 THAT THIS AGREEMENT IS ENFORCEABLE LIKE ANY WRITTEN AGREEMENT SIGNED BY YOU.
 
-IF YOU DO NOT AGREE TO ALL OF THESE TERMS AND CONDITIONS, CLICK "I DON’T AGREE" 
+IF YOU DO NOT AGREE TO ALL OF THESE TERMS AND CONDITIONS, CLICK "I DON'T AGREE" 
 AND DO NOT DOWNLOAD, INSTALL OR USE THE SOFTWARE.
 
 IF YOU WISH TO USE the Software AS AN EMPLOYEE, CONTRACTOR, OR AGENT OF A 
@@ -82,7 +82,7 @@ arrangement, composition or comparable proceeding, or if any such proceeding is
 instituted against such party (and not dismissed within sixty (60) days).  You 
 may terminate this Agreement at any time upon written notice to Akiban.  Either 
 party may terminate this Agreement immediately should any Software become, or 
-in either party’s option is likely to become, the subject of a claim of 
+in either party's option is likely to become, the subject of a claim of 
 infringement or any intellectual property right.  Subject to the provisions of 
 Section 6, termination is not an exclusive remedy and the exercise by either 
 party of any remedy under this Agreement will be without prejudice to any other 
@@ -112,7 +112,7 @@ new releases or new versions of the Software under this Agreement.
 
 6.    Limitation of Remedies and Damages.
 
-6.1 Akiban (Including Akiban’s licensors) SHALL NOT BE LIABLE FOR ANY LOSS OF 
+6.1 Akiban (Including Akiban's licensors) SHALL NOT BE LIABLE FOR ANY LOSS OF 
 USE, LOST DATA, FAILURE OF SECURITY MECHANISMS, INTERRUPTION OF BUSINESS, OR 
 ANY INDIRECT, SPECIAL, INCIDENTAL, OR CONSEQUENTIAL DAMAGES OF ANY KIND 
 (INCLUDING LOST PROFITS), REGARDLESS OF THE FORM OF ACTION, WHETHER IN 
@@ -120,7 +120,7 @@ CONTRACT, TORT (INCLUDING NEGLIGENCE), STRICT LIABILITY OR OTHERWISE, EVEN IF
 INFORMED OF THE POSSIBILITY OF SUCH DAMAGES IN ADVANCE.  
 
 6.2 NOTWITHSTANDING ANY OTHER PROVISION OF THIS AGREEMENT, AKIBAN AND ITS 
-LICENSORS’ ENTIRE LIABILITY TO YOU UNDER THIS AGREEMENT, WHETHER IN CONTRACT, 
+LICENSORS' ENTIRE LIABILITY TO YOU UNDER THIS AGREEMENT, WHETHER IN CONTRACT, 
 TORT OR OTHERWISE, SHALL NOT EXCEED THE AMOUNT (IF ANY) ACTUALLY PAID BY YOU TO 
 AKIBAN UNDER THIS AGREEMENT.
 
@@ -139,11 +139,11 @@ foreign agency or authority.
 8.    General.
 
 8.1 Assignment. This Agreement will bind and inure to the benefit of each 
-party’s permitted successors and assigns. Akiban may assign this Agreement to 
+party's permitted successors and assigns. Akiban may assign this Agreement to 
 any affiliate or in connection with a merger, reorganization, acquisition or 
-other transfer of all or substantially all of Akiban’s assets or voting 
+other transfer of all or substantially all of Akiban's assets or voting 
 securities. You may not assign or transfer this Agreement, in whole or in part, 
-without Akiban’s written consent. Any attempt to transfer or assign this 
+without Akiban's written consent. Any attempt to transfer or assign this 
 Agreement without such written consent will be null and void.
 
 8.2 Severability. If any provision of this Agreement shall be adjudged by any 
@@ -160,8 +160,8 @@ Massachusetts state and United States federal courts located in Boston,
 Massachusetts, and both parties hereby submit to the personal jurisdiction of 
 such courts.
 
-8.4 Attorneys’ Fees and Costs. The prevailing party in any action to enforce 
-this Agreement will be entitled to recover its attorneys’ fees and costs in 
+8.4 Attorneys' Fees and Costs. The prevailing party in any action to enforce 
+this Agreement will be entitled to recover its attorneys' fees and costs in 
 connection with such action.
 
 8.5 Notices and Reports. Any notice or report hereunder shall be in writing. If 
@@ -192,7 +192,7 @@ be for administrative purposes only and shall have no legal effect.
 contractors. There is no relationship of partnership, joint venture, 
 employment, franchise or agency created hereby between the parties. Neither 
 party will have the power to bind the other or incur obligations on the other 
-party’s behalf without the other party’s prior written consent.
+party's behalf without the other party's prior written consent.
 
 8.9 Force Majeure. Neither party shall be liable to the other for any delay or 
 failure to perform any obligation under this Agreement (except for a failure to 
