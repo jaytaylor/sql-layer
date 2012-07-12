@@ -12,7 +12,7 @@ CREATE TABLE orders
   oid int NOT NULL, 
   PRIMARY KEY(oid),
   cid int NOT NULL,
-  order_date date NOT NULL,
+  order_date date,
   GROUPING FOREIGN KEY (cid) REFERENCES customers(cid)
 );
 CREATE INDEX order_date ON orders(order_date);

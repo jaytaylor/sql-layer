@@ -175,7 +175,8 @@ public abstract class Columnar
                         if (!column.isAkibanPKColumn()) {
                             columnsWithoutInternal.add(column);
                         }
-                        notNull.set(column.getPosition(), !column.getNullable());
+                        Boolean nullable = column.getNullable();
+                        notNull.set(column.getPosition(), nullable != null && !nullable);
                     }
                     columnsStale = false;
                 }

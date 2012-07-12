@@ -72,17 +72,17 @@ public class Cast_From_Bigint
     
     public static final TCast TO_MEDIUM_INT = new FromInt64ToInt32(MNumeric.BIGINT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT, true, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt64ToInt64(MNumeric.BIGINT, MNumeric.BIGINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.BIGINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromInt64ToDecimal(MNumeric.BIGINT, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.BIGINT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt64ToDouble(MNumeric.BIGINT, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, true, Constantness.UNKNOWN)
+    public static final TCast TO_DATE = new TCastBase(MNumeric.BIGINT, MDatetimes.DATE, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -105,7 +105,7 @@ public class Cast_From_Bigint
     };
 
 
-    public static final TCast TO_DATETIME = new TCastBase(MNumeric.BIGINT, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_DATETIME = new TCastBase(MNumeric.BIGINT, MDatetimes.DATETIME, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -128,7 +128,7 @@ public class Cast_From_Bigint
         }
     };
     
-    public static final TCast TO_TIMESTAMP = new TCastBase(MNumeric.BIGINT, MDatetimes.TIMESTAMP, true, Constantness.UNKNOWN)
+    public static final TCast TO_TIMESTAMP = new TCastBase(MNumeric.BIGINT, MDatetimes.TIMESTAMP, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -144,7 +144,7 @@ public class Cast_From_Bigint
         }
     };
 
-    public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDatetimes.TIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_TIME = new TCastBase(MNumeric.BIGINT, MDatetimes.TIME, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -167,7 +167,7 @@ public class Cast_From_Bigint
         }
     };
     
-    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.BIGINT, MString.VARCHAR, true, Constantness.UNKNOWN)
+    public static final TCast TO_VARCHAR = new TCastBase(MNumeric.BIGINT, MString.VARCHAR, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
