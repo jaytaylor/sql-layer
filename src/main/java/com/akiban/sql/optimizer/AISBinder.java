@@ -779,10 +779,13 @@ public class AISBinder implements Visitor
         for (int index = 0; index < rcl.size(); index++) {
             ResultColumn rc = rcl.get(index);
             if (rc instanceof AllResultColumn) {
+                AllResultColumn arc = (AllResultColumn)rc;
+
                 expanded = true;
 
-                fullTableName = rc.getTableNameObject();
-                allExpansion = expandAll(fullTableName, fromList);
+                fullTableName = arc.getTableNameObject();
+                boolean recursive = arc.isRecursive();
+                allExpansion = expandAll(fullTableName, fromList, recursive);
 
                 // Make sure that every column has a name.
                 for (ResultColumn nrc : allExpansion) {
@@ -833,12 +836,12 @@ public class AISBinder implements Visitor
      *
      * @exception StandardException Thrown on error
      */
-    protected ResultColumnList expandAll(TableName allTableName, FromList fromList) {
+    protected ResultColumnList expandAll(TableName allTableName, FromList fromList, boolean recursive) {
         ResultColumnList resultColumnList = null;
         ResultColumnList tempRCList = null;
 
         for (FromTable fromTable : fromList) {
-            tempRCList = getAllResultColumns(allTableName, fromTable);
+            tempRCList = getAllResultColumns(allTableName, fromTable, recursive);
 
             if (tempRCList == null)
                 continue;
@@ -866,14 +869,16 @@ public class AISBinder implements Visitor
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   ResultSetNode fromTable) {
+                                                   ResultSetNode fromTable,
+                                                   boolean recursive) {
         try {
             switch (fromTable.getNodeType()) {
             case NodeTypes.FROM_BASE_TABLE:
-                return getAllResultColumns(allTableName, (FromBaseTable)fromTable);
+                return getAllResultColumns(allTableName, (FromBaseTable)fromTable,
+                                           recursive);
             case NodeTypes.JOIN_NODE:
             case NodeTypes.HALF_OUTER_JOIN_NODE:
-                return getAllResultColumns(allTableName, (JoinNode)fromTable);
+                return getAllResultColumns(allTableName, (JoinNode)fromTable, recursive);
             case NodeTypes.FROM_SUBQUERY:
                 return getAllResultColumns(allTableName, (FromSubquery)fromTable);
             default:
@@ -886,7 +891,8 @@ public class AISBinder implements Visitor
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   FromBaseTable fromTable) 
+                                                   FromBaseTable fromTable,
+                                                   boolean recursive)
             throws StandardException {
         TableName exposedName = fromTable.getExposedTableName();
         if ((allTableName != null) && !allTableName.equals(exposedName))
@@ -920,12 +926,15 @@ public class AISBinder implements Visitor
     }
 
     protected ResultColumnList getAllResultColumns(TableName allTableName, 
-                                                   JoinNode fromJoin)
+                                                   JoinNode fromJoin,
+                                                   boolean recursive)
             throws StandardException {
         ResultColumnList leftRCL = getAllResultColumns(allTableName,
-                                                       fromJoin.getLogicalLeftResultSet());
+                                                       fromJoin.getLogicalLeftResultSet(),
+                                                       recursive);
         ResultColumnList rightRCL = getAllResultColumns(allTableName,
-                                                        fromJoin.getLogicalRightResultSet());
+                                                        fromJoin.getLogicalRightResultSet(),
+                                                        recursive);
 
         if (leftRCL == null)
             return rightRCL;
