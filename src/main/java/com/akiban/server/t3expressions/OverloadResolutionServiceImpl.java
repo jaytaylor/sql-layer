@@ -61,11 +61,12 @@ public class OverloadResolutionServiceImpl implements OverloadResolutionService,
         try {
             finder = new FunctionRegistryImpl();
         } catch (Exception e) {
+            logger.error("while creating registry", e);
             throw new ServiceStartupException(getClass().getSimpleName());
         }
         T3Registry t3Registry = new T3Registry(finder);
         OverloadResolver resolver = new OverloadResolver(t3Registry.scalars(), t3Registry.aggregates());
-        if (resolverRef.compareAndSet(null, resolver))
+        if (!resolverRef.compareAndSet(null, resolver))
             logger.warn("tried to set resolver when one already existed");
     }
 
