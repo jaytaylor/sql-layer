@@ -33,6 +33,8 @@ import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 
 import java.io.IOException;
@@ -69,7 +71,35 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                          "(AND c.relname ~ '(.+)'\\s+)?" +
                          "(AND n.nspname ~ '(.+)'\\s+)?" +
                          "(AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
-                         "ORDER BY 1,2;?", true);
+                         "ORDER BY 1,2;?", true),
+        // PSQL \d[S+] NAME
+        PSQL_DESCRIBE_TABLES("SELECT c.oid,\\s*" +
+                             "n.nspname,\\s*" +
+                             "c.relname\\s+" +
+                             "FROM pg_catalog.pg_class c\\s+" +
+                             "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
+                             "WHERE " +
+                             "(c.relname ~ '(.+)'\\s+)?" +
+                             "((?:AND )?n.nspname ~ '(.+)'\\s+)?" +
+                             "(AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
+                             "ORDER BY 2, 3;?", true),
+
+        PSQL_DESCRIBE_TABLES_2("SELECT c.relchecks, c.relkind, c.relhasindex, c.relhasrules, c.relhastriggers, c.relhasoids, '', c.reltablespace\\s+" +
+                               "FROM pg_catalog.pg_class c\\s+" +
+                               "LEFT JOIN pg_catalog.pg_class tc ON \\(c.reltoastrelid = tc.oid\\)\\s+" +
+                               "WHERE c.oid = '(\\d+)';?\\s*", true),
+        PSQL_DESCRIBE_TABLES_3("SELECT a.attname,\\s*" +
+                               "pg_catalog.format_type\\(a.atttypid, a.atttypmod\\),\\s*" +
+                               "\\(SELECT substring\\(pg_catalog.pg_get_expr\\(d.adbin, d.adrelid\\) for 128\\)\\s*" +
+                               "FROM pg_catalog.pg_attrdef d\\s+" +
+                               "WHERE d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef\\),\\s*" +
+                               "a.attnotnull, a.attnum,\\s*" +
+                               "NULL AS attcollation\\s+" +
+                               "FROM pg_catalog.pg_attribute a\\s+" +
+                               "WHERE a.attrelid = '(\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" +
+                               "ORDER BY a.attnum;?", true),
+        PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(\\d+)' ORDER BY inhseqno;?", true),
+        PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true);
 
         private String sql;
         private Pattern pattern;
@@ -118,6 +148,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
     }
 
+    static final PostgresType BOOL_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.BOOL_TYPE_OID.getOid(), (short)1, -1, AkType.BOOL, MNumeric.TINYINT.instance());
+    static final PostgresType INT2_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.INT2_TYPE_OID.getOid(), (short)2, -1, AkType.LONG, MNumeric.BIGINT.instance());
     static final PostgresType OID_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.OID_TYPE_OID.getOid(), (short)4, -1, AkType.LONG, MNumeric.BIGINT.instance());
     static final PostgresType TYPNAME_PG_TYPE = 
@@ -126,6 +160,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)128, -1, AkType.VARCHAR, MString.VARCHAR.instance());
     static final PostgresType LIST_TYPE_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)13, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+    static final PostgresType CHAR0_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)0, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+    static final PostgresType CHAR1_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance());
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -153,6 +191,27 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             ncols = 4;
             names = new String[] { "Schema", "Name", "Type", "Owner" };
             types = new PostgresType[] { IDENT_PG_TYPE, IDENT_PG_TYPE, LIST_TYPE_PG_TYPE, IDENT_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_TABLES:
+            ncols = 3;
+            names = new String[] { "oid", "nspname", "relname" };
+            types = new PostgresType[] { OID_PG_TYPE, IDENT_PG_TYPE, IDENT_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_TABLES_2:
+            ncols = 8;
+            names = new String[] { "relchecks", "relkind",  "relhasindex", "relhasrules", "relhastriggers", "relhasoids", "?column?", "reltablespace" };
+            types = new PostgresType[] { INT2_PG_TYPE, CHAR1_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, CHAR0_PG_TYPE, OID_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_TABLES_3:
+            ncols = 6;
+            names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation" };
+            types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, CHAR0_PG_TYPE };
+            break;
+        case PSQL_DESCRIBE_TABLES_4A:
+        case PSQL_DESCRIBE_TABLES_4B:
+            ncols = 1;
+            names = new String[] { "oid" };
+            types = new PostgresType[] { OID_PG_TYPE };
             break;
         default:
             return;
@@ -194,6 +253,19 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case PSQL_LIST_TABLES:
             nrows = psqlListTablesQuery(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_TABLES:
+            nrows = psqlDescribeTablesQuery(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_TABLES_2:
+            nrows = psqlDescribeTables2Query(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_TABLES_3:
+            nrows = psqlDescribeTables3Query(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_TABLES_4A:
+        case PSQL_DESCRIBE_TABLES_4B:
+            nrows = psqlDescribeTables4Query(server, messenger, maxrows, usePVals);
             break;
         }
         {        
@@ -294,6 +366,113 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             }
         }
         return nrows;
+    }
+
+    private int psqlDescribeTablesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        List<TableName> names = new ArrayList<TableName>();
+        AkibanInformationSchema ais = server.getAIS();
+        names.addAll(ais.getUserTables().keySet());
+        if (false)              // TODO: Don't have table ids for views.
+        names.addAll(ais.getViews().keySet());
+        Pattern schemaPattern = null, tablePattern = null;
+        if (groups.get(1) != null)
+            tablePattern = Pattern.compile(groups.get(2));
+        if (groups.get(3) != null)
+            schemaPattern = Pattern.compile(groups.get(4));
+        Iterator<TableName> iter = names.iterator();
+        while (iter.hasNext()) {
+            TableName name = iter.next();
+            if (((schemaPattern != null) && 
+                 !schemaPattern.matcher(name.getSchemaName()).matches()) ||
+                ((tablePattern != null) && 
+                 !tablePattern.matcher(name.getTableName()).matches()))
+                iter.remove();
+        }
+        Collections.sort(names);
+    	for (TableName name : names) {
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(3); // 3 columns for this query
+            int id = ais.getUserTable(name).getTableId();
+            writeColumn(messenger, encoder, usePVals, 
+                        id, OID_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        name.getSchemaName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        name.getTableName(), IDENT_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
+        return nrows;
+    }
+
+    private int psqlDescribeTables2Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        AkibanInformationSchema ais = server.getAIS();
+        Table table = ais.getUserTable(Integer.parseInt(groups.get(1)));
+        if (table == null) return 0;
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(8); // 8 columns for this query
+        writeColumn(messenger, encoder, usePVals, 
+                    0, INT2_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, 
+                    "r", CHAR1_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, 
+                    false, BOOL_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, 
+                    false, BOOL_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, 
+                    false, BOOL_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, 
+                    false, BOOL_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, 
+                    "", CHAR0_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, 
+                    0, OID_PG_TYPE);
+        messenger.sendMessage();
+        return 1;
+    }
+
+    private int psqlDescribeTables3Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        int nrows = 0;
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        AkibanInformationSchema ais = server.getAIS();
+        Table table = ais.getUserTable(Integer.parseInt(groups.get(1)));
+        if (table == null) return 0;
+        for (Column column : table.getColumns()) {
+            messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+            messenger.writeShort(6); // 6 columns for this query
+            writeColumn(messenger, encoder, usePVals, 
+                        column.getName(), IDENT_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        column.getTypeDescription(), TYPNAME_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        null, CHAR0_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        column.getNullable(), BOOL_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        column.getPosition(), INT2_PG_TYPE);
+            writeColumn(messenger, encoder, usePVals, 
+                        null, CHAR0_PG_TYPE);
+            messenger.sendMessage();
+            nrows++;
+            if ((maxrows > 0) && (nrows >= maxrows)) {
+                break;
+            }
+        }
+        return nrows;
+    }
+
+    private int psqlDescribeTables4Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        AkibanInformationSchema ais = server.getAIS();
+        Table table = ais.getUserTable(Integer.parseInt(groups.get(1)));
+        if (table == null) return 0;
+        return 0;
     }
 
 }
