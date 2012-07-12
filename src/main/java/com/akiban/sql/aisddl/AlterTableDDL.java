@@ -37,10 +37,13 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class AlterTableDDL {
+    static final String TEMP_TABLE_NAME_1 = "__ak_temp_1";
+    static final String TEMP_TABLE_NAME_2 = "__ak_temp_2";
+
     private AlterTableDDL() {}
     
     public static void alterTable(DDLFunctions ddlFunctions,
-                                  Session session, 
+                                  Session session,
                                   String defaultSchemaName,
                                   AlterTableNode alterTable) {
 
