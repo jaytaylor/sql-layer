@@ -37,6 +37,7 @@ import com.akiban.server.error.SelectExistsErrorException;
 import com.akiban.server.error.SubqueryOneColumnException;
 import com.akiban.server.error.TableIsBadSubqueryException;
 import com.akiban.server.error.ViewHasBadSubqueryException;
+import com.akiban.server.error.WholeGroupQueryException;
 
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.*;
@@ -46,6 +47,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Table;
+import com.akiban.ais.model.UserTable;
 import com.akiban.ais.model.View;
 
 import java.util.*;
@@ -785,6 +787,9 @@ public class AISBinder implements Visitor
 
                 fullTableName = arc.getTableNameObject();
                 boolean recursive = arc.isRecursive();
+                if (recursive && !allowSubqueryMultipleColumns) {
+                    throw new WholeGroupQueryException();
+                }
                 allExpansion = expandAll(fullTableName, fromList, recursive);
 
                 // Make sure that every column has a name.
@@ -921,6 +926,11 @@ public class AISBinder implements Visitor
             // Easy to do binding right here.
             valueNode.setUserData(new ColumnBinding(fromTable, column, 
                                                     tableBinding.isNullable()));
+        }
+        if (recursive && (table instanceof UserTable)) {
+            for (Join child : ((UserTable)table).getChildJoins()) {
+                rcList.addResultColumn(add
+            }
         }
         return rcList;
     }
