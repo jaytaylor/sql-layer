@@ -34,16 +34,13 @@ import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
+import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
+import java.util.*;
 import java.util.regex.*;
 
 /**
@@ -93,7 +90,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         PSQL_DESCRIBE_TABLES_2("SELECT c.relchecks, c.relkind, c.relhasindex, c.relhasrules, c.relhastriggers, c.relhasoids, '', c.reltablespace\\s+" +
                                "FROM pg_catalog.pg_class c\\s+" +
                                "LEFT JOIN pg_catalog.pg_class tc ON \\(c.reltoastrelid = tc.oid\\)\\s+" +
-                               "WHERE c.oid = '(\\d+)';?\\s*", true),
+                               "WHERE c.oid = '(-?\\d+)';?\\s*", true),
         PSQL_DESCRIBE_TABLES_3("SELECT a.attname,\\s*" +
                                "pg_catalog.format_type\\(a.atttypid, a.atttypmod\\),\\s*" +
                                "\\(SELECT substring\\(pg_catalog.pg_get_expr\\(d.adbin, d.adrelid\\) for 128\\)\\s*" +
@@ -102,10 +99,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "a.attnotnull, a.attnum,\\s*" +
                                "NULL AS attcollation\\s+" +
                                "FROM pg_catalog.pg_attribute a\\s+" +
-                               "WHERE a.attrelid = '(\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" +
+                               "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" +
                                "ORDER BY a.attnum;?", true),
-        PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(\\d+)' ORDER BY inhseqno;?", true),
-        PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true);
+        PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno;?", true),
+        PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true);
 
         private String sql;
         private Pattern pattern;
@@ -418,10 +415,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlDescribeTables1Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Map<Integer,TableName> nonTableNames = null;
         List<TableName> names = new ArrayList<TableName>();
         AkibanInformationSchema ais = server.getAIS();
         names.addAll(ais.getUserTables().keySet());
-        if (false)              // TODO: Don't have table ids for views.
         names.addAll(ais.getViews().keySet());
         Pattern schemaPattern = null, tablePattern = null;
         if (groups.get(1) != null)
@@ -439,9 +436,18 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         }
         Collections.sort(names);
     	for (TableName name : names) {
+            int id;
+            Columnar table = ais.getColumnar(name);
+            if (table.isTable())
+                id = ((Table)table).getTableId();
+            else {
+                if (nonTableNames == null)
+                    nonTableNames = new HashMap<Integer,TableName>(); 
+                id = - (nonTableNames.size() + 1);
+                nonTableNames.put(id, name);
+            }
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
             messenger.writeShort(3); // 3 columns for this query
-            int id = ais.getUserTable(name).getTableId();
             writeColumn(messenger, encoder, usePVals, 
                         id, OID_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, 
@@ -454,13 +460,32 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 break;
             }
         }
+        server.setAttribute("psql_nonTableNames", nonTableNames);
         return nrows;
+    }
+
+    private Columnar getTableById(PostgresServerSession server, String group) {
+        AkibanInformationSchema ais = server.getAIS();
+        int id = Integer.parseInt(group);
+        if (id < 0) {
+            Map<Integer,TableName> nonTableNames = (Map<Integer,TableName>)
+                server.getAttribute("psql_nonTableNames");
+            if (nonTableNames != null) {
+                TableName name = nonTableNames.get(id);
+                if (name != null) {
+                    return ais.getColumnar(name);
+                }
+            }
+            return null;
+        }
+        else {
+            return ais.getUserTable(id);
+        }
     }
 
     private int psqlDescribeTables2Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        AkibanInformationSchema ais = server.getAIS();
-        Table table = ais.getUserTable(Integer.parseInt(groups.get(1)));
+        Columnar table = getTableById(server, groups.get(1));
         if (table == null) return 0;
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(8); // 8 columns for this query
@@ -487,8 +512,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlDescribeTables3Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        AkibanInformationSchema ais = server.getAIS();
-        Table table = ais.getUserTable(Integer.parseInt(groups.get(1)));
+        Columnar table = getTableById(server, groups.get(1));
         if (table == null) return 0;
         for (Column column : table.getColumns()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
@@ -517,8 +541,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private int psqlDescribeTables4Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        AkibanInformationSchema ais = server.getAIS();
-        Table table = ais.getUserTable(Integer.parseInt(groups.get(1)));
+        Columnar table = getTableById(server, groups.get(1));
         if (table == null) return 0;
         return 0;
     }
