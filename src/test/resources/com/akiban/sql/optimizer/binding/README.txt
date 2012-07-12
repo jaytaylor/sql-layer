@@ -44,6 +44,8 @@ select-8h: Column alias available in HAVING
 
 select-8n: Column alias not available in WHERE
 
-select-9a: Nested result set
+select-9a: Nested result set (hard way)
+
+select-9b: Easy way
 
 update-1: Columns of target table.

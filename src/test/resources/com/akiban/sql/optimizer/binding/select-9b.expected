@@ -1,0 +1,144 @@
+com.akiban.sql.parser.CursorNode@3fdfa916
+name: null
+updateMode: UNSPECIFIED
+statementType: SELECT
+resultSet: 	
+	com.akiban.sql.parser.SelectNode@74d6041c
+	isDistinct: false
+	resultColumns: 		
+		com.akiban.sql.parser.ResultColumnList@ea80631
+
+		[0]:		
+		com.akiban.sql.parser.ResultColumn@392e827b
+		exposedName: id
+		name: id
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@1c787691
+			columnName: id
+			tableName: parent
+			type: null
+			userData: parent.id from com.akiban.sql.parser.FromBaseTable@4fbea764
+		[1]:		
+		com.akiban.sql.parser.ResultColumn@28b03831
+		exposedName: name
+		name: name
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@49392dd5
+			columnName: name
+			tableName: parent
+			type: null
+			userData: parent.name from com.akiban.sql.parser.FromBaseTable@4fbea764
+		[2]:		
+		com.akiban.sql.parser.ResultColumn@48f02081
+		exposedName: state
+		name: state
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.ColumnReference@ce61a90
+			columnName: state
+			tableName: parent
+			type: null
+			userData: parent.state from com.akiban.sql.parser.FromBaseTable@4fbea764
+		[3]:		
+		com.akiban.sql.parser.ResultColumn@56d9ea8d
+		exposedName: child
+		name: child
+		tableName: null
+		isDefaultColumn: false
+		type: null
+		expression: 			
+			com.akiban.sql.parser.SubqueryNode@7cb5fb86
+			subqueryType: EXPRESSION
+			type: null
+			resultSet: 				
+				com.akiban.sql.parser.SelectNode@f945a61
+				isDistinct: false
+				resultColumns: 					
+					com.akiban.sql.parser.ResultColumnList@54b99e44
+
+					[0]:					
+					com.akiban.sql.parser.ResultColumn@6645add0
+					exposedName: id
+					name: id
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.ColumnReference@68966724
+						columnName: id
+						tableName: child
+						type: null
+						userData: child.id from com.akiban.sql.parser.FromBaseTable@3b13bc80
+					[1]:					
+					com.akiban.sql.parser.ResultColumn@6a4da220
+					exposedName: pid
+					name: pid
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.ColumnReference@ecf1966
+						columnName: pid
+						tableName: child
+						type: null
+						userData: child.pid from com.akiban.sql.parser.FromBaseTable@3b13bc80
+					[2]:					
+					com.akiban.sql.parser.ResultColumn@3e8c7f22
+					exposedName: name
+					name: name
+					tableName: null
+					isDefaultColumn: false
+					type: null
+					expression: 						
+						com.akiban.sql.parser.ColumnReference@79eeb142
+						columnName: name
+						tableName: child
+						type: null
+						userData: child.name from com.akiban.sql.parser.FromBaseTable@3b13bc80
+				fromList: 					
+					com.akiban.sql.parser.FromList@25b7a298
+
+					[0]:					
+					com.akiban.sql.parser.FromBaseTable@3b13bc80
+					tableName: test.child
+					updateOrDelete: null
+					null
+					correlation Name: child
+					child
+					userData: test.child
+				whereClause: 					
+					com.akiban.sql.parser.BinaryRelationalOperatorNode@cbc95cd
+					operator: =
+					methodName: equals
+					type: null
+					leftOperand: 						
+						com.akiban.sql.parser.ColumnReference@310ecc43
+						columnName: id
+						tableName: parent
+						type: null
+						userData: parent.id from com.akiban.sql.parser.FromBaseTable@4fbea764
+					rightOperand: 						
+						com.akiban.sql.parser.ColumnReference@42845bde
+						columnName: pid
+						tableName: test.child
+						type: null
+						userData: child.pid from com.akiban.sql.parser.FromBaseTable@3b13bc80
+	fromList: 		
+		com.akiban.sql.parser.FromList@7fab6def
+
+		[0]:		
+		com.akiban.sql.parser.FromBaseTable@4fbea764
+		tableName: parent
+		updateOrDelete: null
+		null
+		correlation Name: null
+		null
+		userData: test.parent
