@@ -92,13 +92,13 @@ public class AlterTableDDLTest {
                 .pk("oid");
         builder.unvalidatedAIS();
 
-        parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
+        parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
 
         assertEquals("Create order", list(TEMP_NAME_1), ddlFunctions.createdTables);
 
-        TableNamePair rename1 = new TableNamePair(tn(SCHEMA, "o"), TEMP_NAME_1);
-        TableNamePair rename2 = new TableNamePair(TEMP_NAME_2, tn(SCHEMA, "o"));
-        assertEquals("Rename order", list(rename1, rename2), ddlFunctions.renamedTables);
+        TableNamePair rename1 = new TableNamePair(tn(SCHEMA, "o"), TEMP_NAME_2);
+        TableNamePair rename2 = new TableNamePair(TEMP_NAME_1, tn(SCHEMA, "o"));
+        assertEquals("Rename order", list(rename1, rename2).toString(), ddlFunctions.renamedTables.toString());
 
         assertEquals("Drop order", list(TEMP_NAME_2), ddlFunctions.droppedTables);
     }
