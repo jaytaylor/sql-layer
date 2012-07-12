@@ -26,6 +26,7 @@
 
 package com.akiban.ais.model.validation;
 
+import com.akiban.server.error.DuplicateIndexColumnException;
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
@@ -101,5 +102,53 @@ public class AISInvariantsTest {
         builder = new AISBuilder();
         builder.createGroup("test", "test", "t1");
         builder.createGroup("test", "test", "t2");
+    }
+
+    @Test (expected=DuplicateIndexColumnException.class)
+    public void testDuplicateColumnsTableIndex() {
+        builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "c1", 0, "INT", null, null, false, false, null, null);
+        builder.index("test", "t1", "c1_index", false, Index.KEY_CONSTRAINT);
+        builder.indexColumn("test", "t1", "c1_index", "c1", 0, true, null);
+        builder.indexColumn("test", "t1", "c1_index", "c1", 1, true, null);
+    }
+
+    @Test (expected=DuplicateIndexColumnException.class)
+    public void testDuplicateColumnsGroupIndex() {
+        builder = createSimpleValidGroup();
+        builder.groupIndex("t1", "y_x", false, Index.JoinType.LEFT);
+        builder.indexColumn("test", "t2", "y_x", "y", 0, true, null);
+        builder.indexColumn("test", "t2", "y_x", "y", 1, true, null);
+    }
+
+    @Test
+    public void testDuplicateColumnNamesButValidGroupIndex() {
+        builder = createSimpleValidGroup();
+        builder.groupIndex("t1", "y_y", false, Index.JoinType.LEFT);
+        builder.indexColumn("test", "t2", "y_x", "y", 0, true, null);
+        builder.indexColumn("test", "t1", "y_x", "y", 1, true, null);
+    }
+
+    private static AISBuilder createSimpleValidGroup() {
+        AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "c1", 0, "INT", null, null, false, false, null, null);
+        builder.column("test", "t1", "x", 1, "INT", null, null, false, false, null, null);
+        builder.column("test", "t1", "y", 2, "INT", null, null, false, false, null, null);
+        builder.index("test", "t1", Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+        builder.indexColumn("test", "t1", Index.PRIMARY_KEY_CONSTRAINT, "c1", 0, true, null);
+        builder.userTable("test", "t2");
+        builder.column("test", "t2", "c1", 0, "INT", null, null, false, false, null, null);
+        builder.column("test", "t2", "c2", 1, "INT", null, null, false, false, null, null);
+        builder.column("test", "t2", "y", 2, "INT", null, null, false, false, null, null);
+        builder.basicSchemaIsComplete();
+
+        builder.createGroup("t1", "test", "ak_" + "t1");
+        builder.addTableToGroup("t1", "test", "t1");
+        builder.joinTables("t2/t1", "test", "t1", "test", "t2");
+        builder.joinColumns("t2/t1", "test", "t2", "c1", "test", "t2", "c2");
+        builder.groupingIsComplete();
+        return builder;
     }
 }
