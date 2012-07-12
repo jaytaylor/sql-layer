@@ -110,14 +110,13 @@ public class FormatterTest {
         Expression substr_ = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1_, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         
         Explainer explainer = substr.getExplainer();
-        Format instance = new Format();
         String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \"%Y-%m-%d\"), 9 + 10, 11)";
-        String result = instance.Describe(explainer);
+        String result = Format.Describe(explainer);
         assertEquals(expResult, result);
         
         explainer = substr_.getExplainer();
         expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \"%Y-%m-%d\"), 9 + 10, 11)";
-        result = instance.Describe(explainer);
+        result = Format.Describe(explainer);
         assertEquals(expResult, result);
     }
 
@@ -128,10 +127,9 @@ public class FormatterTest {
         PrimitiveExplainer explainer2 = PrimitiveExplainer.getInstance("27");
         StringBuilder sb1 = new StringBuilder();
         StringBuilder sb2 = new StringBuilder();
-        Format instance = new Format();
-        instance.describePrimitive(explainer1, sb1);
-        instance.describePrimitive(explainer2, sb2);
-        assertEquals(sb1.toString(),"27");
-        assertEquals(sb2.toString(), "\"27\"");
+        Format.describePrimitive(explainer1, sb1);
+        Format.describePrimitive(explainer2, sb2);
+        assertEquals("27", sb1.toString());
+        assertEquals("\"27\"", sb2.toString());
     }
 }

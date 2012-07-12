@@ -103,6 +103,7 @@ public class Format {
         {
             sb.append(explainer.get());
         }
+        
     }
 
     protected static void describeOperator(OperationExplainer explainer, StringBuilder sb) {
@@ -256,7 +257,8 @@ public class Format {
                 }
                 break;
             default:
-                throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
+                // throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
+                describeExpression(explainer, sb, false, null);
         }
         sb.append(")");
     }
