@@ -26,7 +26,9 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -45,7 +47,8 @@ public class MString extends TString
 
     @Override
     public void writeCollating(PValueSource inValue, TInstance inInstance, PValueTarget out) {
-        out.putString(inValue.getString()); // TODO put string with collation
+        final int collatorId = inInstance.attribute(StringAttribute.COLLATION);
+        out.putString(inValue.getString(), AkCollatorFactory.getAkCollator(collatorId));
     }
 
     private MString(TypeId typeId, String name, int fixedSize) {
