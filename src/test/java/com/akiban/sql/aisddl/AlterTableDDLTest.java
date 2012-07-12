@@ -39,6 +39,7 @@ import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.NoSuchTableException;
+import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.rowdata.RowDef;
 import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
@@ -71,7 +72,7 @@ public class AlterTableDDLTest {
     public void before() {
         parser = new SQLParser();
         builder = AISBBasedBuilder.create();
-        ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
+        ddlFunctions = null;
     }
 
     @After
@@ -81,16 +82,36 @@ public class AlterTableDDLTest {
         ddlFunctions = null;
     }
 
+    @Test(expected=NoSuchTableException.class)
+    public void cannotAddToUnknownTable() throws StandardException {
+        parseAndRun("ALTER TABLE ha1 ADD GROUPING FOREIGN KEY(ha) REFERENCES ha2(ha)");
+    }
+
+    @Test(expected=NoSuchTableException.class)
+    public void cannotAddToUnknownParent() throws StandardException {
+        builder.userTable(SCHEMA, "c").colBigInt("cid", false).colBigInt("other").pk("cid");
+        parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(other) REFERENCES zap(id)");
+    }
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotAddToTableWithParent() throws StandardException {
+        builder.userTable(SCHEMA, "c").colBigInt("cid", false).pk("cid");
+        builder.userTable(SCHEMA, "o").colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo("c").on("cid", "cid");
+        parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
+    }
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotAddToTableWithChild() throws StandardException {
+        builder.userTable(SCHEMA, "a").colBigInt("aid", false).pk("aid");
+        builder.userTable(SCHEMA, "c").colBigInt("cid", false).colBigInt("aid").pk("cid");
+        builder.userTable(SCHEMA, "o").colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo("c").on("cid", "cid");
+        parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(aid) REFERENCES a(aid)");
+    }
+
     @Test
-    public void simpleAddSingleToSingle() throws StandardException {
-        builder.userTable(SCHEMA, "c")
-                .colBigInt("cid", false)
-                .pk("cid");
-        builder.userTable(SCHEMA, "o")
-                .colBigInt("oid", false)
-                .colBigInt("cid")
-                .pk("oid");
-        builder.unvalidatedAIS();
+    public void simpleAddSingleTableToSingleTable() throws StandardException {
+        builder.userTable(SCHEMA, "c").colBigInt("cid", false).pk("cid");
+        builder.userTable(SCHEMA, "o").colBigInt("oid", false).colBigInt("cid").pk("oid");
 
         parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
 
@@ -110,6 +131,7 @@ public class AlterTableDDLTest {
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
+        ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
         AlterTableDDL.alterTable(ddlFunctions, null, SCHEMA, (AlterTableNode)node);
     }
 

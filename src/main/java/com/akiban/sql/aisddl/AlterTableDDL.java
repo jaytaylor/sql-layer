@@ -57,11 +57,9 @@ public class AlterTableDDL {
                                   Session session,
                                   String defaultSchemaName,
                                   AlterTableNode alterTable) {
-
-        com.akiban.sql.parser.TableName sqlName = alterTable.getObjectName();
-        String schemaName = sqlName.hasSchema() ? sqlName.getSchemaName() : defaultSchemaName;
-        TableName tableName = TableName.create(schemaName, sqlName.getTableName());
-        final UserTable table = ddlFunctions.getAIS(session).getUserTable(tableName);
+        final AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
+        final TableName tableName = convertName(defaultSchemaName, alterTable.getObjectName());
+        final UserTable table = curAIS.getUserTable(tableName);
         if (table == null) {
             throw new NoSuchTableException(tableName.getSchemaName(), 
                                            tableName.getTableName());
@@ -85,17 +83,14 @@ public class AlterTableDDL {
                 throw new UnsupportedSQLException("Cannot add non-leaf table to a group", null);
             }
 
-            com.akiban.sql.parser.TableName refTableName = fkNode.getRefTableName();
-            TableName refName = new TableName(refTableName.getSchemaName() != null ? refTableName.getSchemaName() : defaultSchemaName,
-                                              refTableName.getTableName());
-
-            final UserTable refTable = ddlFunctions.getAIS(session).getUserTable(refName);
+            TableName refName = convertName(defaultSchemaName, fkNode.getRefTableName());
+            final UserTable refTable = curAIS.getUserTable(refName);
             if(refTable == null) {
                 throw new NoSuchTableException(refName);
             }
 
             AkibanInformationSchema aisCopy = AISCloner.clone(
-                    ddlFunctions.getAIS(session),
+                    curAIS,
                     new ProtobufWriter.TableAllIndexSelector() {
                         @Override
                         public boolean isSelected(Columnar columnar) {
@@ -104,36 +99,28 @@ public class AlterTableDDL {
                     }
             );
 
-            TableName tempName1 = new TableName(schemaName, TEMP_TABLE_NAME_1);
-            TableName tempName2 = new TableName(schemaName, TEMP_TABLE_NAME_2);
+            TableName tempName1 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_1);
+            TableName tempName2 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_2);
 
+            UserTable newTable = aisCopy.getUserTable(tableName);
             UserTable newRefTable = aisCopy.getUserTable(refName);
-            UserTable newSourceTable = aisCopy.getUserTable(tableName);
-            AISTableNameChanger changer = new AISTableNameChanger(newSourceTable, tableName.getSchemaName(), TEMP_TABLE_NAME_1);
-            changer.doChange();
+            new AISTableNameChanger(newTable, tempName1).doChange();
 
-            Join j = Join.create(aisCopy, "temp_name", newRefTable, newSourceTable);
-            j.setGroup(newRefTable.getGroup());
-            newSourceTable.setGroup(j.getGroup());
+            Join join = Join.create(aisCopy, "temp_name", newRefTable, newTable);
+            join.setGroup(newRefTable.getGroup());
+            newTable.setGroup(join.getGroup());
 
-            String[] sourceColumns = fkNode.getColumnList().getColumnNames();
+            String[] columns = fkNode.getColumnList().getColumnNames();
             String[] refColumns = fkNode.getRefResultColumnList().getColumnNames();
-
-            for(int i = 0; (i < refColumns.length) && (i < sourceColumns.length); ++i) {
-                JoinColumn.create(j, newRefTable.getColumn(refColumns[i]), newSourceTable.getColumn(sourceColumns[i]));
-                ++i;
+            for(int i = 0; (i < refColumns.length) && (i < columns.length); ++i) {
+                JoinColumn.create(join, newRefTable.getColumn(refColumns[i]), newTable.getColumn(columns[i]));
             }
 
-            newSourceTable.getParentJoin();
-            ddlFunctions.createTable(session, newSourceTable);
-
+            ddlFunctions.createTable(session, newTable);
             // TODO: Copy data
-
             ddlFunctions.renameTable(session, tableName, tempName2);
             ddlFunctions.renameTable(session, tempName1, tableName);
-
             ddlFunctions.dropTable(session, tempName2);
-
             return;
         }
 
@@ -155,5 +142,10 @@ public class AlterTableDDL {
             }
         }
         return null;
+    }
+
+    private static TableName convertName(String defaultSchema, com.akiban.sql.parser.TableName parserName) {
+        final String schema = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchema;
+        return new TableName(schema, parserName.getTableName());
     }
 }
