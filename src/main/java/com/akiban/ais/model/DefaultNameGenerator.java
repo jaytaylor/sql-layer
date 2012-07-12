@@ -177,6 +177,7 @@ public class DefaultNameGenerator implements NameGenerator {
         return ret.toLowerCase().replace(',', '_');
     }
 
+    @Override
     public String generateIndexTreeName(Index index) {
         // schema.table.index
         final TableName tableName;
@@ -209,6 +210,14 @@ public class DefaultNameGenerator implements NameGenerator {
         return makeUnique(treeNames, proposed);
     }
 
+    @Override
+    public String generateIdentitySequenceName (TableName tableName, String columnName) {
+        return generateIdentitySequenceName(tableName);
+    }
+    
+    public static String generateIdentitySequenceName (TableName tableName) {
+        return "_sequence-" + tableName.hashCode();
+    }
     private static String makeUnique(Set<String> set, String original) {
         int counter = 1;
         String proposed = original;

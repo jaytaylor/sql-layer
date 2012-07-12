@@ -95,14 +95,13 @@ public class Sequence {
     }
 
     // State
-
-    final protected TableName sequenceName;
+    protected final TableName sequenceName;
     protected String treeName;
     private Integer accumIndex;
 
-    final private long startsWith;
-    final private long increment;
-    final private long minValue;
-    final private long maxValue;
-    final private boolean cycle;
+    private final long startsWith;
+    private final long increment;
+    private final long minValue;
+    private final long maxValue;
+    private final boolean cycle;
 }

@@ -57,6 +57,7 @@ public class ProtobufWriter {
         boolean isSelected(Columnar columnar);
         /** Called for all GroupIndexes and all table indexes where isSelected(UserTable) is true **/
         boolean isSelected(Index index);
+        boolean isSelected(Sequence sequence);
     }
 
     public static WriteSelector ALL_SELECTOR = new WriteSelector() {
@@ -69,11 +70,19 @@ public class ProtobufWriter {
         public boolean isSelected(Index index) {
             return true;
         }
+        @Override
+        public boolean isSelected(Sequence sequence) {
+            return true;
+        }
     };
 
     public static abstract class TableAllIndexSelector implements WriteSelector {
         @Override
         public boolean isSelected(Index index) {
+            return true;
+        }
+        @Override 
+        public boolean isSelected(Sequence sequence) {
             return true;
         }
     }
@@ -97,6 +106,11 @@ public class ProtobufWriter {
         @Override
         public boolean isSelected(Index index) {
             return true;
+        }
+        
+        @Override 
+        public boolean isSelected(Sequence sequence) {
+            return schemaName.equals(sequence.getSequenceName().getSchemaName());
         }
     }
 
@@ -202,8 +216,10 @@ public class ProtobufWriter {
         }
         
         for (Sequence sequence : schema.getSequences().values()) {
-            writeSequence(schemaBuilder, sequence);
-            isEmpty = false;
+            if (selector.isSelected (sequence)) { 
+                writeSequence(schemaBuilder, sequence);
+                isEmpty = false;
+            }
         }
 
         for(View view : schema.getViews().values()) {

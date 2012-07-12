@@ -152,8 +152,8 @@ public class AISMerge {
 
     private void addTable(AISBuilder builder, final UserTable table) {
         
-        // I should use TableSubsetWriter(new AISTarget(targetAIS))
-        // but that assumes the UserTable.getAIS() is complete and valid. 
+        // I should use TableSubsetWriter(new AISTarget(targetAIS)) or AISCloner.clone()
+        // but both assume the UserTable.getAIS() is complete and valid. 
         // i.e. has a group and group table, and the joins point to a valid table
         // which, given the use of AISMerge, is not true. 
         
@@ -181,6 +181,17 @@ public class AISMerge {
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {
                 newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
+            }
+            if (column.getDefaultIdentity() != null) {
+                String sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName), column.getName());
+                Sequence sequence = column.getIdentityGenerator();
+                builder.sequence(schemaName, sequenceName, 
+                        sequence.getStartsWith(), 
+                        sequence.getIncrement(), 
+                        sequence.getMinValue(), 
+                        sequence.getMaxValue(), 
+                        sequence.isCycle());
+                builder.columnAsIdentity(schemaName, tableName, column.getName(), sequenceName, column.getDefaultIdentity());
             }
             // Proactively cache, can go away if Column ever cleans itself up
             newColumn.getMaxStorageSize();

@@ -56,6 +56,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.NameGenerator;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.View;
 import com.akiban.ais.model.validation.AISValidations;
@@ -420,6 +421,11 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                     public boolean isSelected(Index index) {
                         return !indexesToDrop.contains(index);
                     }
+                    
+                    @Override 
+                    public boolean isSelected (Sequence sequence) {
+                        return true;
+                    }
         });
 
         final Set<String> schemas = new HashSet<String>();
@@ -465,12 +471,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
         final Set<String> schemas = new HashSet<String>();
         final List<Integer> tableIDs = new ArrayList<Integer>();
+        final Set<TableName> sequences = new HashSet<TableName>();
         for(TableName name : tables) {
             schemas.add(name.getSchemaName());
             tableIDs.add(getAis().getTable(name).getTableId());
+            for (Column column : getAis().getTable(name).getColumns()) {
+                if (column.getIdentityGenerator() != null) {
+                    sequences.add(column.getIdentityGenerator().getSequenceName());
+                }
+            }
         }
 
-        final AkibanInformationSchema newAIS = removeTablesFromAIS(tables);
+        final AkibanInformationSchema newAIS = removeTablesFromAIS(tables, sequences);
         try {
             saveAISChangeWithRowDefs(session, newAIS, schemas);
             // Success, remaining cleanup
@@ -549,7 +561,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
      * @param tableNames List of tables to exclude from new AIS.
      * @return A completely new AIS.
      */
-    private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames) {
+    private AkibanInformationSchema removeTablesFromAIS(final List<TableName> tableNames, final Set<TableName> sequences) {
         return AISCloner.clone(
                 getAis(),
                 new ProtobufWriter.WriteSelector() {
@@ -570,6 +582,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                             }
                         }
                         return true;
+                    }
+                    @Override 
+                    public boolean isSelected(Sequence sequence) {
+                        return !sequences.contains(sequence.getSequenceName());
                     }
                 }
         );
