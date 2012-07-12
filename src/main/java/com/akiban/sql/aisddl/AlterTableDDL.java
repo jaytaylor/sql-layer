@@ -94,7 +94,9 @@ public class AlterTableDDL {
                     new ProtobufWriter.TableAllIndexSelector() {
                         @Override
                         public boolean isSelected(Columnar columnar) {
-                            return (columnar == table) || (columnar == refTable);
+                            if(columnar.isView()) return false;
+                            UserTable inTable = (UserTable)columnar;
+                            return (columnar == table) || (inTable.getGroup() == refTable.getGroup());
                         }
                     }
             );

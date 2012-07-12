@@ -58,11 +58,17 @@ import java.util.List;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 
 public class AlterTableDDLTest {
     private static final String SCHEMA = "test";
     private static final TableName TEMP_NAME_1 = new TableName(SCHEMA, AlterTableDDL.TEMP_TABLE_NAME_1);
     private static final TableName TEMP_NAME_2 = new TableName(SCHEMA, AlterTableDDL.TEMP_TABLE_NAME_2);
+    private static final TableName C_NAME = tn(SCHEMA, "c");
+    private static final TableName O_NAME = tn(SCHEMA, "o");
+    private static final TableName I_NAME = tn(SCHEMA, "i");
+    private static final TableName A_NAME = tn(SCHEMA, "a");
+
 
     private SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
@@ -83,56 +89,146 @@ public class AlterTableDDLTest {
     }
 
     @Test(expected=NoSuchTableException.class)
-    public void cannotAddToUnknownTable() throws StandardException {
+    public void cannotAddGFKToUnknownTable() throws StandardException {
         parseAndRun("ALTER TABLE ha1 ADD GROUPING FOREIGN KEY(ha) REFERENCES ha2(ha)");
     }
 
     @Test(expected=NoSuchTableException.class)
-    public void cannotAddToUnknownParent() throws StandardException {
-        builder.userTable(SCHEMA, "c").colBigInt("cid", false).colBigInt("other").pk("cid");
+    public void cannotAddGFKToUnknownParent() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("cid", false).colBigInt("other").pk("cid");
         parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(other) REFERENCES zap(id)");
     }
 
     @Test(expected=UnsupportedSQLException.class)
-    public void cannotAddToTableWithParent() throws StandardException {
-        builder.userTable(SCHEMA, "c").colBigInt("cid", false).pk("cid");
-        builder.userTable(SCHEMA, "o").colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo("c").on("cid", "cid");
+    public void cannotAddGFKToTableWithParent() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("cid", false).pk("cid");
+        builder.userTable(O_NAME).colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo(C_NAME).on("cid", "cid");
         parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
     }
 
     @Test(expected=UnsupportedSQLException.class)
-    public void cannotAddToTableWithChild() throws StandardException {
-        builder.userTable(SCHEMA, "a").colBigInt("aid", false).pk("aid");
-        builder.userTable(SCHEMA, "c").colBigInt("cid", false).colBigInt("aid").pk("cid");
-        builder.userTable(SCHEMA, "o").colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo("c").on("cid", "cid");
+    public void cannotAddGFKToTableWithChild() throws StandardException {
+        builder.userTable(A_NAME).colBigInt("aid", false).pk("aid");
+        builder.userTable(C_NAME).colBigInt("cid", false).colBigInt("aid").pk("cid");
+        builder.userTable(O_NAME).colBigInt("oid", false).colBigInt("cid").pk("oid").joinTo(C_NAME).on("cid", "cid");
         parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(aid) REFERENCES a(aid)");
     }
 
     @Test
-    public void simpleAddSingleTableToSingleTable() throws StandardException {
-        builder.userTable(SCHEMA, "c").colBigInt("cid", false).pk("cid");
-        builder.userTable(SCHEMA, "o").colBigInt("oid", false).colBigInt("cid").pk("oid");
+    public void addGFKToSingleTableOnSingleTable() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("cid", false).pk("cid");
+        builder.userTable(O_NAME).colBigInt("oid", false).colBigInt("cid").pk("oid");
 
         parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
 
-        assertEquals("Create order", list(TEMP_NAME_1), ddlFunctions.createdTables);
-
-        TableNamePair rename1 = new TableNamePair(tn(SCHEMA, "o"), TEMP_NAME_2);
-        TableNamePair rename2 = new TableNamePair(TEMP_NAME_1, tn(SCHEMA, "o"));
-        assertEquals("Rename order", list(rename1, rename2).toString(), ddlFunctions.renamedTables.toString());
-
-        assertEquals("Drop order", list(TEMP_NAME_2), ddlFunctions.droppedTables);
-
-        assertEquals("Groups",
-                     ddlFunctions.ais.getUserTable("test","c").getGroup().getName(),
-                     ddlFunctions.ais.getUserTable("test","o").getGroup().getName());
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(O_NAME, TEMP_NAME_2, TEMP_NAME_1, O_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, O_NAME, true);
+        expectChildOf(C_NAME, O_NAME);
     }
+
+    @Test
+    public void addGFKToSingleTableOnRootOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES c(id)");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectGroupIsSame(C_NAME, O_NAME, true);
+        expectGroupIsSame(C_NAME, I_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test
+    public void addGFKToSingleTableOnMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES o(id)");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectGroupIsSame(C_NAME, O_NAME, true);
+        expectGroupIsSame(C_NAME, I_NAME, true);
+        expectChildOf(O_NAME, A_NAME);
+    }
+
+    @Test
+    public void addGFKToSingleTableOnLeafOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES i(id)");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectGroupIsSame(C_NAME, O_NAME, true);
+        expectGroupIsSame(C_NAME, I_NAME, true);
+        expectChildOf(I_NAME, A_NAME);
+    }
+
 
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
         AlterTableDDL.alterTable(ddlFunctions, null, SCHEMA, (AlterTableNode)node);
+    }
+
+    private void expectCreated(TableName... names) {
+        assertEquals("Creation order",
+                     Arrays.asList(names).toString(),
+                     ddlFunctions.createdTables.toString());
+    }
+
+    private void expectRenamed(TableName... pairs) {
+        assertTrue("Even number of names", (pairs.length % 2) == 0);
+        List<TableNamePair> pairList = new ArrayList<TableNamePair>();
+        for(int i = 0; i < pairs.length; i += 2) {
+            pairList.add(new TableNamePair(pairs[i], pairs[i + 1]));
+        }
+        assertEquals("Renamed order",
+                     pairList.toString(),
+                     ddlFunctions.renamedTables.toString());
+    }
+
+    private void expectDropped(TableName... names) {
+        assertEquals("Dropped order",
+                     Arrays.asList(names).toString(),
+                     ddlFunctions.droppedTables.toString());
+    }
+
+    private void expectGroupIsSame(TableName t1, TableName t2, boolean equal) {
+        // Only check the name of the group, DDLFunctionsMock doesn't re-serialize
+        UserTable table1 = ddlFunctions.ais.getUserTable(t1);
+        UserTable table2 = ddlFunctions.ais.getUserTable(t2);
+        String groupName1 = ((table1 != null) && (table1.getGroup() != null)) ? table1.getGroup().getName() : "<NO_GROUP>1";
+        String groupName2 = ((table2 != null) && (table2.getGroup() != null)) ? table2.getGroup().getName() : "<NO_GROUP>2";
+        assertEquals((equal ? "Same" : "Different") + " group for tables " + t1 + "," + t2,
+                     groupName1,
+                     groupName2);
+    }
+
+    private void expectChildOf(TableName t1, TableName t2) {
+        // Only check the names of tables, DDLFunctionsMock doesn't re-serialize
+        UserTable table1 = ddlFunctions.ais.getUserTable(t2);
+        UserTable parent = (table1.getParentJoin() != null) ? table1.getParentJoin().getParent() : null;
+        TableName parentName = (parent != null) ? parent.getName() : null;
+        assertEquals(t2 + " parent name", t1, parentName);
+    }
+
+
+    private void buildCOIJoinedAUnJoined() {
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        builder.userTable(O_NAME).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
+        builder.userTable(I_NAME).colBigInt("id", false).colBigInt("oid").pk("id").joinTo(O_NAME).on("oid", "id");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").pk("id");
     }
 
     private static class TableNamePair {
@@ -153,7 +249,7 @@ public class AlterTableDDLTest {
     }
 
     private static class DDLFunctionsMock implements DDLFunctions {
-        private final AkibanInformationSchema ais;
+        final AkibanInformationSchema ais;
         final List<TableName> createdTables = new ArrayList<TableName>();
         final List<TableName> droppedTables = new ArrayList<TableName>();
         final List<TableNamePair> renamedTables = new ArrayList<TableNamePair>();
@@ -295,9 +391,4 @@ public class AlterTableDDLTest {
     private static TableName tn(String schema, String table) {
         return new TableName(schema, table);
     }
-
-    private static <T> List<T> list(T... names) {
-        return Arrays.asList(names);
-    }
-
 }
