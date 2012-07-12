@@ -26,12 +26,6 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
-
-public interface OverloadResolutionResult {
-    TValidatedOverload overload();
-    TClass tClass(int index);
-    TInstance pickingType();
+public interface OverloadResolutionService {
+    OverloadResolver getResolver();
 }

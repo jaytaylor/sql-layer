@@ -24,32 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.pvalue;
+package com.akiban.server.error;
 
-import com.akiban.server.collation.AkCollator;
-
-public interface PBasicValueTarget {
-    PUnderlying getUnderlyingType();
-
-    void putNull();
-
-    void putBool(boolean value);
-
-    void putInt8(byte value);
-
-    void putInt16(short value);
-
-    void putUInt16(char value);
-
-    void putInt32(int value);
-
-    void putInt64(long value);
-
-    void putFloat(float value);
-
-    void putDouble(double value);
-
-    void putBytes(byte[] value);
-
-    void putString(String value, AkCollator collator);
+public final class UnsupportedCollationException extends InvalidOperationException {
+    public UnsupportedCollationException (String schemaName, String tableName, String columnName, String collation) {
+        super(ErrorCode.UNSUPPORTED_COLLATION, schemaName, tableName, columnName, collation);
+    }
 }

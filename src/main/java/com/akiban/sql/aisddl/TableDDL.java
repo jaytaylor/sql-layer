@@ -173,6 +173,19 @@ public class TableDDL
         addColumn(builder, schemaName, tableName, cdn.getColumnName(), colpos,
                   cdn.getType(), autoIncrement);
         if (autoIncrement) {
+            // if the cdn has a default node-> GENERATE BY DEFAULT
+            // if no default node -> GENERATE ALWAYS
+            Boolean defaultIdentity = new Boolean (cdn.getDefaultNode() != null);
+            // The merge process will generate a real sequence name
+            String sequenceName = "temp-sequence-1"; 
+            // Create a sequence to hold the IDENTITY Information
+            builder.sequence(schemaName, sequenceName, 
+                    cdn.getAutoincrementStart(), 
+                    cdn.getAutoincrementIncrement(), 
+                    Long.MIN_VALUE, Long.MAX_VALUE, 
+                    false);
+            // make the column an identity column 
+            builder.columnAsIdentity(schemaName, tableName, cdn.getColumnName(), sequenceName, defaultIdentity);
             builder.userTableInitialAutoIncrement(schemaName, tableName, 
                                                   cdn.getAutoincrementStart());
         }
