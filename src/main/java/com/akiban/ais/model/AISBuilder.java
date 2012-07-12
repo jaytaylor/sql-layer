@@ -719,11 +719,13 @@ public class
             groupColumn.setUserColumn(userColumn);
             groupColumn.finishCreating();
             
-            if (userColumn.getIdentityGenerator() != null) {
-                userColumn.getIdentityGenerator().setTreeName(groupTable.getTreeName());
+            // TODO : Remove the setting of the tree name 
+            // until we can resolve tree <-> sequence management
+            //if (userColumn.getIdentityGenerator() != null) {
+            //    userColumn.getIdentityGenerator().setTreeName(groupTable.getTreeName());
                 // TODO Generate stable index ids.
-                userColumn.getIdentityGenerator().setAccumIndex(3);
-            }
+            //    userColumn.getIdentityGenerator().setAccumIndex(3);
+            // }
         }
         for (Join join : userTable.getChildJoins()) {
             generateGroupTableColumns(groupTable, join.getChild());

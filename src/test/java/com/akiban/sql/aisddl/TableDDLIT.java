@@ -359,6 +359,12 @@ public class TableDDLIT extends PostgresServerITBase {
         getConnection().createStatement().execute(sql);
         
         assertEquals (1, ddlServer().getAIS(session()).getSequences().size());
+        
+        sql = "DROP TABLE test.t12";
+        getConnection().createStatement().execute(sql);
+        
+        assertEquals (0, ddlServer().getAIS(session()).getSequences().size());
+        
 
     }
     
