@@ -17,6 +17,7 @@ SolidCompression = yes
 MinVersion = 5.1
 PrivilegesRequired = admin
 ArchitecturesInstallIn64BitMode=x64 ia64
+LicenseFile=LICENSE.txt
 
 [Tasks]
 Name: "installsvc"; Description: "Run as Windows Service"; Flags: unchecked
