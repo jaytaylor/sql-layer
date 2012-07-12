@@ -825,40 +825,6 @@ public class BasicInfoSchemaTablesServiceImpl
             }
         }
     }
-
-    private class GroupTablesFactory extends BasicFactoryBase
-    {
-        public GroupTablesFactory(TableName sourceTable)
-        {
-            super(sourceTable);
-        }
-
-        @Override
-        public GroupScan getGroupScan(MemoryAdapter adapter)
-        {
-            return new Scan(getRowType(adapter));
-        }
-
-        @Override
-        public long rowCount()
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-        
-        private class Scan extends BaseScan
-        {
-            public Scan(RowType rowType)
-            {
-                super(rowType);
-            }
-
-            @Override
-            public Row next()
-            {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }   
-        }
-    }
     
     private static class TableConstraintsIteration {
         private final Iterator<UserTable> tableIt;
