@@ -60,6 +60,7 @@ public final class AISValidations {
     public static final AISValidation MEMORY_TABLES_SINGLE = new MemoryTableSingleTableGroup();
     public static final AISValidation VIEW_REFERENCES = new ViewReferences();
     public static final AISValidation INDEX_COLUMN_IS_NOT_PARTIAL = new IndexColumnIsNotPartial();
+    public static final AISValidation COLUMN_SIZES_MATCH = new ColumnMaxAndPrefixSizesMatch();
 
     public static final Collection<AISValidation> LIVE_AIS_VALIDATIONS;
     
@@ -92,7 +93,8 @@ public final class AISValidations {
                 MEMORY_TABLES_SINGLE,
                 //VIEW_REFERENCES
                 //CHARACTER_SET_SUPPORTED
-                INDEX_COLUMN_IS_NOT_PARTIAL
+                INDEX_COLUMN_IS_NOT_PARTIAL,
+                COLUMN_SIZES_MATCH
                 ));
     }
     
