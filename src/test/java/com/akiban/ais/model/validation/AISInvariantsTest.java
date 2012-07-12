@@ -118,16 +118,16 @@ public class AISInvariantsTest {
     public void testDuplicateColumnsGroupIndex() {
         builder = createSimpleValidGroup();
         builder.groupIndex("t1", "y_x", false, Index.JoinType.LEFT);
-        builder.indexColumn("test", "t2", "y_x", "y", 0, true, null);
-        builder.indexColumn("test", "t2", "y_x", "y", 1, true, null);
+        builder.groupIndexColumn("t1", "y_x", "test", "t2", "y", 0);
+        builder.groupIndexColumn("t1", "y_x", "test", "t2", "y", 1);
     }
 
     @Test
     public void testDuplicateColumnNamesButValidGroupIndex() {
         builder = createSimpleValidGroup();
         builder.groupIndex("t1", "y_y", false, Index.JoinType.LEFT);
-        builder.indexColumn("test", "t2", "y_x", "y", 0, true, null);
-        builder.indexColumn("test", "t1", "y_x", "y", 1, true, null);
+        builder.groupIndexColumn("t1", "y_y", "test", "t2", "y", 0);
+        builder.groupIndexColumn("t1", "y_y", "test", "t1", "y", 1);
     }
 
     private static AISBuilder createSimpleValidGroup() {
@@ -148,6 +148,7 @@ public class AISInvariantsTest {
         builder.addTableToGroup("t1", "test", "t1");
         builder.joinTables("t2/t1", "test", "t1", "test", "t2");
         builder.joinColumns("t2/t1", "test", "t2", "c1", "test", "t2", "c2");
+        builder.addJoinToGroup("t1", "t2/t1", 0);
         builder.groupingIsComplete();
         return builder;
     }
