@@ -417,21 +417,21 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         if (table == null) return 0;
         messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
         messenger.writeShort(8); // 8 columns for this query
-        writeColumn(messenger, encoder, usePVals, 
+        writeColumn(messenger, encoder, usePVals, // relchecks
                     0, INT2_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, 
+        writeColumn(messenger, encoder, usePVals, // relind
                     "r", CHAR1_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, 
+        writeColumn(messenger, encoder, usePVals, // relhasindex
+                    "f", CHAR1_PG_TYPE);
+        writeColumn(messenger, encoder, usePVals, // relhasrules
                     false, BOOL_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, 
+        writeColumn(messenger, encoder, usePVals, // relhastriggers
                     false, BOOL_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, 
+        writeColumn(messenger, encoder, usePVals, // relhasoids
                     false, BOOL_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, 
-                    false, BOOL_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, 
+        writeColumn(messenger, encoder, usePVals,
                     "", CHAR0_PG_TYPE);
-        writeColumn(messenger, encoder, usePVals, 
+        writeColumn(messenger, encoder, usePVals, // reltablespacae
                     0, OID_PG_TYPE);
         messenger.sendMessage();
         return 1;
