@@ -61,7 +61,7 @@ public abstract class TString extends TClass
         STRING {
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-                out.append(source.getObject());
+                out.append(source.getString());
             }
         }
     }

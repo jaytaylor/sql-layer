@@ -30,6 +30,7 @@ import com.akiban.server.types3.TClassFormatter;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.util.AkibanAppender;
+import java.math.BigDecimal;
 
 public class NumericFormatter {
 
@@ -73,7 +74,8 @@ public class NumericFormatter {
         BIGDECIMAL{
             @Override
             public void format(TInstance instance, PValueSource source, AkibanAppender out) {
-                //TODO, write formatter for MBigDecimalWrapper class
+                BigDecimal num = ((BigDecimalWrapper) source.getObject()).asBigDecimal();
+                out.append(num.toString());
             }
         };
     }
