@@ -26,6 +26,8 @@
 
 package com.akiban.sql.optimizer.explain;
 
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.util.SqlLiteralValueFormatter;
 import com.akiban.sql.optimizer.explain.Type.GeneralType;
 import java.util.Map;
 
@@ -119,6 +121,7 @@ public class Format {
         }*/
         else
         {
+            SqlLiteralValueFormatter formatter = new SqlLiteralValueFormatter(sb);
             sb.append(explainer.get());
         }
         
@@ -226,6 +229,8 @@ public class Format {
                     describe(atts.get(Label.INPUT_TYPE).get(0), sb);
                 }
                 break;
+            case DISTINCT:
+                describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
             case FILTER:
                 for (Explainer rowtype : atts.get(Label.KEEP_TYPE))
                 {
@@ -286,8 +291,13 @@ public class Format {
                     describe(atts.get(Label.OUTER_TYPE).get(0), sb);
                 }
                 break;
+            case SORT:
+                describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                sb.append(", ");
+                describe(atts.get(Label.SORT_OPTION).get(0), sb);
+                break;
             default:
-                 throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
+                throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
         }
         sb.append(")");
     }

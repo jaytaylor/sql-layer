@@ -307,8 +307,8 @@ public class BranchLookup_Default extends Operator
     {
         OperationExplainer ex = new LookUpOperatorExplainer("Branch Lookup Default", groupTable, inputRowType, keepInput, inputOperator);        
         ex.addAttribute(Label.LIMIT, PrimitiveExplainer.getInstance(limit.toString()));
-        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable()));
-        ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor));
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
+        ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         return ex;
     }
 

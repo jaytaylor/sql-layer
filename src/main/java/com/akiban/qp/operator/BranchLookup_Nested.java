@@ -287,8 +287,8 @@ public class BranchLookup_Nested extends Operator
     public Explainer getExplainer()
     {
         OperationExplainer ex =  new LookUpOperatorExplainer("Branch Lookup Nested", groupTable, inputRowType, keepInput, null);
-        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable()));
-        ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor));
+        ex.addAttribute(Label.OUTPUT_TYPE, PrimitiveExplainer.getInstance(outputRowType.userTable().getName().toString()));
+        ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(commonAncestor.getName().toString()));
         return ex;
     }
 

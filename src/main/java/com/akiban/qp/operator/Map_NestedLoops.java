@@ -35,6 +35,7 @@ import com.akiban.sql.optimizer.explain.std.NestedLoopsExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
 import com.akiban.util.tap.InOutTap;
+import java.math.BigDecimal;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -152,9 +153,12 @@ class Map_NestedLoops extends Operator
     @Override
     public Explainer getExplainer()
     {
-        Explainer ex = new NestedLoopsExplainer("Map", innerInputOperator, outerInputOperator, null, null);
-        ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
-        return ex;
+        // Explainer ex = new NestedLoopsExplainer("Map_NestedLoops", innerInputOperator, outerInputOperator, null, null);
+        // ex.addAttribute(Label.BINDING_POSITION, PrimitiveExplainer.getInstance(inputBindingPosition));
+        // return ex;
+        
+        // TODO optimizer assign name to binding
+        return PrimitiveExplainer.getInstance("Map_NestedLoops");
     }
 
     // Inner classes
