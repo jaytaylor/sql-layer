@@ -106,8 +106,5 @@ elif [ ${platform} == "macosx" ]; then
 else
     echo "Invalid Argument: ${platform}"
     echo "${usage}"
-    bzr revert # clean up in failure
     exit 1
 fi
-
-bzr revert # clean up on success
