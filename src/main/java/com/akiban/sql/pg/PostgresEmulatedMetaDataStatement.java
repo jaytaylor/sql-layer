@@ -648,7 +648,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
 
     private String formatIndexdef(Index index, UserTable table) {
         StringBuilder str = new StringBuilder();
-        str.append(" USING btree ");
+        // Postgres CREATE INDEX has USING method, btree|hash|gist|gin|...
+        // That is where the client starts including output.
+        // Only issue is that for PRIMARY KEY, it prints a comma in
+        // anticipation of some method word before the column.
+        str.append(" USING ");
         str.append("(");
         boolean first = true;
         for (IndexColumn icolumn : index.getKeyColumns()) {
