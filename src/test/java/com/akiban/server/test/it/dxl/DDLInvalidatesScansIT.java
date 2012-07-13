@@ -26,6 +26,7 @@
 
 package com.akiban.server.test.it.dxl;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
@@ -248,22 +249,22 @@ public final class DDLInvalidatesScansIT extends ITBase {
     }
 
     private Index createIndex() throws InvalidOperationException {
-        UserTable customers = getUserTable(SCHEMA, CUSTOMERS);
-        Index addIndex = new TableIndex(
+        AkibanInformationSchema aisCopy = AISCloner.clone(ddl().getAIS(session()));
+        UserTable customers = aisCopy.getUserTable(SCHEMA, CUSTOMERS);
+        Index addIndex = TableIndex.create(
+                aisCopy,
                 customers,
                 "played_for_Bs",
                 2,
                 false,
                 "KEY"
         );
-        addIndex.addColumn(
-                new IndexColumn(
-                        addIndex,
-                        customers.getColumn("has_played_for_bruins"),
-                        0,
-                        true,
-                        null
-                )
+        IndexColumn.create(
+                addIndex,
+                customers.getColumn("has_played_for_bruins"),
+                0,
+                true,
+                null
         );
         return addIndex;
     }

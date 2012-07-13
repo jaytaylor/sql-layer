@@ -380,9 +380,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                             column.getName(),
                             newRefTable.getName(), newColumn.getName());
                 }
-                IndexColumn newIndexCol = new IndexColumn(newIndex, newColumn, indexCol.getPosition(),
-                                                          indexCol.isAscending(), indexCol.getIndexedLength());
-                newIndex.addColumn(newIndexCol);
+                IndexColumn.create(newIndex, newColumn, indexCol.getPosition(),
+                                   indexCol.isAscending(), indexCol.getIndexedLength());
             }
 
             newIndex.freezeColumns();
