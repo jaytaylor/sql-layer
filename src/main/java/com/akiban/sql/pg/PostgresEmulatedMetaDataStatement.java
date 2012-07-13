@@ -107,7 +107,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno;?", true),
         PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true),
         PSQL_DESCRIBE_INDEXES("SELECT c2.relname, i.indisprimary, i.indisunique, i.indisclustered, i.indisvalid, pg_catalog.pg_get_indexdef\\(i.indexrelid, 0, true\\),\\s*" +
-                              "null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred, c2.reltablespace\\s+" +
+                              "(null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred,)? c2.reltablespace\\s+" +
                               "FROM pg_catalog.pg_class c, pg_catalog.pg_class c2, pg_catalog.pg_index i\\s+" +
                               "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" +
                               "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true);
@@ -229,9 +229,16 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             types = new PostgresType[] { OID_PG_TYPE };
             break;
         case PSQL_DESCRIBE_INDEXES:
-            ncols = 11;
-            names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "indisvalid", "pg_get_indexdef", "constraintdef", "contype", "condeferrable", "condeferred", "reltablespace" };
-            types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE };
+            if (groups.get(1) != null) {
+                ncols = 11;
+                names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "indisvalid", "pg_get_indexdef", "constraintdef", "contype", "condeferrable", "condeferred", "reltablespace" };
+                types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE };
+            }
+            else {
+                ncols = 7;
+                names = new String[] { "relname", "indisprimary", "indisunique", "indisclustered", "indisvalid", "pg_get_indexdef", "reltablespace" };
+                types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, INT2_PG_TYPE };
+            }
             break;
         default:
             return;
@@ -566,7 +573,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlDescribeIndexesQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        Columnar columnar = getTableById(server, groups.get(1));
+        Columnar columnar = getTableById(server, groups.get(2));
         if ((columnar == null) || !columnar.isTable()) return 0;
         UserTable table = (UserTable)columnar;
         Map<String,Index> indexes = new TreeMap<String,Index>();
@@ -579,9 +586,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 indexes.put(index.getIndexName().getName(), index);
             }
         }
+        boolean hasExtras = (groups.get(1) != null);
         for (Index index : indexes.values()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-            messenger.writeShort(11); // 11 columns for this query
+            messenger.writeShort(hasExtras ? 11 : 7); // 7-11 columns for this query
             writeColumn(messenger, encoder, usePVals, // relname
                         index.getIndexName().getName(), IDENT_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // indisprimary
@@ -594,14 +602,16 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                         "t", CHAR1_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, // pg_get_indexdef
                         formatIndexdef(index, table), INDEXDEF_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // constraintdef
-                        null, CHAR0_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // contype
-                        null, CHAR0_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // condeferragble
-                        false, BOOL_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, // condeferred
-                        false, BOOL_PG_TYPE);
+            if (hasExtras) {
+                writeColumn(messenger, encoder, usePVals, // constraintdef
+                            null, CHAR0_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, // contype
+                            null, CHAR0_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, // condeferragble
+                            false, BOOL_PG_TYPE);
+                writeColumn(messenger, encoder, usePVals, // condeferred
+                            false, BOOL_PG_TYPE);
+            }
             writeColumn(messenger, encoder, usePVals, // reltablespace
                         0, OID_PG_TYPE);
             messenger.sendMessage();
