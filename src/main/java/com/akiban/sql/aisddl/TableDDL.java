@@ -72,10 +72,7 @@ public class TableDDL
                                   Session session, 
                                   String defaultSchemaName,
                                   DropTableNode dropTable) {
-        com.akiban.sql.parser.TableName parserName = dropTable.getObjectName();
-        
-        String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        TableName tableName = TableName.create(schemaName, parserName.getTableName());
+        TableName tableName = convertName(defaultSchemaName, dropTable.getObjectName());
         ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
