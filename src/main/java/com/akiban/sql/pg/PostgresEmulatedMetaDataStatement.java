@@ -67,7 +67,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         // PSQL \d, \dt, \dv
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
                          "c.relname as \"Name\",\\s*" +
-                         "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' WHEN 'f' THEN 'foreign table' END as \"Type\",\\s+" +
+                         "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' (?:WHEN 'f' THEN 'foreign table' )?END as \"Type\",\\s+" +
                          "pg_catalog.pg_get_userbyid\\(c.relowner\\) as \"Owner\"\\s+" +
                          "FROM pg_catalog.pg_class c\\s+" +
                          "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
