@@ -61,8 +61,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         PSQL_LIST_SCHEMAS("SELECT n.nspname AS \"Name\",\\s*" +
                           "pg_catalog.pg_get_userbyid\\(n.nspowner\\) AS \"Owner\"\\s+" +
                           "FROM pg_catalog.pg_namespace n\\s+" +
-                          "WHERE (?:(?:n.nspname !~ '\\^pg_' AND n.nspname <> 'information_schema')" + 
-                          "|(n.nspname ~ '(.+)'))\\s+" +
+                          "WHERE\\s+" +
+                          "(?:n.nspname !~ '\\^pg_' AND n.nspname <> 'information_schema')?" + 
+                          "(?:\\(n.nspname !~ '\\^pg_temp_' OR\\s+" + 
+                          "n.nspname = \\(pg_catalog.current_schemas\\(true\\)\\)\\[1\\]\\))?" +
+                          "(?:\\s+AND\\s+)?" + 
+                          "(n.nspname ~ '(.+)')?\\s+" +
                           "ORDER BY 1;?", true),
         // PSQL \d, \dt, \dv
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
