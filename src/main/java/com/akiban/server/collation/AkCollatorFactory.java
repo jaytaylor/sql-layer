@@ -69,7 +69,7 @@ public class AkCollatorFactory {
 
     private final static Properties collationNameProperties = new Properties();
 
-    private static Mode mode = Mode.LOOSE; // default for unit tests
+    private volatile static Mode mode = Mode.LOOSE; // default for unit tests
 
     public enum Mode {
         STRICT, LOOSE, DISABLED
