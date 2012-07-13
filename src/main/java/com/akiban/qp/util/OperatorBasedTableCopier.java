@@ -98,6 +98,7 @@ public class OperatorBasedTableCopier implements TableCopier {
 
         UpdatePlannable cursor = insert_Default(plan);
 
+        // TODO: Clean this up when ALTER exposed through DDL API
         StoreAdapter adpater = new PersistitAdapter(schema, store, treeService, session, config);
         QueryContext context = new SimpleQueryContext(adpater);
         Transaction txn = treeService.getTransaction(session);

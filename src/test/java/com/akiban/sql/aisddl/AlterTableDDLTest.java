@@ -40,7 +40,6 @@ import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToUnknownTableException;
-import com.akiban.server.error.JoinToWrongColumnsException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
@@ -337,7 +336,7 @@ public class AlterTableDDLTest {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
-        AlterTableDDL.alterTable(ddlFunctions, NOP_COPIER, null, SCHEMA, (AlterTableNode)node);
+        AlterTableDDL.alterTable(ddlFunctions, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
     }
 
 

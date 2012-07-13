@@ -126,7 +126,7 @@ public class PostgresDDLStatement implements PostgresStatement
                         session,
                         server.getStore().getUnderlyingStore()
                 );
-                AlterTableDDL.alterTable(ddlFunctions, copier, session, schema, (AlterTableNode)ddl);
+                AlterTableDDL.alterTable(ddlFunctions, session, copier, schema, (AlterTableNode)ddl);
                 break;
             }
             case NodeTypes.RENAME_NODE:

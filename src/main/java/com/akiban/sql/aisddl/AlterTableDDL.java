@@ -61,8 +61,8 @@ public class AlterTableDDL {
     private AlterTableDDL() {}
 
     public static void alterTable(DDLFunctions ddlFunctions,
-                                  TableCopier tableCopier,
                                   Session session,
+                                  TableCopier tableCopier,
                                   String defaultSchemaName,
                                   AlterTableNode alterTable) {
         AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
@@ -75,9 +75,8 @@ public class AlterTableDDL {
 
         if (alterTable.isUpdateStatistics()) {
             Collection<String> indexes = null;
-            if(!alterTable.isUpdateStatisticsAll()) {
+            if (!alterTable.isUpdateStatisticsAll())
                 indexes = Collections.singletonList(alterTable.getIndexNameForUpdateStatistics());
-            }
             ddlFunctions.updateTableStatistics(session, tableName, indexes);
             return;
         }
@@ -104,7 +103,6 @@ public class AlterTableDDL {
         if(!table.isRoot() || !table.getChildJoins().isEmpty()) {
             throw new UnsupportedSQLException(String.format(MULTI_GROUP_ERROR_MSG, tableName), null);
         }
-
         final UserTable refTable = ais.getUserTable(refName);
         if(refTable == null) {
             throw new JoinToUnknownTableException(tableName, refName);
