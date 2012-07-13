@@ -425,23 +425,43 @@ public class BasicInfoSchemaTablesServiceImpl
                 return null;
             }
 
-            private String buildPath(UserTable table)
+            private UserTable findRootAndPath(UserTable table, StringBuilder ret)
             {
-                // TODO: "path" to what?
-                // This looks wrong.
+                UserTable root;
+                if (!table.isRoot())
+                    root = findRootAndPath(table.parentTable(), ret);
+                else
+                    root = table;
+                
+                ret.append(table.getName().getDescription()).append("/");
+                return root;
+            }
 
-                String schema = table.getName().getSchemaName();
-                String group = table.getGroup().getName();
-                String tb = table.getName().getTableName();
-              
-                StringBuilder bd = new StringBuilder();
-                if (schema != null)
-                    bd.append(schema).append("/");
-                if (group != null)
-                    bd.append(group).append("/");
-                if (tb != null)
-                    bd.append(tb);
-                return bd.toString();
+            private Object[] getRootAndPath(UserTable table)
+            {
+                // if table is root
+                // return the fullname (schema.tableName)
+                if (table.isRoot())
+                    return new Object[]
+                    {
+                        table.getName().getDescription(),
+                        table
+                    };
+            
+                
+                // if not, build the name/path recursively
+                StringBuilder path = new StringBuilder();
+                UserTable root = findRootAndPath(table, path);
+                
+                // take out the last '/'
+                int last = path.length() - 1;
+                if (path.charAt(last) == '/')
+                    path.deleteCharAt(last);
+                return new Object[]
+                {
+                    path.toString(),
+                    root
+                };
             }
 
             @Override
@@ -451,9 +471,16 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
                 }
                 Join join = table.getParentJoin();
+                
+                Object info[] = getRootAndPath(table);
+                UserTable root = (UserTable)info[1];
+                String path = (String)info[0];
+                
                 return new ValuesRow(rowType,
+                                     root.getName().getDescription(),
+                                     root.getName().getSchemaName(),
                                      table.getGroup().getName(),
-                                     buildPath(table),
+                                     path,
                                      Long.class.cast(table.getDepth()),
                                      table.getName().getSchemaName(),
                                      table.getName().getTableName(),
@@ -1023,6 +1050,8 @@ public class BasicInfoSchemaTablesServiceImpl
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         //foreign key (schema_name, table_name) references TABLES (schema_name, table_name)
         builder.userTable(INDEX_COLUMNS)
+                .colString("root_table_name", IDENT_MAX, false)
+                .colString("root_table_schema", IDENT_MAX, false)
                 .colString("schema_name", IDENT_MAX, false)
                 .colString("index_name", IDENT_MAX, false)
                 .colString("index_table_name", IDENT_MAX, false)
