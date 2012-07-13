@@ -67,8 +67,8 @@ import static org.junit.Assert.fail;
 
 public class AlterTableDDLTest {
     private static final String SCHEMA = "test";
-    private static final TableName TEMP_NAME_1 = new TableName(SCHEMA, AlterTableDDL.TEMP_TABLE_NAME_1);
-    private static final TableName TEMP_NAME_2 = new TableName(SCHEMA, AlterTableDDL.TEMP_TABLE_NAME_2);
+    private static final TableName TEMP_NAME_1 = new TableName(SCHEMA, AlterTableDDL.TEMP_TABLE_NAME_NEW);
+    private static final TableName TEMP_NAME_2 = new TableName(SCHEMA, AlterTableDDL.TEMP_TABLE_NAME_OLD);
     private static final TableName C_NAME = tn(SCHEMA, "c");
     private static final TableName O_NAME = tn(SCHEMA, "o");
     private static final TableName I_NAME = tn(SCHEMA, "i");

@@ -59,8 +59,8 @@ import static com.akiban.util.Exceptions.throwAlways;
 public class AlterTableDDL {
     private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table %s to multiple groups";
     private static final String NON_LEAF_ERROR_MSG = "Cannot drop group from %s table %s";
-    static final String TEMP_TABLE_NAME_1 = "__ak_temp_1";
-    static final String TEMP_TABLE_NAME_2 = "__ak_temp_2";
+    static final String TEMP_TABLE_NAME_NEW = "__ak_alter_temp_new";
+    static final String TEMP_TABLE_NAME_OLD = "__ak_alter_temp_old";
 
     private AlterTableDDL() {}
 
@@ -144,7 +144,7 @@ public class AlterTableDDL {
                 }
         );
 
-        TableName tempName1 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_1);
+        TableName tempName1 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_NEW);
 
         UserTable newTable = aisCopy.getUserTable(tableName);
         UserTable newRefTable = aisCopy.getUserTable(refName);
@@ -192,7 +192,7 @@ public class AlterTableDDL {
                 }
         );
 
-        TableName tempName1 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_1);
+        TableName tempName1 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_NEW);
         UserTable newTable = aisCopy.getUserTable(tableName);
         new AISTableNameChanger(newTable, tempName1).doChange();
         newTable.clearGrouping();
@@ -203,7 +203,7 @@ public class AlterTableDDL {
     private static void createRenameCopyDrop(Session session, DDLFunctions ddl, TableCopier copier,
                                              UserTable newTable, TableName originalName) {
         TableName tempName1 = newTable.getName();
-        TableName tempName2 = new TableName(originalName.getSchemaName(), TEMP_TABLE_NAME_2);
+        TableName tempName2 = new TableName(originalName.getSchemaName(), TEMP_TABLE_NAME_OLD);
         ddl.createTable(session, newTable);
         AkibanInformationSchema newAIS = ddl.getAIS(session); // create just changed it
         copier.copyFullTable(newAIS, originalName, newTable.getName());
