@@ -61,12 +61,12 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         PSQL_LIST_SCHEMAS("SELECT n.nspname AS \"Name\",\\s*" +
                           "pg_catalog.pg_get_userbyid\\(n.nspowner\\) AS \"Owner\"\\s+" +
                           "FROM pg_catalog.pg_namespace n\\s+" +
-                          "WHERE\\s+" +
-                          "(?:n.nspname !~ '\\^pg_' AND n.nspname <> 'information_schema')?" + 
+                          "(?:WHERE\\s+)?" +
                           "(?:\\(n.nspname !~ '\\^pg_temp_' OR\\s+" + 
-                          "n.nspname = \\(pg_catalog.current_schemas\\(true\\)\\)\\[1\\]\\))?" +
-                          "(?:\\s+AND\\s+)?" + 
-                          "(n.nspname ~ '(.+)')?\\s+" +
+                          "n.nspname = \\(pg_catalog.current_schemas\\(true\\)\\)\\[1\\]\\)\\s+)?" +
+                          "(n.nspname !~ '\\^pg_' AND n.nspname <> 'information_schema'\\s+)?" + 
+                          "(?:AND\\s+)?" + 
+                          "(n.nspname ~ '(.+)'\\s+)?" +
                           "ORDER BY 1;?", true),
         // PSQL \d, \dt, \dv
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
@@ -361,15 +361,17 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
         AkibanInformationSchema ais = server.getAIS();
         List<String> names = new ArrayList<String>(ais.getSchemas().keySet());
+        boolean noIS = (groups.get(1) != null);
         Pattern pattern = null;
-        if (groups.get(1) != null)
-            pattern = Pattern.compile(groups.get(2));
+        if (groups.get(2) != null)
+            pattern = Pattern.compile(groups.get(3));
         Iterator<String> iter = names.iterator();
         while (iter.hasNext()) {
             String name = iter.next();
-            if ((pattern == null) ?
-                name.equals(TableName.INFORMATION_SCHEMA) :
-                !pattern.matcher(name).matches())
+            if ((noIS &&
+                 name.equals(TableName.INFORMATION_SCHEMA)) ||
+                ((pattern != null) && 
+                 !pattern.matcher(name).matches()))
                 iter.remove();
         }
         Collections.sort(names);
