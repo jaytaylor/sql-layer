@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # END USER LICENSE AGREEMENT (“EULA”)
 #
@@ -40,6 +40,7 @@ if [ -z "${AKIBAN_CE_FLAG}" ]; then
 else
     target='community'
 fi
+echo "Building Akiban Server for ##### ${target} #####"
 
 # Select the correct license. Handled as a special case to keep LICENSE*.txt files in the top level
 case "${target}" in
@@ -54,8 +55,8 @@ esac
 common_dir="pkg-config-files/${target}" # require packages-common/dir to be the same as the ${target} variable
 [ -d ${common_dir} ] || \
     { echo "fatal: Couldn't find configuration files in: ${common_dir}"; exit 1; }
-echo "-- packages-common directory: ${common_dir}"
-rm packages-common/ABOUT
+echo "-- packages-common directory: ${common_dir} (Linux only)"
+rm packages-common/*
 cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 cp ${common_dir}/* packages-common/
 
@@ -93,6 +94,10 @@ elif [ ${platform} == "macosx" ]; then
     inst_temp=/tmp/inst_temp
     # build jar
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
+
+    # add ce/ee specific config files to Contents/Resources/config
+    rm macosx/Contents/Resources/config/*
+    cp macosx/${target}/* macosx/Contents/Resources/config/
     # build app bundle
     mkdir "$mac_app"
     cp -R macosx/Contents "$mac_app"
@@ -114,6 +119,7 @@ elif [ ${platform} == "macosx" ]; then
     hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
     ditto "$mac_app" "$inst_temp/Akiban Server.app"
     ${mac_ce_cmd}
+    # == add non-app files here ==
     cp macosx/dmg.DS_Store $inst_temp/.DS_Store
     cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
     cp ${license} $inst_temp/LICENSE.txt

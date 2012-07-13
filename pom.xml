@@ -327,6 +327,7 @@
                         <!-- General files that can't have or don't need header -->
                         <exclude>**/*.ddl</exclude>
                         <exclude>**/*.sql</exclude>
+                        <exclude>**/*.tag</exclude>
                         <exclude>**/*.expected</exclude>
                         <exclude>**/*.error</exclude>
                         <exclude>**/*.dat</exclude>
