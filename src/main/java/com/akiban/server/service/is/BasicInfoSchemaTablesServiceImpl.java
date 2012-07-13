@@ -466,17 +466,17 @@ public class BasicInfoSchemaTablesServiceImpl
                 String path = (String)info[0];
                 
                 return new ValuesRow(rowType,
-                                     root.getName().getDescription(),
-                                     root.getName().getSchemaName(),
-                                     table.getGroup().getName(),
-                                     path,
-                                     Long.class.cast(table.getDepth()),
-                                     table.getName().getSchemaName(),
-                                     table.getName().getTableName(),
-                                     isNull ? "null" : join.getName(),
-                                     isNull ? "null" : join.getParent().getName().getSchemaName(),
-                                     isNull ? "null" : join.getParent().getName().getTableName(),
-                                     Index.PRIMARY_KEY_CONSTRAINT,
+                                     table.getGroup().getName(),        // group_name
+                                     table.getName().getSchemaName(),   // constraint_schema_name
+                                     table.getName().getTableName(),    // constraint_table_name
+                                     path,                              // path
+                                     Long.class.cast(table.getDepth()), // depth
+                                     isNull ? null : join.getName(),    // contraint_name
+                                     isNull ? null : join.getParent().getName().getSchemaName(), // unique_schema_name
+                                     isNull ? null : join.getParent().getName().getTableName(),  // unique_table_name
+                                     isNull ? null : Index.PRIMARY_KEY_CONSTRAINT,               // unique_constraint_name
+                                     root.getName().getSchemaName(),    // root (ancestor)'s schema
+                                     root.getName().getTableName(),     // root's table name
                                      ++rowCounter /*hidden pk*/);
             }
         }
@@ -1004,17 +1004,20 @@ public class BasicInfoSchemaTablesServiceImpl
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(GROUPING_CONSTRAINTS) 
-            .colString("root_table_name", IDENT_MAX, false)
-            .colString("root_table_schema", IDENT_MAX, false)
-            .colString("group_name", IDENT_MAX, false)
-            .colString("path", IDENT_MAX, false)
-            .colLong("depth", false)
-            .colString("constraint_schema_name", IDENT_MAX, false)
-            .colString("constraint_table_name", IDENT_MAX, false)
-            .colString("constraint_name", IDENT_MAX, false)
-            .colString("unique_schema_name", IDENT_MAX, false)
-            .colString("unique_table_name", IDENT_MAX, false)
-            .colString("unique_constraint_name", IDENT_MAX, false);
+                .colString("group_name", IDENT_MAX, false)              // this table's group
+                .colString("constraint_schema_name", IDENT_MAX, false)  // this table's schema
+                .colString("constraint_table_name", IDENT_MAX, false)   // this table's name
+                .colString("path", IDENT_MAX, false)                    // path
+                .colLong("depth", false)                                // dept
+                .colString("constraint_name", IDENT_MAX, false)         // 
+                .colString("unique_schema_name", IDENT_MAX, false)      // parent schema
+                .colString("unique_table_name", IDENT_MAX, false)       // parent table
+                .colString("unique_constraint_name", IDENT_MAX, false)  // parent constraint
+                .colString("root_table_schema", IDENT_MAX, false)       // ancestor schema (as in the root of the tree)
+                .colString("root_table_name", IDENT_MAX, false)         // ancestor table
+                ;
+
+            
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
