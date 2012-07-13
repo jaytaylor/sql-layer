@@ -673,6 +673,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                 }
             }
 
+            newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+
             transactionally(sessionService.createSession(), new ThrowingRunnable() {
                 @Override
                 public void run(Session session) throws PersistitException {
@@ -746,7 +748,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         builder.column(SCHEMA, ENTRY,       "index_id", col++,       "int",  null, null, false, false, null, null);
         builder.column(SCHEMA, ENTRY,   "column_count", col++,       "int",  null, null, false, false, null, null);
         builder.column(SCHEMA, ENTRY,    "item_number", col++,       "int",  null, null, false, false, null, null);
-        builder.column(SCHEMA, ENTRY,     "key_string", col++,   "varchar", 2048L, null,  true, false, null, null);
+        builder.column(SCHEMA, ENTRY,     "key_string", col++,   "varchar", 2048L, null,  true, false, "latin1", null);
         builder.column(SCHEMA, ENTRY,      "key_bytes", col++, "varbinary", 4096L, null,  true, false, null, null);
         builder.column(SCHEMA, ENTRY,       "eq_count", col++,    "bigint",  null, null,  true, false, null, null);
         builder.column(SCHEMA, ENTRY,       "lt_count", col++,    "bigint",  null, null,  true, false, null, null);
@@ -785,6 +787,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         entryTable.getIndex(PRIMARY).setTreeName(ENTRY_PK_TREE);
         entryTable.getIndex(FK_NAME).setTreeName(ENTRY_FK_TREE);
         entryTable.setVersion(TABLE_VERSION);
+
+        for(UserTable table : new UserTable[]{statsTable, entryTable}) {
+            for(Column column : table.getColumnsIncludingInternal()) {
+                column.getMaxStorageSize();
+                column.getPrefixSize();
+            }
+        }
 
         // Legacy behavior for group table ID
         GroupTable statsGroupTable = ais.getGroupTable(SCHEMA, GROUP_TABLE);

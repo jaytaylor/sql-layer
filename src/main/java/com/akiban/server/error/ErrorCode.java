@@ -218,6 +218,7 @@ public enum ErrorCode {
     // Class 2E - invalid connection name
     // Class 2F - SQL routine exception
     // Class 2H - invalid collation name
+    UNSUPPORTED_COLLATION   ("2H", "000", Importance.DEBUG, UnsupportedCollationException.class),
     
     
     // Class 30 - invalid SQL statement identifier
@@ -328,6 +329,8 @@ public enum ErrorCode {
     GROUP_MULTIPLE_MEM_TABLES ("50", "01T", Importance.DEBUG, GroupMultipleMemoryTables.class),
     JOIN_PARENT_NO_PK       ("50", "01U", Importance.DEBUG, JoinParentNoExplicitPK.class),
     DUPLICATE_SEQUENCE      ("50", "01V", Importance.DEBUG, DuplicateSequenceNameException.class),
+    INDEX_COLUMN_IS_PARTIAL ("50", "01W", Importance.DEBUG, IndexColumnIsPartialException.class),
+    COLUMN_SIZE_MISMATCH    ("50", "01X", Importance.DEBUG, ColumnSizeMismatchException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

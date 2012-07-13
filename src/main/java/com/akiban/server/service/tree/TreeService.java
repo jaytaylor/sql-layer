@@ -43,7 +43,7 @@ import com.persistit.exception.PersistitException;
  * @author peter
  * 
  */
-public interface TreeService extends Service<TreeService> {
+public interface TreeService extends Service<TreeService>, KeyCreator {
 
     final static int MAX_TABLES_PER_VOLUME = 100000;
 

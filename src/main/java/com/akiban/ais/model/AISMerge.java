@@ -177,9 +177,10 @@ public class AISMerge {
                     column.getInitialAutoIncrementValue() != null, 
                     column.getCharsetAndCollation().charset(), 
                     column.getCharsetAndCollation().collation());
+            Column newColumn = targetTable.getColumn(column.getPosition());
             // if an auto-increment column, set the starting value. 
             if (column.getInitialAutoIncrementValue() != null) {
-                targetTable.getColumn(column.getPosition()).setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
+                newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
             }
             if (column.getDefaultIdentity() != null) {
                 String sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName), column.getName());
@@ -192,6 +193,9 @@ public class AISMerge {
                         sequence.isCycle());
                 builder.columnAsIdentity(schemaName, tableName, column.getName(), sequenceName, column.getDefaultIdentity());
             }
+            // Proactively cache, can go away if Column ever cleans itself up
+            newColumn.getMaxStorageSize();
+            newColumn.getPrefixSize();
         }
         
         // indexes/constraints

@@ -73,19 +73,19 @@ public class Cast_From_Date
     
     public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MDatetimes.DATE, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_INT = new FromInt32ToInt32(MDatetimes.DATE, MNumeric.INT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_INT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT, true, Constantness.UNKNOWN);
+    public static final TCast TO_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_BIGINT = new FromInt32ToInt64(MDatetimes.DATE, MNumeric.BIGINT_UNSIGNED, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.DATE, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt32ToDouble(MDatetimes.DATE, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.DATE, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MDatetimes.DATE, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
     public static final TCast TO_DATETIME = new TCastBase(MDatetimes.DATE, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
     {
@@ -103,7 +103,7 @@ public class Cast_From_Date
         }
     };
     
-    public static final TCast TO_TIME = new TCastBase(MDatetimes.DATE, MDatetimes.TIME, true, Constantness.UNKNOWN)
+    public static final TCast TO_TIME = new TCastBase(MDatetimes.DATE, MDatetimes.TIME, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -137,7 +137,7 @@ public class Cast_From_Date
         }
     };
     
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, true, Constantness.UNKNOWN)
+    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.DATE, MString.VARCHAR, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)

@@ -365,6 +365,14 @@ public class ProtobufWriter {
                     .setTableName(column.getIdentityGenerator().getSequenceName().getTableName())
                     .build());
         }
+        Long maxStorage = column.getMaxStorageSizeWithoutComputing();
+        if(maxStorage != null) {
+            columnBuilder.setMaxStorageSize(maxStorage);
+        }
+        Integer prefix = column.getPrefixSizeWithoutComputing();
+        if(prefix != null) {
+            columnBuilder.setPrefixSize(prefix);
+        }
         return columnBuilder.build();
     }
 
@@ -404,6 +412,10 @@ public class ProtobufWriter {
                 setColumnName(indexColumn.getColumn().getName()).
                 setIsAscending(indexColumn.isAscending()).
                 setPosition(indexColumn.getPosition());
+
+        if(indexColumn.getIndexedLength() != null) {
+            indexColumnBuilder.setIndexedLength(indexColumn.getIndexedLength());
+        }
         
         if(withTableName) {
             TableName tableName = indexColumn.getColumn().getTable().getName();

@@ -28,6 +28,8 @@ package com.akiban.ais.model;
 
 import com.akiban.ais.model.validation.AISInvariants;
 
+import com.akiban.server.collation.AkCollator;
+
 public class IndexColumn
 {
     // IndexColumn interface
@@ -61,6 +63,15 @@ public class IndexColumn
     public Boolean isAscending()
     {
         return ascending;
+    }
+
+    /** Can this index column be used as part of a <em>covering</em> index? */
+    public boolean isRecoverable() {
+        AkCollator collator = column.getCollator();
+        if (collator == null)
+            return true;
+        else
+            return collator.isRecoverable();
     }
 
     public static IndexColumn create(Index index, Column column, Integer position, Boolean ascending, Integer indexedLength) {
