@@ -23,25 +23,21 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
 
-import java.util.List;
-import java.util.Set;
+package com.akiban.server.collation;
 
-public interface T3ScalarsRegistry {
-    List<TValidatedOverload> getOverloads(String name);
+@SuppressWarnings("serial")
+public class InvalidCollationException extends RuntimeException {
 
-    /**
-     * Find the registered cast going from source to taret.
-     * @param source Type to cast from
-     * @param target Type to cast to
-     * @return Return matching cast or <tt>null</tt> if none
-     */
-    TCast cast(TClass source, TClass target);
-
-    Set<TClass> stronglyCastableTo(TClass tClass);
+    private final String name;
+    
+    public InvalidCollationException(final String name) {
+        this.name = name;
+    }
+    
+    @Override
+    public String getMessage() {
+        return name;
+    }
 }

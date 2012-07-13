@@ -158,10 +158,10 @@ public class PersistitKeyPValueSource implements PValueSource {
             {
                 switch (pUnderlying) {
                     case BOOL:      output.putBool(key.decodeBoolean());        break;
-                    case INT_8:     output.putInt8(key.decodeByte());           break;
-                    case INT_16:    output.putInt16(key.decodeShort());         break;
-                    case UINT_16:   output.putUInt16(key.decodeChar());         break;
-                    case INT_32:    output.putInt32(key.decodeInt());           break;
+                    case INT_8:     output.putInt8((byte)key.decodeLong());           break;
+                    case INT_16:    output.putInt16((short)key.decodeLong());         break;
+                    case UINT_16:   output.putUInt16((char)key.decodeLong());         break;
+                    case INT_32:    output.putInt32((int)key.decodeLong());           break;
                     case INT_64:    output.putInt64(key.decodeLong());          break;
                     case FLOAT:     output.putFloat(key.decodeFloat());         break;
                     case DOUBLE:    output.putDouble(key.decodeDouble());       break;
