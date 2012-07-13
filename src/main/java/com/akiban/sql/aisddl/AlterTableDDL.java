@@ -37,6 +37,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.JoinToUnknownTableException;
@@ -67,6 +68,7 @@ public class AlterTableDDL {
 
     public static void alterTable(DXLFunctionsHook hook,
                                   DDLFunctions ddlFunctions,
+                                  DMLFunctions dmlFunctions,
                                   Session session,
                                   TableCopier tableCopier,
                                   String defaultSchemaName,
@@ -81,6 +83,11 @@ public class AlterTableDDL {
             if (!alterTable.isUpdateStatisticsAll())
                 indexes = Collections.singletonList(alterTable.getIndexNameForUpdateStatistics());
             ddlFunctions.updateTableStatistics(session, tableName, indexes);
+            return;
+        }
+
+        if (alterTable.isTruncateTable()) {
+            dmlFunctions.truncateTable(session, table.getTableId());
             return;
         }
 

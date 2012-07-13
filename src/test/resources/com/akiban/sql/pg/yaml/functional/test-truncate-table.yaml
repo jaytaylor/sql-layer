@@ -12,7 +12,7 @@
 - Statement: TRUNCATE TABLE t1
 ---
 - Statement: SELECT * FROM t1
-- output: []
+- row_count: 0
 
 #
 # COI, truncate each individually
@@ -43,7 +43,7 @@
 - Statement: TRUNCATE TABLE c
 ---
 - Statement: SELECT * FROM c
-- output: []
+- row_count: 0
 ---
 - Statement: SELECT * FROM o
 - output: [[10,1], [11,1], [50,5], [1000,100], [5000,500]]
@@ -55,10 +55,10 @@
 - Statement: TRUNCATE TABLE o
 ---
 - Statement: SELECT * FROM c
-- output: []
+- row_count: 0
 ---
 - Statement: SELECT * FROM o
-- output: []
+- row_count: 0
 ---
 - Statement: SELECT * FROM i
 - output: [[100,10], [101,10], [102,10], [200,20], [250,25], [50000,5000], [50005,5000]]
@@ -67,13 +67,12 @@
 - Statement: TRUNCATE TABLE i
 ---
 - Statement: SELECT * FROM c
-- output: []
+- row_count: 0
 ---
 - Statement: SELECT * FROM o
-- output: []
+- row_count: 0
 ---
 - Statement: SELECT * FROM i
-- output: []
-
+- row_count: 0
 
 ...

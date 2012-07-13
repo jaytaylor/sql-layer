@@ -337,7 +337,7 @@ public class AlterTableDDLTest {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
-        AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
+        AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
     }
 
 
