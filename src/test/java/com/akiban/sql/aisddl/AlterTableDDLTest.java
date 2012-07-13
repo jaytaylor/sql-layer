@@ -229,6 +229,25 @@ public class AlterTableDDLTest {
         expectChildOf(I_NAME, A_NAME);
     }
 
+    @Test
+    public void addGFKToTableDifferentSchema() throws StandardException {
+        String schema2 = "foo";
+        TableName xName = tn(schema2, "x");
+        TableName temp1 = tn(schema2, TEMP_NAME_1.getTableName());
+        TableName temp2 = tn(schema2, TEMP_NAME_2.getTableName());
+
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        builder.userTable(xName).colBigInt("id", false).colBigInt("cid").pk("id");
+
+        parseAndRun("ALTER TABLE foo.x ADD GROUPING FOREIGN KEY(cid) REFERENCES c(id)");
+
+        expectCreated(temp1);
+        expectRenamed(xName, temp2, temp1, xName);
+        expectDropped(temp2);
+        expectGroupIsSame(C_NAME, xName, true);
+        expectChildOf(C_NAME, xName);
+    }
+
 
     //
     // DROP
@@ -293,6 +312,24 @@ public class AlterTableDDLTest {
         expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
         expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, A_NAME, false);
+    }
+
+    @Test
+    public void dropGFKFromCrossSchemaGroup() throws StandardException {
+        String schema2 = "foo";
+        TableName xName = tn(schema2, "x");
+        TableName temp1 = tn(schema2, TEMP_NAME_1.getTableName());
+        TableName temp2 = tn(schema2, TEMP_NAME_2.getTableName());
+
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        builder.userTable(xName).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
+
+        parseAndRun("ALTER TABLE foo.x DROP GROUPING FOREIGN KEY");
+
+        expectCreated(temp1);
+        expectRenamed(xName, temp2, temp1, xName);
+        expectDropped(temp2);
+        expectGroupIsSame(C_NAME, xName, false);
     }
 
 
