@@ -401,9 +401,7 @@ public class BasicInfoSchemaTablesServiceImpl
             int count = 0;
             Iterator<UserTable> it = newIteration();
             while(it.hasNext()) {
-                if(it.next().getParentJoin() != null) {
-                    ++count;
-                }
+                ++count;
             }
             return count;
         }
@@ -413,16 +411,6 @@ public class BasicInfoSchemaTablesServiceImpl
 
             public Scan(RowType rowType) {
                 super(rowType);
-            }
-
-            private UserTable advance() {
-                while(tableIt.hasNext()) {
-                    UserTable table = tableIt.next();
-                    if(table.getParentJoin() != null) {
-                        return table;
-                    }
-                }
-                return null;
             }
 
             private UserTable findRootAndPath(UserTable table, StringBuilder ret)
@@ -466,11 +454,12 @@ public class BasicInfoSchemaTablesServiceImpl
 
             @Override
             public Row next() {
-                UserTable table = advance();
-                if(table == null) {
+                if (!tableIt.hasNext())
                     return null;
-                }
+                
+                UserTable table = tableIt.next();
                 Join join = table.getParentJoin();
+                boolean isNull = join == null;
                 
                 Object info[] = getRootAndPath(table);
                 UserTable root = (UserTable)info[1];
@@ -484,9 +473,9 @@ public class BasicInfoSchemaTablesServiceImpl
                                      Long.class.cast(table.getDepth()),
                                      table.getName().getSchemaName(),
                                      table.getName().getTableName(),
-                                     join.getName(),
-                                     join.getParent().getName().getSchemaName(),
-                                     join.getParent().getName().getTableName(),
+                                     isNull ? "null" : join.getName(),
+                                     isNull ? "null" : join.getParent().getName().getSchemaName(),
+                                     isNull ? "null" : join.getParent().getName().getTableName(),
                                      Index.PRIMARY_KEY_CONSTRAINT,
                                      ++rowCounter /*hidden pk*/);
             }
