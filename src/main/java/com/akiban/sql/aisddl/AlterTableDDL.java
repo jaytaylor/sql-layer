@@ -29,6 +29,7 @@ package com.akiban.sql.aisddl;
 import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
@@ -36,6 +37,10 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinToUnknownTableException;
+import com.akiban.server.error.JoinToWrongColumnsException;
+import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
@@ -47,6 +52,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class AlterTableDDL {
+    private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table to multiple groups";
     static final String TEMP_TABLE_NAME_1 = "__ak_temp_1";
     static final String TEMP_TABLE_NAME_2 = "__ak_temp_2";
 
@@ -77,16 +83,16 @@ public class AlterTableDDL {
         FKConstraintDefinitionNode fkNode = getOnlyGroupingFKNode(alterTable);
         if(fkNode != null) {
             if(table.getParentJoin() != null) {
-                throw new UnsupportedSQLException("Table cannot exist in multiple groups", null);
+                throw new UnsupportedSQLException(MULTI_GROUP_ERROR_MSG, null);
             }
             if(!table.getChildJoins().isEmpty()) {
-                throw new UnsupportedSQLException("Cannot add non-leaf table to a group", null);
+                throw new UnsupportedSQLException(MULTI_GROUP_ERROR_MSG, null);
             }
 
             TableName refName = convertName(defaultSchemaName, fkNode.getRefTableName());
             final UserTable refTable = curAIS.getUserTable(refName);
             if(refTable == null) {
-                throw new NoSuchTableException(refName);
+                throw new JoinToUnknownTableException(tableName, refName);
             }
 
             AkibanInformationSchema aisCopy = AISCloner.clone(
@@ -114,8 +120,12 @@ public class AlterTableDDL {
 
             String[] columns = fkNode.getColumnList().getColumnNames();
             String[] refColumns = fkNode.getRefResultColumnList().getColumnNames();
-            for(int i = 0; (i < refColumns.length) && (i < columns.length); ++i) {
-                JoinColumn.create(join, newRefTable.getColumn(refColumns[i]), newTable.getColumn(columns[i]));
+            if(columns.length != refColumns.length) {
+                throw new JoinColumnMismatchException(columns.length, tableName, refName, refColumns.length);
+            }
+
+            for(int i = 0; i < refColumns.length;++i) {
+                JoinColumn.create(join, checkGetColumn(refTable, refColumns[i]), checkGetColumn(table, columns[i]));
             }
 
             ddlFunctions.createTable(session, newTable);
@@ -150,5 +160,13 @@ public class AlterTableDDL {
     private static TableName convertName(String defaultSchema, com.akiban.sql.parser.TableName parserName) {
         final String schema = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchema;
         return new TableName(schema, parserName.getTableName());
+    }
+
+    private static Column checkGetColumn(UserTable table, String columnName) {
+        Column column = table.getColumn(columnName);
+        if(column == null) {
+            throw new NoSuchColumnException(columnName);
+        }
+        return column;
     }
 }

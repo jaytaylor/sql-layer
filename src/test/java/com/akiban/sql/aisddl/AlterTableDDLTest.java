@@ -38,6 +38,10 @@ import com.akiban.ais.model.aisb2.NewAISBuilder;
 import com.akiban.server.api.DDLFunctions;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.JoinColumnMismatchException;
+import com.akiban.server.error.JoinToUnknownTableException;
+import com.akiban.server.error.JoinToWrongColumnsException;
+import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.rowdata.RowDef;
@@ -99,7 +103,7 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE ha1 ADD GROUPING FOREIGN KEY(ha) REFERENCES ha2(ha)");
     }
 
-    @Test(expected=NoSuchTableException.class)
+    @Test(expected=JoinToUnknownTableException.class)
     public void cannotAddGFKToUnknownParent() throws StandardException {
         builder.userTable(C_NAME).colBigInt("cid", false).colBigInt("other").pk("cid");
         parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(other) REFERENCES zap(id)");
@@ -120,10 +124,50 @@ public class AlterTableDDLTest {
         parseAndRun("ALTER TABLE c ADD GROUPING FOREIGN KEY(aid) REFERENCES a(aid)");
     }
 
+    @Test(expected=NoSuchColumnException.class)
+    public void cannotAddGFKToUnknownParentColumns() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(aid) REFERENCES c(banana)");
+    }
+
+    @Test(expected=NoSuchColumnException.class)
+    public void cannotAddGFKToUnknownChildColumns() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(banana) REFERENCES c(id)");
+    }
+
+    @Test(expected= JoinColumnMismatchException.class)
+    public void cannotAddGFKToTooManyChildColumns() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("y").pk("id");
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(id,y) REFERENCES c(id)");
+    }
+
+    @Test(expected=JoinColumnMismatchException.class)
+    public void cannotAddGFKToTooManyParentColumns() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("x").pk("id");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("y").pk("id");
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(y) REFERENCES c(id,x)");
+    }
+
     @Test
     public void addGFKToSingleTableOnSingleTable() throws StandardException {
         builder.userTable(C_NAME).colBigInt("cid", false).pk("cid");
         builder.userTable(O_NAME).colBigInt("oid", false).colBigInt("cid").pk("oid");
+
+        parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(O_NAME, TEMP_NAME_2, TEMP_NAME_1, O_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, O_NAME, true);
+        expectChildOf(C_NAME, O_NAME);
+    }
+
+    @Test
+    public void addGFKToPkLessTable() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("cid", false).pk("cid");
+        builder.userTable(O_NAME).colBigInt("oid", false).colBigInt("cid");
 
         parseAndRun("ALTER TABLE o ADD GROUPING FOREIGN KEY(cid) REFERENCES c(cid)");
 
