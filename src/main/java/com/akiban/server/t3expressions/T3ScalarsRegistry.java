@@ -29,11 +29,11 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 
-import java.util.List;
+import java.util.Collection;
 import java.util.Set;
 
 public interface T3ScalarsRegistry {
-    List<TValidatedOverload> getOverloads(String name);
+    Collection<TValidatedOverload> getOverloads(String name);
 
     /**
      * Find the registered cast going from source to taret.

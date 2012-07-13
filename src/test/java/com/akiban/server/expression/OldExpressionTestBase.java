@@ -24,31 +24,23 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql;
+package com.akiban.server.expression;
 
-import com.akiban.server.types3.TBundle;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.Types3Switch;
+import org.junit.After;
+import org.junit.Before;
 
-import java.util.Map;
+public abstract class OldExpressionTestBase {
+    private boolean types3switch;
 
-public enum AkBundle implements TBundle {
-    INSTANCE;
-
-    @Override
-    public TBundleID id() {
-        return bundleId;
+    @Before
+    public final void setTypes3Switch() {
+        types3switch = Types3Switch.ON;
+        Types3Switch.ON = false;
     }
 
-    @Override
-    public Map<TClass, TFactory> typeClasses() {
-        throw new UnsupportedOperationException(); // TODO
+    @After
+    public final void restoreTypes3Switch() {
+        Types3Switch.ON = types3switch;
     }
-
-    public enum AkSwitcher {
-        // TODO
-    }
-
-    private static TBundleID bundleId = new TBundleID("aksql", "282696ac-6f10-450c-9960-a54c8abe94c0");
 }

@@ -157,7 +157,7 @@ public class NoArgFuncs
         }
     };
     
-    public static final TOverload CUR_USER = new NoArgExpression("CUR_USER", true)
+    public static final TOverload CUR_USER = new NoArgExpression("CURRENT_USER", true)
     {
 
         @Override

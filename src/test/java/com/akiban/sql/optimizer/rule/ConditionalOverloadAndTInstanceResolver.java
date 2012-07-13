@@ -24,31 +24,33 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql;
+package com.akiban.sql.optimizer.rule;
 
-import com.akiban.server.types3.TBundle;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.sql.optimizer.plan.PlanContext;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.Map;
+public final class ConditionalOverloadAndTInstanceResolver extends BaseRule {
 
-public enum AkBundle implements TBundle {
-    INSTANCE;
-
-    @Override
-    public TBundleID id() {
-        return bundleId;
-    }
+    private static final Logger logger = LoggerFactory.getLogger(ConditionalOverloadAndTInstanceResolver.class);
 
     @Override
-    public Map<TClass, TFactory> typeClasses() {
-        throw new UnsupportedOperationException(); // TODO
+    protected Logger getLogger() {
+        return logger;
     }
 
-    public enum AkSwitcher {
-        // TODO
+    @Override
+    public void apply(PlanContext plan) {
+        if (delegate != null)
+            delegate.apply(plan);
     }
 
-    private static TBundleID bundleId = new TBundleID("aksql", "282696ac-6f10-450c-9960-a54c8abe94c0");
+    public ConditionalOverloadAndTInstanceResolver() {
+        delegate = Types3Switch.ON
+                ? new OverloadAndTInstanceResolver()
+                : null;
+    }
+
+    private final BaseRule delegate;
 }

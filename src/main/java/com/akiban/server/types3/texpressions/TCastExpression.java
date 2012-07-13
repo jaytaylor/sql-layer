@@ -63,6 +63,11 @@ public final class TCastExpression implements TPreparedExpression {
         return new CastEvaluation(input.build(), context, cast);
     }
 
+    @Override
+    public String toString() {
+        return input.toString(); // for backwards compatibility in OperatorCompilerTest, don't actually print the cast
+    }
+
     public TCastExpression(TPreparedExpression input, TCast cast, TInstance targetInstance) {
         this.input = input;
         this.cast = cast;

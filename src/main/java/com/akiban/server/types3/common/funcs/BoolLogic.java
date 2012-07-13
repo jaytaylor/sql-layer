@@ -38,7 +38,7 @@ import com.akiban.server.types3.texpressions.TOverloadBase;
 
 public class BoolLogic extends TOverloadBase
 {
-    public static TOverload INSTANCES[] = new TOverload[Op.values().length];
+    public static final TOverload INSTANCES[] = new TOverload[Op.values().length];
     static
     {
         Op op[] = Op.values();
