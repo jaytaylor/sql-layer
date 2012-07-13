@@ -29,6 +29,7 @@ package com.akiban.qp.persistitadapter;
 import com.akiban.ais.model.GroupTable;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.PrimaryKey;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.UserTable;
 import com.akiban.qp.expression.IndexKeyRange;
 import com.akiban.qp.operator.*;
@@ -38,6 +39,8 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistitAdapterException;
@@ -49,12 +52,15 @@ import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
+import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
@@ -226,10 +232,16 @@ public class PersistitAdapter extends StoreAdapter
             if (source.isNull()) {
                 if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
                     logger.warn("rowData: got identity column");
-                    //Tree tree;
-                    //treeService.getExchange(getSession(), tree);
+                    Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
+                    Tree tree = sequence.getTreeCache().getTree();
+                    
+                    long value = AccumulatorAdapter.getLiveValue(AccumInfo.AUTO_INC, treeService, tree);
+                    AccumulatorAdapter.updateAndGet(AccumInfo.AUTO_INC, treeService.getExchange(getSession(), tree),
+                            sequence.getIncrement());
+                    FromObjectValueSource objectSource = new FromObjectValueSource();
+                    objectSource.setExplicitly(value, AkType.LONG);
+                    source = objectSource;
                 }
-                //FromObjectValueSource objectSource = new FromObjectValueSource()
             }
             niceRow.put(i, target.convertFromSource(source));
         }
