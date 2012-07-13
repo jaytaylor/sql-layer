@@ -33,20 +33,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.ais.gwtutils.GwtLogger;
 import com.akiban.ais.gwtutils.GwtLogging;
 import com.akiban.ais.model.Join.GroupingUsage;
 import com.akiban.ais.model.Join.SourceType;
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.rowdata.RowDefCache;
 
 // AISBuilder can be used to create an AIS. The API is designed to sify the creation of an AIS during a scan
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
-public class
-        AISBuilder {
-    GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
-
+public class AISBuilder {
+    //GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
+    private static final Logger LOG = LoggerFactory.getLogger(AISBuilder.class);
     // API for creating capturing basic schema information
 
     public AISBuilder() {
@@ -140,6 +143,7 @@ public class
         column.setDefaultIdentity(defaultIdentity);
         Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
         column.setIdentityGenerator(identityGenerator);
+        identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
     }
 
     public void index(String schemaName, String tableName, String indexName,
@@ -718,14 +722,6 @@ public class
             userColumn.setGroupColumn(groupColumn);
             groupColumn.setUserColumn(userColumn);
             groupColumn.finishCreating();
-            
-            // TODO : Remove the setting of the tree name 
-            // until we can resolve tree <-> sequence management
-            //if (userColumn.getIdentityGenerator() != null) {
-            //    userColumn.getIdentityGenerator().setTreeName(groupTable.getTreeName());
-                // TODO Generate stable index ids.
-            //    userColumn.getIdentityGenerator().setAccumIndex(3);
-            // }
         }
         for (Join join : userTable.getChildJoins()) {
             generateGroupTableColumns(groupTable, join.getChild());

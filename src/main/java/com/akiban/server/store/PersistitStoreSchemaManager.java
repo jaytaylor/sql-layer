@@ -904,7 +904,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             final RowDefCache rowDefCache = store.getRowDefCache();
             rowDefCache.clear();
             treeService.getTableStatusCache().detachAIS();
+            // This create|verifies the trees exist for indexes & tables
             rowDefCache.setAIS(newAis);
+            // This creates|verifies the trees exist for sequences
+            sequenceTrees(newAis);
             saveCurrentTimestamp();
             aish.setAis(newAis);
         } catch(PersistitException e) {
@@ -914,6 +917,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
     }
 
+    private void sequenceTrees (final AkibanInformationSchema newAis) throws PersistitException {
+        for (Sequence sequence : newAis.getSequences().values()) {
+            LOG.debug("registering sequence: " + sequence.getSequenceName() + " with tree name: " + sequence.getTreeName());
+            treeService.populateTreeCache(sequence);
+        }
+    }
+    
     private void saveMetaModel(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String volume)
             throws PersistitException {
         buffer.clear();

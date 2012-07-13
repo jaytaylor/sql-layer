@@ -51,7 +51,6 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
-import com.akiban.sql.pg.PostgresOperatorCompiler;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -120,8 +119,8 @@ public class PersistitAdapter extends StoreAdapter
             throw new IllegalArgumentException(String.format("%s != %s", rowDef, rowDefNewRow));
         }
 
-        RowData oldRowData = rowData(rowDef, oldRow);
-        RowData newRowData = rowData(rowDef, newRow);
+        RowData oldRowData = oldRowData(rowDef, oldRow);
+        RowData newRowData = newRowData(rowDef, newRow);
         int oldStep = enterUpdateStep();
         try {
             store.updateRow(getSession(), oldRowData, newRowData, null);
@@ -136,7 +135,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public void writeRow (Row newRow) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
-        RowData newRowData = rowData (rowDef, newRow);
+        RowData newRowData = newRowData (rowDef, newRow);
         int oldStep = enterUpdateStep();
         try {
             store.writeRow(getSession(), newRowData);
@@ -152,7 +151,7 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public void deleteRow (Row oldRow) {
         RowDef rowDef = oldRow.rowType().userTable().rowDef();
-        RowData oldRowData = rowData(rowDef, oldRow);
+        RowData oldRowData = oldRowData(rowDef, oldRow);
         int oldStep = enterUpdateStep();
         try {
             store.deleteRow(getSession(), oldRowData);
@@ -200,7 +199,20 @@ public class PersistitAdapter extends StoreAdapter
         return row;
     }
 
-    public RowData rowData(RowDef rowDef, RowBase row)
+    private RowData oldRowData (RowDef rowDef, RowBase row) {
+        if (row instanceof PersistitGroupRow) {
+            return ((PersistitGroupRow) row).rowData();
+        }
+        ToObjectValueTarget target = new ToObjectValueTarget();
+        NewRow niceRow = newRow(rowDef);
+        for(int i = 0; i < row.rowType().nFields(); ++i) {
+            ValueSource source = row.eval(i);
+            niceRow.put(i, target.convertFromSource(source));
+        }
+        return niceRow.toRowData();
+    }
+    
+    private RowData newRowData(RowDef rowDef, RowBase row)
     {
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow) row).rowData();

@@ -25,9 +25,13 @@
  */
 package com.akiban.ais.model;
 
-import com.akiban.ais.model.validation.AISInvariants;
+import java.util.concurrent.atomic.AtomicReference;
 
-public class Sequence {
+import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.service.tree.TreeCache;
+import com.akiban.server.service.tree.TreeLink;
+
+public class Sequence implements TreeLink {
 
     public static Sequence create (AkibanInformationSchema ais, 
             String schemaName, 
@@ -66,6 +70,8 @@ public class Sequence {
     public final TableName getSequenceName() {
         return sequenceName;
     }
+    
+    @Override 
     public final String getTreeName() {
         return treeName;
     }
@@ -98,10 +104,29 @@ public class Sequence {
     protected final TableName sequenceName;
     protected String treeName;
     private Integer accumIndex;
-
+    
     private final long startsWith;
     private final long increment;
     private final long minValue;
     private final long maxValue;
     private final boolean cycle;
+
+    private AtomicReference<TreeCache> treeCache = new AtomicReference<TreeCache>();
+    
+   
+    // TreeLink implementation
+    @Override
+    public String getSchemaName() {
+        return sequenceName.getSchemaName();
+    }
+
+    @Override
+    public void setTreeCache(TreeCache cache) {
+        treeCache.set(cache);
+    }
+
+    @Override
+    public TreeCache getTreeCache() {
+        return treeCache.get();
+    }
 }
