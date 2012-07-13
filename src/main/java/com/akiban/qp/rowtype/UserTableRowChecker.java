@@ -26,55 +26,39 @@
 
 package com.akiban.qp.rowtype;
 
-import java.util.List;
-
-import com.akiban.ais.model.HKey;
+import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types3.TInstance;
+import com.akiban.qp.row.Row;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.NotNullViolationException;
 
-public class ProjectedUserTableRowType extends ProjectedRowType {
+import java.util.BitSet;
 
-    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TInstance> tInstances) {
-        super(schema, table.getTableId(), projections, tInstances);
-        this.table = table;
-        this.constraintChecker = new UserTableRowChecker(this);
-    }
-
+public class UserTableRowChecker implements ConstraintChecker
+{
     @Override
-    public UserTable userTable() {
-        return table;
-    }
-
-    @Override
-    public boolean hasUserTable() {
-        return table != null;
-    }
-    
-    @Override
-    public int nFields()
+    public void checkConstraints(Row row) throws InvalidOperationException
     {
-        return table.getColumns().size();
+        for (int f = 0; f < fields; f++) {
+            if (notNull.get(f) && row.eval(f).isNull()) {
+                TableName tableName = table.getName();
+                throw new NotNullViolationException(tableName.getSchemaName(),
+                                                    tableName.getTableName(),
+                                                    table.getColumnsIncludingInternal().get(f).getName());
+            }
+        }
+
     }
 
-    @Override
-    public ConstraintChecker constraintChecker()
+    public UserTableRowChecker(RowType rowType)
     {
-        return constraintChecker;
+        assert rowType.hasUserTable() : rowType;
+        fields = rowType.nFields();
+        table = rowType.userTable();
+        notNull = table.notNull();
     }
 
-    @Override
-    public HKey hKey()
-    {
-        return table.hKey();
-    }
-
-    @Override
-    public String toString()
-    {
-        return String.format("%s: %s", super.toString(), table);
-    }
-
+    private final int fields;
     private final UserTable table;
-    private final ConstraintChecker constraintChecker;
+    private final BitSet notNull;
 }
