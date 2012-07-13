@@ -286,7 +286,10 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected void readyForQuery() throws IOException {
         messenger.beginMessage(PostgresMessages.READY_FOR_QUERY_TYPE.code());
-        messenger.writeByte('I'); // Idle ('T' -> xact open; 'E' -> xact abort)
+        char mode = 'I';        // Idle
+        if (isTransactionActive())
+            mode = isTransactionRollbackPending() ? 'E' : 'T';
+        messenger.writeByte(mode);
         messenger.sendMessage(true);
     }
 
