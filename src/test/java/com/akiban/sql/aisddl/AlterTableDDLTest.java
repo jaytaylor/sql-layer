@@ -63,6 +63,7 @@ import java.util.List;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 public class AlterTableDDLTest {
     private static final String SCHEMA = "test";
@@ -97,6 +98,11 @@ public class AlterTableDDLTest {
         builder = null;
         ddlFunctions = null;
     }
+
+
+    //
+    // ADD
+    //
 
     @Test(expected=NoSuchTableException.class)
     public void cannotAddGFKToUnknownTable() throws StandardException {
@@ -223,6 +229,59 @@ public class AlterTableDDLTest {
         expectChildOf(I_NAME, A_NAME);
     }
 
+
+    //
+    // DROP
+    //
+
+    @Test(expected=NoSuchTableException.class)
+    public void cannotDropGFKFromUnknownTable() throws StandardException {
+        parseAndRun("ALTER TABLE c DROP GROUPING FOREIGN KEY");
+    }
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotDropGFKFromSingleTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        parseAndRun("ALTER TABLE c DROP GROUPING FOREIGN KEY");
+    }
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotDropGFKFromRootOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE c DROP GROUPING FOREIGN KEY");
+    }
+
+    @Test(expected=UnsupportedSQLException.class)
+    public void cannotDropGFKFromMiddleOfGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER TABLE o DROP GROUPING FOREIGN KEY");
+    }
+
+    @Test
+    public void dropGFKLeafFromTwoTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
+
+        parseAndRun("ALTER TABLE a DROP GROUPING FOREIGN KEY");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, false);
+    }
+
+    @Test
+    public void dropGFKLeafFromGroup() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER TABLE i DROP GROUPING FOREIGN KEY");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(I_NAME, TEMP_NAME_2, TEMP_NAME_1, I_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, I_NAME, false);
+    }
+
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
@@ -260,9 +319,11 @@ public class AlterTableDDLTest {
         UserTable table2 = ddlFunctions.ais.getUserTable(t2);
         String groupName1 = ((table1 != null) && (table1.getGroup() != null)) ? table1.getGroup().getName() : "<NO_GROUP>1";
         String groupName2 = ((table2 != null) && (table2.getGroup() != null)) ? table2.getGroup().getName() : "<NO_GROUP>2";
-        assertEquals((equal ? "Same" : "Different") + " group for tables " + t1 + "," + t2,
-                     groupName1,
-                     groupName2);
+        if(equal) {
+            assertEquals("Same group for tables " + t1 + "," + t2, groupName1, groupName2);
+        } else if(groupName1.equals(groupName2)) {
+            fail("Expected different group for tables " + t1 + "," + t2);
+        }
     }
 
     private void expectChildOf(TableName t1, TableName t2) {

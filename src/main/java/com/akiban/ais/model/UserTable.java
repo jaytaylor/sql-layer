@@ -129,6 +129,12 @@ public class UserTable extends Table
         candidateChildJoins.add(childJoin);
     }
 
+    public void clearGrouping() {
+        candidateChildJoins.clear();
+        candidateParentJoins.clear();
+        group = null;
+    }
+
     public List<Join> getCandidateParentJoins()
     {
         return Collections.unmodifiableList(candidateParentJoins);
