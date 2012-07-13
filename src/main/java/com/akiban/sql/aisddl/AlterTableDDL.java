@@ -82,59 +82,65 @@ public class AlterTableDDL {
 
         FKConstraintDefinitionNode fkNode = getOnlyGroupingFKNode(alterTable);
         if(fkNode != null) {
-            if((table.getParentJoin() != null) || !table.getChildJoins().isEmpty()) {
-                throw new UnsupportedSQLException(String.format(MULTI_GROUP_ERROR_MSG, tableName), null);
-            }
-
             TableName refName = convertName(defaultSchemaName, fkNode.getRefTableName());
-            final UserTable refTable = curAIS.getUserTable(refName);
-            if(refTable == null) {
-                throw new JoinToUnknownTableException(tableName, refName);
-            }
-
-            AkibanInformationSchema aisCopy = AISCloner.clone(
-                    curAIS,
-                    new ProtobufWriter.TableAllIndexSelector() {
-                        @Override
-                        public boolean isSelected(Columnar columnar) {
-                            if(columnar.isView()) return false;
-                            UserTable inTable = (UserTable)columnar;
-                            return (columnar == table) || (inTable.getGroup() == refTable.getGroup());
-                        }
-                    }
-            );
-
-            TableName tempName1 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_1);
-            TableName tempName2 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_2);
-
-            UserTable newTable = aisCopy.getUserTable(tableName);
-            UserTable newRefTable = aisCopy.getUserTable(refName);
-            new AISTableNameChanger(newTable, tempName1).doChange();
-
-            Join join = Join.create(aisCopy, "temp_name", newRefTable, newTable);
-            join.setGroup(newRefTable.getGroup());
-            newTable.setGroup(join.getGroup());
-
-            String[] columns = fkNode.getColumnList().getColumnNames();
-            String[] refColumns = fkNode.getRefResultColumnList().getColumnNames();
-            if(columns.length != refColumns.length) {
-                throw new JoinColumnMismatchException(columns.length, tableName, refName, refColumns.length);
-            }
-
-            for(int i = 0; i < refColumns.length;++i) {
-                JoinColumn.create(join, checkGetColumn(newRefTable, refColumns[i]), checkGetColumn(newTable, columns[i]));
-            }
-
-            ddlFunctions.createTable(session, newTable);
-            curAIS = ddlFunctions.getAIS(session);
-            tableCopier.copyFullTable(curAIS, tableName, newTable.getName());
-            ddlFunctions.renameTable(session, tableName, tempName2);
-            ddlFunctions.renameTable(session, tempName1, tableName);
-            ddlFunctions.dropTable(session, tempName2);
+            doAddGroupingFK(fkNode, curAIS, table, refName, session, ddlFunctions, tableCopier);
             return;
         }
 
         throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
+    }
+
+    private static void doAddGroupingFK(FKConstraintDefinitionNode fk, AkibanInformationSchema ais, final UserTable table,
+                                        TableName refName, Session session, DDLFunctions ddl, TableCopier copier) {
+        TableName tableName = table.getName();
+        if((table.getParentJoin() != null) || !table.getChildJoins().isEmpty()) {
+            throw new UnsupportedSQLException(String.format(MULTI_GROUP_ERROR_MSG, tableName), null);
+        }
+
+        final UserTable refTable = ais.getUserTable(refName);
+        if(refTable == null) {
+            throw new JoinToUnknownTableException(tableName, refName);
+        }
+
+        AkibanInformationSchema aisCopy = AISCloner.clone(
+                ais,
+                new ProtobufWriter.TableAllIndexSelector() {
+                    @Override
+                    public boolean isSelected(Columnar columnar) {
+                        if(columnar.isView()) return false;
+                        UserTable inTable = (UserTable)columnar;
+                        return (columnar == table) || (inTable.getGroup() == refTable.getGroup());
+                    }
+                }
+        );
+
+        TableName tempName1 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_1);
+        TableName tempName2 = new TableName(tableName.getSchemaName(), TEMP_TABLE_NAME_2);
+
+        UserTable newTable = aisCopy.getUserTable(tableName);
+        UserTable newRefTable = aisCopy.getUserTable(refName);
+        new AISTableNameChanger(newTable, tempName1).doChange();
+
+        Join join = Join.create(aisCopy, "temp_name", newRefTable, newTable);
+        join.setGroup(newRefTable.getGroup());
+        newTable.setGroup(join.getGroup());
+
+        String[] columns = fk.getColumnList().getColumnNames();
+        String[] refColumns = fk.getRefResultColumnList().getColumnNames();
+        if(columns.length != refColumns.length) {
+            throw new JoinColumnMismatchException(columns.length, tableName, refName, refColumns.length);
+        }
+
+        for(int i = 0; i < refColumns.length;++i) {
+            JoinColumn.create(join, checkGetColumn(newRefTable, refColumns[i]), checkGetColumn(newTable, columns[i]));
+        }
+
+        ddl.createTable(session, newTable);
+        AkibanInformationSchema newAIS = ddl.getAIS(session); // create just changed it
+        copier.copyFullTable(newAIS, tableName, newTable.getName());
+        ddl.renameTable(session, tableName, tempName2);
+        ddl.renameTable(session, tempName1, tableName);
+        ddl.dropTable(session, tempName2);
     }
 
     private static FKConstraintDefinitionNode getOnlyGroupingFKNode(AlterTableNode node) {
