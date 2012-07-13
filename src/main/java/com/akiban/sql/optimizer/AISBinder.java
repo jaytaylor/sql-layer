@@ -1065,7 +1065,7 @@ public class AISBinder implements Visitor
                                 parserContext);
         ResultColumn resultColumn = (ResultColumn) 
             nodeFactory.getNode(NodeTypes.RESULT_COLUMN,
-                                childUserTable.getName().getTableName(),
+                                childUserTable.getName().toString(),
                                 subquery,
                                 parserContext);
         return resultColumn;

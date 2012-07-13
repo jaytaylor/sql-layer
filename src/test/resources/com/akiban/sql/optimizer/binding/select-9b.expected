@@ -49,8 +49,8 @@ resultSet:
 			userData: parent.state from com.akiban.sql.parser.FromBaseTable@4cd8d871
 		[3]:		
 		com.akiban.sql.parser.ResultColumn@5ee16306
-		exposedName: child
-		name: child
+		exposedName: test.child
+		name: test.child
 		tableName: null
 		isDefaultColumn: false
 		type: null
