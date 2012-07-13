@@ -50,6 +50,7 @@ import com.akiban.ais.model.HKeySegment;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexRowComposition;
 import com.akiban.ais.model.IndexToHKey;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.UserTable;
@@ -1374,6 +1375,11 @@ public class PersistitStore implements Store {
         for(Index index : groupIndexes) {
             treeLinks.add(index.indexDef());
         }
+        // Drop the sequence trees too. 
+        if (table.isUserTable() && ((UserTable)table).getIdentityColumn() != null) {
+            treeLinks.add(((UserTable)table).getIdentityColumn().getIdentityGenerator());
+        }
+        
         // And the group tree
         treeLinks.add(table.rowDef());
         // And drop them all
@@ -1406,6 +1412,13 @@ public class PersistitStore implements Store {
             }
         }
         indexStatistics.deleteIndexStatistics(session, indexes);
+    }
+    
+    @Override
+    public void deleteSequences (Session session, Collection<? extends Sequence> sequences) {
+        Collection<TreeLink> links = new ArrayList<TreeLink>();
+        links.addAll(sequences);
+        removeTrees(session, links);
     }
 
     private void buildIndexAddKeys(final SortedSet<KeyState> keys,
