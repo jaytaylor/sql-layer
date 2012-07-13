@@ -30,6 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.LazyListBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
@@ -64,6 +65,30 @@ public abstract class TOverloadBase implements TOverload {
 
     @Override
     public void finishPreptimePhase(TPreptimeContext context) {
+    }
+
+    @Override
+    public String toString(List<? extends TPreparedExpression> inputs, TInstance resultType) {
+        StringBuilder sb = new StringBuilder(toStringName());
+        sb.append('(');
+        sb.append(toStringArgsPrefix());
+        for (int i = 0, len = inputs.size(); i < len; ++i) {
+            sb.append(inputs.get(i));
+            if (i+1 < len)
+                sb.append(", ");
+        }
+        sb.append(" -> ");
+        sb.append(resultType.typeClass().name().unqualifiedName());
+        sb.append(')');
+        return sb.toString();
+    }
+
+    protected String toStringName() {
+        return overloadName();
+    }
+
+    protected String toStringArgsPrefix() {
+        return "";
     }
 
     @Override
