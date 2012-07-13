@@ -439,7 +439,7 @@
                                             <fileset dir="${akiban.client.project}/target/dependency" />
                                         </copy>
                                         <copy todir="${setup.staging.dir}/config">
-                                          <fileset dir="${basedir}/windows/${akiban.release.target}/">
+                                          <fileset dir="${basedir}/windows/${akiban.release.target}" />
                                         </copy>
                                         <get src="http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${setup.staging.dir}/procrun.zip" usetimestamp="true" />
                                         <mkdir dir="${setup.staging.dir}/procrun" />
