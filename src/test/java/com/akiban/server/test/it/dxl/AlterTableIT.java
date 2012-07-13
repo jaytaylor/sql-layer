@@ -26,7 +26,6 @@
 
 package com.akiban.server.test.it.dxl;
 
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.operator.StoreAdapter;
 import com.akiban.qp.persistitadapter.PersistitAdapter;
 import com.akiban.qp.row.RowBase;
@@ -44,7 +43,6 @@ import com.akiban.sql.parser.SQLParser;
 import com.akiban.sql.parser.StatementNode;
 import org.junit.Test;
 
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 // TODO: Cleanup once ALTER exists on DDLFunctions directly
@@ -89,9 +87,6 @@ public class AlterTableIT extends ITBase {
         runAlter("ALTER TABLE i ADD GROUPING FOREIGN KEY(spare_id) REFERENCES o(id)");
         updateAISGeneration();
 
-        UserTable cTable = getUserTable(SCHEMA, "c");
-        assertNotNull("c table found", cTable);
-
         Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
         RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
         RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
@@ -115,7 +110,49 @@ public class AlterTableIT extends ITBase {
                         testRow(cType, 10, "zxcv")
 
                 },
-                adapter.newGroupCursor(cTable.getGroup().getGroupTable())
+                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+        );
+    }
+
+    @Test
+    public void simpleDropGroupingForeignKey() throws StandardException {
+        int cid = createTable(SCHEMA, "c", "id int not null primary key, v varchar(32)");
+        int oid = createTable(SCHEMA, "o", "id int not null primary key, cid int, tag char(1), grouping foreign key(cid) references c(id)");
+
+        writeRows(
+                createNewRow(cid, 1, "asdf"),
+                createNewRow(cid, 5, "qwer"),
+                createNewRow(cid, 10, "zxcv")
+        );
+        writeRows(
+                createNewRow(oid, 10, 1, "a"),
+                createNewRow(oid, 11, 1, "b"),
+                createNewRow(oid, 60, 6, "c")
+        );
+
+        runAlter("ALTER TABLE o DROP GROUPING FOREIGN KEY");
+        updateAISGeneration();
+
+        Schema schema = SchemaCache.globalSchema(ddl().getAIS(session()));
+        RowType cType = schema.userTableRowType(getUserTable(SCHEMA, "c"));
+        RowType oType = schema.userTableRowType(getUserTable(SCHEMA, "o"));
+
+        StoreAdapter adapter = new PersistitAdapter(schema, store(), treeService(), session(), configService());
+        compareRows(
+                new RowBase[] {
+                        testRow(cType, 1L, "asdf"),
+                        testRow(cType, 5, "qwer"),
+                        testRow(cType, 10, "zxcv")
+                },
+                adapter.newGroupCursor(cType.userTable().getGroup().getGroupTable())
+        );
+        compareRows(
+                new RowBase[] {
+                        testRow(oType, 10, 1, "a"),
+                        testRow(oType, 11, 1, "b"),
+                        testRow(oType, 60, 6, "c"),
+                },
+                adapter.newGroupCursor(oType.userTable().getGroup().getGroupTable())
         );
     }
 }
