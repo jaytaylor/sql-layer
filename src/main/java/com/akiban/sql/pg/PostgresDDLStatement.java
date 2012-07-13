@@ -134,6 +134,7 @@ public class PostgresDDLStatement implements PostgresStatement
                     IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
                 } else if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.TABLE) {
                     TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
+                    break;
                 }
             case NodeTypes.REVOKE_NODE:
             default:

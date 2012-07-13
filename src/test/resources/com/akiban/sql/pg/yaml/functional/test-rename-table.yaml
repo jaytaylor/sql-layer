@@ -12,7 +12,7 @@
 - output: [[1], [10], [100]]
 ---
 - Statement: SELECT * FROM t1
-- error: [100]
+- error: [42501] # NO_SUCH_TABLE
 ---
 - Statement: DROP TABLE x1
 
@@ -30,7 +30,16 @@
 ---
 - Statement: INSERT INTO o VALUES (10,1)
 ---
-- Statement: INSERT INTO o VALUES (100,10)
+- Statement: INSERT INTO i VALUES (100,10)
+---
+- Statement: SELECT * FROM c
+- output: [[1]]
+---
+- Statement: SELECT * FROM o
+- output: [[10,1]]
+---
+- Statement: SELECT * FROM i
+- output: [[100,10]]
 
 ---
 - Statement: RENAME TABLE o TO bar
@@ -67,5 +76,12 @@
 ---
 - Statement: SELECT * FROM foo
 - output: [[100,10]]
+
+---
+- Statement: DROP TABLE foo
+---
+- Statement: DROP TABLE bar
+---
+- Statement: DROP TABLE zap
 
 ...

@@ -54,6 +54,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.ALTER_TABLE_TEMP_TABLE;
+import static com.akiban.sql.aisddl.DDLHelper.convertName;
 import static com.akiban.util.Exceptions.throwAlways;
 
 public class AlterTableDDL {
@@ -246,11 +247,6 @@ public class AlterTableDDL {
             }
         }
         return null;
-    }
-
-    private static TableName convertName(String defaultSchema, com.akiban.sql.parser.TableName parserName) {
-        final String schema = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchema;
-        return new TableName(schema, parserName.getTableName());
     }
 
     private static Column checkGetColumn(UserTable table, String columnName) {
