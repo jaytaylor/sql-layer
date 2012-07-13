@@ -258,7 +258,7 @@ public class AlterTableDDLTest {
     }
 
     @Test
-    public void dropGFKLeafFromTwoTableGroup() throws StandardException {
+     public void dropGFKLeafFromTwoTableGroup() throws StandardException {
         builder.userTable(C_NAME).colBigInt("id", false).pk("id");
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
 
@@ -281,6 +281,20 @@ public class AlterTableDDLTest {
         expectDropped(TEMP_NAME_2);
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
+
+    @Test
+    public void dropGFKLeafWithNoPKFromGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("cid").joinTo(C_NAME).on("cid", "id");
+
+        parseAndRun("ALTER TABLE a DROP GROUPING FOREIGN KEY");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, false);
+    }
+
 
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);

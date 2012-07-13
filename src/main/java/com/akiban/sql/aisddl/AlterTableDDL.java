@@ -219,10 +219,8 @@ public class AlterTableDDL {
             ConstraintDefinitionNode conNode = (ConstraintDefinitionNode)elementNode;
             if(ConstraintDefinitionNode.ConstraintType.DROP.equals(conNode.getConstraintType())) {
                 // No access to verifyType (which would be FOREIGN_KEY) and not otherwise marked GROUPING
-                // Assume no name is DROP GFK for now
-                if(conNode.getName() == null) {
-                    return conNode;
-                }
+                // Assume any name (even no name) is DROP GFK for now
+                return conNode;
             }
         }
         return null;
