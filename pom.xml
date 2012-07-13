@@ -344,7 +344,7 @@
                         <!-- No extension. Manually add header and ignore -->
                         <exclude>bin/*</exclude>
                         <exclude>conf/config/jvm.options</exclude>
-                        <exclude>packages-common/jvm.options</exclude>
+                        <exclude>**/jvm.options</exclude>
                         <exclude>conf/config/jvm-options.cmd</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>debian/*</exclude>

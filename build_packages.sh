@@ -34,13 +34,30 @@ fi
 platform=$1
 bzr_revno=`bzr revno`
 
-# Use default license is $AKIBAN_CE_FLAG is undefined
+# Handle file preparation for release target
 if [ -z "${AKIBAN_CE_FLAG}" ]; then
-    license=LICENSE.txt
+    target='enterprise'
 else
-    license=LICENSE-CE.txt
+    target='community'
 fi
+
+# Select the correct license. Handled as a special case to keep LICENSE*.txt files in the top level
+case "${target}" in
+    'enterprise') license=LICENSE-EE.txt;;
+    'community')  license=LICENSE-CE.txt;;
+    *) echo "fatal: Invalid release type (name: [{$target}]). Check that \
+     the script is handling condition flags correctly."
+        exit 1
+        ;;
+esac
+
+common_dir="pkg-config-files/${target}" # require packages-common/dir to be the same as the ${target} variable
+[ -d ${common_dir} ] || \
+    { echo "fatal: Couldn't find configuration files in: ${common_dir}"; exit 1; }
+echo "-- packages-common directory: ${common_dir}"
+rm packages-common/ABOUT
 cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
+cp ${common_dir}/* packages-common/
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
@@ -48,6 +65,7 @@ else
 	epoch=$2
 fi
 
+# Handle platform-specific packaging process
 if [ ${platform} == "debian" ]; then
     cp packages-common/* ${platform}
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}

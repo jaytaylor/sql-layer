@@ -54,6 +54,8 @@ cp -p redhat/services-config.yaml ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/jvm.options ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 cp -p redhat/LICENSE.txt ${RPM_BUILD_ROOT}/usr/share/%{username}
+cp -p redhat/*.info ${RPM_BUILD_ROOT}/usr/share/%{username}
+
 cp -p target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
