@@ -231,7 +231,7 @@ public enum ErrorCode {
     // Class 39 - external routine invocation
     // Class 3B - savepoint exception
     // Class 3C - ambiguous cursor name
-    // Class 3D - invalid cataAlog name
+    // Class 3D - invalid catalog name
     // Class 3F - invalid schema name
     NO_SUCH_SCHEMA          ("3F", "000", Importance.DEBUG, NoSuchSchemaException.class),
     
