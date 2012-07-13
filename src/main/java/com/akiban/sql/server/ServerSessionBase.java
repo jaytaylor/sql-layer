@@ -161,6 +161,16 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
     }
 
     @Override
+    public boolean isTransactionActive() {
+        return (transaction != null);
+    }
+
+    @Override
+    public boolean isTransactionRollbackPending() {
+        return ((transaction != null) && transaction.isRollbackPending());
+    }
+
+    @Override
     public void beginTransaction() {
         if (transaction != null)
             throw new TransactionInProgressException();
