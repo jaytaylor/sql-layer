@@ -51,6 +51,7 @@ import com.akiban.server.store.PersistitStore;
 import com.akiban.server.store.Store;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
+import com.akiban.sql.pg.PostgresOperatorCompiler;
 import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
@@ -60,8 +61,12 @@ import com.persistit.exception.PersistitInterruptedException;
 
 import java.io.InterruptedIOException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class PersistitAdapter extends StoreAdapter
 {
+    private static final Logger logger = LoggerFactory.getLogger(PersistitAdapter.class);
     // StoreAdapter interface
 
     @Override
@@ -204,6 +209,16 @@ public class PersistitAdapter extends StoreAdapter
         NewRow niceRow = newRow(rowDef);
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             ValueSource source = row.eval(i);
+            
+            // TODO: Insert default values if source  
+            if (source.isNull()) {
+                if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
+                    logger.warn("rowData: got identity column");
+                    //Tree tree;
+                    //treeService.getExchange(getSession(), tree);
+                }
+                //FromObjectValueSource objectSource = new FromObjectValueSource()
+            }
             niceRow.put(i, target.convertFromSource(source));
         }
         return niceRow.toRowData();
