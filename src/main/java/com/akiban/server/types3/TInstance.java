@@ -122,7 +122,7 @@ public final class TInstance {
                 && attr1 == other.attr1
                 && attr2 == other.attr2
                 && attr3 == other.attr3
-                && (isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable)
+                && ((isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable))
                 && tclass.equals(other.tclass);
 
     }

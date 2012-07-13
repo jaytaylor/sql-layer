@@ -142,8 +142,9 @@ public class SelectPreponer extends BaseRule
 
         public void setIndex(IndexScan index) {
             indexColumns = new HashMap<ExpressionNode,PlanNode>();
-            for (ExpressionNode column : index.getColumns()) {
-                if (column != null) {
+            for (int i = 0; i < index.getColumns().size(); i++) {
+                ExpressionNode column = index.getColumns().get(i);
+                if ((column != null) && index.isRecoverableAt(i)) {
                     indexColumns.put(column, index);
                 }
             }

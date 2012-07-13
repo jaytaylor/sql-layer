@@ -501,8 +501,7 @@ public class UserTable extends Table
                                                maxIndexId + 1,
                                                true,
                                                Index.PRIMARY_KEY_CONSTRAINT);
-        IndexColumn pkIndexColumn = new IndexColumn(pkIndex, pkColumn, 0, true, null);
-        pkIndex.addColumn(pkIndexColumn);
+        IndexColumn.create(pkIndex, pkColumn, 0, true, null);
         return pkIndex;
     }
 

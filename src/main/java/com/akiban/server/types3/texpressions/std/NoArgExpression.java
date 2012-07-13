@@ -64,6 +64,11 @@ public abstract class NoArgExpression extends TOverloadBase
     }
 
     @Override
+    protected boolean neverConstant() {
+        return true;
+    }
+
+    @Override
     public TOverloadResult resultType()
     {
         return TOverloadResult.fixed(tInstance());

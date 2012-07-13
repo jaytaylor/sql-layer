@@ -78,7 +78,7 @@ public class Cast_From_Tinyint
     
     public static final TCast TO_DECIMAL = new FromInt8ToDecimal(MNumeric.TINYINT, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_DOUBLE = new FromInt8ToDouble(MNumeric.TINYINT, MApproximateNumber.DOUBLE, false, Constantness.UNKNOWN);
+    public static final TCast TO_DOUBLE = new FromInt8ToDouble(MNumeric.TINYINT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
     public static final TCast TO_VARCHAR = new FromInt8ToString(MNumeric.TINYINT, MString.VARCHAR, false, Constantness.UNKNOWN);
 }

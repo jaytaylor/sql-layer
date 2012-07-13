@@ -37,9 +37,9 @@ import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
-import com.akiban.server.types3.aksql.aktypes.AkNumeric;
 import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.StringFactory.Charset;
+import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
 import com.akiban.server.types3.mcompat.mtypes.MBinary;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
@@ -104,6 +104,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
 
         ResolvingVistor(PlanContext context) {
             folder = new Folder(context);
+            folder.setFoldingState();
             SchemaRulesContext src = (SchemaRulesContext)context.getRulesContext();
             resolver = src.getOverloadResolver();
         }
@@ -191,7 +192,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             // cast operands
             for (int i = 0, operandsSize = operands.size(); i < operandsSize; i++) {
 
-                ExpressionNode operand = castTo(operands.get(i), resolutionResult.getTypeInstance(i));
+                ExpressionNode operand = castTo(operands.get(i), resolutionResult.getTypeClass(i));
                 operands.set(i, operand);
             }
 
@@ -232,9 +233,9 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             }
             overload.finishPreptimePhase(context);
 
-            // TODO should this be in Folder?
-            // -----------------------------------------------------------
-            TPreptimeValue result = overload.evaluateConstant(context, new LazyListBase<TPreptimeValue>() {
+            // Put the preptime value, possibly including nullness, into the expression. The constant folder
+            // will use it.
+            TPreptimeValue preptimeValue = overload.evaluateConstant(context, new LazyListBase<TPreptimeValue>() {
                 @Override
                 public TPreptimeValue get(int i) {
                     return operandValues.get(i);
@@ -245,13 +246,14 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                     return operandValues.size();
                 }
             });
-            if (result.value() != null) {
-                assert false : "create constant expression" ; // TODO
-            }
-            // -----------------------------------------------------------
+            if (preptimeValue == null)
+                preptimeValue = new TPreptimeValue(resultInstance);
+            else
+                assert resultInstance.equals(preptimeValue.instance())
+                        : resultInstance + " != " + preptimeValue.instance();
 
-            TPreptimeValue preptimeValue = new TPreptimeValue(resultInstance);
             expression.setPreptimeValue(preptimeValue);
+
             return expression;
         }
 
@@ -322,7 +324,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
             ExpressionNode right = expression.getRight();
             TClass leftTClass = tclass(left);
             TClass rightTClass = tclass(right);
-            if (!leftTClass.equals(rightTClass)) {
+            if (leftTClass != rightTClass) {
                 TClass common = resolver.commonTClass(leftTClass, rightTClass);
                 if (common == null)
                     throw error("no common type found for comparison of " + expression);
@@ -380,6 +382,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         ExpressionNode handleParameterExpression(ParameterExpression expression) {
+            TInstance tinst = tinst(expression.getSQLtype());
+            expression.setPreptimeValue(new TPreptimeValue(tinst));
             return expression;
         }
 
@@ -413,7 +417,8 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
         }
 
         private static TInstance tinst(ExpressionNode node) {
-            return node.getPreptimeValue().instance();
+            TPreptimeValue ptv = node.getPreptimeValue();
+            return ptv == null ? null : ptv.instance();
         }
 
         private static PValueSource pval(ExpressionNode expression) {
@@ -432,7 +437,7 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 break;
             case TypeId.FormatIds.VARCHAR_TYPE_ID:
             case TypeId.FormatIds.CHAR_TYPE_ID:
-                Charset charset = StringFactory.Charset.valueOf(descriptor.getCharacterAttributes().getCharacterSet());
+                Charset charset = StringFactory.Charset.of(descriptor.getCharacterAttributes().getCharacterSet());
                 result = MString.VARCHAR.instance(descriptor.getMaximumWidth(), charset.ordinal());
                 break;
             case TypeId.FormatIds.DECIMAL_TYPE_ID:
@@ -440,17 +445,17 @@ public final class OverloadAndTInstanceResolver extends BaseRule {
                 result = MNumeric.DECIMAL.instance(descriptor.getPrecision(), descriptor.getScale());
                 break;
             case TypeId.FormatIds.DOUBLE_TYPE_ID:
-                result = AkNumeric.DOUBLE.instance();
+                result = MApproximateNumber.DOUBLE.instance();
                 break;
             case TypeId.FormatIds.INT_TYPE_ID:
-                result = AkNumeric.INT.instance();
+                result = MNumeric.INT.instance();
                 break;
             case TypeId.FormatIds.TINYINT_TYPE_ID:
             case TypeId.FormatIds.SMALLINT_TYPE_ID:
-                result = AkNumeric.SMALLINT.instance();
+                result = MNumeric.SMALLINT.instance();
                 break;
             case TypeId.FormatIds.LONGINT_TYPE_ID:
-                result = AkNumeric.BIGINT.instance();
+                result = MNumeric.BIGINT.instance();
                 break;
             case TypeId.FormatIds.DATE_TYPE_ID:
                 result = MDatetimes.DATE.instance();
