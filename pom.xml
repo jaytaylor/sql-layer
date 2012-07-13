@@ -438,6 +438,9 @@
                                             <fileset dir="${akiban.client.project}/target" includes="akiban-client-tools-${project.version}.jar" />
                                             <fileset dir="${akiban.client.project}/target/dependency" />
                                         </copy>
+                                        <copy todir="${setup.staging.dir}/config">
+                                          <fileset dir="${basedir}/windows/${akiban.release.target}/">
+                                        </copy>
                                         <get src="http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${setup.staging.dir}/procrun.zip" usetimestamp="true" />
                                         <mkdir dir="${setup.staging.dir}/procrun" />
                                         <unzip src="${setup.staging.dir}/procrun.zip" dest="${setup.staging.dir}/procrun" />
@@ -485,7 +488,8 @@
                 <setup.appversion>${project.version}</setup.appversion>
                 <setup.jarfile>${project.build.finalName}-jar-with-dependencies.jar</setup.jarfile>
                 <setup.output>${project.build.finalName}-installer</setup.output>
-                <akiban.license>LICENSE.txt</akiban.license>
+                <akiban.license>LICENSE-EE.txt</akiban.license>
+                <akiban.release.target>enterprise</akiban.release.target> <!-- other options: { community } -->
                 <akiban.client.project>${basedir}/../client-latest</akiban.client.project>
             </properties>
         </profile>

@@ -75,6 +75,7 @@ elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
     bzr export --format=tar $tar_file
+    rm {$PWD}/redhat/akserver/redhat # Clear out old files
     cp packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
 # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
