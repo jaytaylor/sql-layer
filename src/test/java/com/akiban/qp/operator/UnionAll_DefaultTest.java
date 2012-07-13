@@ -29,6 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.DerivedTypesSchema;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.OldExpressionTestBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.Types3Switch;
 import org.junit.Test;

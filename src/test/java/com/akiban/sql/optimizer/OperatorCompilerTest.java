@@ -26,7 +26,12 @@
 
 package com.akiban.sql.optimizer;
 
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
+import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.server.t3expressions.T3Registry;
+import com.akiban.server.types3.Types3Switch;
+import com.akiban.server.types3.service.FunctionRegistryImpl;
 import com.akiban.sql.NamedParamsTestBase;
 import com.akiban.sql.TestBase;
 
@@ -120,8 +125,18 @@ public class OperatorCompilerTest extends NamedParamsTestBase
             compiler.initAIS(ais, OptimizerTestBase.DEFAULT_SCHEMA);
             compiler.initParser(parser);
             compiler.initFunctionsRegistry(new FunctionsRegistryImpl());
+            boolean usePValues = Types3Switch.ON;
+            if (usePValues) {
+                T3Registry t3Registry;
+                try {
+                    t3Registry = new T3Registry(new FunctionRegistryImpl());
+                } catch (Exception e) {
+                    throw new AkibanInternalException("while creating registry", e);
+                }
+                compiler.initOverloadResolver(new OverloadResolver(t3Registry.scalars(), t3Registry.aggregates()));
+            }
             if (Boolean.parseBoolean(properties.getProperty("cbo", "true")))
-                compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties), false);
+                compiler.initCostEstimator(new TestCostEstimator(ais, compiler.getSchema(), statsFile, false, properties), usePValues);
             else
                 compiler.initCostEstimator(null, false);
             compiler.initDone();

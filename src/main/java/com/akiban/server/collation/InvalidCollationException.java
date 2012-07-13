@@ -24,31 +24,20 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql;
 
-import com.akiban.server.types3.TBundle;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
+package com.akiban.server.collation;
 
-import java.util.Map;
+@SuppressWarnings("serial")
+public class InvalidCollationException extends RuntimeException {
 
-public enum AkBundle implements TBundle {
-    INSTANCE;
-
+    private final String name;
+    
+    public InvalidCollationException(final String name) {
+        this.name = name;
+    }
+    
     @Override
-    public TBundleID id() {
-        return bundleId;
+    public String getMessage() {
+        return name;
     }
-
-    @Override
-    public Map<TClass, TFactory> typeClasses() {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
-    public enum AkSwitcher {
-        // TODO
-    }
-
-    private static TBundleID bundleId = new TBundleID("aksql", "282696ac-6f10-450c-9960-a54c8abe94c0");
 }

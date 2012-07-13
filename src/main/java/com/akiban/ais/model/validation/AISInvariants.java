@@ -27,9 +27,11 @@
 package com.akiban.ais.model.validation;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
+import com.akiban.ais.model.IndexName;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.server.error.AISNullReferenceException;
@@ -83,10 +85,11 @@ public class AISInvariants {
         }
     }
     
-    public static void checkDuplicateColumnsInIndex(Index index, String columnName)
+    public static void checkDuplicateColumnsInIndex(Index index, TableName columnarName, String columnName)
     {
         for(IndexColumn icol : index.getKeyColumns()) {
-            if(icol.getColumn().getName().equals(columnName)) {
+            Column column = icol.getColumn();
+            if(column.getName().equals(columnName) && column.getColumnar().getName().equals(columnarName)) {
                 throw new DuplicateIndexColumnException (index, columnName);
             }
         }

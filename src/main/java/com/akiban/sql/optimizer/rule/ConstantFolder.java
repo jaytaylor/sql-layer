@@ -26,6 +26,8 @@
 
 package com.akiban.sql.optimizer.rule;
 
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
 
@@ -75,6 +77,10 @@ public class ConstantFolder extends BaseRule
         public Folder(PlanContext planContext) {
             this.planContext = planContext;
             this.expressionAssembler = new OldExpressionAssembler(planContext.getRulesContext());
+        }
+
+        public void setFoldingState() {
+            this.state = State.FOLDING;
         }
 
         /** Return <code>true</code> if substantial enough changes were made that
@@ -209,30 +215,38 @@ public class ConstantFolder extends BaseRule
             else if ("if".equals(fname))
                 return ifFunction(fun);
 
-            boolean allConstant = true, anyNull = false;
-            for (ExpressionNode operand : fun.getOperands()) {
-                switch (isConstant(operand)) {
-                case NULL:
-                    anyNull = true;
-                    /* falls through */
-                case VARIABLE:
-                    allConstant = false;
-                    break;
-                }
+            TPreptimeValue preptimeValue = fun.getPreptimeValue();
+            if (preptimeValue != null) {
+                return (preptimeValue.value() == null)
+                        ? fun
+                        : new ConstantExpression(preptimeValue);
             }
-            if (allConstant && isIdempotent(fun))
-                return evalNow(fun);
-
-            if (anyNull)
-                switch(expressionAssembler.getFunctionRegistry().composer(fname).getNullTreating())
-                {
-                    case REMOVE:       return removeNull(fun);
-                    case RETURN_NULL: return new BooleanConstantExpression(null, 
-                                                     fun.getSQLtype(), 
-                                                     fun.getSQLsource());
+            else {
+                boolean allConstant = true, anyNull = false;
+                for (ExpressionNode operand : fun.getOperands()) {
+                    switch (isConstant(operand)) {
+                    case NULL:
+                        anyNull = true;
+                        /* falls through */
+                    case VARIABLE:
+                        allConstant = false;
+                        break;
+                    }
                 }
-            
-            return fun;
+                if (allConstant && isIdempotent(fun))
+                    return evalNow(fun);
+
+                if (anyNull)
+                    switch(expressionAssembler.getFunctionRegistry().composer(fname).getNullTreating())
+                    {
+                        case REMOVE:       return removeNull(fun);
+                        case RETURN_NULL: return new BooleanConstantExpression(null,
+                                                         fun.getSQLtype(),
+                                                         fun.getSQLsource());
+                    }
+
+                return fun;
+            }
         }
 
         protected ConditionExpression logicalFunctionCondition(LogicalFunctionCondition lfun) {

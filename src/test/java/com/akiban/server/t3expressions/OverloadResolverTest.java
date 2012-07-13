@@ -95,7 +95,7 @@ public class OverloadResolverTest {
 
         @Override
         public List<TValidatedOverload> getOverloads(String name) {
-            return validatedMap.get(name);
+            return validatedMap.get(name.toLowerCase());
         }
 
         @Override
@@ -313,7 +313,7 @@ public class OverloadResolverTest {
     }
 
     // input resolution, no casts
-    @Test
+    @Test(expected = OverloadException.class)
     public void mulIntMulBigIntWithIntsNoCasts() {
         init(MUL_INTS, MUL_BIGINTS);
         checkResolved("INT*INT", null, MUL_NAME, prepVals(TINT, TINT));
@@ -352,11 +352,16 @@ public class OverloadResolverTest {
         checkResolved("BIGINT*INT", MUL_BIGINTS, MUL_NAME, prepVals(TBIGINT, TINT));
         // 1 survives filtering
         checkResolved("DATE*INT", MUL_DATE_INT, MUL_NAME, prepVals(TDATE, TINT));
-        // 3 survive filtering, 1 less specific, 2 candidates
-        checkResolved("?*INT", null, MUL_NAME, prepVals(null, TINT));
+        try {
+            // 3 survive filtering, 1 less specific, 2 candidates
+            checkResolved("?*INT", null, MUL_NAME, prepVals(null, TINT));
+            fail("expected OverloadException");
+        } catch (OverloadException e) {
+            // expected
+        }
     }
 
-    @Test
+    @Test(expected = OverloadException.class)
     public void conflictingOverloads() {
         final String NAME = "foo";
         // Overloads aren't valid and should(?) be rejected by real registry,
@@ -409,7 +414,7 @@ public class OverloadResolverTest {
     public void onlyPickingRemaining() {
         final String NAME = "first";
         TestGetBase first = new TestGetBase(NAME, null);
-        first.builder.pickingVararg(null);
+        first.builder.pickingVararg(null, 0);
         init(first);
         checkResolved(NAME+"(INT)", first, NAME, prepVals(TINT));
         registry.setCasts(C_INT_BIGINT);
@@ -417,8 +422,8 @@ public class OverloadResolverTest {
         try {
             checkResolved(NAME+"()", first, NAME, prepVals());
             fail("expected overload exception");
-        } catch (OverloadException e) {
-            // can't find picking type for first if there's no inputs
+        } catch (WrongExpressionArityException e) {
+            // can't resolve overload if nargs is wrong
         }
         try {
             checkResolved(NAME+"(null)", first, NAME, Arrays.asList(prepVal(null)));
