@@ -39,11 +39,9 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.regex.Pattern;
 
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import com.akiban.server.PersistitAccumulatorTableStatusCache;
 import com.akiban.server.TableStatusCache;
+import com.akiban.server.collation.AkCollatorFactory;
 import com.akiban.server.error.ConfigurationPropertiesLoadException;
 import com.akiban.server.error.InvalidVolumeException;
 import com.akiban.server.error.PersistitAdapterException;
@@ -76,6 +74,8 @@ public class TreeServiceImpl
     private static final String DATAPATH_PROP_NAME = "datapath";
 
     private static final String BUFFER_SIZE_PROP_NAME = "buffersize";
+    
+    private static final String COLLATION_PROP_NAME = "akserver.collation";
 
     private static final Session.Key<Volume> TEMP_VOLUME = Session.Key.named("TEMP_VOLUME");
 
@@ -137,6 +137,12 @@ public class TreeServiceImpl
 
     public synchronized void start() {
         assert getDb() == null;
+        /*
+         * TODO:
+         * Remove when AkCollatorFactory becomes a service.
+         * Temporary bridge to get the akserver.collation property AkCollatorFactory
+         */
+        AkCollatorFactory.setCollationMode(configService.getProperty(COLLATION_PROP_NAME));
         // TODO - remove this when sure we don't need it
         ++instanceCount;
         assert instanceCount == 1 : instanceCount;
