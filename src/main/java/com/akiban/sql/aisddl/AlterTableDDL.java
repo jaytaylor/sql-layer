@@ -41,7 +41,6 @@ import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.FKConstraintDefinitionNode;
-import com.akiban.sql.parser.ResultColumn;
 import com.akiban.sql.parser.TableElementNode;
 
 import java.util.Collection;
@@ -52,12 +51,13 @@ public class AlterTableDDL {
     static final String TEMP_TABLE_NAME_2 = "__ak_temp_2";
 
     private AlterTableDDL() {}
-    
+
     public static void alterTable(DDLFunctions ddlFunctions,
+                                  TableCopier tableCopier,
                                   Session session,
                                   String defaultSchemaName,
                                   AlterTableNode alterTable) {
-        final AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
+        AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
         final TableName tableName = convertName(defaultSchemaName, alterTable.getObjectName());
         final UserTable table = curAIS.getUserTable(tableName);
         if (table == null) {
@@ -119,7 +119,8 @@ public class AlterTableDDL {
             }
 
             ddlFunctions.createTable(session, newTable);
-            // TODO: Copy data
+            curAIS = ddlFunctions.getAIS(session);
+            tableCopier.copyFullTable(curAIS, tableName, newTable.getName());
             ddlFunctions.renameTable(session, tableName, tempName2);
             ddlFunctions.renameTable(session, tempName1, tableName);
             ddlFunctions.dropTable(session, tempName2);

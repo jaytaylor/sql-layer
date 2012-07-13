@@ -69,6 +69,12 @@ public class AlterTableDDLTest {
     private static final TableName I_NAME = tn(SCHEMA, "i");
     private static final TableName A_NAME = tn(SCHEMA, "a");
 
+    private static final TableCopier NOP_COPIER = new TableCopier() {
+        @Override
+        public void copyFullTable(AkibanInformationSchema ais, TableName source, TableName destination) {
+        }
+    };
+
 
     private SQLParser parser;
     private DDLFunctionsMock ddlFunctions;
@@ -173,13 +179,13 @@ public class AlterTableDDLTest {
         expectChildOf(I_NAME, A_NAME);
     }
 
-
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
-        AlterTableDDL.alterTable(ddlFunctions, null, SCHEMA, (AlterTableNode)node);
+        AlterTableDDL.alterTable(ddlFunctions, NOP_COPIER, null, SCHEMA, (AlterTableNode)node);
     }
+
 
     private void expectCreated(TableName... names) {
         assertEquals("Creation order",

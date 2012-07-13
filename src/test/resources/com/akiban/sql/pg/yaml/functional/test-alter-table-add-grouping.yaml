@@ -1,0 +1,16 @@
+#
+# Test basic functionality of ALTER TABLE x ADD GROUPING FOREIGN KEY
+---
+- CreateTable: t1 (id INT NOT NULL PRIMARY KEY)
+---
+- CreateTable: t2 (id INT NOT NULL PRIMARY KEY, t1id INT)
+---
+- Statement: INSERT INTO t1 VALUES (1), (10), (100)
+---
+- Statement: INSERT INTO t2 VALUES (2, 1), (20, 10), (200, 100)
+---
+- Statement: ALTER TABLE t2 ADD GROUPING FOREIGN KEY(t1id) REFERENCES t1(id)
+---
+- Statement: SELECT t1.id,t2.id FROM t1,t2 WHERE t1.id=t2.t1id;
+- output: [[1,2], [10,20], [100,200]]
+...
