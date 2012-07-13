@@ -99,8 +99,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "\\(SELECT substring\\(pg_catalog.pg_get_expr\\(d.adbin, d.adrelid\\) for 128\\)\\s*" +
                                "FROM pg_catalog.pg_attrdef d\\s+" +
                                "WHERE d.adrelid = a.attrelid AND d.adnum = a.attnum AND a.atthasdef\\),\\s*" +
-                               "a.attnotnull, a.attnum,\\s*" +
-                               "NULL AS attcollation\\s+" +
+                               "a.attnotnull, a.attnum,?\\s*" +
+                               "(NULL AS attcollation\\s+)?" +
                                "FROM pg_catalog.pg_attribute a\\s+" +
                                "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" +
                                "ORDER BY a.attnum;?", true),
@@ -218,7 +218,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             types = new PostgresType[] { INT2_PG_TYPE, CHAR1_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, CHAR0_PG_TYPE, OID_PG_TYPE };
             break;
         case PSQL_DESCRIBE_TABLES_3:
-            ncols = 6;
+            ncols = (groups.get(1) != null) ? 6 : 5;
             names = new String[] { "attname", "format_type", "?column?", "attnotnull", "attnum", "attcollation" };
             types = new PostgresType[] { IDENT_PG_TYPE, TYPNAME_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE, CHAR0_PG_TYPE };
             break;
@@ -527,24 +527,26 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
     private int psqlDescribeTables3Query(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
         int nrows = 0;
         ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
-        Columnar table = getTableById(server, groups.get(1));
+        Columnar table = getTableById(server, groups.get(2));
         if (table == null) return 0;
+        boolean hasCollation = (groups.get(1) != null);
         for (Column column : table.getColumns()) {
             messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
-            messenger.writeShort(6); // 6 columns for this query
-            writeColumn(messenger, encoder, usePVals, 
+            messenger.writeShort(hasCollation ? 6 : 5); // 5-6 columns for this query
+            writeColumn(messenger, encoder, usePVals, // attname
                         column.getName(), IDENT_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
+            writeColumn(messenger, encoder, usePVals, // format_type
                         column.getTypeDescription(), TYPNAME_PG_TYPE);
             writeColumn(messenger, encoder, usePVals, 
                         null, CHAR0_PG_TYPE);
             // This should use BOOL_PG_TYPE, except that does true/false, not t/f.
-            writeColumn(messenger, encoder, usePVals, 
+            writeColumn(messenger, encoder, usePVals, // attnotnull
                         column.getNullable() ? "f" : "t", CHAR1_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
+            writeColumn(messenger, encoder, usePVals, // attnum
                         column.getPosition(), INT2_PG_TYPE);
-            writeColumn(messenger, encoder, usePVals, 
-                        null, CHAR0_PG_TYPE);
+            if (hasCollation)
+                writeColumn(messenger, encoder, usePVals, // attcollation
+                            null, CHAR0_PG_TYPE);
             messenger.sendMessage();
             nrows++;
             if ((maxrows > 0) && (nrows >= maxrows)) {
