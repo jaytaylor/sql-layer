@@ -94,7 +94,7 @@ public class AkCollatorFactory {
         final String idAndScheme = schemeForName(name);
         final Matcher matcher = SCHEMA_PATTERN.matcher(idAndScheme);
         if (!matcher.matches()) {
-            throw new IllegalArgumentException("collation name " + name + " has malformed value " + idAndScheme);
+            throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
         }
         final String scheme = matcher.group(2);
         if (scheme.startsWith(UCS_BINARY)) {
@@ -114,10 +114,10 @@ public class AkCollatorFactory {
             try {
                 collationId = Integer.parseInt(matcher.group(1));
                 if (collationId < 0 || collationId > MAX_COLLATION_ID) {
-                    throw new IllegalArgumentException("collation name " + name + " has invalid ID " + collationId);
+                    throw new IllegalStateException("collation name " + name + " has invalid ID " + collationId);
                 }
             } catch (Exception e) {
-                throw new IllegalArgumentException("collation name " + name + " has malformed value " + idAndScheme);
+                throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
             }
             
             final AkCollator akCollator;
@@ -201,7 +201,7 @@ public class AkCollatorFactory {
         final String lcname = name.toLowerCase();
         String scheme = collationNameProperties.getProperty(lcname);
         if (scheme == null) {
-            throw new IllegalArgumentException("Collation " + name + " is unknown");
+            throw new InvalidCollationException(name);
         }
         return scheme;
     }
