@@ -3,7 +3,7 @@ PhysicalSelect@1f9f0f2[name, order_date, name]
     Flatten_HKeyOrdered(test.customers INNER test.orders)
       AncestorLookup_Default(Index(test.orders.order_date[IndexColumn(order_date)]) -> [test.customers, test.orders])
         IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]) (>UnboundExpressions[CAST_DATE(Literal(2011-01-01))],<UnboundExpressions[Literal(NULL)]))
-    project([Bound(0,Field(1)), Bound(0,Field(4)), Field(2)])
+    project(Bound(0,Field(1)), Bound(0,Field(4)), Field(2))
       Select_HKeyOrdered(test.child, Field(2) != Literal(Smith))
         Filter_Default([test.child])
           BranchLookup_Default(_akiban_parent Index(test.parent.name[IndexColumn(name)]) -> test.parent limit NO LIMIT)

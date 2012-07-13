@@ -1,4 +1,4 @@
 PhysicalUpdate
-  Insert_Default(project to table test.orders ([Literal(205), Field(1), Literal(NULL)]))
-    project to table test.orders ([Literal(205), Field(1), Literal(NULL)])
+  Insert_Default(project(205, Field(1), "NULL"))
+    project(205, Field(1), "NULL")
       IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Literal(Jones)],<=UnboundExpressions[Literal(Jones)]))

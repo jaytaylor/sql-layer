@@ -60,45 +60,63 @@ public class Format {
     protected static void describeExpression(OperationExplainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         
         Attributes atts = (Attributes) explainer.get().clone();
-        Explainer TRUE = PrimitiveExplainer.getInstance(true);
-        Explainer INFIX = PrimitiveExplainer.getInstance("INFIX");
+        String name = atts.get(Label.NAME).get(0).get().toString();
         
-        if (atts.get(Label.REPRESENTATION_MODE) == INFIX)
+        if (name.equals("Field"))
+        {
+            sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
+        }
+        else if (name.equals("Bound"))
+        {
+            sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(",");
+            describe(atts.get(Label.OPERAND).get(0), sb);
+            sb.append(")");
+        }
+        else if (name.equals("Variable"))
+        {
+            sb.append(name).append("(pos=").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
+        }
+        else if (atts.containsKey(Label.INFIX_REPRESENTATION))
         {
             Explainer leftExplainer = atts.valuePairs().get(0).getValue();
             Explainer rightExplainer = atts.valuePairs().get(1).getValue();
-            String name = atts.get(Label.NAME).get(0).get().toString();
-            if (name.equals(parentName) && atts.get(Label.ASSOCIATIVE) == TRUE)
+            if (name.equals(parentName) && atts.get(Label.ASSOCIATIVE).get(0).equals(PrimitiveExplainer.getInstance(true)))
                 needsParens = false;
             if (needsParens)
                 sb.append("(");
             describe(leftExplainer, sb, true, name);
-            sb.append(" ");
-            describe(atts.get(Label.REPRESENTATION_MODE).get(0), sb);
-            sb.append(" ");
+            sb.append(" ").append(atts.get(Label.INFIX_REPRESENTATION).get(0).get()).append(" ");
             describe(rightExplainer, sb, true, name);
             if (needsParens)
                 sb.append(")");
         }
         else
         {
-            sb.append(atts.get(Label.NAME).get(0).get()).append("(");
+            sb.append(name).append("(");
             atts.remove(Label.NAME);
-            for (Map.Entry<Label, Explainer> entry : atts.valuePairs())
+            for (Explainer entry : atts.get(Label.OPERAND))
             {
-                describe(entry.getValue(), sb);
+                describe(entry, sb);
                 sb.append(", ");
             }
-            sb.setLength(sb.length()-2);
+            if (!atts.valuePairs().isEmpty())
+            {
+                sb.setLength(sb.length()-2);
+            }
             sb.append(")");
         }
     }
 
     protected static void describePrimitive(PrimitiveExplainer explainer, StringBuilder sb) {
+
         if (explainer.getType()==Type.STRING)
         {
             sb.append("\"").append(explainer.get()).append("\"");
         }
+        /*else if (explainer.getClass().isArray())
+        {
+        * TODO: add functionality to describePrimitive each element of the array separately.
+        }*/
         else
         {
             sb.append(explainer.get());
@@ -135,13 +153,16 @@ public class Format {
                         describe(row, sb);
                         sb.append(", ");
                     }
-                    sb.setLength(sb.length()-2);
+                    if (!atts.valuePairs().isEmpty())
+                    {
+                        sb.setLength(sb.length() - 2);
+                    }
                 }
                 else if (name.equals("Group Scan"))
                 {
                     describe(atts.get(Label.GROUP_TABLE).get(0), sb);
                 }
-                else if (name.equals("Index Scan"))
+                //else if (name.equals("Index Scan"))
                 {
                     // TODO
                 }
@@ -156,7 +177,10 @@ public class Format {
                         describe(table, sb);
                         sb.append(", ");
                     }
-                    sb.setLength(sb.length()-2);
+                    if (!atts.valuePairs().isEmpty())
+                    {
+                        sb.setLength(sb.length() - 2);
+                    }
                 }
                 else if (name.equals("Ancestor Lookup Nested"))
                 {
@@ -167,7 +191,10 @@ public class Format {
                         describe(table, sb);
                         sb.append(", ");
                     }
-                    sb.setLength(sb.length()-2);
+                    if (!atts.valuePairs().isEmpty())
+                    {
+                        sb.setLength(sb.length() - 2);
+                    }
                 }
                 else if (name.equals("Branch Lookup Default"))
                 {
@@ -238,7 +265,10 @@ public class Format {
                     describe(expression, sb);
                     sb.append(", ");
                 }
-                sb.setLength(sb.length() - 2);
+                if (!atts.valuePairs().isEmpty())
+                {
+                    sb.setLength(sb.length() - 2);
+                }
                 break;
             case LIMIT_OPERATOR:
                 describe(atts.get(Label.LIMIT).get(0), sb);
@@ -257,8 +287,7 @@ public class Format {
                 }
                 break;
             default:
-                // throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
-                describeExpression(explainer, sb, false, null);
+                 throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
         }
         sb.append(")");
     }

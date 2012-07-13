@@ -170,7 +170,7 @@ class Select_HKeyOrdered extends Operator
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("SELECT"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("Select_HKeyOrdered"));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
         att.put(Label.PREDICATE, predicate.getExplainer());
         return new OperationExplainer(Type.SELECT_HKEY, att);

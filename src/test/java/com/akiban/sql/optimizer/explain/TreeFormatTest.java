@@ -103,17 +103,25 @@ public class TreeFormatTest
                      
          */
         
+        
+        // Incorrect because this format is no longer used.
         String exp = "\nSUBSTRING\n" +
                      "--OPERAND: FROM_UNIXTIME\n" +
                      "------OPERAND: +\n" +
                      "----------OPERAND: *\n" +
                      "--------------OPERAND: 123456\n" + 
                      "--------------OPERAND: 7\n" + 
-                     "----------OPERAND: 8\n" +
+                     "--------------INFIX_REPRESENTATION: *\n" + 
+                     "--------------ASSOCIATIVE: true\n" + 
+                     "----------OPERAND: 8\n" + 
+                     "----------INFIX_REPRESENTATION: +\n" + 
+                     "----------ASSOCIATIVE: true\n" + 
                      "------OPERAND: %Y-%m-%d\n" + 
-                     "--OPERAND: +\n" +
-                     "------OPERAND: 9\n" +
-                     "------OPERAND: 10\n" +
+                     "--OPERAND: +\n" + 
+                     "------OPERAND: 9\n" + 
+                     "------OPERAND: 10\n" + 
+                     "------INFIX_REPRESENTATION: +\n" + 
+                     "------ASSOCIATIVE: true\n" + 
                      "--OPERAND: 11\n";
         
         assertEquals(exp, actual);

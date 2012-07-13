@@ -1,4 +1,4 @@
 PhysicalSelect[order_date:date[DATE]]
-  project([Field(2)])
+  project(Field(2))
     AncestorLookup_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) -> [test.orders])
       IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (,))

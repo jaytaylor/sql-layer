@@ -36,8 +36,7 @@ import java.util.Map.Entry;
 
 /**
  * 
- * implements a simple Format that would print all the Explainer in an
- * indenting-fashion. 
+ * DEFUNCT DO NOT USE. 
  * 
  */
 public class TreeFormat // used to implement Format.java, now is outdated.

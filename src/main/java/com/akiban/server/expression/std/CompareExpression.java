@@ -68,13 +68,13 @@ public class CompareExpression extends AbstractBinaryExpression {
     
     @Override
     public String name () {
-        return comparison.toString();
+        return comparison.name();
     }
 
     @Override
     public Explainer getExplainer () {
         Explainer ex = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
-        ex.addAttribute(Label.REPRESENTATION_MODE, PrimitiveExplainer.getInstance("INFIX"));
+        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(comparison.toString()));
         return ex;
     }
     

@@ -1,7 +1,7 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  project([Field(1), Field(4), Field(7), Field(8)])
+  project(Field(1), Field(4), Field(7), Field(8))
     Filter_Default([flatten(flatten(test.customers, test.orders), test.items)])
       Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
         Flatten_HKeyOrdered(test.customers INNER test.orders)
-          Select_HKeyOrdered(test.items, BoolLogic(AND -> Field(3) == Literal(100), Field(2) < Literal(8888) -> BOOL))
+          Select_HKeyOrdered((Field(3) == 100) AND (Field(2) < "8888"))
             GroupScan_Default(full scan on _akiban_customers)

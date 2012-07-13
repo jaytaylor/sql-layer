@@ -1,6 +1,6 @@
 PhysicalSelect[_SQL_COL_1:VARCHAR(32) CHARACTER SET utf8 COLLATE utf8_bin]
-  project([Field(0)])
+  project(Field(0))
     IfEmpty_Default(Literal(NULL), KEEP_INPUT)
-      Limit_Default(limit=1: project([Field(1)]))
-        project([Field(1)])
+      Limit_Default(limit=1: project(Field(1)))
+        project(Field(1))
           IndexScan_Default(Index(.customers.cname_and_sku[IndexColumn(name), IndexColumn(sku)]) (>=UnboundExpressions[Literal(Smith)],<=UnboundExpressions[Literal(Smith)]))
