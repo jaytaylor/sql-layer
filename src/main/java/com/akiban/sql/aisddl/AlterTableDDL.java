@@ -52,7 +52,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 public class AlterTableDDL {
-    private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table to multiple groups";
+    private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table %s to multiple groups";
     static final String TEMP_TABLE_NAME_1 = "__ak_temp_1";
     static final String TEMP_TABLE_NAME_2 = "__ak_temp_2";
 
@@ -82,11 +82,8 @@ public class AlterTableDDL {
 
         FKConstraintDefinitionNode fkNode = getOnlyGroupingFKNode(alterTable);
         if(fkNode != null) {
-            if(table.getParentJoin() != null) {
-                throw new UnsupportedSQLException(MULTI_GROUP_ERROR_MSG, null);
-            }
-            if(!table.getChildJoins().isEmpty()) {
-                throw new UnsupportedSQLException(MULTI_GROUP_ERROR_MSG, null);
+            if((table.getParentJoin() != null) || !table.getChildJoins().isEmpty()) {
+                throw new UnsupportedSQLException(String.format(MULTI_GROUP_ERROR_MSG, tableName), null);
             }
 
             TableName refName = convertName(defaultSchemaName, fkNode.getRefTableName());
@@ -125,7 +122,7 @@ public class AlterTableDDL {
             }
 
             for(int i = 0; i < refColumns.length;++i) {
-                JoinColumn.create(join, checkGetColumn(refTable, refColumns[i]), checkGetColumn(table, columns[i]));
+                JoinColumn.create(join, checkGetColumn(newRefTable, refColumns[i]), checkGetColumn(newTable, columns[i]));
             }
 
             ddlFunctions.createTable(session, newTable);
