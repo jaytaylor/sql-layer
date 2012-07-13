@@ -35,16 +35,14 @@ import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
-import com.akiban.util.AkibanAppender;
 
 public class MApproximateNumber extends SimpleDtdTClass
 {
-    public static final TClass DOUBLE = new MApproximateNumber(TypeId.DOUBLE_ID, PUnderlying.DOUBLE);
-    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber(TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE);
-    public static final TClass FLOAT = new MApproximateNumber(TypeId.REAL_ID, PUnderlying.FLOAT);
-    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber(TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT);
+    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, PUnderlying.DOUBLE);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE);
+    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, PUnderlying.FLOAT);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
@@ -142,9 +140,9 @@ public class MApproximateNumber extends SimpleDtdTClass
         }
     }
 
-    private MApproximateNumber(TypeId typeId, PUnderlying underlying)
+    private MApproximateNumber(String name, TypeId typeId, PUnderlying underlying)
     {
-        super(MBundle.INSTANCE.id(), "double", 
+        super(MBundle.INSTANCE.id(), name,
                 DoubleAttribute.class, NumericFormatter.FORMAT.DOUBLE,
                 1, 1, 8,
                 underlying, typeId);

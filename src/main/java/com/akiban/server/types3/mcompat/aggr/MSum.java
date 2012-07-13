@@ -72,7 +72,7 @@ public class MSum implements TAggregator {
                 }
             }
         }, 
-        FLOAT(MNumeric.BIGINT) {
+        FLOAT(MApproximateNumber.FLOAT) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
                 float oldState = source.getFloat();
@@ -92,15 +92,8 @@ public class MSum implements TAggregator {
                 BigDecimalWrapper input = (BigDecimalWrapper) state.getObject();
                 state.putObject(oldState.add(input));
             }
-        }, 
-        BIGINTEGER(MNumeric.BIGINT) {
-            @Override
-            void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
-                BigInteger oldState = (BigInteger) source.getObject();
-                BigInteger input = (BigInteger) state.getObject();
-                state.putObject(oldState.add(input));
-            }            
-        };
+        }
+        ;
         abstract void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
         private final TClass typeClass;
         
@@ -111,7 +104,6 @@ public class MSum implements TAggregator {
     
     public static final TAggregator[] INSTANCES = {
         new MSum(SumType.BIGDECIMAL),
-        new MSum(SumType.BIGINTEGER),
         new MSum(SumType.DOUBLE),
         new MSum(SumType.FLOAT), 
         new MSum(SumType.LONG)
