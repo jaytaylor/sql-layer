@@ -129,6 +129,11 @@ public class UserTable extends Table
         candidateChildJoins.add(childJoin);
     }
 
+    /**
+     * TODO: This leaves the AIS in an invalid state. Do not execute on a canonical copy.
+     * Should be replaced with a way to
+     *  a) disassociate a table from a group fully b) copy with splitting out of group c) something even better
+     */
     public void clearGrouping() {
         candidateChildJoins.clear();
         candidateParentJoins.clear();
