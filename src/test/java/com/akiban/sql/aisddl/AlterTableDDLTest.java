@@ -44,6 +44,7 @@ import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.rowdata.RowDef;
+import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.dxl.IndexCheckSummary;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.StandardException;
@@ -336,7 +337,7 @@ public class AlterTableDDLTest {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
-        AlterTableDDL.alterTable(ddlFunctions, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
+        AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
     }
 
 
@@ -546,6 +547,20 @@ public class AlterTableDDLTest {
         @Override
         public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
             throw new UnsupportedOperationException();
+        }
+    }
+
+    private static class MockHook implements DXLFunctionsHook {
+        @Override
+        public void hookFunctionIn(Session session, DXLFunction function) {
+        }
+
+        @Override
+        public void hookFunctionCatch(Session session, DXLFunction function, Throwable throwable) {
+        }
+
+        @Override
+        public void hookFunctionFinally(Session session, DXLFunction function, Throwable throwable) {
         }
     }
 

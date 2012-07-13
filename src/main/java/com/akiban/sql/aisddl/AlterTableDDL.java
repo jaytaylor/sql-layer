@@ -43,6 +43,7 @@ import com.akiban.server.error.JoinToUnknownTableException;
 import com.akiban.server.error.NoSuchColumnException;
 import com.akiban.server.error.NoSuchTableException;
 import com.akiban.server.error.UnsupportedSQLException;
+import com.akiban.server.service.dxl.DXLFunctionsHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
@@ -52,6 +53,9 @@ import com.akiban.sql.parser.TableElementNode;
 import java.util.Collection;
 import java.util.Collections;
 
+import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.ALTER_TABLE_TEMP_TABLE;
+import static com.akiban.util.Exceptions.throwAlways;
+
 public class AlterTableDDL {
     private static final String MULTI_GROUP_ERROR_MSG = "Cannot add table %s to multiple groups";
     private static final String NON_LEAF_ERROR_MSG = "Cannot drop group from %s table %s";
@@ -60,7 +64,8 @@ public class AlterTableDDL {
 
     private AlterTableDDL() {}
 
-    public static void alterTable(DDLFunctions ddlFunctions,
+    public static void alterTable(DXLFunctionsHook hook,
+                                  DDLFunctions ddlFunctions,
                                   Session session,
                                   TableCopier tableCopier,
                                   String defaultSchemaName,
@@ -68,10 +73,7 @@ public class AlterTableDDL {
         AkibanInformationSchema curAIS = ddlFunctions.getAIS(session);
         final TableName tableName = convertName(defaultSchemaName, alterTable.getObjectName());
         final UserTable table = curAIS.getUserTable(tableName);
-        if (table == null) {
-            throw new NoSuchTableException(tableName.getSchemaName(), 
-                                           tableName.getTableName());
-        }
+        checkExists(tableName, table);
 
         if (alterTable.isUpdateStatistics()) {
             Collection<String> indexes = null;
@@ -82,24 +84,43 @@ public class AlterTableDDL {
         }
 
         FKConstraintDefinitionNode fkNode = getOnlyAddGFKNode(alterTable);
-        if(fkNode != null) {
-            TableName refName = convertName(defaultSchemaName, fkNode.getRefTableName());
-            doAddGroupingFK(fkNode, curAIS, table, refName, session, ddlFunctions, tableCopier);
-            return;
-        }
-
         ConstraintDefinitionNode conNode = getOnlyDropGFKNode(alterTable);
-        if(conNode != null) {
-            doDropGroupingFK(curAIS, table, session, ddlFunctions, tableCopier);
+        if((fkNode != null) || (conNode != null)) {
+            Throwable thrown = null;
+            hook.hookFunctionIn(session, ALTER_TABLE_TEMP_TABLE);
+            try {
+                if(fkNode != null) {
+                    TableName refName = convertName(defaultSchemaName, fkNode.getRefTableName());
+                    doAddGroupingFK(fkNode, tableName, refName, session, ddlFunctions, tableCopier);
+                } else {
+                    doDropGroupingFK(tableName, session, ddlFunctions, tableCopier);
+                }
+            } catch(Throwable t) {
+                thrown = t;
+                hook.hookFunctionCatch(session, ALTER_TABLE_TEMP_TABLE, t);
+                throw throwAlways(t);
+            } finally {
+                hook.hookFunctionFinally(session, ALTER_TABLE_TEMP_TABLE, thrown);
+            }
             return;
         }
 
         throw new UnsupportedSQLException (alterTable.statementToString(), alterTable);
     }
 
-    private static void doAddGroupingFK(FKConstraintDefinitionNode fk, AkibanInformationSchema ais, final UserTable table,
-                                        TableName refName, Session session, DDLFunctions ddl, TableCopier copier) {
-        TableName tableName = table.getName();
+    private static void checkExists(TableName tableName, UserTable table) {
+        if (table == null) {
+            throw new NoSuchTableException(tableName);
+        }
+    }
+
+    private static void doAddGroupingFK(FKConstraintDefinitionNode fk, TableName tableName, TableName refName,
+                                        Session session, DDLFunctions ddl, TableCopier copier) {
+        // Reacquire and check, now inside lock
+        AkibanInformationSchema ais = ddl.getAIS(session);
+        final UserTable table = ais.getUserTable(tableName);
+        checkExists(tableName, table);
+
         if(!table.isRoot() || !table.getChildJoins().isEmpty()) {
             throw new UnsupportedSQLException(String.format(MULTI_GROUP_ERROR_MSG, tableName), null);
         }
@@ -146,9 +167,12 @@ public class AlterTableDDL {
         createRenameCopyDrop(session, ddl, copier, newTable, tableName);
     }
 
-    private static void doDropGroupingFK(AkibanInformationSchema ais, final UserTable table,
-                                         Session session, DDLFunctions ddl, TableCopier copier) {
-        TableName tableName = table.getName();
+    private static void doDropGroupingFK(TableName tableName, Session session, DDLFunctions ddl, TableCopier copier) {
+        // Reacquire and check, now inside lock
+        AkibanInformationSchema ais = ddl.getAIS(session);
+        final UserTable table = ais.getUserTable(tableName);
+        checkExists(tableName, table);
+
         if(table.isRoot()) {
             throw new UnsupportedSQLException(String.format(NON_LEAF_ERROR_MSG, "root", tableName), null);
         }
