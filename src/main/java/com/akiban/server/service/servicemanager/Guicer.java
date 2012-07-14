@@ -196,6 +196,9 @@ public final class Guicer {
                    Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
+        this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
+        this.serviceManager = serviceManager;
+        
         List<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
         List<ResolvedServiceBinding> resolvedServiceBindings = new ArrayList<ResolvedServiceBinding>();
 
@@ -246,6 +249,9 @@ public final class Guicer {
                 dependencyClasses.add(dependency.getKey().getTypeLiteral().getRawType());
             }
         }
+
+        // This dependency is already handled.
+        dependencyClasses.remove(serviceManagerInterfaceClass);
 
         // Sort it and recursively invoke
         Collections.sort(dependencyClasses, BY_CLASS_NAME);
@@ -360,6 +366,8 @@ public final class Guicer {
 
     // object state
 
+    private final Class<? extends ServiceManagerBase> serviceManagerInterfaceClass;
+    private final ServiceManagerBase serviceManager;
     private final Collection<Class<?>> directlyRequiredClasses;
     private final Set<Object> services;
     private final Injector _injector;

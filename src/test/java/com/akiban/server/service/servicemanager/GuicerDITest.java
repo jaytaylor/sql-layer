@@ -227,7 +227,7 @@ public final class GuicerDITest {
 
     @Test
     public void managerInjection() {
-        M m = new MImpl();
+        M m = new MImpl(1.0);
         new GuiceInjectionTester()
                 .manager(M.class, m)
                 .bind(N.class, NImpl.class)
@@ -244,6 +244,10 @@ public final class GuicerDITest {
     }
 
     public static class MImpl implements M {
+        // No no-arg ctor.
+        public MImpl(double d) {
+        }
+
         private boolean seen = false;
         @Override
         public boolean wasSeen() {
