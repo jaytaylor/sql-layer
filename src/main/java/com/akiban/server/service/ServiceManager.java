@@ -46,6 +46,10 @@ import org.slf4j.LoggerFactory;
 public interface ServiceManager extends ServiceManagerBase {
     static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
 
+    enum State { IDLE, STARTING, ACTIVE, STOPPING };
+
+    State getState();
+
     void startServices() throws ServiceStartupException;
 
     void stopServices() throws Exception;

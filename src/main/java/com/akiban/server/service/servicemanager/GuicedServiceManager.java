@@ -29,6 +29,7 @@ package com.akiban.server.service.servicemanager;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManager.State;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
@@ -61,12 +62,19 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     // ServiceManager interface
 
     @Override
+    public State getState() {
+        return state;
+    }
+
+    @Override
     public void startServices() {
+        state = State.STARTING;
         logger.info("Starting services.");
         getJmxRegistryService().register(this);
         for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
             guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
         }
+        state = State.ACTIVE;
         AkServerInterface akServer = getAkSserver();
         logger.info("{} {} ready.",
                     akServer.getServerName(), akServer.getServerVersion());
@@ -74,16 +82,20 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     @Override
     public void stopServices() throws Exception {
+        state = State.STOPPING;
         logger.info("Stopping services normally.");
         guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
         logger.info("Services stopped.");
+        state = State.IDLE;
     }
 
     @Override
     public void crashServices() throws Exception {
+        state = State.STOPPING;
         logger.info("Stopping services abnormally.");
         guicer.stopAllServices(CRASH_SERVICES);
         logger.info("Services stopped.");
+        state = State.IDLE;
     }
 
     @Override
@@ -223,6 +235,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     // object state
 
+    private State state = State.IDLE;
     private final Guicer guicer;
 
     private final ServiceManagerMXBean bean = new ServiceManagerMXBean() {
