@@ -224,4 +224,42 @@ public final class GuicerDITest {
     }
 
     public static class MethodInjectionBImpl implements MethodInjectionB {}
+
+    @Test
+    public void managerInjection() {
+        M m = new MImpl();
+        new GuiceInjectionTester()
+                .manager(M.class, m)
+                .bind(N.class, NImpl.class)
+                .startAndStop(N.class);
+        assert (m.wasSeen());
+    }
+
+    public interface M extends ServiceManagerBase {
+        boolean wasSeen();
+        void seen();
+    }
+
+    public interface N {
+    }
+
+    public static class MImpl implements M {
+        private boolean seen = false;
+        @Override
+        public boolean wasSeen() {
+            return seen;
+        }
+        @Override
+        public void seen() {
+            seen = true;
+        }
+    }
+
+    public static class NImpl implements N {
+        @Inject
+        public NImpl(M mgr) {
+            mgr.seen();
+        }
+    }
+
 }

@@ -171,15 +171,29 @@ public final class Guicer {
     // public class methods
 
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
-    throws ClassNotFoundException
+            throws ClassNotFoundException 
+    {
+        return forServices(null, null, serviceBindings);
+    }
+
+    public static <M extends ServiceManagerBase> Guicer forServices(Class<M> serviceManagerInterfaceClass, M serviceManager,
+                                     Collection<ServiceBinding> serviceBindings)
+            throws ClassNotFoundException 
     {
         ArgumentValidation.notNull("bindings", serviceBindings);
-        return new Guicer(serviceBindings);
+        if (serviceManagerInterfaceClass != null) {
+            if (!serviceManagerInterfaceClass.isInstance(serviceManager)) {
+                throw new IllegalArgumentException(serviceManager + " is not a "
+                                                   + serviceManagerInterfaceClass);
+            }
+        }
+        return new Guicer(serviceManagerInterfaceClass, serviceManager, serviceBindings);
     }
 
     // private methods
 
-    private Guicer(Collection<ServiceBinding> serviceBindings)
+    private Guicer(Class<? extends ServiceManagerBase> serviceManagerInterfaceClass, ServiceManagerBase serviceManager,
+                   Collection<ServiceBinding> serviceBindings)
     throws ClassNotFoundException
     {
         List<Class<?>> localDirectlyRequiredClasses = new ArrayList<Class<?>>();
@@ -197,7 +211,8 @@ public final class Guicer {
 
         this.services = Collections.synchronizedSet(new LinkedHashSet<Object>());
 
-        AbstractModule module = new ServiceBindingsModule(resolvedServiceBindings);
+        AbstractModule module = new ServiceBindingsModule(serviceManagerInterfaceClass, serviceManager,
+                                                          resolvedServiceBindings);
         _injector = Guice.createInjector(module);
     }
 
@@ -399,6 +414,8 @@ public final class Guicer {
         // we use unchecked, raw Class, relying on the invariant established by ResolvedServiceBinding's ctor
         @SuppressWarnings("unchecked")
         protected void configure() {
+            if (serviceManagerInterfaceClass != null)
+                bind((Class)serviceManagerInterfaceClass).toInstance(serviceManager);
             for (ResolvedServiceBinding binding : bindings) {
                 Class unchecked = binding.serviceInterfaceClass();
                 bind(unchecked).to(binding.serviceImplementationClass()).in(Scopes.SINGLETON);
@@ -407,13 +424,18 @@ public final class Guicer {
 
         // ServiceBindingsModule interface
 
-        private ServiceBindingsModule(Collection<ResolvedServiceBinding> bindings)
+        private ServiceBindingsModule(Class<? extends ServiceManagerBase> serviceManagerInterfaceClass, ServiceManagerBase serviceManager,
+                                      Collection<ResolvedServiceBinding> bindings)
         {
+            this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
+            this.serviceManager = serviceManager;
             this.bindings = bindings;
         }
 
         // object state
 
+        private final Class<? extends ServiceManagerBase> serviceManagerInterfaceClass;
+        private final ServiceManagerBase serviceManager;
         private final Collection<ResolvedServiceBinding> bindings;
     }
 

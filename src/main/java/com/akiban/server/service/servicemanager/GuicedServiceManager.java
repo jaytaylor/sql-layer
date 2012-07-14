@@ -194,7 +194,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         final Collection<ServiceBinding> bindings = configurationHandler.serviceBindings();
         try {
-            guicer = Guicer.forServices(bindings);
+            guicer = Guicer.forServices(ServiceManager.class, this, bindings);
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
