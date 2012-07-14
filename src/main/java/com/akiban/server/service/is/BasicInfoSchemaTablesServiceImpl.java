@@ -400,11 +400,8 @@ public class BasicInfoSchemaTablesServiceImpl
         public long rowCount() {
             int count = 0;
             Iterator<UserTable> it = newIteration();
-            while(it.hasNext()) {
-                if(it.next().getParentJoin() != null) {
-                    ++count;
-                }
-            }
+            while(it.hasNext())
+                ++count;
             return count;
         }
 
@@ -415,31 +412,54 @@ public class BasicInfoSchemaTablesServiceImpl
                 super(rowType);
             }
 
-            private UserTable advance() {
-                while(tableIt.hasNext()) {
-                    UserTable table = tableIt.next();
-                    if(table.getParentJoin() != null) {
-                        return table;
-                    }
-                }
-                return null;
+            private UserTable findRootAndPath(UserTable table, StringBuilder path)
+            {
+                UserTable root;
+                if (table.isRoot())
+                    root = table;
+                else
+                    root = findRootAndPath(table.parentTable(), path);
+              
+                path.append(table.getName().getDescription()).append("/");
+                return root;
             }
 
             @Override
             public Row next() {
-                UserTable table = advance();
-                if(table == null) {
+                if (!tableIt.hasNext())
                     return null;
-                }
+                
+                UserTable table = tableIt.next();
                 Join join = table.getParentJoin();
+                
+                String constraintName = null;
+                String uniqueSchema = null;
+                String uniqueTable = null;
+                String uniqueConstraint = null;
+                
+                if (join != null)
+                {
+                    constraintName = join.getName();
+                    uniqueSchema = join.getParent().getName().getSchemaName();
+                    uniqueTable = join.getParent().getName().getTableName();
+                    uniqueConstraint = Index.PRIMARY_KEY_CONSTRAINT;
+                }
+
+                StringBuilder path = new StringBuilder();
+                UserTable root = findRootAndPath(table, path);
+
                 return new ValuesRow(rowType,
-                                     table.getName().getSchemaName(),
-                                     table.getName().getTableName(),
-                                     join.getName(),
-                                     join.getParent().getName().getSchemaName(),
-                                     join.getParent().getName().getTableName(),
-                                     Index.PRIMARY_KEY_CONSTRAINT,
-                                     ++rowCounter /*hidden pk*/);
+                                     root.getName().getSchemaName(),    // root_schema_name
+                                     root.getName().getTableName(),     // root_table_name
+                                     table.getName().getSchemaName(),   // constraint_schema_name
+                                     table.getName().getTableName(),    // constraint_table_name
+                                     path.substring(0, path.length() - 1),  // path (w/o the forward slash at the end)
+                                     new Long(table.getDepth()),        // depth
+                                     constraintName,                    // constraint_name
+                                     uniqueSchema,                      // unique_schema_name
+                                     uniqueTable,                       // unique_table_name
+                                     uniqueConstraint,                  // unique_constraint_name
+                                     ++rowCounter);
             }
         }
     }
@@ -803,7 +823,7 @@ public class BasicInfoSchemaTablesServiceImpl
             }
         }
     }
-
+    
     private static class TableConstraintsIteration {
         private final Iterator<UserTable> tableIt;
         private Iterator<? extends Index> indexIt;
@@ -898,6 +918,7 @@ public class BasicInfoSchemaTablesServiceImpl
             return curTable;
         }
     }
+    
 
     //
     // Package, for testing
@@ -964,13 +985,17 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("delete_rule", DESCRIPTOR_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
-        builder.userTable(GROUPING_CONSTRAINTS)
-            .colString("constraint_schema_name", IDENT_MAX, false)
-            .colString("constraint_table_name", IDENT_MAX, false)
-            .colString("constraint_name", IDENT_MAX, false)
-            .colString("unique_schema_name", IDENT_MAX, false)
-            .colString("unique_table_name", IDENT_MAX, false)
-            .colString("unique_constraint_name", IDENT_MAX, false);
+        builder.userTable(GROUPING_CONSTRAINTS) 
+                .colString("root_schema_name", IDENT_MAX, false)
+                .colString("root_table_name", IDENT_MAX, false)
+                .colString("constraint_schema_name", IDENT_MAX, false)
+                .colString("constraint_table_name", IDENT_MAX, false)
+                .colString("path", IDENT_MAX, false)
+                .colBigInt("depth", false)
+                .colString("constraint_name", IDENT_MAX, false)
+                .colString("unique_schema_name", IDENT_MAX, false)
+                .colString("unique_table_name", IDENT_MAX, false)
+                .colString("unique_constraint_name", IDENT_MAX, false);                            
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
