@@ -1,3 +1,3 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL, _SQL_COL_2:CHAR(5) NOT NULL]
-  project(1, "hello")
+  project(1, 'hello')
     IndexScan_Default(Index(.customers.sku_and_date[IndexColumn(sku), IndexColumn(order_date)]) (>UnboundExpressions[Literal(1234), Literal(2011-01-01)],<UnboundExpressions[Literal(1234), Literal(NULL)]))

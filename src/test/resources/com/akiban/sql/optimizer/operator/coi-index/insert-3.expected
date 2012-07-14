@@ -1,4 +1,4 @@
 PhysicalUpdate
   Insert_Default(project to table test.customers ([Field(1), Field(0)]))
-    project to table test.customers ([Field(1), Field(0)])
+    project(Field(1), Field(0))
       ValuesScan_Default[ImmutableRow[Brown, 4], ImmutableRow[Williams, 5]]

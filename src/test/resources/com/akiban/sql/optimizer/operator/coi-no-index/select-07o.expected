@@ -2,5 +2,5 @@ PhysicalSelect[order_date:date[DATE]]
   project(Field(4))
     Filter_Default([flatten(test.customers, test.orders)])
       Flatten_HKeyOrdered(test.customers INNER test.orders)
-        Select_HKeyOrdered(Field(2) > "2011-01-01"))
+        Select_HKeyOrdered(Field(2) > DATE '2011-01-01')
           GroupScan_Default(full scan on _akiban_customers)

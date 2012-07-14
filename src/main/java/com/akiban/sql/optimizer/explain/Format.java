@@ -100,13 +100,13 @@ public class Format {
         {
             sb.append(name).append("(");
             atts.remove(Label.NAME);
-            for (Explainer entry : atts.get(Label.OPERAND))
+            if (atts.containsKey(Label.OPERAND))
             {
-                describe(entry, sb);
-                sb.append(", ");
-            }
-            if (!atts.valuePairs().isEmpty())
-            {
+                for (Explainer entry : atts.get(Label.OPERAND))
+                {
+                    describe(entry, sb);
+                    sb.append(", ");
+                }
                 sb.setLength(sb.length()-2);
             }
             sb.append(")");
