@@ -650,10 +650,12 @@ public class PostgresServerConnection extends ServerSessionBase
 
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
-        if (format.equals("json"))
+        if (format.equals("table"))
+            compiler = PostgresOperatorCompiler.create(this);
+        else if (format.equals("json"))
             compiler = PostgresJsonCompiler.create(this); 
         else
-            compiler = PostgresOperatorCompiler.create(this);
+            throw new InvalidParameterValueException(format);
         
         // Add the Persisitit Adapter - default for most tables
         adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
@@ -728,7 +730,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean success = false;
         try {
             sessionTracer.beginEvent(EventTypes.EXECUTE);
-            boolean usePVals = Boolean.parseBoolean(getProperty("newtypes", Boolean.toString(Types3Switch.ON)));
+            boolean usePVals = getBooleanProperty("newtypes", Types3Switch.ON);
             rowsProcessed = pstmt.execute(context, maxrows, usePVals);
             success = true;
         }

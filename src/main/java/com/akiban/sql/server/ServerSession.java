@@ -63,6 +63,9 @@ public interface ServerSession
     /** Get a client property. */
     public String getProperty(String key, String defval);
 
+    /** Get a boolean client property with error checking. */
+    public boolean getBooleanProperty(String key, boolean defval);
+
     /** Set a client property. */
     public void setProperty(String key, String value);
 
