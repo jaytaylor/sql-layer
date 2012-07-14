@@ -32,7 +32,6 @@ import java.util.Arrays;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
-import com.akiban.sql.server.ServerStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

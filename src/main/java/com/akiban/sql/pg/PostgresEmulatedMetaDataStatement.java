@@ -30,7 +30,6 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
-import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.ais.model.AkibanInformationSchema;

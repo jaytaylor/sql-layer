@@ -32,7 +32,6 @@ import com.akiban.qp.exec.UpdateResult;
 import java.io.IOException;
 
 import com.akiban.server.service.session.Session;
-import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;

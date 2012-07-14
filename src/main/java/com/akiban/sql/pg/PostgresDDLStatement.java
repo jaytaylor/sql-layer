@@ -47,7 +47,6 @@ import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.RenameNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
-import com.akiban.sql.server.ServerStatement;
 
 import java.io.IOException;
 

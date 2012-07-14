@@ -27,7 +27,6 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.error.NoSuchSchemaException;
-import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
@@ -37,7 +36,6 @@ import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StatementType;
-import com.akiban.sql.server.ServerStatement;
 
 import java.util.Arrays;
 import java.io.IOException;
