@@ -446,8 +446,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
 
                 String path;
-                String rootSchema = null;
-                String rootTable = null;
+                String rootSchema = null; // a root table doesn't have any root
+                String rootTable = null;  // ditto
 
                 if (table.isRoot())
                     path = table.getName().getDescription(); // path to a root table is just its qualified name
@@ -462,8 +462,8 @@ public class BasicInfoSchemaTablesServiceImpl
                 }
 
                  return new ValuesRow(rowType,
-                                      rootSchema,       // root_schema_name
-                                      rootTable,        // root_table_name
+                                      rootSchema,                        // root_schema_name
+                                      rootTable,                         // root_table_name
                                       Long.class.cast(table.getDepth()), // depth
                                       table.getName().getSchemaName(),   // constraint_schema_name
                                       table.getName().getTableName(),    // constraint_table_name
