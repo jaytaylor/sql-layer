@@ -17,7 +17,7 @@ URL:            http://akiban.com/
 Source0:       akserver.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
 
-Requires:      jre >= 1.6.0
+Requires:      jre >= 1.6.0, postgresql-jdbc
 Requires(pre): user(akiban)
 Requires(pre): group(akiban)
 Requires(pre): shadow-utils
