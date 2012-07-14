@@ -27,28 +27,44 @@
 package com.akiban.server.service.ui;
 
 import com.akiban.server.service.Service;
+import com.akiban.server.service.ServiceManager;
 
 import javax.swing.JFrame;
 import javax.swing.SwingUtilities;
 
 import java.io.PrintStream;
 
+import com.google.inject.Inject;
+
 public class SwingConsoleServiceImpl implements SwingConsoleService, Service<SwingConsoleService> 
 {
-    private SwingConsole console;
+    private final ServiceManager serviceManager;
     private final PrintStream origOut = System.out;
     private final PrintStream origErr = System.err;
+    private SwingConsole console;
+
+    @Inject
+    public SwingConsoleServiceImpl(ServiceManager serviceManager) {
+        this.serviceManager = serviceManager;
+    }
 
     @Override
     public final void start() {
-        final SwingConsole console = new SwingConsole();
-        this.console = console;
-        System.setOut(console.openPrintStream(true));
+        if (console == null) {
+            console = new SwingConsole(serviceManager);
+            System.setOut(console.openPrintStream(true));
+        }
         show();
     }
 
     @Override
     public final void stop() {
+        // If we stop while starting, that means some other service has problems.
+        // Let the user see them before removing the console.
+        switch (serviceManager.getState()) {
+        case STARTING:
+            return;
+        }
         final JFrame console = this.console;
         this.console = null;
         System.setOut(origOut);

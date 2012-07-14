@@ -26,6 +26,8 @@
 
 package com.akiban.server.service.ui;
 
+import com.akiban.server.service.ServiceManager;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -40,11 +42,14 @@ public class SwingConsole extends JFrame implements WindowListener
     public static final String TITLE = "Akiban Server";
     public static final String ICON_PATH = "Akiban_Server_128x128.png";
 
+    private final ServiceManager serviceManager;
     private JTextArea textArea;
     private PrintStream printStream;
 
-    public SwingConsole() {
+    public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
+
+        this.serviceManager = serviceManager;
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         addWindowListener(this);
@@ -173,10 +178,10 @@ public class SwingConsole extends JFrame implements WindowListener
     }
 
     protected void quit() {
-        // TODO: There isn't any way for a service to rendezvous with
-        // the service manager. Should there be?
         try {
-            com.akiban.server.AkServer.procrunStop(new String[0]);
+            if (serviceManager.getState() != ServiceManager.State.IDLE) {
+                serviceManager.stopServices();
+            }
         }
         catch (Exception ex) {
         }
