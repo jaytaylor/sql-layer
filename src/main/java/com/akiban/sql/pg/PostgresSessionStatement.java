@@ -27,6 +27,7 @@
 package com.akiban.sql.pg;
 
 import com.akiban.server.error.NoSuchSchemaException;
+import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.UnsupportedConfigurationException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.sql.aisddl.SchemaDDL;
@@ -101,6 +102,10 @@ public class PostgresSessionStatement implements PostgresStatement
             messenger.sendMessage();
         }
         return 0;
+    }
+
+    public boolean operationIsRollback() {
+        return operation == Operation.ROLLBACK_TRANSACTION;
     }
 
     protected void doOperation(PostgresServerSession server) {

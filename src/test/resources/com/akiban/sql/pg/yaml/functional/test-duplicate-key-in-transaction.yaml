@@ -61,7 +61,7 @@
 - DropTable: t2
 
 #
-# User transaction case, no read after failure, then commit
+# User transaction case, no read after failure, then (try) commit
 #
 ---
 - CreateTable: t3 (id INT NOT NULL PRIMARY KEY, x INT, UNIQUE(x));
@@ -84,6 +84,9 @@
 - error: [23501]
 ---
 - Statement: COMMIT
+- error: [25P02]
+---
+- Statement: ROLLBACK
 ---
 - Statement: BEGIN
 ---
@@ -121,10 +124,7 @@
 - error: [23501]
 ---
 - Statement: SELECT id FROM t4
-- output: [[1], [2], [5], [10]]
----
-- Statement: SELECT x FROM t4
-- output: [[10], [20], [50], [100]]
+- error: [25P02]
 ---
 - Statement: ROLLBACK
 ---
