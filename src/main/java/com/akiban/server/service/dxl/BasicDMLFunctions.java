@@ -710,19 +710,21 @@ class BasicDMLFunctions extends ClientAPIBase implements DMLFunctions {
      * @throws Exception 
      */
     private boolean canFastTruncate(Session session, UserTable userTable) {
-        UserTable rootTable = userTable.getGroup().getGroupTable().getRoot();
-        for(Join join : rootTable.getChildJoins()) {
-            UserTable childTable = join.getChild();
-            if(!childTable.equals(userTable)) {
-                TableStatistics stats = getTableStatistics(session, childTable.getTableId(), false);
+        List<UserTable> tableList = new ArrayList<UserTable>();
+        tableList.add(userTable.getGroup().getGroupTable().getRoot());
+        while(!tableList.isEmpty()) {
+            UserTable table = tableList.remove(tableList.size() - 1);
+            if(table != userTable) {
+                TableStatistics stats = getTableStatistics(session, table.getTableId(), false);
                 if(stats.getRowCount() > 0) {
                     return false;
                 }
             }
+            for(Join join : table.getChildJoins()) {
+                tableList.add(join.getChild());
+            }
         }
-        // Only iterated over children, also check root table
-        return rootTable.equals(userTable) ||
-               getTableStatistics(session, rootTable.getTableId(), false).getRowCount() == 0;
+        return true;
     }
 
     @Override

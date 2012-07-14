@@ -65,6 +65,11 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
         return TransactionMode.WRITE;
     }
 
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
     public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         PostgresMessenger messenger = server.getMessenger();

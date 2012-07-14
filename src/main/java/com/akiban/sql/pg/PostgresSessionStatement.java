@@ -91,6 +91,18 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        switch (operation) {
+            case USE:
+            case ROLLBACK_TRANSACTION:
+            case CONFIGURATION:
+                return TransactionAbortedMode.ALLOWED;
+            default:
+                return TransactionAbortedMode.NOT_ALLOWED;
+        }
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         doOperation(server);

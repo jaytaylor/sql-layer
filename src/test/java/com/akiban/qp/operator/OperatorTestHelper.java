@@ -35,6 +35,7 @@ import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
+import com.akiban.server.store.Store;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -187,6 +188,11 @@ public final class OperatorTestHelper {
         @Override
         public <HKEY extends HKey> HKEY newHKey(com.akiban.ais.model.HKey hKeyMetadata)
         {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Store getUnderlyingStore() {
             throw new UnsupportedOperationException();
         }
 
