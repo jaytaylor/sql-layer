@@ -61,8 +61,8 @@ public final class OverloadResolver {
             return pickedInstance;
         }
 
-        public TClass getTypeInstance(int inputIndex) {
-            throw new UnsupportedOperationException(); // TODO
+        public TClass getTypeClass(int inputIndex) {
+            return overload.inputSetAt(inputIndex).targetType();
         }
     }
 
@@ -182,9 +182,9 @@ public final class OverloadResolver {
                 candidates.add(overload);
             }
         }
+        if (candidates.isEmpty())
+            throw new OverloadException("no suitable overload found for");
         TValidatedOverload mostSpecific = null;
-        if (candidates.size() == 0)
-            return null;
         if (candidates.size() == 1) {
             mostSpecific = candidates.get(0);
         } else {
@@ -195,7 +195,7 @@ public final class OverloadResolver {
             // TODO: Throw or let registry handle it?
         }
         if (mostSpecific == null)
-            return null;
+            throw new OverloadException("no suitable overload found for");
         return buildResult(mostSpecific, inputs);
     }
 

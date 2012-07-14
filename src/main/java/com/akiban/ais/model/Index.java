@@ -96,7 +96,7 @@ public abstract class Index implements Traversable
         return "Index(" + indexName + keyColumns + ")";
     }
 
-    public void addColumn(IndexColumn indexColumn)
+    void addColumn(IndexColumn indexColumn)
     {
         if (columnsFrozen) {
             throw new IllegalStateException("can't add column because columns list is frozen");

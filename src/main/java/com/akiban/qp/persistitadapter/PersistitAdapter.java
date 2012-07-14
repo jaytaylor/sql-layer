@@ -101,6 +101,11 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     @Override
+    public Store getUnderlyingStore() {
+        return store;
+    }
+
+    @Override
     public Cursor sort(QueryContext context,
                        Cursor input,
                        RowType rowType,

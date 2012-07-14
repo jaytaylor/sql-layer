@@ -27,6 +27,7 @@
 package com.akiban.server.expression.subquery;
 
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.OldExpressionTestBase;
 import com.akiban.server.expression.std.Comparison;
 import static com.akiban.server.expression.std.Expressions.*;
 
@@ -45,7 +46,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.Deque;
 
-public class AnySubqueryExpressionTest {
+public class AnySubqueryExpressionTest extends OldExpressionTestBase {
 
     @Test
     public void testAny() {
