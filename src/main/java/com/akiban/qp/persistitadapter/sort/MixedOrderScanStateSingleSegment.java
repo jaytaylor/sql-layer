@@ -57,10 +57,10 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         boolean more;
         if (singleValue) {
             // We already know that lo = hi.
-            more = sortKeyAdapter.areEqual(fieldValue, loSource);
+            more = sortKeyAdapter.areEqual(fieldTInstance, fieldValue, loSource);
         } else if (bounded()) {
-            long compareLo = sortKeyAdapter.compare(fieldValue,  loSource);
-            long compareHi = sortKeyAdapter.compare(fieldValue, hiSource);
+            long compareLo = sortKeyAdapter.compare(fieldTInstance, fieldValue,  loSource);
+            long compareHi = sortKeyAdapter.compare(fieldTInstance, fieldValue, hiSource);
             more =
                 (loInclusive ? compareLo >= 0 : compareLo > 0) &&
                 (hiInclusive ? compareHi <= 0 : compareHi < 0);
@@ -98,9 +98,12 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         super(cursor, field, ascending);
         assert lo != null;
         assert hi != null;
+        this.fieldType = cursor.akTypeAt(field);
+        this.collator = cursor.collatorAt(field);
+        this.fieldTInstance = cursor.tInstanceAt(field);
         this.keyTarget = sortKeyAdapter.createTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
-        this.keySource = sortKeyAdapter.createSource();
+        this.keySource = sortKeyAdapter.createSource(fieldTInstance);
         this.sortKeyAdapter = sortKeyAdapter;
         boolean loNull = sortKeyAdapter.isNull(lo);
         boolean hiNull = sortKeyAdapter.isNull(hi);
@@ -111,13 +114,10 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         this.loInclusive = loInclusive;
         this.hiInclusive = hiInclusive;
         this.singleValue = singleValue;
-        this.fieldType = cursor.akTypeAt(field);
-        this.collator = cursor.collatorAt(field);
-        this.fieldTInstance = cursor.tInstanceAt(field);
         if (singleValue) {
             assert !loNull;
             assert !hiNull;
-            boolean loEQHi = sortKeyAdapter.areEqual(loSource, hiSource);
+            boolean loEQHi = sortKeyAdapter.areEqual(fieldTInstance, loSource, hiSource);
             if (!loEQHi) {
                 throw new IllegalArgumentException();
             }
@@ -130,15 +130,15 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
         super(cursor, field, cursor.ordering().ascending(field));
         this.keyTarget = sortKeyAdapter.createTarget();
         this.keyTarget.attach(cursor.exchange.getKey());
-        this.keySource = sortKeyAdapter.createSource();
+        this.keySource = sortKeyAdapter.createSource(cursor.tInstanceAt(field));
         this.sortKeyAdapter = sortKeyAdapter;
     }
 
     private void setupEndComparison(Comparison comparison, S bound)
     {
         if (endComparison == null) {
-            keySource.attach(cursor.exchange.getKey(), -1, fieldType); // depth unimportant, will be set later
-            endComparison = sortKeyAdapter.createComparison(keySource.asSource(), comparison, bound);
+            keySource.attach(cursor.exchange.getKey(), -1, fieldType, fieldTInstance); // depth unimportant, will be set later
+            endComparison = sortKeyAdapter.createComparison(fieldTInstance, keySource.asSource(), comparison, bound);
         }
     }
 
@@ -201,7 +201,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
             // hiComparisonExpression depends on exchange's key, but we need to compare the correct key segment.
             Key key = cursor.exchange.getKey();
             int keySize = key.getEncodedSize();
-            keySource.attach(key, field, fieldType);
+            keySource.attach(key, field, fieldType, fieldTInstance);
             if (sortKeyAdapter.isNull(keySource.asSource())) {
                 pastEnd = !ascending;
             } else {

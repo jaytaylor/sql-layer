@@ -33,7 +33,6 @@ import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.expression.std.RankExpression;
@@ -43,7 +42,7 @@ import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
-class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource, Expression> {
+class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expression> {
 
     private OldExpressionsSortKeyAdapter() {}
     
@@ -105,14 +104,7 @@ class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource, Expres
     }
 
     @Override
-    public boolean areEqual(ValueSource one, ValueSource two) {
-        return Expressions.compare(Expressions.valueSource(one),
-                Comparison.EQ,
-                Expressions.valueSource(two)).evaluation().eval().getBool();
-    }
-
-    @Override
-    public long compare(ValueSource one, ValueSource two) {
+    public long compare(TInstance tInstance, ValueSource one, ValueSource two) {
         return new RankExpression(Expressions.valueSource(one),
                 Expressions.valueSource(two)).evaluation().eval().getInt();
     }
@@ -123,12 +115,12 @@ class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource, Expres
     }
 
     @Override
-    public SortKeySource<ValueSource> createSource() {
+    public SortKeySource<ValueSource> createSource(TInstance tInstance) {
         return new OldExpressionsKeySource();
     }
 
     @Override
-    public Expression createComparison(ValueSource one, Comparison comparison, ValueSource two) {
+    public Expression createComparison(TInstance tInstance, ValueSource one, Comparison comparison, ValueSource two) {
         return Expressions.compare(Expressions.valueSource(one),
                 comparison,
                 Expressions.valueSource(two));
@@ -136,8 +128,7 @@ class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource, Expres
 
     @Override
     public boolean evaluateComparison(Expression comparison) {
-        ExpressionEvaluation evaluation = comparison.evaluation();
-        return evaluation.eval().getBool();
+        return comparison.evaluation().eval().getBool();
     }
 
     @Override
@@ -171,7 +162,7 @@ class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource, Expres
     
     private static class OldExpressionsKeySource implements SortKeySource<ValueSource> {
         @Override
-        public void attach(Key key, int i, AkType fieldType) {
+        public void attach(Key key, int i, AkType fieldType, TInstance tInstance) {
             source.attach(key, i, fieldType);
         }
 
