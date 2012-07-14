@@ -45,6 +45,11 @@ public abstract class DelegatingServiceManager implements ServiceManager {
     // ServiceManager interface
 
     @Override
+    public State getState() {
+        return delegate().getState();
+    }
+
+    @Override
     public void startServices() throws ServiceStartupException {
         throw new UnsupportedOperationException("can't start services via the static delegate");
     }
