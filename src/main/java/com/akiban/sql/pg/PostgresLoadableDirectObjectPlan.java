@@ -73,7 +73,12 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     public TransactionMode getTransactionMode() {
         return TransactionMode.NONE;
     }
-    
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
     @Override
     public void sendDescription(PostgresQueryContext context, boolean always)
             throws IOException {

@@ -32,6 +32,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.NoTransactionInProgressException;
+import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
@@ -294,6 +295,17 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 localTransaction = new ServerTransaction(this, false);
                 localTransaction.beforeUpdate();
                 break;
+            }
+        }
+        if (isTransactionRollbackPending()) {
+            ServerStatement.TransactionAbortedMode abortedMode = stmt.getTransactionAbortedMode();
+            switch (abortedMode) {
+                case ALLOWED:
+                    break;
+                case NOT_ALLOWED:
+                    throw new TransactionAbortedException();
+                default:
+                    throw new IllegalStateException("Unknown mode: " + abortedMode);
             }
         }
         return localTransaction;

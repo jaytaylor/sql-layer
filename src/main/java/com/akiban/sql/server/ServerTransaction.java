@@ -90,7 +90,8 @@ public class ServerTransaction
     }
 
     public void afterUpdate() {
-        transaction.incrementStep();
+        if (!transaction.isRollbackPending())
+            transaction.incrementStep();
     }
 
     /** Commit transaction. */
