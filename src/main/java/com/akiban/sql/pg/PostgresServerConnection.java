@@ -267,7 +267,8 @@ public class PostgresServerConnection extends ServerSessionBase
         else {
             messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
             messenger.write('S');
-            messenger.writeString("ERROR");
+            messenger.writeString((type.errorMode() == PostgresMessages.ErrorMode.FATAL)
+                                  ? "FATAL" : "ERROR");
             messenger.write('C');
             messenger.writeString(errorCode.getFormattedValue());
             messenger.write('M');
@@ -799,10 +800,7 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
-            if ("UNICODE".equals(value) || (value == null))
-                messenger.setEncoding("UTF-8");
-            else
-                messenger.setEncoding(value);
+            messenger.setEncoding(value);
             return true;
         }
         if ("OutputFormat".equals(key) ||
