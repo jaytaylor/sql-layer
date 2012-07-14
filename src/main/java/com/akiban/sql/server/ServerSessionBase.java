@@ -28,6 +28,9 @@ package com.akiban.sql.server;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.NoTransactionInProgressException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
@@ -68,9 +71,24 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
 
     @Override
     public void setProperty(String key, String value) {
+        String ovalue = (String)properties.get(key); // Not inheriting.
         super.setProperty(key, value);
-        if (!propertySet(key, properties.getProperty(key)))
-            sessionChanged();   // Give individual handlers a chance.
+        try {
+            if (!propertySet(key, properties.getProperty(key)))
+                sessionChanged();   // Give individual handlers a chance.
+        }
+        catch (InvalidOperationException ex) {
+            super.setProperty(key, ovalue);
+            try {
+                if (!propertySet(key, properties.getProperty(key)))
+                    sessionChanged();
+            }
+            catch (InvalidOperationException ex2) {
+                throw new AkibanInternalException("Error recovering " + key + " setting",
+                                                  ex2);
+            }
+            throw ex;
+        }
     }
 
     protected void setProperties(Properties properties) {
@@ -81,6 +99,12 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
         sessionChanged();
     }
 
+    /** React to a property change.
+     * Implementers are not required to remember the old state on
+     * error, but must not leave things in such a mess that reverting
+     * to the old value will not work.
+     * @see InvalidParameterValueException
+     **/
     protected boolean propertySet(String key, String value) {
         if ("zeroDateTimeBehavior".equals(key)) {
             zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
