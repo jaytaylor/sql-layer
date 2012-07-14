@@ -461,18 +461,18 @@ public class BasicInfoSchemaTablesServiceImpl
                     rootTable = root.getName().getTableName();
                 }
 
-                 return new ValuesRow(rowType,
-                                      rootSchema,                        // root_schema_name
-                                      rootTable,                         // root_table_name
-                                      Long.class.cast(table.getDepth()), // depth
-                                      table.getName().getSchemaName(),   // constraint_schema_name
-                                      table.getName().getTableName(),    // constraint_table_name
-                                      constraintName,                    // constraint_name
-                                      path,                              // path
-                                      uniqueSchema,                      // unique_schema_name
-                                      uniqueTable,                       // unique_table_name
-                                      uniqueConstraint,                  // unique_constraint_name
-                                      ++rowCounter);
+                return new ValuesRow(rowType,
+                                     rootSchema,                        // root_schema_name
+                                     rootTable,                         // root_table_name
+                                     table.getName().getSchemaName(),   // constraint_schema_name
+                                     table.getName().getTableName(),    // constraint_table_name
+                                     path,                              // path
+                                     Long.class.cast(table.getDepth()), // depth
+                                     constraintName,                    // constraint_name
+                                     uniqueSchema,                      // unique_schema_name
+                                     uniqueTable,                       // unique_table_name
+                                     uniqueConstraint,                  // unique_constraint_name
+                                     ++rowCounter);
             }
         }
     }
@@ -1001,11 +1001,11 @@ public class BasicInfoSchemaTablesServiceImpl
         builder.userTable(GROUPING_CONSTRAINTS) 
                 .colString("root_schema_name", IDENT_MAX, false)
                 .colString("root_table_name", IDENT_MAX, false)
-                .colLong("depth", false)
                 .colString("constraint_schema_name", IDENT_MAX, false)
                 .colString("constraint_table_name", IDENT_MAX, false)
-                .colString("constraint_name", IDENT_MAX, false)
                 .colString("path", IDENT_MAX, false)
+                .colLong("depth", false)
+                .colString("constraint_name", IDENT_MAX, false)
                 .colString("unique_schema_name", IDENT_MAX, false)
                 .colString("unique_table_name", IDENT_MAX, false)
                 .colString("unique_constraint_name", IDENT_MAX, false);                            
