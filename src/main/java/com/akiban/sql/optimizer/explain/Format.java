@@ -113,7 +113,7 @@ public class Format {
 
         if (explainer.getType()==Type.STRING)
         {
-            sb.append("\"").append(explainer.get()).append("\"");
+            sb.append('\'').append(explainer.get()).append('\'');
         }
         /*else if (explainer.getClass().isArray())
         {

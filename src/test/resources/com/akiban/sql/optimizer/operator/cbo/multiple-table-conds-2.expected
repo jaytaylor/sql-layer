@@ -7,5 +7,5 @@ PhysicalSelect[name:varchar(32)[VARCHAR]]
       project(Bound(1,Field(0)))
         Select_HKeyOrdered(Bound(0,Field(0)) != Field(3))
           AncestorLookup_Default(Index(test.addresses.state[IndexColumn(state)]) -> [test.addresses])
-            Select_HKeyOrdered(BoolLogic((Field(0) != Bound(1,Field(0)), Field(0) != Literal(WY) -> BOOL))
+            Select_HKeyOrdered((Field(0) != Bound(1,Field(0)) AND Field(0) != "WY))
               IndexScan_Default(Index(test.addresses.state[IndexColumn(state)]) (>UnboundExpressions[Literal(M)],<UnboundExpressions[Literal(NULL)]))
