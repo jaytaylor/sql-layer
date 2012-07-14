@@ -46,6 +46,10 @@ public class SqlLiteralValueFormatter
     public SqlLiteralValueFormatter(Appendable buffer) {
         this.buffer = buffer;
     }
+    
+    public void append(ValueSource source) throws IOException {
+        append(source, source.getConversionType());
+    }
 
     public void append(ValueSource source, AkType type) throws IOException {
         if (source.isNull()) {

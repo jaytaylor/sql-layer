@@ -2,10 +2,10 @@ PhysicalSelect[name:varchar(32)[VARCHAR]]
   Map_NestedLoops
     IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (,))
     Map_NestedLoops
-      Select_HKeyOrdered(Index(test.customers.name[IndexColumn(name)]), Field(0) > Literal(M))
+      Select_HKeyOrdered(Field(0) > "M")
         IndexScan_Default(Index(test.customers.name[IndexColumn(name)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))
-      project([Bound(1,Field(0))])
-        Select_HKeyOrdered(test.addresses, Bound(0,Field(0)) != Field(3))
+      project(Bound(1,Field(0)))
+        Select_HKeyOrdered(Bound(0,Field(0)) != Field(3))
           AncestorLookup_Default(Index(test.addresses.state[IndexColumn(state)]) -> [test.addresses])
-            Select_HKeyOrdered(Index(test.addresses.state[IndexColumn(state)]), BoolLogic(AND -> Field(0) != Bound(1,Field(0)), Field(0) != Literal(WY) -> BOOL))
+            Select_HKeyOrdered(BoolLogic((Field(0) != Bound(1,Field(0)), Field(0) != Literal(WY) -> BOOL))
               IndexScan_Default(Index(test.addresses.state[IndexColumn(state)]) (>UnboundExpressions[Literal(M)],<UnboundExpressions[Literal(NULL)]))

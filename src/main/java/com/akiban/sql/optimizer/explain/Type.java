@@ -75,7 +75,7 @@ public enum Type
     //--------------------------------------------------------------------------
     FLOATING_POINT(GeneralType.SCALAR_VALUE),
     EXACT_NUMERIC(GeneralType.SCALAR_VALUE),
-    STRING(GeneralType.SCALAR_VALUE)
+    STRING(GeneralType.SCALAR_VALUE),
     ;
     
     private final GeneralType generalType;

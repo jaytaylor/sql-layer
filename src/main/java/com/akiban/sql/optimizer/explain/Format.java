@@ -121,7 +121,6 @@ public class Format {
         }*/
         else
         {
-            SqlLiteralValueFormatter formatter = new SqlLiteralValueFormatter(sb);
             sb.append(explainer.get());
         }
         
@@ -293,8 +292,7 @@ public class Format {
                 break;
             case SORT:
                 describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
-                sb.append(", ");
-                describe(atts.get(Label.SORT_OPTION).get(0), sb);
+                sb.append(", ").append(atts.get(Label.SORT_OPTION).get(0).get());
                 break;
             default:
                 throw new UnsupportedOperationException("Formatter does not recognize " + type.name());

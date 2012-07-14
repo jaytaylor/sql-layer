@@ -36,7 +36,11 @@ import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
+import java.util.List;
 
 public final class LiteralExpression implements Expression {
 
