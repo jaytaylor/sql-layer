@@ -51,6 +51,7 @@ import com.akiban.server.service.EventTypes;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -223,6 +224,9 @@ public class PostgresServerConnection extends ServerSessionBase
                 } catch (InvalidOperationException ex) {
                     logError("Error in query", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                } catch (RollbackException ex) {
+                    QueryRollbackException qe = new QueryRollbackException();
+                    sendErrorResponse(type, qe,  qe.getCode(), qe.getMessage());
                 } catch (Exception ex) {
                     logError("Unexpected error in query", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
