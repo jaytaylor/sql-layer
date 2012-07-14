@@ -44,11 +44,7 @@ interface SortKeyAdapter<S> {
     S[] createSourceArray(int size);
     S get(BoundExpressions boundExpressions, int f);
 
-    void attachToStartKey(Key key);
-    void attachToEndKey(Key key);
-
-    void appendToStartKey(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
-    void appendToEndKey(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
+    SortKeyTarget<S> createTarget();
 
     boolean isNull(S source);
 }

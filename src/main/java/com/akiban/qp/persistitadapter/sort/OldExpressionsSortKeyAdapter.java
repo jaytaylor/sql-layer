@@ -41,6 +41,10 @@ import com.persistit.Key;
 
 class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource> {
 
+    private OldExpressionsSortKeyAdapter() {}
+    
+    public static final SortKeyAdapter<ValueSource> INSTANCE = new OldExpressionsSortKeyAdapter();
+    
     @Override
     public AkType[] createAkTypes(int size) {
         return new AkType[size];
@@ -92,23 +96,8 @@ class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource> {
     }
 
     @Override
-    public void attachToStartKey(Key key) {
-        startKeyTarget.attach(key);
-    }
-
-    @Override
-    public void attachToEndKey(Key key) {
-        endKeyTarget.attach(key);
-    }
-
-    @Override
-    public void appendToStartKey(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(startKeyTarget, source, akTypes[f], collators[f]);
-    }
-
-    @Override
-    public void appendToEndKey(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(endKeyTarget, source, akTypes[f], collators[f]);
+    public SortKeyTarget<ValueSource> createTarget() {
+        return new OldExpressionsSortKeyTarget();
     }
 
     @Override
@@ -116,11 +105,22 @@ class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource> {
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyValueTarget target, ValueSource source, AkType type, AkCollator collator) {
-        target.expectingType(type, collator);
-        Converters.convert(source, target);
-    }
+    private static class OldExpressionsSortKeyTarget implements SortKeyTarget<ValueSource> {
 
-    protected final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
-    protected final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
+        @Override
+        public void attach(Key key) {
+            target.attach(key);
+        }
+
+        @Override
+        public void append(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances,
+                           AkCollator[] collators) {
+            AkType type = akTypes[f];
+            AkCollator collator = collators[f];
+            target.expectingType(type, collator);
+            Converters.convert(source, target);
+        }
+
+        protected final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+    }
 }
