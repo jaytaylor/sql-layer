@@ -69,7 +69,7 @@ class MixedOrderScanStateSingleSegment<S,E> extends MixedOrderScanState<S>
             more = true;
         }
         if (more) {
-            keyTarget.append(fieldValue, fieldType, fieldTInstance, collator);
+            keyTarget.append(fieldValue, collator, fieldTInstance);
             more = cursor.exchange.traverse(ascending ? Key.Direction.GTEQ : Key.Direction.LTEQ, false) && !pastEnd();
             if (!more) {
                 // Go back to a key prefix known to exist.

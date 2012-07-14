@@ -164,6 +164,11 @@ class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpress
             tClass.writeCollating(source, tInstance, target);
         }
 
+        @Override
+        public void append(PValueSource source, AkCollator collator, TInstance tInstance) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
         protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget();
     }
     

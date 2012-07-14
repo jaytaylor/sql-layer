@@ -157,6 +157,12 @@ class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expressio
             Converters.convert(source, target);
         }
 
+        @Override
+        public void append(ValueSource source, AkCollator collator, TInstance tInstance) {
+            target.expectingType(source.getConversionType(), collator);
+            Converters.convert(source, target);
+        }
+
         protected final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
     }
     
