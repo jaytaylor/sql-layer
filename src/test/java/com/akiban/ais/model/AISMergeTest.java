@@ -439,7 +439,6 @@ public class AISMergeTest {
         
         assertNotNull (t.getTable(TABLENAME).getColumn(0).getIdentityGenerator());
         Sequence identityGenerator = t.getTable(TABLENAME).getColumn(0).getIdentityGenerator();
-        //assertEquals(t.getTable(TABLENAME).getTreeName(), identityGenerator.getTreeName());
         assertEquals (5, identityGenerator.getStartsWith());
         assertEquals (2, identityGenerator.getIncrement());
         assertEquals (1000, identityGenerator.getMaxValue());

@@ -238,11 +238,7 @@ public class PersistitAdapter extends StoreAdapter
                 if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
                     logger.warn("rowData: got identity column");
                     Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
-                    Tree tree = sequence.getTreeCache().getTree();
-                    
-                    long value = AccumulatorAdapter.getLiveValue(AccumInfo.AUTO_INC, treeService, tree);
-                    AccumulatorAdapter.updateAndGet(AccumInfo.AUTO_INC, treeService.getExchange(getSession(), tree),
-                            sequence.getIncrement());
+                    long value = sequence.nextValue(getSession(), treeService);
                     FromObjectValueSource objectSource = new FromObjectValueSource();
                     objectSource.setExplicitly(value, AkType.LONG);
                     source = objectSource;

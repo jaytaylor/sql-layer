@@ -28,8 +28,13 @@ package com.akiban.ais.model;
 import java.util.concurrent.atomic.AtomicReference;
 
 import com.akiban.ais.model.validation.AISInvariants;
+import com.akiban.server.AccumulatorAdapter;
+import com.akiban.server.AccumulatorAdapter.AccumInfo;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
+import com.akiban.server.service.tree.TreeService;
+import com.persistit.Tree;
 
 public class Sequence implements TreeLink {
 
@@ -128,5 +133,15 @@ public class Sequence implements TreeLink {
     @Override
     public TreeCache getTreeCache() {
         return treeCache.get();
+    }
+    
+    public long nextValue(Session session, TreeService treeService) {
+        
+        Tree tree = getTreeCache().getTree();
+        long value = AccumulatorAdapter.getLiveValue(AccumInfo.AUTO_INC, treeService, tree);
+        AccumulatorAdapter.updateAndGet(AccumInfo.AUTO_INC, treeService.getExchange(session, tree),
+                increment);
+        return value;
+
     }
 }
