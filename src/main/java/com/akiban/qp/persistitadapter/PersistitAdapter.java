@@ -39,8 +39,6 @@ import com.akiban.qp.row.RowBase;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
-import com.akiban.server.AccumulatorAdapter;
-import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
 import com.akiban.server.error.PersistitAdapterException;
@@ -60,7 +58,6 @@ import com.akiban.util.tap.InOutTap;
 import com.persistit.Exchange;
 import com.persistit.Key;
 import com.persistit.Transaction;
-import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
 import com.persistit.exception.PersistitInterruptedException;
 
@@ -131,9 +128,10 @@ public class PersistitAdapter extends StoreAdapter
         }
 
         RowData oldRowData = oldRowData(rowDef, oldRow);
-        RowData newRowData = newRowData(rowDef, newRow);
-        int oldStep = enterUpdateStep();
+        int oldStep = 0;
         try {
+            RowData newRowData = newRowData(rowDef, newRow);
+            oldStep = enterUpdateStep();
             store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (PersistitException e) {
             handlePersistitException(e);
@@ -146,9 +144,10 @@ public class PersistitAdapter extends StoreAdapter
     @Override
     public void writeRow (Row newRow) {
         RowDef rowDef = newRow.rowType().userTable().rowDef();
-        RowData newRowData = newRowData (rowDef, newRow);
-        int oldStep = enterUpdateStep();
+        int oldStep = 0;
         try {
+            RowData newRowData = newRowData (rowDef, newRow);
+            oldStep = enterUpdateStep();
             store.writeRow(getSession(), newRowData);
         } catch (PersistitException e) {
             handlePersistitException(e);
@@ -223,7 +222,7 @@ public class PersistitAdapter extends StoreAdapter
         return niceRow.toRowData();
     }
     
-    private RowData newRowData(RowDef rowDef, RowBase row)
+    private RowData newRowData(RowDef rowDef, RowBase row) throws PersistitException
     {
         if (row instanceof PersistitGroupRow) {
             return ((PersistitGroupRow) row).rowData();
@@ -236,9 +235,8 @@ public class PersistitAdapter extends StoreAdapter
             // TODO: Insert default values if source  
             if (source.isNull()) {
                 if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
-                    logger.warn("rowData: got identity column");
                     Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
-                    long value = sequence.nextValue(getSession(), treeService);
+                    long value = sequence.nextValue(treeService);
                     FromObjectValueSource objectSource = new FromObjectValueSource();
                     objectSource.setExplicitly(value, AkType.LONG);
                     source = objectSource;

@@ -30,11 +30,12 @@ import java.util.concurrent.atomic.AtomicReference;
 import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
-import com.akiban.server.service.session.Session;
+import com.akiban.server.error.SequenceLimitExceededException;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Tree;
+import com.persistit.exception.PersistitException;
 
 public class Sequence implements TreeLink {
 
@@ -135,13 +136,36 @@ public class Sequence implements TreeLink {
         return treeCache.get();
     }
     
-    public long nextValue(Session session, TreeService treeService) {
+    public long nextValue(TreeService treeService) throws PersistitException {
         
         Tree tree = getTreeCache().getTree();
-        long value = AccumulatorAdapter.getLiveValue(AccumInfo.AUTO_INC, treeService, tree);
-        AccumulatorAdapter.updateAndGet(AccumInfo.AUTO_INC, treeService.getExchange(session, tree),
-                increment);
+        AccumulatorAdapter accum = new AccumulatorAdapter (AccumInfo.AUTO_INC, treeService, tree);
+        long value = accum.getLiveValue();
+/*
+ * TODO: This is the cycle processing for the Sequence. 
+ * The current sequence specification does not allow setting 
+ * Min or Max, so they default to long.min_value and long.max_value
+ * And cycle is always off. 
+ * When implicit sequences can set these (or explicit sequences are
+ * implemented), we should turn this back on. 
+        if (value >= maxValue && increment > 0) {
+            if (cycle) {
+                value = minValue;
+                accum.set(value);
+            } else {
+                throw new SequenceLimitExceededException(this);
+            }
+        } else if (value <= minValue && increment < 0) {
+            if (cycle) {
+                value = maxValue;
+                accum.set(value);
+            }
+            throw new SequenceLimitExceededException (this);
+        } else {
+            accum.updateAndGet(increment);
+        }
+*/
+        accum.updateAndGet(increment);
         return value;
-
     }
 }

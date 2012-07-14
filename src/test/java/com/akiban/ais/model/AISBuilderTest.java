@@ -1442,11 +1442,33 @@ public class AISBuilderTest
     }
 
     @Test
-    public void validateIdentityMinMax() {
+    public void validateIdentityMinMax1() {
         final AISBuilder builder = new AISBuilder();
         builder.userTable("test", "t1");
         builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
         builder.sequence("test", "seq-1", 1, 1, 1000, 0, false);
+        builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
+        builder.basicSchemaIsComplete();
+        builder.createGroup("group", "test", "coi");
+        builder.addTableToGroup("group", "test", "t1");
+        builder.groupingIsComplete();
+        AISValidationResults vResults = builder.akibanInformationSchema().validate(AISValidations.LIVE_AIS_VALIDATIONS);
+        
+        Assert.assertEquals(2, vResults.failures().size());
+        Iterator<AISValidationFailure> errors = vResults.failures().iterator();
+        
+        AISValidationFailure fail = errors.next();
+        assertEquals(ErrorCode.SEQUENCE_MIN_GE_MAX, fail.errorCode());
+        fail = errors.next();
+        assertEquals(ErrorCode.SEQUENCE_START_IN_RANGE, fail.errorCode());
+    }
+
+    @Test
+    public void validateIdentityMinMax2() {
+        final AISBuilder builder = new AISBuilder();
+        builder.userTable("test", "t1");
+        builder.column("test", "t1", "id", 0, "int", 0L, 0L, false, false, null, null);
+        builder.sequence("test", "seq-1", 1000, 1, 1000, 1000, false);
         builder.columnAsIdentity("test", "t1", "id", "seq-1", true);
         builder.basicSchemaIsComplete();
         builder.createGroup("group", "test", "coi");
