@@ -61,13 +61,29 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
     }
 
     public AkType[] getFieldTypes() {
-        if (expressions.isEmpty())
-            return new AkType[0];
-        List<ExpressionNode> nodes = expressions.get(0);
-        AkType[] result = new AkType[nodes.size()];
-        for (int i=0; i < result.length; ++i) {
-            result[i] = nodes.get(i).getAkType();
+        AkType[] result = null;
+        for (List<ExpressionNode> nodes : expressions) {
+            if (result == null)
+                result = new AkType[nodes.size()];
+            boolean incomplete = false;
+            for (int i = 0; i < result.length; i++) {
+                AkType type = nodes.get(i).getAkType();
+                // Each type gets first non-null.
+                // TODO: Should be UNIONed type, though maybe not computed here.
+                if ((type == AkType.UNSUPPORTED) ||
+                    (type == AkType.NULL)) {
+                    incomplete = true;
+                }
+                if ((result[i] == null) ||
+                    (result[i] == AkType.UNSUPPORTED) ||
+                    (result[i] == AkType.NULL)) {
+                    result[i] = type;
+                }
+            }
+            if (!incomplete) break;
         }
+        if (result == null)
+            result = new AkType[0];
         return result;
     }
 

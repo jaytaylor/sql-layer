@@ -33,6 +33,12 @@ import com.akiban.sql.parser.*;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.types.DataTypeDescriptor;
 
+import com.akiban.ais.model.Column;
+import com.akiban.ais.model.UserTable;
+
+import java.util.ArrayList;
+import java.util.List;
+
 /** Calculate types from schema information. */
 public class AISTypeComputer extends TypeComputer
 {
@@ -54,6 +60,61 @@ public class AISTypeComputer extends TypeComputer
         ColumnBinding columnBinding = (ColumnBinding)node.getUserData();
         assert (columnBinding != null) : "column is not bound yet";
         return columnBinding.getType();
+    }
+
+    @Override
+    protected void insertNode(InsertNode node) throws StandardException {
+        TableName tableName = node.getTargetTableName();
+        UserTable table = (UserTable)tableName.getUserData();
+        if (table == null) return;
+        ResultSetNode source = node.getResultSetNode();
+        int ncols = source.getResultColumns().size();
+        ResultColumnList targetColumns = node.getTargetColumnList();
+        List<Column> columns;
+        if (targetColumns != null) {
+            if (ncols > targetColumns.size())
+                ncols = targetColumns.size();
+            columns = new ArrayList<Column>(ncols);
+            for (int i = 0; i < ncols; i++) {
+                ColumnBinding cb = (ColumnBinding)
+                    targetColumns.get(i).getReference().getUserData();
+                columns.add((cb == null) ? null : cb.getColumn());
+            }
+        }
+        else {
+            List<Column> allColumns = table.getColumns();
+            if (ncols > allColumns.size())
+                ncols = allColumns.size();
+            columns = new ArrayList<Column>(ncols);
+            for (int i = 0; i < ncols; i++) {
+                columns.add(allColumns.get(i));
+            }
+        }
+        for (int i = 0; i < ncols; i++) {
+            Column column = columns.get(i);
+            if (column == null) continue;
+            pushType(source, i, ColumnBinding.getType(column, false));
+        }
+    }
+
+    protected void pushType(ResultSetNode result, int i, DataTypeDescriptor type)
+            throws StandardException {
+        ResultColumn column = result.getResultColumns().get(i);
+        if (column.getType() == null) {
+            column.setType(type); // Parameters and NULL.
+            ValueNode expr = column.getExpression();
+            if (expr.getType() == null) {
+                expr.setType(type);
+            }
+        }
+        else {
+            // TODO: Could also add casts here to make types consistent.
+        }
+        if (result.getNodeType() == NodeTypes.UNION_NODE) {
+            UnionNode union = (UnionNode)result;
+            pushType(union.getLeftResultSet(), i, type);
+            pushType(union.getRightResultSet(), i, type);
+        }
     }
 
 }
