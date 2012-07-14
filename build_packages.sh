@@ -60,6 +60,22 @@ rm packages-common/*
 cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 cp ${common_dir}/* packages-common/
 
+# Add akiban-client tools
+rm -rf akiban-client-tools
+bzr branch lp:akiban-client-tools && pushd akiban-client-tools
+mvn  -Dmaven.test.skip.exec clean install
+
+# Linux
+cp bin/akdump ../packages-common/
+cp target/akiban-client-*-SNAPSHOT.jar ../packages-common/
+
+# Mac
+# Not supported
+
+# Windows
+# Handled already
+popd
+
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
 else
@@ -75,7 +91,7 @@ elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
     bzr export --format=tar $tar_file
-    rm {$PWD}/redhat/akserver/redhat # Clear out old files
+    rm {$PWD}/redhat/akserver/redhat/* # Clear out old files
     cp packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
 # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
