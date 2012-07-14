@@ -85,7 +85,7 @@ public class PostgresExplainStatement implements PostgresStatement
 
     @Override
     public TransactionAbortedMode getTransactionAbortedMode() {
-        return TransactionAbortedMode.ALLOWED;
+        return TransactionAbortedMode.NOT_ALLOWED;
     }
 
     @Override

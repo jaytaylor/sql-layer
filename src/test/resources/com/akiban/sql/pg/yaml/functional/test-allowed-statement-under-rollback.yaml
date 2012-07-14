@@ -25,6 +25,9 @@
 - Statement: TRUNCATE TABLE t
 - error: [25002] # TRUNCATE currently marked DDL
 ---
+- Statement: EXPLAIN SELECT * FROM t
+- error: [25P02]
+---
 - Statement: COMMIT
 - error: [25P02]
 
@@ -39,11 +42,6 @@
 - Statement: ALTER SERVER SET parserInfixBit TO DEFAULT
 
 # Other ALTER SERVER also allowed, but disconnect/kill/shutdown to hard to test here
-
-# Can explain
----
-- Statement: EXPLAIN SELECT * FROM t
-# Actual explain doesn't matter, so don't check
 
 # And ROLLBACK
 ---
