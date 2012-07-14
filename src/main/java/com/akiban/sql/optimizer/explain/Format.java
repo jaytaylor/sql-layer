@@ -99,7 +99,6 @@ public class Format {
         else
         {
             sb.append(name).append("(");
-            atts.remove(Label.NAME);
             if (atts.containsKey(Label.OPERAND))
             {
                 for (Explainer entry : atts.get(Label.OPERAND))

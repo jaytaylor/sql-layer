@@ -61,13 +61,13 @@ public class TreeFormat // used to implement Format.java, now is outdated.
              bd.append(atts.get(Label.NAME).get(0).get()); 
              atts.remove(Label.NAME);
              ++level;
-             for (Entry<Label, Explainer> entry : atts.valuePairs())
+             for (Explainer entry : atts.get(Label.OPERAND))
              {
                  bd.append("\n");
                  for (int i = 0; i < level; ++i)
                      bd.append("--");
-                 bd.append(entry.getKey()).append(": ");
-                 doFormat(entry.getValue(), bd, level +1);
+                 bd.append(entry.get()).append(": ");
+                 doFormat(entry, bd, level +1);
              }
         }
         else
