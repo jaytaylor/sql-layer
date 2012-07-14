@@ -26,14 +26,12 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.qp.util.OperatorBasedTableCopier;
 import com.akiban.server.api.DDLFunctions;
-import com.akiban.server.error.SQLParserInternalException;
 import com.akiban.server.error.UnsupportedSQLException;
 import com.akiban.server.service.dxl.DXLReadWriteLockHook;
 import com.akiban.server.service.session.Session;
 import com.akiban.sql.aisddl.*;
-
-import com.akiban.sql.StandardException;
 
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.CreateIndexNode;
@@ -47,9 +45,6 @@ import com.akiban.sql.parser.DDLStatementNode;
 import com.akiban.sql.parser.DropViewNode;
 import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.RenameNode;
-
-import com.akiban.sql.optimizer.AISBinder;
-import com.akiban.sql.views.ViewDefinition;
 
 import com.akiban.ais.model.AkibanInformationSchema;
 
@@ -124,8 +119,16 @@ public class PostgresDDLStatement implements PostgresStatement
                 IndexDDL.dropIndex(ddlFunctions, session, schema, (DropIndexNode)ddl);
                 break;
             case NodeTypes.ALTER_TABLE_NODE:
-                AlterTableDDL.alterTable(ddlFunctions, session, schema, (AlterTableNode)ddl);
+            {
+                OperatorBasedTableCopier copier = new OperatorBasedTableCopier(
+                        server.getStore().getConfig(),
+                        server.getTreeService(),
+                        session,
+                        server.getStore().getUnderlyingStore()
+                );
+                AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddlFunctions, session, copier, schema, (AlterTableNode)ddl);
                 break;
+            }
             case NodeTypes.RENAME_NODE:
                 if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.INDEX) {
                     IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
