@@ -47,6 +47,7 @@ public enum Type
     FUNCTION(GeneralType.EXPRESSION), 
     BINARY_OPERATOR(GeneralType.EXPRESSION),
     SUBQUERY(GeneralType.EXPRESSION),
+    LITERAL(GeneralType.EXPRESSION),
         
     // OPERATORS
     //--------------------------------------------------------------------------

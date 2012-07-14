@@ -37,8 +37,13 @@ import com.akiban.server.types.util.BoolValueSource;
 import com.akiban.server.types.util.SqlLiteralValueFormatter;
 import com.akiban.server.types.util.ValueHolder;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.OperationExplainer;
 import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+import com.akiban.sql.optimizer.explain.Type;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -142,7 +147,9 @@ public final class LiteralExpression implements Expression {
         } catch (IOException ex) {
             Logger.getLogger(LiteralExpression.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return PrimitiveExplainer.getInstance(sb.toString());
+        Explainer ex = new ExpressionExplainer(Type.LITERAL, name(), (List)null);
+        ex.addAttribute(Label.OPERAND, PrimitiveExplainer.getInstance(sb.toString()));
+        return ex;
     }
     
     public boolean nullIsContaminating()

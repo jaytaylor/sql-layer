@@ -64,7 +64,11 @@ public class Format {
         Attributes atts = (Attributes) explainer.get().clone();
         String name = atts.get(Label.NAME).get(0).get().toString();
         
-        if (name.equals("Field"))
+        if (explainer.getType().equals(Type.LITERAL))
+        {
+            sb.append(atts.get(Label.OPERAND).get(0).get());
+        }
+        else if (name.equals("Field"))
         {
             sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
         }
@@ -117,7 +121,7 @@ public class Format {
         }
         /*else if (explainer.getClass().isArray())
         {
-        * TODO: add functionality to describePrimitive each element of the array separately.
+        * do we need functionality to describePrimitive each element of the array separately?
         }*/
         else
         {
