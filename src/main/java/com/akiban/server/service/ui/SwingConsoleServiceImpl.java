@@ -40,7 +40,6 @@ public class SwingConsoleServiceImpl implements SwingConsoleService, Service<Swi
 {
     private final ServiceManager serviceManager;
     private final PrintStream origOut = System.out;
-    private final PrintStream origErr = System.err;
     private SwingConsole console;
 
     @Inject
@@ -68,7 +67,6 @@ public class SwingConsoleServiceImpl implements SwingConsoleService, Service<Swi
         final JFrame console = this.console;
         this.console = null;
         System.setOut(origOut);
-        System.setErr(origErr);
         if (console != null) {
             SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
