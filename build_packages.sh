@@ -60,6 +60,22 @@ rm packages-common/*
 cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 cp ${common_dir}/* packages-common/
 
+# Add akiban-client tools
+rm -rf akiban-client-tools
+bzr branch lp:akiban-client-tools && pushd akiban-client-tools
+mvn  -Dmaven.test.skip.exec clean install
+
+# Linux
+cp bin/akdump ../packages-common/
+cp target/akiban-client-*-SNAPSHOT.jar ../packages-common/
+
+# Mac
+# Not supported
+
+# Windows
+# Handled already
+popd
+
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
 else
@@ -75,7 +91,7 @@ elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
     bzr export --format=tar $tar_file
-    rm {$PWD}/redhat/akserver/redhat # Clear out old files
+    rm {$PWD}/redhat/akserver/redhat/* # Clear out old files
     cp packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
 # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
@@ -90,6 +106,8 @@ elif [ ${platform} == "redhat" ]; then
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
 elif [ ${platform} == "macosx" ]; then
     server_jar=target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar
+    akdump_jar=akiban-client-tools/target/akiban-client-tools-1.3.0-SNAPSHOT.jar
+    akdump_bin=packages-common/akdump
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'
     inst_temp=/tmp/inst_temp
@@ -106,6 +124,10 @@ elif [ ${platform} == "macosx" ]; then
     cp /System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS/JavaApplicationStub "$mac_app/Contents/MacOS"
     mkdir -p "$mac_app/Contents/Resources/Java"
     cp $server_jar "$mac_app/Contents/Resources/Java"
+    mkdir -p "$mac_app/Contents/Resources/tools/"{lib,bin}
+    cp $akdump_jar "$mac_app/Contents/Resources/tools/lib/"
+    cp macosx/postgresql-jdbc3.jar "$mac_app/Contents/Resources/tools/lib/"
+    cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
     SetFile -a B "$mac_app"
     # build disk image template
     rm -rf $inst_temp; mkdir $inst_temp; mkdir "$inst_temp/Akiban Server.app"

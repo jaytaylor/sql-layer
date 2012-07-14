@@ -10,7 +10,7 @@ Standards-Version: 3.9.1
 
 Package: akiban-server
 Architecture: all
-Depends: openjdk-6-jre-headless (>= 6b11) | java6-runtime, adduser
+Depends: openjdk-6-jre-headless (>= 6b11) | java6-runtime, adduser, libpg-java
 Recommends: postgresql-client, libpg-java
 Description: Akiban Server 
  Akiban Server is the primary interface for the Orthogonal architecture.

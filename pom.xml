@@ -352,6 +352,8 @@
                         <exclude>redhat/*</exclude>
                         <exclude>macosx/**</exclude>
                         <exclude>windows/**</exclude>
+                        <exclude>akiban-client-tools/**</exclude>
+                        <exclude>**/akdump*</exclude>
                         <exclude>**/LICENSE*.txt</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
