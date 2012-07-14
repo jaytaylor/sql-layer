@@ -114,6 +114,12 @@ public interface ServerSession
     /** Return the LoadablePlan with the given name. */
     public LoadablePlan<?> loadablePlan(String planName);
 
+    /** Is a transaction open? */
+    public boolean isTransactionActive();
+
+    /** Is a transaction marked rollback-only? */
+    public boolean isTransactionRollbackPending();
+
     /** Begin a new transaction. */
     public void beginTransaction();
 

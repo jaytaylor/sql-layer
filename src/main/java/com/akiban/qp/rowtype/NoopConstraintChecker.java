@@ -26,55 +26,13 @@
 
 package com.akiban.qp.rowtype;
 
-import java.util.List;
+import com.akiban.qp.row.Row;
+import com.akiban.server.error.InvalidOperationException;
 
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.expression.Expression;
-import com.akiban.server.types3.TInstance;
-
-public class ProjectedUserTableRowType extends ProjectedRowType {
-
-    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TInstance> tInstances) {
-        super(schema, table.getTableId(), projections, tInstances);
-        this.table = table;
-        this.constraintChecker = new UserTableRowChecker(this);
-    }
-
+public class NoopConstraintChecker implements ConstraintChecker
+{
     @Override
-    public UserTable userTable() {
-        return table;
-    }
-
-    @Override
-    public boolean hasUserTable() {
-        return table != null;
-    }
-    
-    @Override
-    public int nFields()
+    public void checkConstraints(Row row) throws InvalidOperationException
     {
-        return table.getColumns().size();
     }
-
-    @Override
-    public ConstraintChecker constraintChecker()
-    {
-        return constraintChecker;
-    }
-
-    @Override
-    public HKey hKey()
-    {
-        return table.hKey();
-    }
-
-    @Override
-    public String toString()
-    {
-        return String.format("%s: %s", super.toString(), table);
-    }
-
-    private final UserTable table;
-    private final ConstraintChecker constraintChecker;
 }

@@ -37,14 +37,15 @@ import org.junit.Test;
 public class AkCollatorFactoryTest {
 
     private final static int NTHREADS = 10;
-    
-   
+
+    private AkCollatorFactory.Mode DEFAULT_MODE = AkCollatorFactory.Mode.STRICT;
+
     @Test
     public void uniquePerThread() throws Exception {
         final AtomicInteger threadIndex = new AtomicInteger();
         final AkCollator[] array = new AkCollator[NTHREADS];
         Thread[] threads = new Thread[NTHREADS];
-        for (int i = 0; i < NTHREADS;i++) {
+        for (int i = 0; i < NTHREADS; i++) {
             threads[i] = new Thread(new Runnable() {
                 public void run() {
                     int index = threadIndex.getAndIncrement();
@@ -65,19 +66,55 @@ public class AkCollatorFactoryTest {
             }
         }
     }
-    
+
     @Test
     public void makeMySQLCollator() throws Exception {
+        AkCollatorFactory.setCollationMode(DEFAULT_MODE);
         final AkCollator collator = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
         assertEquals("Collector should have correct name", "latin1_swedish_ci", collator.getName());
     }
-    
+
     @Test
     public void collatorById() throws Exception {
+        AkCollatorFactory.setCollationMode(DEFAULT_MODE);
         AkCollator collator = AkCollatorFactory.getAkCollator(0);
         assertEquals("Should be the AkCollatorBinary singleton", AkCollatorFactory.UCS_BINARY_COLLATOR, collator);
-        
+
         collator = AkCollatorFactory.getAkCollator(1);
         assertEquals("Should be the latin1_general_ci collator", "latin1_general_ci", collator.getName());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void collationBadMode() throws Exception {
+        AkCollatorFactory.setCollationMode(DEFAULT_MODE);
+        AkCollatorFactory.setCollationMode("Invalid");
+    }
+
+    @Test(expected = InvalidCollationException.class)
+    public void collationBadName() throws Exception {
+        AkCollatorFactory.setCollationMode("Strict");
+        AkCollatorFactory.getAkCollator("fricostatic_sengalese_ci");
+    }
+
+    @Test
+    public void collationLooseMode() throws Exception {
+        AkCollatorFactory.setCollationMode("LOOSE");
+        assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
+                .getAkCollator("fricostatic_sengalese_ci"));
+        assertEquals("Collector should have correct name", "latin1_swedish_ci", AkCollatorFactory.getAkCollator(
+                "latin1_swedish_ci").getName());
+
+    }
+    
+    public void collationDisabledMode() throws Exception {
+        AkCollatorFactory.setCollationMode("LOOSE");
+        assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
+                .getAkCollator("latin1_swedish_ci"));
+        assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
+                .getAkCollator("invalid_collation_name"));
+        assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
+                .getAkCollator("en_us_ci"));
+        
+        
     }
 }

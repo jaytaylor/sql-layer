@@ -34,12 +34,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import com.akiban.ais.model.AISBuilder;
-import com.akiban.server.error.UnsupportedCollationException;
+import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.collation.AkCollatorFactory.Mode;
 
 public class AISCollationValidationTest {
     private LinkedList<AISValidation> validations;
-
-    private AISBuilder builder;
 
     @Before
     public void createValidations() {
@@ -49,20 +48,46 @@ public class AISCollationValidationTest {
 
     @Test
     public void testSupportedCollation() {
-        builder = new AISBuilder();
+        final AISBuilder builder = new AISBuilder();
         builder.userTable("test", "t1");
         builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null, "latin1_swedish_ci");
         builder.basicSchemaIsComplete();
-        Assert.assertEquals(0, builder.akibanInformationSchema().validate(validations).failures().size());
+        Assert.assertEquals("Expect no validation failure for supported collation", 0, builder
+                .akibanInformationSchema().validate(validations).failures().size());
     }
 
     @Test
-    public void testUnsupportedCollation() {
-        builder = new AISBuilder();
-        builder.userTable("test", "t1");
-        builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null, "fricostatic_sengalese_ci");
-        builder.basicSchemaIsComplete();
-        Assert.assertEquals(1, builder.akibanInformationSchema().validate(validations).failures().size());
+    public void testUnsupportedCollationStrictMode() {
+        Mode save = AkCollatorFactory.getCollationMode();
+        try {
+            AkCollatorFactory.setCollationMode(Mode.STRICT);
+            final AISBuilder builder = new AISBuilder();
+            builder.userTable("test", "t1");
+            builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null,
+                    "fricostatic_sengalese_ci");
+            builder.basicSchemaIsComplete();
+            Assert.assertEquals("Expect validation failure on invalid collation", 1, builder.akibanInformationSchema()
+                    .validate(validations).failures().size());
+        } finally {
+            AkCollatorFactory.setCollationMode(save);
+        }
+    }
+
+    @Test
+    public void testUnsupportedCollationLooseMode() {
+        Mode save = AkCollatorFactory.getCollationMode();
+        try {
+            AkCollatorFactory.setCollationMode(Mode.LOOSE);
+            final AISBuilder builder = new AISBuilder();
+            builder.userTable("test", "t1");
+            builder.column("test", "t1", "c1", 0, "INT", (long) 0, (long) 0, false, true, null,
+                    "fricostatic_sengalese_ci");
+            builder.basicSchemaIsComplete();
+            Assert.assertEquals("Expect no validation failure in loose mode", 0, builder.akibanInformationSchema()
+                    .validate(validations).failures().size());
+        } finally {
+            AkCollatorFactory.setCollationMode(save);
+        }
     }
 
 }

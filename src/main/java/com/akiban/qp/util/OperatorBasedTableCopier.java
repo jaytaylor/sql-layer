@@ -107,6 +107,9 @@ public class OperatorBasedTableCopier implements TableCopier {
             cursor.run(context);
             txn.commit();
         } catch(PersistitException e) {
+            if(txn.isActive()) {
+                txn.rollback();
+            }
             throw new PersistitAdapterException(e);
         } finally {
             if(txn.isActive()) {
