@@ -413,43 +413,16 @@ public class BasicInfoSchemaTablesServiceImpl
                 super(rowType);
             }
 
-            private UserTable findRootAndPath(UserTable table, StringBuilder ret)
+            private UserTable findRootAndPath(UserTable table, StringBuilder path)
             {
                 UserTable root;
                 if (!table.isRoot())
-                    root = findRootAndPath(table.parentTable(), ret);
+                    root = findRootAndPath(table.parentTable(), path);
                 else
                     root = table;
                 
-                ret.append(table.getName().getDescription()).append("/");
+                path.append(table.getName().getDescription()).append("/");
                 return root;
-            }
-
-            private Object[] getRootAndPath(UserTable table)
-            {
-                // if table is root
-                // return the fullname (schema.tableName)
-                if (table.isRoot())
-                    return new Object[]
-                    {
-                        table.getName().getDescription(),
-                        table
-                    };
-            
-                
-                // if not, build the name/path recursively
-                StringBuilder path = new StringBuilder();
-                UserTable root = findRootAndPath(table, path);
-                
-                // take out the last '/'
-                int last = path.length() - 1;
-                if (path.charAt(last) == '/')
-                    path.deleteCharAt(last);
-                return new Object[]
-                {
-                    path.toString(),
-                    root
-                };
             }
 
             @Override
@@ -458,26 +431,29 @@ public class BasicInfoSchemaTablesServiceImpl
                     return null;
                 
                 UserTable table = tableIt.next();
-                Join join = table.getParentJoin();
-                boolean isNull = join == null;
+
+                if (table.isRoot())
+                     return new ValuesRow(rowType,
+                                          null,                              // root table doesnt have any root
+                                          null,                              // ditto
+                                          Long.class.cast(table.getDepth()), // depth
+                                          table.getName().getSchemaName(),   // constraint_schema_name
+                                          table.getName().getTableName(),    // constraint_table_name
+                                          table.getName().getDescription(),  // path to a root table is <schemaname>.<tablename>
+                                          ++rowCounter);
                 
-                Object info[] = getRootAndPath(table);
-                UserTable root = (UserTable)info[1];
-                String path = (String)info[0];
                 
-                return new ValuesRow(rowType,
-                                     table.getGroup().getName(),        // group_name
-                                     table.getName().getSchemaName(),   // constraint_schema_name
-                                     table.getName().getTableName(),    // constraint_table_name
-                                     path,                              // path
-                                     Long.class.cast(table.getDepth()), // depth
-                                     isNull ? null : join.getName(),    // contraint_name
-                                     isNull ? null : join.getParent().getName().getSchemaName(), // unique_schema_name
-                                     isNull ? null : join.getParent().getName().getTableName(),  // unique_table_name
-                                     isNull ? null : Index.PRIMARY_KEY_CONSTRAINT,               // unique_constraint_name
-                                     root.getName().getSchemaName(),    // root (ancestor)'s schema
-                                     root.getName().getTableName(),     // root's table name
-                                     ++rowCounter /*hidden pk*/);
+                StringBuilder path = new StringBuilder();
+                UserTable root = findRootAndPath(table, path);
+                
+                 return new ValuesRow(rowType,
+                                      root.getName().getSchemaName(),       // root_schema_name
+                                      root.getName().getTableName(),        // root_table_name
+                                      Long.class.cast(table.getDepth()),    // depth
+                                      table.getName().getSchemaName(),      // constraint_schema_name
+                                      table.getName().getTableName(),       // constraint_table_name
+                                      path.toString(),                      // path
+                                      ++rowCounter);
             }
         }
     }
@@ -1003,19 +979,26 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("delete_rule", DESCRIPTOR_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
+        /**
+         * UserTable table = advance();
+         **root_schema_name, root_table_name, depth, constraint_schema_name, constraint_table_name 
+         */
         builder.userTable(GROUPING_CONSTRAINTS) 
-                .colString("group_name", IDENT_MAX, false)              // this table's group
+                .colString("root_schema_name", IDENT_MAX, false)
+                .colString("root_table_name", IDENT_MAX, false)
+                .colLong("depth", false)
                 .colString("constraint_schema_name", IDENT_MAX, false)  // this table's schema
                 .colString("constraint_table_name", IDENT_MAX, false)   // this table's name
-                .colString("path", IDENT_MAX, false)                    // path
-                .colLong("depth", false)                                // dept
-                .colString("constraint_name", IDENT_MAX, false)         // 
-                .colString("unique_schema_name", IDENT_MAX, false)      // parent schema
-                .colString("unique_table_name", IDENT_MAX, false)       // parent table
-                .colString("unique_constraint_name", IDENT_MAX, false)  // parent constraint
-                .colString("root_table_schema", IDENT_MAX, false)       // ancestor schema (as in the root of the tree)
-                .colString("root_table_name", IDENT_MAX, false)         // ancestor table
-                ;
+                .colString("path", IDENT_MAX, false) ;                   // path
+        
+//                .colLong("depth", false)                                // dept
+//                .colString("constraint_name", IDENT_MAX, false)         // 
+//                .colString("unique_schema_name", IDENT_MAX, false)      // parent schema
+//                .colString("unique_table_name", IDENT_MAX, false)       // parent table
+//                .colString("unique_constraint_name", IDENT_MAX, false)  // parent constraint
+//                .colString("root_table_schema", IDENT_MAX, false)       // ancestor schema (as in the root of the tree)
+//                .colString("root_table_name", IDENT_MAX, false)         // ancestor table
+                
 
             
         //foreign key (schema_name, table_name, constraint_name)
