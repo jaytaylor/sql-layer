@@ -26,6 +26,7 @@
 
 package com.akiban.server.service.is;
 
+import com.akiban.server.types.WrongValueGetException;
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
@@ -227,6 +228,8 @@ public class BasicInfoSchemaTablesServiceImplTest {
         int rowIndex = 0;
         while((row = scan.next()) != null) {
             if(rowIndex == expectedRows.length) {
+                System.out.println("expected row: " + expectedRows.length);
+                System.out.println("actual: " + rowIndex);
                 fail("More actual rows than expected");
             }
             assertEquals("Expected column count, row " + rowIndex,
@@ -248,6 +251,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                         break;
                     }
                     assertEquals(msg, expected, actual.getString());
+   
                 } else if(expected instanceof Integer) {
                     assertEquals(msg, expected, actual.getInt());
                 } else if(expected instanceof Long) {
@@ -327,7 +331,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 83, skipped);
+        assertEquals("Skipped I_S columns", 87, skipped);
     }
 
     @Test
@@ -357,16 +361,23 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void groupingConstraintsScan() {
         final Object[][] expected = {
-                { "test", "bar2", "bar2/bar", "test", "bar", "PRIMARY", LONG },
-                { "zzz", "zzz2", "zzz2/zzz1", "zzz", "zzz1", "PRIMARY", LONG },
+                { "test", "bar", "test", "bar", "test.bar", 0L, null, null, null, null, LONG },
+                { "test", "bar", "test", "bar2", "test.bar/test.bar2", 1L, "bar2/bar", "test", "bar", "PRIMARY", LONG },
+                { "test", "foo", "test", "foo", "test.foo", 0L, null, null, null, null, LONG },
+                { "zap", "pow", "zap", "pow", "zap.pow", 0L, null, null, null, null, LONG },
+                { "zzz", "zzz1", "zzz", "zzz1", "zzz.zzz1", 0L, null, null, null, null, LONG },
+                { "zzz", "zzz1", "zzz", "zzz2", "zzz.zzz1/zzz.zzz2", 1L, "zzz2/zzz1", "zzz", "zzz1", "PRIMARY", LONG },
         };
+
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S grouping_constraints", 0, skipped);
+        assertEquals("Skipped I_S grouping_constraints", 12, skipped);
     }
 
     @Test
     public void keyColumnUsageScan() {
+        
+                        
         final Object[][] expected = {
                 { "test", "bar", "PRIMARY", "col", 0L, null, LONG },
                 { "test", "bar2", "bar2/bar", "pid", 0L, 0L, LONG },
@@ -376,6 +387,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "zzz", "zzz2", "zzz2/zzz1", "one_id", 0L, 0L, LONG },
                 { "zzz", "zzz2", "PRIMARY", "id", 0L, null, LONG },
         };
+
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.KEY_COLUMN_USAGE).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S key_column_usage", 0, skipped);

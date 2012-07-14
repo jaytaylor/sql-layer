@@ -445,29 +445,16 @@ public class BasicInfoSchemaTablesServiceImpl
                     uniqueConstraint = Index.PRIMARY_KEY_CONSTRAINT;
                 }
 
-                String path;
-                String rootSchema = null; // a root table doesn't have any root
-                String rootTable = null;  // ditto
-
-                if (table.isRoot())
-                    path = table.getName().getDescription(); // path to a root table is just its qualified name
-                else
-                {
-                    StringBuilder bd = new StringBuilder();
-                    UserTable root = findRootAndPath(table, bd);
-                    
-                    path = bd.toString();
-                    rootSchema = root.getName().getSchemaName();
-                    rootTable = root.getName().getTableName();
-                }
+                StringBuilder path = new StringBuilder();
+                UserTable root = findRootAndPath(table, path);
 
                 return new ValuesRow(rowType,
-                                     rootSchema,                        // root_schema_name
-                                     rootTable,                         // root_table_name
+                                     root.getName().getSchemaName(),    // root_schema_name
+                                     root.getName().getTableName(),     // root_table_name
                                      table.getName().getSchemaName(),   // constraint_schema_name
                                      table.getName().getTableName(),    // constraint_table_name
-                                     path,                              // path
-                                     Long.class.cast(table.getDepth()), // depth
+                                     path.substring(0, path.length() - 1),  // path (w/o the forward slash at the end)
+                                     new Long(table.getDepth()),        // depth
                                      constraintName,                    // constraint_name
                                      uniqueSchema,                      // unique_schema_name
                                      uniqueTable,                       // unique_table_name
@@ -1004,7 +991,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("constraint_schema_name", IDENT_MAX, false)
                 .colString("constraint_table_name", IDENT_MAX, false)
                 .colString("path", IDENT_MAX, false)
-                .colLong("depth", false)
+                .colBigInt("depth", false)
                 .colString("constraint_name", IDENT_MAX, false)
                 .colString("unique_schema_name", IDENT_MAX, false)
                 .colString("unique_table_name", IDENT_MAX, false)
