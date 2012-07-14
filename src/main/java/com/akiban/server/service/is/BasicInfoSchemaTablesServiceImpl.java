@@ -416,11 +416,11 @@ public class BasicInfoSchemaTablesServiceImpl
             private UserTable findRootAndPath(UserTable table, StringBuilder path)
             {
                 UserTable root;
-                if (!table.isRoot())
-                    root = findRootAndPath(table.parentTable(), path);
-                else
+                if (table.isRoot())
                     root = table;
-                
+                else
+                    root = findRootAndPath(table.parentTable(), path);
+              
                 path.append(table.getName().getDescription()).append("/");
                 return root;
             }
