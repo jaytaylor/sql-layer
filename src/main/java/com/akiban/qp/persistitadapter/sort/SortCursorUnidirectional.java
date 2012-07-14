@@ -52,7 +52,7 @@ class SortCursorUnidirectional extends SortCursor
     public void open()
     {
         super.open();
-        evaluateBoundaries(context, sortStrategy);
+        evaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
     }
 
@@ -92,7 +92,7 @@ class SortCursorUnidirectional extends SortCursor
             ? keyRange.resetLo(new IndexBound(row, columnSelector))
             : keyRange.resetHi(new IndexBound(row, columnSelector));
         initializeCursor(keyRange, ordering);
-        reevaluateBoundaries(context, sortStrategy);
+        reevaluateBoundaries(context, sortKeyAdapter);
         initializeForOpen();
     }
 
@@ -122,11 +122,11 @@ class SortCursorUnidirectional extends SortCursor
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
         this.endBoundColumns = keyRange.boundColumns();
         this.endKey = endBoundColumns == 0 ? null : adapter.newKey();
-        this.sortStrategy = usePValues ? new PValueSortStrategy() : new OldExpressionsSortStrategy();
+        this.sortKeyAdapter = usePValues ? new PValueSortKeyAdapter() : new OldExpressionsSortKeyAdapter();
         initializeCursor(keyRange, ordering);
     }
 
-    protected <S> void evaluateBoundaries(QueryContext context, SortStrategy<S> strategy)
+    protected <S> void evaluateBoundaries(QueryContext context, SortKeyAdapter<S> keyAdapter)
     {
         if (startBoundColumns == 0) {
             startKey.append(startBoundary);
@@ -135,7 +135,7 @@ class SortCursorUnidirectional extends SortCursor
             BoundExpressions loExpressions = lo.boundExpressions(context);
             BoundExpressions hiExpressions = hi.boundExpressions(context);
             for (int f = 0; f < endBoundColumns - 1; f++) {
-                strategy.checkConstraints(loExpressions, hiExpressions, f);
+                keyAdapter.checkConstraints(loExpressions, hiExpressions, f);
             }
             /*
                 Null bounds are slightly tricky. An index restriction is described by an IndexKeyRange which contains
@@ -166,22 +166,22 @@ class SortCursorUnidirectional extends SortCursor
             // startBoundColumns == endBoundColumns because jump() hasn't been called.
             // If it had we'd be in reevaluateBoundaries, not here.
             assert startBoundColumns == endBoundColumns;
-            S[] startValues = strategy.createSourceArray(startBoundColumns);
-            S[] endValues = strategy.createSourceArray(endBoundColumns);
+            S[] startValues = keyAdapter.createSourceArray(startBoundColumns);
+            S[] endValues = keyAdapter.createSourceArray(endBoundColumns);
             for (int f = 0; f < startBoundColumns; f++) {
-                startValues[f] = strategy.get(startExpressions, f);
-                endValues[f] = strategy.get(endExpressions, f);
+                startValues[f] = keyAdapter.get(startExpressions, f);
+                endValues[f] = keyAdapter.get(endExpressions, f);
             }
             startKey.clear();
-            strategy.attachToStartKey(startKey);
+            keyAdapter.attachToStartKey(startKey);
             endKey.clear();
-            strategy.attachToEndKey(endKey);
+            keyAdapter.attachToEndKey(endKey);
             // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
-                strategy.appendToEndKey(startValues[f], f, types, tInstances,collators);
+                keyAdapter.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                keyAdapter.appendToEndKey(startValues[f], f, types, tInstances,collators);
                 f++;
             }
             // For the last column:
@@ -204,13 +204,13 @@ class SortCursorUnidirectional extends SortCursor
             //
             if (direction == FORWARD) {
                 // Start values
-                strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                keyAdapter.appendToStartKey(startValues[f], f, types, tInstances,collators);
                 // End values
-                if (strategy.isNull(endValues[f])) {
+                if (keyAdapter.isNull(endValues[f])) {
                     if (endInclusive) {
-                        if (startInclusive && strategy.isNull(startValues[f])) {
+                        if (startInclusive && keyAdapter.isNull(startValues[f])) {
                             // Case 10:
-                            strategy.appendToEndKey(endValues[f], f, types, tInstances,collators);
+                            keyAdapter.appendToEndKey(endValues[f], f, types, tInstances,collators);
                         } else {
                             // Cases 2, 6, 14:
                             throw new IllegalArgumentException();
@@ -221,18 +221,18 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToEndKey(endValues[f], f, types, tInstances,collators);
+                    keyAdapter.appendToEndKey(endValues[f], f, types, tInstances,collators);
                 }
             } else {
                 // Same as above, swapping start and end
                 // End values
-                strategy.appendToEndKey(endValues[f], f, types, tInstances,collators);
+                keyAdapter.appendToEndKey(endValues[f], f, types, tInstances,collators);
                 // Start values
-                if (strategy.isNull(startValues[f])) {
+                if (keyAdapter.isNull(startValues[f])) {
                     if (startInclusive) {
-                        if (endInclusive && strategy.isNull(endValues[f])) {
+                        if (endInclusive && keyAdapter.isNull(endValues[f])) {
                             // Case 10:
-                            strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                            keyAdapter.appendToStartKey(startValues[f], f, types, tInstances,collators);
                         } else {
                             // Cases 2, 6, 14:
                             throw new IllegalArgumentException();
@@ -243,48 +243,48 @@ class SortCursorUnidirectional extends SortCursor
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                    keyAdapter.appendToStartKey(startValues[f], f, types, tInstances,collators);
                 }
             }
         }
     }
 
     // A lot like evaluateBoundaries, but simplified because end state can be left alone.
-    protected <S> void reevaluateBoundaries(QueryContext context, SortStrategy<S> strategy)
+    protected <S> void reevaluateBoundaries(QueryContext context, SortKeyAdapter<S> keyAdapter)
     {
         if (startBoundColumns == 0) {
             startKey.append(startBoundary);
         } else {
             // Construct start key
             BoundExpressions startExpressions = start.boundExpressions(context);
-            S[] startValues = strategy.createSourceArray(startBoundColumns);
+            S[] startValues = keyAdapter.createSourceArray(startBoundColumns);
             for (int f = 0; f < startBoundColumns; f++) {
-                startValues[f] = strategy.get(startExpressions, f);
+                startValues[f] = keyAdapter.get(startExpressions, f);
             }
             startKey.clear();
-            strategy.attachToStartKey(startKey);
+            keyAdapter.attachToStartKey(startKey);
             // Construct bounds of search. For first boundColumns - 1 columns, if start and end are both null,
             // interpret the nulls literally.
             int f = 0;
             while (f < startBoundColumns - 1) {
-                strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                keyAdapter.appendToStartKey(startValues[f], f, types, tInstances,collators);
                 f++;
             }
             if (direction == FORWARD) {
-                strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                keyAdapter.appendToStartKey(startValues[f], f, types, tInstances,collators);
             } else {
-                if (strategy.isNull(startValues[f])) {
+                if (keyAdapter.isNull(startValues[f])) {
                     if (startInclusive) {
                         // Assume case 10, the only valid choice here. On evaluateBoundaries, cases 2, 6, 14
                         // would have thrown IllegalArgumentException.
-                        strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                        keyAdapter.appendToStartKey(startValues[f], f, types, tInstances,collators);
                     } else {
                         // Cases 0, 4, 8, 12
                         startKey.append(Key.AFTER);
                     }
                 } else {
                     // Cases 1, 3, 5, 7, 9, 11, 13, 15
-                    strategy.appendToStartKey(startValues[f], f, types, tInstances,collators);
+                    keyAdapter.appendToStartKey(startValues[f], f, types, tInstances,collators);
                 }
             }
         }
@@ -335,13 +335,13 @@ class SortCursorUnidirectional extends SortCursor
             assert false : ordering;
         }
         this.startKey = adapter.newKey();
-        this.types = sortStrategy.createAkTypes(startBoundColumns);
-        this.collators = sortStrategy.createAkCollators(startBoundColumns);
-        this.tInstances = sortStrategy.createTInstances(startBoundColumns);
+        this.types = sortKeyAdapter.createAkTypes(startBoundColumns);
+        this.collators = sortKeyAdapter.createAkCollators(startBoundColumns);
+        this.tInstances = sortKeyAdapter.createTInstances(startBoundColumns);
         List<IndexColumn> indexColumns = keyRange.indexRowType().index().getAllColumns();
         for (int f = 0; f < startBoundColumns; f++) {
             Column column = indexColumns.get(f).getColumn();
-            sortStrategy.setColumnMetadata(column, f, types, collators, tInstances);
+            sortKeyAdapter.setColumnMetadata(column, f, types, collators, tInstances);
         }
     }
 
@@ -386,7 +386,7 @@ class SortCursorUnidirectional extends SortCursor
         this.endKey = null;
         this.startBoundColumns = 0;
         this.endBoundColumns = 0;
-        this.sortStrategy = usePValues ? new PValueSortStrategy() : new OldExpressionsSortStrategy();
+        this.sortKeyAdapter = usePValues ? new PValueSortKeyAdapter() : new OldExpressionsSortKeyAdapter();
     }
 
     // Class state
@@ -417,5 +417,5 @@ class SortCursorUnidirectional extends SortCursor
     protected boolean endInclusive;
     protected Key startKey;
     protected Key endKey;
-    private SortStrategy<?> sortStrategy;
+    private SortKeyAdapter<?> sortKeyAdapter;
 }

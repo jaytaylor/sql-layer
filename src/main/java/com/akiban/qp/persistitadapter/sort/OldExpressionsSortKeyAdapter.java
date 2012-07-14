@@ -28,73 +28,67 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
-import com.akiban.server.PersistitKeyPValueTarget;
+import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.expression.std.Expressions;
 import com.akiban.server.types.AkType;
-import com.akiban.server.types3.TClass;
+import com.akiban.server.types.ValueSource;
+import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TComparisonExpression;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
-import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
-public final class PValueSortStrategy implements SortStrategy<PValueSource> {
+class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource> {
 
     @Override
     public AkType[] createAkTypes(int size) {
-        return null;
+        return new AkType[size];
     }
 
     @Override
     public AkCollator[] createAkCollators(int size) {
-        return null;
+        return new AkCollator[size];
     }
 
     @Override
     public TInstance[] createTInstances(int size) {
-        return new TInstance[size];
+        return null;
     }
 
     @Override
-    public void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators,
-                                  TInstance[] tInstances) {
-        tInstances[f] = column.tInstance();
+    public void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators, TInstance[] tInstances) {
+        akTypes[f] = column.getType().akType();
+        collators[f] = column.getCollator();
     }
 
     @Override
     public void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f) {
-        PValueSource loValueSource = loExpressions.pvalue(f);
-        PValueSource hiValueSource = hiExpressions.pvalue(f);
+        ValueSource loValueSource = loExpressions.eval(f);
+        ValueSource hiValueSource = hiExpressions.eval(f);
         if (loValueSource.isNull() && hiValueSource.isNull()) {
             // OK, they're equal
         } else if (loValueSource.isNull() || hiValueSource.isNull()) {
             throw new IllegalArgumentException(String.format("lo: %s, hi: %s", loValueSource, hiValueSource));
         } else {
-            TPreparedExpression loEQHi =
-                    new TComparisonExpression(
-                            new TPreparedLiteral(null, loValueSource),
+            Expression loEQHi =
+                    Expressions.compare(Expressions.valueSource(loValueSource),
                             Comparison.EQ,
-                            new TPreparedLiteral(null, hiValueSource)
-                    );
-            TEvaluatableExpression eval = loEQHi.build();
-            eval.evaluate();
-            if (!eval.resultValue().getBoolean()) {
+                            Expressions.valueSource(hiValueSource));
+            if (!loEQHi.evaluation().eval().getBool()) {
                 throw new IllegalArgumentException();
             }
         }
     }
 
     @Override
-    public PValueSource[] createSourceArray(int size) {
-        return new PValueSource[size];
+    public ValueSource[] createSourceArray(int size) {
+        return new ValueSource[size];
     }
 
     @Override
-    public PValueSource get(BoundExpressions boundExpressions, int f) {
-        return boundExpressions.pvalue(f);
+    public ValueSource get(BoundExpressions boundExpressions, int f) {
+        return boundExpressions.eval(f);
     }
 
     @Override
@@ -108,26 +102,25 @@ public final class PValueSortStrategy implements SortStrategy<PValueSource> {
     }
 
     @Override
-    public void appendToStartKey(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(startKeyTarget, source, tInstances[f]);
+    public void appendToStartKey(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
+        appendTo(startKeyTarget, source, akTypes[f], collators[f]);
     }
 
     @Override
-    public void appendToEndKey(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(endKeyTarget, source, tInstances[f]);
+    public void appendToEndKey(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
+        appendTo(endKeyTarget, source, akTypes[f], collators[f]);
     }
 
     @Override
-    public boolean isNull(PValueSource source) {
+    public boolean isNull(ValueSource source) {
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyPValueTarget target, PValueSource source, TInstance tInstance) {
-        target.expectingType(source.getUnderlyingType());
-        TClass tClass = tInstance.typeClass();
-        tClass.writeCollating(source, tInstance, target);
+    private void appendTo(PersistitKeyValueTarget target, ValueSource source, AkType type, AkCollator collator) {
+        target.expectingType(type, collator);
+        Converters.convert(source, target);
     }
 
-    protected final PersistitKeyPValueTarget startKeyTarget = new PersistitKeyPValueTarget();
-    protected final PersistitKeyPValueTarget endKeyTarget = new PersistitKeyPValueTarget();
+    protected final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
+    protected final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
 }

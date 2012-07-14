@@ -33,7 +33,7 @@ import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
-interface SortStrategy<S> {
+interface SortKeyAdapter<S> {
     AkType[] createAkTypes(int size);
     AkCollator[] createAkCollators(int size);
     TInstance[] createTInstances(int size);

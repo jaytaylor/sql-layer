@@ -59,7 +59,7 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
     }
 
     @Override
-    protected <S> void evaluateBoundaries(QueryContext context, SortStrategy<S> strategy)
+    protected <S> void evaluateBoundaries(QueryContext context, SortKeyAdapter<S> keyAdapter)
     {
         BoundExpressions startExpressions = null;
         if (startBoundColumns == 0 || start == null) {
@@ -67,11 +67,11 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
         } else {
             startExpressions = start.boundExpressions(context);
             startKey.clear();
-            strategy.attachToStartKey(startKey);
+            keyAdapter.attachToStartKey(startKey);
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
-                    S source = strategy.get(startExpressions, f);
-                    strategy.appendToStartKey(source, f, types, tInstances, collators);
+                    S source = keyAdapter.get(startExpressions, f);
+                    keyAdapter.appendToStartKey(source, f, types, tInstances, collators);
                 }
             }
         }
@@ -81,14 +81,14 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
         } else {
             endExpressions = end.boundExpressions(context);
             endKey.clear();
-            strategy.attachToEndKey(endKey);
+            keyAdapter.attachToEndKey(endKey);
             for (int f = 0; f < endBoundColumns; f++) {
                 if (end.columnSelector().includesColumn(f)) {
-                    S source = strategy.get(endExpressions, f);
-                    if (strategy.isNull(source) && startExpressions != null && !startExpressions.eval(f).isNull()) {
+                    S source = keyAdapter.get(endExpressions, f);
+                    if (keyAdapter.isNull(source) && startExpressions != null && !startExpressions.eval(f).isNull()) {
                         endKey.append(Key.AFTER);
                     } else {
-                        strategy.appendToEndKey(source, f, types, tInstances, collators);
+                        keyAdapter.appendToEndKey(source, f, types, tInstances, collators);
                     }
                 } else {
                     endKey.append(Key.AFTER);
