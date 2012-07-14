@@ -232,7 +232,16 @@ public class PersistitAdapter extends StoreAdapter
         for(int i = 0; i < row.rowType().nFields(); ++i) {
             ValueSource source = row.eval(i);
             
-            // TODO: Insert default values if source  
+            // this is the generated always case. Always override the value in the
+            // row
+            if (rowDef.table().getColumn(i).getDefaultIdentity() != null &&
+                    rowDef.table().getColumn(i).getDefaultIdentity().booleanValue() == false) {
+                long value = rowDef.table().getColumn(i).getIdentityGenerator().nextValue(treeService);
+                FromObjectValueSource objectSource = new FromObjectValueSource();
+                objectSource.setExplicitly(value, AkType.LONG);
+                source = objectSource;
+            }
+              
             if (source.isNull()) {
                 if (rowDef.table().getColumn(i).getIdentityGenerator() != null) {
                     Sequence sequence= rowDef.table().getColumn(i).getIdentityGenerator();
@@ -241,7 +250,10 @@ public class PersistitAdapter extends StoreAdapter
                     objectSource.setExplicitly(value, AkType.LONG);
                     source = objectSource;
                 }
+                // TODO: If not an identityGenerator, insert the column default value. 
             }
+            
+            // TODO: Validate column Check Constraints. 
             niceRow.put(i, target.convertFromSource(source));
         }
         return niceRow.toRowData();

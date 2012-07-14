@@ -177,6 +177,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
+    private boolean inServiceStartProcessing = false;
     private SerializationType serializationType = SerializationType.NONE;
     private final Set<TableName> legacyISTables = new HashSet<TableName>();
     private static volatile Runnable upgradeHook;
@@ -646,7 +647,7 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     @Override
     public void start() {
         updateTimestamp = new AtomicLong();
-
+        inServiceStartProcessing = true;
         skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
@@ -674,15 +675,18 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
             newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
 
+
             transactionally(sessionService.createSession(), new ThrowingRunnable() {
                 @Override
                 public void run(Session session) throws PersistitException {
                     buildRowDefCache(newAIS);
                 }
             });
+
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
+        inServiceStartProcessing = false;
     }
 
     @Override
@@ -919,7 +923,13 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private void sequenceTrees (final AkibanInformationSchema newAis) throws PersistitException {
         for (Sequence sequence : newAis.getSequences().values()) {
             LOG.debug("registering sequence: " + sequence.getSequenceName() + " with tree name: " + sequence.getTreeName());
-            treeService.populateTreeCache(sequence);
+            // treeCache == null -> loading from start or creating a new sequence
+            if (sequence.getTreeCache() == null) {
+                treeService.populateTreeCache(sequence);
+                if (!inServiceStartProcessing) {
+                    sequence.setStartWithAccumulator(treeService);
+                }
+            }
         }
     }
     

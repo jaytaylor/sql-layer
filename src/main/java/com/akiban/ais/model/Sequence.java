@@ -31,11 +31,13 @@ import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.AccumulatorAdapter;
 import com.akiban.server.AccumulatorAdapter.AccumInfo;
 import com.akiban.server.error.SequenceLimitExceededException;
+import com.akiban.server.service.session.Session;
 import com.akiban.server.service.tree.TreeCache;
 import com.akiban.server.service.tree.TreeLink;
 import com.akiban.server.service.tree.TreeService;
 import com.persistit.Tree;
 import com.persistit.exception.PersistitException;
+import com.persistit.exception.PersistitInterruptedException;
 
 public class Sequence implements TreeLink {
 
@@ -167,5 +169,11 @@ public class Sequence implements TreeLink {
 */
         accum.updateAndGet(increment);
         return value;
+    }
+    
+    public void setStartWithAccumulator(TreeService treeService) throws PersistitException {
+        Tree tree = getTreeCache().getTree();
+        AccumulatorAdapter accum = new AccumulatorAdapter (AccumInfo.AUTO_INC, treeService, tree);
+        accum.set(startsWith);
     }
 }
