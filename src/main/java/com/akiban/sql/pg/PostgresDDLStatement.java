@@ -47,6 +47,7 @@ import com.akiban.sql.parser.NodeTypes;
 import com.akiban.sql.parser.RenameNode;
 
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.sql.server.ServerStatement;
 
 import java.io.IOException;
 
@@ -80,6 +81,11 @@ public class PostgresDDLStatement implements PostgresStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.NONE;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
     }
 
     @Override

@@ -32,6 +32,7 @@ import java.util.Arrays;
 import javax.management.MBeanServer;
 import javax.management.ObjectName;
 
+import com.akiban.sql.server.ServerStatement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -51,6 +52,11 @@ public class PostgresServerStatement implements PostgresStatement {
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.ALLOWED;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.ALLOWED;
     }
 
     @Override
@@ -92,6 +98,9 @@ public class PostgresServerStatement implements PostgresStatement {
     protected void doOperation (PostgresServerSession session) throws Exception {
         PostgresServer server = ((PostgresServerConnection)session).getServer();
         Integer sessionId = statement.getSessionID();
+        /*
+         * Note: Caution when adding new types and check execution under ROLLBACK, see getTransactionAbortedMode()
+         */
         switch (statement.getAlterSessionType()) {
         case SET_SERVER_VARIABLE:
             setVariable (session, statement.getVariable(), statement.getValue());

@@ -32,6 +32,7 @@ import com.akiban.qp.exec.UpdateResult;
 import java.io.IOException;
 
 import com.akiban.server.service.session.Session;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
@@ -63,6 +64,11 @@ public class PostgresModifyOperatorStatement extends PostgresBaseStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.WRITE;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
     }
 
     public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {

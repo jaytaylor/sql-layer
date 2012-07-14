@@ -30,6 +30,7 @@ import com.akiban.qp.loadableplan.LoadableDirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectPlan;
 import com.akiban.qp.loadableplan.DirectObjectCursor;
 import com.akiban.server.service.session.Session;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
@@ -73,7 +74,12 @@ public class PostgresLoadableDirectObjectPlan extends PostgresBaseStatement
     public TransactionMode getTransactionMode() {
         return TransactionMode.NONE;
     }
-    
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
     @Override
     public void sendDescription(PostgresQueryContext context, boolean always)
             throws IOException {

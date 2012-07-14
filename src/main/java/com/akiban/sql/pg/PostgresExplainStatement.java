@@ -26,6 +26,7 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.sql.server.ServerValueEncoder;
 
 import com.akiban.server.types.AkType;
@@ -81,6 +82,11 @@ public class PostgresExplainStatement implements PostgresStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.ALLOWED;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.ALLOWED;
     }
 
     @Override

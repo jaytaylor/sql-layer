@@ -30,6 +30,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.qp.operator.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.sql.server.ServerStatement;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import org.slf4j.Logger;
@@ -66,6 +67,11 @@ public class PostgresOperatorStatement extends PostgresBaseStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.READ;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
     }
 
     @Override

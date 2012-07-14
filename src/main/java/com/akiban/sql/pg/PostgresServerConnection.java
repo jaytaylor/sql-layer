@@ -722,11 +722,6 @@ public class PostgresServerConnection extends ServerSessionBase
 
     protected int executeStatement(PostgresStatement pstmt, PostgresQueryContext context, int maxrows)
             throws IOException {
-        if (isTransactionRollbackPending()) {
-            PostgresSessionStatement pss = (pstmt instanceof PostgresSessionStatement) ? (PostgresSessionStatement)pstmt : null;
-            if ((pss == null) || !pss.operationIsRollback())
-                throw new TransactionAbortedException();
-        }
         ServerTransaction localTransaction = beforeExecute(pstmt);
         int rowsProcessed = 0;
         boolean success = false;

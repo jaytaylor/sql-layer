@@ -273,6 +273,17 @@ public abstract class ServerSessionBase extends AISBinderContext implements Serv
                 break;
             }
         }
+        if (isTransactionRollbackPending()) {
+            ServerStatement.TransactionAbortedMode abortedMode = stmt.getTransactionAbortedMode();
+            switch (abortedMode) {
+                case ALLOWED:
+                    break;
+                case NOT_ALLOWED:
+                    throw new TransactionAbortedException();
+                default:
+                    throw new IllegalStateException("Unknown mode: " + abortedMode);
+            }
+        }
         return localTransaction;
     }
 

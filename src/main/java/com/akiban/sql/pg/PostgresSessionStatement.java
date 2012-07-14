@@ -37,6 +37,7 @@ import com.akiban.sql.parser.SetSchemaNode;
 import com.akiban.sql.parser.SetTransactionAccessNode;
 import com.akiban.sql.parser.StatementNode;
 import com.akiban.sql.parser.StatementType;
+import com.akiban.sql.server.ServerStatement;
 
 import java.util.Arrays;
 import java.io.IOException;
@@ -92,6 +93,18 @@ public class PostgresSessionStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        switch (operation) {
+            case USE:
+            case ROLLBACK_TRANSACTION:
+            case CONFIGURATION:
+                return TransactionAbortedMode.ALLOWED;
+            default:
+                return TransactionAbortedMode.NOT_ALLOWED;
+        }
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         doOperation(server);
@@ -102,10 +115,6 @@ public class PostgresSessionStatement implements PostgresStatement
             messenger.sendMessage();
         }
         return 0;
-    }
-
-    public boolean operationIsRollback() {
-        return operation == Operation.ROLLBACK_TRANSACTION;
     }
 
     protected void doOperation(PostgresServerSession server) {
