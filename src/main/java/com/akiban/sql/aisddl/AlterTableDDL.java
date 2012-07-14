@@ -37,6 +37,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
 import com.akiban.server.api.DDLFunctions;
+import com.akiban.server.api.DMLFunctions;
 import com.akiban.server.error.JoinColumnMismatchException;
 import com.akiban.server.error.JoinToProtectedTableException;
 import com.akiban.server.error.JoinToUnknownTableException;
@@ -54,6 +55,7 @@ import java.util.Collection;
 import java.util.Collections;
 
 import static com.akiban.server.service.dxl.DXLFunctionsHook.DXLFunction.ALTER_TABLE_TEMP_TABLE;
+import static com.akiban.sql.aisddl.DDLHelper.convertName;
 import static com.akiban.util.Exceptions.throwAlways;
 
 public class AlterTableDDL {
@@ -66,6 +68,7 @@ public class AlterTableDDL {
 
     public static void alterTable(DXLFunctionsHook hook,
                                   DDLFunctions ddlFunctions,
+                                  DMLFunctions dmlFunctions,
                                   Session session,
                                   TableCopier tableCopier,
                                   String defaultSchemaName,
@@ -80,6 +83,11 @@ public class AlterTableDDL {
             if (!alterTable.isUpdateStatisticsAll())
                 indexes = Collections.singletonList(alterTable.getIndexNameForUpdateStatistics());
             ddlFunctions.updateTableStatistics(session, tableName, indexes);
+            return;
+        }
+
+        if (alterTable.isTruncateTable()) {
+            dmlFunctions.truncateTable(session, table.getTableId());
             return;
         }
 
@@ -246,11 +254,6 @@ public class AlterTableDDL {
             }
         }
         return null;
-    }
-
-    private static TableName convertName(String defaultSchema, com.akiban.sql.parser.TableName parserName) {
-        final String schema = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchema;
-        return new TableName(schema, parserName.getTableName());
     }
 
     private static Column checkGetColumn(UserTable table, String columnName) {

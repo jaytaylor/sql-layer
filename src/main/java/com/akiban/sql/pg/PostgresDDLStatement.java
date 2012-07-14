@@ -126,7 +126,8 @@ public class PostgresDDLStatement implements PostgresStatement
                         session,
                         server.getStore().getUnderlyingStore()
                 );
-                AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddlFunctions, session, copier, schema, (AlterTableNode)ddl);
+                AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddlFunctions, server.getDXL().dmlFunctions(),
+                                         session, copier, schema, (AlterTableNode)ddl);
                 break;
             }
             case NodeTypes.RENAME_NODE:
@@ -134,6 +135,7 @@ public class PostgresDDLStatement implements PostgresStatement
                     IndexDDL.renameIndex(ddlFunctions, session, schema, (RenameNode)ddl);
                 } else if (((RenameNode)ddl).getRenameType() == RenameNode.RenameType.TABLE) {
                     TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
+                    break;
                 }
             case NodeTypes.REVOKE_NODE:
             default:

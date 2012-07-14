@@ -54,7 +54,7 @@ public class AlterTableIT extends ITBase {
         StatementNode node = parser.parseStatement(sql);
         assertTrue("is alter node", node instanceof AlterTableNode);
         OperatorBasedTableCopier copier = new OperatorBasedTableCopier(configService(), treeService(), session(), store());
-        AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddl(), session(), copier, SCHEMA, (AlterTableNode)node);
+        AlterTableDDL.alterTable(DXLReadWriteLockHook.only(), ddl(), dml(), session(), copier, SCHEMA, (AlterTableNode)node);
     }
 
     private RowBase testRow(RowType type, Object... fields) {
