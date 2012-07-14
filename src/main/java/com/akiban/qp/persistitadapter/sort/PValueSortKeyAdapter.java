@@ -41,7 +41,7 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
-public final class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> {
+class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> {
 
     @Override
     public AkType[] createAkTypes(int size) {
