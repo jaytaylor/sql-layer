@@ -28,12 +28,14 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.row.Row;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
-interface SortKeyAdapter<S> {
+interface SortKeyAdapter<S, E> {
     AkType[] createAkTypes(int size);
     AkCollator[] createAkCollators(int size);
     TInstance[] createTInstances(int size);
@@ -45,6 +47,14 @@ interface SortKeyAdapter<S> {
     S get(BoundExpressions boundExpressions, int f);
 
     SortKeyTarget<S> createTarget();
+    SortKeySource<S> createSource();
+    
+    boolean areEqual(S one, S two);
+    long compare(S one, S two);
+    E createComparison(S one, Comparison comparison, S two);
+    boolean evaluateComparison(E comparison);
 
     boolean isNull(S source);
+
+    S eval(Row row, int field);
 }

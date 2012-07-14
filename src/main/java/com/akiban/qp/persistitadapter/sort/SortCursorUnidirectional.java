@@ -102,7 +102,7 @@ class SortCursorUnidirectional<S> extends SortCursor
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering,
-                                                  SortKeyAdapter<S> sortKeyAdapter)
+                                                  SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         return
             keyRange == null // occurs if we're doing a Sort_Tree
@@ -116,7 +116,7 @@ class SortCursorUnidirectional<S> extends SortCursor
                                        IterationHelper iterationHelper,
                                        IndexKeyRange keyRange,
                                        API.Ordering ordering,
-                                       SortKeyAdapter<S> sortKeyAdapter)
+                                       SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         super(context, iterationHelper);
         // end state never changes. start state can change on a jump, so it is set in initializeCursor.
@@ -128,7 +128,7 @@ class SortCursorUnidirectional<S> extends SortCursor
         initializeCursor(keyRange, ordering);
     }
 
-    protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S> keyAdapter)
+    protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S, ?> keyAdapter)
     {
         if (startBoundColumns == 0) {
             startKey.append(startBoundary);
@@ -252,7 +252,7 @@ class SortCursorUnidirectional<S> extends SortCursor
     }
 
     // A lot like evaluateBoundaries, but simplified because end state can be left alone.
-    protected void reevaluateBoundaries(QueryContext context, SortKeyAdapter<S> keyAdapter)
+    protected void reevaluateBoundaries(QueryContext context, SortKeyAdapter<S, ?> keyAdapter)
     {
         if (startBoundColumns == 0) {
             startKey.append(startBoundary);
@@ -368,7 +368,7 @@ class SortCursorUnidirectional<S> extends SortCursor
     private SortCursorUnidirectional(QueryContext context,
                                      IterationHelper iterationHelper,
                                      API.Ordering ordering,
-                                     SortKeyAdapter<S> sortKeyAdapter)
+                                     SortKeyAdapter<S, ?> sortKeyAdapter)
     {
         super(context, iterationHelper);
         this.keyRange = null;
@@ -421,7 +421,7 @@ class SortCursorUnidirectional<S> extends SortCursor
     protected boolean endInclusive;
     protected Key startKey;
     protected Key endKey;
-    private SortKeyAdapter<S> sortKeyAdapter;
+    private SortKeyAdapter<S, ?> sortKeyAdapter;
     protected final SortKeyTarget<S> startKeyTarget;
     protected final SortKeyTarget<S> endKeyTarget;
 }

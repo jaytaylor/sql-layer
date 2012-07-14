@@ -28,22 +28,26 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.row.Row;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
+import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.RankExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
-class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource> {
+class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource, Expression> {
 
     private OldExpressionsSortKeyAdapter() {}
     
-    public static final SortKeyAdapter<ValueSource> INSTANCE = new OldExpressionsSortKeyAdapter();
+    public static final SortKeyAdapter<ValueSource, Expression> INSTANCE = new OldExpressionsSortKeyAdapter();
     
     @Override
     public AkType[] createAkTypes(int size) {
@@ -101,8 +105,44 @@ class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource> {
     }
 
     @Override
+    public boolean areEqual(ValueSource one, ValueSource two) {
+        return Expressions.compare(Expressions.valueSource(one),
+                Comparison.EQ,
+                Expressions.valueSource(two)).evaluation().eval().getBool();
+    }
+
+    @Override
+    public long compare(ValueSource one, ValueSource two) {
+        return new RankExpression(Expressions.valueSource(one),
+                Expressions.valueSource(two)).evaluation().eval().getInt();
+    }
+
+    @Override
     public boolean isNull(ValueSource source) {
         return source.isNull();
+    }
+
+    @Override
+    public SortKeySource<ValueSource> createSource() {
+        return new OldExpressionsKeySource();
+    }
+
+    @Override
+    public Expression createComparison(ValueSource one, Comparison comparison, ValueSource two) {
+        return Expressions.compare(Expressions.valueSource(one),
+                comparison,
+                Expressions.valueSource(two));
+    }
+
+    @Override
+    public boolean evaluateComparison(Expression comparison) {
+        ExpressionEvaluation evaluation = comparison.evaluation();
+        return evaluation.eval().getBool();
+    }
+
+    @Override
+    public ValueSource eval(Row row, int field) {
+        return row.eval(field);
     }
 
     private static class OldExpressionsSortKeyTarget implements SortKeyTarget<ValueSource> {
@@ -117,10 +157,29 @@ class OldExpressionsSortKeyAdapter implements SortKeyAdapter<ValueSource> {
                            AkCollator[] collators) {
             AkType type = akTypes[f];
             AkCollator collator = collators[f];
-            target.expectingType(type, collator);
+            append(source, type, null, collator);
+        }
+
+        @Override
+        public void append(ValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
+            target.expectingType(akType, collator);
             Converters.convert(source, target);
         }
 
         protected final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+    }
+    
+    private static class OldExpressionsKeySource implements SortKeySource<ValueSource> {
+        @Override
+        public void attach(Key key, int i, AkType fieldType) {
+            source.attach(key, i, fieldType);
+        }
+
+        @Override
+        public ValueSource asSource() {
+            return source;
+        }
+        
+        private PersistitKeyValueSource source = new PersistitKeyValueSource();
     }
 }
