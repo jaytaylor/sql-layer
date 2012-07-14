@@ -1,6 +1,8 @@
 # Test constraints
 ---
-
+- Properties: all
+- suppressed: true
+---
 # Setup
 - CreateTable: t (id int not null, x int not null, y int, primary key(id))
 ---
