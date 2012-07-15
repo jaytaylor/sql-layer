@@ -41,4 +41,5 @@ public interface NameGenerator
     String generateGroupTreeName (Group group);
     String generateIndexTreeName (Index index);
     String generateIdentitySequenceName (TableName table, String columnName);
+    String generateIdentitySequenceTreeName (Sequence sequence);
 }

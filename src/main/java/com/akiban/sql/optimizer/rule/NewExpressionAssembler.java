@@ -50,6 +50,7 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
 import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
+import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
@@ -106,7 +107,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
         else {
             throw new AssertionError(functionNode);
         }
-        TInstance resultInstance = functionNode.getPreptimeValue().instance();
+         TInstance resultInstance = functionNode.getPreptimeValue().instance();
         return new TPreparedFunction(overload, resultInstance, arguments);
     }
 
@@ -142,7 +143,7 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     protected TPreparedExpression variable(ParameterExpression expression) {
-        throw new UnsupportedOperationException(); // TODO
+        return new TPreparedParameter(expression.getPosition(), expression.getPreptimeValue().instance());
     }
 
     @Override

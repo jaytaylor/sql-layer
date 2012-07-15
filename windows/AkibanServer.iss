@@ -38,9 +38,9 @@ Source: "procrun\*"; DestDir: "{app}\procrun"; Flags: recursesubdirs
 
 [Icons]
 Name: "{group}\Akiban Server"; Filename: "{app}\bin\akserver.cmd"; Parameters: "window";  WorkingDir: "{app}"; Comment: "Run the server as an application"; IconFilename: "{app}\bin\Akiban_Server.ico"
-Name: "{group}\Start Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "start";  WorkingDir: "{app}"; Comment: "Start Windows service"
-Name: "{group}\Stop Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "stop";  WorkingDir: "{app}"; Comment: "Stop Windows service"
-Name: "{group}\Monitor Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "monitor";  WorkingDir: "{app}"; Comment: "Monitor Windows service"
+Name: "{group}\Start Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "start";  WorkingDir: "{app}"; Comment: "Start Windows service"; Tasks: installsvc
+Name: "{group}\Stop Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "stop";  WorkingDir: "{app}"; Comment: "Stop Windows service"; Tasks: installsvc
+Name: "{group}\Monitor Service"; Filename: "{app}\bin\akserver.cmd"; Parameters: "monitor";  WorkingDir: "{app}"; Comment: "Monitor Windows service"; Tasks: installsvc
 Name: "{group}\Uninstall Akiban Server"; Filename: "{uninstallexe}"
 
 [Run]

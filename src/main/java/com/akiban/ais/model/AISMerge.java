@@ -192,6 +192,7 @@ public class AISMerge {
                         sequence.getMaxValue(), 
                         sequence.isCycle());
                 builder.columnAsIdentity(schemaName, tableName, column.getName(), sequenceName, column.getDefaultIdentity());
+                LOG.debug("Generated sequence: {}, with tree name; {}", sequenceName, sequence.getTreeName());
             }
             // Proactively cache, can go away if Column ever cleans itself up
             newColumn.getMaxStorageSize();
@@ -340,6 +341,11 @@ public class AISMerge {
             }
             for(Index index : table.getIndexesIncludingInternal()) {
                 treeNames.add(index.getTreeName());
+            }
+        }
+        for (Sequence sequence : ais.getSequences().values()){
+            if(sequence.getTreeName() != null) {
+                treeNames.add(sequence.getTreeName());
             }
         }
         return treeNames;

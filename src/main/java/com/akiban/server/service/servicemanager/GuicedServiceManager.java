@@ -29,6 +29,7 @@ package com.akiban.server.service.servicemanager;
 import com.akiban.server.AkServerInterface;
 import com.akiban.server.service.Service;
 import com.akiban.server.service.ServiceManager;
+import com.akiban.server.service.ServiceManager.State;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
@@ -61,12 +62,27 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     // ServiceManager interface
 
     @Override
+    public State getState() {
+        return state;
+    }
+
+    @Override
     public void startServices() {
         logger.info("Starting services.");
+        state = State.STARTING;
         getJmxRegistryService().register(this);
-        for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
-            guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
+        boolean ok = false;
+        try {
+            for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
+                guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
+            }
+            ok = true;
         }
+        finally {
+            if (!ok)
+                state = State.ERROR_STARTING;
+        }
+        state = State.ACTIVE;
         AkServerInterface akServer = getAkSserver();
         logger.info("{} {} ready.",
                     akServer.getServerName(), akServer.getServerVersion());
@@ -75,14 +91,26 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
     @Override
     public void stopServices() throws Exception {
         logger.info("Stopping services normally.");
-        guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
+        state = State.STOPPING;
+        try {
+            guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
+        }
+        finally {
+            state = State.IDLE;
+        }
         logger.info("Services stopped.");
     }
 
     @Override
     public void crashServices() throws Exception {
         logger.info("Stopping services abnormally.");
-        guicer.stopAllServices(CRASH_SERVICES);
+        state = State.STOPPING;
+        try {
+            guicer.stopAllServices(CRASH_SERVICES);
+        }
+        finally {
+            state = State.IDLE;
+        }
         logger.info("Services stopped.");
     }
 
@@ -194,7 +222,8 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         final Collection<ServiceBinding> bindings = configurationHandler.serviceBindings();
         try {
-            guicer = Guicer.forServices(bindings);
+            guicer = Guicer.forServices(ServiceManager.class, this, 
+                                        bindings, configurationHandler.priorities());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -223,6 +252,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     // object state
 
+    private State state = State.IDLE;
     private final Guicer guicer;
 
     private final ServiceManagerMXBean bean = new ServiceManagerMXBean() {
@@ -499,6 +529,15 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                         );
                     }
                     config.require(theInterface);
+                } else if (property.startsWith(PRIORITIZE)) {
+                    String theInterface = property.substring(PRIORITIZE.length());
+                    String value = properties.getProperty(property);
+                    if (value.length() != 0) {
+                        throw new IllegalArgumentException(
+                                String.format("-Dprioritize tags may not have values: %s = %s", theInterface, value)
+                        );
+                    }
+                    config.prioritize(theInterface);
                 }
             }
         }
@@ -519,6 +558,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         private static final String BIND = "bind:";
         private static final String REQUIRE = "require:";
+        private static final String PRIORITIZE = "prioritize:";
     }
 
     public static class NoOpJmxRegistry implements JmxRegistryService {

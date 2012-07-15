@@ -31,8 +31,8 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.util.ArgumentValidation;
 
@@ -55,12 +55,11 @@ public abstract class BindableRow {
         if (pExpressions != null) {
             assert expressions == null : "can't have both style of expressions";
             ArgumentValidation.isEQ("rowType fields", rowType.nFields(), "expressions.size", pExpressions.size());
-            // TODO build constants
-//        for (TPreparedExpression expression : expressions) {
-//            if (!expression.isConstant())
-//                return new BindingExpressions(rowType, expressions);
-//        }
-            // all expressions are const; put them into a ImmutableRow
+            for (TPreparedExpression expression : pExpressions) {
+                TPreptimeValue tpv = expression.evaluateConstant();
+                if (tpv.value() == null)
+                    return new BindingExpressions(rowType, null, pExpressions);
+            }
             newVals = new PExpressionEvaluator(pExpressions);
             oldVals = null;
         }
@@ -132,7 +131,7 @@ public abstract class BindableRow {
 
         @Override
         public String toString() {
-            return "Bindable" + expressions;
+            return "Bindable" + (expressions == null ? pExprs : expressions);
         }
 
         private final List<? extends Expression> expressions;
@@ -227,10 +226,10 @@ public abstract class BindableRow {
         @Override
         public PValueSource next() {
             TPreparedExpression expression = expressions.next();
-//            assert expression.isConstant() : "not constant: " + expression; TODO
-            TEvaluatableExpression eval = expression.build();
-            eval.evaluate();
-            return eval.resultValue();
+            TPreptimeValue ptv = expression.evaluateConstant();
+            assert ptv != null && ptv.value() != null
+                    : "not constant: " + expression + " with prepare-time value of " + ptv;
+            return ptv.value();
         }
 
         @Override

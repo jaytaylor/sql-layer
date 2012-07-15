@@ -46,8 +46,8 @@ public abstract class ServerOperatorCompiler extends OperatorCompiler
         initAIS(server.getAIS(), server.getDefaultSchemaName());
         initParser(server.getParser());
         initFunctionsRegistry(server.functionsRegistry());
-        if (Boolean.parseBoolean(server.getProperty("cbo", "true"))) {
-            boolean usePValues = Types3Switch.ON || Boolean.parseBoolean(server.getProperty("newtypes", "false"));
+        if (server.getBooleanProperty("cbo", true)) {
+            boolean usePValues = Types3Switch.ON || server.getBooleanProperty("newtypes", false);
             initCostEstimator(server.costEstimator(this, server.getTreeService()), usePValues);
             if (usePValues)
                 initOverloadResolver(server.overloadResolver());

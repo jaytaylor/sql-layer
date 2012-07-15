@@ -29,7 +29,6 @@ package com.akiban.server.service.is;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -53,8 +52,12 @@ import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
@@ -382,13 +385,57 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
+    private static class RootPathTable {
+        final UserTable root;
+        final String path;
+        final UserTable table;
+
+        public RootPathTable(UserTable root, String path, UserTable table) {
+            this.root = root;
+            this.path = path;
+            this.table = table;
+        }
+
+        @Override
+        public String toString() {
+            return root.getName() + ", " + table.getName() + ", " + path;
+        }
+    }
+
+    private static class TableIDComparator implements Comparator<UserTable> {
+        @Override
+        public int compare(UserTable o1, UserTable o2) {
+            return o1.getTableId().compareTo(o2.getTableId());
+        }
+    }
+    private static final TableIDComparator TABLE_ID_COMPARATOR = new TableIDComparator();
+
+    private static void addBranchToList(List<RootPathTable> list, StringBuilder builder, UserTable root, UserTable branch) {
+        if(builder.length() != 0) {
+            builder.append('/');
+        }
+        builder.append(branch.getName().getSchemaName());
+        builder.append('.');
+        builder.append(branch.getName().getTableName());
+        list.add(new RootPathTable(root, builder.toString(), branch));
+
+        // For tables at the same depth, comparing table IDs is currently synonymous with ordinals
+        List<UserTable> children = new ArrayList<UserTable>();
+        for(Join join : branch.getChildJoins()) {
+            children.add(join.getChild());
+        }
+        Collections.sort(children, TABLE_ID_COMPARATOR);
+
+        for(UserTable child : children) {
+            int saveLen = builder.length();
+            addBranchToList(list, builder, root, child);
+            builder.setLength(saveLen);
+        }
+    }
+
     private class GroupingConstraintsFactory extends BasicFactoryBase {
         public GroupingConstraintsFactory(TableName sourceTable) {
             super(sourceTable);
-        }
-
-        private Iterator<UserTable> newIteration() {
-            return aisHolder.getAis().getUserTables().values().iterator();
         }
 
         @Override
@@ -398,48 +445,64 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public long rowCount() {
-            int count = 0;
-            Iterator<UserTable> it = newIteration();
-            while(it.hasNext()) {
-                if(it.next().getParentJoin() != null) {
-                    ++count;
-                }
-            }
-            return count;
+            return aisHolder.getAis().getUserTables().values().size();
         }
 
         private class Scan extends BaseScan {
-            final Iterator<UserTable> tableIt = newIteration();
+            final List<RootPathTable> rootPathTables;
+            final Iterator<RootPathTable> it;
 
             public Scan(RowType rowType) {
                 super(rowType);
-            }
 
-            private UserTable advance() {
-                while(tableIt.hasNext()) {
-                    UserTable table = tableIt.next();
-                    if(table.getParentJoin() != null) {
-                        return table;
+                // Desired output: groups together, ordered by branch (ordinal), then ordered by depth
+                // Highest level sorting will be by schema.root, which seems as good as any
+                rootPathTables = new ArrayList<RootPathTable>();
+                Collection<UserTable> allTables = aisHolder.getAis().getUserTables().values();
+                StringBuilder builder = new StringBuilder();
+                for(UserTable table : allTables) {
+                    if(table.isRoot()) {
+                        addBranchToList(rootPathTables, builder, table, table);
+                        builder.setLength(0);
                     }
                 }
-                return null;
+                assert rootPathTables.size() == allTables.size() : "Didn't collect all tables";
+                it = rootPathTables.iterator();
             }
 
             @Override
             public Row next() {
-                UserTable table = advance();
-                if(table == null) {
+                if (!it.hasNext()) {
                     return null;
                 }
+                
+                RootPathTable rpt = it.next();
+                UserTable table = rpt.table;
+                String constraintName = null;
+                String uniqueSchema = null;
+                String uniqueTable = null;
+                String uniqueConstraint = null;
+
                 Join join = table.getParentJoin();
+                if (table.getParentJoin() != null) {
+                    constraintName = join.getName();
+                    uniqueSchema = join.getParent().getName().getSchemaName();
+                    uniqueTable = join.getParent().getName().getTableName();
+                    uniqueConstraint = Index.PRIMARY_KEY_CONSTRAINT;
+                }
+
                 return new ValuesRow(rowType,
-                                     table.getName().getSchemaName(),
-                                     table.getName().getTableName(),
-                                     join.getName(),
-                                     join.getParent().getName().getSchemaName(),
-                                     join.getParent().getName().getTableName(),
-                                     Index.PRIMARY_KEY_CONSTRAINT,
-                                     ++rowCounter /*hidden pk*/);
+                                     rpt.root.getName().getSchemaName(),// root_schema_name
+                                     rpt.root.getName().getTableName(), // root_table_name
+                                     table.getName().getSchemaName(),   // constraint_schema_name
+                                     table.getName().getTableName(),    // constraint_table_name
+                                     rpt.path,                          // path
+                                     table.getDepth(),                  // depth
+                                     constraintName,                    // constraint_name
+                                     uniqueSchema,                      // unique_schema_name
+                                     uniqueTable,                       // unique_table_name
+                                     uniqueConstraint,                  // unique_constraint_name
+                                     ++rowCounter);
             }
         }
     }
@@ -803,7 +866,7 @@ public class BasicInfoSchemaTablesServiceImpl
             }
         }
     }
-
+    
     private static class TableConstraintsIteration {
         private final Iterator<UserTable> tableIt;
         private Iterator<? extends Index> indexIt;
@@ -898,6 +961,7 @@ public class BasicInfoSchemaTablesServiceImpl
             return curTable;
         }
     }
+    
 
     //
     // Package, for testing
@@ -964,13 +1028,17 @@ public class BasicInfoSchemaTablesServiceImpl
             .colString("delete_rule", DESCRIPTOR_MAX, false);
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
-        builder.userTable(GROUPING_CONSTRAINTS)
-            .colString("constraint_schema_name", IDENT_MAX, false)
-            .colString("constraint_table_name", IDENT_MAX, false)
-            .colString("constraint_name", IDENT_MAX, false)
-            .colString("unique_schema_name", IDENT_MAX, false)
-            .colString("unique_table_name", IDENT_MAX, false)
-            .colString("unique_constraint_name", IDENT_MAX, false);
+        builder.userTable(GROUPING_CONSTRAINTS) 
+                .colString("root_schema_name", IDENT_MAX, false)
+                .colString("root_table_name", IDENT_MAX, false)
+                .colString("constraint_schema_name", IDENT_MAX, false)
+                .colString("constraint_table_name", IDENT_MAX, false)
+                .colString("path", IDENT_MAX, false)
+                .colBigInt("depth", false)
+                .colString("constraint_name", IDENT_MAX, false)
+                .colString("unique_schema_name", IDENT_MAX, false)
+                .colString("unique_table_name", IDENT_MAX, false)
+                .colString("unique_constraint_name", IDENT_MAX, false);                            
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)

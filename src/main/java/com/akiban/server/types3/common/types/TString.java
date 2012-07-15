@@ -37,6 +37,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public abstract class TString extends TClass
 {
@@ -59,6 +61,29 @@ public abstract class TString extends TClass
     }
 
     @Override
+    public void attributeToString(int attributeIndex, long value, StringBuilder output) {
+        StringAttribute attribute = StringAttribute.values()[attributeIndex];
+        switch (attribute) {
+        case LENGTH:
+            output.append(value);
+            break;
+        case CHARSET:
+            StringFactory.Charset[] charsets = StringFactory.Charset.values();
+            if (value < 0 || value >= charsets.length) {
+                logger.warn("charset value out of range: {}", value);
+                output.append(value);
+            }
+            else {
+                output.append(charsets[(int)value]);
+            }
+            break;
+        case COLLATION:
+            // TODO plug into AkCollator factory
+            break;
+        }
+    }
+
+    @Override
     public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         return new DataTypeDescriptor(
                 typeId, instance.nullability(), instance.attribute(StringAttribute.LENGTH));
@@ -67,7 +92,7 @@ public abstract class TString extends TClass
     @Override
     public TInstance instance(int charsetId, int collationId) {
         return fixedLength < 0
-                ? super.instance(charsetId, collationId)
+                ? super.instance(charsetId, StringFactory.DEFAULT_CHARSET.ordinal(), collationId)
                 : super.instance(fixedLength, charsetId, collationId);
     }
 
@@ -135,4 +160,5 @@ public abstract class TString extends TClass
     
     private final int fixedLength;
     private final TypeId typeId;
+    private static final Logger logger = LoggerFactory.getLogger(TString.class);
 }

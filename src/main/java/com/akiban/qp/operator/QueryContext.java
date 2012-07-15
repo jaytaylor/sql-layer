@@ -189,4 +189,8 @@ public interface QueryContext
     /** Check whether query has been cancelled or timeout has been exceeded. */
     public void checkQueryCancelation();
 
+    /** Check constraints on row.
+     * @throws InvalidOperationException thrown if a constraint on the row is violated.
+     */
+    public void checkConstraints(Row row) throws InvalidOperationException;
 }

@@ -107,10 +107,10 @@ IF "%VERB%"=="version" GOTO VERSION
 
 IF "%VERB%"=="start" (
   "%PRUNSRV%" //ES//%SERVICE_NAME%
-  GOTO EOF
+  GOTO CHECK_ERROR
 ) ELSE IF "%VERB%"=="stop" (
   "%PRUNSRV%" //SS//%SERVICE_NAME%
-  GOTO EOF
+  GOTO CHECK_ERROR
 ) ELSE IF "%VERB%"=="uninstall" (
   "%PRUNSRV%" //DS//%SERVICE_NAME%
   GOTO EOF
@@ -181,8 +181,16 @@ java %JVM_OPTS% -jar "%JAR_FILE%"
 GOTO EOF
 
 :WINDOW_CMD
-SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.akiban.server.service.ui.SwingConsoleService"
+SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.akiban.server.service.ui.SwingConsoleService" "-Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
 START javaw %JVM_OPTS% -cp "%JAR_FILE%" com.akiban.server.service.ui.AkServerWithSwingConsole
+GOTO EOF
+
+:CHECK_ERROR
+IF ERRORLEVEL 1 GOTO PAUSE
+GOTO EOF
+
+:PAUSE
+PAUSE
 GOTO EOF
 
 :EOF

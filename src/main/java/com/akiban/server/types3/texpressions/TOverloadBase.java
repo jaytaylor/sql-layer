@@ -68,6 +68,9 @@ public abstract class TOverloadBase implements TOverload {
 
     @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, final LazyList<? extends TPreptimeValue> inputs) {
+        if (neverConstant()) {
+            return null;
+        }
         for (int i = 0; i < inputs.size(); ++i) {
             if (constnessMatters(i)) {
                 TPreptimeValue preptimeValue = inputs.get(i);
@@ -134,6 +137,10 @@ public abstract class TOverloadBase implements TOverload {
 
     protected boolean nullContaminates(int inputIndex) {
         return true;
+    }
+
+    protected boolean neverConstant() {
+        return false;
     }
 
     @Override
