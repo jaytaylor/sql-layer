@@ -24,31 +24,10 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.sql.server;
+package com.akiban.server.error;
 
-/**
- * An executable statement. Base only handles transactionality, not
- * actual execution and returning of values.
- */
-public interface ServerStatement
-{
-    /** What transaction mode(s) does this statement use? */
-    public enum TransactionMode { 
-        ALLOWED,                // Does not matter.
-        NONE,                   // Must not have a transaction; none created.
-        NEW,                    // Must not have a transaction: read only created.
-        NEW_WRITE,              // Must not have a transaction: read write created.
-        READ,                   // New read only or existing allowed.
-        WRITE,                  // New or existing read write allowed.
-        REQUIRED,               // Must have transaction: read only okay.
-        REQUIRED_WRITE          // Must have read write transaction.
-    };
-
-    public enum TransactionAbortedMode {
-        ALLOWED,                // Statement always allowed
-        NOT_ALLOWED,            // Statement never allowed
+public class WholeGroupQueryException extends InvalidOperationException {
+    public WholeGroupQueryException () {
+        super(ErrorCode.WHOLE_GROUP_QUERY);
     }
-
-    public TransactionMode getTransactionMode();
-    public TransactionAbortedMode getTransactionAbortedMode();
 }

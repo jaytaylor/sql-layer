@@ -41,6 +41,8 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.api.dml.scan.NewRow;
 import com.akiban.server.api.dml.scan.NiceRow;
+import com.akiban.server.error.DuplicateKeyException;
+import com.akiban.server.error.InvalidOperationException;
 import com.akiban.server.error.PersistitAdapterException;
 import com.akiban.server.error.QueryCanceledException;
 import com.akiban.server.rowdata.RowData;
@@ -133,7 +135,11 @@ public class PersistitAdapter extends StoreAdapter
             RowData newRowData = newRowData(rowDef, newRow);
             oldStep = enterUpdateStep();
             store.updateRow(getSession(), oldRowData, newRowData, null);
+        } catch (InvalidOperationException e) {
+            rollbackIfNeeded(e);
+            throw e;
         } catch (PersistitException e) {
+            rollbackIfNeeded(e);
             handlePersistitException(e);
             assert false;
         }
@@ -149,7 +155,11 @@ public class PersistitAdapter extends StoreAdapter
             RowData newRowData = newRowData (rowDef, newRow);
             oldStep = enterUpdateStep();
             store.writeRow(getSession(), newRowData);
+        } catch (InvalidOperationException e) {
+            rollbackIfNeeded(e);
+            throw e;
         } catch (PersistitException e) {
+            rollbackIfNeeded(e);
             handlePersistitException(e);
             assert false;
         }
@@ -165,7 +175,11 @@ public class PersistitAdapter extends StoreAdapter
         int oldStep = enterUpdateStep();
         try {
             store.deleteRow(getSession(), oldRowData);
+        } catch (InvalidOperationException e) {
+            rollbackIfNeeded(e);
+            throw e;
         } catch (PersistitException e) {
+            rollbackIfNeeded(e);
             handlePersistitException(e);
             assert false;
         }
@@ -293,12 +307,16 @@ public class PersistitAdapter extends StoreAdapter
         handlePersistitException(getSession(), e);
     }
 
+    public static boolean isFromInterruption(Exception e) {
+        Throwable cause = e.getCause();
+        return (e instanceof PersistitInterruptedException) ||
+               ((cause != null) && (cause instanceof InterruptedIOException || cause instanceof InterruptedException));
+    }
+
     public static void handlePersistitException(Session session, PersistitException e)
     {
         assert e != null;
-        Throwable cause = e.getCause();
-        if (e instanceof PersistitInterruptedException ||
-            cause != null && (cause instanceof InterruptedIOException || cause instanceof InterruptedException)) {
+        if (isFromInterruption(e)) {
             throw new QueryCanceledException(session);
         } else {
             throw new PersistitAdapterException(e);
@@ -324,7 +342,10 @@ public class PersistitAdapter extends StoreAdapter
     }
 
     public void leaveUpdateStep(int step) {
-        transaction().setStep(step);
+        Transaction txn = transaction();
+        if(txn.isActive() && !txn.isRollbackPending()) {
+            txn.setStep(step);
+        }
     }
 
     public PersistitAdapter(Schema schema,
@@ -351,6 +372,15 @@ public class PersistitAdapter extends StoreAdapter
         this.withStepChanging = withStepChanging;
     }
     
+    private void rollbackIfNeeded(Exception e) {
+        if((e instanceof DuplicateKeyException) || (e instanceof PersistitException) || isFromInterruption(e)) {
+            Transaction txn = transaction();
+            if(txn.isActive()) {
+                txn.rollback();
+            }
+        }
+    }
+
     // Object state
 
     private final TreeService treeService;

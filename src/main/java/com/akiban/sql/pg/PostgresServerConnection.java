@@ -51,6 +51,7 @@ import com.akiban.server.service.EventTypes;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
+import com.persistit.exception.RollbackException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -223,6 +224,9 @@ public class PostgresServerConnection extends ServerSessionBase
                 } catch (InvalidOperationException ex) {
                     logError("Error in query", ex);
                     sendErrorResponse(type, ex, ex.getCode(), ex.getShortMessage());
+                } catch (RollbackException ex) {
+                    QueryRollbackException qe = new QueryRollbackException();
+                    sendErrorResponse(type, qe,  qe.getCode(), qe.getMessage());
                 } catch (Exception ex) {
                     logError("Unexpected error in query", ex);
                     String message = (ex.getMessage() == null ? ex.getClass().toString() : ex.getMessage());
@@ -263,7 +267,8 @@ public class PostgresServerConnection extends ServerSessionBase
         else {
             messenger.beginMessage(PostgresMessages.ERROR_RESPONSE_TYPE.code());
             messenger.write('S');
-            messenger.writeString("ERROR");
+            messenger.writeString((type.errorMode() == PostgresMessages.ErrorMode.FATAL)
+                                  ? "FATAL" : "ERROR");
             messenger.write('C');
             messenger.writeString(errorCode.getFormattedValue());
             messenger.write('M');
@@ -645,10 +650,12 @@ public class PostgresServerConnection extends ServerSessionBase
 
         PostgresOperatorCompiler compiler;
         String format = getProperty("OutputFormat", "table");
-        if (format.equals("json"))
+        if (format.equals("table"))
+            compiler = PostgresOperatorCompiler.create(this);
+        else if (format.equals("json"))
             compiler = PostgresJsonCompiler.create(this); 
         else
-            compiler = PostgresOperatorCompiler.create(this);
+            throw new InvalidParameterValueException(format);
         
         // Add the Persisitit Adapter - default for most tables
         adapters.put(StoreAdapter.AdapterType.PERSISTIT_ADAPTER, 
@@ -723,7 +730,7 @@ public class PostgresServerConnection extends ServerSessionBase
         boolean success = false;
         try {
             sessionTracer.beginEvent(EventTypes.EXECUTE);
-            boolean usePVals = Boolean.parseBoolean(getProperty("newtypes", Boolean.toString(Types3Switch.ON)));
+            boolean usePVals = getBooleanProperty("newtypes", Types3Switch.ON);
             rowsProcessed = pstmt.execute(context, maxrows, usePVals);
             success = true;
         }
@@ -795,10 +802,7 @@ public class PostgresServerConnection extends ServerSessionBase
     @Override
     protected boolean propertySet(String key, String value) {
         if ("client_encoding".equals(key)) {
-            if ("UNICODE".equals(value) || (value == null))
-                messenger.setEncoding("UTF-8");
-            else
-                messenger.setEncoding(value);
+            messenger.setEncoding(value);
             return true;
         }
         if ("OutputFormat".equals(key) ||
