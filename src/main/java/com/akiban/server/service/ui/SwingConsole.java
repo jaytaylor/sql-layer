@@ -65,7 +65,7 @@ public class SwingConsole extends JFrame implements WindowListener
                 JMenuItem quitMenuItem = new JMenuItem("Quit", KeyEvent.VK_Q);
                 quitMenuItem.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            quit();
+                            quit(true);
                         }
                     });
                 quitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, shift));
@@ -118,7 +118,7 @@ public class SwingConsole extends JFrame implements WindowListener
 
     @Override
     public void windowClosing(WindowEvent arg0) {
-        quit();
+        quit(false);
     }
 
     @Override
@@ -177,13 +177,21 @@ public class SwingConsole extends JFrame implements WindowListener
         printStream = null;
     }
 
-    protected void quit() {
-        try {
-            if (serviceManager.getState() != ServiceManager.State.IDLE) {
+    protected void quit(boolean force) {
+        switch (serviceManager.getState()) {
+        default:
+            try {
                 serviceManager.stopServices();
             }
-        }
-        catch (Exception ex) {
+            catch (Exception ex) {
+            }
+            break;
+        case IDLE:
+        case ERROR_STARTING:
+            if (force) {
+                dispose();
+            }
+            break;
         }
     }
 
