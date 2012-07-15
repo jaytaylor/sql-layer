@@ -68,11 +68,19 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     @Override
     public void startServices() {
-        state = State.STARTING;
         logger.info("Starting services.");
+        state = State.STARTING;
         getJmxRegistryService().register(this);
-        for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
-            guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
+        boolean ok = false;
+        try {
+            for (Class<?> directlyRequiredClass : guicer.directlyRequiredClasses()) {
+                guicer.get(directlyRequiredClass, STANDARD_SERVICE_ACTIONS);
+            }
+            ok = true;
+        }
+        finally {
+            if (!ok)
+                state = State.ERROR_STARTING;
         }
         state = State.ACTIVE;
         AkServerInterface akServer = getAkSserver();
@@ -82,20 +90,28 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
     @Override
     public void stopServices() throws Exception {
-        state = State.STOPPING;
         logger.info("Stopping services normally.");
-        guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
+        state = State.STOPPING;
+        try {
+            guicer.stopAllServices(STANDARD_SERVICE_ACTIONS);
+        }
+        finally {
+            state = State.IDLE;
+        }
         logger.info("Services stopped.");
-        state = State.IDLE;
     }
 
     @Override
     public void crashServices() throws Exception {
-        state = State.STOPPING;
         logger.info("Stopping services abnormally.");
-        guicer.stopAllServices(CRASH_SERVICES);
+        state = State.STOPPING;
+        try {
+            guicer.stopAllServices(CRASH_SERVICES);
+        }
+        finally {
+            state = State.IDLE;
+        }
         logger.info("Services stopped.");
-        state = State.IDLE;
     }
 
     @Override
