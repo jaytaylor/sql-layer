@@ -24,15 +24,7 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.servicemanager.configuration;
+package com.akiban.server.service.servicemanager;
 
-public interface ServiceConfigurationHandler {
-    void bind(String interfaceName, String implementingClassName);
-    void require(String interfaceName);
-    void lock(String interfaceName);
-    void mustBeLocked(String interfaceName);
-    void mustBeBound(String interfaceName);
-    void prioritize(String interfaceName);
-    void sectionEnd();
-    void unrecognizedCommand(String where, Object command, String message);
+public interface ServiceManagerBase {
 }

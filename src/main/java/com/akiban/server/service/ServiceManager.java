@@ -32,6 +32,7 @@ import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.instrumentation.InstrumentationService;
 import com.akiban.server.service.jmx.JmxRegistryService;
+import com.akiban.server.service.servicemanager.ServiceManagerBase;
 import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.stats.StatisticsService;
 import com.akiban.server.service.tree.TreeService;
@@ -42,8 +43,12 @@ import com.akiban.sql.pg.PostgresService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public interface ServiceManager {
+public interface ServiceManager extends ServiceManagerBase {
     static final Logger logger = LoggerFactory.getLogger(ServiceManager.class);
+
+    enum State { IDLE, STARTING, ACTIVE, STOPPING, ERROR_STARTING };
+
+    State getState();
 
     void startServices() throws ServiceStartupException;
 

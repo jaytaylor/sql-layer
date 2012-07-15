@@ -29,6 +29,7 @@ package com.akiban.server.service.servicemanager.configuration;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 class ServiceBindingsBuilder {
@@ -54,6 +55,10 @@ class ServiceBindingsBuilder {
         return all;
     }
 
+    public List<String> getPriorities() {
+        return priorities;
+    }
+
     public void lock(String interfaceName) {
         require(interfaceName).lock();
     }
@@ -76,6 +81,10 @@ class ServiceBindingsBuilder {
         if (binding == null || !binding.isLocked()) {
             sectionRequirements.put(interfaceName, true);
         }
+    }
+
+    public void prioritize(String interfaceName) {
+        priorities.add(interfaceName);
     }
 
     public void markSectionEnd() {
@@ -121,4 +130,8 @@ class ServiceBindingsBuilder {
      * If we ever need to track more requirements, we should change the Boolean to an enum set.
      */
     private final Map<String,Boolean> sectionRequirements = new HashMap<String, Boolean>();
+
+    /** Interfaces that ought to be run first (in order), as permitted
+     * by dependencies. */
+    private final List<String> priorities = new ArrayList<String>();
 }
