@@ -1,8 +1,9 @@
 ---
 - Include: all-update-schema.yaml
---- # not working, bug 914778
-#- Statement: BEGIN; UPDATE items SET quan = 0; ROLLBACK;
-#---
+---
+# bug 914778
+- Statement: BEGIN; UPDATE items SET quan = 0; ROLLBACK;
+---
 - Statement: select * from customers;
 - output_ordered: [[1,Smith],[2,Jones]]
 ---
