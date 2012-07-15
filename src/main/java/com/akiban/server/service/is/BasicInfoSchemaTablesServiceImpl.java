@@ -401,7 +401,10 @@ public class BasicInfoSchemaTablesServiceImpl
             int count = 0;
             Iterator<UserTable> it = newIteration();
             while(it.hasNext())
+            {
+                it.next();
                 ++count;
+            }
             return count;
         }
 
