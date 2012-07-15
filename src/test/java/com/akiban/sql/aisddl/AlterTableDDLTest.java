@@ -50,6 +50,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 import org.junit.After;
 import org.junit.Before;
@@ -253,7 +254,7 @@ public class AlterTableDDLTest {
     public void addGFKWithNoReferencedSingleColumn() throws StandardException {
         buildCOIJoinedAUnJoined();
 
-        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES i");
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES c");
 
         expectCreated(TEMP_NAME_1);
         expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
@@ -264,10 +265,10 @@ public class AlterTableDDLTest {
 
     @Test
     public void addGFKWithNoReferencedMultiColumn() throws StandardException {
-        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id", "id2");
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
 
-        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES i");
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES c");
 
         expectCreated(TEMP_NAME_1);
         expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
@@ -276,6 +277,13 @@ public class AlterTableDDLTest {
         expectChildOf(C_NAME, A_NAME);
     }
 
+    @Test(expected=SQLParserException.class)
+    public void addGFKReferencedColumnListCannotBeEmpty() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES c()");
+    }
 
 
     //
@@ -397,6 +405,19 @@ public class AlterTableDDLTest {
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
 
         parseAndRun("ALTER GROUP ADD TABLE a(other_id,other_id2) TO c");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test(expected=SQLParserException.class)
+    public void groupAddReferencedListCannotBeEmpty() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c()");
 
         expectCreated(TEMP_NAME_1);
         expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);

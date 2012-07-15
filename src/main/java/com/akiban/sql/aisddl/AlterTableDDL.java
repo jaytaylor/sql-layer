@@ -31,8 +31,11 @@ import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Columnar;
+import com.akiban.ais.model.Index;
+import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.PrimaryKey;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.ais.protobuf.ProtobufWriter;
@@ -49,6 +52,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.ConstraintDefinitionNode;
 import com.akiban.sql.parser.FKConstraintDefinitionNode;
+import com.akiban.sql.parser.ResultColumnList;
 import com.akiban.sql.parser.TableElementNode;
 
 import java.util.Collection;
@@ -162,8 +166,8 @@ public class AlterTableDDL {
         join.setGroup(newRefTable.getGroup());
         newTable.setGroup(join.getGroup());
 
-        String[] columns = fk.getColumnList().getColumnNames();
-        String[] refColumns = fk.getRefResultColumnList().getColumnNames();
+        String[] columns = columnNamesFromListOrPK(fk.getColumnList(), null); // No defaults for child table
+        String[] refColumns = columnNamesFromListOrPK(fk.getRefResultColumnList(), refTable.getPrimaryKey());
         if(columns.length != refColumns.length) {
             throw new JoinColumnMismatchException(columns.length, tableName, refName, refColumns.length);
         }
@@ -262,5 +266,21 @@ public class AlterTableDDL {
             throw new NoSuchColumnException(columnName);
         }
         return column;
+    }
+
+    private static String[] columnNamesFromListOrPK(ResultColumnList list, PrimaryKey pk) {
+        String[] names = (list == null) ? null: list.getColumnNames();
+        if(((names == null) || (names.length == 0)) && (pk != null)) {
+            Index index = pk.getIndex();
+            names = new String[index.getKeyColumns().size()];
+            int i = 0;
+            for(IndexColumn iCol : index.getKeyColumns()) {
+                names[i++] = iCol.getColumn().getName();
+            }
+        }
+        if(names == null) {
+            names = new String[0];
+        }
+        return names;
     }
 }
