@@ -218,7 +218,7 @@ public final class Guicer {
                 localDirectlyRequiredClasses.add(0, clazz);
             }
             else {
-                throw new IllegalArgumentException("priority service " + priorities.get(i) + " must be a top-level dependency");
+                throw new IllegalArgumentException("priority service " + priorities.get(i) + " is not a dependency");
             }
         }
         directlyRequiredClasses = Collections.unmodifiableCollection(localDirectlyRequiredClasses);

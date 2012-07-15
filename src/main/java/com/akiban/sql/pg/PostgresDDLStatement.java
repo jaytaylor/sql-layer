@@ -83,6 +83,11 @@ public class PostgresDDLStatement implements PostgresStatement
     }
 
     @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.NOT_ALLOWED;
+    }
+
+    @Override
     public int execute(PostgresQueryContext context, int maxrows, boolean usePVals) throws IOException {
         PostgresServerSession server = context.getServer();
         AkibanInformationSchema ais = server.getAIS();
