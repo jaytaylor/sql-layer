@@ -51,13 +51,18 @@ public final class GuiceInjectionTester {
         return this;
     }
 
+    public <I> GuiceInjectionTester prioritize(Class<I> anInterface) {
+        configHandler.prioritize(anInterface.getName());
+        return this;
+    }
+
     public GuiceInjectionTester startAndStop(Class<?>... requiredClasses) {
         for (Class<?> requiredClass : requiredClasses) {
             configHandler.require(requiredClass.getName());
         }
         try {
             guicer = Guicer.forServices((Class)serviceManagerInterfaceClass, serviceManager,
-                                        configHandler.serviceBindings());
+                                        configHandler.serviceBindings(), configHandler.priorities());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
