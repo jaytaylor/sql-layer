@@ -12,3 +12,5 @@
     - com.akiban.server.service.is.BasicInfoSchemaTablesService
     - com.akiban.server.service.is.StorageSchemaTablesService
     - com.akiban.server.service.is.ServerSchemaTablesService
+- prioritize:
+    - com.akiban.server.service.ui.SwingConsoleService  # Show service progress ASAP
