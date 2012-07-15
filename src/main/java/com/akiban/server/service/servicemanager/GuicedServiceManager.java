@@ -534,7 +534,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                     String value = properties.getProperty(property);
                     if (value.length() != 0) {
                         throw new IllegalArgumentException(
-                                String.format("-Drequire tags may not have values: %s = %s", theInterface, value)
+                                String.format("-Dprioritize tags may not have values: %s = %s", theInterface, value)
                         );
                     }
                     config.prioritize(theInterface);
