@@ -29,7 +29,6 @@ package com.akiban.server.service.is;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.CharsetAndCollation;
 import com.akiban.ais.model.Column;
-import com.akiban.ais.model.Columnar;
 import com.akiban.ais.model.GroupIndex;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
@@ -386,20 +385,51 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
-    private static class GroupDepthOrderedComparator implements Comparator<UserTable> {
+    private static class RootPathTable {
+        final UserTable root;
+        final String path;
+        final UserTable table;
+
+        public RootPathTable(UserTable root, String path, UserTable table) {
+            this.root = root;
+            this.path = path;
+            this.table = table;
+        }
+
+        @Override
+        public String toString() {
+            return root.getName() + ", " + table.getName() + ", " + path;
+        }
+    }
+
+    private static class TableIDComparator implements Comparator<UserTable> {
         @Override
         public int compare(UserTable o1, UserTable o2) {
-            // First by group
-            if(o1.getGroup() != o2.getGroup()) {
-                return o1.getGroup().getName().compareTo(o2.getGroup().getName());
-            }
-            // Then by depth
-            int cmp = o1.getDepth().compareTo(o2.getDepth());
-            if(cmp != 0) {
-                return cmp;
-            }
-            // Then by name
-            return o1.getName().compareTo(o2.getName());
+            return o1.getTableId().compareTo(o2.getTableId());
+        }
+    }
+    private static final TableIDComparator TABLE_ID_COMPARATOR = new TableIDComparator();
+
+    private static void addBranchToList(List<RootPathTable> list, StringBuilder builder, UserTable root, UserTable branch) {
+        if(builder.length() != 0) {
+            builder.append('/');
+        }
+        builder.append(branch.getName().getSchemaName());
+        builder.append('.');
+        builder.append(branch.getName().getTableName());
+        list.add(new RootPathTable(root, builder.toString(), branch));
+
+        // For tables at the same depth, comparing table IDs is currently synonymous with ordinals
+        List<UserTable> children = new ArrayList<UserTable>();
+        for(Join join : branch.getChildJoins()) {
+            children.add(join.getChild());
+        }
+        Collections.sort(children, TABLE_ID_COMPARATOR);
+
+        for(UserTable child : children) {
+            int saveLen = builder.length();
+            addBranchToList(list, builder, root, child);
+            builder.setLength(saveLen);
         }
     }
 
@@ -419,61 +449,55 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final List<UserTable> depthOrderedList;
-            final Iterator<UserTable> tableIt;
+            final List<RootPathTable> rootPathTables;
+            final Iterator<RootPathTable> it;
 
             public Scan(RowType rowType) {
                 super(rowType);
 
-                depthOrderedList = new ArrayList<UserTable>();
-                depthOrderedList.addAll(aisHolder.getAis().getUserTables().values());
-                Collections.sort(depthOrderedList, new GroupDepthOrderedComparator());
-                tableIt = depthOrderedList.iterator();
-            }
-
-            private UserTable findRootAndPath(UserTable table, StringBuilder path)
-            {
-                UserTable root;
-                if (table.isRoot())
-                    root = table;
-                else
-                    root = findRootAndPath(table.parentTable(), path);
-              
-                path.append(table.getName().getDescription()).append("/");
-                return root;
+                // Desired output: groups together, ordered by branch (ordinal), then ordered by depth
+                // Highest level sorting will be by schema.root, which seems as good as any
+                rootPathTables = new ArrayList<RootPathTable>();
+                Collection<UserTable> allTables = aisHolder.getAis().getUserTables().values();
+                StringBuilder builder = new StringBuilder();
+                for(UserTable table : allTables) {
+                    if(table.isRoot()) {
+                        addBranchToList(rootPathTables, builder, table, table);
+                        builder.setLength(0);
+                    }
+                }
+                assert rootPathTables.size() == allTables.size() : "Didn't collect all tables";
+                it = rootPathTables.iterator();
             }
 
             @Override
             public Row next() {
-                if (!tableIt.hasNext())
+                if (!it.hasNext()) {
                     return null;
+                }
                 
-                UserTable table = tableIt.next();
-                Join join = table.getParentJoin();
-                
+                RootPathTable rpt = it.next();
+                UserTable table = rpt.table;
                 String constraintName = null;
                 String uniqueSchema = null;
                 String uniqueTable = null;
                 String uniqueConstraint = null;
-                
-                if (join != null)
-                {
+
+                Join join = table.getParentJoin();
+                if (table.getParentJoin() != null) {
                     constraintName = join.getName();
                     uniqueSchema = join.getParent().getName().getSchemaName();
                     uniqueTable = join.getParent().getName().getTableName();
                     uniqueConstraint = Index.PRIMARY_KEY_CONSTRAINT;
                 }
 
-                StringBuilder path = new StringBuilder();
-                UserTable root = findRootAndPath(table, path);
-
                 return new ValuesRow(rowType,
-                                     root.getName().getSchemaName(),    // root_schema_name
-                                     root.getName().getTableName(),     // root_table_name
+                                     rpt.root.getName().getSchemaName(),// root_schema_name
+                                     rpt.root.getName().getTableName(), // root_table_name
                                      table.getName().getSchemaName(),   // constraint_schema_name
                                      table.getName().getTableName(),    // constraint_table_name
-                                     path.substring(0, path.length() - 1),  // path (w/o the forward slash at the end)
-                                     new Long(table.getDepth()),        // depth
+                                     rpt.path,                          // path
+                                     table.getDepth(),                  // depth
                                      constraintName,                    // constraint_name
                                      uniqueSchema,                      // unique_schema_name
                                      uniqueTable,                       // unique_table_name
