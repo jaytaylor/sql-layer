@@ -132,7 +132,9 @@ public class PersistitAdapter extends StoreAdapter
         RowData oldRowData = oldRowData(rowDef, oldRow);
         int oldStep = 0;
         try {
-            RowData newRowData = newRowData(rowDef, newRow);
+            // For Update row, the new row (value being inserted) does not 
+            // need the default value (including identity set)
+            RowData newRowData = oldRowData(rowDef, newRow);
             oldStep = enterUpdateStep();
             store.updateRow(getSession(), oldRowData, newRowData, null);
         } catch (InvalidOperationException e) {

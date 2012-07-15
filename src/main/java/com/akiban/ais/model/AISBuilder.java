@@ -36,19 +36,15 @@ import java.util.Properties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.akiban.ais.gwtutils.GwtLogger;
-import com.akiban.ais.gwtutils.GwtLogging;
 import com.akiban.ais.model.Join.GroupingUsage;
 import com.akiban.ais.model.Join.SourceType;
 import com.akiban.ais.model.validation.AISInvariants;
-import com.akiban.server.rowdata.RowDefCache;
 
 // AISBuilder can be used to create an AIS. The API is designed to sify the creation of an AIS during a scan
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
 public class AISBuilder {
-    //GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
     private static final Logger LOG = LoggerFactory.getLogger(AISBuilder.class);
     // API for creating capturing basic schema information
 
@@ -89,7 +85,7 @@ public class AISBuilder {
     public void sequence (String schemaName, String sequenceName,
             long start, long increment,
             long minValue, long maxValue, boolean cycle) {
-        LOG.info("sequence: " + schemaName + "." + sequenceName);
+        LOG.info("sequence: {}.{} ", schemaName,sequenceName);
         Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
     }
     

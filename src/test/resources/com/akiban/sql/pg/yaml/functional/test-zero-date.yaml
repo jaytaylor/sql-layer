@@ -1,8 +1,5 @@
 # Test zero date functionality
 ---
-- Properties: all
-- suppressed: true
----
 - Include: all-types-schema.yaml
 ---
 - Statement: Insert into all_types (bigint_field, date_field, time_field, timestamp_field, datetime_field) values (1,'2011-01-01','13:45:12','2011-01-01 13:45:12','2011-01-01 13:45:12')

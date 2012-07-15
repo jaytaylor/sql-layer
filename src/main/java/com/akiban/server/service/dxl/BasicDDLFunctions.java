@@ -124,8 +124,7 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             
             
             if (userTable.getIdentityColumn() != null) {
-                Collection<Sequence> sequences = new ArrayList<Sequence>();
-                sequences.add(userTable.getIdentityColumn().getIdentityGenerator());
+                Collection<Sequence> sequences = Collections.singleton(userTable.getIdentityColumn().getIdentityGenerator());
                 store().deleteSequences(session, sequences);
             }
         }

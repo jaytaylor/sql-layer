@@ -442,6 +442,7 @@ public class AISMergeTest {
         assertEquals (5, identityGenerator.getStartsWith());
         assertEquals (2, identityGenerator.getIncrement());
         assertEquals (1000, identityGenerator.getMaxValue());
+        assertNotNull (identityGenerator.getTreeName());
     }
 
     /*

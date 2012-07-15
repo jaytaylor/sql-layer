@@ -459,7 +459,9 @@ public class ProtobufWriter {
                 .setIsCycle(sequence.isCycle());
         if (sequence.getTreeName() != null) {
             sequenceBuilder.setTreeName(sequence.getTreeName());
-            //sequenceBuilder.setAccumulator(sequence.getAccumIndex());
+        }
+        if (sequence.getAccumIndex() != null) {
+            sequenceBuilder.setAccumulator(sequence.getAccumIndex());
         }
         schemaBuilder.addSequences (sequenceBuilder.build());
     }
