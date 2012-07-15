@@ -53,8 +53,12 @@ import com.akiban.server.store.AisHolder;
 import com.akiban.server.store.SchemaManager;
 import com.google.inject.Inject;
 
+import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
@@ -382,13 +386,21 @@ public class BasicInfoSchemaTablesServiceImpl
         }
     }
 
+    private static class GroupDepthOrderedComparator implements Comparator<UserTable> {
+        @Override
+        public int compare(UserTable o1, UserTable o2) {
+            // First by group
+            if(o1.getGroup() != o2.getGroup()) {
+                return o1.getGroup().getName().compareTo(o2.getGroup().getName());
+            }
+            // Then by depth
+            return o1.getDepth().compareTo(o2.getDepth());
+        }
+    }
+
     private class GroupingConstraintsFactory extends BasicFactoryBase {
         public GroupingConstraintsFactory(TableName sourceTable) {
             super(sourceTable);
-        }
-
-        private Iterator<UserTable> newIteration() {
-            return aisHolder.getAis().getUserTables().values().iterator();
         }
 
         @Override
@@ -402,10 +414,16 @@ public class BasicInfoSchemaTablesServiceImpl
         }
 
         private class Scan extends BaseScan {
-            final Iterator<UserTable> tableIt = newIteration();
+            final List<UserTable> depthOrderedList;
+            final Iterator<UserTable> tableIt;
 
             public Scan(RowType rowType) {
                 super(rowType);
+
+                depthOrderedList = new ArrayList<UserTable>();
+                depthOrderedList.addAll(aisHolder.getAis().getUserTables().values());
+                Collections.sort(depthOrderedList, new GroupDepthOrderedComparator());
+                tableIt = depthOrderedList.iterator();
             }
 
             private UserTable findRootAndPath(UserTable table, StringBuilder path)
