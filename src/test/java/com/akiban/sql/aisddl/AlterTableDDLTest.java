@@ -248,6 +248,35 @@ public class AlterTableDDLTest {
         expectChildOf(C_NAME, xName);
     }
 
+    // Should map automatically to the PK
+    @Test
+    public void addGFKWithNoReferencedSingleColumn() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES i");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test
+    public void addGFKWithNoReferencedMultiColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES i");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+
 
     //
     // DROP
@@ -330,6 +359,50 @@ public class AlterTableDDLTest {
         expectRenamed(xName, temp2, temp1, xName);
         expectDropped(temp2);
         expectGroupIsSame(C_NAME, xName, false);
+    }
+
+
+    //
+    // ALTER GROUP ADD
+    //
+    @Test
+    public void groupAddSimple() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c(id)");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test
+    public void groupAddNoReferencedSingleColumn() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test
+    public void groupAddNoReferencedMultiColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id,other_id2) TO c");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
     }
 
 
