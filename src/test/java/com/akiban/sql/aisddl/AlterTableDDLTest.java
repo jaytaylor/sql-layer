@@ -277,11 +277,17 @@ public class AlterTableDDLTest {
         expectChildOf(C_NAME, A_NAME);
     }
 
+    @Test(expected=JoinColumnMismatchException.class)
+    public void addGFKWithNoReferenceSingleColumnToMultiColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES c");
+    }
+
     @Test(expected=SQLParserException.class)
     public void addGFKReferencedColumnListCannotBeEmpty() throws StandardException {
         builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
         builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
-
         parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES c()");
     }
 
@@ -414,25 +420,17 @@ public class AlterTableDDLTest {
         expectChildOf(C_NAME, A_NAME);
     }
 
+    @Test(expected=JoinColumnMismatchException.class)
+    public void groupAddNoReferencedSingleColumnToMultiColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c");
+    }
+
     @Test(expected=SQLParserException.class)
     public void groupAddReferencedListCannotBeEmpty() throws StandardException {
         buildCOIJoinedAUnJoined();
-
         parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c()");
-
-        expectCreated(TEMP_NAME_1);
-        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
-        expectDropped(TEMP_NAME_2);
-        expectGroupIsSame(C_NAME, A_NAME, true);
-        expectChildOf(C_NAME, A_NAME);
-    }
-
-
-    private void parseAndRun(String sqlText) throws StandardException {
-        StatementNode node = parser.parseStatement(sqlText);
-        assertEquals("Was alter", AlterTableNode.class, node.getClass());
-        ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
-        AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
     }
 
 
@@ -465,6 +463,13 @@ public class AlterTableDDLTest {
         expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
+
+    private void parseAndRun(String sqlText) throws StandardException {
+        StatementNode node = parser.parseStatement(sqlText);
+        assertEquals("Was alter", AlterTableNode.class, node.getClass());
+        ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
+        AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
+    }
 
     private void expectCreated(TableName... names) {
         assertEquals("Creation order",
