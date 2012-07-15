@@ -52,6 +52,7 @@ public class SwingConsoleServiceImpl implements SwingConsoleService, Service<Swi
         if (console == null) {
             console = new SwingConsole(serviceManager);
             System.setOut(console.openPrintStream(true));
+            System.out.flush(); // Pick up output from before started.
         }
         show();
     }
