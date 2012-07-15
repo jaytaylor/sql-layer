@@ -131,6 +131,11 @@ public final class PropertyBindingsTest {
         }
 
         @Override
+        public void prioritize(String interfaceName) {
+            messages.add("prioritize: " + interfaceName);
+        }
+
+        @Override
         public void sectionEnd() {
             messages.add("section end");
         }

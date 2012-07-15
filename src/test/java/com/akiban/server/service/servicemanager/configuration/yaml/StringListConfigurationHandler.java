@@ -62,6 +62,11 @@ final class StringListConfigurationHandler implements ServiceConfigurationHandle
     }
 
     @Override
+    public void prioritize(String interfaceName) {
+        say("PRIORITIZE %s", interfaceName);
+    }
+
+    @Override
     public void sectionEnd() {
         say("SECTION END");
     }

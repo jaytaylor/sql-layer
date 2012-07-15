@@ -173,11 +173,11 @@ public final class Guicer {
     public static Guicer forServices(Collection<ServiceBinding> serviceBindings)
             throws ClassNotFoundException 
     {
-        return forServices(null, null, serviceBindings);
+        return forServices(null, null, serviceBindings, Collections.<String>emptyList());
     }
 
     public static <M extends ServiceManagerBase> Guicer forServices(Class<M> serviceManagerInterfaceClass, M serviceManager,
-                                     Collection<ServiceBinding> serviceBindings)
+                                                                    Collection<ServiceBinding> serviceBindings, List<String> priorities)
             throws ClassNotFoundException 
     {
         ArgumentValidation.notNull("bindings", serviceBindings);
@@ -187,13 +187,14 @@ public final class Guicer {
                                                    + serviceManagerInterfaceClass);
             }
         }
-        return new Guicer(serviceManagerInterfaceClass, serviceManager, serviceBindings);
+        return new Guicer(serviceManagerInterfaceClass, serviceManager, 
+                          serviceBindings, priorities);
     }
 
     // private methods
 
     private Guicer(Class<? extends ServiceManagerBase> serviceManagerInterfaceClass, ServiceManagerBase serviceManager,
-                   Collection<ServiceBinding> serviceBindings)
+                   Collection<ServiceBinding> serviceBindings, List<String> priorities)
     throws ClassNotFoundException
     {
         this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
@@ -210,6 +211,16 @@ public final class Guicer {
             }
         }
         Collections.sort(localDirectlyRequiredClasses, BY_CLASS_NAME);
+        // Pull to front in reverse order.
+        for (int i = priorities.size() - 1; i >= 0; i--) {
+            Class<?> clazz = Class.forName(priorities.get(i));
+            if (localDirectlyRequiredClasses.remove(clazz)) {
+                localDirectlyRequiredClasses.add(0, clazz);
+            }
+            else {
+                throw new IllegalArgumentException("priority service " + priorities.get(i) + " must be a top-level dependency");
+            }
+        }
         directlyRequiredClasses = Collections.unmodifiableCollection(localDirectlyRequiredClasses);
 
         this.services = Collections.synchronizedSet(new LinkedHashSet<Object>());
