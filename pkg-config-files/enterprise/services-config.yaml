@@ -1,9 +1,8 @@
 # copies in:
 #  conf/config/
 #  macosx/Contents/Resources/config/
-#  src/izpack/config/
+#  windows/config/
 - require:
-#   - com.akiban.server.service.ui.SwingConsoleService  # Presents a simple UI
     - com.akiban.server.AkServerInterface               # Loads the AKSERVER JMX bean
     - com.akiban.server.service.dxl.DXLService          # Loads the DDL/DML JMX bean
     - com.akiban.server.service.network.NetworkService  # MySQL replication
@@ -15,3 +14,4 @@
     - com.akiban.server.service.is.BasicInfoSchemaTablesService
     - com.akiban.server.service.is.StorageSchemaTablesService
     - com.akiban.server.service.is.ServerSchemaTablesService
+#   - com.akiban.server.service.ui.SwingConsoleService  # Presents a simple UI
