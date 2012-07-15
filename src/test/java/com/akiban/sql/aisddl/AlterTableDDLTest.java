@@ -373,6 +373,7 @@ public class AlterTableDDLTest {
     //
     // ALTER GROUP ADD
     //
+
     @Test
     public void groupAddSimple() throws StandardException {
         buildCOIJoinedAUnJoined();
@@ -432,6 +433,36 @@ public class AlterTableDDLTest {
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
         AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
+    }
+
+
+    //
+    // ALTER GROUP DROP
+    //
+
+    @Test
+    public void groupDropTableTwoTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
+
+        parseAndRun("ALTER GROUP DROP TABLE a");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, false);
+    }
+
+    @Test
+    public void groupDropTableLeafOfMultiple() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER GROUP DROP TABLE i");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(I_NAME, TEMP_NAME_2, TEMP_NAME_1, I_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, I_NAME, false);
     }
 
 
