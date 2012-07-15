@@ -529,6 +529,15 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
                         );
                     }
                     config.require(theInterface);
+                } else if (property.startsWith(PRIORITIZE)) {
+                    String theInterface = property.substring(PRIORITIZE.length());
+                    String value = properties.getProperty(property);
+                    if (value.length() != 0) {
+                        throw new IllegalArgumentException(
+                                String.format("-Drequire tags may not have values: %s = %s", theInterface, value)
+                        );
+                    }
+                    config.prioritize(theInterface);
                 }
             }
         }
@@ -549,6 +558,7 @@ public final class GuicedServiceManager implements ServiceManager, JmxManageable
 
         private static final String BIND = "bind:";
         private static final String REQUIRE = "require:";
+        private static final String PRIORITIZE = "prioritize:";
     }
 
     public static class NoOpJmxRegistry implements JmxRegistryService {
