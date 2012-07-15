@@ -43,9 +43,9 @@ public class UserTableRowChecker implements ConstraintChecker
             if (notNull.get(f) && row.eval(f).isNull()) {
                 // if this column is an identity column, null is allowed
                 // 
-                //if (f == identityColumn) {
-                //    continue;
-                //}
+                if (f == identityColumn) {
+                    continue;
+                }
                 TableName tableName = table.getName();
                 throw new NotNullViolationException(tableName.getSchemaName(),
                                                     tableName.getTableName(),

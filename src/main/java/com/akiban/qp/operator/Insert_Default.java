@@ -142,7 +142,7 @@ class Insert_Default implements UpdatePlannable {
                     // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
                     checkQueryCancelation();
                     ++seen;
-                    //context.checkConstraints(row);
+                    context.checkConstraints(row);
                     adapter().writeRow(row);
                     ++modified;
                     if (LOG.isDebugEnabled()) {
