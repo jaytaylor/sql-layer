@@ -181,7 +181,7 @@ java %JVM_OPTS% -jar "%JAR_FILE%"
 GOTO EOF
 
 :WINDOW_CMD
-SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.akiban.server.service.ui.SwingConsoleService"
+SET JVM_OPTS=%JVM_OPTS% "-Drequire:com.akiban.server.service.ui.SwingConsoleService" "-Dprioritize:com.akiban.server.service.ui.SwingConsoleService"
 START javaw %JVM_OPTS% -cp "%JAR_FILE%" com.akiban.server.service.ui.AkServerWithSwingConsole
 GOTO EOF
 
