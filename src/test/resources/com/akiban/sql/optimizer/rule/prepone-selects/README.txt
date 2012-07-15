@@ -24,3 +24,5 @@ multiple-table-2: Product conditions do not move currently because branch not ac
 multiple-table-3: Just indexes.
 
 multiple-table-in: Can be before the semi-join.
+
+collating-index: An index with with a non-recoverable key.

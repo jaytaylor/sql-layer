@@ -573,7 +573,7 @@ public class ApiTestBase {
         userTable.removeIndexes(Collections.singleton(tempIndex));
         TableIndex fkIndex = TableIndex.create(tempAIS, userTable, indexName, 0, false, "FOREIGN KEY");
         for(IndexColumn col : tempIndex.getKeyColumns()) {
-            fkIndex.addColumn(col);
+            IndexColumn.create(fkIndex, col.getColumn(), col.getPosition(), col.isAscending(), col.getIndexedLength());
         }
         ddl().createIndexes(session(), Collections.singleton(fkIndex));
         updateAISGeneration();
@@ -589,8 +589,7 @@ public class ApiTestBase {
         int pos = 0;
         for (String columnName : columns) {
             Column column = table.getColumn(columnName);
-            IndexColumn indexColumn = new IndexColumn(index, column, pos++, true, null);
-            index.addColumn(indexColumn);
+            IndexColumn.create(index, column, pos++, true, null);
         }
         ddl().createIndexes(session(), Collections.singleton(index));
         return getUserTable(table.getTableId()).getIndex(indexName);

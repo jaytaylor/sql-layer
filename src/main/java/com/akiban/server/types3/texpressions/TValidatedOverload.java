@@ -103,7 +103,7 @@ public final class TValidatedOverload implements TOverload {
     }
 
     public TOverloadResult resultStrategy() {
-        throw new UnsupportedOperationException();
+        return resultStrategy;
     }
 
     public boolean coversNInputs(int nInputs) {

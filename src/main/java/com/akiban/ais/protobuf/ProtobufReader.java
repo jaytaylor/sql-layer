@@ -258,6 +258,7 @@ public class ProtobufReader {
                     pbSequence.getMinValue(),
                     pbSequence.getMaxValue(),
                     pbSequence.getIsCycle());
+            
             if (pbSequence.hasTreeName() ) {
                 sequence.setTreeName(pbSequence.getTreeName());
             }

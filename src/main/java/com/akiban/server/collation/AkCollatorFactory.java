@@ -63,14 +63,17 @@ public class AkCollatorFactory {
 
     private final static Map<Integer, SoftReference<AkCollator>> collationIdMap = new ConcurrentHashMap<Integer, SoftReference<AkCollator>>();
 
-    public final static boolean COLLATION_ENABLED = Boolean.parseBoolean(System.getProperty("akiban.collation.enabled",
-            "true"));
-
     private final static String DEFAULT_PROPERTIES_FILE_NAME = "collation_data.properties";
 
     private final static String COLLATION_PROPERTIES_FILE_NAME_PROPERTY = "akiban.collation.properties";
 
     private final static Properties collationNameProperties = new Properties();
+
+    private volatile static Mode mode = Mode.LOOSE; // default for unit tests
+
+    public enum Mode {
+        STRICT, LOOSE, DISABLED
+    }
 
     static {
         try {
@@ -84,14 +87,55 @@ public class AkCollatorFactory {
     }
 
     /**
+     * Set factory to one of three modes specified by case-insensitive string:
+     * <dl>
+     * <dt>disabled</dt>
+     * <dd>always uses UCS_BINARY_COLLATOR</dd>
+     * <dt>strict</dt>
+     * <dd>disallows unimplemented collators</dd>
+     * <dt>loose</dt>
+     * <dd>returns UCS_BINARY_COLLATOR for any unrecognized name</dd>
+     * </dl
+     * 
+     * @param mode
+     */
+    public static void setCollationMode(String modeString) {
+        try {
+            mode = Mode.valueOf(modeString.toUpperCase());
+        } catch (IllegalArgumentException e) {
+            throw new IllegalArgumentException("Collation mode must be STRICT, LOOSE or DISABLED: " + modeString);
+        }
+    }
+    
+    public static void setCollationMode(Mode m) {
+        if (m == null) {
+            throw new NullPointerException();
+        }
+        mode = m;
+    }
+    
+    public static Mode getCollationMode() {
+        return mode;
+    }
+
+    /**
      * @param name
      * @return an AkCollator
      */
     public static AkCollator getAkCollator(final String name) {
-        if (!COLLATION_ENABLED || name == null || UCS_BINARY.equalsIgnoreCase(name)) {
+        if (mode == Mode.DISABLED || name == null) {
             return UCS_BINARY_COLLATOR;
         }
+        
         final String idAndScheme = schemeForName(name);
+        if (idAndScheme == null) {
+            if (mode == Mode.LOOSE) {
+                return UCS_BINARY_COLLATOR;
+            } else {
+                throw new InvalidCollationException(name);
+            }
+        }
+        
         final Matcher matcher = SCHEMA_PATTERN.matcher(idAndScheme);
         if (!matcher.matches()) {
             throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
@@ -119,7 +163,7 @@ public class AkCollatorFactory {
             } catch (Exception e) {
                 throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
             }
-            
+
             final AkCollator akCollator;
             if (scheme.startsWith(MYSQL)) {
                 akCollator = new AkCollatorMySQL(name, scheme, collationId, collationNameProperties.getProperty(scheme));
@@ -136,7 +180,7 @@ public class AkCollatorFactory {
 
     public static AkCollator getAkCollator(final int collatorId) {
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
-        AkCollator collator =  (ref == null ? null : ref.get());
+        AkCollator collator = (ref == null ? null : ref.get());
         if (collator == null) {
             if (collatorId == 0) {
                 return UCS_BINARY_COLLATOR;
@@ -200,9 +244,6 @@ public class AkCollatorFactory {
     private synchronized static String schemeForName(final String name) {
         final String lcname = name.toLowerCase();
         String scheme = collationNameProperties.getProperty(lcname);
-        if (scheme == null) {
-            throw new InvalidCollationException(name);
-        }
         return scheme;
     }
 

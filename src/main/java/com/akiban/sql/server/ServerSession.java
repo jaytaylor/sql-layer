@@ -63,6 +63,9 @@ public interface ServerSession
     /** Get a client property. */
     public String getProperty(String key, String defval);
 
+    /** Get a boolean client property with error checking. */
+    public boolean getBooleanProperty(String key, boolean defval);
+
     /** Set a client property. */
     public void setProperty(String key, String value);
 
@@ -113,6 +116,12 @@ public interface ServerSession
 
     /** Return the LoadablePlan with the given name. */
     public LoadablePlan<?> loadablePlan(String planName);
+
+    /** Is a transaction open? */
+    public boolean isTransactionActive();
+
+    /** Is a transaction marked rollback-only? */
+    public boolean isTransactionRollbackPending();
 
     /** Begin a new transaction. */
     public void beginTransaction();

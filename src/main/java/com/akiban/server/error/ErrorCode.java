@@ -136,7 +136,8 @@ public enum ErrorCode {
         // SubClass 00F - zero-length character string
     
         // SubClass 00G - most specific type mismatch
-        // SubClass 00H - sequence generator limit exceeded    
+        // SubClass 00H - sequence generator limit exceeded 
+    SEQUENCE_LIMIT_EXCEEDED ("22", "00H", Importance.DEBUG, SequenceLimitExceededException.class),
         // SubClass 00P - interval value out of range
         // SubClass 00Q - multiset value overflow
     
@@ -187,7 +188,8 @@ public enum ErrorCode {
 
     // Class 23 - integrity constraint violation
     DUPLICATE_KEY           ("23", "501", Importance.DEBUG, DuplicateKeyException.class),
-    FK_CONSTRAINT_VIOLATION ("23", "502", Importance.DEBUG, ForeignKeyConstraintDMLException.class),
+    NOT_NULL_VIOLATION      ("23", "502", Importance.ERROR, NotNullViolationException.class),
+    FK_CONSTRAINT_VIOLATION ("23", "503", Importance.DEBUG, ForeignKeyConstraintDMLException.class),
     // Class 24 - invalid cursor state
     CURSOR_IS_FINISHED      ("24", "501", Importance.ERROR, CursorIsFinishedException.class), 
     CURSOR_IS_UNKNOWN       ("24", "502", Importance.ERROR, CursorIsUnknownException.class),
@@ -207,6 +209,7 @@ public enum ErrorCode {
         // SubClass 006 - read-only SQL-transaction
         // SubClass 007 - schema and data statement mixing not supported
         // SubClass 008 - held cursor requires same isolation level
+    TRANSACTION_ABORTED     ("25", "P02", Importance.DEBUG, TransactionAbortedException.class), // No standard, Postgres uses P02
     // Class 26 - invalid SQL statement name
     // Class 27 - triggered data change violation 
     // Class 28 - invalid authorization specification
@@ -237,6 +240,7 @@ public enum ErrorCode {
     
     // Class 40 - transaction rollback
     QUERY_TIMEOUT           ("40", "000", Importance.ERROR, QueryTimedOutException.class),
+    QUERY_ROLLBACK          ("40", "001", Importance.ERROR, QueryRollbackException.class),
 
     // Class 42 - syntax error or access rule violation
     // These exceptions are re-thrown errors from the parser and from the
@@ -331,6 +335,10 @@ public enum ErrorCode {
     DUPLICATE_SEQUENCE      ("50", "01V", Importance.DEBUG, DuplicateSequenceNameException.class),
     INDEX_COLUMN_IS_PARTIAL ("50", "01W", Importance.DEBUG, IndexColumnIsPartialException.class),
     COLUMN_SIZE_MISMATCH    ("50", "01X", Importance.DEBUG, ColumnSizeMismatchException.class),
+    WHOLE_GROUP_QUERY       ("50", "01Y", Importance.DEBUG, WholeGroupQueryException.class),
+    SEQUENCE_INTERVAL_ZERO  ("50", "01Z", Importance.DEBUG, SequenceIntervalZeroException.class),
+    SEQUENCE_MIN_GE_MAX     ("50", "020", Importance.DEBUG, SequenceMinGEMaxException.class),
+    SEQUENCE_START_IN_RANGE ("50", "021", Importance.DEBUG, SequenceStartInRangeException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

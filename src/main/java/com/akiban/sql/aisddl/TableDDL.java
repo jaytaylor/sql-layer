@@ -60,6 +60,8 @@ import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.sql.pg.PostgresQueryContext;
 
+import static com.akiban.sql.aisddl.DDLHelper.convertName;
+
 /** DDL operations on Tables */
 public class TableDDL
 {
@@ -75,7 +77,7 @@ public class TableDDL
         com.akiban.sql.parser.TableName parserName = dropTable.getObjectName();
         
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        TableName tableName = TableName.create(schemaName, parserName.getTableName());
+        TableName tableName = convertName(defaultSchemaName, dropTable.getObjectName());
         ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
@@ -98,8 +100,9 @@ public class TableDDL
                                     Session session,
                                     String defaultSchemaName,
                                     RenameNode renameTable) {
-        throw new UnsupportedSQLException (renameTable.statementToString(), renameTable);
-        //ddlFunctions.renameTable(session, currentName, newName);
+        TableName oldName = convertName(defaultSchemaName, renameTable.getObjectName());
+        TableName newName = convertName(defaultSchemaName, renameTable.getNewTableName());
+        ddlFunctions.renameTable(session, oldName, newName);
     }
 
     public static void createTable(DDLFunctions ddlFunctions,

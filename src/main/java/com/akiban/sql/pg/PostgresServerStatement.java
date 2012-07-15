@@ -54,6 +54,11 @@ public class PostgresServerStatement implements PostgresStatement {
     }
 
     @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        return TransactionAbortedMode.ALLOWED;
+    }
+
+    @Override
     public PostgresType[] getParameterTypes() {
         return null;
     }
@@ -92,6 +97,9 @@ public class PostgresServerStatement implements PostgresStatement {
     protected void doOperation (PostgresServerSession session) throws Exception {
         PostgresServer server = ((PostgresServerConnection)session).getServer();
         Integer sessionId = statement.getSessionID();
+        /*
+         * Note: Caution when adding new types and check execution under ROLLBACK, see getTransactionAbortedMode()
+         */
         switch (statement.getAlterSessionType()) {
         case SET_SERVER_VARIABLE:
             setVariable (session, statement.getVariable(), statement.getValue());

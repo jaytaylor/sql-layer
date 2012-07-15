@@ -29,6 +29,7 @@ package com.akiban.server.expression.subquery;
 import com.akiban.server.error.SubqueryTooManyRowsException;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionType;
+import com.akiban.server.expression.OldExpressionTestBase;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
@@ -50,7 +51,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 
-public class ScalarSubqueryExpressionTest {
+public class ScalarSubqueryExpressionTest extends OldExpressionTestBase {
 
     private FunctionsRegistry functionsRegistry = new FunctionsRegistryImpl();
 
