@@ -394,7 +394,12 @@ public class BasicInfoSchemaTablesServiceImpl
                 return o1.getGroup().getName().compareTo(o2.getGroup().getName());
             }
             // Then by depth
-            return o1.getDepth().compareTo(o2.getDepth());
+            int cmp = o1.getDepth().compareTo(o2.getDepth());
+            if(cmp != 0) {
+                return cmp;
+            }
+            // Then by name
+            return o1.getName().compareTo(o2.getName());
         }
     }
 
