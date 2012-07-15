@@ -398,11 +398,7 @@ public class BasicInfoSchemaTablesServiceImpl
 
         @Override
         public long rowCount() {
-            int count = 0;
-            Iterator<UserTable> it = newIteration();
-            while(it.hasNext())
-                ++count;
-            return count;
+            return aisHolder.getAis().getUserTables().values().size();
         }
 
         private class Scan extends BaseScan {

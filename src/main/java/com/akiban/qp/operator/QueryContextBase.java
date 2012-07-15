@@ -26,12 +26,8 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.TableName;
-import com.akiban.ais.model.UserTable;
 import com.akiban.qp.row.HKey;
 import com.akiban.qp.row.Row;
-import com.akiban.qp.rowtype.RowType;
-import com.akiban.qp.rowtype.UserTableRowType;
 import com.akiban.server.error.*;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.FromObjectValueSource;
@@ -45,7 +41,6 @@ import com.akiban.util.SparseArray;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.util.BitSet;
 import java.util.Date;
 
 public abstract class QueryContextBase implements QueryContext

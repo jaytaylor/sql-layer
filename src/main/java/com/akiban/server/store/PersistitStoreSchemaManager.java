@@ -177,7 +177,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     private AtomicLong updateTimestamp;
     private int maxAISBufferSize;
     private boolean skipAISUpgrade;
-    private boolean inServiceStartProcessing = false;
     private SerializationType serializationType = SerializationType.NONE;
     private final Set<TableName> legacyISTables = new HashSet<TableName>();
     private static volatile Runnable upgradeHook;
@@ -647,7 +646,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     @Override
     public void start() {
         updateTimestamp = new AtomicLong();
-        inServiceStartProcessing = true;
         skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
@@ -686,7 +684,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
-        inServiceStartProcessing = false;
     }
 
     @Override
@@ -926,9 +923,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             // treeCache == null -> loading from start or creating a new sequence
             if (sequence.getTreeCache() == null) {
                 treeService.populateTreeCache(sequence);
-                if (!inServiceStartProcessing) {
-                    sequence.setStartWithAccumulator(treeService);
-                }
             }
         }
     }
@@ -1191,6 +1185,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         } else {
             // Memory only table changed, no reason to re-serialize
             buildRowDefCache(newAIS);
+        }
+        try {
+            if (mergedTable.getIdentityColumn() != null) {
+                mergedTable.getIdentityColumn().getIdentityGenerator().setStartWithAccumulator(treeService);
+            }
+        } catch (PersistitException ex) {
+            LOG.error("Setting sequence starting value for table {} failed", mergedTable.getName().getDescription());
+            throw new PersistitAdapterException(ex);
         }
         return getAis().getUserTable(newName).getName();
     }

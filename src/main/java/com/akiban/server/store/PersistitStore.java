@@ -1378,6 +1378,13 @@ public class PersistitStore implements Store {
         // Drop the sequence trees too. 
         if (table.isUserTable() && ((UserTable)table).getIdentityColumn() != null) {
             treeLinks.add(((UserTable)table).getIdentityColumn().getIdentityGenerator());
+        } else if (table.isGroupTable()) {
+            for (UserTable userTable : table.getAIS().getUserTables().values()) {
+                if (userTable.getGroup() == table.getGroup() &&
+                        userTable.getIdentityColumn() != null) {
+                    treeLinks.add(userTable.getIdentityColumn().getIdentityGenerator());
+                }
+            }
         }
         
         // And the group tree

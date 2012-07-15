@@ -142,7 +142,8 @@ public class Sequence implements TreeLink {
         
         Tree tree = getTreeCache().getTree();
         AccumulatorAdapter accum = new AccumulatorAdapter (AccumInfo.AUTO_INC, treeService, tree);
-        long value = accum.getLiveValue();
+        long value = accum.updateAndGet(increment);
+        //long value = accum.getLiveValue();
 /*
  * TODO: This is the cycle processing for the Sequence. 
  * The current sequence specification does not allow setting 
@@ -167,13 +168,16 @@ public class Sequence implements TreeLink {
             accum.updateAndGet(increment);
         }
 */
-        accum.updateAndGet(increment);
         return value;
     }
     
     public void setStartWithAccumulator(TreeService treeService) throws PersistitException {
         Tree tree = getTreeCache().getTree();
         AccumulatorAdapter accum = new AccumulatorAdapter (AccumInfo.AUTO_INC, treeService, tree);
-        accum.set(startsWith);
+        // Set the starting value to startsWith - increment, 
+        // which will be, on first call to nextValue() be updated to the start value
+        // TODO: This can cause problems if startsWith is within increment of 
+        // Long.MaxValue or Long.MinValue. 
+        accum.set(startsWith - increment);
     }
 }
