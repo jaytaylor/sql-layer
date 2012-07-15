@@ -136,7 +136,8 @@ public enum ErrorCode {
         // SubClass 00F - zero-length character string
     
         // SubClass 00G - most specific type mismatch
-        // SubClass 00H - sequence generator limit exceeded    
+        // SubClass 00H - sequence generator limit exceeded 
+    SEQUENCE_LIMIT_EXCEEDED ("22", "00H", Importance.DEBUG, SequenceLimitExceededException.class),
         // SubClass 00P - interval value out of range
         // SubClass 00Q - multiset value overflow
     
@@ -335,6 +336,9 @@ public enum ErrorCode {
     INDEX_COLUMN_IS_PARTIAL ("50", "01W", Importance.DEBUG, IndexColumnIsPartialException.class),
     COLUMN_SIZE_MISMATCH    ("50", "01X", Importance.DEBUG, ColumnSizeMismatchException.class),
     WHOLE_GROUP_QUERY       ("50", "01Y", Importance.DEBUG, WholeGroupQueryException.class),
+    SEQUENCE_INTERVAL_ZERO  ("50", "01Z", Importance.DEBUG, SequenceIntervalZeroException.class),
+    SEQUENCE_MIN_GE_MAX     ("50", "020", Importance.DEBUG, SequenceMinGEMaxException.class),
+    SEQUENCE_START_IN_RANGE ("50", "021", Importance.DEBUG, SequenceStartInRangeException.class),
 
     // Class 51 - Internal problems created by user configuration
     STALE_AIS               ("51", "001", Importance.TRACE, OldAISException.class),

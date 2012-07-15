@@ -23,23 +23,10 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+package com.akiban.server.error;
 
-package com.akiban.ais.model;
-
-import java.util.List;
-
-public interface NameGenerator
-{
-    String generateColumnName(Column column);
-    String generateGroupTableIndexName(TableIndex userTableIndex);
-    String generateGroupName (UserTable userTable);
-    String generateGroupName (String tableName);
-    String generateGroupTableName (String groupName);
-    String generateIndexName (String indexName, String columnName, String constraint);
-    String generateJoinName (TableName parentTable, TableName childTable, List<JoinColumn> joinIndex);
-    String generateJoinName (TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
-    String generateGroupTreeName (Group group);
-    String generateIndexTreeName (Index index);
-    String generateIdentitySequenceName (TableName table, String columnName);
-    String generateIdentitySequenceTreeName (Sequence sequence);
+public class SequenceMinGEMaxException extends InvalidOperationException  {
+    public  SequenceMinGEMaxException () {
+        super (ErrorCode.SEQUENCE_MIN_GE_MAX);
+    }
 }

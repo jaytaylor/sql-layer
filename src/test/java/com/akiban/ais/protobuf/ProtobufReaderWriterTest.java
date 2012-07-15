@@ -389,7 +389,6 @@ public class ProtobufReaderWriterTest {
         assertNotNull(outAIS.getSequence(seqName));
         Sequence sequence = outAIS.getSequence(seqName);
         assertEquals ("sequence-3.tree", sequence.getTreeName());
-        assertEquals (new Integer(3), sequence.getAccumIndex());
     }
     
     @Test 

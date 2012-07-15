@@ -40,6 +40,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableIndex;
 import com.akiban.ais.model.TableName;
@@ -120,6 +121,12 @@ class BasicDDLFunctions extends ClientAPIBase implements DDLFunctions {
             dml.truncateTable(session, table.getTableId());
             store().deleteIndexes(session, userTable.getIndexesIncludingInternal());
             store().deleteIndexes(session, userTable.getGroupIndexes());
+            
+            
+            if (userTable.getIdentityColumn() != null) {
+                Collection<Sequence> sequences = Collections.singleton(userTable.getIdentityColumn().getIdentityGenerator());
+                store().deleteSequences(session, sequences);
+            }
         }
         schemaManager().deleteTableDefinition(session, tableName.getSchemaName(), tableName.getTableName());
         checkCursorsForDDLModification(session, table);

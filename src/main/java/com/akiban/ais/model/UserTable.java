@@ -188,6 +188,17 @@ public class UserTable extends Table
         }
         return autoIncrementColumn;
     }
+    
+    public Column getIdentityColumn() 
+    {
+        Column identity = null;
+        for (Column column : getColumns()) {
+            if (column.getIdentityGenerator() != null) {
+                identity = column;
+            }
+        }
+        return identity;
+    }
 
     @Override
     public Collection<TableIndex> getIndexes()
