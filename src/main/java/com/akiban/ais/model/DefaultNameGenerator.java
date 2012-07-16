@@ -133,6 +133,11 @@ public class DefaultNameGenerator implements NameGenerator {
         treeNames.addAll(initialSet);
         return this;
     }
+
+    public DefaultNameGenerator setDefaultSequenceNames (Set<String> initialSet) {
+        sequenceNames.addAll(initialSet);
+        return this;
+    }
     
     @Override
     public String generateIndexName(String indexName, String columnName,
@@ -220,7 +225,7 @@ public class DefaultNameGenerator implements NameGenerator {
     }
     
     @Override
-    public String generateIdentitySequenceName (TableName tableName, String columnName) {
+    public String generateIdentitySequenceName (TableName tableName) {
         return makeUnique(sequenceNames, "_sequence-" + tableName.hashCode());
     }
     
