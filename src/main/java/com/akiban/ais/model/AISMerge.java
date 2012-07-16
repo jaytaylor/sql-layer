@@ -353,7 +353,7 @@ public class AISMerge {
     }
 
     public static Set<String> computeSequenceNames (AkibanInformationSchema ais) {
-        // Collect all tree names
+        // Collect all sequence names
         Set<String> sequenceNames = new HashSet<String>();
         for(TableName sequence : ais.getSequences().keySet()) {
             sequenceNames.add(sequence.getTableName());
