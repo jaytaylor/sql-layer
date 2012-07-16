@@ -32,7 +32,6 @@ import com.akiban.qp.rowtype.ProjectedRowType;
 import com.akiban.qp.rowtype.ProjectedUserTableRowType;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.sql.optimizer.explain.Explainer;
@@ -151,16 +150,7 @@ class Project_Default extends Operator
         this.rowType = rowType;
         this.pExpressions = pExpressions;
         this.projections = projections;
-        projectType = rowType.schema().newProjectType(this.projections, tInstances(pExpressions));
-    }
-
-    private List<TInstance> tInstances(List<? extends TPreparedExpression> pExpressions) {
-        if (pExpressions == null)
-            return null;
-        List<TInstance> tInstances = new ArrayList<TInstance>(pExpressions.size());
-        for (TPreparedExpression preparedExpression : pExpressions)
-            tInstances.add(preparedExpression.resultType());
-        return tInstances;
+        projectType = rowType.schema().newProjectType(this.projections, pExpressions);
     }
 
     // Project_Default constructor, returns ProjectedUserTableRowType rows 
@@ -185,7 +175,7 @@ class Project_Default extends Operator
         projectType = new ProjectedUserTableRowType(projectTableRowType.schema(),
                                                     projectTableRowType.userTable(),
                                                     projections,
-                                                    tInstances(pExpressions));
+                                                    pExpressions);
         this.pExpressions = pExpressions; // TODO defensively copy once the old expressions are gone (until then, this may NPE)
     }
 
