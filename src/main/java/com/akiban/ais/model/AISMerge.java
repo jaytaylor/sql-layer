@@ -76,6 +76,7 @@ public class AISMerge {
         sourceTable = newTable;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
+                setDefaultSequenceNames(computeSequenceNames(targetAIS)).
                 setDefaultTreeNames(computeTreeNames(targetAIS));
         collectTableIDs(primaryAIS);
     }
@@ -183,7 +184,7 @@ public class AISMerge {
                 newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
             }
             if (column.getDefaultIdentity() != null) {
-                String sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName), column.getName());
+                String sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
                 Sequence sequence = column.getIdentityGenerator();
                 builder.sequence(schemaName, sequenceName, 
                         sequence.getStartsWith(), 
@@ -349,6 +350,15 @@ public class AISMerge {
             }
         }
         return treeNames;
+    }
+
+    public static Set<String> computeSequenceNames (AkibanInformationSchema ais) {
+        // Collect all tree names
+        Set<String> sequenceNames = new HashSet<String>();
+        for(TableName sequence : ais.getSequences().keySet()) {
+            sequenceNames.add(sequence.getTableName());
+        }
+        return sequenceNames;
     }
 
     private void collectTableIDs(AkibanInformationSchema ais) {
