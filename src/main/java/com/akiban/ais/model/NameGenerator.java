@@ -40,6 +40,6 @@ public interface NameGenerator
     String generateJoinName (TableName parentTable, TableName childTable, List<String> pkColNames, List<String> fkColNames);
     String generateGroupTreeName (Group group);
     String generateIndexTreeName (Index index);
-    String generateIdentitySequenceName (TableName table, String columnName);
+    String generateIdentitySequenceName (TableName table);
     String generateIdentitySequenceTreeName (Sequence sequence);
 }
