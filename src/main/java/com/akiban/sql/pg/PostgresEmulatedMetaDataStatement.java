@@ -558,7 +558,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relchecks
                     0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relkind
-                    "r", CHAR1_PG_TYPE);
+                    table.isView() ? "v" : "r", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasindex
                     hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relhasrules
@@ -584,7 +584,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         writeColumn(messenger, encoder, usePVals, // relhasindex
                     hasIndexes(table) ? "t" : "f", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relkind
-                    "r", CHAR1_PG_TYPE);
+                    table.isView() ? "v" : "r", CHAR1_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // relchecks
                     0, INT2_PG_TYPE);
         writeColumn(messenger, encoder, usePVals, // reltriggers
