@@ -1035,10 +1035,10 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("constraint_table_name", IDENT_MAX, false)
                 .colString("path", IDENT_MAX, false)
                 .colBigInt("depth", false)
-                .colString("constraint_name", IDENT_MAX, false)
-                .colString("unique_schema_name", IDENT_MAX, false)
-                .colString("unique_table_name", IDENT_MAX, false)
-                .colString("unique_constraint_name", IDENT_MAX, false);                            
+                .colString("constraint_name", IDENT_MAX, true)
+                .colString("unique_schema_name", IDENT_MAX, true)
+                .colString("unique_table_name", IDENT_MAX, true)
+                .colString("unique_constraint_name", IDENT_MAX, true);                            
         //foreign key (schema_name, table_name, constraint_name)
         //    references TABLE_CONSTRAINTS (schema_name, table_name, constraint_name)
         builder.userTable(KEY_COLUMN_USAGE)
