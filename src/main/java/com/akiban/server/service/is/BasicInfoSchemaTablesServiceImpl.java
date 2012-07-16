@@ -979,7 +979,7 @@ public class BasicInfoSchemaTablesServiceImpl
                 .colString("table_schema", IDENT_MAX, false)
                 .colString("table_name", IDENT_MAX, false)
                 .colString("table_type", IDENT_MAX, false)
-                .colBigInt("table_id", false)
+                .colBigInt("table_id", true)
                 .colString("tree_name", PATH_MAX, true)
                 .colString("character_set_schema", IDENT_MAX, true)
                 .colString("character_set_name", IDENT_MAX, true)
