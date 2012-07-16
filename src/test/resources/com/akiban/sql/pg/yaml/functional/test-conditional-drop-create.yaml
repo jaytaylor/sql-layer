@@ -9,7 +9,7 @@
 - warnings_count: 1
 - warnings: [['50006', 'Table `test`.`t1` already exists']]
 ---
-- DropTable: t1;
+- Statement: DROP TABLE t1;
 --- # so such table to drop
 - DropTable: t1;
 - error: [42501]
