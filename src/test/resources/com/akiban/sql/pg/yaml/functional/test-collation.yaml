@@ -1,4 +1,10 @@
 # Test collation (other than UCS_BINARY)
+
+# Disabled in AAS until non-ascii strings are sorted out.
+---
+- Properties: sys-aksql
+- suppressed: true
+
 ---
 - CreateTable: t (id INT PRIMARY KEY NOT NULL, s VARCHAR(32) CHARACTER SET latin1 COLLATE latin1_swedish_ci)
 ---
