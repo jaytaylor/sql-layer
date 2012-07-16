@@ -62,9 +62,8 @@ cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 cp ${common_dir}/* packages-common/
 
 # Add akiban-client tools via `bzr root`/target/akiban-client-tools
-tools_branch="lp:~louisli/akiban-client-tools/postgres-jar-mod" ### TODO CHANGE BACK
-branch_folder=$(echo ${tools_branch} | rev | cut -f 1 -d "/" | rev)
-pushd target && bzr branch ${tools_branch} && pushd ${branch_folder}
+tools_branch="lp:akiban-client-tools"
+pushd target && bzr branch ${tools_branch} && pushd akiban-client-tools
 mvn  -Dmaven.test.skip.exec clean install
 
 # Linux and Mac
