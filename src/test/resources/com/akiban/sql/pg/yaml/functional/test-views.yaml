@@ -37,4 +37,21 @@
 ---
 - Statement: SELECT * FROM s
 - output_ordered: [[1],[2],[3],[9]]
+
+# Clean up views so table can be dropped
+---
+- Statement: DROP VIEW s
+---
+- Statement: DROP VIEW v0
+---
+- Statement: DROP VIEW v3
+---
+- Statement: DROP VIEW v2
+---
+- Statement: DROP VIEW v1
+
+# And explicitly drop table, for sanity
+---
+- DropTable: t
+
 ...
