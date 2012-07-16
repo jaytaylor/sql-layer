@@ -27,6 +27,7 @@
 package com.akiban.server.store;
 
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.server.rowdata.FieldDef;
 import com.akiban.server.rowdata.RowData;
@@ -156,6 +157,10 @@ public abstract class DelegatingStore<S extends Store> implements Store {
         delegate.deleteIndexes(session, indexes);
     }
 
+    public void deleteSequences (Session session, Collection<? extends Sequence> sequences) {
+        delegate.deleteSequences(session, sequences);
+    }
+    
     public void removeTrees(Session session, Table table) {
         delegate.removeTrees(session, table);
     }

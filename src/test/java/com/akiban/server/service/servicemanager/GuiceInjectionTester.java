@@ -44,12 +44,25 @@ public final class GuiceInjectionTester {
         return this;
     }
 
+    public <I extends ServiceManagerBase> GuiceInjectionTester manager(Class<I> serviceManagerInterfaceClass,
+                                        I serviceManager) {
+        this.serviceManagerInterfaceClass = serviceManagerInterfaceClass;
+        this.serviceManager = serviceManager;
+        return this;
+    }
+
+    public <I> GuiceInjectionTester prioritize(Class<I> anInterface) {
+        configHandler.prioritize(anInterface.getName());
+        return this;
+    }
+
     public GuiceInjectionTester startAndStop(Class<?>... requiredClasses) {
         for (Class<?> requiredClass : requiredClasses) {
             configHandler.require(requiredClass.getName());
         }
         try {
-            guicer = Guicer.forServices(configHandler.serviceBindings());
+            guicer = Guicer.forServices((Class)serviceManagerInterfaceClass, serviceManager,
+                                        configHandler.serviceBindings(), configHandler.priorities());
         } catch (ClassNotFoundException e) {
             throw new RuntimeException(e);
         }
@@ -122,6 +135,8 @@ public final class GuiceInjectionTester {
 
     private final DefaultServiceConfigurationHandler configHandler = new DefaultServiceConfigurationHandler();
     private final ListOnShutdown shutdownHook = new ListOnShutdown();
+    private Class<? extends ServiceManagerBase> serviceManagerInterfaceClass;
+    private ServiceManagerBase serviceManager;
     private Guicer guicer;
 
     // nested classes

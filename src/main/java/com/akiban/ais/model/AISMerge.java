@@ -76,6 +76,7 @@ public class AISMerge {
         sourceTable = newTable;
         nameGenerator = new DefaultNameGenerator().
                 setDefaultGroupNames(targetAIS.getGroups().keySet()).
+                setDefaultSequenceNames(computeSequenceNames(targetAIS)).
                 setDefaultTreeNames(computeTreeNames(targetAIS));
         collectTableIDs(primaryAIS);
     }
@@ -183,7 +184,7 @@ public class AISMerge {
                 newColumn.setInitialAutoIncrementValue(column.getInitialAutoIncrementValue());
             }
             if (column.getDefaultIdentity() != null) {
-                String sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName), column.getName());
+                String sequenceName = nameGenerator.generateIdentitySequenceName(new TableName(schemaName, tableName));
                 Sequence sequence = column.getIdentityGenerator();
                 builder.sequence(schemaName, sequenceName, 
                         sequence.getStartsWith(), 
@@ -192,6 +193,7 @@ public class AISMerge {
                         sequence.getMaxValue(), 
                         sequence.isCycle());
                 builder.columnAsIdentity(schemaName, tableName, column.getName(), sequenceName, column.getDefaultIdentity());
+                LOG.debug("Generated sequence: {}, with tree name; {}", sequenceName, sequence.getTreeName());
             }
             // Proactively cache, can go away if Column ever cleans itself up
             newColumn.getMaxStorageSize();
@@ -342,7 +344,21 @@ public class AISMerge {
                 treeNames.add(index.getTreeName());
             }
         }
+        for (Sequence sequence : ais.getSequences().values()){
+            if(sequence.getTreeName() != null) {
+                treeNames.add(sequence.getTreeName());
+            }
+        }
         return treeNames;
+    }
+
+    public static Set<String> computeSequenceNames (AkibanInformationSchema ais) {
+        // Collect all sequence names
+        Set<String> sequenceNames = new HashSet<String>();
+        for(TableName sequence : ais.getSequences().keySet()) {
+            sequenceNames.add(sequence.getTableName());
+        }
+        return sequenceNames;
     }
 
     private void collectTableIDs(AkibanInformationSchema ais) {

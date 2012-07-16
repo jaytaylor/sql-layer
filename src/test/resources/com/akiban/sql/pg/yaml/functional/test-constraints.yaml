@@ -1,6 +1,5 @@
 # Test constraints
 ---
-
 # Setup
 - CreateTable: t (id int not null, x int not null, y int, primary key(id))
 ---

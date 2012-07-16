@@ -39,6 +39,8 @@ import com.akiban.qp.row.ValuesRow;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.error.ErrorCode;
 import com.akiban.server.service.Service;
+import com.akiban.server.service.config.ConfigurationService;
+import com.akiban.server.service.config.Property;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.store.SchemaManager;
 import com.akiban.server.types.AkType;
@@ -53,13 +55,16 @@ public class ServerSchemaTablesServiceImpl
     static final TableName ERROR_CODES = new TableName (SCHEMA_NAME, "error_codes");
     static final TableName SERVER_INSTANCE_SUMMARY = new TableName (SCHEMA_NAME, "server_instance_summary");
     static final TableName SERVER_SESSIONS = new TableName (SCHEMA_NAME, "server_sessions");
+    static final TableName SERVER_PARAMETERS = new TableName (SCHEMA_NAME, "server_parameters");
     
     private final PostgresService manager;
+    private final ConfigurationService configService;
     
     @Inject
-    public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, PostgresService manager) {
+    public ServerSchemaTablesServiceImpl (SchemaManager schemaManager, PostgresService manager, ConfigurationService configService) {
         super(schemaManager);
         this.manager = manager;
+        this.configService = configService;
     }
     
     @Override
@@ -81,6 +86,8 @@ public class ServerSchemaTablesServiceImpl
         attach (ais, true, SERVER_INSTANCE_SUMMARY, InstanceSummary.class);
         //SERVER_SESSIONS
         attach (ais, true, SERVER_SESSIONS, Sessions.class);
+        //SERVER_PARAMETERS
+        attach (ais, true, SERVER_PARAMETERS, ServerParameters.class);
     }
 
     @Override
@@ -216,6 +223,42 @@ public class ServerSchemaTablesServiceImpl
             }
         }
     }
+
+    private class ServerParameters extends BasicFactoryBase {
+        public ServerParameters(TableName sourceTable) {
+            super(sourceTable);
+        }
+
+        @Override
+        public GroupScan getGroupScan(MemoryAdapter adapter) {
+            return new Scan (getRowType(adapter));
+        }
+
+        @Override
+        public long rowCount() {
+            return configService.getProperties().size();
+        }
+
+        private class Scan extends BaseScan {
+            private Iterator<Property> propertyIt;
+
+            public Scan(RowType rowType) {
+                super(rowType);
+                propertyIt = configService.getProperties().iterator();
+            }
+
+            @Override
+            public Row next() {
+                if (!propertyIt.hasNext())
+                    return null;
+                Property prop = propertyIt.next();
+                return new ValuesRow (rowType,
+                                      prop.getKey(),
+                                      prop.getValue(),
+                                      ++rowCounter);
+            }
+        }
+    }
     
     static AkibanInformationSchema createTablesToRegister() {
         NewAISBuilder builder = AISBBasedBuilder.create();
@@ -237,6 +280,11 @@ public class ServerSchemaTablesServiceImpl
             .colString("name", DESCRIPTOR_MAX, false)
             .colString("message", IDENT_MAX, false)
             .colString("description", PATH_MAX, true);
+
+        builder.userTable(SERVER_PARAMETERS)
+            .colString("parameter_name", IDENT_MAX, false)
+            .colString("current_value", PATH_MAX, false);
+
         return builder.ais(false);
     }
 }

@@ -24,25 +24,34 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.service.ui;
+package com.akiban.ais.model.validation;
 
-import com.akiban.server.AkServer;
+import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Sequence;
+import com.akiban.server.error.SequenceIntervalZeroException;
+import com.akiban.server.error.SequenceMinGEMaxException;
+import com.akiban.server.error.SequenceStartInRangeException;
 
-import java.io.PrintStream;
+public class SequenceValuesValid implements AISValidation {
 
-public class AkServerWithSwingConsole
-{
-    public static void main(String[] args) {
-        // This has to be done before log4j gets a chance to capture the previous
-        // System.out for the CONSOLE appender. It will get switched to the real
-        // console when that service starts up.
-        PrintStream ps = new SwingConsole.TextAreaPrintStream();
-        System.setOut(ps);
-        try {
-            AkServer.main(args);
-        }
-        catch (Exception ex) {
-            ex.printStackTrace(ps);
+    @Override
+    public void validate(AkibanInformationSchema ais, AISValidationOutput output) {
+        for (Sequence sequence : ais.getSequences().values()) {
+            if (sequence.getIncrement() == 0) {
+                output.reportFailure(new AISValidationFailure (
+                        new SequenceIntervalZeroException()));
+            }
+            if (sequence.getMinValue() >= sequence.getMaxValue()) {
+                output.reportFailure(new AISValidationFailure (
+                        new SequenceMinGEMaxException()));
+            }
+            if (sequence.getStartsWith() < sequence.getMinValue() ||
+                    sequence.getStartsWith() > sequence.getMaxValue()) {
+                output.reportFailure(new AISValidationFailure(
+                        new SequenceStartInRangeException ()));
+            }
+                
+                
         }
     }
 }
