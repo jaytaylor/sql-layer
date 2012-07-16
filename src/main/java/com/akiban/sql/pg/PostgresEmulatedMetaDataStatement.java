@@ -59,8 +59,10 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         SEQUEL_B_TYPE_QUERY("select oid, typname from pg_type where typtype = 'b'"),
         // PSQL \dn
         PSQL_LIST_SCHEMAS("SELECT n.nspname AS \"Name\",\\s*" +
-                          "pg_catalog.pg_get_userbyid\\(n.nspowner\\) AS \"Owner\"\\s+" +
+                          "(?:pg_catalog.pg_get_userbyid\\(n.nspowner\\)|u.usename) AS \"Owner\"\\s+" +
                           "FROM pg_catalog.pg_namespace n\\s+" +
+                          "(?:LEFT JOIN pg_catalog.pg_user u\\s+" +
+                          "ON n.nspowner=u.usesysid\\s+)?" +
                           "(?:WHERE\\s+)?" +
                           "(?:\\(n.nspname !~ '\\^pg_temp_' OR\\s+" + 
                           "n.nspname = \\(pg_catalog.current_schemas\\(true\\)\\)\\[1\\]\\)\\s+)?" +
