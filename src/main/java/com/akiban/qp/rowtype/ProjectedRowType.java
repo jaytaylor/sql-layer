@@ -70,9 +70,14 @@ public class ProjectedRowType extends DerivedRowType
         super(schema, typeId);
         this.projections = projections;
         this.tExprs = tExpr;
-        this.tInstances = new ArrayList<TInstance>(tExpr.size());
-        for (TPreparedExpression expr : tExpr)
-            tInstances.add(expr.resultType());
+        if (tExpr != null) {
+            this.tInstances = new ArrayList<TInstance>(tExpr.size());
+            for (TPreparedExpression expr : tExpr)
+                tInstances.add(expr.resultType());
+        }
+        else {
+            this.tInstances = null;
+        }
     }
     
     // Object state
