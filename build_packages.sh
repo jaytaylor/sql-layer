@@ -62,7 +62,7 @@ cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 cp ${common_dir}/* packages-common/
 
 # Add akiban-client tools
-rm -rf akiban-client-tools
+rm -rf target/akiban-client-tools
 pushd target && bzr branch lp:akiban-client-tools && pushd akiban-client-tools
 mvn  -Dmaven.test.skip.exec clean install
 
@@ -118,6 +118,7 @@ elif [ ${platform} == "macosx" ]; then
     tar xzf macosx/license-icon.tar.gz
     xattr -wx com.apple.FinderInfo "`xattr -px com.apple.FinderInfo prototype.txt`" ${license}
     cp prototype.txt/..namedfork/rsrc ${license}/..namedfork/rsrc
+    rm prototype.txt
     
     # build jar
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
