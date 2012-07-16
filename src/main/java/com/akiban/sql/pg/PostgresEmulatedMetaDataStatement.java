@@ -766,8 +766,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         Columnar table = getTableById(server, groups.get(1));
         if ((table == null) || !table.isView()) return 0;
         View view = (View)table;
+        messenger.beginMessage(PostgresMessages.DATA_ROW_TYPE.code());
+        messenger.writeShort(1); // 1 column for this query
         writeColumn(messenger, encoder, usePVals, // pg_get_viewdef
                     view.getDefinition(), VIEWDEF_PG_TYPE);
+        messenger.sendMessage();
         return 1;
     }
 
