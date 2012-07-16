@@ -7,7 +7,7 @@
 ---
 - CreateTable: IF NOT EXISTS t1(ff double)
 #- warnings_count: [1]
-#- warnings: ['t1 already exists']
+- warnings: [['t1 already exists']]
 ---
 - DropTable: t1;
 #--- #BUG: error can't be captured

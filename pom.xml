@@ -351,7 +351,7 @@
                         <exclude>redhat/*</exclude>
                         <exclude>macosx/**</exclude>
                         <exclude>windows/**</exclude>
-                        <exclude>LICENSE.txt</exclude>
+                        <exclude>**/LICENSE*.txt</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
                         <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
@@ -427,8 +427,9 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
+                                        <copy file="${basedir}/${akiban.license}" tofile="${setup.staging.dir}/LICENSE.TXT" />
                                         <copy todir="${setup.staging.dir}">
-                                            <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
+                                            <fileset dir="${basedir}" includes="bin/*.cmd,doc/**" />
                                             <fileset dir="${basedir}/windows" />
                                             <fileset dir="${akiban.client.project}" includes="bin/*.cmd" />
                                         </copy>
@@ -483,6 +484,7 @@
                 <setup.appversion>${project.version}</setup.appversion>
                 <setup.jarfile>${project.build.finalName}-jar-with-dependencies.jar</setup.jarfile>
                 <setup.output>${project.build.finalName}-installer</setup.output>
+                <akiban.license>LICENSE.txt</akiban.license>
                 <akiban.client.project>${basedir}/../client-latest</akiban.client.project>
             </properties>
         </profile>

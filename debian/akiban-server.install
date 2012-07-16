@@ -4,3 +4,4 @@ debian/services-config.yaml etc/akiban/config
 debian/jvm.options etc/akiban/config
 bin/akserver usr/sbin
 bin/akloader usr/bin
+debian/LICENSE.txt usr/share/akiban

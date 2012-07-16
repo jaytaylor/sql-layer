@@ -25,13 +25,22 @@
 # PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
 #
 
+usage="Usage: ./build_packages.sh [debian|redhat|macosx] [... epoch]"
 if [ $# -lt 1 ]; then
-    echo "Usage: ./build_packages.sh [debian|redhat|macosx]"
+    echo "${usage}"
     exit 1
 fi
 
 platform=$1
 bzr_revno=`bzr revno`
+
+# Use default license is $AKIBAN_CE_FLAG is undefined
+if [ -z "${AKIBAN_CE_FLAG}" ]; then
+    license=LICENSE.txt
+else
+    license=LICENSE-CE.txt
+fi
+cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
@@ -86,14 +95,16 @@ elif [ ${platform} == "macosx" ]; then
     mkdir $inst_temp
     hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
     ditto "$mac_app" "$inst_temp/Akiban Server.app"
+    ${mac_ce_cmd}
     cp macosx/dmg.DS_Store $inst_temp/.DS_Store
-    cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns    
+    cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
+    cp ${license} $inst_temp/LICENSE.txt
     SetFile -a C $inst_temp
     hdiutil detach `hdiutil info | grep $inst_temp | grep '^/dev' | cut -f1`
     hdiutil convert $inst_temp.dmg -format UDZO -imagekey zlib-level=9 -o "$mac_dmg"
     rm $inst_temp.dmg
 else
     echo "Invalid Argument: ${platform}"
-    echo "Usage: ./build_packages.sh [debian|redhat]"
+    echo "${usage}"
     exit 1
 fi
