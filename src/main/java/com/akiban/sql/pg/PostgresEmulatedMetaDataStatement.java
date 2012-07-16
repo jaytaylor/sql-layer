@@ -40,6 +40,7 @@ import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
+import com.akiban.ais.model.View;
 
 import java.io.IOException;
 import java.io.ByteArrayOutputStream;
@@ -125,7 +126,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                               "(null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred, )?(?:c2.reltablespace)?\\s+" + // 2
                               "FROM pg_catalog.pg_class c, pg_catalog.pg_class c2, pg_catalog.pg_index i\\s+" +
                               "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" + // 3
-                              "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true);
+                              "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true),
+        PSQL_DESCRIBE_VIEW("SELECT pg_catalog.pg_get_viewdef\\('(-?\\d+)'::pg_catalog.oid, true\\);?", true);
 
         private String sql;
         private Pattern pattern;
@@ -189,6 +191,8 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1, -1, AkType.VARCHAR, MString.VARCHAR.instance());
     static final PostgresType INDEXDEF_PG_TYPE = 
         new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)1024, -1, AkType.VARCHAR, MString.VARCHAR.instance());
+    static final PostgresType VIEWDEF_PG_TYPE = 
+        new PostgresType(PostgresType.TypeOid.NAME_TYPE_OID.getOid(), (short)32768, -1, AkType.VARCHAR, MString.VARCHAR.instance());
 
     @Override
     public PostgresType[] getParameterTypes() {
@@ -270,6 +274,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                 types = new PostgresType[] { IDENT_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INDEXDEF_PG_TYPE, CHAR0_PG_TYPE, CHAR0_PG_TYPE, BOOL_PG_TYPE, BOOL_PG_TYPE, INT2_PG_TYPE };
             }
             break;
+        case PSQL_DESCRIBE_VIEW:
+            ncols = 1;
+            names = new String[] { "pg_get_viewdef" };
+            types = new PostgresType[] { VIEWDEF_PG_TYPE };
+            break;
         default:
             return;
         }
@@ -338,6 +347,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             break;
         case PSQL_DESCRIBE_INDEXES:
             nrows = psqlDescribeIndexesQuery(server, messenger, maxrows, usePVals);
+            break;
+        case PSQL_DESCRIBE_VIEW:
+            nrows = psqlDescribeViewQuery(server, messenger, maxrows, usePVals);
             break;
         }
         {        
@@ -747,6 +759,16 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             str.append(" USING " + index.getJoinType() + " JOIN");
         }
         return str.toString();
+    }
+
+    private int psqlDescribeViewQuery(PostgresServerSession server, PostgresMessenger messenger, int maxrows, boolean usePVals) throws IOException {
+        ServerValueEncoder encoder = new ServerValueEncoder(messenger.getEncoding());
+        Columnar table = getTableById(server, groups.get(1));
+        if ((table == null) || !table.isView()) return 0;
+        View view = (View)table;
+        writeColumn(messenger, encoder, usePVals, // pg_get_viewdef
+                    view.getDefinition(), VIEWDEF_PG_TYPE);
+        return 1;
     }
 
 }
