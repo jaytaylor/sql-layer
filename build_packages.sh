@@ -52,6 +52,7 @@ case "${target}" in
         ;;
 esac
 
+mkdir -p target
 mkdir -p packages-common
 common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
 [ -d ${common_dir} ] || \
@@ -62,19 +63,19 @@ cp ${common_dir}/* packages-common/
 
 # Add akiban-client tools
 rm -rf akiban-client-tools
-bzr branch lp:akiban-client-tools && pushd akiban-client-tools
+pushd target && bzr branch lp:akiban-client-tools && pushd akiban-client-tools
 mvn  -Dmaven.test.skip.exec clean install
 
 # Linux
-cp bin/akdump ../packages-common/
-cp target/akiban-client-*-SNAPSHOT.jar ../packages-common/
+cp bin/akdump ../../packages-common/
+cp target/akiban-client-*-SNAPSHOT.jar ../../packages-common/
 
 # Mac
 # Handled in its own section below
 
 # Windows
 # Handled already by Maven / .iss
-popd
+popd && popd
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
