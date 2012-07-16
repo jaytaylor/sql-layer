@@ -66,24 +66,28 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                           "(?:WHERE\\s+)?" +
                           "(?:\\(n.nspname !~ '\\^pg_temp_' OR\\s+" + 
                           "n.nspname = \\(pg_catalog.current_schemas\\(true\\)\\)\\[1\\]\\)\\s+)?" +
-                          "(n.nspname !~ '\\^pg_' AND n.nspname <> 'information_schema'\\s+)?" + 
+                          "(n.nspname !~ '\\^pg_' AND n.nspname <> 'information_schema'\\s+)?" + // 1
                           "(?:AND\\s+)?" + 
-                          "(n.nspname ~ '(.+)'\\s+)?" +
+                          "(n.nspname ~ '(.+)'\\s+)?" + // 2 (3)
                           "ORDER BY 1;?", true),
         // PSQL \d, \dt, \dv
         PSQL_LIST_TABLES("SELECT n.nspname as \"Schema\",\\s*" +
                          "c.relname as \"Name\",\\s*" +
                          "CASE c.relkind WHEN 'r' THEN 'table' WHEN 'v' THEN 'view' WHEN 'i' THEN 'index' WHEN 'S' THEN 'sequence' WHEN 's' THEN 'special' (?:WHEN 'f' THEN 'foreign table' )?END as \"Type\",\\s+" +
-                         "pg_catalog.pg_get_userbyid\\(c.relowner\\) as \"Owner\"\\s+" +
+                         "(?:pg_catalog.pg_get_userbyid\\(c.relowner\\)|u.usename) as \"Owner\"\\s+" +
                          "FROM pg_catalog.pg_class c\\s+" +
+                         "(?:LEFT JOIN pg_catalog.pg_user u ON u.usesysid = c.relowner\\s+)?" +
                          "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
-                         "WHERE c.relkind IN \\((.+)\\)\\s+" +
+                         "WHERE c.relkind IN \\((.+)\\)\\s+" + // 1
                          "(AND n.nspname <> 'pg_catalog'\\s+" +
-                         "AND n.nspname <> 'information_schema'\\s+)?" +
-                         "AND n.nspname !~ '\\^pg_toast'\\s+" +
-                         "(AND c.relname ~ '(.+)'\\s+)?" +
-                         "(AND n.nspname ~ '(.+)'\\s+)?" +
-                         "(AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
+                         "AND n.nspname <> 'information_schema'\\s+)?" + // 2
+                         "(?:AND n.nspname !~ '\\^pg_toast'\\s+)?" +
+                         "(?:(AND n.nspname NOT IN \\('pg_catalog', 'pg_toast'\\)\\s+)|" + // 3
+                         "(AND n.nspname = 'pg_catalog')\\s+)?" + // 4
+                         "(AND c.relname ~ '(.+)'\\s+)?" + // 5 (6)
+                         "(AND n.nspname ~ '(.+)'\\s+)?" + // 7 (8)
+                         "(?:AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
+                         "(AND c.relname ~ '(.+)'\\s+)?" + // 9 (10)
                          "ORDER BY 1,2;?", true),
         // PSQL \d NAME
         PSQL_DESCRIBE_TABLES_1("SELECT c.oid,\\s*" +
@@ -92,14 +96,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "FROM pg_catalog.pg_class c\\s+" +
                                "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
                                "WHERE " +
-                               "(c.relname ~ '(.+)'\\s+)?" +
-                               "((?:AND )?n.nspname ~ '(.+)'\\s+)?" +
-                               "(AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
+                               "(c.relname ~ '(.+)'\\s+)?" + // 1 (2)
+                               "((?:AND )?n.nspname ~ '(.+)'\\s+)?" + // 3 (4)
+                               "(?:AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
                                "ORDER BY 2, 3;?", true),
         PSQL_DESCRIBE_TABLES_2("SELECT c.relchecks, c.relkind, c.relhasindex, c.relhasrules, c.relhastriggers, c.relhasoids, '', c.reltablespace\\s+" +
                                "FROM pg_catalog.pg_class c\\s+" +
                                "LEFT JOIN pg_catalog.pg_class tc ON \\(c.reltoastrelid = tc.oid\\)\\s+" +
-                               "WHERE c.oid = '(-?\\d+)';?\\s*", true),
+                               "WHERE c.oid = '(-?\\d+)';?\\s*", true), // 1
         PSQL_DESCRIBE_TABLES_3("SELECT a.attname,\\s*" +
                                "pg_catalog.format_type\\(a.atttypid, a.atttypmod\\),\\s*" +
                                "\\(SELECT substring\\(pg_catalog.pg_get_expr\\(d.adbin, d.adrelid\\) for 128\\)\\s*" +
@@ -108,14 +112,14 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "a.attnotnull, a.attnum,?\\s*" +
                                "(NULL AS attcollation\\s+)?" +
                                "FROM pg_catalog.pg_attribute a\\s+" +
-                               "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" +
+                               "WHERE a.attrelid = '(-?\\d+)' AND a.attnum > 0 AND NOT a.attisdropped\\s+" + // 1
                                "ORDER BY a.attnum;?", true),
         PSQL_DESCRIBE_TABLES_4A("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhparent AND i.inhrelid = '(-?\\d+)' ORDER BY inhseqno;?", true),
         PSQL_DESCRIBE_TABLES_4B("SELECT c.oid::pg_catalog.regclass FROM pg_catalog.pg_class c, pg_catalog.pg_inherits i WHERE c.oid=i.inhrelid AND i.inhparent = '(-?\\d+)' ORDER BY c.oid::pg_catalog.regclass::pg_catalog.text;?", true),
         PSQL_DESCRIBE_INDEXES("SELECT c2.relname, i.indisprimary, i.indisunique, i.indisclustered, i.indisvalid, pg_catalog.pg_get_indexdef\\(i.indexrelid, 0, true\\),\\s*" +
-                              "(null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred,)? c2.reltablespace\\s+" +
+                              "(null AS constraintdef, null AS contype, false AS condeferrable, false AS condeferred,)? c2.reltablespace\\s+" + // 1
                               "FROM pg_catalog.pg_class c, pg_catalog.pg_class c2, pg_catalog.pg_index i\\s+" +
-                              "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" +
+                              "WHERE c.oid = '(-?\\d+)' AND c.oid = i.indrelid AND i.indexrelid = c2.oid\\s+" + // 2
                               "ORDER BY i.indisprimary DESC, i.indisunique DESC, c2.relname;?", true);
 
         private String sql;
@@ -378,7 +382,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             if ((noIS &&
                  name.equals(TableName.INFORMATION_SCHEMA)) ||
                 ((pattern != null) && 
-                 !pattern.matcher(name).matches()))
+                 !pattern.matcher(name).find()))
                 iter.remove();
         }
         Collections.sort(names);
@@ -408,21 +412,24 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
             names.addAll(ais.getUserTables().keySet());
         if (types.contains("'v'"))
             names.addAll(ais.getViews().keySet());
-        boolean noIS = (groups.get(2) != null);
+        boolean noIS = (groups.get(2) != null) || (groups.get(3) != null);
+        boolean onlyIS = (groups.get(4) != null);
         Pattern schemaPattern = null, tablePattern = null;
-        if (groups.get(3) != null)
-            tablePattern = Pattern.compile(groups.get(4));
         if (groups.get(5) != null)
-            schemaPattern = Pattern.compile(groups.get(6));
+            tablePattern = Pattern.compile(groups.get(6));
+        if (groups.get(7) != null)
+            schemaPattern = Pattern.compile(groups.get(8));
+        if (groups.get(9) != null)
+            tablePattern = Pattern.compile(groups.get(10));
         Iterator<TableName> iter = names.iterator();
         while (iter.hasNext()) {
             TableName name = iter.next();
-            if ((noIS &&
-                 name.getSchemaName().equals(TableName.INFORMATION_SCHEMA)) ||
+            boolean keep = true;
+            if ((name.getSchemaName().equals(TableName.INFORMATION_SCHEMA) ? noIS : onlyIS) ||
                 ((schemaPattern != null) && 
-                 !schemaPattern.matcher(name.getSchemaName()).matches()) ||
+                 !schemaPattern.matcher(name.getSchemaName()).find()) ||
                 ((tablePattern != null) && 
-                 !tablePattern.matcher(name.getTableName()).matches()))
+                 !tablePattern.matcher(name.getTableName()).find()))
                 iter.remove();
         }
         Collections.sort(names);
@@ -464,9 +471,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         while (iter.hasNext()) {
             TableName name = iter.next();
             if (((schemaPattern != null) && 
-                 !schemaPattern.matcher(name.getSchemaName()).matches()) ||
+                 !schemaPattern.matcher(name.getSchemaName()).find()) ||
                 ((tablePattern != null) && 
-                 !tablePattern.matcher(name.getTableName()).matches()))
+                 !tablePattern.matcher(name.getTableName()).find()))
                 iter.remove();
         }
         Collections.sort(names);
