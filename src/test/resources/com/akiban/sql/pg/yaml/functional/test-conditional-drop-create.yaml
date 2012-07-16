@@ -1,4 +1,10 @@
 # test conditional create
+
+# The IF classes need work to work in AAS, which tries to slurp out the table name
+---
+- Properties: sys-aksql
+- suppressed: true
+
 ---
 - CreateTable: IF NOT EXISTS t1 (ff double);
 ---
