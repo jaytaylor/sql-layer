@@ -17,7 +17,7 @@ URL:            http://akiban.com/
 Source0:       akserver.tar.gz
 BuildRoot:     %{_tmppath}/%{name}-%{version}-%{release}-root
 
-Requires:      jre >= 1.6.0
+Requires:      jre >= 1.6.0, postgresql-jdbc
 Requires(pre): user(akiban)
 Requires(pre): group(akiban)
 Requires(pre): shadow-utils
@@ -54,10 +54,17 @@ cp -p redhat/services-config.yaml ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/jvm.options ${RPM_BUILD_ROOT}/etc/%{username}/config
 cp -p redhat/akiban-server ${RPM_BUILD_ROOT}/etc/rc.d/init.d/
 cp -p redhat/LICENSE.txt ${RPM_BUILD_ROOT}/usr/share/%{username}
+cp -p redhat/*.tag ${RPM_BUILD_ROOT}/usr/share/%{username}
+
 cp -p target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p redhat/akiban-client-tools-1.3.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-client-tools-1.3.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
+
+mv redhat/akdump ${RPM_BUILD_ROOT}/usr/bin
 mv bin/akserver ${RPM_BUILD_ROOT}/usr/sbin
 mv bin/akloader ${RPM_BUILD_ROOT}/usr/bin
+
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
 mkdir -p ${RPM_BUILD_ROOT}/var/lib/%{username}
@@ -83,6 +90,7 @@ fi
 %defattr(-,root,root,0755)
 %attr(755,root,root) %{_sbindir}/akserver
 %attr(755,root,root) %{_bindir}/akloader
+%attr(755,root,root) %{_bindir}/akdump
 %attr(755,root,root) /etc/rc.d/init.d/akiban-server
 %attr(755,%{username},%{username}) /usr/share/%{username}*
 %attr(755,%{username},%{username}) %config(noreplace) /%{_sysconfdir}/%{username}

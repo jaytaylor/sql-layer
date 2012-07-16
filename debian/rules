@@ -25,6 +25,12 @@ install: build
 	dh_link usr/share/akiban/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar \
 		usr/share/akiban/akiban-server.jar
 
+	# Dump tools
+	dh_install packages-common/akiban-client-tools-1.3.0-SNAPSHOT.jar \
+		usr/share/akiban
+	dh_link usr/share/akiban/akiban-client-tools-1.3.0-SNAPSHOT.jar \
+		usr/share/akiban/akiban-client-tools.jar
+
 # Build architecture-independent files here.
 binary-indep: build install
 	dh_testdir
