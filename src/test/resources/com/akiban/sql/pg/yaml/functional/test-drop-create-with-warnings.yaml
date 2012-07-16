@@ -1,6 +1,7 @@
 # test conditonal create
 ---
 - CreateTable:  IF NOT EXISTS t1 (ff double);
+- warnings_count: 0
 ---
 - CreateTable: t1 (ff double);
 - error: [50006]

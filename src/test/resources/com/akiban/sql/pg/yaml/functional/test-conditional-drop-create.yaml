@@ -1,11 +1,13 @@
 # test conditional create
 ---
 - Statement: CREATE TABLE IF NOT EXISTS t1 (ff double)
+- warnings_count: 0
 ---
 - Statement: CREATE TABLE t1 (ff double)
 - error: [50006]
 ---
 - Statement: CREATE TABLE IF NOT EXISTS t1 (ff double)
+- warnings: [['50006', 'Table `test`.`t1` already exists']]
 ---
 - Statement: DROP TABLE t1
 ---
@@ -13,6 +15,7 @@
 - error: [42501]
 ---
 - Statement: DROP TABLE IF EXISTS t1
+- warnings: [['42501', 'Cannot find the table `test`.`t1`']]
 ---
 - Statement: CREATE SCHEMA s
 ---
