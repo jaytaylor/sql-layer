@@ -1,6 +1,6 @@
 # Test to prove bug 979162 has been fixed
 --- 
-- CreateTable: region(rid INT NOT NULL PRIMARY KEY);
+- CreateTable: region (rid INT NOT NULL PRIMARY KEY);
 ---
 - Statement: INSERT INTO region VALUES(1),(2)
 ---

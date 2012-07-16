@@ -1,11 +1,11 @@
-# test conditonal create
+# test conditional create
 ---
-- CreateTable:  IF NOT EXISTS t1 (ff double);
+- CreateTable: IF NOT EXISTS t1 (ff double);
 ---
-- CreateTable: t1(ff double);
+- CreateTable: t1 (ff double);
 - error: [50006]
 ---
-- CreateTable: IF NOT EXISTS t1(ff double)
+- CreateTable: IF NOT EXISTS t1 (ff double)
 ---
 - DropTable: t1;
 #--- #BUG: error can't be captured
