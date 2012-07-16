@@ -107,6 +107,7 @@ elif [ ${platform} == "redhat" ]; then
 elif [ ${platform} == "macosx" ]; then
     server_jar=target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar
     akdump_jar=akiban-client-tools/target/akiban-client-tools-1.3.0-SNAPSHOT.jar
+    postgres_jar=akiban-client-tools/target/dependency/postgresql.jar
     akdump_bin=packages-common/akdump
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'
@@ -126,7 +127,7 @@ elif [ ${platform} == "macosx" ]; then
     cp $server_jar "$mac_app/Contents/Resources/Java"
     mkdir -p "$mac_app/Contents/Resources/tools/"{lib,bin}
     cp $akdump_jar "$mac_app/Contents/Resources/tools/lib/"
-    cp macosx/postgresql-jdbc3.jar "$mac_app/Contents/Resources/tools/lib/"
+    cp $postgres_jar "$mac_app/Contents/Resources/tools/lib/"
     cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
     SetFile -a B "$mac_app"
     # build disk image template
