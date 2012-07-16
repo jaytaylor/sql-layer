@@ -96,6 +96,7 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "FROM pg_catalog.pg_class c\\s+" +
                                "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
                                "WHERE " +
+                               "(?:pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+AND )?" +
                                "(c.relname ~ '(.+)'\\s+)?" + // 1 (2)
                                "((?:AND )?n.nspname ~ '(.+)'\\s+)?" + // 3 (4)
                                "(?:AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
