@@ -60,7 +60,7 @@ function InitializeSetup(): Boolean;
 var
   JavaInstalled : Boolean;
 begin
-  JavaInstalled := RegKeyExists(HKLM,'SOFTWARE\JavaSoft\Java Runtime Environment');
+  JavaInstalled := RegKeyExists(HKLM,'SOFTWARE\JavaSoft\Java Runtime Environment') OR RegKeyExists(HKLM,'SOFTWARE\Wow6432Node\JavaSoft\Java Runtime Environment');
   if JavaInstalled then
     Result := true
   else begin
