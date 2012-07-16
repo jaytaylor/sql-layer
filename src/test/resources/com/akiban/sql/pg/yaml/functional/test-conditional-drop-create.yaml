@@ -2,7 +2,7 @@
 ---
 - CreateTable:  IF NOT EXISTS t1 (ff double);
 ---
-- CreateTable: t1(ff double);
+- CreateTable: t1 (ff double);
 - error: [50006]
 ---
 - CreateTable: IF NOT EXISTS t1 (ff double)
