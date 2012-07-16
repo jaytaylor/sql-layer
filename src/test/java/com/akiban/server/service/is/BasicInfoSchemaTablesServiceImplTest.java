@@ -28,6 +28,7 @@ package com.akiban.server.service.is;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
 import com.akiban.ais.model.Join;
@@ -292,6 +293,14 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 final String msg = "row " + rowIndex + ", col " + colIndex;
                 final Object expected = expectedRows[rowIndex][colIndex];
                 final ValueSource actual = row.eval(colIndex);
+                
+                if(expected == null || actual.isNull()) {
+                    Column column = row.rowType().userTable().getColumn(colIndex);
+                    if(!Boolean.TRUE.equals(column.getNullable())) {
+                        fail(String.format("Expected (%s) or actual (%s) NULL for column (%s) declared NOT NULL",
+                                           expected, actual, column));
+                    }
+                }
 
                 if(expected == null) {
                     assertEquals(msg + " isNull", true, actual.isNull());
