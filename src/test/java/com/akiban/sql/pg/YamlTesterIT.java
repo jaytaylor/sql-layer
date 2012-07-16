@@ -549,7 +549,7 @@ public class YamlTesterIT extends PostgresServerYamlITBase {
 
     @Test
     public void testStatementCreateTable() throws Exception {
-	testYamlFail("- Statement: create TABLE foo (int_field int)");
+	testYaml("- Statement: create TABLE foo (int_field int)");
     }
 
     @Test
