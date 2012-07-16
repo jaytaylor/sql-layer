@@ -38,13 +38,8 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueSources;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
-import com.akiban.server.types3.texpressions.TDummyExpression;
-import com.akiban.server.types3.texpressions.TNullExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedField;
@@ -54,14 +49,12 @@ import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
-import com.akiban.sql.optimizer.plan.ColumnExpression;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
-import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -93,7 +86,6 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             overload = fexpr.getOverload();
         }
         else if (functionNode instanceof BooleanOperationExpression) {
-            BooleanOperationExpression bexpr = (BooleanOperationExpression) functionNode;
             List<TPreptimeValue> inputPreptimeValues = new ArrayList<TPreptimeValue>(argumentNodes.size());
             for (ExpressionNode argument : argumentNodes) {
                 inputPreptimeValues.add(argument.getPreptimeValue());
