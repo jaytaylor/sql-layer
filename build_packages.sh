@@ -52,11 +52,11 @@ case "${target}" in
         ;;
 esac
 
-common_dir="pkg-config-files/${target}" # require packages-common/dir to be the same as the ${target} variable
+mkdir -p packages-common
+common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
 [ -d ${common_dir} ] || \
     { echo "fatal: Couldn't find configuration files in: ${common_dir}"; exit 1; }
 echo "-- packages-common directory: ${common_dir} (Linux only)"
-rm packages-common/*
 cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 cp ${common_dir}/* packages-common/
 
