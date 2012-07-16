@@ -113,6 +113,12 @@ elif [ ${platform} == "macosx" ]; then
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'
     inst_temp=/tmp/inst_temp
+
+    # copy icon data from a "prototype" file
+    tar xzf macosx/license-icon.tar.gz
+    xattr -wx com.apple.FinderInfo "`xattr -px com.apple.FinderInfo prototype.txt`" ${license}
+    cp prototype.txt/..namedfork/rsrc ${license}/..namedfork/rsrc
+    
     # build jar
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
 
