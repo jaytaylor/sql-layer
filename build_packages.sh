@@ -62,7 +62,6 @@ cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
 cp ${common_dir}/* packages-common/
 
 # Add akiban-client tools
-rm -rf target/akiban-client-tools
 pushd target && bzr branch lp:akiban-client-tools && pushd akiban-client-tools
 mvn  -Dmaven.test.skip.exec clean install
 
@@ -71,7 +70,7 @@ cp bin/akdump ../../packages-common/
 cp target/akiban-client-*-SNAPSHOT.jar ../../packages-common/
 
 # Mac
-# Handled in its own section below
+cp target/dependency/postgresql.jar ../../macosx/
 
 # Windows
 # Handled already by Maven / .iss
@@ -107,8 +106,8 @@ elif [ ${platform} == "redhat" ]; then
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
 elif [ ${platform} == "macosx" ]; then
     server_jar=target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar
-    akdump_jar=akiban-client-tools/target/akiban-client-tools-1.3.0-SNAPSHOT.jar
-    postgres_jar=akiban-client-tools/target/dependency/postgresql.jar
+    akdump_jar=packages-common/akiban-client-tools-1.3.0-SNAPSHOT.jar
+    postgres_jar=macosx/postgresql.jar
     akdump_bin=packages-common/akdump
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'
