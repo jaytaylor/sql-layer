@@ -70,10 +70,10 @@ cp bin/akdump ../packages-common/
 cp target/akiban-client-*-SNAPSHOT.jar ../packages-common/
 
 # Mac
-# Not supported
+# Handled in its own section below
 
 # Windows
-# Handled already
+# Handled already by Maven / .iss
 popd
 
 if [ -z "$2" ] ; then
