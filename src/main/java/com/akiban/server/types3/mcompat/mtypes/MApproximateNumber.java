@@ -30,15 +30,16 @@ import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.types3.TAttributeValues;
 import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.DoubleAttribute;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.mcompat.mcasts.Cast_From_Varchar;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
@@ -129,6 +130,21 @@ public class MApproximateNumber extends SimpleDtdTClass
             context.warnClient(new OutOfRangeException(Double.toString(raw)));
 
         targetValue.putDouble(rounded);
+    }
+
+    @Override
+    public void fromObject(TExecutionContext contextForErrors,
+                           PValueSource in, TInstance outTInstance, PValueTarget out)
+    {
+        switch(in.getUnderlyingType())
+        {
+            case STRING:
+                String str = in.getString();
+                Cast_From_Varchar.TO_DOUBLE.evaluate(contextForErrors, in, out);
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected PUnderlying: " + in.getUnderlyingType());
+        }
     }
 
     private class DoubleFactory implements TFactory

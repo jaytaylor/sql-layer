@@ -26,9 +26,13 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
 /**
@@ -38,5 +42,12 @@ import com.akiban.sql.types.TypeId;
 public class AkBool
 {
     public static final NoAttrTClass INSTANCE = new NoAttrTClass(
-            AkBundle.INSTANCE.id(), "boolean", 1, 1, 1, PUnderlying.BOOL, TypeId.BOOLEAN_ID);
+            AkBundle.INSTANCE.id(), "boolean", 1, 1, 1, PUnderlying.BOOL, TypeId.BOOLEAN_ID) {
+
+        @Override
+        public void fromObject(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+    };
 }

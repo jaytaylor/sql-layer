@@ -36,7 +36,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
-public class NoAttrTClass extends SimpleDtdTClass {
+public abstract class NoAttrTClass extends SimpleDtdTClass {
 
     @Override
     public TFactory factory() {

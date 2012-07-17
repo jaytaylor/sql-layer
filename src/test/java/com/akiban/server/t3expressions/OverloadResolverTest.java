@@ -128,6 +128,12 @@ public class OverloadResolverTest {
         public TestClassBase(String name, PUnderlying pUnderlying) {
             super(TEST_BUNDLE_ID, name, 1, 1, 1, pUnderlying, null);
         }
+
+        @Override
+        public void fromObject(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
     }
 
     private static class TestCastBase extends TCastBase {

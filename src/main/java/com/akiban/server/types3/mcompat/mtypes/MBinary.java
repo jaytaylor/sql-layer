@@ -31,6 +31,7 @@ import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TAttributeValues;
 import com.akiban.server.types3.TAttributesDeclaration;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
@@ -39,6 +40,7 @@ import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
+import java.util.Arrays;
 
 public final class MBinary extends SimpleDtdTClass {
 
@@ -53,6 +55,29 @@ public final class MBinary extends SimpleDtdTClass {
         LENGTH
     }
 
+    @Override
+    public void fromObject(TExecutionContext contextForErrors,
+                           PValueSource in, TInstance outTInstance, PValueTarget out)
+    {
+        switch(in.getUnderlyingType())
+        {
+            case BYTES:
+                byte[] bytes = in.getBytes();
+                int expectedLength = outTInstance.attribute(Attrs.LENGTH);
+                if (bytes.length > expectedLength)
+                {
+                    out.putBytes(Arrays.copyOf(bytes, expectedLength));
+                    contextForErrors.reportTruncate("BINARY string of LENGTH: " + bytes.length,
+                                                    "BINARY string of LENGTH: " + expectedLength);
+                }
+                else
+                    out.putBytes(bytes);
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected PUnderlying: " + in.getUnderlyingType());
+        }
+    }
+    
     @Override
     public TFactory factory() {
         return new TFactory() {

@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mcasts;
 
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.mcompat.mtypes.MBigDecimalWrapper;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -74,6 +75,27 @@ public final class CastUtils
             return val;
     }
      
+    public static MBigDecimalWrapper parseDecimalString (String st, TExecutionContext context)
+    {
+        Matcher m = DOUBLE_PATTERN.matcher(st);
+        
+        m.lookingAt();
+        String truncated = st.substring(0, m.end());
+        
+        if (!truncated.equals(st))
+            context.reportTruncate(st, truncated);
+        
+        MBigDecimalWrapper ret = MBigDecimalWrapper.ZERO;
+        try
+        {
+            ret = new MBigDecimalWrapper(truncated);
+        }
+        catch (NumberFormatException e)
+        {
+            context.reportBadValue(e.getMessage());
+        }
+        return ret;
+    }
     /**
      * Parse the st for a double value
      * MySQL compat in that illegal digits will be truncated and won't cause
@@ -139,5 +161,5 @@ public final class CastUtils
         return st;
     }
     
-    private static final Pattern DOUBLE_PATTERN = Pattern.compile("([-+]?\\d*)(\\.?\\d+)?(e[-+]?\\d+)?");
+    private static final Pattern DOUBLE_PATTERN = Pattern.compile("([-+]?\\d*)(\\.?\\d+)?([eE][-+]?\\d+)?");
 }

@@ -52,9 +52,6 @@ public class Cast_From_Varchar
     /**
      * TODO:
      * 
-     * DATETIME
-     * TIME
-     * TIMESTAMP
      * 
      * BIT
      * CHAR
@@ -97,7 +94,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt16((short)tryParse((String)source.getObject(),
+            target.putInt16((short)tryParse(source.getString(),
                                             Short.MAX_VALUE, Short.MIN_VALUE,
                                             context));
         }
@@ -130,7 +127,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)tryParse((String)source.getObject(),
+            target.putInt32((int)tryParse(source.getString(),
                                           Integer.MAX_VALUE, Integer.MIN_VALUE,
                                           context));
         }
@@ -162,7 +159,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(tryParse((String)source.getObject(),
+            target.putInt64(tryParse(source.getString(),
                                      Long.MAX_VALUE, Long.MIN_VALUE,
                                      context));
         }
@@ -195,7 +192,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(tryParse((String)source.getObject(),
+            target.putInt64(tryParse(source.getString(),
                                      Long.MAX_VALUE, Long.MIN_VALUE,
                                      context));
         }
@@ -250,9 +247,25 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putDouble(CastUtils.parseDoubleString((String)source.getObject(), context));
+            target.putDouble(CastUtils.parseDoubleString(source.getString(), context));
         }
     };
+    
+    public static final TCast TO_DECIMAL = new TCastBase(MString.VARCHAR, MNumeric.DECIMAL, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }   
+    };
+    
     public static final TCast TO_DATE = new TCastBase(MString.VARCHAR, MDatetimes.DATE, true, Constantness.UNKNOWN)
     {
         @Override
@@ -264,11 +277,73 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            int ret = MDatetimes.parseDate((String) source.getObject(), context);
+            int ret = MDatetimes.parseDate(source.getString(), context);
             if (ret < 0)
                 target.putNull();
             else
                 target.putInt32(ret);
+        }
+    };
+
+    public static final TCast TO_DATETIME = new TCastBase(MString.VARCHAR, MDatetimes.DATETIME, true, Constantness.UNKNOWN)
+    {
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt64(MDatetimes.parseDatetime(source.getString()));
+        }
+    };
+    
+    public static final TCast TO_TIME = new TCastBase(MString.VARCHAR, MDatetimes.TIME, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32(MDatetimes.parseTime(source.getString(), context));
+        }
+    };
+
+    public static final TCast TO_TIMESTAMP = new TCastBase(MString.VARCHAR, MDatetimes.TIMESTAMP, true, Constantness.UNKNOWN)
+    {
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt32(MDatetimes.parseTimestamp(source.getString(), context.getCurrentTimezone(), context));
+        }
+    };
+    
+    public static final TCast TO_YEAR = new TCastBase(MString.VARCHAR, MDatetimes.YEAR, true, Constantness.UNKNOWN)
+    {
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putInt8((byte)tryParse(source.getString(), Byte.MAX_VALUE, Byte.MIN_VALUE, context));
         }
     };
 

@@ -27,19 +27,22 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.common.types.StringFactory;
 import com.akiban.server.types3.common.types.TString;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
+import java.io.UnsupportedEncodingException;
+import java.util.Arrays;
 
 public class MString extends TString
 {
     public static final MString CHAR = new MString(TypeId.CHAR_ID, "varchar");
     public static final MString VARCHAR = new MString(TypeId.VARCHAR_ID, "varchar");
-
     public static final MString TINYTEXT = new MString(TypeId.LONGVARCHAR_ID, "tinytext", 256);
     public static final MString MEDIUMTEXT = new MString(TypeId.LONGVARCHAR_ID, "mediumtext", 65535);
     public static final MString TEXT = new MString(TypeId.LONGVARCHAR_ID, "text", 16777215);
@@ -59,4 +62,50 @@ public class MString extends TString
     {       
         super(typeId, MBundle.INSTANCE, name, -1);
     }
+
+    @Override
+    public void fromObject(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
+    {
+        int expectedLen = outTInstance.attribute(StringAttribute.LENGTH);
+        int charsetId = outTInstance.attribute(StringAttribute.CHARSET);
+        int collatorId = outTInstance.attribute(StringAttribute.COLLATION);
+
+        switch (in.getUnderlyingType())
+        {
+            case STRING:
+                String inStr = in.getString();
+                out.putString(expectedLen >= inStr.length()
+                                    ? inStr
+                                    : inStr.substring(0, expectedLen)
+                             , AkCollatorFactory.getAkCollator(collatorId));
+                break;
+                
+            case BYTES:
+                byte bytes[] = in.getBytes();
+                byte truncated[];
+
+                if (bytes.length > expectedLen)
+                {
+                    contextForErrors.reportTruncate("BYTES string of length " + bytes.length,
+                                                    "BYTES string of length " + expectedLen);
+                    truncated = Arrays.copyOf(bytes, expectedLen);
+                }
+                else
+                    truncated = bytes;
+                
+                try 
+                {
+                     out.putString(new String(truncated,
+                                              StringFactory.Charset.of(charsetId))
+                                  , AkCollatorFactory.getAkCollator(collatorId));
+                }
+                catch (UnsupportedEncodingException e)
+                {
+                    contextForErrors.reportBadValue(e.getMessage());
+                }
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.getUnderlyingType());
+        }
+    }           
 }

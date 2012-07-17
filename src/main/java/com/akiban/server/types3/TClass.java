@@ -36,14 +36,11 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.ArgumentValidation;
 import com.google.common.primitives.Booleans;
-import com.google.common.primitives.Chars;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
 import com.google.common.primitives.Longs;
-import com.google.common.primitives.Shorts;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.regex.Pattern;
 
@@ -52,6 +49,9 @@ public abstract class TClass {
     public abstract TFactory factory();
 
     public abstract DataTypeDescriptor dataTypeDescriptor(TInstance instance);
+
+    public abstract void fromObject (TExecutionContext contextForErrors,
+                            PValueSource in, TInstance outTInstance, PValueTarget out);
 
     public void selfCast(TExecutionContext context,
                          TInstance sourceInstance, PValueSource source, TInstance targetInstance, PValueTarget target) {

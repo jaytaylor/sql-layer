@@ -31,17 +31,18 @@ import com.akiban.server.rowdata.ConversionHelperBigDecimal;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.mcompat.mcasts.Cast_From_Varchar;
 import com.akiban.server.types3.pvalue.PBasicValueSource;
 import com.akiban.server.types3.pvalue.PBasicValueTarget;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueCacher;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
@@ -62,6 +63,22 @@ public class MBigDecimal extends TClass {
         super(MBundle.INSTANCE.id(), "decimal", Attrs.class, 1, 1, 8, PUnderlying.BYTES);
     }
 
+     
+    @Override
+    public void fromObject(TExecutionContext contextForErrors,
+                           PValueSource in, TInstance outTInstance, PValueTarget out)
+    {
+        switch(in.getUnderlyingType())
+        {
+            case STRING:
+                String str = in.getString();
+                Cast_From_Varchar.TO_DECIMAL.evaluate(contextForErrors, in, out);
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected PUnderlying: " + in.getUnderlyingType());
+        }
+    }
+    
     @Override
     public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         // stolen from TypesTranslation

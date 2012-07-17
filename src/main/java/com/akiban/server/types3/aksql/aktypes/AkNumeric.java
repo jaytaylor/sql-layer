@@ -26,9 +26,13 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
+import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
 public class AkNumeric {
@@ -51,6 +55,13 @@ public class AkNumeric {
                                        PUnderlying underlying)
     {
         return new NoAttrTClass(AkBundle.INSTANCE.id(), name, internalVersion, serialVersion, size, underlying,
-                TypeId.INTEGER_ID);
+                TypeId.INTEGER_ID) {
+
+            @Override
+            public void fromObject(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
+            {
+                throw new UnsupportedOperationException("Not supported yet.");
+            }
+        };
     }
 }
