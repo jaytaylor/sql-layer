@@ -6,7 +6,7 @@ PhysicalSelect@3961aadb[name, order_date, name]
       IndexScan_Default(Index(test.parent.name[IndexColumn(name)]) (>=UnboundExpressions[Bound(0,Field(2))],<=UnboundExpressions[Bound(0,Field(2))]))
       project(Field(1), Field(4), Bound(0,Field(2)))
         Select_HKeyOrdered(Bound(0,Field(2)) != 'Smith')
-          Select_HKeyOrdered(Field(4) > CAST_DATE('2011-01-01'))
+          Select_HKeyOrdered(Field(4) > CAST('2011-01-01' AS DATE))
             Filter_Default([flatten(test.customers, test.orders)])
               Flatten_HKeyOrdered(test.customers INNER test.orders)
                 BranchLookup_Default(_akiban_customers Index(test.customers.name[IndexColumn(name)]) -> test.customers limit NO LIMIT)

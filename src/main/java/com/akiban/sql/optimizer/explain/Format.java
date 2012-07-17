@@ -68,6 +68,12 @@ public class Format {
         {
             sb.append(atts.get(Label.OPERAND).get(0).get());
         }
+        else if (name.startsWith("CAST"))
+        {
+            sb.append(name.substring(0, 4)).append("(");
+            describe(atts.get(Label.OPERAND).get(0), sb);
+            sb.append(" AS ").append(atts.get(Label.OUTPUT_TYPE).get(0).get()).append(")");
+        }
         else if (name.equals("Field"))
         {
             sb.append(name).append("(").append(atts.get(Label.BINDING_POSITION).get(0).get()).append(")");
