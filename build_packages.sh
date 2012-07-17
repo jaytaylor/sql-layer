@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/bash -x
 #
 # END USER LICENSE AGREEMENT (“EULA”)
 #
@@ -34,13 +34,46 @@ fi
 platform=$1
 bzr_revno=`bzr revno`
 
-# Use default license is $AKIBAN_CE_FLAG is undefined
+# Handle file preparation for release target
 if [ -z "${AKIBAN_CE_FLAG}" ]; then
-    license=LICENSE.txt
+    target='enterprise'
 else
-    license=LICENSE-CE.txt
+    target='community'
 fi
+echo "Building Akiban Server for ##### ${target} #####"
+
+# Select the correct license. Handled as a special case to keep LICENSE*.txt files in the top level
+case "${target}" in
+    'enterprise') license=LICENSE-EE.txt;;
+    'community')  license=LICENSE-CE.txt;;
+    *) echo "fatal: Invalid release type (name: [{$target}]). Check that \
+     the script is handling condition flags correctly."
+        exit 1
+        ;;
+esac
+
+mkdir -p target
+mkdir -p packages-common
+common_dir="config-files/${target}" # require config-files/dir to be the same as the ${target} variable
+[ -d ${common_dir} ] || \
+    { echo "fatal: Couldn't find configuration files in: ${common_dir}"; exit 1; }
+echo "-- packages-common directory: ${common_dir} (Linux only)"
 cp ${license} packages-common/LICENSE.txt # All licenses become LICENSE.txt
+cp ${common_dir}/* packages-common/
+
+# Add akiban-client tools via `bzr root`/target/akiban-client-tools
+tools_branch="lp:akiban-client-tools"
+pushd target && bzr branch ${tools_branch} && pushd akiban-client-tools
+mvn  -Dmaven.test.skip.exec clean install
+
+# Linux and Mac
+cp bin/akdump ../../packages-common/
+cp target/akiban-client-*-SNAPSHOT.jar ../../packages-common/
+cp target/dependency/postgresql.jar ../../packages-common/
+
+# Windows
+# Handled already by Maven / .iss
+popd && popd
 
 if [ -z "$2" ] ; then
 	epoch=`date +%s`
@@ -48,6 +81,7 @@ else
 	epoch=$2
 fi
 
+# Handle platform-specific packaging process
 if [ ${platform} == "debian" ]; then
     cp packages-common/* ${platform}
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
@@ -56,6 +90,7 @@ elif [ ${platform} == "redhat" ]; then
     mkdir -p ${PWD}/redhat/rpmbuild/{BUILD,SOURCES,SRPMS,RPMS/noarch}
     tar_file=${PWD}/redhat/rpmbuild/SOURCES/akserver.tar
     bzr export --format=tar $tar_file
+    rm {$PWD}/redhat/akserver/redhat/* # Clear out old files
     cp packages-common/* ${PWD}/redhat/akserver/redhat
     pushd redhat
 # bzr st -S outs lines like "? redhat/akserver/redhat/log4j.properties"
@@ -70,11 +105,25 @@ elif [ ${platform} == "redhat" ]; then
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
 elif [ ${platform} == "macosx" ]; then
     server_jar=target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar
+    akdump_jar=packages-common/akiban-client-tools-1.3.0-SNAPSHOT.jar
+    postgres_jar=packages-common/postgresql.jar
+    akdump_bin=packages-common/akdump
     mac_app='target/Akiban Server.app'
     mac_dmg='target/Akiban Server.dmg'
     inst_temp=/tmp/inst_temp
+
+    # copy icon data from a "prototype" file
+    tar xzf macosx/license-icon.tar.gz
+    xattr -wx com.apple.FinderInfo "`xattr -px com.apple.FinderInfo prototype.txt`" ${license}
+    cp prototype.txt/..namedfork/rsrc ${license}/..namedfork/rsrc
+    rm prototype.txt
+    
     # build jar
     mvn -Dmaven.test.skip.exec clean install -DBZR_REVISION=${bzr_revno}
+
+    # add ce/ee specific config files to Contents/Resources/config
+    rm macosx/Contents/Resources/config/*
+    cp macosx/${target}/* macosx/Contents/Resources/config/
     # build app bundle
     mkdir "$mac_app"
     cp -R macosx/Contents "$mac_app"
@@ -82,6 +131,10 @@ elif [ ${platform} == "macosx" ]; then
     cp /System/Library/Frameworks/JavaVM.framework/Versions/Current/Resources/MacOS/JavaApplicationStub "$mac_app/Contents/MacOS"
     mkdir -p "$mac_app/Contents/Resources/Java"
     cp $server_jar "$mac_app/Contents/Resources/Java"
+    mkdir -p "$mac_app/Contents/Resources/tools/"{lib,bin}
+    cp $akdump_jar "$mac_app/Contents/Resources/tools/lib/"
+    cp $postgres_jar "$mac_app/Contents/Resources/tools/lib/"
+    cp $akdump_bin "$mac_app/Contents/Resources/tools/bin/"
     SetFile -a B "$mac_app"
     # build disk image template
     rm -rf $inst_temp; mkdir $inst_temp; mkdir "$inst_temp/Akiban Server.app"
@@ -96,6 +149,7 @@ elif [ ${platform} == "macosx" ]; then
     hdiutil attach $inst_temp.dmg -noautoopen -mountpoint $inst_temp
     ditto "$mac_app" "$inst_temp/Akiban Server.app"
     ${mac_ce_cmd}
+    # == add non-app files here ==
     cp macosx/dmg.DS_Store $inst_temp/.DS_Store
     cp macosx/dmg_VolumeIcon.icns $inst_temp/.VolumeIcon.icns
     cp ${license} $inst_temp/LICENSE.txt
