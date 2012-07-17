@@ -50,6 +50,12 @@ import java.util.*;
 public class ConstantFolder extends BaseRule 
 {
     private static final Logger logger = LoggerFactory.getLogger(ConstantFolder.class);
+    
+    private final boolean usePValues;
+
+    public ConstantFolder(boolean usePValues) {
+        this.usePValues = usePValues;
+    }
 
     @Override
     protected Logger getLogger() {
@@ -58,12 +64,12 @@ public class ConstantFolder extends BaseRule
 
     @Override
     public void apply(PlanContext planContext) {
-        Folder folder = new Folder(planContext);
+        Folder folder = usePValues ? new NewFolder(planContext) : new OldFolder(planContext);
         while (folder.foldConstants());
         folder.finishAggregates();
     }
 
-    static class Folder implements PlanVisitor, ExpressionRewriteVisitor {
+    private static abstract class Folder implements PlanVisitor, ExpressionRewriteVisitor {
         private final PlanContext planContext;
         private final OldExpressionAssembler expressionAssembler;
         private Set<ColumnSource> eliminatedSources = new HashSet<ColumnSource>();
@@ -74,13 +80,23 @@ public class ConstantFolder extends BaseRule
         private Map<ConditionExpression,Boolean> topLevelConditions = 
             new IdentityHashMap<ConditionExpression,Boolean>();
 
-        public Folder(PlanContext planContext) {
+        protected Folder(PlanContext planContext) {
             this.planContext = planContext;
             this.expressionAssembler = new OldExpressionAssembler(planContext.getRulesContext());
         }
 
         public void setFoldingState() {
             this.state = State.FOLDING;
+        }
+        
+        public ExpressionNode foldConstants(ExpressionNode fromNode) {
+            do {
+                state = State.FOLDING;
+                changed = false;
+                topLevelConditions.clear();
+                fromNode = fromNode.accept(this);
+            } while (changed);
+            return fromNode;
         }
 
         /** Return <code>true</code> if substantial enough changes were made that
@@ -841,6 +857,18 @@ public class ConstantFolder extends BaseRule
             catch (Exception ex) {
             }
             return node;
+        }
+    }
+
+    private static class OldFolder extends Folder {
+        private OldFolder(PlanContext planContext) {
+            super(planContext);
+        }
+    }
+
+    public static class NewFolder extends Folder {
+        public NewFolder(PlanContext planContext) {
+            super(planContext);
         }
     }
 
