@@ -23,38 +23,13 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
 package com.akiban.qp.persistitadapter.sort;
 
-import com.persistit.exception.PersistitException;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.persistit.Key;
 
-import static com.akiban.qp.persistitadapter.sort.SortCursor.SORT_TRAVERSE;
-
-abstract class MixedOrderScanState<S>
-{
-    public abstract boolean startScan() throws PersistitException;
-
-    public abstract boolean jump(S fieldValue) throws PersistitException;
-
-    public final int field()
-    {
-        return field;
-    }
-
-    public boolean advance() throws PersistitException
-    {
-        SORT_TRAVERSE.hit();
-        return ascending ? cursor.exchange.next(false) : cursor.exchange.previous(false);
-    }
-
-    protected MixedOrderScanState(SortCursorMixedOrder cursor, int field, boolean ascending) throws PersistitException
-    {
-        this.cursor = cursor;
-        this.field = field;
-        this.ascending = ascending;
-    }
-
-    protected final SortCursorMixedOrder cursor;
-    protected final int field;
-    protected final boolean ascending;
+public interface SortKeySource<S> {
+    void attach(Key key, int i, AkType fieldType, TInstance tInstance);
+    S asSource();
 }

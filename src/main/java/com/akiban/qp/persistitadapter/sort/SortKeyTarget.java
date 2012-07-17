@@ -23,32 +23,16 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
 package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.ais.model.Column;
-import com.akiban.qp.expression.BoundExpressions;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
-interface SortStrategy<S> {
-    AkType[] createAkTypes(int size);
-    AkCollator[] createAkCollators(int size);
-    TInstance[] createTInstances(int size);
-    void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators, TInstance[] tInstances);
-
-    void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f);
-
-    S[] createSourceArray(int size);
-    S get(BoundExpressions boundExpressions, int f);
-
-    void attachToStartKey(Key key);
-    void attachToEndKey(Key key);
-
-    void appendToStartKey(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
-    void appendToEndKey(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
-
-    boolean isNull(S source);
+public interface SortKeyTarget<S> {
+    void attach(Key key);
+    void append(S source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators);
+    void append(S source, AkType akType, TInstance tInstance, AkCollator collator);
+    void append(S source, AkCollator collator, TInstance tInstance);
 }

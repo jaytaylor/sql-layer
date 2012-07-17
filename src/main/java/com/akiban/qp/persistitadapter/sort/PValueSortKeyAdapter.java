@@ -28,6 +28,8 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.row.Row;
+import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
@@ -41,8 +43,12 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
-public final class PValueSortStrategy implements SortStrategy<PValueSource> {
+class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpression> {
 
+    private PValueSortKeyAdapter() {}
+    
+    public static final SortKeyAdapter<PValueSource, TPreparedExpression> INSTANCE = new PValueSortKeyAdapter();
+    
     @Override
     public AkType[] createAkTypes(int size) {
         return null;
@@ -98,23 +104,8 @@ public final class PValueSortStrategy implements SortStrategy<PValueSource> {
     }
 
     @Override
-    public void attachToStartKey(Key key) {
-        startKeyTarget.attach(key);
-    }
-
-    @Override
-    public void attachToEndKey(Key key) {
-        endKeyTarget.attach(key);
-    }
-
-    @Override
-    public void appendToStartKey(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(startKeyTarget, source, tInstances[f]);
-    }
-
-    @Override
-    public void appendToEndKey(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(endKeyTarget, source, tInstances[f]);
+    public SortKeyTarget<PValueSource> createTarget() {
+        return new PValueSortKeyTarget();
     }
 
     @Override
@@ -122,12 +113,80 @@ public final class PValueSortStrategy implements SortStrategy<PValueSource> {
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyPValueTarget target, PValueSource source, TInstance tInstance) {
-        target.expectingType(source.getUnderlyingType());
-        TClass tClass = tInstance.typeClass();
-        tClass.writeCollating(source, tInstance, target);
+    @Override
+    public SortKeySource<PValueSource> createSource(TInstance tInstance) {
+        return new PValueSortKeySource(tInstance);
     }
 
-    protected final PersistitKeyPValueTarget startKeyTarget = new PersistitKeyPValueTarget();
-    protected final PersistitKeyPValueTarget endKeyTarget = new PersistitKeyPValueTarget();
+    @Override
+    public long compare(TInstance tInstance, PValueSource one, PValueSource two) {
+        TClass tClass = tInstance.typeClass();
+        return tClass.compare(tInstance, one, tInstance, two);
+    }
+
+    @Override
+    public TPreparedExpression createComparison(TInstance tInstance, PValueSource one, Comparison comparison, PValueSource two) {
+        TPreparedExpression arg1 = new TPreparedLiteral(tInstance, one);
+        TPreparedExpression arg2 = new TPreparedLiteral(tInstance, two);
+        return new TComparisonExpression(arg1, comparison, arg2);
+    }
+
+    @Override
+    public boolean evaluateComparison(TPreparedExpression comparison) {
+        TEvaluatableExpression eval = comparison.build();
+        eval.evaluate();
+        return eval.resultValue().getBoolean();
+    }
+
+    @Override
+    public PValueSource eval(Row row, int field) {
+        return row.pvalue(field);
+    }
+
+    private static class PValueSortKeyTarget implements SortKeyTarget<PValueSource> {
+        @Override
+        public void attach(Key key) {
+            target.attach(key);
+        }
+
+        @Override
+        public void append(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances,
+                           AkCollator[] collators)
+        {
+            TInstance tInstance = tInstances[f];
+            target.expectingType(source.getUnderlyingType());
+            append(source, null, tInstance, null);
+        }
+
+        @Override
+        public void append(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
+            TClass tClass = tInstance.typeClass();
+            tClass.writeCollating(source, tInstance, target);
+        }
+
+        @Override
+        public void append(PValueSource source, AkCollator collator, TInstance tInstance) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
+        protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget();
+    }
+    
+    private static class PValueSortKeySource implements SortKeySource<PValueSource> {
+        @Override
+        public void attach(Key key, int i, AkType fieldType, TInstance tInstance) {
+            source.attach(key, i, tInstance.typeClass().underlyingType());
+        }
+
+        @Override
+        public PValueSource asSource() {
+            return source;
+        }
+        
+        public PValueSortKeySource(TInstance tInstance) {
+            source = new PersistitKeyPValueSource(tInstance.typeClass().underlyingType());
+        }
+        
+        private final PersistitKeyPValueSource source;
+    }
 }

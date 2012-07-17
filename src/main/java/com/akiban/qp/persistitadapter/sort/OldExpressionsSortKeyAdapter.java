@@ -28,19 +28,26 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.row.Row;
+import com.akiban.server.PersistitKeyValueSource;
 import com.akiban.server.PersistitKeyValueTarget;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.expression.std.Expressions;
+import com.akiban.server.expression.std.RankExpression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.conversion.Converters;
 import com.akiban.server.types3.TInstance;
 import com.persistit.Key;
 
-class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
+class OldExpressionsSortKeyAdapter extends SortKeyAdapter<ValueSource, Expression> {
 
+    private OldExpressionsSortKeyAdapter() {}
+    
+    public static final SortKeyAdapter<ValueSource, Expression> INSTANCE = new OldExpressionsSortKeyAdapter();
+    
     @Override
     public AkType[] createAkTypes(int size) {
         return new AkType[size];
@@ -92,23 +99,14 @@ class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
     }
 
     @Override
-    public void attachToStartKey(Key key) {
-        startKeyTarget.attach(key);
+    public SortKeyTarget<ValueSource> createTarget() {
+        return new OldExpressionsSortKeyTarget();
     }
 
     @Override
-    public void attachToEndKey(Key key) {
-        endKeyTarget.attach(key);
-    }
-
-    @Override
-    public void appendToStartKey(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(startKeyTarget, source, akTypes[f], collators[f]);
-    }
-
-    @Override
-    public void appendToEndKey(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(endKeyTarget, source, akTypes[f], collators[f]);
+    public long compare(TInstance tInstance, ValueSource one, ValueSource two) {
+        return new RankExpression(Expressions.valueSource(one),
+                Expressions.valueSource(two)).evaluation().eval().getInt();
     }
 
     @Override
@@ -116,11 +114,69 @@ class OldExpressionsSortStrategy implements SortStrategy<ValueSource> {
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyValueTarget target, ValueSource source, AkType type, AkCollator collator) {
-        target.expectingType(type, collator);
-        Converters.convert(source, target);
+    @Override
+    public SortKeySource<ValueSource> createSource(TInstance tInstance) {
+        return new OldExpressionsKeySource();
     }
 
-    protected final PersistitKeyValueTarget startKeyTarget = new PersistitKeyValueTarget();
-    protected final PersistitKeyValueTarget endKeyTarget = new PersistitKeyValueTarget();
+    @Override
+    public Expression createComparison(TInstance tInstance, ValueSource one, Comparison comparison, ValueSource two) {
+        return Expressions.compare(Expressions.valueSource(one),
+                comparison,
+                Expressions.valueSource(two));
+    }
+
+    @Override
+    public boolean evaluateComparison(Expression comparison) {
+        return comparison.evaluation().eval().getBool();
+    }
+
+    @Override
+    public ValueSource eval(Row row, int field) {
+        return row.eval(field);
+    }
+
+    private static class OldExpressionsSortKeyTarget implements SortKeyTarget<ValueSource> {
+
+        @Override
+        public void attach(Key key) {
+            target.attach(key);
+        }
+
+        @Override
+        public void append(ValueSource source, int f, AkType[] akTypes, TInstance[] tInstances,
+                           AkCollator[] collators) {
+            AkType type = akTypes[f];
+            AkCollator collator = collators[f];
+            append(source, type, null, collator);
+        }
+
+        @Override
+        public void append(ValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
+            target.expectingType(akType, collator);
+            Converters.convert(source, target);
+        }
+
+        @Override
+        public void append(ValueSource source, AkCollator collator, TInstance tInstance) {
+            target.expectingType(source.getConversionType(), collator);
+            Converters.convert(source, target);
+        }
+
+        protected final PersistitKeyValueTarget target = new PersistitKeyValueTarget();
+    }
+    
+    private static class OldExpressionsKeySource implements SortKeySource<ValueSource> {
+        @Override
+        public void attach(Key key, int i, AkType fieldType, TInstance tInstance) {
+            source.attach(key, i, fieldType);
+        }
+
+        @Override
+        public ValueSource asSource() {
+            return source;
+        }
+        
+        private PersistitKeyValueSource source = new PersistitKeyValueSource();
+    }
 }
