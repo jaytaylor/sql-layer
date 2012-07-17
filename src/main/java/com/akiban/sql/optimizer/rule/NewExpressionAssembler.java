@@ -30,6 +30,7 @@ import com.akiban.server.collation.AkCollator;
 import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
@@ -38,6 +39,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
@@ -47,14 +49,17 @@ import com.akiban.server.types3.texpressions.TPreparedFunction;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.akiban.server.types3.texpressions.TPreparedParameter;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.sql.optimizer.plan.BooleanConstantExpression;
 import com.akiban.sql.optimizer.plan.BooleanOperationExpression;
 import com.akiban.sql.optimizer.plan.CastExpression;
 import com.akiban.sql.optimizer.plan.ComparisonCondition;
+import com.akiban.sql.optimizer.plan.ConditionExpression;
 import com.akiban.sql.optimizer.plan.ConstantExpression;
 import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.optimizer.plan.PlanContext;
 import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -121,6 +126,12 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             }
             else {
                 TCast tcast = overloadResolver.getTCast(operand.getPreptimeValue().instance(), toType);
+                if (tcast == null) {
+                    String castName = "CAST("
+                            + operand.getPreptimeValue().instance().typeClass()
+                            + " to " + toType.typeClass() + ')';
+                    throw new NoSuchMethodError(castName); // TODO should be a NoSuchCastError
+                }
                 expr = new TCastExpression(expr, tcast, toType);
             }
         }
@@ -188,6 +199,28 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
                 nkeys,
                 aggregators,
                 outputInstances);
+    }
+
+    @Override
+    public ConstantExpression evalNow(PlanContext planContext, ExpressionNode node) {
+        if (node instanceof ConstantExpression)
+            return (ConstantExpression)node;
+        TPreparedExpression expr = assembleExpression(node, null, null);
+        TPreptimeValue preptimeValue = expr.evaluateConstant();
+        if (preptimeValue == null)
+            throw new AkibanInternalException("required constant expression: " + expr);
+        PValueSource valueSource = preptimeValue.value();
+        if (valueSource == null)
+            throw new AkibanInternalException("required constant expression: " + expr);
+        if (node instanceof ConditionExpression) {
+            Boolean value = valueSource.isNull() ? null : valueSource.getBoolean();
+            return new BooleanConstantExpression(value,
+                    node.getSQLtype(),
+                    node.getSQLsource());
+        }
+        else {
+            return new ConstantExpression(preptimeValue);
+        }
     }
 
     @Override
