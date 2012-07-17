@@ -829,7 +829,9 @@ public class ASTStatementLoader extends BaseRule
             List<ExpressionNode> operands = new ArrayList<ExpressionNode>(3);
             operands.add(toExpression(ternary.getReceiver(), projects));
             operands.add(toExpression(ternary.getLeftOperand(), projects));
-            if (ternary.getRightOperand() != null)
+            ValueNode third = ternary.getRightOperand();
+            
+            if (ternary.getRightOperand() != ValueNode.NOT_SPECIFIED)
                 operands.add(toExpression(ternary.getRightOperand(), projects));
             conditions.add(new FunctionCondition(ternary.getMethodName(),
                                                  operands,
