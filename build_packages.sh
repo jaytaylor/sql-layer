@@ -104,7 +104,7 @@ elif [ ${platform} == "redhat" ]; then
     sed -i "10,10s/EPOCH/${epoch}/g" ${PWD}/redhat/akiban-server-${bzr_revno}.spec
     rpmbuild --target=noarch --define "_topdir ${PWD}/redhat/rpmbuild" -ba ${PWD}/redhat/akiban-server-${bzr_revno}.spec
 elif [ ${platform} == "macosx" ]; then
-    server_jar=target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar
+    server_jar=target/akiban-server-1.3.0-jar-with-dependencies.jar
     akdump_jar=packages-common/akiban-client-tools-1.3.0-SNAPSHOT.jar
     postgres_jar=packages-common/postgresql.jar
     akdump_bin=packages-common/akdump

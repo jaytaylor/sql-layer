@@ -20,9 +20,9 @@ install: build
 	dh_install
 
 	# Copy in the jar and symlink to something stable
-	dh_install target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar \
+	dh_install target/akiban-server-1.3.0-jar-with-dependencies.jar \
 		usr/share/akiban
-	dh_link usr/share/akiban/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar \
+	dh_link usr/share/akiban/akiban-server-1.3.0-jar-with-dependencies.jar \
 		usr/share/akiban/akiban-server.jar
 
 	# Dump tools

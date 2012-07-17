@@ -57,8 +57,8 @@ cp -p redhat/LICENSE.txt ${RPM_BUILD_ROOT}/usr/share/%{username}
 cp -p redhat/*.tag ${RPM_BUILD_ROOT}/usr/share/%{username}
 cp -p redhat/postgresql.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 
-cp -p target/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
-ln -s /usr/share/%{username}/akiban-server-1.3.0-SNAPSHOT-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
+cp -p target/akiban-server-1.3.0-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
+ln -s /usr/share/%{username}/akiban-server-1.3.0-jar-with-dependencies.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-server.jar
 cp -p redhat/akiban-client-tools-1.3.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}
 ln -s /usr/share/%{username}/akiban-client-tools-1.3.0-SNAPSHOT.jar ${RPM_BUILD_ROOT}/usr/share/%{username}/akiban-client-tools.jar
 
