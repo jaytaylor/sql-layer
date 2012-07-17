@@ -278,7 +278,14 @@ public class ArithExpression extends AbstractBinaryExpression
     {
         ExpressionExplainer explainer = new ExpressionExplainer(Type.BINARY_OPERATOR, name(), children());
         if (op.isInfix())
-            explainer.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(name()));
+            if (name().equals("d"))
+            {
+                explainer.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance("/"));
+            }
+            else
+            {
+                explainer.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(name()));
+            }
         if (op.isAssociative())
             explainer.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
         return explainer;
