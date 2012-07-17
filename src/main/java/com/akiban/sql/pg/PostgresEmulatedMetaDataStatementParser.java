@@ -46,7 +46,7 @@ public class PostgresEmulatedMetaDataStatementParser implements PostgresStatemen
 
     /** Quickly determine whether a given query <em>might</em> be a
      * Postgres system table. */
-    public static final String POSSIBLE_PG_QUERY = "FROM\\s+PG_";
+    public static final String POSSIBLE_PG_QUERY = "FROM\\s+PG_|PG_CATALOG\\.";
     
     private Pattern possiblePattern;
 
