@@ -33,8 +33,8 @@
 - params: [[2]]
 - output: [['yzt'], ['yzt']]
 --- # test index out of bound
-- Statement: SELECT SUBSTR('ABC', 4 ) from all_types;
-- output: [[null], [null]]
+- Statement: SELECT SUBSTR('ABC', 4 );
+- output: [['']]
 --- # test empty string
 - Statement: SELECT SUBSTR('', 2, 0) from all_types;
 - output: [[''], ['']]
@@ -50,4 +50,7 @@
 --- # test wrong arity: excessive arguments
 - Statement: SELECT SUBSTR('ABC', 1, 2, 3) from all_types;
 - error: [42000]
+--- # test SUBSTR called with 2 args
+- Statement: SELECT SUBSTR('abcd', 1);
+- output: [['abcd']]
 ...

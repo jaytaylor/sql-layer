@@ -301,17 +301,15 @@ public class FunctionsTypeComputer extends AISTypeComputer
 
     final class TernaryValuesAccess extends ValueNodesAccess {
         private final TernaryOperatorNode node;
-
+        private final int nargs;
         public TernaryValuesAccess(TernaryOperatorNode node) {
             this.node = node;
+            nargs = node.getRightOperand() == ValueNode.NOT_SPECIFIED ? 2 : 3;
         }
 
         @Override
         public int nargs() {
-            if (node.getRightOperand() != null)
-                return 3;
-            else
-                return 2;
+            return nargs;
         }
 
         @Override
@@ -322,6 +320,8 @@ public class FunctionsTypeComputer extends AISTypeComputer
             case 1:
                 return node.getLeftOperand();
             case 2:
+                if (nargs != 3)
+                    throw new IndexOutOfBoundsException("Out of range index: " + index);
                 return node.getRightOperand();
             default:
                 assert false;

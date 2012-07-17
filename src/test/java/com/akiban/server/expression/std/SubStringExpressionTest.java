@@ -76,7 +76,8 @@ public class SubStringExpressionTest extends ComposedExpressionTestBase
     @Test
     public void test ()
     {
-        // test with 2 argument  
+        // test with 2 argument
+        subAndCheck("abcef", "bcde", 2);
         subAndCheck("quadratically", "ratically", 5);
         subAndCheck("Sakila", "Sakila", 1);
         subAndCheck("1234", "1234", 1); // meaning from index 0 to the end
