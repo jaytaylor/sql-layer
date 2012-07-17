@@ -100,7 +100,7 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     @Override
-    public void putSafety(QueryContext context, TInstance sourceInstance, PValueSource sourceValue,
+    public void putSafety(TExecutionContext context, TInstance sourceInstance, PValueSource sourceValue,
                           TInstance targetInstance, PValueTarget targetValue) {
         targetValue.putBytes(sourceValue.getBytes());
     }

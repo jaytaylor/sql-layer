@@ -108,7 +108,7 @@ public abstract class TClass {
         output.append(value);
     }
 
-    public abstract void putSafety(QueryContext context,
+    public abstract void putSafety(TExecutionContext context,
                         TInstance sourceInstance,
                         PValueSource sourceValue,
                         TInstance targetInstance,

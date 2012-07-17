@@ -111,7 +111,7 @@ public class MApproximateNumber extends SimpleDtdTClass
     }
 
     @Override
-    public void putSafety(QueryContext context, 
+    public void putSafety(TExecutionContext context, 
                           TInstance sourceInstance,
                           PValueSource sourceValue,
                           TInstance targetInstance,

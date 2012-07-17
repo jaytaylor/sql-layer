@@ -30,6 +30,7 @@ import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.types3.TBundle;
 import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -97,7 +98,7 @@ public abstract class TString extends TClass
     }
 
     @Override
-    public void putSafety(QueryContext context, 
+    public void putSafety(TExecutionContext context, 
                           TInstance sourceInstance,
                           PValueSource sourceValue,
                           TInstance targetInstance,

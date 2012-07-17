@@ -36,7 +36,7 @@ import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.MBundle;
-import com.akiban.server.types3.mcompat.mcasts.Cast_From_Varchar;
+import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.pvalue.PBasicValueSource;
 import com.akiban.server.types3.pvalue.PBasicValueTarget;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -72,7 +72,13 @@ public class MBigDecimal extends TClass {
         {
             case STRING:
                 String str = in.getString();
-                Cast_From_Varchar.TO_DECIMAL.evaluate(contextForErrors, in, out);
+                // TODO: pass outTIntance to TO_DECMAL.evalute() ?
+                // Cast_From_Varchar.TO_DECIMAL.evaluate(contextForErrors, in, out);
+                doPutSafety(contextForErrors,
+                            outTInstance,
+                            CastUtils.parseDecimalString(in.getString(),contextForErrors),
+                            out);
+                
                 break;
             default:
                 throw new IllegalArgumentException("Unexpected PUnderlying: " + in.getUnderlyingType());
@@ -110,39 +116,49 @@ public class MBigDecimal extends TClass {
     }
 
     @Override
-    public void putSafety(QueryContext context,
+    public void putSafety(TExecutionContext context,
                           TInstance sourceInstance,
                           PValueSource sourceValue,
                           TInstance targetInstance,
                           PValueTarget targetValue)
     {
-        MBigDecimalWrapper num = (MBigDecimalWrapper) sourceValue.getObject();
+        MBigDecimal.doPutSafety(null,
+                                targetInstance,
+                                (MBigDecimalWrapper) sourceValue.getObject(),
+                                targetValue);
+    }
+
+    static void doPutSafety(TExecutionContext context,
+                            TInstance outTInstance,
+                            BigDecimalWrapper num,
+                            PValueTarget out)
+    {
         int pre = num.getPrecision();
         int scale = num.getScale();
-        
-        int expectedPre = targetInstance.attribute(Attrs.PRECISION);
-        int expectedScale = targetInstance.attribute(Attrs.SCALE);
 
-        BigDecimalWrapper meta[] = (BigDecimalWrapper[]) targetInstance.getMetaData();
-        
+        int expectedPre = outTInstance.attribute(Attrs.PRECISION);
+        int expectedScale = outTInstance.attribute(Attrs.SCALE);
+
+        BigDecimalWrapper meta[] = (BigDecimalWrapper[]) outTInstance.getMetaData();
+
         if (meta == null)
         {
             // compute the max value:
             meta = new BigDecimalWrapper[2];
             meta[MAX_INDEX] = new MBigDecimalWrapper(getNum(expectedScale, expectedPre));
             meta[MIN_INDEX] = meta[MAX_INDEX].negate();
-       
-            targetInstance.setMetaData(meta);
+
+            outTInstance.setMetaData(meta);
         }
 
         if (num.compareTo(meta[MAX_INDEX]) >= 0)
-            targetValue.putObject(meta[MAX_INDEX]);
+            out.putObject(meta[MAX_INDEX]);
         else if (num.compareTo(meta[MIN_INDEX]) <= 0)
-            targetValue.putObject(meta[MIN_INDEX]);
+            out.putObject(meta[MIN_INDEX]);
         else if (scale > expectedScale) // check the sacle
-            targetValue.putObject(num.round(expectedPre, expectedScale));
+            out.putObject(num.round(expectedPre, expectedScale));
         else // else put the original value
-            targetValue.putValueSource(sourceValue);
+            out.putObject(num);
     }
 
     @Override
