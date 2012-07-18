@@ -124,9 +124,10 @@ public class SwingConsole extends JFrame implements WindowListener
         int yn = javax.swing.JOptionPane.showConfirmDialog(
                 this, "Quitting Akiban-server. Continue?", "Attention!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
         
-        if (yn == JOptionPane.NO_OPTION)
+        if (yn == JOptionPane.YES_OPTION)
+            quit(false);
+        else
             return;
-        quit(false);
     }
 
     @Override
