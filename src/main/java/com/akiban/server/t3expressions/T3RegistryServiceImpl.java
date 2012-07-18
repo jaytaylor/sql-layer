@@ -36,7 +36,6 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TName;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -46,21 +45,30 @@ import com.akiban.server.types3.service.FunctionRegistryImpl;
 import com.akiban.server.types3.texpressions.Constantness;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
 import com.akiban.util.DagChecker;
+import com.google.common.base.Function;
+import com.google.common.base.Functions;
 import com.google.common.collect.ArrayListMultimap;
+import com.google.common.collect.ComparisonChain;
 import com.google.common.collect.Multimap;
 import com.google.common.collect.Multimaps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.yaml.snakeyaml.DumperOptions;
+import org.yaml.snakeyaml.DumperOptions.FlowStyle;
 import org.yaml.snakeyaml.Yaml;
 
+import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.TreeMap;
 
 public final class T3RegistryServiceImpl implements T3RegistryService, Service<T3RegistryService>, JmxManageable {
 
@@ -290,141 +298,124 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
     }
 
     private class Bean implements T3RegistryMXBean {
+
+        @Override
+        public String describeTypes() {
+            return toYaml(typesDescriptors());
+        }
+
+        @Override
+        public String describeCasts() {
+            return toYaml(castsDescriptors());
+        }
+
+        @Override
+        public String describeScalars() {
+            return toYaml(scalarDescriptors());
+        }
+
+        @Override
+        public String describeAggregates() {
+            return toYaml(aggregateDescriptors());
+        }
+
         @Override
         public String describeAll() {
-            List<Object> all = new ArrayList<Object>();
+            Map<String,Object> all = new LinkedHashMap<String, Object>(5);
 
-            all.addAll(typesDescriptors());
-            all.addAll(castsDescriptors());
+            all.put("types", typesDescriptors());
+            all.put("casts", castsDescriptors());
+            all.put("scalar_functions", scalarDescriptors());
+            all.put("aggregate_functions", aggregateDescriptors());
 
             return toYaml(all);
         }
 
-        private List<TypeDescriptor> typesDescriptors() {
-            List<TypeDescriptor> result = new ArrayList<TypeDescriptor>(tClasses.size());
-            for (TClass tClass : tClasses)
-                result.add(new TypeDescriptor(tClass));
-            Collections.sort(result);
+        private Object typesDescriptors() {
+            List<Map<String,Comparable<?>>> result = new ArrayList<Map<String,Comparable<?>>>(tClasses.size());
+            for (TClass tClass : tClasses) {
+                Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
+                buildTName("bundle", "name", tClass, map);
+                map.put("internalVersion", tClass.internalRepresentationVersion());
+                map.put("serializationVersion", tClass.serializationVersion());
+                map.put("fixedSize", tClass.hasFixedSerializationSize() ? tClass.fixedSerializationSize() : null);
+                result.add(map);
+            }
+            Collections.sort(result, new Comparator<Map<String, Comparable<?>>>() {
+                @Override
+                public int compare(Map<String, Comparable<?>> o1, Map<String, Comparable<?>> o2) {
+                    return ComparisonChain.start()
+                            .compare(o1.get("bundle"), o2.get("bundle"))
+                            .compare(o1.get("name"), o2.get("name"))
+                            .result();
+                }
+            });
             return result;
         }
 
-        private List<CastDescriptor>  castsDescriptors() {
-            List<CastDescriptor> result = new ArrayList<CastDescriptor>(castsBySource.size() * 5); // guess the size
+        private Object castsDescriptors() {
+            // the starting size is just a guess
+            List<Map<String,Comparable<?>>> result = new ArrayList<Map<String,Comparable<?>>>(castsBySource.size() * 5);
             for (Map<TClass,TCast> castsByTarget : castsBySource.values()) {
                 for (TCast tCast : castsByTarget.values()) {
-                    result.add(new CastDescriptor(tCast));
+                    Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
+                    buildTName("source_bundle", "source_type", tCast.sourceClass(), map);
+                    buildTName("target_bundle", "target_type", tCast.sourceClass(), map);
+                    map.put("strong", tCast.isAutomatic());
+                    result.add(map);
                 }
             }
-            Collections.sort(result);
+            Collections.sort(result, new Comparator<Map<String, Comparable<?>>>() {
+                @Override
+                public int compare(Map<String, Comparable<?>> o1, Map<String, Comparable<?>> o2) {
+                    return ComparisonChain.start()
+                            .compare(o1.get("source_bundle"), o2.get("source_bundle"))
+                            .compare(o1.get("source_type"), o2.get("source_type"))
+                            .compare(o1.get("target_bundle"), o2.get("target_bundle"))
+                            .compare(o1.get("target_type"), o2.get("target_type"))
+                            .result();
+                }
+            });
             return result;
         }
 
-        private List<?>  buildScalars() {
-            throw new UnsupportedOperationException();
+        private Object scalarDescriptors() {
+            return describeOverloads(overloadsByName.asMap(), Functions.toStringFunction());
         }
 
-        private List<?>  buildAggregates() {
-            throw new UnsupportedOperationException();
+        private Object aggregateDescriptors() {
+            return describeOverloads(aggregatorsByName, new Function<TAggregator, TClass>() {
+                @Override
+                public TClass apply(TAggregator aggr) {
+                    return aggr.getTypeClass();
+                }
+            });
+        }
+
+        private <T,S> Object describeOverloads(Map<String, Collection<T>> elems, Function<? super T, S> format) {
+            Map<String,List<String>> result = new TreeMap<String, List<String>>();
+            for (Map.Entry<String, ? extends Collection<T>> entry : elems.entrySet()) {
+                Collection<T> overloads = entry.getValue();
+                List<String> overloadDescriptions = new ArrayList<String>(overloads.size());
+                for (T overload : overloads)
+                    overloadDescriptions.add(String.valueOf(format.apply(overload)));
+                Collections.sort(overloadDescriptions);
+                result.put(entry.getKey(), overloadDescriptions);
+            }
+            return result;
+        }
+
+        private void buildTName(String bundleTag, String nameTag, TClass tClass, Map<String, Comparable<?>> out) {
+            out.put(bundleTag, tClass.name().bundleId().name());
+            out.put(nameTag, tClass.name().unqualifiedName());
         }
 
         private String toYaml(Object obj) {
-            return new Yaml().dump(obj);
+            DumperOptions options = new DumperOptions();
+            options.setAllowReadOnlyProperties(true);
+            options.setDefaultFlowStyle(FlowStyle.BLOCK);
+            options.setIndent(4);
+            return new Yaml(options).dump(obj);
         }
-    }
-
-    private static class TypeNameDescriptor implements Comparable<TypeNameDescriptor> {
-
-        public String getBundle() {
-            return tName.bundleId().name();
-        }
-
-        public String getName() {
-            return tName.unqualifiedName();
-        }
-
-        @Override
-        public int compareTo(TypeNameDescriptor o) {
-            int cmp = getBundle().compareTo(o.getBundle());
-            if (cmp == 0)
-                cmp = getName().compareTo(o.getName());
-            return cmp;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            TypeNameDescriptor that = (TypeNameDescriptor) o;
-            return tName.equals(that.tName);
-        }
-
-        @Override
-        public int hashCode() {
-            return tName.hashCode();
-        }
-
-        private TypeNameDescriptor(TName tName) {
-            this.tName = tName;
-        }
-
-        private TName tName;
-    }
-
-    private static class TypeDescriptor implements Comparable<TypeDescriptor> {
-
-        public TypeNameDescriptor getQualifiedName() {
-            return name;
-        }
-
-        public int getInternalVersion() {
-            return tClass.internalRepresentationVersion();
-        }
-
-        public int getSerializationVersion() {
-            return tClass.serializationVersion();
-        }
-
-        public Integer getFixedSize() {
-            return tClass.hasFixedSerializationSize() ? tClass.fixedSerializationSize() : null;
-        }
-
-        @Override
-        public int compareTo(TypeDescriptor o) {
-            return getQualifiedName().compareTo(o.getQualifiedName());
-        }
-
-        private TypeDescriptor(TClass tClass) {
-            this.tClass = tClass;
-            name = new TypeNameDescriptor(tClass.name());
-        }
-
-        private TClass tClass;
-        private TypeNameDescriptor name;
-    }
-
-    private static class CastDescriptor implements Comparable<CastDescriptor> {
-
-        public TypeNameDescriptor getSource() {
-            return new TypeNameDescriptor(tCast.sourceClass().name());
-        }
-
-        public TypeNameDescriptor getTarget() {
-            return new TypeNameDescriptor(tCast.targetClass().name());
-        }
-
-        public boolean isStrong() {
-            return tCast.isAutomatic();
-        }
-
-        @Override
-        public int compareTo(CastDescriptor o) {
-            throw new UnsupportedOperationException(); // TODO
-        }
-
-        private CastDescriptor(TCast tCast) {
-            this.tCast = tCast;
-        }
-
-        private TCast tCast;
     }
 }
