@@ -34,17 +34,17 @@ import com.persistit.Key;
 
 // For a lexicographic (mysqlish) index scan
 
-class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
+class SortCursorUnidirectionalLexicographic<S> extends SortCursorUnidirectional<S>
 {
     // SortCursorUnidirectional interface
 
-    public static SortCursorUnidirectionalLexicographic create(QueryContext context,
+    public static <S> SortCursorUnidirectionalLexicographic<S> create(QueryContext context,
                                                                IterationHelper iterationHelper,
                                                                IndexKeyRange keyRange,
                                                                API.Ordering ordering,
-                                                               boolean usePValues)
+                                                               SortKeyAdapter<S> sortKeyAdapter)
     {
-        return new SortCursorUnidirectionalLexicographic(context, iterationHelper, keyRange, ordering, usePValues);
+        return new SortCursorUnidirectionalLexicographic<S>(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     // For use by this class
@@ -53,13 +53,13 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
                                                   IterationHelper iterationHelper,
                                                   IndexKeyRange keyRange,
                                                   API.Ordering ordering,
-                                                  boolean usePValues)
+                                                  SortKeyAdapter<S> sortKeyAdapter)
     {
-        super(context, iterationHelper, keyRange, ordering, usePValues);
+        super(context, iterationHelper, keyRange, ordering, sortKeyAdapter);
     }
 
     @Override
-    protected <S> void evaluateBoundaries(QueryContext context, SortKeyAdapter<S> keyAdapter)
+    protected void evaluateBoundaries(QueryContext context, SortKeyAdapter<S> keyAdapter)
     {
         BoundExpressions startExpressions = null;
         if (startBoundColumns == 0 || start == null) {
@@ -67,11 +67,11 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
         } else {
             startExpressions = start.boundExpressions(context);
             startKey.clear();
-            keyAdapter.attachToStartKey(startKey);
+            startKeyTarget.attach(startKey);
             for (int f = 0; f < startBoundColumns; f++) {
                 if (start.columnSelector().includesColumn(f)) {
                     S source = keyAdapter.get(startExpressions, f);
-                    keyAdapter.appendToStartKey(source, f, types, tInstances, collators);
+                    startKeyTarget.append(source, f, types, tInstances, collators);
                 }
             }
         }
@@ -81,14 +81,14 @@ class SortCursorUnidirectionalLexicographic extends SortCursorUnidirectional
         } else {
             endExpressions = end.boundExpressions(context);
             endKey.clear();
-            keyAdapter.attachToEndKey(endKey);
+            endKeyTarget.attach(endKey);
             for (int f = 0; f < endBoundColumns; f++) {
                 if (end.columnSelector().includesColumn(f)) {
                     S source = keyAdapter.get(endExpressions, f);
                     if (keyAdapter.isNull(source) && startExpressions != null && !startExpressions.eval(f).isNull()) {
                         endKey.append(Key.AFTER);
                     } else {
-                        keyAdapter.appendToEndKey(source, f, types, tInstances, collators);
+                        endKeyTarget.append(source, f, types, tInstances, collators);
                     }
                 } else {
                     endKey.append(Key.AFTER);

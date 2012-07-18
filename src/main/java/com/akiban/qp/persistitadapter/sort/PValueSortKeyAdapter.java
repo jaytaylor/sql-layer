@@ -41,8 +41,12 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
-public final class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> {
+class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> {
 
+    private PValueSortKeyAdapter() {}
+    
+    public static final SortKeyAdapter<PValueSource> INSTANCE = new PValueSortKeyAdapter();
+    
     @Override
     public AkType[] createAkTypes(int size) {
         return null;
@@ -98,23 +102,8 @@ public final class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> 
     }
 
     @Override
-    public void attachToStartKey(Key key) {
-        startKeyTarget.attach(key);
-    }
-
-    @Override
-    public void attachToEndKey(Key key) {
-        endKeyTarget.attach(key);
-    }
-
-    @Override
-    public void appendToStartKey(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(startKeyTarget, source, tInstances[f]);
-    }
-
-    @Override
-    public void appendToEndKey(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances, AkCollator[] collators) {
-        appendTo(endKeyTarget, source, tInstances[f]);
+    public SortKeyTarget<PValueSource> createTarget() {
+        return new PValueSortKeyTarget();
     }
 
     @Override
@@ -122,12 +111,22 @@ public final class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> 
         return source.isNull();
     }
 
-    private void appendTo(PersistitKeyPValueTarget target, PValueSource source, TInstance tInstance) {
-        target.expectingType(source.getUnderlyingType());
-        TClass tClass = tInstance.typeClass();
-        tClass.writeCollating(source, tInstance, target);
-    }
+    private static class PValueSortKeyTarget implements SortKeyTarget<PValueSource> {
+        @Override
+        public void attach(Key key) {
+            target.attach(key);
+        }
 
-    protected final PersistitKeyPValueTarget startKeyTarget = new PersistitKeyPValueTarget();
-    protected final PersistitKeyPValueTarget endKeyTarget = new PersistitKeyPValueTarget();
+        @Override
+        public void append(PValueSource source, int f, AkType[] akTypes, TInstance[] tInstances,
+                           AkCollator[] collators)
+        {
+            TInstance tInstance = tInstances[f];
+            target.expectingType(source.getUnderlyingType());
+            TClass tClass = tInstance.typeClass();
+            tClass.writeCollating(source, tInstance, target);
+        }
+        
+        protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget();
+    }
 }
