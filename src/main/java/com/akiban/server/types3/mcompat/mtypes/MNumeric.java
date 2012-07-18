@@ -26,7 +26,7 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.qp.operator.QueryContext;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
@@ -41,13 +41,13 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
-public abstract class MNumeric extends SimpleDtdTClass {
+public class MNumeric extends SimpleDtdTClass {
 
-    protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying, int defaultWidth) {
+    protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying, int defaultWidth, TCast fromObject) {
         super(MBundle.INSTANCE.id(), name, 
                 NumericAttribute.class,
                 1, 1, serializationSize, 
-                pUnderlying, inferTypeid(name));
+                pUnderlying, fromObject, inferTypeid(name));
         this.defaultWidth = defaultWidth;
     }
 
@@ -102,112 +102,37 @@ public abstract class MNumeric extends SimpleDtdTClass {
     
     // numeric types
     // TODO verify default widths
-    public static final MNumeric TINYINT = new MNumeric("tinyint", 1, PUnderlying.INT_8, 5) 
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_TINYINT.evaluate(contextForErrors, in, out);
-        }
-    };
+    public static final MNumeric TINYINT 
+            = new MNumeric("tinyint", 1, PUnderlying.INT_8, 5, Cast_From_Varchar.TO_TINYINT); 
 
-    public static final MNumeric TINYINT_UNSIGNED = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16, 4)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_UNSIGNED_TINYINT.evaluate(contextForErrors, in, out);
-        }
-    };
+    public static final MNumeric TINYINT_UNSIGNED 
+            = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16, 4, Cast_From_Varchar.TO_UNSIGNED_TINYINT);
 
-    public static final MNumeric SMALLINT = new MNumeric("smallint", 2, PUnderlying.INT_16, 7)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_SMALLINT.evaluate(contextForErrors, in, out);
-        }
-    };
+    public static final MNumeric SMALLINT 
+            = new MNumeric("smallint", 2, PUnderlying.INT_16, 7, Cast_From_Varchar.TO_SMALLINT);
+
+    public static final MNumeric SMALLINT_UNSIGNED 
+            = new MNumeric("smallintunsigned", 4, PUnderlying.INT_32, 6, Cast_From_Varchar.TO_UNSIGNED_SMALLINT);
+
+    public static final MNumeric MEDIUMINT 
+            = new MNumeric("mediumint", 3, PUnderlying.INT_32, 9, Cast_From_Varchar.TO_MEDIUMINT);
+
+    public static final MNumeric MEDIUMINT_UNSIGNED 
+            = new MNumeric("mediumintunsigned", 8, PUnderlying.INT_64, 8, Cast_From_Varchar.TO_UNSIGNED_MEDIUMINT);
+
+    public static final MNumeric INT 
+            = new MNumeric("int", 4, PUnderlying.INT_32, 11, Cast_From_Varchar.TO_INT);
+
+    public static final MNumeric INT_UNSIGNED 
+            = new MNumeric("intunsigned", 8, PUnderlying.INT_64, 10, Cast_From_Varchar.TO_UNSIGNED_INT);
+
+    public static final MNumeric BIGINT 
+            = new MNumeric("bigint", 8, PUnderlying.INT_64, 21, Cast_From_Varchar.TO_BIGINT);
     
-    public static final MNumeric SMALLINT_UNSIGNED = new MNumeric("smallintunsigned", 4, PUnderlying.INT_32, 6)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_UNSIGNED_SMALLINT.evaluate(contextForErrors, in, out);
-        }
-    };
+    public static final MNumeric BIGINT_UNSIGNED 
+           = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64, 20, Cast_From_Varchar.TO_UNSIGNED_BIGINT);
 
-    public static final MNumeric MEDIUMINT = new MNumeric("mediumint", 3, PUnderlying.INT_32, 9)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_MEDIUMINT.evaluate(contextForErrors, in, out);
-        }
-    };
-
-    public static final MNumeric MEDIUMINT_UNSIGNED = new MNumeric("mediumintunsigned", 8, PUnderlying.INT_64, 8)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_UNSIGNED_MEDIUMINT.evaluate(contextForErrors, in, out);
-        }
-    };
-
-    public static final MNumeric INT = new MNumeric("int", 4, PUnderlying.INT_32, 11)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_INT.evaluate(contextForErrors, in, out);
-        }
-    };
-
-    public static final MNumeric INT_UNSIGNED = new MNumeric("intunsigned", 8, PUnderlying.INT_64, 10)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_UNSIGNED_INT.evaluate(contextForErrors, in, out);
-        }
-    };
-
-    public static final MNumeric BIGINT = new MNumeric("bigint", 8, PUnderlying.INT_64, 21)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_BIGINT.evaluate(contextForErrors, in, out);
-        }
-    };
-
-    public static final MNumeric BIGINT_UNSIGNED = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64, 20)
-    {
-        @Override
-        protected void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_UNSIGNED_BIGINT.evaluate(contextForErrors, in, out);
-        }
-    };
-    
     public static final TClass DECIMAL = new MBigDecimal();
 
     public static final TClass DECIMAL_UNSIGNED = new MBigDecimal();
-
-    protected abstract void doFromObject(TExecutionContext contextForErrors, PValueSource in, PValueTarget out);
-    @Override
-    public void fromObject(TExecutionContext contextForErrors,
-                           PValueSource in, TInstance outTInstance, PValueTarget out)
-    {
-        switch(in.getUnderlyingType())
-        {
-            case STRING:
-                doFromObject(contextForErrors, in, out);
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected PUnderlying: " + in.getUnderlyingType());
-        }
-    }
 }

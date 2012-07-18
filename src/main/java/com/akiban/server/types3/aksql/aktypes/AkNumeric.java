@@ -26,42 +26,33 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
-
+import static com.akiban.server.types3.aksql.akcasts.Cast_From_Varchar.*;
 public class AkNumeric {
 
     private AkNumeric() {}
     
     // numeric types
-    public static final NoAttrTClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16);
-    public static final NoAttrTClass INT = create("int", 1, 1, 4, PUnderlying.INT_32);
-    public static final NoAttrTClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64);
-    public static final NoAttrTClass U_BIGINT = create("unsigned bigint", 1, 1, 8, PUnderlying.INT_64);
+    public static final NoAttrTClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16, TO_SMALLINT);
+    public static final NoAttrTClass INT = create("int", 1, 1, 4, PUnderlying.INT_32, TO_INT);
+    public static final NoAttrTClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64, TO_BIGINT);
+    public static final NoAttrTClass U_BIGINT = create("unsigned bigint", 1, 1, 8, PUnderlying.INT_64, TO_UNSIGNED_BIGINT);
     
-    public static final NoAttrTClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE);
+    public static final NoAttrTClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE, TO_DOUBLE);
 
     // basically a curried function, with AkBunder.INSTANCE.id() partially applied
     private static NoAttrTClass create(String name,
                                        int internalVersion,
                                        int serialVersion,
                                        int size,
-                                       PUnderlying underlying)
+                                       PUnderlying underlying,
+                                       TCast fromObject)
     {
         return new NoAttrTClass(AkBundle.INSTANCE.id(), name, internalVersion, serialVersion, size, underlying,
-                TypeId.INTEGER_ID) {
-
-            @Override
-            public void fromObject(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
-            {
-                throw new UnsupportedOperationException("Not supported yet.");
-            }
-        };
+                fromObject, TypeId.INTEGER_ID);
     }
 }

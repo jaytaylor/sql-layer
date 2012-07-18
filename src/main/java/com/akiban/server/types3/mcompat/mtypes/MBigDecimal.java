@@ -26,17 +26,17 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.rowdata.ConversionHelperBigDecimal;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
-import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
+import com.akiban.server.types3.mcompat.mcasts.Cast_From_Varchar;
 import com.akiban.server.types3.pvalue.PBasicValueSource;
 import com.akiban.server.types3.pvalue.PBasicValueTarget;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -48,43 +48,20 @@ import com.akiban.sql.types.TypeId;
 import com.akiban.util.AkibanAppender;
 
 import java.math.BigDecimal;
-import java.util.Arrays;
 
-public class MBigDecimal extends TClass {
+public class MBigDecimal extends TClassBase {
 
     public enum Attrs implements Attribute {
         PRECISION, SCALE
     }
 
-    private static final int MAX_INDEX = 0;
-    private static final int MIN_INDEX = 1;
+    public static final int MAX_INDEX = 0;
+    public static final int MIN_INDEX = 1;
     
     public MBigDecimal(){
-        super(MBundle.INSTANCE.id(), "decimal", Attrs.class, 1, 1, 8, PUnderlying.BYTES);
+        super(MBundle.INSTANCE.id(), "decimal", Attrs.class, 1, 1, 8, PUnderlying.BYTES, Cast_From_Varchar.TO_DECIMAL);
     }
 
-     
-    @Override
-    public void fromObject(TExecutionContext contextForErrors,
-                           PValueSource in, TInstance outTInstance, PValueTarget out)
-    {
-        switch(in.getUnderlyingType())
-        {
-            case STRING:
-                String str = in.getString();
-                // TODO: pass outTIntance to TO_DECMAL.evalute() ?
-                // Cast_From_Varchar.TO_DECIMAL.evaluate(contextForErrors, in, out);
-                doPutSafety(contextForErrors,
-                            outTInstance,
-                            CastUtils.parseDecimalString(in.getString(),contextForErrors),
-                            out);
-                
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected PUnderlying: " + in.getUnderlyingType());
-        }
-    }
-    
     @Override
     public DataTypeDescriptor dataTypeDescriptor(TInstance instance) {
         // stolen from TypesTranslation
@@ -99,16 +76,7 @@ public class MBigDecimal extends TClass {
         return cacher;
     }
 
-    public static String getNum(int scale, int precision)
-    {
-        assert precision >= scale : "precision has to be >= scale";
-        
-        char val[] = new char[precision + 1];
-        Arrays.fill(val, '9');
-        val[precision - scale] = '.';
-        
-        return new String(val);
-    }
+
 
     @Override
     public TInstance instance() {
@@ -122,43 +90,7 @@ public class MBigDecimal extends TClass {
                           TInstance targetInstance,
                           PValueTarget targetValue)
     {
-        MBigDecimal.doPutSafety(null,
-                                targetInstance,
-                                (MBigDecimalWrapper) sourceValue.getObject(),
-                                targetValue);
-    }
-
-    static void doPutSafety(TExecutionContext context,
-                            TInstance outTInstance,
-                            BigDecimalWrapper num,
-                            PValueTarget out)
-    {
-        int pre = num.getPrecision();
-        int scale = num.getScale();
-
-        int expectedPre = outTInstance.attribute(Attrs.PRECISION);
-        int expectedScale = outTInstance.attribute(Attrs.SCALE);
-
-        BigDecimalWrapper meta[] = (BigDecimalWrapper[]) outTInstance.getMetaData();
-
-        if (meta == null)
-        {
-            // compute the max value:
-            meta = new BigDecimalWrapper[2];
-            meta[MAX_INDEX] = new MBigDecimalWrapper(getNum(expectedScale, expectedPre));
-            meta[MIN_INDEX] = meta[MAX_INDEX].negate();
-
-            outTInstance.setMetaData(meta);
-        }
-
-        if (num.compareTo(meta[MAX_INDEX]) >= 0)
-            out.putObject(meta[MAX_INDEX]);
-        else if (num.compareTo(meta[MIN_INDEX]) <= 0)
-            out.putObject(meta[MIN_INDEX]);
-        else if (scale > expectedScale) // check the sacle
-            out.putObject(num.round(expectedPre, expectedScale));
-        else // else put the original value
-            out.putObject(num);
+        CastUtils.doCastDecimal(context,(MBigDecimalWrapper)sourceValue.getObject(), targetValue);
     }
 
     @Override

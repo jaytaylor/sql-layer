@@ -24,39 +24,54 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.akiban.server.types3;
 
-import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.common.types.StringAttribute;
-import com.akiban.server.types3.common.types.TString;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.sql.types.TypeId;
 
-public class AkString extends TString
+public abstract class TClassBase extends TClass
 {
-    public static final AkString VARCHAR = new AkString("varchar", -1);
+    private final TCast fromObjectCast;
     
-    // TODO: define CHAR, and VARBINARY
-    
-    private AkString (String name, int serialisationSize)
-    {
-        super(TypeId.VARCHAR_ID, AkBundle.INSTANCE, name, serialisationSize);
-    }
-
+    protected <A extends Enum<A> & Attribute> TClassBase(TBundleID bundle,
+            String name,
+            Class<A> enumClass,
+            int internalRepVersion, int sVersion, int sSize,
+            PUnderlying pUnderlying,
+            TCast fromObjectCast)
+     {
+         super(bundle,
+               name,
+               enumClass,
+               internalRepVersion,
+               sVersion,
+               sSize,
+               pUnderlying);
+         
+         this.fromObjectCast = fromObjectCast;
+     }
+     
+     
+     protected <A extends Enum<A> & Attribute> TClassBase(TName name,
+            Class<A> enumClass,
+            int internalRepVersion, int sVersion, int sSize,
+            PUnderlying pUnderlying,
+            TCast fromObjectCast)
+     {
+         super(name,
+               enumClass,
+               internalRepVersion,
+               sVersion,
+               sSize,
+               pUnderlying);
+         
+         this.fromObjectCast = fromObjectCast;
+     }
+     
     @Override
-    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
-    {
-        int expectedLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
-        int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
-        int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
-        
-        String inStr = in.getString();
-        out.putString(expectedLen >= inStr.length()
-                                ? inStr
-                                : inStr.substring(0, expectedLen)
-                      , AkCollatorFactory.getAkCollator(collatorId));
-    }
+     public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
+     {
+         fromObjectCast.evaluate(context, in, out);
+     }
 }

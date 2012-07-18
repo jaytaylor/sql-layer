@@ -32,10 +32,8 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.mtypes.MDatetimes;
 import com.akiban.server.types3.mcompat.mtypes.MApproximateNumber;
-import com.akiban.server.types3.mcompat.mtypes.MBigDecimal.Attrs;
 import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -74,7 +72,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt8((byte) tryParse((String) source.getObject(),
+            target.putInt8((byte) CastUtils.parseInRange(source.getString(),
                                            Byte.MAX_VALUE, Byte.MIN_VALUE,
                                            context));
         }
@@ -96,7 +94,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt16((short)tryParse(source.getString(),
+            target.putInt16((short)CastUtils.parseInRange(source.getString(),
                                             Short.MAX_VALUE, Short.MIN_VALUE,
                                             context));
         }
@@ -112,7 +110,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt16((short) tryParse((String) source.getObject(),
+            target.putInt16((short)CastUtils.parseInRange(source.getString(),
                                              Short.MAX_VALUE,
                                              Short.MIN_VALUE,
                                              context));
@@ -129,7 +127,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)tryParse(source.getString(),
+            target.putInt32((int)CastUtils.parseInRange(source.getString(),
                                           Integer.MAX_VALUE, Integer.MIN_VALUE,
                                           context));
         }
@@ -145,7 +143,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int) tryParse((String) source.getObject(),
+            target.putInt32((int)CastUtils.parseInRange(source.getString(),
                                              Integer.MAX_VALUE, Integer.MIN_VALUE,
                                              context));
         }
@@ -161,7 +159,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(tryParse(source.getString(),
+            target.putInt64(CastUtils.parseInRange(source.getString(),
                                      Long.MAX_VALUE, Long.MIN_VALUE,
                                      context));
         }
@@ -177,7 +175,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int) tryParse((String) source.getObject(),
+            target.putInt32((int)CastUtils.parseInRange(source.getString(),
                                            Integer.MAX_VALUE,
                                            Integer.MIN_VALUE,
                                            context));
@@ -194,7 +192,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(tryParse(source.getString(),
+            target.putInt64(CastUtils.parseInRange(source.getString(),
                                      Long.MAX_VALUE, Long.MIN_VALUE,
                                      context));
         }
@@ -210,7 +208,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            String st = CastUtils.truncateNonDigits((String) source.getObject(), context);
+            String st = CastUtils.truncateNonDigits(source.getString(), context);
 
             try
             {
@@ -238,6 +236,24 @@ public class Cast_From_Varchar
             throw new UnsupportedOperationException("not supported yet");
         }
     };
+    
+    public static final TCast TO_FLOAT = new TCastBase(MString.VARCHAR, MApproximateNumber.FLOAT, true, Constantness.UNKNOWN)
+    {
+
+        @Override
+        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+        {
+            throw new UnsupportedOperationException("Not supported yet.");
+        }
+
+        @Override
+        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+        {
+            target.putFloat((float)CastUtils.parseDoubleString(source.getString(), context));
+        }
+        
+    };
+    
     public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN)
     {
         @Override
@@ -264,9 +280,9 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // TODO: needs access to target TInstace in order to
-            // correctly cast to DECIMAL(M, D)
-            throw new UnsupportedOperationException("Not supported yet.");
+            CastUtils.doCastDecimal(context,
+                                    CastUtils.parseDecimalString(source.getString(),context),
+                                    target);
         }   
     };
     
@@ -347,28 +363,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt8((byte)tryParse(source.getString(), Byte.MAX_VALUE, Byte.MIN_VALUE, context));
+            target.putInt8((byte)CastUtils.parseInRange(source.getString(), Byte.MAX_VALUE, Byte.MIN_VALUE, context));
         }
     };
-
-    private static long tryParse(String st, long max, long min, TExecutionContext context)
-    {
-        String truncated;
-
-        // first attempt
-        try
-        {
-            return CastUtils.getInRange(Long.parseLong(st), max, min, context);
-        }
-        catch (NumberFormatException e)
-        {
-            truncated = CastUtils.truncateNonDigits(st, context);
-        }
-
-        // second attempt
-        return CastUtils.getInRange(Long.parseLong(truncated), max, min, context);
-    }
-    
-    // TODO: add more
-  
 }

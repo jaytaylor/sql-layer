@@ -64,11 +64,11 @@ public class MString extends TString
     }
 
     @Override
-    public void fromObject(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
+    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
     {
-        int expectedLen = outTInstance.attribute(StringAttribute.LENGTH);
-        int charsetId = outTInstance.attribute(StringAttribute.CHARSET);
-        int collatorId = outTInstance.attribute(StringAttribute.COLLATION);
+        int expectedLen = context.outputTInstance().attribute(StringAttribute.LENGTH);
+        int charsetId = context.outputTInstance().attribute(StringAttribute.CHARSET);
+        int collatorId = context.outputTInstance().attribute(StringAttribute.COLLATION);
 
         switch (in.getUnderlyingType())
         {
@@ -86,8 +86,8 @@ public class MString extends TString
 
                 if (bytes.length > expectedLen)
                 {
-                    contextForErrors.reportTruncate("BYTES string of length " + bytes.length,
-                                                    "BYTES string of length " + expectedLen);
+                    context.reportTruncate("BYTES string of length " + bytes.length,
+                                           "BYTES string of length " + expectedLen);
                     truncated = Arrays.copyOf(bytes, expectedLen);
                 }
                 else
@@ -101,7 +101,7 @@ public class MString extends TString
                 }
                 catch (UnsupportedEncodingException e)
                 {
-                    contextForErrors.reportBadValue(e.getMessage());
+                    context.reportBadValue(e.getMessage());
                 }
                 break;
             default:

@@ -26,9 +26,9 @@
 
 package com.akiban.server.types3.common.types;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
@@ -37,7 +37,7 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
 
-public abstract class NoAttrTClass extends SimpleDtdTClass {
+public class NoAttrTClass extends SimpleDtdTClass {
 
     @Override
     public TFactory factory() {
@@ -59,9 +59,9 @@ public abstract class NoAttrTClass extends SimpleDtdTClass {
     }
 
     public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
-                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TypeId typeId) {
+                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TCast fromObject, TypeId typeId) {
         super(bundle, name, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
-                pUnderlying, typeId);
+                pUnderlying, fromObject, typeId);
     }
 
     @Override

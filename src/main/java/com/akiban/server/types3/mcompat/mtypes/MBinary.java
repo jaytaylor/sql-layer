@@ -25,7 +25,6 @@
  */
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.IllegalNameException;
 import com.akiban.server.types3.TAttributeValues;
@@ -56,28 +55,20 @@ public final class MBinary extends SimpleDtdTClass {
     }
 
     @Override
-    public void fromObject(TExecutionContext contextForErrors,
-                           PValueSource in, TInstance outTInstance, PValueTarget out)
+    public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
     {
-        switch(in.getUnderlyingType())
+        byte[] bytes = in.getBytes();
+        int expectedLength = context.outputTInstance().attribute(Attrs.LENGTH);
+        if (bytes.length > expectedLength)
         {
-            case BYTES:
-                byte[] bytes = in.getBytes();
-                int expectedLength = outTInstance.attribute(Attrs.LENGTH);
-                if (bytes.length > expectedLength)
-                {
-                    out.putBytes(Arrays.copyOf(bytes, expectedLength));
-                    contextForErrors.reportTruncate("BINARY string of LENGTH: " + bytes.length,
-                                                    "BINARY string of LENGTH: " + expectedLength);
-                }
-                else
-                    out.putBytes(bytes);
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected PUnderlying: " + in.getUnderlyingType());
+            out.putBytes(Arrays.copyOf(bytes, expectedLength));
+            context.reportTruncate("BINARY string of LENGTH: " + bytes.length,
+                                   "BINARY string of LENGTH: " + expectedLength);
         }
+        else
+            out.putBytes(bytes);
     }
-    
+
     @Override
     public TFactory factory() {
         return new TFactory() {
@@ -132,7 +123,7 @@ public final class MBinary extends SimpleDtdTClass {
     }
     
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, Attrs.class, 1, 1, -1, PUnderlying.BYTES, typeId);
+        super(MBundle.INSTANCE.id(), name, Attrs.class, 1, 1, -1, PUnderlying.BYTES, null, typeId);
         this.defaultLength = defaultLength;
     }
     

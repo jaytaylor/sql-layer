@@ -30,14 +30,11 @@ import com.akiban.server.error.InvalidDateFormatException;
 import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TExecutionContext;
-import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.mcompat.mcasts.Cast_From_Varchar;
 import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
 import java.text.DateFormatSymbols;
 import java.util.*;
 import java.util.regex.Matcher;
@@ -52,79 +49,20 @@ public class MDatetimes
 {
     private static final TBundleID MBundleID = MBundle.INSTANCE.id();
     
-    public static final NoAttrTClass DATE = new MDateTimesNoAttr(MBundleID,
-            "date", 1, 1, 4, PUnderlying.INT_32, TypeId.DATE_ID) 
-    {
-        @Override
-        protected void doPut(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_DATE.evaluate(contextForErrors, in, out);
-        }
-    };
+    public static final NoAttrTClass DATE = new NoAttrTClass(MBundleID,
+            "date", 1, 1, 4, PUnderlying.INT_32, Cast_From_Varchar.TO_DATE, TypeId.DATE_ID);
 
-    public static final NoAttrTClass DATETIME = new MDateTimesNoAttr(MBundleID,
-            "datetime", 1, 1, 8, PUnderlying.INT_64, TypeId.DATETIME_ID)
-    {
-        @Override
-        protected void doPut(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_DATETIME.evaluate(contextForErrors, in, out);
-        }
-    };
+    public static final NoAttrTClass DATETIME = new NoAttrTClass(MBundleID,
+            "datetime", 1, 1, 8, PUnderlying.INT_64, Cast_From_Varchar.TO_DATETIME, TypeId.DATETIME_ID);
 
-    public static final NoAttrTClass TIME = new MDateTimesNoAttr(MBundleID,
-            "time", 1, 1, 4, PUnderlying.INT_32, TypeId.TIME_ID)
-    {
-        @Override
-        protected void doPut(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_TIME.evaluate(contextForErrors, in, out);
-        }
-    };
+    public static final NoAttrTClass TIME = new NoAttrTClass(MBundleID,
+            "time", 1, 1, 4, PUnderlying.INT_32, Cast_From_Varchar.TO_TIME, TypeId.TIME_ID);
 
-    public static final NoAttrTClass YEAR = new MDateTimesNoAttr(MBundleID,
-            "year", 1, 1, 1, PUnderlying.INT_8, TypeId.YEAR_ID)
-    {
-        @Override
-        protected void doPut(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_YEAR.evaluate(contextForErrors, in, out);
-        }
-    };
+    public static final NoAttrTClass YEAR = new NoAttrTClass(MBundleID,
+            "year", 1, 1, 1, PUnderlying.INT_8, Cast_From_Varchar.TO_YEAR, TypeId.YEAR_ID);
 
-    public static final NoAttrTClass TIMESTAMP = new MDateTimesNoAttr(MBundleID,
-            "timestamp", 1, 1, 4, PUnderlying.INT_32, TypeId.TIMESTAMP_ID)
-    {
-        @Override
-        protected void doPut(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
-        {
-            Cast_From_Varchar.TO_TIMESTAMP.evaluate(contextForErrors, in, out);
-        }
-    };
-
-    private static abstract class MDateTimesNoAttr extends NoAttrTClass
-    {
-        protected abstract void doPut(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out);
-        
-        MDateTimesNoAttr(TBundleID bundle, String name, int internalRepVersion,
-                           int serialisationVersion, int serialisationSize, PUnderlying pUnderlying, TypeId typeId)
-        {
-            super(bundle, name, internalRepVersion, serialisationVersion, serialisationSize, pUnderlying, typeId);
-        }
-        
-        @Override
-        public void fromObject(TExecutionContext contextForErrors, PValueSource in, TInstance outTInstance, PValueTarget out)
-        {
-            switch(in.getUnderlyingType())
-            {
-                case STRING:
-                    doPut(contextForErrors, in, outTInstance, out);
-                    break;
-                default:
-                    throw new IllegalArgumentException("Unexpected UnderlyingType: " + in.getUnderlyingType());
-            }
-        }
-    }
+    public static final NoAttrTClass TIMESTAMP = new NoAttrTClass(MBundleID,
+            "timestamp", 1, 1, 4, PUnderlying.INT_32, Cast_From_Varchar.TO_TIMESTAMP, TypeId.TIMESTAMP_ID);
 
     public static final List<String> SUPPORTED_LOCALES = new LinkedList<String>();
     

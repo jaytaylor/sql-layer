@@ -25,10 +25,10 @@
  */
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.OutOfRangeException;
 import com.akiban.server.types3.TAttributeValues;
 import com.akiban.server.types3.TAttributesDeclaration;
+import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
@@ -36,6 +36,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.DoubleAttribute;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
+import com.akiban.server.types3.mcompat.mcasts.CastUtils;
 import com.akiban.server.types3.mcompat.mcasts.Cast_From_Varchar;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
@@ -44,10 +45,10 @@ import com.akiban.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
 {
-    public static final TClass DOUBLE = new MApproximateNumber(TypeId.DOUBLE_ID, PUnderlying.DOUBLE);
-    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber(TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE);
-    public static final TClass FLOAT = new MApproximateNumber(TypeId.REAL_ID, PUnderlying.FLOAT);
-    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber(TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT);
+    public static final TClass DOUBLE = new MApproximateNumber(TypeId.DOUBLE_ID, PUnderlying.DOUBLE, Cast_From_Varchar.TO_DOUBLE);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber(TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE, Cast_From_Varchar.TO_DOUBLE);
+    public static final TClass FLOAT = new MApproximateNumber(TypeId.REAL_ID, PUnderlying.FLOAT, Cast_From_Varchar.TO_FLOAT);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber(TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT, Cast_From_Varchar.TO_FLOAT);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
@@ -77,7 +78,7 @@ public class MApproximateNumber extends SimpleDtdTClass
             {
                 // cache the max value
                 meta = new double[2];
-                meta[MAX_INDEX] = Double.parseDouble(MBigDecimal.getNum(scale, precision));
+                meta[MAX_INDEX] = Double.parseDouble(CastUtils.getNum(scale, precision));
                 meta[MIN_INDEX] = meta[MAX_INDEX] * -1;
                 instance.setMetaData(meta);
                 return neg ? meta[MIN_INDEX] : meta[MAX_INDEX];
@@ -132,21 +133,6 @@ public class MApproximateNumber extends SimpleDtdTClass
         targetValue.putDouble(rounded);
     }
 
-    @Override
-    public void fromObject(TExecutionContext contextForErrors,
-                           PValueSource in, TInstance outTInstance, PValueTarget out)
-    {
-        switch(in.getUnderlyingType())
-        {
-            case STRING:
-                String str = in.getString();
-                Cast_From_Varchar.TO_DOUBLE.evaluate(contextForErrors, in, out);
-                break;
-            default:
-                throw new IllegalArgumentException("Unexpected PUnderlying: " + in.getUnderlyingType());
-        }
-    }
-
     private class DoubleFactory implements TFactory
     {
         @Override
@@ -160,12 +146,12 @@ public class MApproximateNumber extends SimpleDtdTClass
         }
     }
 
-    private MApproximateNumber(TypeId typeId, PUnderlying underlying)
+    private MApproximateNumber(TypeId typeId, PUnderlying underlying, TCast fromObject)
     {
         super(MBundle.INSTANCE.id(), "double", 
                 DoubleAttribute.class,
                 1, 1, 8,
-                underlying, typeId);
+                underlying, fromObject, typeId);
     }
     
     @Override
