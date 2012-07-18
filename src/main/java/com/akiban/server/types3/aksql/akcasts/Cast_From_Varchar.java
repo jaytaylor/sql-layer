@@ -94,7 +94,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.INT, true, Constantness.UNKNOWN)
+    public static final TCast TO_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.BIGINT, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
@@ -112,7 +112,7 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.BIGINT, true, Constantness.UNKNOWN)
+    public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(AkString.VARCHAR, AkNumeric.U_BIGINT, true, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)

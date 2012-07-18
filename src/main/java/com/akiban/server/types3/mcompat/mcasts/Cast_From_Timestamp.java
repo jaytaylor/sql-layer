@@ -115,7 +115,7 @@ public class Cast_From_Timestamp
         }
     };
         
-    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIMESTAMP, MString.VARCHAR, true, Constantness.UNKNOWN)
+    public static final TCast TO_VARCHAR = new TCastBase(MDatetimes.TIMESTAMP, MString.VARCHAR, false, Constantness.UNKNOWN)
     {
         @Override
         public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
