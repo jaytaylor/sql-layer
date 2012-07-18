@@ -60,7 +60,7 @@ public class SchemaDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateSchemaNode);
         
-        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt, null);
     }
     
     @Test (expected=DuplicateSchemaException.class)
@@ -74,7 +74,7 @@ public class SchemaDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateSchemaNode);
         
-        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt, null);
     }
     
       
@@ -89,7 +89,7 @@ public class SchemaDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateSchemaNode);
         
-        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt, null);
     }
         
     @Test
@@ -103,7 +103,7 @@ public class SchemaDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateSchemaNode);
         
-        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt);
+        SchemaDDL.createSchema(ais, null, (CreateSchemaNode)stmt, null);
     }
 
     @Test (expected=NoSuchSchemaException.class)
@@ -117,7 +117,7 @@ public class SchemaDDLTest {
         
         DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
-        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt, null);
     }
 
     @Test
@@ -131,7 +131,7 @@ public class SchemaDDLTest {
         
         DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
-        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)node);
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)node, null);
     }
 
     @Test
@@ -145,7 +145,7 @@ public class SchemaDDLTest {
         
         DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
-        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt, null);
     }
 
     @Test(expected=DropSchemaNotAllowedException.class)
@@ -160,7 +160,7 @@ public class SchemaDDLTest {
         assertTrue (stmt instanceof DropSchemaNode);
         DDLFunctions ddlFunctions = new TableDDLTest.DDLFunctionsMock(ais);
         
-        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt);
+        SchemaDDL.dropSchema(ddlFunctions, null, (DropSchemaNode)stmt, null);
     }
 
     protected SQLParser parser;
