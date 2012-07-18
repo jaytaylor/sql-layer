@@ -26,8 +26,10 @@ Name: "installsvc\auto"; Description: "Start with Windows"; Flags: unchecked
 Name: "start"; Description: "Start now"
 
 [Dirs]
-Name: "{code:DataDir}\data"
-Name: "{code:DataDir}\log"
+Name: "{code:DataDir}\data"; Permissions: users-modify; Tasks: not installsvc
+Name: "{code:DataDir}\data"; Tasks: installsvc
+Name: "{code:DataDir}\log"; Permissions: users-modify; Tasks: not installsvc
+Name: "{code:DataDir}\log"; Permissions: users-readexec; Tasks: installsvc 
 
 [Files]
 Source: "LICENSE.txt"; DestDir: "{app}"
