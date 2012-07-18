@@ -33,6 +33,7 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -40,6 +41,7 @@ import java.lang.reflect.*;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+
 
 public class FunctionRegistryImpl implements FunctionRegistry
 {
@@ -106,7 +108,15 @@ public class FunctionRegistryImpl implements FunctionRegistry
     }
 
     private void rejectTOverload(TOverload overload, Throwable e) {
-        logger.error("rejecting overload " + overload + " from " +  overload.getClass(), e);
+        StringBuilder sb = new StringBuilder("rejecting overload ");
+        Class<?> overloadClass = overload == null ? null : overload.getClass();
+        try {
+            sb.append(overload).append(' ');
+        } catch (Exception e1) {
+            logger.error("couldn't toString overload: " + overload);
+        }
+        sb.append("from ").append(overloadClass);
+        logger.error(sb.toString(), e);
     }
 
     private static <T> Collection<T> collectInstances(Collection<Class<?>> classes, Class<T> target)
