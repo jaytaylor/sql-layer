@@ -40,6 +40,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
+import static com.akiban.server.types3.TParsers.*;
+
 /**
  * 
  * This implements a MySQL compatible cast from STRING.
@@ -72,9 +74,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt8((byte) CastUtils.parseInRange(source.getString(),
-                                           Byte.MAX_VALUE, Byte.MIN_VALUE,
-                                           context));
+            TINYINT.parse(context, source, target);
         }
 
         @Override
@@ -94,9 +94,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt16((short)CastUtils.parseInRange(source.getString(),
-                                            Short.MAX_VALUE, Short.MIN_VALUE,
-                                            context));
+            UNSIGNED_TINYINT.parse(context, source, target);
         }
     };
     public static final TCast TO_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT, true, Constantness.UNKNOWN)
@@ -110,10 +108,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt16((short)CastUtils.parseInRange(source.getString(),
-                                             Short.MAX_VALUE,
-                                             Short.MIN_VALUE,
-                                             context));
+            SMALLINT.parse(context, source, target);
         }
     };
     public static final TCast TO_UNSIGNED_SMALLINT = new TCastBase(MString.VARCHAR, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN)
@@ -127,9 +122,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)CastUtils.parseInRange(source.getString(),
-                                          Integer.MAX_VALUE, Integer.MIN_VALUE,
-                                          context));
+            UNSIGNED_SMALLINT.parse(context, source, target);
         }
     };
     public static final TCast TO_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN)
@@ -143,9 +136,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)CastUtils.parseInRange(source.getString(),
-                                             Integer.MAX_VALUE, Integer.MIN_VALUE,
-                                             context));
+            MEDIUMINT.parse(context, source, target);
         }
     };
     public static final TCast TO_UNSIGNED_MEDIUMINT = new TCastBase(MString.VARCHAR, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN)
@@ -159,9 +150,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(CastUtils.parseInRange(source.getString(),
-                                     Long.MAX_VALUE, Long.MIN_VALUE,
-                                     context));
+            UNSIGNED_MEDIUMINT.parse(context, source, target);
         }
     };
     public static final TCast TO_INT = new TCastBase(MString.VARCHAR, MNumeric.INT, true, Constantness.UNKNOWN)
@@ -175,10 +164,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)CastUtils.parseInRange(source.getString(),
-                                           Integer.MAX_VALUE,
-                                           Integer.MIN_VALUE,
-                                           context));
+            INT.parse(context, source, target);
         }
     };
     public static final TCast TO_UNSIGNED_INT = new TCastBase(MString.VARCHAR, MNumeric.INT_UNSIGNED, true, Constantness.UNKNOWN)
@@ -192,9 +178,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(CastUtils.parseInRange(source.getString(),
-                                     Long.MAX_VALUE, Long.MIN_VALUE,
-                                     context));
+            UNSIGNED_INT.parse(context, source, target);
         }
     };
     public static final TCast TO_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT, true, Constantness.UNKNOWN)
@@ -208,17 +192,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            String st = CastUtils.truncateNonDigits(source.getString(), context);
-
-            try
-            {
-                target.putInt64(Long.parseLong(st));
-            }
-            catch (NumberFormatException e) // overflow error
-            {
-                context.reportOverflow(e.getMessage());
-                target.putInt64(Long.MAX_VALUE);
-            }
+            BIGINT.parse(context, source, target);
         }
     };
     public static final TCast TO_UNSIGNED_BIGINT = new TCastBase(MString.VARCHAR, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN)
@@ -232,8 +206,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            // BigInteger ?
-            throw new UnsupportedOperationException("not supported yet");
+            UNSIGNED_BIGINT.parse(context, source, target);
         }
     };
     
@@ -249,7 +222,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putFloat((float)CastUtils.parseDoubleString(source.getString(), context));
+            FLOAT.parse(context, source, target);
         }
         
     };
@@ -265,7 +238,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putDouble(CastUtils.parseDoubleString(source.getString(), context));
+            DOUBLE.parse(context, source, target);
         }
     };
     
@@ -280,9 +253,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            CastUtils.doCastDecimal(context,
-                                    CastUtils.parseDecimalString(source.getString(),context),
-                                    target);
+            DECIMAL.parse(context, source, target);
         }   
     };
     
@@ -297,11 +268,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            int ret = MDatetimes.parseDate(source.getString(), context);
-            if (ret < 0)
-                target.putNull();
-            else
-                target.putInt32(ret);
+            DATE.parse(context, source, target);
         }
     };
 
@@ -317,7 +284,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(MDatetimes.parseDatetime(source.getString()));
+            DATETIME.parse(context, source, target);
         }
     };
     
@@ -332,7 +299,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32(MDatetimes.parseTime(source.getString(), context));
+            TIME.parse(context, source, target);
         }
     };
 
@@ -348,7 +315,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32(MDatetimes.parseTimestamp(source.getString(), context.getCurrentTimezone(), context));
+            TIMESTAMP.parse(context, source, target);
         }
     };
     
@@ -363,7 +330,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt8((byte)CastUtils.parseInRange(source.getString(), Byte.MAX_VALUE, Byte.MIN_VALUE, context));
+            YEAR.parse(context, source, target);
         }
     };
 }

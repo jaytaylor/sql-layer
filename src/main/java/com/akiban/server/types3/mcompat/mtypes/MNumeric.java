@@ -26,11 +26,12 @@
 
 package com.akiban.server.types3.mcompat.mtypes;
 
-import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TParser;
+import com.akiban.server.types3.TParsers;
 import com.akiban.server.types3.TypeDeclarationException;
 import com.akiban.server.types3.common.types.NumericAttribute;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
@@ -43,11 +44,11 @@ import com.akiban.sql.types.TypeId;
 
 public class MNumeric extends SimpleDtdTClass {
 
-    protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying, int defaultWidth, TCast fromObject) {
+    protected MNumeric(String name, int serializationSize, PUnderlying pUnderlying, int defaultWidth, TParser parser) {
         super(MBundle.INSTANCE.id(), name, 
                 NumericAttribute.class,
                 1, 1, serializationSize, 
-                pUnderlying, fromObject, inferTypeid(name));
+                pUnderlying, parser, inferTypeid(name));
         this.defaultWidth = defaultWidth;
     }
 
@@ -103,34 +104,34 @@ public class MNumeric extends SimpleDtdTClass {
     // numeric types
     // TODO verify default widths
     public static final MNumeric TINYINT 
-            = new MNumeric("tinyint", 1, PUnderlying.INT_8, 5, Cast_From_Varchar.TO_TINYINT); 
+            = new MNumeric("tinyint", 1, PUnderlying.INT_8, 5, TParsers.TINYINT); 
 
     public static final MNumeric TINYINT_UNSIGNED 
-            = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16, 4, Cast_From_Varchar.TO_UNSIGNED_TINYINT);
+            = new MNumeric("tinyintunsigned", 4, PUnderlying.INT_16, 4, TParsers.UNSIGNED_TINYINT);
 
     public static final MNumeric SMALLINT 
-            = new MNumeric("smallint", 2, PUnderlying.INT_16, 7, Cast_From_Varchar.TO_SMALLINT);
+            = new MNumeric("smallint", 2, PUnderlying.INT_16, 7, TParsers.SMALLINT);
 
     public static final MNumeric SMALLINT_UNSIGNED 
-            = new MNumeric("smallintunsigned", 4, PUnderlying.INT_32, 6, Cast_From_Varchar.TO_UNSIGNED_SMALLINT);
+            = new MNumeric("smallintunsigned", 4, PUnderlying.INT_32, 6, TParsers.UNSIGNED_SMALLINT);
 
     public static final MNumeric MEDIUMINT 
-            = new MNumeric("mediumint", 3, PUnderlying.INT_32, 9, Cast_From_Varchar.TO_MEDIUMINT);
+            = new MNumeric("mediumint", 3, PUnderlying.INT_32, 9, TParsers.MEDIUMINT);
 
     public static final MNumeric MEDIUMINT_UNSIGNED 
-            = new MNumeric("mediumintunsigned", 8, PUnderlying.INT_64, 8, Cast_From_Varchar.TO_UNSIGNED_MEDIUMINT);
+            = new MNumeric("mediumintunsigned", 8, PUnderlying.INT_64, 8, TParsers.UNSIGNED_MEDIUMINT);
 
     public static final MNumeric INT 
-            = new MNumeric("int", 4, PUnderlying.INT_32, 11, Cast_From_Varchar.TO_INT);
+            = new MNumeric("int", 4, PUnderlying.INT_32, 11, TParsers.INT);
 
     public static final MNumeric INT_UNSIGNED 
-            = new MNumeric("intunsigned", 8, PUnderlying.INT_64, 10, Cast_From_Varchar.TO_UNSIGNED_INT);
+            = new MNumeric("intunsigned", 8, PUnderlying.INT_64, 10, TParsers.UNSIGNED_INT);
 
     public static final MNumeric BIGINT 
-            = new MNumeric("bigint", 8, PUnderlying.INT_64, 21, Cast_From_Varchar.TO_BIGINT);
+            = new MNumeric("bigint", 8, PUnderlying.INT_64, 21, TParsers.BIGINT);
     
     public static final MNumeric BIGINT_UNSIGNED 
-           = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64, 20, Cast_From_Varchar.TO_UNSIGNED_BIGINT);
+           = new MNumeric("bigintunsigned", 8, PUnderlying.INT_64, 20, TParsers.UNSIGNED_BIGINT);
 
     public static final TClass DECIMAL = new MBigDecimal();
 

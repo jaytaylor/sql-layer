@@ -33,10 +33,10 @@ import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TParsers;
 import com.akiban.server.types3.common.BigDecimalWrapper;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
-import com.akiban.server.types3.mcompat.mcasts.Cast_From_Varchar;
 import com.akiban.server.types3.pvalue.PBasicValueSource;
 import com.akiban.server.types3.pvalue.PBasicValueTarget;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -59,7 +59,7 @@ public class MBigDecimal extends TClassBase {
     public static final int MIN_INDEX = 1;
     
     public MBigDecimal(){
-        super(MBundle.INSTANCE.id(), "decimal", Attrs.class, 1, 1, 8, PUnderlying.BYTES, Cast_From_Varchar.TO_DECIMAL);
+        super(MBundle.INSTANCE.id(), "decimal", Attrs.class, 1, 1, 8, PUnderlying.BYTES, TParsers.DECIMAL);
     }
 
     @Override

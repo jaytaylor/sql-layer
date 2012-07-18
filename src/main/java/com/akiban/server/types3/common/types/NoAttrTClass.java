@@ -28,10 +28,10 @@ package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -59,9 +59,9 @@ public class NoAttrTClass extends SimpleDtdTClass {
     }
 
     public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
-                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TCast fromObject, TypeId typeId) {
+                           int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
         super(bundle, name, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
-                pUnderlying, fromObject, typeId);
+                pUnderlying, parser, typeId);
     }
 
     @Override

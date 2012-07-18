@@ -27,24 +27,24 @@ package com.akiban.server.types3.common.types;
 
 import com.akiban.server.types3.Attribute;
 import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClassBase;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TName;
+import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 public abstract class SimpleDtdTClass extends TClassBase {
     protected <A extends Enum<A> & Attribute> SimpleDtdTClass(TName name, Class<A> enumClass, int internalRepVersion, int serializationVersion,
-                              int serializationSize, PUnderlying pUnderlying, TCast fromObject, TypeId typeId) {
-        super(name, enumClass, internalRepVersion, serializationVersion, serializationSize, pUnderlying, fromObject);
+                              int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
+        super(name, enumClass, internalRepVersion, serializationVersion, serializationSize, pUnderlying, parser);
         this.typeId = typeId;
     }
 
     protected <A extends Enum<A> & Attribute>SimpleDtdTClass(TBundleID bundle, String name, Class<A> enumClass, int internalRepVersion,
-                              int serializationVersion, int serializationSize, PUnderlying pUnderlying, TCast fromObject, TypeId typeId) {
-        super(bundle, name, enumClass, internalRepVersion, serializationVersion, serializationSize, pUnderlying, fromObject);
+                              int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
+        super(bundle, name, enumClass, internalRepVersion, serializationVersion, serializationSize, pUnderlying, parser);
         this.typeId = typeId;
     }
 

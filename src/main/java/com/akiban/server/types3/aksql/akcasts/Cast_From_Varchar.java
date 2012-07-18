@@ -40,6 +40,8 @@ import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.Constantness;
 
+import static com.akiban.server.types3.TParsers.*;
+
 public class Cast_From_Varchar
 {
     public static final TCast TO_BOOLEAN = new TCastBase(AkString.VARCHAR, AkBool.INSTANCE, true, Constantness.UNKNOWN)
@@ -53,7 +55,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putBool(Boolean.parseBoolean(source.getString()));
+            BOOLEAN.parse(context, source, target);
         }
     };
     
@@ -68,10 +70,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt16((short)CastUtils.parseInRange((source.getString()),
-                                                           Short.MAX_VALUE,
-                                                           Short.MIN_VALUE,
-                                                           context));
+            SMALLINT.parse(context, source, target);
         }
     };
     
@@ -87,10 +86,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt32((int)CastUtils.parseInRange(source.getString(),
-                                                         Integer.MAX_VALUE,
-                                                         Integer.MIN_VALUE,
-                                                         context));
+            INT.parse(context, source, target);
         }
     };
     
@@ -105,10 +101,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(CastUtils.parseInRange(source.getString(),
-                                                   Long.MAX_VALUE,
-                                                   Long.MIN_VALUE,
-                                                   context));
+            BIGINT.parse(context, source, target);
         }
     };
     
@@ -123,10 +116,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putInt64(CastUtils.parseInRange(source.getString(),
-                                                   Long.MAX_VALUE,
-                                                   Long.MIN_VALUE,
-                                                   context));
+            UNSIGNED_BIGINT.parse(context, source, target);
         }
     };
     
@@ -141,7 +131,7 @@ public class Cast_From_Varchar
         @Override
         public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
         {
-            target.putDouble(CastUtils.parseDoubleString(source.getString(), context));
+            DOUBLE.parse(context, source, target);
         }
     };
 }

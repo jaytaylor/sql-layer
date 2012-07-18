@@ -32,14 +32,14 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 
 public abstract class TClassBase extends TClass
 {
-    private final TCast fromObjectCast;
+    private final TParser parser;
     
     protected <A extends Enum<A> & Attribute> TClassBase(TBundleID bundle,
             String name,
             Class<A> enumClass,
             int internalRepVersion, int sVersion, int sSize,
             PUnderlying pUnderlying,
-            TCast fromObjectCast)
+            TParser parser)
      {
          super(bundle,
                name,
@@ -49,7 +49,7 @@ public abstract class TClassBase extends TClass
                sSize,
                pUnderlying);
          
-         this.fromObjectCast = fromObjectCast;
+         this.parser = parser;
      }
      
      
@@ -57,7 +57,7 @@ public abstract class TClassBase extends TClass
             Class<A> enumClass,
             int internalRepVersion, int sVersion, int sSize,
             PUnderlying pUnderlying,
-            TCast fromObjectCast)
+            TParser parser)
      {
          super(name,
                enumClass,
@@ -66,12 +66,12 @@ public abstract class TClassBase extends TClass
                sSize,
                pUnderlying);
          
-         this.fromObjectCast = fromObjectCast;
+         this.parser = parser;
      }
      
     @Override
      public void fromObject(TExecutionContext context, PValueSource in, PValueTarget out)
      {
-         fromObjectCast.evaluate(context, in, out);
+         parser.parse(context, in, out);
      }
 }

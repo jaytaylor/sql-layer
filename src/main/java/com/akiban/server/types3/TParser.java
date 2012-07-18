@@ -23,23 +23,16 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
-package com.akiban.server.types3.aksql.aktypes;
-
-import com.akiban.server.types3.TParsers;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.aksql.akcasts.Cast_From_Varchar;
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.sql.types.TypeId;
-
-/**
- * 
- * Implement AkServer's bool type which is a Java's primitive boolean
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
  */
-public class AkBool
+package com.akiban.server.types3;
+
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueTarget;
+
+public interface TParser
 {
-    public static final NoAttrTClass INSTANCE 
-            = new NoAttrTClass(AkBundle.INSTANCE.id(), "boolean", 1, 1, 1, 
-                               PUnderlying.BOOL, TParsers.BOOLEAN, TypeId.BOOLEAN_ID);
+    public void parse (TExecutionContext context, PValueSource in, PValueTarget out);
 }

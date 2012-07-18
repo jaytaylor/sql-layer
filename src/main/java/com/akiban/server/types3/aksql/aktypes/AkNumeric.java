@@ -26,23 +26,23 @@
 
 package com.akiban.server.types3.aksql.aktypes;
 
-import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TParsers;
+import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.aksql.AkBundle;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.sql.types.TypeId;
-import static com.akiban.server.types3.aksql.akcasts.Cast_From_Varchar.*;
 public class AkNumeric {
 
     private AkNumeric() {}
     
     // numeric types
-    public static final NoAttrTClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16, TO_SMALLINT);
-    public static final NoAttrTClass INT = create("int", 1, 1, 4, PUnderlying.INT_32, TO_INT);
-    public static final NoAttrTClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64, TO_BIGINT);
-    public static final NoAttrTClass U_BIGINT = create("unsigned bigint", 1, 1, 8, PUnderlying.INT_64, TO_UNSIGNED_BIGINT);
+    public static final NoAttrTClass SMALLINT = create("smallint", 1, 1, 2, PUnderlying.INT_16, TParsers.SMALLINT);
+    public static final NoAttrTClass INT = create("int", 1, 1, 4, PUnderlying.INT_32, TParsers.INT);
+    public static final NoAttrTClass BIGINT = create("bigint", 1, 1, 8, PUnderlying.INT_64, TParsers.BIGINT);
+    public static final NoAttrTClass U_BIGINT = create("unsigned bigint", 1, 1, 8, PUnderlying.INT_64, TParsers.UNSIGNED_BIGINT);
     
-    public static final NoAttrTClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE, TO_DOUBLE);
+    public static final NoAttrTClass DOUBLE = create("double precision", 1, 1, 8, PUnderlying.DOUBLE, TParsers.DOUBLE);
 
     // basically a curried function, with AkBunder.INSTANCE.id() partially applied
     private static NoAttrTClass create(String name,
@@ -50,9 +50,9 @@ public class AkNumeric {
                                        int serialVersion,
                                        int size,
                                        PUnderlying underlying,
-                                       TCast fromObject)
+                                       TParser parser)
     {
         return new NoAttrTClass(AkBundle.INSTANCE.id(), name, internalVersion, serialVersion, size, underlying,
-                fromObject, TypeId.INTEGER_ID);
+                parser, TypeId.INTEGER_ID);
     }
 }
