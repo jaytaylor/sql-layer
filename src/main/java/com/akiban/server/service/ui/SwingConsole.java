@@ -34,7 +34,6 @@ import javax.swing.*;
 import javax.swing.text.*;
 
 import java.net.URL;
-import java.io.OutputStream;
 import java.io.PrintStream;
 
 public class SwingConsole extends JFrame implements WindowListener 
@@ -51,7 +50,7 @@ public class SwingConsole extends JFrame implements WindowListener
 
         this.serviceManager = serviceManager;
 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(this);
         {
             boolean macOSX = "Mac OS X".equals(System.getProperty("os.name"));
@@ -106,8 +105,12 @@ public class SwingConsole extends JFrame implements WindowListener
         JScrollPane scrollPane = new JScrollPane(textArea);
         add(scrollPane);
 
-        pack();
-        setLocation(200, 200);
+        // centerise the window
+        pack();       
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        setSize(screenSize.width/2, screenSize.height/2);
+        setLocationRelativeTo(null);
+ 
         
         URL iconURL = SwingConsole.class.getClassLoader().getResource(SwingConsole.class.getPackage().getName().replace('.', '/') + "/" + ICON_PATH);
         if (iconURL != null) {
@@ -118,6 +121,11 @@ public class SwingConsole extends JFrame implements WindowListener
 
     @Override
     public void windowClosing(WindowEvent arg0) {
+        int yn = javax.swing.JOptionPane.showConfirmDialog(
+                this, "Quitting Akiban-server. Continue?", "Attention!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
+        
+        if (yn == JOptionPane.NO_OPTION)
+            return;
         quit(false);
     }
 
