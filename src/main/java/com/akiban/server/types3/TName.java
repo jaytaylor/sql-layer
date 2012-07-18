@@ -50,6 +50,10 @@ public final class TName {
         return name;
     }
 
+    public TBundleID bundleId() {
+        return bundleID;
+    }
+
     // object interface
 
     @Override

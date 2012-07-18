@@ -27,9 +27,25 @@
 package com.akiban.server.t3expressions;
 
 import com.akiban.server.types3.TAggregator;
+import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.texpressions.TValidatedOverload;
 
 import java.util.Collection;
+import java.util.Set;
 
-public interface T3AggregatesRegistry {
+public interface T3RegistryService {
     Collection<? extends TAggregator> getAggregates(String name);
+    Collection<? extends TValidatedOverload> getOverloads(String name);
+
+    /**
+     * Find the registered cast going from source to taret.
+     * @param source Type to cast from
+     * @param target Type to cast to
+     * @return Return matching cast or <tt>null</tt> if none
+     */
+    TCast cast(TClass source, TClass target);
+
+    Set<? extends TClass> stronglyCastableTo(TClass tClass);
+
 }

@@ -33,7 +33,6 @@ import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
-import com.google.inject.Singleton;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,7 +41,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-@Singleton
 public class FunctionRegistryImpl implements FunctionRegistry
 {
     private static final Logger logger = LoggerFactory.getLogger(FunctionRegistryImpl.class);
