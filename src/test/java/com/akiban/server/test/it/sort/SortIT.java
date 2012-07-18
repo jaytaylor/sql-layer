@@ -40,6 +40,7 @@ import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.test.it.ITBase;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types.NullValueSource;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 import com.persistit.exception.PersistitException;
@@ -66,7 +67,8 @@ public final class SortIT extends ITBase {
                                    inputOperator.rowType(),
                                    ordering,
                                    API.SortOption.PRESERVE_DUPLICATES,
-                                   TEST_TAP);
+                                   TEST_TAP,
+                                   Types3Switch.ON);
         Cursor sortedCursor = sorter.sort();
 
         // check expected output
