@@ -1,6 +1,6 @@
-SelectQuery@208290a1
-  ResultSet@5be54ab3[c1]
-    Project@2a8b5ce7[tc.c1]
-      Select@23805783[]
-        TableJoins@3ef16baa(TableGroup@5bd3862e(tc) - SingleIndexScan@1c0e651b(Index(test.tc.tc_c1[IndexColumn(c1)]), NONE))
-          TableSource@12b6d1b8(tc - TableGroup@5bd3862e(tc))
+SelectQuery@7f3ae009
+  ResultSet@724ab020[c1]
+    Project@5713f7f[tc.c1]
+      Select@4dffada3[]
+        TableJoins@4ce0d056(TableGroup@3b8de588(tc) - GroupScan@60d86243(Group(tc -> test._akiban_tc)))
+          TableSource@66d83fa6(tc - TableGroup@3b8de588(tc))
