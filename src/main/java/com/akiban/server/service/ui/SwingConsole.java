@@ -64,7 +64,7 @@ public class SwingConsole extends JFrame implements WindowListener
                 JMenuItem quitMenuItem = new JMenuItem("Quit", KeyEvent.VK_Q);
                 quitMenuItem.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            quit(true);
+                            quit();
                         }
                     });
                 quitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, shift));
@@ -121,15 +121,9 @@ public class SwingConsole extends JFrame implements WindowListener
 
     @Override
     public void windowClosing(WindowEvent arg0) {
-        int yn = javax.swing.JOptionPane.showConfirmDialog(
-                this, "Quitting Akiban-server. Continue?", "Attention!", JOptionPane.YES_NO_OPTION, JOptionPane.QUESTION_MESSAGE);
-        
-        if (yn == JOptionPane.YES_OPTION)
-            quit(false);
-        else
-            return;
+        quit();
     }
-
+    
     @Override
     public void windowClosed(WindowEvent arg0) {
     }
@@ -186,19 +180,24 @@ public class SwingConsole extends JFrame implements WindowListener
         printStream = null;
     }
 
-    protected void quit(boolean force) {
-        switch (serviceManager.getState()) {
+    protected void quit() {
+        switch (serviceManager.getState()) {    
+        case ERROR_STARTING:
+            dispose();
+            break;
         default:
+            int yn = javax.swing.JOptionPane.showConfirmDialog(this, 
+                                                               "Do you really want to quit Akiban-Server?",
+                                                               "Attention!", 
+                                                                JOptionPane.YES_NO_OPTION,
+                                                                JOptionPane.QUESTION_MESSAGE);
+
+            if (yn != JOptionPane.YES_OPTION)
+                return;
             try {
                 serviceManager.stopServices();
             }
             catch (Exception ex) {
-            }
-            break;
-        case IDLE:
-        case ERROR_STARTING:
-            if (force) {
-                dispose();
             }
             break;
         }
