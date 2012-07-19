@@ -451,6 +451,15 @@ public class AISMergeTest {
      */
     @Test
     public void userTableIDUniqueIncludingIS() {
+        /*
+         * Set up this scenario:
+         * table id -> table_name
+         * x   -> test.bar
+         * x+1 -> test._akiban_bar
+         *   (x+2 = invalid next user table id)
+         * x+2 -> i_s.foo
+         * x+3 -> i_s._akiban_foo
+         */
         AISBuilder tb = new AISBuilder(t);
         tb.setTableIdOffset(AISMerge.AIS_TABLE_ID_OFFSET);
 
@@ -468,10 +477,8 @@ public class AISMergeTest {
         tb.groupingIsComplete();
         t.freeze();
 
-        UserTable barTable = tb.akibanInformationSchema().getUserTable(SCHEMA, "bar");
-        assertNotNull("bar table", barTable);
-        UserTable fooTable = t.getUserTable(TableName.INFORMATION_SCHEMA, "foo");
-        assertNotNull("foo table", fooTable);
+        assertNotNull("bar table", tb.akibanInformationSchema().getUserTable(SCHEMA, "bar"));
+        assertNotNull("foo table", t.getUserTable(TableName.INFORMATION_SCHEMA, "foo"));
 
         b.userTable(SCHEMA, "zap");
         b.column(SCHEMA, "zap", "id", 0, "INT", null, null, false, false, null, null);
@@ -485,9 +492,10 @@ public class AISMergeTest {
         /*
          * Set up this scenario:
          * table id -> table_name
-         * x -> i_s.foo
+         * x   -> i_s.foo
          * x+1 -> i_s._akiban_foo
-         *    -- next i_s table ID
+         *    (x+2 = valid next i_s table ID)
+         *    (x+3 = invalid next i_s group table id)
          * x+3 -> test.bar
          * x+4 -> test._akiban_bar
          */
