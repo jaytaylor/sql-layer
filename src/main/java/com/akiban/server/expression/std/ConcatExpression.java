@@ -39,9 +39,12 @@ import com.akiban.server.types.NullValueSource;
 import com.akiban.server.types.ValueSource;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.Label;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.Type;
 import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import com.akiban.util.AkibanAppender;
+import java.math.BigDecimal;
 
 import java.util.List;
 
@@ -97,6 +100,15 @@ public final class ConcatExpression extends AbstractCompositeExpression {
     @Override
     public String name () {
         return "CONCATENATE";
+    }
+    
+    @Override
+    public Explainer getExplainer ()
+    {
+        Explainer ex = super.getExplainer();
+        ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance("||"));
+        ex.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
+        return ex;
     }
     
     @Override

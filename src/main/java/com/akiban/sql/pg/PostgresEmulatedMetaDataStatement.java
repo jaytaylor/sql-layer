@@ -98,8 +98,9 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
                                "LEFT JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace\\s+" +
                                "WHERE " +
                                "(?:pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+AND )?" +
-                               "(c.relname ~ '(.+)'\\s+)?" + // 1 (2)
-                               "((?:AND )?n.nspname ~ '(.+)'\\s+)?" + // 3 (4)
+                               "(n.nspname ~ '(.+)'\\s+)?" + // 1 (2)
+                               "((?:AND )?c.relname ~ '(.+)'\\s+)?" + // 3 (4)
+                               "((?:AND )?n.nspname ~ '(.+)'\\s+)?" + // 5 (6)
                                "(?:AND pg_catalog.pg_table_is_visible\\(c.oid\\)\\s+)?" +
                                "ORDER BY 2, 3;?", true),
         PSQL_DESCRIBE_TABLES_2("SELECT c.relchecks, c.relkind, c.relhasindex, c.relhasrules, c.relhastriggers, c.relhasoids, '', c.reltablespace\\s+" +
@@ -500,9 +501,11 @@ public class PostgresEmulatedMetaDataStatement implements PostgresStatement
         names.addAll(ais.getViews().keySet());
         Pattern schemaPattern = null, tablePattern = null;
         if (groups.get(1) != null)
-            tablePattern = Pattern.compile(groups.get(2));
+            schemaPattern = Pattern.compile(groups.get(2));
         if (groups.get(3) != null)
-            schemaPattern = Pattern.compile(groups.get(4));
+            tablePattern = Pattern.compile(groups.get(4));
+        if (groups.get(5) != null)
+            schemaPattern = Pattern.compile(groups.get(6));
         Iterator<TableName> iter = names.iterator();
         while (iter.hasNext()) {
             TableName name = iter.next();

@@ -1,7 +1,7 @@
 PhysicalSelect[order_date:date[DATE], oid:int[INT], oid:int[INT]]
   Map_NestedLoops
     IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]) (,))
-    project([Bound(0,Field(0)), Bound(0,Field(2)), Field(2)])
+    project(Bound(0,Field(0)), Bound(0,Field(2)), Field(2))
       IfEmpty_Default(Literal(NULL), Literal(NULL), Literal(NULL), KEEP_INPUT)
-        Select_HKeyOrdered(Index(test.orders.order_date[IndexColumn(order_date)]), Field(2) != Bound(0,Field(2)))
+        Select_HKeyOrdered(Field(2) != Bound(0,Field(2)))
           IndexScan_Default(Index(test.orders.order_date[IndexColumn(order_date)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))

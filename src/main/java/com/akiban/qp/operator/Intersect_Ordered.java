@@ -26,14 +26,10 @@
 
 package com.akiban.qp.operator;
 
-import com.akiban.ais.model.*;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.row.ValuesHolderRow;
 import com.akiban.qp.rowtype.IndexRowType;
 import com.akiban.qp.rowtype.RowType;
-import com.akiban.server.expression.std.AbstractTwoArgExpressionEvaluation;
-import com.akiban.server.expression.std.FieldExpression;
-import com.akiban.server.expression.std.RankExpression;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.server.api.dml.ColumnSelector;
 import com.akiban.server.api.dml.IndexRowPrefixSelector;
@@ -47,6 +43,7 @@ import java.util.*;
 
 import static com.akiban.qp.operator.API.IntersectOption;
 import static com.akiban.qp.operator.API.JoinType;
+import com.akiban.sql.optimizer.explain.*;
 import static java.lang.Math.abs;
 import static java.lang.Math.min;
 
@@ -203,6 +200,7 @@ class Intersect_Ordered extends Operator
         this.right = right;
         this.leftRowType = leftRowType;
         this.rightRowType = rightRowType;
+        this.joinType = joinType;
         this.ascending = Arrays.copyOf(ascending, ascending.length);
         // outerjoins
         this.keepUnmatchedLeft = joinType == JoinType.LEFT_JOIN;
@@ -231,6 +229,7 @@ class Intersect_Ordered extends Operator
     private final Operator right;
     private final IndexRowType leftRowType;
     private final IndexRowType rightRowType;
+    private final JoinType joinType;
     private final int leftFixedFields;
     private final int rightFixedFields;
     private final int fieldsToCompare;
@@ -246,7 +245,14 @@ class Intersect_Ordered extends Operator
     @Override
     public Explainer getExplainer()
     {
-        throw new UnsupportedOperationException("Not supported yet.");
+        Attributes atts = new Attributes();
+        
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Intersect"));
+        atts.put(Label.LEFT, PrimitiveExplainer.getInstance(leftFixedFields));
+        atts.put(Label.RIGHT, PrimitiveExplainer.getInstance(rightFixedFields));
+        atts.put(Label.NUM_COMPARE, PrimitiveExplainer.getInstance(fieldsToCompare));
+        atts.put(Label.JOIN_OPTION, PrimitiveExplainer.getInstance(joinType.name()));
+        return new OperationExplainer(com.akiban.sql.optimizer.explain.Type.ORDERED, atts);
     }
 
     // Inner classes

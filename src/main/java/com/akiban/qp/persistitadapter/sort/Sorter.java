@@ -60,7 +60,8 @@ public class Sorter
                   RowType rowType, 
                   API.Ordering ordering,
                   API.SortOption sortOption,
-                  InOutTap loadTap)
+                  InOutTap loadTap,
+                  boolean usePValues)
         throws PersistitException
     {
         this.context = context;
@@ -100,6 +101,7 @@ public class Sorter
             evaluations.add(evaluation);
         }
         this.loadTap = loadTap;
+        this.usePValues = usePValues;
     }
 
     public Cursor sort() throws PersistitException
@@ -157,7 +159,7 @@ public class Sorter
     private Cursor cursor()
     {
         exchange.clear();
-        return SortCursor.create(context, null, ordering, new SorterIterationHelper());
+        return SortCursor.create(context, null, ordering, new SorterIterationHelper(), usePValues);
     }
 
     private void createKey(Row row)
@@ -229,6 +231,7 @@ public class Sorter
     final PersistitValueValueTarget valueTarget;
     final int rowFields;
     final AkType fieldTypes[], orderingTypes[];
+    private final boolean usePValues;
     final AkCollator orderingCollators[];
     Exchange exchange;
     long rowCount = 0;
