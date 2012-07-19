@@ -36,10 +36,12 @@ import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
 import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
@@ -156,6 +158,11 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
     protected AkCollator collator(ComparisonCondition cond, TPreparedExpression left, TPreparedExpression right) {
         TInstance leftInstance = left.resultType();
         TInstance rightInstance = right.resultType();
+        TClass tClass = leftInstance.typeClass();
+        assert tClass.equals(rightInstance.typeClass())
+                : tClass + " != " + rightInstance.typeClass();
+        if (tClass.underlyingType() != PUnderlying.STRING)
+            return null;
         CharacterTypeAttributes leftAttributes = StringAttribute.characterTypeAttributes(leftInstance);
         CharacterTypeAttributes rightAttributes = StringAttribute.characterTypeAttributes(rightInstance);
         return ExpressionTypes.mergeAkCollators(leftAttributes, rightAttributes);
