@@ -25,8 +25,7 @@
  */
 package com.akiban.sql.optimizer.explain;
 
-public abstract class Explainer<T>
-{    
+public abstract class Explainer {
     public abstract Type getType();
     
     /**
@@ -34,7 +33,7 @@ public abstract class Explainer<T>
      * @return a map of this object's attributes if it's an OperationExplainer
      *         a primitive object (Integer, Double, etc ...), otherwise.
      */
-    public abstract T get();
+    public abstract Object get();
     
     public abstract boolean hasAttributes();
  
