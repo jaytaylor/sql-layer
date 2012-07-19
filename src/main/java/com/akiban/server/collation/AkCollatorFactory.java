@@ -106,7 +106,7 @@ public class AkCollatorFactory {
      */
     public static void setCollationMode(String modeString) {
         try {
-            mode = Mode.valueOf(modeString.toUpperCase());
+            setCollationMode(Mode.valueOf(modeString.toUpperCase()));
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Collation mode must be STRICT, LOOSE or DISABLED: " + modeString);
         }
@@ -116,6 +116,8 @@ public class AkCollatorFactory {
         if (m == null) {
             throw new NullPointerException();
         }
+        collationIdMap.clear();
+        collatorMap.clear();
         mode = m;
     }
 
