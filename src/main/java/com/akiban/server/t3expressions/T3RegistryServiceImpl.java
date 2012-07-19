@@ -360,7 +360,7 @@ public final class T3RegistryServiceImpl implements T3RegistryService, Service<T
                 for (TCast tCast : castsByTarget.values()) {
                     Map<String,Comparable<?>> map = new LinkedHashMap<String, Comparable<?>>();
                     buildTName("source_bundle", "source_type", tCast.sourceClass(), map);
-                    buildTName("target_bundle", "target_type", tCast.sourceClass(), map);
+                    buildTName("target_bundle", "target_type", tCast.targetClass(), map);
                     map.put("strong", tCast.isAutomatic());
                     result.add(map);
                 }
