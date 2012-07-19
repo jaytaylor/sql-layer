@@ -27,6 +27,7 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.collation.AkCollatorFactory;
+import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringAttribute;
@@ -74,10 +75,15 @@ public class MString extends TString
         {
             case STRING:
                 String inStr = in.getString();
-                out.putString(expectedLen >= inStr.length()
-                                    ? inStr
-                                    : inStr.substring(0, expectedLen)
-                             , AkCollatorFactory.getAkCollator(collatorId));
+                String ret;
+                if (expectedLen > inStr.length())
+                    ret = inStr;
+                else
+                {
+                    ret = inStr.substring(0, expectedLen);
+                    context.reportTruncate(inStr, ret);
+                }
+                out.putString(ret, AkCollatorFactory.getAkCollator(collatorId));
                 break;
                 
             case BYTES:
