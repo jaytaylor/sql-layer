@@ -144,7 +144,7 @@ public class AkCollatorFactory {
         final String idAndScheme = schemeForName(name);
         if (idAndScheme == null) {
             if (mode == Mode.LOOSE) {
-                return UCS_BINARY_COLLATOR;
+                return mapToBinary(name);
             } else {
                 throw new InvalidCollationException(name);
             }
@@ -156,9 +156,8 @@ public class AkCollatorFactory {
         }
         final String scheme = matcher.group(2);
         if (scheme.startsWith(UCS_BINARY)) {
-            return UCS_BINARY_COLLATOR;
+            return mapToBinary(name);
         }
-
 
         synchronized (collatorMap) {
             final int collationId;
@@ -184,7 +183,7 @@ public class AkCollatorFactory {
             return akCollator;
         }
     }
-
+    
     public static AkCollator getAkCollator(final int collatorId) {
         final SoftReference<AkCollator> ref = collationIdMap.get(collatorId);
         AkCollator collator = (ref == null ? null : ref.get());
@@ -248,6 +247,11 @@ public class AkCollatorFactory {
         }
         collator = collator.cloneAsThawed();
         return collator;
+    }
+
+    private static AkCollator mapToBinary(final String name) {
+        collatorMap.put(name, new SoftReference<AkCollator>(UCS_BINARY_COLLATOR));
+        return UCS_BINARY_COLLATOR;
     }
 
     private synchronized static String schemeForName(final String name) {
