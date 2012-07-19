@@ -77,6 +77,19 @@ public class ArithOps
             if (type2 == AkType.INTERVAL_MILLIS || type2 == AkType.INTERVAL_MONTH)
                 args.setType(1 - index, AkType.DOUBLE);
         }
+
+        @Override
+        public boolean isInfix()
+        {
+            return true;
+        }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return true;
+        }
+        
     };
     
     @Scalar("minus")
@@ -126,6 +139,18 @@ public class ArithOps
                     args.setType(1 - index, args.get(1 - index).getPrecision() > 10 ? AkType.DATETIME : AkType.DATE);
             }
         }
+
+        @Override
+        public boolean isInfix()
+        {
+            return true;
+        }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return false;
+        }
     };
 
     @Scalar("mod")
@@ -167,6 +192,18 @@ public class ArithOps
         protected void adjustVarchar(TypesList args, int index) throws StandardException
         {
             // does nothing, as MOD operation does not support any DATE/TIME
+        }
+
+        @Override
+        public boolean isInfix()
+        {
+            return true;
+        }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return false;
         }
     };
 
@@ -222,6 +259,18 @@ public class ArithOps
             if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
                 args.setType(1 - index, AkType.DOUBLE);
         }
+
+        @Override
+        public boolean isInfix()
+        {
+            return true;
+        }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return false;
+        }
     };
     
     /**
@@ -276,6 +325,18 @@ public class ArithOps
             if (type == AkType.INTERVAL_MILLIS || type == AkType.INTERVAL_MONTH)
                 args.setType(1 - index, AkType.DOUBLE);
         }
+
+        @Override
+        public boolean isInfix()
+        {
+            return true;
+        }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return false;
+        }
     };
     
     @Scalar("plus")
@@ -314,6 +375,18 @@ public class ArithOps
 
             if (type2 == AkType.INTERVAL_MILLIS || type2 == AkType.INTERVAL_MONTH)
                 args.setType(index, args.get(index).getPrecision() > 10 ? AkType.DATETIME : AkType.DATE);
+        }
+
+        @Override
+        public boolean isInfix()
+        {
+            return true;
+        }
+        
+        @Override
+        public boolean isAssociative()
+        {
+            return true;
         }
     };
             

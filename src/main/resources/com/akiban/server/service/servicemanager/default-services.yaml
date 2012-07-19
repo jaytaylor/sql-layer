@@ -19,4 +19,5 @@
     com.akiban.server.service.is.StorageSchemaTablesService   : com.akiban.server.service.is.StorageSchemaTablesServiceImpl
     com.akiban.server.service.ui.SwingConsoleService : com.akiban.server.service.ui.SwingConsoleServiceImpl
     com.akiban.server.service.is.ServerSchemaTablesService    : com.akiban.server.service.is.ServerSchemaTablesServiceImpl
+    com.akiban.server.t3expressions.T3RegistryService : com.akiban.server.t3expressions.T3RegistryServiceImpl
     com.akiban.server.t3expressions.OverloadResolutionService : com.akiban.server.t3expressions.OverloadResolutionServiceImpl

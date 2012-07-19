@@ -133,7 +133,7 @@ class Count_TableStatus extends Operator
     @Override
     public Explainer getExplainer()
     {
-        return new CountOperatorExplainer("Count_TableStatus", tableType, resultType, null);
+        return new CountOperatorExplainer("Count TableStatus", tableType, resultType, null);
     }
 
     // Inner classes

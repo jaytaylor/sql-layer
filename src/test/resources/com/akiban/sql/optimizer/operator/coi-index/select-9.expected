@@ -1,5 +1,5 @@
 PhysicalSelect[name:varchar(32)[VARCHAR]]
-  project([Field(1)])
+  project(Field(1))
     Filter_Default([flatten(test.customers, test.items)])
       Flatten_HKeyOrdered(test.customers INNER test.items)
         AncestorLookup_Default(test.orders -> [test.customers])

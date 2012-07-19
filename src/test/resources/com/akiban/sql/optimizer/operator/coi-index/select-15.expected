@@ -1,5 +1,5 @@
 PhysicalSelect[oid:int[INT], cid:int[INT], order_date:date[DATE], iid:int[INT], oid:int[INT], sku:varchar(32)[VARCHAR], quan:int[INT]]
-  project([Field(0), Field(1), Field(2), Field(3), Field(4), Field(5), Field(6)])
+  project(Field(0), Field(1), Field(2), Field(3), Field(4), Field(5), Field(6))
     Flatten_HKeyOrdered(test.orders INNER test.items)
       AncestorLookup_Default(Index(test.items.sku[IndexColumn(sku)]) -> [test.orders, test.items])
         Intersect_Ordered(skip 1 from left, skip 1 from right, compare 2, SKIP_SCAN)

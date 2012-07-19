@@ -23,8 +23,10 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.server.t3expressions;
 
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.texpressions.TValidatedOverload;
@@ -32,8 +34,9 @@ import com.akiban.server.types3.texpressions.TValidatedOverload;
 import java.util.Collection;
 import java.util.Set;
 
-public interface T3ScalarsRegistry {
-    Collection<TValidatedOverload> getOverloads(String name);
+public interface T3RegistryService {
+    Collection<? extends TAggregator> getAggregates(String name);
+    Collection<? extends TValidatedOverload> getOverloads(String name);
 
     /**
      * Find the registered cast going from source to taret.
@@ -43,5 +46,6 @@ public interface T3ScalarsRegistry {
      */
     TCast cast(TClass source, TClass target);
 
-    Set<TClass> stronglyCastableTo(TClass tClass);
+    Set<? extends TClass> stronglyCastableTo(TClass tClass);
+
 }

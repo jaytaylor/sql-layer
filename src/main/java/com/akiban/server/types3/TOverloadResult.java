@@ -27,6 +27,7 @@
 package com.akiban.server.types3;
 
 import com.akiban.server.types3.common.types.NoAttrTClass;
+import com.akiban.util.ArgumentValidation;
 
 public class TOverloadResult {
     
@@ -73,7 +74,7 @@ public class TOverloadResult {
     @Override
     public String toString() {
         switch (category) {
-        case CUSTOM:    return "custom rule";
+        case CUSTOM:    return "custom";
         case FIXED:     return fixedInstance.toString();
         case PICKING:   return "picking";
         default: throw new AssertionError(category);
@@ -97,6 +98,18 @@ public class TOverloadResult {
         this.fixedInstance = fixedInstance;
         this.customRule = customRule;
         this.castSource = castSource;
+        switch (category) {
+        case CUSTOM:
+            ArgumentValidation.notNull("custom rule", customRule);
+            break;
+        case FIXED:
+            ArgumentValidation.notNull("fixed type", fixedInstance);
+            break;
+        case PICKING:
+            break;
+        default:
+            throw new AssertionError(category);
+        }
     }
 
     private final Category category;
