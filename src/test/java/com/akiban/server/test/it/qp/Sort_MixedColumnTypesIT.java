@@ -63,6 +63,7 @@ public final class Sort_MixedColumnTypesIT extends ITBase {
                 "importance", "name"
         );
         // These values have been picked for the following criteria:
+        // - all three columns (pk and the two indexed columns) are of different types
         // - neither 'name' nor 'importance' are consistently ordered relative to cid
         // - when the rows are ordered by name, they are unordered by importance
         // - when the rows are ordered by importance, they are unordered by name
