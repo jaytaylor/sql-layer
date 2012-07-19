@@ -33,8 +33,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
-import com.akiban.ais.gwtutils.GwtLogger;
-import com.akiban.ais.gwtutils.GwtLogging;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.akiban.ais.model.Join.GroupingUsage;
 import com.akiban.ais.model.Join.SourceType;
 import com.akiban.ais.model.validation.AISInvariants;
@@ -43,10 +44,8 @@ import com.akiban.ais.model.validation.AISInvariants;
 // of a dump. The user need not search the AIS and hold on to AIS objects (UserTable, Column, etc.). Instead,
 // only names from the dump need be supplied. 
 
-public class
-        AISBuilder {
-    GwtLogger LOG = GwtLogging.getLogger(AISBuilder.class);
-
+public class AISBuilder {
+    private static final Logger LOG = LoggerFactory.getLogger(AISBuilder.class);
     // API for creating capturing basic schema information
 
     public AISBuilder() {
@@ -86,7 +85,7 @@ public class
     public void sequence (String schemaName, String sequenceName,
             long start, long increment,
             long minValue, long maxValue, boolean cycle) {
-        LOG.info("sequence: " + schemaName + "." + sequenceName);
+        LOG.info("sequence: {}.{} ", schemaName,sequenceName);
         Sequence.create(ais, schemaName, sequenceName, start, increment, minValue, maxValue, cycle);
     }
     
@@ -140,6 +139,7 @@ public class
         column.setDefaultIdentity(defaultIdentity);
         Sequence identityGenerator = ais.getSequence(new TableName (schemaName, sequenceName));
         column.setIdentityGenerator(identityGenerator);
+        identityGenerator.setTreeName(nameGenerator.generateIdentitySequenceTreeName(identityGenerator));
     }
 
     public void index(String schemaName, String tableName, String indexName,
@@ -182,8 +182,7 @@ public class
         Index index = table.getIndex(indexName);
         checkFound(table, "creating index column", "index",
                 concat(schemaName, tableName, indexName));
-        index.addColumn(new IndexColumn(index, column, position, ascending,
-                indexedLength));
+        IndexColumn.create(index, column, position, ascending, indexedLength);
     }
 
     public void groupIndexColumn(String groupName, String indexName, String schemaName, String tableName,
@@ -201,7 +200,7 @@ public class
         checkFound(table, "creating group index column", "table", concat(schemaName, tableName));
         Column column = table.getColumn(columnName);
         checkFound(column, "creating group index column", "column", concat(schemaName, tableName, columnName));
-        index.addColumn(new IndexColumn(index, column, position, true, null));
+        IndexColumn.create(index, column, position, true, null);
     }
 
     public void joinTables(String joinName, String parentSchemaName,
@@ -616,13 +615,12 @@ public class
                 this.checkFound(userIndexColumn, "building group indexes", "userIndexColumn", "NONE");
                 this.checkFound(userIndexColumn.getColumn().getGroupColumn(), "building group indexes",
                                 "group column", userIndexColumn.getColumn().getName());
-                IndexColumn groupIndexColumn = new IndexColumn(
+                IndexColumn.create(
                         groupIndex,
                         userIndexColumn.getColumn().getGroupColumn(),
                         position++,
                         userIndexColumn.isAscending(),
                         userIndexColumn.getIndexedLength());
-                groupIndex.addColumn(groupIndexColumn);
             }
         }
 
@@ -718,14 +716,6 @@ public class
             userColumn.setGroupColumn(groupColumn);
             groupColumn.setUserColumn(userColumn);
             groupColumn.finishCreating();
-            
-            // TODO : Remove the setting of the tree name 
-            // until we can resolve tree <-> sequence management
-            //if (userColumn.getIdentityGenerator() != null) {
-            //    userColumn.getIdentityGenerator().setTreeName(groupTable.getTreeName());
-                // TODO Generate stable index ids.
-            //    userColumn.getIdentityGenerator().setAccumIndex(3);
-            // }
         }
         for (Join join : userTable.getChildJoins()) {
             generateGroupTableColumns(groupTable, join.getChild());

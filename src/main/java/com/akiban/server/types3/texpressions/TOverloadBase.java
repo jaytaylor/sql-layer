@@ -32,6 +32,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
+import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
@@ -184,7 +185,8 @@ public abstract class TOverloadBase implements TOverload {
                     sb.append(", ");
             }
         }
-        sb.append(')');
+        sb.append(") -> ");
+        sb.append(resultType());
         return sb.toString();
     }
 

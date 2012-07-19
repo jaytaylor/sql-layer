@@ -458,7 +458,10 @@ public class ProtobufWriter {
                 .setMaxValue(sequence.getMaxValue())
                 .setIsCycle(sequence.isCycle());
         if (sequence.getTreeName() != null) {
-            sequenceBuilder.setTreeName(sequence.getTreeName()).setAccumulator(sequence.getAccumIndex());
+            sequenceBuilder.setTreeName(sequence.getTreeName());
+        }
+        if (sequence.getAccumIndex() != null) {
+            sequenceBuilder.setAccumulator(sequence.getAccumIndex());
         }
         schemaBuilder.addSequences (sequenceBuilder.build());
     }

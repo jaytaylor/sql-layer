@@ -1,0 +1,2 @@
+CREATE TABLE tc (c1 VARCHAR(10) COLLATE en_US_ci, c2 INT);
+CREATE INDEX tc_c1 ON tc(c1);

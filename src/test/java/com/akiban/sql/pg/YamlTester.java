@@ -565,11 +565,6 @@ class YamlTester {
 
 	StatementCommand(Object value, List<Object> sequence) {
 	    super(string(value, "Statement value"));
-	    if (statement.regionMatches(true, 0, "CREATE TABLE", 0, 12)) {
-		throw new ContextAssertionError(
-			"The Statement command should not be used for CREATE"
-				+ " TABLE statements");
-	    }
 	    for (int i = 1; i < sequence.size(); i++) {
 		Entry<Object, Object> map = onlyEntry(sequence.get(i),
 			"Statement attribute");

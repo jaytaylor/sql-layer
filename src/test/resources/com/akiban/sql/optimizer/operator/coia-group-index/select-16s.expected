@@ -1,6 +1,6 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
   Sort_Tree(project([Field(1), Field(4)]), SUPPRESS_DUPLICATES)
-    project([Field(1), Field(4)])
+    project(Field(1), Field(4))
       Filter_Default([flatten(flatten(test.customers, test.orders), test.items)])
         Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
           Flatten_HKeyOrdered(test.customers INNER test.orders)

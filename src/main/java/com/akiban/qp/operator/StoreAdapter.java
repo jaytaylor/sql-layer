@@ -35,6 +35,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.Store;
 import com.akiban.util.tap.InOutTap;
 
 public abstract class StoreAdapter
@@ -54,6 +55,8 @@ public abstract class StoreAdapter
     {
         return schema;
     }
+
+    public abstract Store getUnderlyingStore();
 
     public abstract void updateRow(Row oldRow, Row newRow);
     
@@ -84,7 +87,7 @@ public abstract class StoreAdapter
         MEMORY_ADAPTER;
     }
     
-    protected final ConfigurationService getConfig() {
+    public final ConfigurationService getConfig() {
         return config;
     }
 

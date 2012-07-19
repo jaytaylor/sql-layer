@@ -28,7 +28,6 @@ package com.akiban.ais.model;
 
 import java.util.*;
 
-import com.akiban.ais.model.validation.AISInvariants;
 import com.akiban.server.rowdata.RowDef;
 
 public abstract class Table extends Columnar implements Traversable, HasGroup

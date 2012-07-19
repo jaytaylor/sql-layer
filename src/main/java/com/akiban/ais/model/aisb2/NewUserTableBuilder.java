@@ -26,6 +26,8 @@
 
 package com.akiban.ais.model.aisb2;
 
+import com.akiban.ais.model.TableName;
+
 public interface NewUserTableBuilder extends NewAISBuilder {
     /**
      * Joins this table to another one, using the default schema
@@ -33,6 +35,13 @@ public interface NewUserTableBuilder extends NewAISBuilder {
      * @return a builder that will create the new join
      */
     NewAkibanJoinBuilder joinTo(String table);
+
+    /**
+     * Joins this table to another one.
+     * @param tableName the name of the table to join to
+     * @return a builder that will create the new join
+     */
+    NewAkibanJoinBuilder joinTo(TableName tableName);
 
     /**
      * Joins this table to another one.

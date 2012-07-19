@@ -37,6 +37,7 @@ public class TextAreaOutputStream extends OutputStream
     private JTextArea textArea;
     private final StringBuilder buffer = new StringBuilder();
     private final OutputStream oldStream;
+    private int writeOldFrom;
     
     // Initialize in deferred mode.
     public TextAreaOutputStream() {
@@ -62,9 +63,10 @@ public class TextAreaOutputStream extends OutputStream
 
     public synchronized void flush() throws IOException {
         final JTextArea textArea = this.textArea;
-        final String string = buffer.toString();
-        buffer.setLength(0);
         if (textArea != null) {
+            final String string = buffer.toString();
+            buffer.setLength(0);
+            writeOldFrom = 0;
             SwingUtilities.invokeLater(new Runnable() {
                     public void run() {
                         textArea.append(string);
@@ -72,7 +74,11 @@ public class TextAreaOutputStream extends OutputStream
                 });
         }
         else if (oldStream != null) {
-            oldStream.write(string.getBytes());
+            // Keep buffering in hopes that the console will appear, but still output
+            // to stdout just in case.
+            int end = buffer.length();
+            oldStream.write(buffer.subSequence(writeOldFrom, end).toString().getBytes());
+            writeOldFrom = end;
         }
     }
 

@@ -1,8 +1,8 @@
 PhysicalSelect[cid:int[INT]]
-  project([Field(0)])
+  project(Field(0))
     Filter_Default([flatten(test.customers, test.addresses)])
       Flatten_HKeyOrdered(test.customers INNER test.addresses)
-        Select_HKeyOrdered(test.addresses, Field(2) == Literal(CA))
+        Select_HKeyOrdered(Field(2) == 'CA')
           BranchLookup_Default(_akiban_customers test.customers -> test.addresses limit NO LIMIT)
             AncestorLookup_Default(Index(test.orders.order_date[IndexColumn(order_date)]) -> [test.customers])
               Intersect_Ordered(skip 1 from left, skip 1 from right, compare 1)

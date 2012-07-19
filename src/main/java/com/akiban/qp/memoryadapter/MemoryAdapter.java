@@ -44,6 +44,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.rowtype.Schema;
 import com.akiban.server.service.config.ConfigurationService;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.store.Store;
 import com.akiban.util.tap.InOutTap;
 
 public class MemoryAdapter extends StoreAdapter {
@@ -62,6 +63,11 @@ public class MemoryAdapter extends StoreAdapter {
     @Override
     public <HKEY extends HKey> HKEY newHKey(
             com.akiban.ais.model.HKey hKeyMetadata) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public Store getUnderlyingStore() {
         throw new UnsupportedOperationException();
     }
 

@@ -60,6 +60,7 @@ public class AISBinderTest extends OptimizerTestBase
     @Test
     public void testBinding() throws Exception {
         loadSchema(new File(RESOURCE_DIR, "schema.ddl"));
+        binder.setAllowSubqueryMultipleColumns(true);
         generateAndCheckResult();
     }
 

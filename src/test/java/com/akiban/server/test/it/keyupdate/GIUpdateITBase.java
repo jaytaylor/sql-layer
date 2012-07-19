@@ -62,6 +62,7 @@ public abstract class GIUpdateITBase extends ITBase {
     @After
     public final void forgetTables() throws PersistitException {
         dml().truncateTable(session(), a);
+        dml().truncateTable(session(), h);
         dml().truncateTable(session(), i);
         dml().truncateTable(session(), o);
         dml().truncateTable(session(), c);

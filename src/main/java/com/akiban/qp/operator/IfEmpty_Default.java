@@ -182,10 +182,10 @@ class IfEmpty_Default extends Operator
     {
         Attributes att = new Attributes();
         
-        att.put(Label.NAME, PrimitiveExplainer.getInstance("IF EMPTY"));
+        att.put(Label.NAME, PrimitiveExplainer.getInstance("If Empty"));
         for (Expression ex : expressions)
             att.put(Label.OPERAND, ex.getExplainer());
-        return new OperationExplainer(Type.IF_ELSE, att);
+        return new OperationExplainer(Type.IF_EMPTY, att);
     }
 
     // Inner classes

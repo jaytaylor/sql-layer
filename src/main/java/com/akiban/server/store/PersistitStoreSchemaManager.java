@@ -380,9 +380,8 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
                             column.getName(),
                             newRefTable.getName(), newColumn.getName());
                 }
-                IndexColumn newIndexCol = new IndexColumn(newIndex, newColumn, indexCol.getPosition(),
-                                                          indexCol.isAscending(), indexCol.getIndexedLength());
-                newIndex.addColumn(newIndexCol);
+                IndexColumn.create(newIndex, newColumn, indexCol.getPosition(),
+                                   indexCol.isAscending(), indexCol.getIndexedLength());
             }
 
             newIndex.freezeColumns();
@@ -647,7 +646,6 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
     @Override
     public void start() {
         updateTimestamp = new AtomicLong();
-
         skipAISUpgrade = Boolean.parseBoolean(config.getProperty(SKIP_AIS_UPGRADE_PROPERTY));
         maxAISBufferSize = Integer.parseInt(config.getProperty(MAX_AIS_SIZE_PROPERTY));
         if(maxAISBufferSize < 0) {
@@ -675,12 +673,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
 
             newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
 
+
             transactionally(sessionService.createSession(), new ThrowingRunnable() {
                 @Override
                 public void run(Session session) throws PersistitException {
                     buildRowDefCache(newAIS);
                 }
             });
+
         } catch (PersistitException e) {
             throw new PersistitAdapterException(e);
         }
@@ -904,7 +904,10 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
             final RowDefCache rowDefCache = store.getRowDefCache();
             rowDefCache.clear();
             treeService.getTableStatusCache().detachAIS();
+            // This create|verifies the trees exist for indexes & tables
             rowDefCache.setAIS(newAis);
+            // This creates|verifies the trees exist for sequences
+            sequenceTrees(newAis);
             saveCurrentTimestamp();
             aish.setAis(newAis);
         } catch(PersistitException e) {
@@ -914,6 +917,16 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         }
     }
 
+    private void sequenceTrees (final AkibanInformationSchema newAis) throws PersistitException {
+        for (Sequence sequence : newAis.getSequences().values()) {
+            LOG.debug("registering sequence: " + sequence.getSequenceName() + " with tree name: " + sequence.getTreeName());
+            // treeCache == null -> loading from start or creating a new sequence
+            if (sequence.getTreeCache() == null) {
+                treeService.populateTreeCache(sequence);
+            }
+        }
+    }
+    
     private void saveMetaModel(Exchange ex, GrowableByteBuffer buffer, AkibanInformationSchema newAIS, final String volume)
             throws PersistitException {
         buffer.clear();
@@ -1172,6 +1185,14 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         } else {
             // Memory only table changed, no reason to re-serialize
             buildRowDefCache(newAIS);
+        }
+        try {
+            if (mergedTable.getIdentityColumn() != null) {
+                mergedTable.getIdentityColumn().getIdentityGenerator().setStartWithAccumulator(treeService);
+            }
+        } catch (PersistitException ex) {
+            LOG.error("Setting sequence starting value for table {} failed", mergedTable.getName().getDescription());
+            throw new PersistitAdapterException(ex);
         }
         return getAis().getUserTable(newName).getName();
     }
