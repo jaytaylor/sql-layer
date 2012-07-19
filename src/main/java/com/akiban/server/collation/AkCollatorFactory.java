@@ -71,6 +71,11 @@ public class AkCollatorFactory {
 
     private volatile static Mode mode = Mode.LOOSE; // default for unit tests
 
+    /*
+     * Note: used only in a single-threaded unit test.
+     */
+    private static int cacheHits;
+
     public enum Mode {
         STRICT, LOOSE, DISABLED
     }
@@ -106,14 +111,14 @@ public class AkCollatorFactory {
             throw new IllegalArgumentException("Collation mode must be STRICT, LOOSE or DISABLED: " + modeString);
         }
     }
-    
+
     public static void setCollationMode(Mode m) {
         if (m == null) {
             throw new NullPointerException();
         }
         mode = m;
     }
-    
+
     public static Mode getCollationMode() {
         return mode;
     }
@@ -126,7 +131,16 @@ public class AkCollatorFactory {
         if (mode == Mode.DISABLED || name == null) {
             return UCS_BINARY_COLLATOR;
         }
-        
+
+        SoftReference<AkCollator> ref = collatorMap.get(name);
+        if (ref != null) {
+            AkCollator akCollator = ref.get();
+            if (akCollator != null) {
+                cacheHits++;
+                return akCollator;
+            }
+        }
+
         final String idAndScheme = schemeForName(name);
         if (idAndScheme == null) {
             if (mode == Mode.LOOSE) {
@@ -135,7 +149,7 @@ public class AkCollatorFactory {
                 throw new InvalidCollationException(name);
             }
         }
-        
+
         final Matcher matcher = SCHEMA_PATTERN.matcher(idAndScheme);
         if (!matcher.matches()) {
             throw new IllegalStateException("collation name " + name + " has malformed value " + idAndScheme);
@@ -145,13 +159,6 @@ public class AkCollatorFactory {
             return UCS_BINARY_COLLATOR;
         }
 
-        SoftReference<AkCollator> ref = collatorMap.get(scheme);
-        if (ref != null) {
-            AkCollator akCollator = ref.get();
-            if (akCollator != null) {
-                return akCollator;
-            }
-        }
 
         synchronized (collatorMap) {
             final int collationId;
@@ -191,6 +198,8 @@ public class AkCollatorFactory {
                     return getAkCollator(entry.getKey().toString());
                 }
             }
+        } else {
+            cacheHits++;
         }
         return collator;
     }
@@ -247,4 +256,13 @@ public class AkCollatorFactory {
         return scheme;
     }
 
+    /**
+     * Intended only for unit tests.
+     * 
+     * @return Number of times either getAkCollator() method has returned a
+     *         cached value.
+     */
+    static int getCacheHits() {
+        return cacheHits;
+    }
 }

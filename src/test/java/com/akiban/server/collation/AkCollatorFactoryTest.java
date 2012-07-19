@@ -34,6 +34,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import org.junit.Test;
 
+import com.ibm.icu.text.Collator;
+
 public class AkCollatorFactoryTest {
 
     private final static int NTHREADS = 10;
@@ -43,13 +45,14 @@ public class AkCollatorFactoryTest {
     @Test
     public void uniquePerThread() throws Exception {
         final AtomicInteger threadIndex = new AtomicInteger();
-        final AkCollator[] array = new AkCollator[NTHREADS];
+        final Collator[] array = new Collator[NTHREADS];
         Thread[] threads = new Thread[NTHREADS];
         for (int i = 0; i < NTHREADS; i++) {
             threads[i] = new Thread(new Runnable() {
                 public void run() {
                     int index = threadIndex.getAndIncrement();
-                    array[index] = AkCollatorFactory.getAkCollator("sv_se_ci");
+                    AkCollatorICU icu = (AkCollatorICU)(AkCollatorFactory.getAkCollator("sv_se_ci"));
+                    array[index] = icu.collator.get();
                 }
             });
         }
@@ -106,15 +109,31 @@ public class AkCollatorFactoryTest {
 
     }
     
+    @Test
     public void collationDisabledMode() throws Exception {
-        AkCollatorFactory.setCollationMode("LOOSE");
+        AkCollatorFactory.setCollationMode("Disabled");
         assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
                 .getAkCollator("latin1_swedish_ci"));
         assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
                 .getAkCollator("invalid_collation_name"));
         assertEquals("Should be binary", AkCollatorFactory.UCS_BINARY_COLLATOR, AkCollatorFactory
                 .getAkCollator("en_us_ci"));
+    }
+    
+    @Test
+    public void fromCache() throws Exception {
+        AkCollatorFactory.setCollationMode(DEFAULT_MODE);
+        AkCollator c = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
+        int cid = c.getCollationId();
+        int hits = AkCollatorFactory.getCacheHits();
+        for (int i = 0; i < 10; i++) {
+            c = AkCollatorFactory.getAkCollator("latin1_swedish_ci");
+        }
+        assertEquals("Should have used cache", hits + 10, AkCollatorFactory.getCacheHits());
         
-        
+        for (int i = 0; i < 10; i++) {
+            c = AkCollatorFactory.getAkCollator(cid);
+        }
+        assertEquals("Should have used cache", hits + 20, AkCollatorFactory.getCacheHits());
     }
 }
