@@ -25,8 +25,7 @@
  */
 package com.akiban.sql.optimizer.explain;
 
-public  class OperationExplainer extends Explainer<Attributes>
-{     
+public  class OperationExplainer extends Explainer {
     private final Type type; 
     private Attributes states;
         
