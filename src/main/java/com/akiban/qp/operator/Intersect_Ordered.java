@@ -246,7 +246,6 @@ class Intersect_Ordered extends Operator
     @Override
     public Explainer getExplainer()
     {
-        javax.swing.JOptionPane.showMessageDialog(null, "not implemented");
         throw new UnsupportedOperationException("Not supported yet.");
     }
 

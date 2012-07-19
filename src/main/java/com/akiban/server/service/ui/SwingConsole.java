@@ -186,11 +186,11 @@ public class SwingConsole extends JFrame implements WindowListener
             dispose();
             break;
         default:
-            int yn = javax.swing.JOptionPane.showConfirmDialog(this, 
-                                                               "Do you really want to quit Akiban-Server?",
-                                                               "Attention!", 
-                                                                JOptionPane.YES_NO_OPTION,
-                                                                JOptionPane.QUESTION_MESSAGE);
+            int yn = JOptionPane.showConfirmDialog(this, 
+                                                   "Do you really want to quit Akiban-Server?",
+                                                   "Attention!", 
+                                                    JOptionPane.YES_NO_OPTION,
+                                                    JOptionPane.QUESTION_MESSAGE);
 
             if (yn != JOptionPane.YES_OPTION)
                 return;
