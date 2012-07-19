@@ -122,7 +122,7 @@ public final class TInstance {
                 && attr1 == other.attr1
                 && attr2 == other.attr2
                 && attr3 == other.attr3
-                && (isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable)
+                && ((isNullable == null) ? (other.isNullable == null) : isNullable.equals(other.isNullable))
                 && tclass.equals(other.tclass);
 
     }
@@ -163,6 +163,16 @@ public final class TInstance {
         this.attr2 = attr2;
         this.attr3 = attr3;
         this.enumClass = enumClass;
+    }
+
+    public TInstance(TInstance copyFrom) {
+        this.tclass = copyFrom.tclass;
+        this.attr0 = copyFrom.attr0;
+        this.attr1 = copyFrom.attr1;
+        this.attr2 = copyFrom.attr2;
+        this.attr3 = copyFrom.attr3;
+        this.enumClass = copyFrom.enumClass;
+        this.isNullable = copyFrom.isNullable;
     }
 
     private final TClass tclass;

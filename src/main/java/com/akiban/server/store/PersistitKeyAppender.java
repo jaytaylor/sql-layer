@@ -63,7 +63,7 @@ public final class PersistitKeyAppender {
     }
 
     public void appendNull() {
-        target.expectingType(AkType.NULL).putNull();
+        target.expectingType(AkType.NULL, null).putNull();
     }
 
     public Key key() {

@@ -37,6 +37,10 @@ import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Iterator;
 import java.util.List;
 
 public abstract class TOverloadBase implements TOverload {
@@ -64,6 +68,9 @@ public abstract class TOverloadBase implements TOverload {
 
     @Override
     public TPreptimeValue evaluateConstant(TPreptimeContext context, final LazyList<? extends TPreptimeValue> inputs) {
+        if (neverConstant()) {
+            return null;
+        }
         for (int i = 0; i < inputs.size(); ++i) {
             if (constnessMatters(i)) {
                 TPreptimeValue preptimeValue = inputs.get(i);
@@ -132,8 +139,34 @@ public abstract class TOverloadBase implements TOverload {
         return true;
     }
 
+    protected boolean neverConstant() {
+        return false;
+    }
+
     @Override
     public String toString() {
-        return overloadName() + ": " + inputSets();
+        StringBuilder sb = new StringBuilder(overloadName());
+        sb.append('(');
+
+        List<TInputSet> origInputSets = inputSets();
+        if (!origInputSets.isEmpty()) {
+            List<TInputSet> inputSets = new ArrayList<TInputSet>(origInputSets);
+            Collections.sort(inputSets, INPUT_SET_COMPARATOR);
+            for (Iterator<TInputSet> iter = inputSets.iterator(); iter.hasNext(); ) {
+                TInputSet inputSet = iter.next();
+                sb.append(inputSet);
+                if (iter.hasNext())
+                    sb.append(", ");
+            }
+        }
+        sb.append(')');
+        return sb.toString();
     }
+
+    private static final Comparator<? super TInputSet> INPUT_SET_COMPARATOR = new Comparator<TInputSet>() {
+        @Override
+        public int compare(TInputSet o1, TInputSet o2) {
+            return o1.firstPosition() - o2.firstPosition();
+        }
+    };
 }

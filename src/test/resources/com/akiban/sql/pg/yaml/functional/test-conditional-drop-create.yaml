@@ -1,0 +1,25 @@
+# test conditonal create
+---
+- CreateTable:  IF NOT EXISTS t1 (ff double);
+---
+- CreateTable: t1(ff double);
+- error: [50006]
+---
+- CreateTable: IF NOT EXISTS t1(ff double)
+---
+- DropTable: t1;
+#--- #BUG: error can't be captured
+#- DropTable: t1;
+#- error: [42501]
+---
+- DropTable: if exists t1;
+#--- CreateSchema is not implemented yet
+# as per http://akibainc.onconfluence.com/pages/viewpage.action?pageId=3015866
+#- CreateSchema: create schema S;
+#---
+#- CreateSchema: create schema S;
+#- error: [5000N]
+#---
+#- CreateSchema: IF NOT EXISTS schema S;
+#---
+...

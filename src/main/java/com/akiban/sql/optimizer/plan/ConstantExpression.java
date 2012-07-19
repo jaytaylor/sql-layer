@@ -31,6 +31,11 @@ import com.akiban.server.types.FromObjectValueSource;
 import com.akiban.server.types.ToObjectValueTarget;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types.util.ValueHolder;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
+import com.akiban.sql.optimizer.TypesTranslation;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.parser.ValueNode;
 
@@ -38,6 +43,7 @@ import com.akiban.sql.parser.ValueNode;
 public class ConstantExpression extends BaseExpression 
 {
     private Object value;
+    private PValueSource pValueSource;
 
     public ConstantExpression(Object value, 
                               DataTypeDescriptor sqlType, AkType type, ValueNode sqlSource) {
@@ -64,12 +70,36 @@ public class ConstantExpression extends BaseExpression
         this(value, null, type, null);
     }
 
+    public ConstantExpression(TPreptimeValue preptimeValue) {
+        this(preptimeValue.instance().typeClass().dataTypeDescriptor(preptimeValue.instance()), preptimeValue.value());
+    }
+
+    private ConstantExpression(DataTypeDescriptor sqlType, PValueSource value) {
+        this(null, sqlType, TypesTranslation.sqlTypeToAkType(sqlType), null);
+        // only store the pValueSource if it's not null. If it's null, #value will just stay null.
+        if (!value.isNull())
+            this.pValueSource = value;
+    }
+
+    @Override
+    public TPreptimeValue getPreptimeValue() {
+        TPreptimeValue result = super.getPreptimeValue();
+        if (result == null) {
+            result = PValueSources.fromObject(value, getAkType());
+            setPreptimeValue(result);
+        }
+        return result;
+    }
+
     @Override
     public boolean isConstant() {
         return true;
     }
 
     public Object getValue() {
+        if (value == null && pValueSource != null) {
+            value = PValueSources.toObject(pValueSource, getAkType());
+        }
         return value;
     }
 

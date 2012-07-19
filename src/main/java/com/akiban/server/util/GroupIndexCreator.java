@@ -26,6 +26,7 @@
 
 package com.akiban.server.util;
 
+import com.akiban.ais.AISCloner;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
@@ -82,6 +83,9 @@ public class GroupIndexCreator {
      */
     private static GroupIndex createIndex(AkibanInformationSchema ais, String groupName, String indexName,
                                          boolean unique, String tableColumnList, Index.JoinType joinType) {
+        if(ais.isFrozen()) {
+            ais = AISCloner.clone(ais);
+        }
         final Group group = ais.getGroup(groupName);
         if(group == null) {
             throw new NoSuchGroupException (groupName);
@@ -111,7 +115,7 @@ public class GroupIndexCreator {
                 if(column == null) {
                     throw new NoSuchColumnException (columnName);
                 }
-                tmpIndex.addColumn(new IndexColumn(tmpIndex, column, pos++, true, null));
+                IndexColumn.create(tmpIndex, column, pos++, true, null);
             }
             complete = true;
         }

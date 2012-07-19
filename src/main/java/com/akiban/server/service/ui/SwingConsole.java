@@ -31,12 +31,14 @@ import java.awt.event.*;
 import javax.swing.*;
 import javax.swing.text.*;
 
+import java.net.URL;
 import java.io.OutputStream;
 import java.io.PrintStream;
 
 public class SwingConsole extends JFrame implements WindowListener 
 {
     public static final String TITLE = "Akiban Server";
+    public static final String ICON_PATH = "Akiban_Server_128x128.png";
 
     private JTextArea textArea;
     private PrintStream printStream;
@@ -101,6 +103,12 @@ public class SwingConsole extends JFrame implements WindowListener
 
         pack();
         setLocation(200, 200);
+        
+        URL iconURL = SwingConsole.class.getClassLoader().getResource(SwingConsole.class.getPackage().getName().replace('.', '/') + "/" + ICON_PATH);
+        if (iconURL != null) {
+            ImageIcon icon = new ImageIcon(iconURL);
+            setIconImage(icon.getImage());
+        }
     }
 
     @Override

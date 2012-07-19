@@ -26,10 +26,13 @@
 
 package com.akiban.sql.pg;
 
+import com.akiban.server.error.InvalidParameterValueException;
+
 import com.akiban.util.tap.InOutTap;
 import com.akiban.util.tap.Tap;
 
 import java.io.*;
+import java.nio.charset.Charset;
 
 /**
  * Basic implementation of Postgres wire protocol for SQL integration.
@@ -83,7 +86,19 @@ public class PostgresMessenger implements DataInput, DataOutput
         return encoding;
     }
     public void setEncoding(String encoding) {
-        this.encoding = encoding;
+        String newEncoding = encoding;
+        if ((newEncoding == null) || newEncoding.equals("UNICODE"))
+            newEncoding = "UTF-8";
+        else if (newEncoding.startsWith("WIN") && newEncoding.matches("WIN\\d+"))
+            newEncoding = "Cp" + newEncoding.substring(3);
+        try {
+            Charset.forName(newEncoding);
+        }
+        catch (IllegalArgumentException ex) {
+            throw new InvalidParameterValueException("unknown client_encoding '" + 
+                                                     encoding + "'");
+        }
+        this.encoding = newEncoding;
     }
 
     /** Has a cancel been sent? */

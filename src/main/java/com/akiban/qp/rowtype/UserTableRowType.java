@@ -73,6 +73,12 @@ public class UserTableRowType extends AisRowType
         return table.getColumnsIncludingInternal().get(index).tInstance();
     }
 
+    @Override
+    public ConstraintChecker constraintChecker()
+    {
+        return constraintChecker;
+    }
+
     // UserTableRowType interface
     @Override
     public UserTable userTable()
@@ -122,8 +128,10 @@ public class UserTableRowType extends AisRowType
         List<Column> columns = table.getColumnsIncludingInternal();
         akTypes = new AkType[columns.size()];
         for (int i = 0; i < columns.size(); i++) {
-            akTypes[i] = table.getColumnsIncludingInternal().get(i).getType().akType();
+            Column column = columns.get(i);
+            akTypes[i] = column.getType().akType();
         }
+        constraintChecker = new UserTableRowChecker(this);
     }
 
     // Object state
@@ -132,4 +140,5 @@ public class UserTableRowType extends AisRowType
     // Type of indexRowTypes is ArrayList, not List, to make it clear that null values are permitted.
     private final ArrayList<IndexRowType> indexRowTypes = new ArrayList<IndexRowType>();
     private final AkType[] akTypes;
+    private final ConstraintChecker constraintChecker;
 }

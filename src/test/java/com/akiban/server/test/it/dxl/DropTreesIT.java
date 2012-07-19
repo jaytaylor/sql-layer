@@ -77,7 +77,7 @@ public final class DropTreesIT extends ITBase {
         Column newColumn = Column.create(newTable,  curColumn.getName(), curColumn.getPosition(), curColumn.getType());
         newColumn.setTypeParameter1(curColumn.getTypeParameter1());
         newColumn.setTypeParameter2(curColumn.getTypeParameter2());
-        newIndex.addColumn(new IndexColumn(newIndex, newColumn, 0, true, null));
+        IndexColumn.create(newIndex, newColumn, 0, true, null);
         return newIndex;
     }
 

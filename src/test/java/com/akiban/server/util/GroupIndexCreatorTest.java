@@ -50,7 +50,7 @@ public class GroupIndexCreatorTest {
         ais = builder.defaultSchema("test")
                 .userTable("c").colLong("id").colString("name", 32).pk("id")
                 .userTable("o").colLong("id").colLong("date").colLong("cid").pk("id").joinTo("c").on("cid", "id")
-                .ais();
+                .unvalidatedAIS();
     }
 
     @Test(expected=NoSuchGroupException.class)

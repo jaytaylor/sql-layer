@@ -51,14 +51,21 @@
 package com.akiban.server.types3.mcompat.mfuncs;
 
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TCustomOverloadResult;
 import com.akiban.server.types3.TExecutionContext;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
+import com.akiban.server.types3.TPreptimeContext;
+import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.common.types.StringAttribute;
 import com.akiban.server.types3.mcompat.mtypes.MString;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.server.types3.texpressions.TInputSetBuilder;
 import com.akiban.server.types3.texpressions.TOverloadBase;
+
+import java.util.List;
 
 public class MConcat extends TOverloadBase {
     public static final TOverload INSTANCE = new MConcat();
@@ -83,12 +90,20 @@ public class MConcat extends TOverloadBase {
 
     @Override
     public String overloadName() {
-        return "CONCAT";
+        return "concatenate";
     }
 
     @Override
     public TOverloadResult resultType() {
-        assert false : "need to implement this!";
-        return TOverloadResult.custom(null); // todo
+        return TOverloadResult.custom(new TCustomOverloadResult() {
+            @Override
+            public TInstance resultInstance(List<TPreptimeValue> inputs, TPreptimeContext context) {
+                int length = 0;
+                for (TPreptimeValue ptv : inputs) {
+                    length += ptv.instance().attribute(StringAttribute.LENGTH);
+                }
+                return MString.VARCHAR.instance(length);
+            }
+        });
     }
 }

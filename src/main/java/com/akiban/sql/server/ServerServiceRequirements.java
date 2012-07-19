@@ -34,6 +34,8 @@ import com.akiban.server.service.session.SessionService;
 import com.akiban.server.service.tree.TreeService;
 import com.akiban.server.store.Store;
 import com.akiban.server.store.statistics.IndexStatisticsService;
+import com.akiban.server.t3expressions.OverloadResolutionService;
+import com.akiban.server.t3expressions.OverloadResolver;
 
 public final class ServerServiceRequirements {
 
@@ -44,7 +46,8 @@ public final class ServerServiceRequirements {
                                      TreeService treeService,
                                      FunctionsRegistry functionsRegistry,
                                      ConfigurationService config,
-                                     IndexStatisticsService indexStatistics) {
+                                     IndexStatisticsService indexStatistics,
+                                     OverloadResolutionService overloadResolutionService) {
         this.instrumentation = instrumentation;
         this.dxlService = dxlService;
         this.sessionService = sessionService;
@@ -53,6 +56,7 @@ public final class ServerServiceRequirements {
         this.functionsRegistry = functionsRegistry;
         this.config = config;
         this.indexStatistics = indexStatistics;
+        this.overloadResolutionService = overloadResolutionService;
     }
 
     public InstrumentationService instrumentation() {
@@ -79,6 +83,10 @@ public final class ServerServiceRequirements {
         return functionsRegistry;
     }
 
+    public OverloadResolver overloadResolver() {
+        return overloadResolutionService.getResolver();
+    }
+
     public ConfigurationService config() {
         return config;
     }
@@ -95,4 +103,5 @@ public final class ServerServiceRequirements {
     private final FunctionsRegistry functionsRegistry;
     private final ConfigurationService config;
     private final IndexStatisticsService indexStatistics;
+    private final OverloadResolutionService overloadResolutionService;
 }

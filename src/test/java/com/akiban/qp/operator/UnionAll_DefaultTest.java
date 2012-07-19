@@ -29,7 +29,9 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.DerivedTypesSchema;
 import com.akiban.qp.rowtype.RowType;
+import com.akiban.server.expression.OldExpressionTestBase;
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.Types3Switch;
 import org.junit.Test;
 
 import static org.junit.Assert.assertEquals;
@@ -175,7 +177,7 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
-        new UnionAll_Default(null, first.rowType(), new TestOperator(second), second.rowType());
+        new UnionAll_Default(null, first.rowType(), new TestOperator(second), second.rowType(), Types3Switch.ON);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -183,7 +185,7 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
-        new UnionAll_Default(new TestOperator(first), null, new TestOperator(second), second.rowType());
+        new UnionAll_Default(new TestOperator(first), null, new TestOperator(second), second.rowType(), Types3Switch.ON);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -191,7 +193,7 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
-        new UnionAll_Default(new TestOperator(first), first.rowType(), null, second.rowType());
+        new UnionAll_Default(new TestOperator(first), first.rowType(), null, second.rowType(), Types3Switch.ON);
     }
 
     @Test(expected = IllegalArgumentException.class)
@@ -199,7 +201,7 @@ public final class UnionAll_DefaultTest {
         DerivedTypesSchema schema = new DerivedTypesSchema();
         RowsBuilder first = new RowsBuilder(schema, AkType.LONG, AkType.VARCHAR);
         RowsBuilder second = new RowsBuilder(schema, AkType.LONG, AkType.NULL);
-        new UnionAll_Default(new TestOperator(first), first.rowType(), new TestOperator(second), null);
+        new UnionAll_Default(new TestOperator(first), first.rowType(), new TestOperator(second), null, Types3Switch.ON);
     }
 
     /**
@@ -240,7 +242,10 @@ public final class UnionAll_DefaultTest {
     private static void checkRowTypes(RowType expected, RowType actual) {
         assertEquals("number of fields", expected.nFields(), actual.nFields());
         for (int i=0; i < expected.nFields(); ++i) {
-            assertEquals("field " + i, expected.typeAt(i), actual.typeAt(i));
+            if (Types3Switch.ON)
+                assertEquals("field " + i, expected.typeInstanceAt(i), actual.typeInstanceAt(i));
+            else
+                assertEquals("field " + i, expected.typeAt(i), actual.typeAt(i));
         }
     }
 
@@ -249,7 +254,8 @@ public final class UnionAll_DefaultTest {
                     new TestOperator(rb1),
                     rb1.rowType(),
                     new TestOperator(rb2),
-                    rb2.rowType()
+                    rb2.rowType(),
+                    Types3Switch.ON
             );
     }
 }

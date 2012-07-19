@@ -67,7 +67,7 @@ public class Cast_From_Int
     
     public static final TCast TO_UNSIGNED_SMALLINT = new FromInt32ToInt32(MNumeric.INT, MNumeric.SMALLINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MNumeric.INT, MNumeric.MEDIUMINT, true, Constantness.UNKNOWN);
+    public static final TCast TO_MEDIUMINT = new FromInt32ToInt32(MNumeric.INT, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
     public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt32ToInt64(MNumeric.INT, MNumeric.MEDIUMINT_UNSIGNED, true, Constantness.UNKNOWN);
     
@@ -81,7 +81,7 @@ public class Cast_From_Int
 
     public static final TCast TO_DOUBLE = new FromInt32ToDouble(MNumeric.INT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
 
-    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MNumeric.INT, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromInt32ToDecimal(MNumeric.INT, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_VARCHAR = new FromInt32ToString(MNumeric.INT, MString.VARCHAR, true, Constantness.UNKNOWN);
+    public static final TCast TO_VARCHAR = new FromInt32ToString(MNumeric.INT, MString.VARCHAR, false, Constantness.UNKNOWN);
 }

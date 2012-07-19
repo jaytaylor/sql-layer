@@ -49,6 +49,11 @@ public final class TPreparedField implements TPreparedExpression {
         return new Evaluation(typeInstance.typeClass().underlyingType(), fieldIndex);
     }
 
+    @Override
+    public String toString() {
+        return "Field(" + fieldIndex + ')';
+    }
+
     public TPreparedField(TInstance typeInstance, int fieldIndex) {
         this.typeInstance = typeInstance;
         this.fieldIndex = fieldIndex;
@@ -60,8 +65,7 @@ public final class TPreparedField implements TPreparedExpression {
     private static class Evaluation extends ContextualEvaluation<Row> {
         @Override
         protected void evaluate(Row context, PValueTarget target) {
-            PValueSource rowSource = null;
-//            rowSource = context.rowEval(fieldIndex);
+            PValueSource rowSource = context.pvalue(fieldIndex);
             target.putValueSource(rowSource);
         }
 

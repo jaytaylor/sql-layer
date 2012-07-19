@@ -27,7 +27,10 @@
 package com.akiban.sql.optimizer.plan;
 
 import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.TPreptimeValue;
 
+import java.util.Collections;
 import java.util.List;
 import java.util.ArrayList;
 
@@ -46,13 +49,51 @@ public class ExpressionsSource extends BaseJoinable implements ColumnSource
         return expressions;
     }
 
-    public AkType[] getFieldTypes() {
+    public List<TPreptimeValue> getPreptimeValues() {
         if (expressions.isEmpty())
-            return new AkType[0];
+            return Collections.emptyList();
         List<ExpressionNode> nodes = expressions.get(0);
-        AkType[] result = new AkType[nodes.size()];
+        List<TPreptimeValue> result = new ArrayList<TPreptimeValue>(nodes.size());
+        for (ExpressionNode node : nodes) {
+            result.add(node.getPreptimeValue());
+        }
+        return result;
+    }
+
+    public AkType[] getFieldTypes() {
+        AkType[] result = null;
+        for (List<ExpressionNode> nodes : expressions) {
+            if (result == null)
+                result = new AkType[nodes.size()];
+            boolean incomplete = false;
+            for (int i = 0; i < result.length; i++) {
+                AkType type = nodes.get(i).getAkType();
+                // Each type gets first non-null.
+                // TODO: Should be UNIONed type, though maybe not computed here.
+                if ((type == AkType.UNSUPPORTED) ||
+                    (type == AkType.NULL)) {
+                    incomplete = true;
+                }
+                if ((result[i] == null) ||
+                    (result[i] == AkType.UNSUPPORTED) ||
+                    (result[i] == AkType.NULL)) {
+                    result[i] = type;
+                }
+            }
+            if (!incomplete) break;
+        }
+        if (result == null)
+            result = new AkType[0];
+        return result;
+    }
+
+    public TInstance[] getFieldTInstances() {
+        if (expressions.isEmpty())
+            return new TInstance[0];
+        List<ExpressionNode> nodes = expressions.get(0);
+        TInstance[] result = new TInstance[nodes.size()];
         for (int i=0; i < result.length; ++i) {
-            result[i] = nodes.get(i).getAkType();
+            result[i] = nodes.get(i).getPreptimeValue().instance();
         }
         return result;
     }

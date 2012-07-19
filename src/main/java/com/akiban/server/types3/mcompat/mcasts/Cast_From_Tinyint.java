@@ -76,9 +76,9 @@ public class Cast_From_Tinyint
     
     public static final TCast TO_UNSIGNED_BIGINT = new FromInt8ToInt64(MNumeric.TINYINT, MNumeric.BIGINT_UNSIGNED, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_DECIMAL = new FromInt8ToDecimal(MNumeric.TINYINT, MNumeric.DECIMAL, true, Constantness.UNKNOWN);
+    public static final TCast TO_DECIMAL = new FromInt8ToDecimal(MNumeric.TINYINT, MNumeric.DECIMAL, false, Constantness.UNKNOWN);
     
     public static final TCast TO_DOUBLE = new FromInt8ToDouble(MNumeric.TINYINT, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN);
     
-    public static final TCast TO_VARCHAR = new FromInt8ToString(MNumeric.TINYINT, MString.VARCHAR, true, Constantness.UNKNOWN);
+    public static final TCast TO_VARCHAR = new FromInt8ToString(MNumeric.TINYINT, MString.VARCHAR, false, Constantness.UNKNOWN);
 }

@@ -1,10 +1,10 @@
 ---
-- CreateTable: people (pid INT NOT NULL PRIMARY KEY, name VARCHAR(32));
+- CreateTable: people (pid INT NOT NULL PRIMARY KEY, name VARCHAR(32) COLLATE utf8_bin);
 ---
 - CreateTable: addresses (
     aid INT NOT NULL PRIMARY KEY,
     pid INT NOT NULL,
-    street VARCHAR(32),
+    street VARCHAR(32) COLLATE utf8_bin,
     GROUPING FOREIGN KEY (pid) REFERENCES people (pid))
 ---
 - JMX: com.akiban:type=IndexStatistics

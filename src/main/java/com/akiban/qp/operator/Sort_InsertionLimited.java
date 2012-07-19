@@ -405,7 +405,13 @@ class Sort_InsertionLimited extends Operator
                 else if (v2 == null) {
                     return greater;
                 }
-                int comp = v1.compareTo(v2);
+                int comp;
+                if (ordering.collator(i) == null) {
+                    comp = v1.compareTo(v2);
+                }
+                else {
+                    comp = ordering.collator(i).compare(v1.toString(), v2.toString());
+                }
                 if (comp != 0) {
                     if (comp < 0)
                         return less;

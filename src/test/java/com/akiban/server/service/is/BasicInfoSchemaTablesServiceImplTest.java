@@ -44,8 +44,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 import static com.akiban.qp.memoryadapter.MemoryGroupCursor.GroupScan;
 import static com.akiban.server.types.AkType.*;
@@ -185,6 +188,18 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 index.setTreeName(index.getIndexName().getName() + "_tree");
             }
         }
+
+        {
+        String schema = "test";
+        String view = "voo";
+        Map<TableName,Collection<String>> refs = new HashMap<TableName,Collection<String>>();
+        refs.put(TableName.create(schema, "foo"), Arrays.asList("c1", "c2"));
+        builder.view(schema, view,
+                     "CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo", new Properties(),
+                     refs);
+        builder.column(schema, view, "c1", 0, "DOUBLE", null, null, true, false, null, null);
+        builder.column(schema, view, "c2", 1, "INT", null, null, false, false, null, null);
+        }
     }
 
     private MemoryTableFactory getFactory(TableName name) {
@@ -233,12 +248,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
                         break;
                     }
                     assertEquals(msg, expected, actual.getString());
+   
                 } else if(expected instanceof Integer) {
                     assertEquals(msg, expected, actual.getInt());
                 } else if(expected instanceof Long) {
                     assertEquals(msg, expected, actual.getLong());
                 } else if(expected instanceof Boolean) {
                     assertEquals(msg, (Boolean)expected ? "YES" : "NO", actual.getString());
+                } else if(expected instanceof Text) {
+                    assertEquals(msg, ((Text)expected).getText(), actual.getText());
                 } else {
                     fail("Unsupported type: " + expected.getClass());
                 }
@@ -253,6 +271,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
         return skippedRows;
     }
 
+    static class Text {
+        private String text;
+        public Text(String text) {
+            this.text = text;
+        }
+        public String getText() {
+            return text;
+        }
+    }
 
     @Test
     public void schemataScan() {
@@ -275,10 +302,11 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "zap", "pow", "TABLE", LONG, "pow_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "zzz", "zzz1", "TABLE", LONG, "zzz1_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "zzz", "zzz2", "TABLE", LONG, "zzz2_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "test", "voo", "VIEW", null, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.TABLES).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skip I_S tables", 9, skipped);
+        assertEquals("Skip I_S tables", 12, skipped);
     }
 
     @Test
@@ -295,10 +323,12 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 { "zzz", "zzz1", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
                 { "zzz", "zzz2", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
                 { "zzz", "zzz2", "one_id", 1L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "voo", "c1", 0L, "double", true, 8L, null, null, 0L, null, null, null, null, null, LONG },
+                { "test", "voo", "c2", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
         };
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.COLUMNS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S columns", 70, skipped);
+        assertEquals("Skipped I_S columns", 87, skipped);
     }
 
     @Test
@@ -328,16 +358,21 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void groupingConstraintsScan() {
         final Object[][] expected = {
-                { "test", "bar2", "bar2/bar", "test", "bar", "PRIMARY", LONG },
-                { "zzz", "zzz2", "zzz2/zzz1", "zzz", "zzz1", "PRIMARY", LONG },
+                { "test", "bar", "test", "bar", "test.bar", 0L, null, null, null, null, LONG },
+                { "test", "bar", "test", "bar2", "test.bar/test.bar2", 1L, "bar2/bar", "test", "bar", "PRIMARY", LONG },
+                { "test", "foo", "test", "foo", "test.foo", 0L, null, null, null, null, LONG },
+                { "zap", "pow", "zap", "pow", "zap.pow", 0L, null, null, null, null, LONG },
+                { "zzz", "zzz1", "zzz", "zzz1", "zzz.zzz1", 0L, null, null, null, null, LONG },
+                { "zzz", "zzz1", "zzz", "zzz2", "zzz.zzz1/zzz.zzz2", 1L, "zzz2/zzz1", "zzz", "zzz1", "PRIMARY", LONG },
         };
+
         GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.GROUPING_CONSTRAINTS).getGroupScan(adapter);
         int skipped = scanAndCompare(expected, scan);
-        assertEquals("Skipped I_S grouping_constraints", 0, skipped);
+        assertEquals("Skipped I_S grouping_constraints", 12, skipped);
     }
 
     @Test
-    public void keyColumnUsageScan() {
+    public void keyColumnUsageScan() {    
         final Object[][] expected = {
                 { "test", "bar", "PRIMARY", "col", 0L, null, LONG },
                 { "test", "bar2", "bar2/bar", "pid", 0L, 0L, LONG },
@@ -381,4 +416,36 @@ public class BasicInfoSchemaTablesServiceImplTest {
         int skipped = scanAndCompare(expected, scan);
         assertEquals("Skipped I_S index_columns", 0, skipped);
     }
+
+    @Test
+    public void viewsScan() {
+        final Object[][] expected = {
+                { "test", "voo", new Text("CREATE VIEW voo(c1,c2) AS SELECT c2,c1 FROM foo"), false, LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEWS).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S views", 0, skipped);
+    }
+
+    @Test
+    public void viewTableUsageScan() {
+        final Object[][] expected = {
+                { "test", "voo", "test", "foo", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_TABLE_USAGE).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S views", 0, skipped);
+    }
+
+    @Test
+    public void viewColumnUsageScan() {
+        final Object[][] expected = {
+                { "test", "voo", "test", "foo", "c1", LONG },
+                { "test", "voo", "test", "foo", "c2", LONG },
+        };
+        GroupScan scan = getFactory(BasicInfoSchemaTablesServiceImpl.VIEW_COLUMN_USAGE).getGroupScan(adapter);
+        int skipped = scanAndCompare(expected, scan);
+        assertEquals("Skip I_S views", 0, skipped);
+    }
+
 }

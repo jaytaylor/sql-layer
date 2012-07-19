@@ -31,6 +31,9 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.server.types.extract.Extractors;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.texpressions.TEvaluatableExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.sql.optimizer.explain.Attributes;
 import com.akiban.sql.optimizer.explain.Explainer;
 import com.akiban.sql.optimizer.explain.Label;
@@ -97,7 +100,8 @@ class Select_HKeyOrdered extends Operator
     @Override
     public String toString()
     {
-        return String.format("%s(%s, %s)", getClass().getSimpleName(), predicateRowType, predicate);
+        Object toStringPredicate = (predicate == null) ? pPredicate : predicate;
+        return String.format("%s(%s, %s)", getClass().getSimpleName(), predicateRowType, toStringPredicate);
     }
 
     // Operator interface
@@ -133,11 +137,26 @@ class Select_HKeyOrdered extends Operator
 
     public Select_HKeyOrdered(Operator inputOperator, RowType predicateRowType, Expression predicate)
     {
-        ArgumentValidation.notNull("predicateRowType", predicateRowType);
+        this(inputOperator, predicateRowType, predicate, null);
         ArgumentValidation.notNull("predicate", predicate);
+    }
+
+    public Select_HKeyOrdered(Operator inputOperator, RowType predicateRowType, TPreparedExpression predicate)
+    {
+        this(inputOperator, predicateRowType, null, predicate);
+        ArgumentValidation.notNull("predicate", predicate);
+        if (predicate.resultType().typeClass() != AkBool.INSTANCE)
+            throw new IllegalArgumentException("predicate must return type " + AkBool.INSTANCE);
+    }
+
+    private Select_HKeyOrdered(Operator inputOperator, RowType predicateRowType,
+                               Expression predicate, TPreparedExpression pPredicate)
+    {
+        ArgumentValidation.notNull("predicateRowType", predicateRowType);
         this.inputOperator = inputOperator;
         this.predicateRowType = predicateRowType;
         this.predicate = predicate;
+        this.pPredicate = pPredicate;
     }
 
     // Class state
@@ -150,6 +169,7 @@ class Select_HKeyOrdered extends Operator
     private final Operator inputOperator;
     private final RowType predicateRowType;
     private final Expression predicate;
+    private final TPreparedExpression pPredicate;
 
     @Override
     public Explainer getExplainer()
@@ -175,7 +195,10 @@ class Select_HKeyOrdered extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 input.open();
-                evaluation.of(context);
+                if (evaluation == null)
+                    pEvaluation.with(context);
+                else
+                    evaluation.of(context);
                 idle = false;
             } finally {
                 TAP_OPEN.out();
@@ -193,11 +216,22 @@ class Select_HKeyOrdered extends Operator
                 Row inputRow = input.next();
                 while (row == null && inputRow != null) {
                     if (inputRow.rowType() == predicateRowType) {
-                        evaluation.of(inputRow);
-                        if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval(), false)) {
-                            // New row of predicateRowType
-                            selectedRow.hold(inputRow);
-                            row = inputRow;
+                        if (evaluation == null) {
+                            pEvaluation.with(inputRow);
+                            pEvaluation.evaluate();
+                            if (pEvaluation.resultValue().getBoolean(false)) {
+                                // New row of predicateRowType
+                                selectedRow.hold(inputRow);
+                                row = inputRow;
+                            }
+                        }
+                        else {
+                            evaluation.of(inputRow);
+                            if (Extractors.getBooleanExtractor().getBoolean(evaluation.eval(), false)) {
+                                // New row of predicateRowType
+                                selectedRow.hold(inputRow);
+                                row = inputRow;
+                            }
                         }
                     } else if (predicateRowType.ancestorOf(inputRow.rowType())) {
                         // Row's type is a descendent of predicateRowType.
@@ -237,7 +271,8 @@ class Select_HKeyOrdered extends Operator
             if (!isDestroyed()) {
                 close();
                 input.destroy();
-                evaluation.destroy();
+                if (evaluation != null)
+                    evaluation.destroy();
             }
         }
 
@@ -265,7 +300,14 @@ class Select_HKeyOrdered extends Operator
         {
             super(context);
             this.input = input;
-            this.evaluation = predicate.evaluation();
+            if (predicate == null) {
+                this.evaluation = null;
+                this.pEvaluation = pPredicate.build();
+            }
+            else {
+                this.evaluation = predicate.evaluation();
+                this.pEvaluation = null;
+            }
         }
 
         // Object state
@@ -273,6 +315,7 @@ class Select_HKeyOrdered extends Operator
         private final Cursor input;
         private final ShareHolder<Row> selectedRow = new ShareHolder<Row>(); // The last input row with type = predicateRowType.
         private final ExpressionEvaluation evaluation;
+        private final TEvaluatableExpression pEvaluation;
         private boolean idle = true;
     }
 }

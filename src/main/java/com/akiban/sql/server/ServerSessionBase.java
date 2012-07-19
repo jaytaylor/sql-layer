@@ -26,38 +26,38 @@
 
 package com.akiban.sql.server;
 
-import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.operator.StoreAdapter;
+import com.akiban.server.error.AkibanInternalException;
+import com.akiban.server.error.InvalidOperationException;
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.NoTransactionInProgressException;
+import com.akiban.server.error.TransactionAbortedException;
 import com.akiban.server.error.TransactionInProgressException;
 import com.akiban.server.error.TransactionReadOnlyException;
 import com.akiban.server.service.dxl.DXLService;
 import com.akiban.server.service.functions.FunctionsRegistry;
 import com.akiban.server.service.instrumentation.SessionTracer;
 import com.akiban.server.service.session.Session;
+import com.akiban.server.service.tree.KeyCreator;
 import com.akiban.server.service.tree.TreeService;
+import com.akiban.server.t3expressions.OverloadResolver;
+import com.akiban.sql.optimizer.AISBinderContext;
 import com.akiban.sql.optimizer.rule.cost.CostEstimator;
-import com.akiban.sql.parser.SQLParser;
 
 import java.util.*;
 
-public abstract class ServerSessionBase implements ServerSession
+public abstract class ServerSessionBase extends AISBinderContext implements ServerSession
 {
     public static final String COMPILER_PROPERTIES_PREFIX = "optimizer.";
 
     protected final ServerServiceRequirements reqs;
-    protected Properties properties, compilerProperties;
+    protected Properties compilerProperties;
     protected Map<String,Object> attributes = new HashMap<String,Object>();
     
     protected Session session;
-    protected long aisTimestamp = -1;
-    protected AkibanInformationSchema ais;
     protected Map<StoreAdapter.AdapterType, StoreAdapter> adapters = 
         new HashMap<StoreAdapter.AdapterType, StoreAdapter>();
-    //protected StoreAdapter adapter;
-    protected String defaultSchemaName;
-    protected SQLParser parser;
     protected ServerTransaction transaction;
     protected boolean transactionDefaultReadOnly = false;
     protected ServerSessionTracer sessionTracer;
@@ -71,38 +71,41 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public Properties getProperties() {
-        return properties;
-    }
-
-    @Override
-    public String getProperty(String key) {
-        return properties.getProperty(key);
-    }
-
-    @Override
-    public String getProperty(String key, String defval) {
-        return properties.getProperty(key, defval);
-    }
-
-    @Override
     public void setProperty(String key, String value) {
-        if (value == null)
-            properties.remove(key);
-        else
-            properties.setProperty(key, value);
-        if (!propertySet(key, properties.getProperty(key)))
-            sessionChanged();   // Give individual handlers a chance.
+        String ovalue = (String)properties.get(key); // Not inheriting.
+        super.setProperty(key, value);
+        try {
+            if (!propertySet(key, properties.getProperty(key)))
+                sessionChanged();   // Give individual handlers a chance.
+        }
+        catch (InvalidOperationException ex) {
+            super.setProperty(key, ovalue);
+            try {
+                if (!propertySet(key, properties.getProperty(key)))
+                    sessionChanged();
+            }
+            catch (InvalidOperationException ex2) {
+                throw new AkibanInternalException("Error recovering " + key + " setting",
+                                                  ex2);
+            }
+            throw ex;
+        }
     }
 
     protected void setProperties(Properties properties) {
-        this.properties = properties;
+        super.setProperties(properties);
         for (String key : properties.stringPropertyNames()) {
             propertySet(key, properties.getProperty(key));
         }
         sessionChanged();
     }
 
+    /** React to a property change.
+     * Implementers are not required to remember the old state on
+     * error, but must not leave things in such a mess that reverting
+     * to the old value will not work.
+     * @see InvalidParameterValueException
+     **/
     protected boolean propertySet(String key, String value) {
         if ("zeroDateTimeBehavior".equals(key)) {
             zeroDateTimeBehavior = ServerValueEncoder.ZeroDateTimeBehavior.fromProperty(value);
@@ -119,6 +122,12 @@ public abstract class ServerSessionBase implements ServerSession
             return true;
         }
         return false;
+    }
+
+    @Override
+    public void setDefaultSchemaName(String defaultSchemaName) {
+        super.setDefaultSchemaName(defaultSchemaName);
+        sessionChanged();
     }
 
     protected abstract void sessionChanged();
@@ -150,26 +159,10 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public String getDefaultSchemaName() {
-        return defaultSchemaName;
+    public AISBinderContext getBinderContext() {
+        return this;
     }
 
-    @Override
-    public void setDefaultSchemaName(String defaultSchemaName) {
-        this.defaultSchemaName = defaultSchemaName;
-        sessionChanged();
-    }
-
-    @Override
-    public AkibanInformationSchema getAIS() {
-        return ais;
-    }
-
-    @Override
-    public SQLParser getParser() {
-        return parser;
-    }
-    
     @Override
     public Properties getCompilerProperties() {
         if (compilerProperties == null)
@@ -190,6 +183,16 @@ public abstract class ServerSessionBase implements ServerSession
     @Override
     public TreeService getTreeService() {
         return reqs.treeService();
+    }
+
+    @Override
+    public boolean isTransactionActive() {
+        return (transaction != null);
+    }
+
+    @Override
+    public boolean isTransactionRollbackPending() {
+        return ((transaction != null) && transaction.isRollbackPending());
     }
 
     @Override
@@ -241,6 +244,11 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
+    public OverloadResolver overloadResolver() {
+        return reqs.overloadResolver();
+    }
+
+    @Override
     public Date currentTime() {
         return new Date();
     }
@@ -256,8 +264,8 @@ public abstract class ServerSessionBase implements ServerSession
     }
 
     @Override
-    public CostEstimator costEstimator(ServerOperatorCompiler compiler) {
-        return new ServerCostEstimator(this, reqs, compiler);
+    public CostEstimator costEstimator(ServerOperatorCompiler compiler, KeyCreator keyCreator) {
+        return new ServerCostEstimator(this, reqs, compiler, keyCreator);
     }
 
     /** Prepare to execute given statement.
@@ -287,6 +295,17 @@ public abstract class ServerSessionBase implements ServerSession
                 localTransaction = new ServerTransaction(this, false);
                 localTransaction.beforeUpdate();
                 break;
+            }
+        }
+        if (isTransactionRollbackPending()) {
+            ServerStatement.TransactionAbortedMode abortedMode = stmt.getTransactionAbortedMode();
+            switch (abortedMode) {
+                case ALLOWED:
+                    break;
+                case NOT_ALLOWED:
+                    throw new TransactionAbortedException();
+                default:
+                    throw new IllegalStateException("Unknown mode: " + abortedMode);
             }
         }
         return localTransaction;

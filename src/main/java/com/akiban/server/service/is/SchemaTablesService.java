@@ -37,10 +37,10 @@ import com.akiban.server.store.SchemaManager;
 public class SchemaTablesService {
     
     static final String SCHEMA_NAME = TableName.INFORMATION_SCHEMA;
-    public static final int IDENT_MAX = 128;
     public static final int YES_NO_MAX = 3;
-    public static final int PATH_MAX = 1024;
     public static final int DESCRIPTOR_MAX = 32;
+    public static final int IDENT_MAX = 128;
+    public static final int PATH_MAX = 1024;
     protected final SchemaManager schemaManager;
 
     public SchemaTablesService (SchemaManager schemaManager) {

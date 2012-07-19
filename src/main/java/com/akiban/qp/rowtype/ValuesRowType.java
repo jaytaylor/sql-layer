@@ -28,6 +28,8 @@ package com.akiban.qp.rowtype;
 
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.server.types3.pvalue.PValueSources;
 
 import java.util.Arrays;
 
@@ -38,7 +40,7 @@ public class ValuesRowType extends DerivedRowType
     @Override
     public String toString()
     {
-        return "values(" + Arrays.toString(types) + ')';
+        return "values(" + Arrays.toString(types == null ? tInstances : types) + ')';
     }
 
     // RowType interface
@@ -46,7 +48,7 @@ public class ValuesRowType extends DerivedRowType
     @Override
     public int nFields()
     {
-        return types.length;
+        return (types == null ) ? tInstances.length : types.length;
     }
 
     @Override
@@ -56,7 +58,7 @@ public class ValuesRowType extends DerivedRowType
 
     @Override
     public TInstance typeInstanceAt(int index) {
-        return tInstances[index];
+        return tInstances != null ? tInstances[index] : PValueSources.fromAkType(types[index]);
     }
 
     // ValuesRowType interface
@@ -68,8 +70,14 @@ public class ValuesRowType extends DerivedRowType
         this.tInstances = null;
     }
 
+    public ValuesRowType(DerivedTypesSchema schema, int typeId, TInstance... fields) {
+        super(schema, typeId);
+        this.types = null;
+        this.tInstances = fields;
+    }
+
     // Object state
 
     private final AkType[] types;
-    private final TInstance[] tInstances;
+    private TInstance[] tInstances;
 }

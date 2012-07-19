@@ -46,10 +46,15 @@ public class PostgresSessionStatement implements PostgresStatement
     enum Operation {
         USE, CONFIGURATION,
         BEGIN_TRANSACTION, COMMIT_TRANSACTION, ROLLBACK_TRANSACTION,
-        TRANSACTION_ISOLATION, TRANSACTION_ACCESS
+        TRANSACTION_ISOLATION, TRANSACTION_ACCESS;
+        
+        public PostgresSessionStatement getStatement(StatementNode statement) {
+            return new PostgresSessionStatement (this, statement);
+        }
     };
 
     public static final String[] ALLOWED_CONFIGURATION = new String[] {
+      "columnAsFunc",
       "client_encoding", "DateStyle", "geqo", "ksqo",
       "queryTimeoutSec", "zeroDateTimeBehavior", "maxNotificationLevel", "OutputFormat",
       "parserInfixBit", "parserInfixLogical", "parserDoubleQuoted",
@@ -59,7 +64,7 @@ public class PostgresSessionStatement implements PostgresStatement
     private Operation operation;
     private StatementNode statement;
     
-    public PostgresSessionStatement(Operation operation, StatementNode statement) {
+    protected PostgresSessionStatement(Operation operation, StatementNode statement) {
         this.operation = operation;
         this.statement = statement;
     }
@@ -83,6 +88,18 @@ public class PostgresSessionStatement implements PostgresStatement
     @Override
     public TransactionMode getTransactionMode() {
         return TransactionMode.ALLOWED;
+    }
+
+    @Override
+    public TransactionAbortedMode getTransactionAbortedMode() {
+        switch (operation) {
+            case USE:
+            case ROLLBACK_TRANSACTION:
+            case CONFIGURATION:
+                return TransactionAbortedMode.ALLOWED;
+            default:
+                return TransactionAbortedMode.NOT_ALLOWED;
+        }
     }
 
     @Override
@@ -137,15 +154,17 @@ public class PostgresSessionStatement implements PostgresStatement
         case CONFIGURATION:
             {
                 SetConfigurationNode node = (SetConfigurationNode)statement;
-                String variable = node.getVariable();
-                if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
-                    throw new UnsupportedConfigurationException(variable);
-                server.setProperty(variable, node.getValue());
+                setVariable (server, node.getVariable(), node.getValue());
             }
             break;
         default:
             throw new UnsupportedSQLException("session control", statement);
         }
     }
-
+    
+    protected void setVariable(PostgresServerSession server, String variable, String value) {
+        if (!Arrays.asList(ALLOWED_CONFIGURATION).contains(variable))
+            throw new UnsupportedConfigurationException (variable);
+        server.setProperty(variable, value);
+    }
 }
