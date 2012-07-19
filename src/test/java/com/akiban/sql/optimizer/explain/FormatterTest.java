@@ -23,6 +23,7 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
+
 package com.akiban.sql.optimizer.explain;
 
 import com.akiban.server.expression.Expression;
@@ -33,17 +34,42 @@ import com.akiban.server.expression.std.FromUnixExpression;
 import com.akiban.server.expression.std.LiteralExpression;
 import com.akiban.server.expression.std.SubStringExpression;
 import com.akiban.server.types.AkType;
-import com.akiban.sql.optimizer.explain.std.TreeFormat;
+import com.akiban.sql.optimizer.explain.std.ExpressionExplainer;
 import java.util.Arrays;
 import java.util.Collections;
-import org.junit.Test;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import org.junit.*;
 
-public class TreeFormatTest
-{
+public class FormatterTest {
+    
+    public FormatterTest() {
+    }
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+    }
+    
+    @Before
+    public void setUp() {
+    }
+    
+    @After
+    public void tearDown() {
+    }
+
+    /**
+     * Test of Describe method, of class Format.
+     */
     @Test
-    public void testExplainerInExpression()
-    {
+    public void testDescribe_Explainer() {
+        System.out.println("describe");
+        
+        // copied from TreeFormatTest
         // parent expresion: 
         // SUBSTRING(FROM_UNIXTIME(123456 * 7 + 8, "%Y-%m-%d"), 9 + 10, 11)
         
@@ -71,53 +97,39 @@ public class TreeFormatTest
         // from times exp
         Expression times = ((ExpressionComposer)ArithOps.MULTIPLY).compose(Arrays.asList(lit_123456, lit_7), Collections.<ExpressionType>nCopies(3, null));
         Expression add = ((ExpressionComposer)ArithOps.ADD).compose(Arrays.asList(times, lit_8), Collections.<ExpressionType>nCopies(3, null));
+        Expression times_ = ((ExpressionComposer)ArithOps.MULTIPLY).compose(Arrays.asList(times, lit_8), Collections.<ExpressionType>nCopies(3, null));
         
         Expression arg2 = ((ExpressionComposer)ArithOps.ADD).compose(Arrays.asList(lit_9, lit_10), Collections.<ExpressionType>nCopies(3, null));
         
         // from unix exp
         Expression arg1 = FromUnixExpression.COMPOSER.compose(Arrays.asList(add, lit_varchar), Collections.<ExpressionType>nCopies(3, null));
+        Expression arg1_ = FromUnixExpression.COMPOSER.compose(Arrays.asList(times_, lit_varchar), Collections.<ExpressionType>nCopies(3, null));
         
         // substr exp
         Expression substr = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
+        Expression substr_ = SubStringExpression.COMPOSER.compose(Arrays.asList(arg1_, arg2, lit_11), Collections.<ExpressionType>nCopies(4, null));
         
-        TreeFormat fm = new TreeFormat();
+        Explainer explainer = substr.getExplainer();
+        String expResult = "SUBSTRING(FROM_UNIXTIME((123456 * 7) + 8, \'%Y-%m-%d\'), 9 + 10, 11)";
+        String result = Format.Describe(explainer);
+        assertEquals(expResult, result);
         
-        String actual = fm.describe(substr.getExplainer());
-        System.out.println(actual);
-        
-        /**
-         * Expected output:
-         * 
-            SUBSTRING
-            --OPERAND: FROM_UNIXTIME
-            ------OPERAND: +
-            ----------OPERAND: *
-            --------------OPERAND: 123456
-            --------------OPERAND: 7
-            ----------OPERAND: 8
-            ------OPERAND: %Y-%m-%d
-            --OPERAND: +
-            ------OPERAND: 9
-            ------OPERAND: 10
-            --OPERAND: 11
-                     
-         */
-        
-        String exp = "\nSUBSTRING\n" +
-                     "--OPERAND: FROM_UNIXTIME\n" +
-                     "------OPERAND: +\n" +
-                     "----------OPERAND: *\n" +
-                     "--------------OPERAND: 123456\n" + 
-                     "--------------OPERAND: 7\n" + 
-                     "----------OPERAND: 8\n" +
-                     "------OPERAND: %Y-%m-%d\n" + 
-                     "--OPERAND: +\n" +
-                     "------OPERAND: 9\n" +
-                     "------OPERAND: 10\n" +
-                     "--OPERAND: 11\n";
-        
-        assertEquals(exp, actual);
-               
+        explainer = substr_.getExplainer();
+        expResult = "SUBSTRING(FROM_UNIXTIME(123456 * 7 * 8, \'%Y-%m-%d\'), 9 + 10, 11)";
+        result = Format.Describe(explainer);
+        assertEquals(expResult, result);
     }
-    
+
+    @Test
+    public void testDescribePrimitive() {
+        System.out.println("describePrimitive");
+        PrimitiveExplainer explainer1 = PrimitiveExplainer.getInstance(27);
+        PrimitiveExplainer explainer2 = PrimitiveExplainer.getInstance("27");
+        StringBuilder sb1 = new StringBuilder();
+        StringBuilder sb2 = new StringBuilder();
+        Format.describePrimitive(explainer1, sb1);
+        Format.describePrimitive(explainer2, sb2);
+        assertEquals("27", sb1.toString());
+        assertEquals("\'27\'", sb2.toString());
+    }
 }

@@ -42,7 +42,7 @@
     VALUES ('alfa', 100), ('bravo', 200), ('Delta', 400)
 ---
 - Statement: EXPLAIN SELECT i, j FROM parent INNER JOIN child USING (name)
-- output: [['project([Field(1), Field(3)])'],
+- output: [['project(Field(1), Field(3))'],
            ['  Filter_Default([flatten(test.parent, test.child)])'],
            ['    Flatten_HKeyOrdered(test.parent INNER test.child)'],
            ['      GroupScan_Default(full scan on _akiban_parent)']]

@@ -351,7 +351,7 @@ final class Aggregate_Partial extends Operator
     public Explainer getExplainer()
     {
         Attributes atts = new Attributes();
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("AGGREGATE_PARTIAL"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Aggregate"));
         
  
         for (AggregatorFactory agg : aggregatorFactories)
