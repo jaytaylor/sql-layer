@@ -36,12 +36,12 @@ import com.akiban.sql.optimizer.explain.Type;
 
 public class SortOperatorExplainer extends OperationExplainer
 {
-    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp)
+    public SortOperatorExplainer (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering)
     {
-        super(Type.SORT, buildMap(name, sortOption, sortType, inputOp));
+        super(Type.SORT, buildMap(name, sortOption, sortType, inputOp, ordering));
     }
     
-    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp)
+    private static Attributes buildMap (String name, API.SortOption sortOption, RowType sortType, Operator inputOp, API.Ordering ordering)
     {
         Attributes map = new Attributes();
         
@@ -49,6 +49,11 @@ public class SortOperatorExplainer extends OperationExplainer
         map.put(Label.SORT_OPTION, PrimitiveExplainer.getInstance(sortOption.name()));
         map.put(Label.ROWTYPE, PrimitiveExplainer.getInstance(sortType));
         map.put(Label.INPUT_OPERATOR, inputOp.getExplainer());
+        for (int i = 0; i < ordering.sortColumns(); i++)
+        {
+            map.put(Label.EXPRESSIONS, ordering.expression(i).getExplainer());
+            map.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.ascending(i) ? "ASC" : "DESC"));
+        }
         
         return map;
     }

@@ -61,7 +61,7 @@ public class Format {
 
     protected static void describeExpression(OperationExplainer explainer, StringBuilder sb, boolean needsParens, String parentName) {
         
-        Attributes atts = (Attributes) explainer.get().clone();
+        Attributes atts = explainer.get();
         String name = atts.get(Label.NAME).get(0).get().toString();
         
         if (explainer.getType().equals(Type.LITERAL))
@@ -137,7 +137,7 @@ public class Format {
 
     protected static void describeOperator(OperationExplainer explainer, StringBuilder sb) {
         
-        Attributes atts = (Attributes) explainer.get().clone();
+        Attributes atts = explainer.get();
         String name = atts.get(Label.NAME).get(0).get().toString();
         
         sb.append(name).append("(");
@@ -245,7 +245,10 @@ public class Format {
                     describe(rowtype, sb);
                     sb.append(" - ");
                 }
-                sb.setLength(sb.length()-3);
+                if (!atts.get(Label.KEEP_TYPE).isEmpty())
+                {
+                    sb.setLength(sb.length()-3);
+                }
                 break;
             case FLATTEN_OPERATOR: // Eventually may want to implement associativity for this
                 describe(atts.get(Label.PARENT_TYPE).get(0), sb);
@@ -300,8 +303,19 @@ public class Format {
                 }
                 break;
             case SORT:
-                describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
-                sb.append(", ").append(atts.get(Label.SORT_OPTION).get(0).get());
+                //describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                int i = 0;
+                for (Explainer ex : atts.get(Label.EXPRESSIONS))
+                {
+                    describe(ex, sb);
+                    sb.append(" ").append(atts.get(Label.ORDERING).get(i++).get()).append(", ");
+                }
+                if (atts.containsKey(Label.LIMIT))
+                {
+                    sb.append("LIMIT ");
+                    describe(atts.get(Label.LIMIT).get(0), sb);
+                }
+                sb.append(atts.get(Label.SORT_OPTION).get(0).get());
                 break;
             case DUI:
                 if (name.equals("Delete"))

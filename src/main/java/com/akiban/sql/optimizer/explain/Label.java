@@ -42,6 +42,7 @@ public enum Label
     LEFT(Category.CHILD),
     RIGHT(Category.CHILD),
     NUM_COMPARE(Category.CHILD),
+    EXPRESSIONS(Category.CHILD),
     
     
     // COST

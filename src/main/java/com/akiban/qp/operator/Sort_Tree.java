@@ -155,7 +155,7 @@ class Sort_Tree extends Operator
     @Override
     public Explainer getExplainer()
     {
-        return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator);
+        return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator, ordering);
         
         // TODO implement for real
         //return PrimitiveExplainer.getInstance(toString()); // Dummy explainer
