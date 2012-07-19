@@ -84,6 +84,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
+import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -445,7 +447,7 @@ public class OperatorAssembler extends BaseRule
             protected TPreparedExpression existsExpression(Operator operator, RowType outerRowType,
                                                            RowType innerRowType,
                                                            int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ExistsSubqueryTExpression(operator, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
@@ -459,7 +461,7 @@ public class OperatorAssembler extends BaseRule
             protected TPreparedExpression scalarSubqueryExpression(Operator operator, TPreparedExpression innerExpression,
                                                                    RowType outerRowType, RowType innerRowType,
                                                                    int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ScalarSubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
