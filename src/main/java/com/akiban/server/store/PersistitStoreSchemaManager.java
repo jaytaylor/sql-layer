@@ -618,6 +618,27 @@ public class PersistitStoreSchemaManager implements Service<SchemaManager>, Sche
         return ddlList;
     }
 
+    /** Add the Sequence to the current AIS */
+    @Override
+    public void createSequence(Session session, Sequence sequence) {
+        AkibanInformationSchema newAIS = AISMerge.mergeSequence(this.getAis(), sequence);
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
+        try {
+            sequence.setStartWithAccumulator(treeService);
+        } catch (PersistitException e) {
+            LOG.error("Setting sequence starting value for sequence {} failed", sequence.getSequenceName().getDescription());
+            throw new PersistitAdapterException(e);
+        }
+    }
+    
+    /** Drop the given sequence from the current AIS. */
+    @Override
+    public void dropSequence(Session session, Sequence sequence) {
+        List<TableName> emptyList = new ArrayList<TableName>(0);
+        final AkibanInformationSchema newAIS = removeTablesFromAIS(emptyList, Collections.singleton(sequence.getSequenceName()));
+        saveAISChangeWithRowDefs(session, newAIS, Collections.singleton(sequence.getSchemaName()));
+    }
+
     @Override
     public long getUpdateTimestamp() {
         return updateTimestamp.get();

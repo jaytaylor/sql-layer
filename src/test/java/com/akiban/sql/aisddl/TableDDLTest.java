@@ -45,6 +45,7 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.ais.model.Join;
 import com.akiban.ais.model.JoinColumn;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -373,6 +374,14 @@ public class TableDDLTest {
         @Override
         public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
             return null;
+        }
+
+        @Override
+        public void createSequence(Session session, Sequence sequence) {
+        }
+
+        @Override
+        public void dropSequence(Session session, Sequence sequence) {
         }
     } // END class DDLFunctionsMock
 

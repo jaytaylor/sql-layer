@@ -29,6 +29,7 @@ package com.akiban.sql.aisddl;
 import com.akiban.ais.model.AISTableNameChanger;
 import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Sequence;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -676,6 +677,16 @@ public class AlterTableDDLTest {
 
         @Override
         public IndexCheckSummary checkAndFixIndexes(Session session, String schemaRegex, String tableRegex) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void createSequence(Session session, Sequence sequence) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void dropSequence(Session session, Sequence sequence) {
             throw new UnsupportedOperationException();
         }
     }

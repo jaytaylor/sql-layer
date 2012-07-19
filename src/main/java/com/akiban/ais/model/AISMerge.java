@@ -410,4 +410,14 @@ public class AISMerge {
         }
         newAIS.addView(newView);
     }
+    
+    public static AkibanInformationSchema mergeSequence (AkibanInformationSchema oldAIS,
+                                                            Sequence sequence)
+    {
+        AkibanInformationSchema newAIS = copyAIS (oldAIS);
+        newAIS.addSequence(sequence);
+        newAIS.validate(AISValidations.LIVE_AIS_VALIDATIONS).throwIfNecessary();
+        newAIS.freeze();
+        return newAIS;
+    }    
 }

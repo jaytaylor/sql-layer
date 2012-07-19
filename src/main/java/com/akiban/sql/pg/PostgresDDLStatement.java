@@ -35,10 +35,12 @@ import com.akiban.sql.aisddl.*;
 
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.CreateIndexNode;
+import com.akiban.sql.parser.CreateSequenceNode;
 import com.akiban.sql.parser.CreateTableNode;
 import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.CreateViewNode;
 import com.akiban.sql.parser.DropIndexNode;
+import com.akiban.sql.parser.DropSequenceNode;
 import com.akiban.sql.parser.DropTableNode;
 import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.parser.DDLStatementNode;
@@ -142,6 +144,12 @@ public class PostgresDDLStatement implements PostgresStatement
                     TableDDL.renameTable(ddlFunctions, session, schema, (RenameNode)ddl);
                     break;
                 }
+            case NodeTypes.CREATE_SEQUENCE_NODE:
+                SequenceDDL.createSequence(ddlFunctions, session, schema, (CreateSequenceNode)ddl);
+                break;
+            case NodeTypes.DROP_SEQUENCE_NODE:
+                SequenceDDL.dropSequence(ddlFunctions, session, schema, (DropSequenceNode)ddl);
+                break;
             case NodeTypes.REVOKE_NODE:
             default:
                 throw new UnsupportedSQLException (ddl.statementToString(), ddl);

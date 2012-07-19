@@ -267,6 +267,7 @@ public enum ErrorCode {
     UNSUPPORTED_CONFIGURATION ("42", "513", Importance.DEBUG, UnsupportedConfigurationException.class),
     SCHEMA_DEF_PARSE_EXCEPTION ("42", "514", Importance.DEBUG, SchemaDefParseException.class),
     SQL_PARSER_INTERNAL_EXCEPTION ("42", "515", Importance.DEBUG, SQLParserInternalException.class),
+    NO_SUCH_SEQUENCE        ("42", "516", Importance.DEBUG, NoSuchSequenceException.class),
 
     // Class 44 - with check option violation
     
