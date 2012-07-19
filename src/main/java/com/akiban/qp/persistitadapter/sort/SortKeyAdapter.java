@@ -24,19 +24,27 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.service;
+package com.akiban.qp.persistitadapter.sort;
 
-import com.akiban.server.types3.TAggregator;
-import com.akiban.server.types3.TCast;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.texpressions.TValidatedOverload;
+import com.akiban.ais.model.Column;
+import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.server.collation.AkCollator;
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.persistit.Key;
 
-import java.util.Collection;
+interface SortKeyAdapter<S> {
+    AkType[] createAkTypes(int size);
+    AkCollator[] createAkCollators(int size);
+    TInstance[] createTInstances(int size);
+    void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators, TInstance[] tInstances);
 
-public interface FunctionRegistry
-{
-    Collection<? extends TAggregator> aggregators();
-    Collection<? extends TValidatedOverload> overloads();
-    Collection<? extends TCast> casts();
-    Collection<? extends TClass> tclasses();
+    void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f);
+
+    S[] createSourceArray(int size);
+    S get(BoundExpressions boundExpressions, int f);
+
+    SortKeyTarget<S> createTarget();
+
+    boolean isNull(S source);
 }

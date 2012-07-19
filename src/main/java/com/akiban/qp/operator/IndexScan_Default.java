@@ -183,13 +183,15 @@ class IndexScan_Default extends Operator
     public IndexScan_Default(IndexRowType indexType,
                              IndexKeyRange indexKeyRange,
                              API.Ordering ordering,
-                             IndexScanSelector scanSelector)
+                             IndexScanSelector scanSelector,
+                             boolean usePValues)
     {
         ArgumentValidation.notNull("indexType", indexType);
         this.index = indexType.index();
         this.ordering = ordering;
         this.indexKeyRange = indexKeyRange;
         this.scanSelector = scanSelector;
+        this.usePValues = usePValues;
     }
 
     // Class state
@@ -204,6 +206,7 @@ class IndexScan_Default extends Operator
     private final API.Ordering ordering;
     private final IndexKeyRange indexKeyRange;
     private final IndexScanSelector scanSelector;
+    private final boolean usePValues;
 
     @Override
     public Explainer getExplainer()
@@ -296,7 +299,7 @@ class IndexScan_Default extends Operator
             super(context);
             
             UserTable table = (UserTable)index.rootMostTable();
-            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector);
+            this.cursor = adapter(table).newIndexCursor(context, index, indexKeyRange, ordering, scanSelector, usePValues);
         }
 
         // Object state

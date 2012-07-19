@@ -43,8 +43,12 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
         this.statement = statement;
         this.columnBinary = columnBinary;
         this.defaultColumnBinary = defaultColumnBinary;
-        if (parameters != null)
-            decodeParameters(parameters);
+        if (parameters != null) {
+            boolean usePValues = false;
+            if (statement instanceof PostgresOperatorStatement)
+                usePValues = ((PostgresOperatorStatement)statement).usesPValues();
+            decodeParameters(parameters, usePValues);
+        }
     }
 
     public PostgresStatement getStatement() {
@@ -58,7 +62,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
             return defaultColumnBinary;
     }
 
-    protected void decodeParameters(Object[] parameters) {
+    protected void decodeParameters(Object[] parameters, boolean usePValues) {
         PostgresType[] parameterTypes = statement.getParameterTypes();
         for (int i = 0; i < parameters.length; i++) {
             PostgresType pgType = (parameterTypes == null) ? null : parameterTypes[i];
@@ -67,7 +71,7 @@ public class PostgresBoundQueryContext extends PostgresQueryContext
                 akType = pgType.getAkType();
             if (akType == null)
                 akType = AkType.VARCHAR;
-            setValue(i, parameters[i], akType);
+            setValue(i, parameters[i], akType, usePValues);
         }
     }
 

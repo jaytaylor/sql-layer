@@ -26,10 +26,10 @@
 
 package com.akiban.server.t3expressions;
 
-import com.akiban.server.types3.TAggregator;
-
-import java.util.Collection;
-
-public interface T3AggregatesRegistry {
-    Collection<? extends TAggregator> getAggregates(String name);
+public interface T3RegistryMXBean {
+    String describeTypes();
+    String describeCasts();
+    String describeScalars();
+    String describeAggregates();
+    String describeAll();
 }
