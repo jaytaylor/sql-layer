@@ -39,6 +39,7 @@ public class ProjectedUserTableRowType extends ProjectedRowType {
     public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TPreparedExpression> tExprs) {
         super(schema, table.getTableId(), projections, tExprs);
         this.table = table;
+        this.constraintChecker = new UserTableRowChecker(this);
     }
 
     @Override
@@ -58,6 +59,12 @@ public class ProjectedUserTableRowType extends ProjectedRowType {
     }
 
     @Override
+    public ConstraintChecker constraintChecker()
+    {
+        return constraintChecker;
+    }
+
+    @Override
     public HKey hKey()
     {
         return table.hKey();
@@ -70,6 +77,5 @@ public class ProjectedUserTableRowType extends ProjectedRowType {
     }
 
     private final UserTable table;
-    
-
+    private final ConstraintChecker constraintChecker;
 }

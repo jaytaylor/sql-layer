@@ -86,6 +86,13 @@ public final class PropertyBindingsTest {
         compare(config, "require foo");
     }
 
+    @Test
+    public void prioritize() {
+        StringsConfig config = new StringsConfig();
+        new PropsBuilder().add("require:foo", "").add("require:bar", "").add("prioritize:foo", "").get().loadInto(config);
+        compare(config, "require foo", "prioritize foo", "require bar");
+    }
+
     private static void compare(StringsConfig actual, String... expected) {
         assertEquals("strings", Arrays.asList(expected), actual.messages());
     }
@@ -128,6 +135,11 @@ public final class PropertyBindingsTest {
         @Override
         public void mustBeBound(String interfaceName) {
             messages.add("must be bound: " + interfaceName);
+        }
+
+        @Override
+        public void prioritize(String interfaceName) {
+            messages.add("prioritize " + interfaceName);
         }
 
         @Override

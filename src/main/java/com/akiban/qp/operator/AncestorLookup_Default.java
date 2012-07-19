@@ -255,7 +255,7 @@ class AncestorLookup_Default extends Operator
     {
         OperationExplainer ex = new LookUpOperatorExplainer("Ancestor Lookup Default", groupTable, rowType, keepInput, inputOperator);
         for (UserTable table : ancestors)
-            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table));
+            ex.addAttribute(Label.ANCESTOR_TYPE, PrimitiveExplainer.getInstance(table.getName().toString()));
         return ex;
     }
 

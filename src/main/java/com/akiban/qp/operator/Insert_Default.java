@@ -124,7 +124,7 @@ class Insert_Default implements UpdatePlannable {
     @Override
     public Explainer getExplainer()
     {
-        return new DUIOperatorExplainer("INSERT", inputOperator);
+        return new DUIOperatorExplainer("Insert", inputOperator);
     }
 
     // Inner classes
@@ -142,6 +142,7 @@ class Insert_Default implements UpdatePlannable {
                     // LOG.warn("About to insert {}: {}", row.rowType().userTable(), row);
                     checkQueryCancelation();
                     ++seen;
+                    context.checkConstraints(row);
                     adapter().writeRow(row);
                     ++modified;
                     if (LOG.isDebugEnabled()) {

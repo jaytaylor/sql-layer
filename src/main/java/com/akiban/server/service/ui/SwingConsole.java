@@ -26,6 +26,8 @@
 
 package com.akiban.server.service.ui;
 
+import com.akiban.server.service.ServiceManager;
+
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
@@ -40,11 +42,14 @@ public class SwingConsole extends JFrame implements WindowListener
     public static final String TITLE = "Akiban Server";
     public static final String ICON_PATH = "Akiban_Server_128x128.png";
 
+    private final ServiceManager serviceManager;
     private JTextArea textArea;
     private PrintStream printStream;
 
-    public SwingConsole() {
+    public SwingConsole(ServiceManager serviceManager) {
         super(TITLE);
+
+        this.serviceManager = serviceManager;
 
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         addWindowListener(this);
@@ -60,7 +65,7 @@ public class SwingConsole extends JFrame implements WindowListener
                 JMenuItem quitMenuItem = new JMenuItem("Quit", KeyEvent.VK_Q);
                 quitMenuItem.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            quit();
+                            quit(true);
                         }
                     });
                 quitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, shift));
@@ -113,7 +118,7 @@ public class SwingConsole extends JFrame implements WindowListener
 
     @Override
     public void windowClosing(WindowEvent arg0) {
-        quit();
+        quit(false);
     }
 
     @Override
@@ -172,13 +177,21 @@ public class SwingConsole extends JFrame implements WindowListener
         printStream = null;
     }
 
-    protected void quit() {
-        // TODO: There isn't any way for a service to rendezvous with
-        // the service manager. Should there be?
-        try {
-            com.akiban.server.AkServer.procrunStop(new String[0]);
-        }
-        catch (Exception ex) {
+    protected void quit(boolean force) {
+        switch (serviceManager.getState()) {
+        default:
+            try {
+                serviceManager.stopServices();
+            }
+            catch (Exception ex) {
+            }
+            break;
+        case IDLE:
+        case ERROR_STARTING:
+            if (force) {
+                dispose();
+            }
+            break;
         }
     }
 

@@ -149,7 +149,7 @@ class Count_Default extends Operator
     @Override
     public Explainer getExplainer()
     {
-        return new CountOperatorExplainer("Count_TableStatus", countType, resultType, null);
+        return new CountOperatorExplainer("Count Default", countType, resultType, null);
     }
 
     // Inner classes

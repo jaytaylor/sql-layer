@@ -29,6 +29,7 @@ import com.akiban.server.error.NoSuchFunctionException;
 import com.akiban.server.error.WrongExpressionArityException;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadException;
 import com.akiban.server.types3.LazyList;
+import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TBundleID;
 import com.akiban.server.types3.TCast;
 import com.akiban.server.types3.TCastBase;
@@ -51,6 +52,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -62,7 +64,7 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
 public class OverloadResolverTest {
-    private static class SimpleRegistry implements T3ScalarsRegistry {
+    private static class SimpleRegistry implements T3RegistryService {
         private final Map<String,List<TValidatedOverload>> validatedMap = new HashMap<String, List<TValidatedOverload>>();
         private final Map<TOverload,TValidatedOverload> originalMap = new HashMap<TOverload, TValidatedOverload>();
         private final Map<TClass, Map<TClass, TCast>> castMap = new HashMap<TClass, Map<TClass, TCast>>();
@@ -109,12 +111,17 @@ public class OverloadResolverTest {
 
         @Override
         public Set<TClass> stronglyCastableTo(TClass tClass) {
-            Map<TClass, TCast> map = T3Registry.createStrongCastsMap(castMap).get(tClass);
+            Map<TClass, TCast> map = T3RegistryServiceImpl.createStrongCastsMap(castMap).get(tClass);
             Set<TClass> results = (map == null)
                     ? new HashSet<TClass>(1)
                     : new HashSet<TClass>(map.keySet());
             results.add(tClass);
             return results;
+        }
+
+        @Override
+        public Collection<? extends TAggregator> getAggregates(String name) {
+            throw new UnsupportedOperationException();
         }
 
         public TValidatedOverload validated(TOverload overload) {

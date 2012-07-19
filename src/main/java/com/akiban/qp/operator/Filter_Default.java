@@ -132,7 +132,7 @@ class Filter_Default extends Operator
     @Override
     public Explainer getExplainer()
     {
-        return new FilterExplainer("FILTER DEFAULT", keepTypes, inputOperator);
+        return new FilterExplainer("Filter Default", keepTypes, inputOperator);
     }
 
     // Inner classes

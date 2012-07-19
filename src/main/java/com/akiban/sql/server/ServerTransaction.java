@@ -47,7 +47,6 @@ public class ServerTransaction
     public ServerTransaction(ServerSession server, boolean readOnly) {
         session = server.getSession();
         transaction = server.getTreeService().getTransaction(session);
-        boolean transactionBegun = false;
         try {
             transaction.begin();
         }
@@ -91,7 +90,8 @@ public class ServerTransaction
     }
 
     public void afterUpdate() {
-        transaction.incrementStep();
+        if (!transaction.isRollbackPending())
+            transaction.incrementStep();
     }
 
     /** Commit transaction. */
@@ -122,6 +122,10 @@ public class ServerTransaction
         transaction.end();
     }
     
+    public boolean isRollbackPending() {
+        return transaction.isRollbackPending();
+    }
+
     /** Return the transaction's time, which is fixed the first time
      * something asks for it. */
     public Date getTime(ServerSession server) {

@@ -37,14 +37,13 @@ import com.akiban.server.types3.mcompat.mtypes.MNumeric;
 import com.akiban.server.types3.pvalue.PValue;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import java.math.BigInteger;
 
 public class MSum implements TAggregator {
 
     private final SumType sumType;
     
     private enum SumType {
-        LONG(MNumeric.BIGINT) {
+        BIGINT(MNumeric.BIGINT) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
                 long oldState = source.getInt64();
@@ -71,21 +70,8 @@ public class MSum implements TAggregator {
                     state.putDouble(sum);
                 }
             }
-        }, 
-        FLOAT(MApproximateNumber.FLOAT) {
-            @Override
-            void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
-                float oldState = source.getFloat();
-                float input = state.getFloat();
-                float sum = oldState + input;
-                if (Float.isInfinite(sum) && !Float.isInfinite(oldState) && !Float.isInfinite(input)) {
-                    throw new OverflowException();
-                } else {
-                    state.putFloat(sum);
-                }
-            }
-        }, 
-        BIGDECIMAL(MNumeric.DECIMAL) {
+        },
+        DECIMAL(MNumeric.DECIMAL) {
             @Override
             void input(TInstance instance, PValueSource source, TInstance stateType, PValue state) {
                 BigDecimalWrapper oldState = (BigDecimalWrapper) source.getObject();
@@ -103,10 +89,9 @@ public class MSum implements TAggregator {
     }
     
     public static final TAggregator[] INSTANCES = {
-        new MSum(SumType.BIGDECIMAL),
+        new MSum(SumType.DECIMAL),
         new MSum(SumType.DOUBLE),
-        new MSum(SumType.FLOAT), 
-        new MSum(SumType.LONG)
+        new MSum(SumType.BIGINT)
     };
     
     private MSum(SumType sumType) {

@@ -120,6 +120,12 @@ public abstract class Columnar
         return tableName.getSchemaName().equals(TableName.INFORMATION_SCHEMA);
     }
 
+    public BitSet notNull()
+    {
+        ensureColumnsUpToDate();
+        return notNull;
+    }
+
     protected void addColumn(Column column)
     {
         columnMap.put(column.getName().toLowerCase(), column);
@@ -164,10 +170,13 @@ public abstract class Columnar
                                          }
                                      });
                     columnsWithoutInternal.clear();
+                    notNull = new BitSet(columns.size());
                     for (Column column : columns) {
                         if (!column.isAkibanPKColumn()) {
                             columnsWithoutInternal.add(column);
                         }
+                        Boolean nullable = column.getNullable();
+                        notNull.set(column.getPosition(), nullable != null && !nullable);
                     }
                     columnsStale = false;
                 }
@@ -181,6 +190,7 @@ public abstract class Columnar
     protected final List<Column> columns = new ArrayList<Column>();
     protected final List<Column> columnsWithoutInternal = new ArrayList<Column>();
     protected final Map<String, Column> columnMap = new TreeMap<String, Column>();
+    private BitSet notNull;
 
     protected TableName tableName;
     protected volatile boolean columnsStale = true;

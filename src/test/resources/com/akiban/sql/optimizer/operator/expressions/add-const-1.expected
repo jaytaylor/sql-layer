@@ -1,3 +1,3 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
-  project([Literal(3)])
+  project(3)
     IndexScan_Default(Index(test.customers.PRIMARY[IndexColumn(cid)]) (,))

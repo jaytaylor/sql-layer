@@ -1,13 +1,13 @@
 PhysicalSelect[_SQL_COL_1:INTEGER NOT NULL]
-  project([Field(0)])
+  project(Field(0))
     Count_Default(Index(test.orders.PRIMARY[IndexColumn(oid)]))
       Map_NestedLoops
         Map_NestedLoops
           Filter_Default([test.items])
             GroupScan_Default(full scan on _akiban_customers)
-          project([Arith(+ -> Bound(1,Field(0)), Literal(1) -> LONG), Arith(+ -> Field(0), Literal(1) -> LONG)])
+          project(Bound(1,Field(0)) + 1, Field(0) + 1)
             Filter_Default([test.items])
-              Select_HKeyOrdered(test.items, Field(3) == Bound(1,Field(3)))
+              Select_HKeyOrdered(Field(3) == Bound(1,Field(3)))
                 GroupScan_Default(full scan on _akiban_customers)
         Map_NestedLoops
           IndexScan_Default(Index(test.customers.PRIMARY[IndexColumn(cid)]) (>=UnboundExpressions[Bound(0,Field(0))],<=UnboundExpressions[Bound(0,Field(0))]))

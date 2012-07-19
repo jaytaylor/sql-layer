@@ -107,6 +107,9 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
             case BOUND:
                 internalDoBound( config, strings(where, commandValue) );
                 break;
+            case PRIORITIZE:
+                internalDoPrioritize( config, strings(where, commandValue) );
+                break;
             default:
                 throw new UnsupportedOperationException(command.name());
             }
@@ -154,6 +157,12 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
     private void internalDoBound(ServiceConfigurationHandler config, List<String> interfaceNames) {
         for (String interfaceName : interfaceNames) {
             config.mustBeBound(interfaceName);
+        }
+    }
+
+    private void internalDoPrioritize(ServiceConfigurationHandler config, List<String> interfaceNames) {
+        for (String interfaceName : interfaceNames) {
+            config.prioritize(interfaceName);
         }
     }
 
@@ -230,6 +239,7 @@ public final class YamlConfiguration implements BindingsConfigurationLoader {
         REQUIRE_LOCKED,
         LOCKED,
         BOUND,
+        PRIORITIZE,
         ;
     }
 

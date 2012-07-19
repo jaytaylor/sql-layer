@@ -85,7 +85,7 @@ public class TableDDLTest {
         createTableSimpleGenerateAIS();
         StatementNode createNode = parser.parseStatement(sql);
         assertTrue(createNode instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode) createNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode) createNode, null);
     }
 
     @Test
@@ -95,7 +95,7 @@ public class TableDDLTest {
         createTableSimpleGenerateAIS(); // creates DEFAULT_SCHEMA.DEFAULT_TABLE
         StatementNode createNode = parser.parseStatement(sql);
         assertTrue(createNode instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode) createNode);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode) createNode, null);
     }
 
     @Test
@@ -105,7 +105,7 @@ public class TableDDLTest {
         createTableSimpleGenerateAIS();
         StatementNode node = parser.parseStatement(sql);
         assertTrue(node instanceof DropTableNode);
-        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)node);
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)node, null);
     }
     
     @Test
@@ -115,7 +115,7 @@ public class TableDDLTest {
         createTableSimpleGenerateAIS();
         StatementNode node = parser.parseStatement(sql);
         assertTrue(node instanceof DropTableNode);
-        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)node);
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)node, null);
     }
     
     @Test
@@ -126,7 +126,7 @@ public class TableDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         
-        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt, null);
     }
 
     @Test
@@ -137,7 +137,7 @@ public class TableDDLTest {
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
         
-        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt, null);
     }
 
     @Test (expected=NoSuchTableException.class)
@@ -150,7 +150,7 @@ public class TableDDLTest {
 
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
-        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt, null);
     }
     
     @Test (expected=NoSuchTableException.class)
@@ -163,7 +163,7 @@ public class TableDDLTest {
         
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof DropTableNode);
-        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt);
+        TableDDL.dropTable(ddlFunctions, null, DEFAULT_SCHEMA, (DropTableNode)stmt, null);
     }
 
     @Test
@@ -173,7 +173,7 @@ public class TableDDLTest {
         createTableSimpleGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
         
     }
     
@@ -184,7 +184,7 @@ public class TableDDLTest {
         createTablePKGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
     
     @Test
@@ -194,7 +194,7 @@ public class TableDDLTest {
         createTableUniqueKeyGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
 
     @Test (expected=DuplicateIndexException.class)
@@ -203,7 +203,7 @@ public class TableDDLTest {
         
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
     
     @Test
@@ -213,7 +213,7 @@ public class TableDDLTest {
         createTableFKSimpleGenerateAIS();
         StatementNode stmt = parser.parseStatement(sql);
         assertTrue (stmt instanceof CreateTableNode);
-        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt);
+        TableDDL.createTable(ddlFunctions, null, DEFAULT_SCHEMA, (CreateTableNode)stmt, null);
     }
     
     public static class DDLFunctionsMock implements DDLFunctions {

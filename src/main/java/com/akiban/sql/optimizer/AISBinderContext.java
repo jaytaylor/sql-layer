@@ -37,6 +37,7 @@ import com.akiban.ais.model.AkibanInformationSchema;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.View;
 
+import com.akiban.server.error.InvalidParameterValueException;
 import com.akiban.server.error.ViewHasBadSubqueryException;
 
 import com.akiban.server.service.functions.FunctionsRegistryImpl;
@@ -108,14 +109,18 @@ public class AISBinderContext
         Set<SQLParserFeature> parserFeatures = new HashSet<SQLParserFeature>();
         // TODO: Others that are on by defaults; could have override to turn them
         // off, but they are pretty harmless.
-        if (Boolean.parseBoolean(getProperty("parserInfixBit", "false")))
+        if (getBooleanProperty("parserInfixBit", false))
             parserFeatures.add(SQLParserFeature.INFIX_BIT_OPERATORS);
-        if (Boolean.parseBoolean(getProperty("parserInfixLogical", "false")))
+        if (getBooleanProperty("parserInfixLogical", false))
             parserFeatures.add(SQLParserFeature.INFIX_LOGICAL_OPERATORS);
-        if (Boolean.parseBoolean(getProperty("columnAsFunc", "false")))
+        if (getBooleanProperty("columnAsFunc", false))
             parserFeatures.add(SQLParserFeature.MYSQL_COLUMN_AS_FUNCS);
-        if ("string".equals(getProperty("parserDoubleQuoted", "identifier")))
+        String prop = getProperty("parserDoubleQuoted", "identifier");
+        if (prop.equals("string"))
             parserFeatures.add(SQLParserFeature.DOUBLE_QUOTED_STRING);
+        else if (!prop.equals("identifier"))
+            throw new InvalidParameterValueException("'" + prop 
+                                                     + "' for parserDoubleQuoted");
         parser.getFeatures().addAll(parserFeatures);
 
         defaultSchemaName = getProperty("database");
@@ -124,6 +129,17 @@ public class AISBinderContext
         BindingNodeFactory.wrap(parser);
 
         return parserFeatures;
+    }
+
+    public boolean getBooleanProperty(String key, boolean defval) {
+        String prop = getProperty(key);
+        if (prop == null) return defval;
+        if (prop.equalsIgnoreCase("true"))
+            return true;
+        else if (prop.equalsIgnoreCase("false"))
+            return false;
+        else
+            throw new InvalidParameterValueException("'" + prop + "' for " + key);
     }
 
     /** Get the non-default properties that were used to parse a view

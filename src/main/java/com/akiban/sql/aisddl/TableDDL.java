@@ -58,6 +58,9 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.Types;
 import com.akiban.server.error.DuplicateTableNameException;
 import com.akiban.sql.parser.ExistenceCheck;
+import com.akiban.sql.pg.PostgresQueryContext;
+
+import static com.akiban.sql.aisddl.DDLHelper.convertName;
 
 /** DDL operations on Tables */
 public class TableDDL
@@ -69,11 +72,12 @@ public class TableDDL
     public static void dropTable (DDLFunctions ddlFunctions,
                                   Session session, 
                                   String defaultSchemaName,
-                                  DropTableNode dropTable) {
+                                  DropTableNode dropTable,
+                                  PostgresQueryContext context) {
         com.akiban.sql.parser.TableName parserName = dropTable.getObjectName();
         
         String schemaName = parserName.hasSchema() ? parserName.getSchemaName() : defaultSchemaName;
-        TableName tableName = TableName.create(schemaName, parserName.getTableName());
+        TableName tableName = convertName(defaultSchemaName, dropTable.getObjectName());
         ExistenceCheck existenceCheck = dropTable.getExistenceCheck();
 
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
@@ -81,7 +85,11 @@ public class TableDDL
         if (ais.getUserTable(tableName) == null && 
                 ddlFunctions.getAIS(session).getGroupTable(tableName) == null) {
             if (existenceCheck == ExistenceCheck.IF_EXISTS)
+            {
+                if (context != null)
+                    context.warnClient(new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName()));
                 return;
+            }
             throw new NoSuchTableException (tableName.getSchemaName(), tableName.getTableName());
         }
         ViewDDL.checkDropTable(ddlFunctions, session, tableName);
@@ -92,14 +100,16 @@ public class TableDDL
                                     Session session,
                                     String defaultSchemaName,
                                     RenameNode renameTable) {
-        throw new UnsupportedSQLException (renameTable.statementToString(), renameTable);
-        //ddlFunctions.renameTable(session, currentName, newName);
+        TableName oldName = convertName(defaultSchemaName, renameTable.getObjectName());
+        TableName newName = convertName(defaultSchemaName, renameTable.getNewTableName());
+        ddlFunctions.renameTable(session, oldName, newName);
     }
 
     public static void createTable(DDLFunctions ddlFunctions,
                                    Session session,
                                    String defaultSchemaName,
-                                   CreateTableNode createTable) {
+                                   CreateTableNode createTable,
+                                   PostgresQueryContext context) {
         if (createTable.getQueryExpression() != null)
             throw new UnsupportedCreateSelectException();
 
@@ -115,6 +125,8 @@ public class TableDDL
             {
                 case IF_NOT_EXISTS:
                     // table already exists. does nothing
+                    if (context != null)
+                        context.warnClient(new DuplicateTableNameException(schemaName, tableName));
                     return;
                 case NO_CONDITION:
                     throw new DuplicateTableNameException(schemaName, tableName);
