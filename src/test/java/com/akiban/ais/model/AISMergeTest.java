@@ -480,6 +480,46 @@ public class AISMergeTest {
         t = merge.merge().getAIS();
     }
 
+    @Test
+    public void groupTableIDUniqueIncludingIS() {
+        /*
+         * Set up this scenario:
+         * table id -> table_name
+         * x -> i_s.foo
+         * x+1 -> i_s._akiban_foo
+         *    -- next i_s table ID
+         * x+3 -> test.bar
+         * x+4 -> test._akiban_bar
+         */
+        final String I_S = TableName.INFORMATION_SCHEMA;
+        AISBuilder tb = new AISBuilder(t);
+        tb.setTableIdOffset(AISMerge.AIS_TABLE_ID_OFFSET);
+
+        tb.userTable(I_S, "foo");
+        tb.column(I_S, "foo", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("foo", I_S, "akiban_foo");
+        tb.addTableToGroup("foo", I_S, "foo");
+
+        tb.setTableIdOffset(tb.getTableIdOffset()+1);
+        tb.userTable(SCHEMA, "bar");
+        tb.column(SCHEMA, "bar", "id", 0, "INT", null, null, false, false, null, null);
+        tb.createGroup("bar", SCHEMA, "akiban_bar");
+        tb.addTableToGroup("bar", SCHEMA, "bar");
+
+        tb.basicSchemaIsComplete();
+        tb.groupingIsComplete();
+        t.freeze();
+
+        assertNotNull("bar table", tb.akibanInformationSchema().getUserTable(SCHEMA, "bar"));
+        assertNotNull("foo table", t.getUserTable(I_S, "foo"));
+
+        b.userTable(I_S, "zap");
+        b.column(I_S, "zap", "id", 0, "INT", null, null, false, false, null, null);
+
+        AISMerge merge = new AISMerge(t, s.getUserTable(I_S, "zap"));
+        t = merge.merge().getAIS();
+    }
+
     private void checkColumns(List<Column> actual, String ... expected)
     {
         assertEquals(expected.length, actual.size());
