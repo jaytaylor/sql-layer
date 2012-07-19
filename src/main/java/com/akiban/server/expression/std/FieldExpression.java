@@ -91,7 +91,7 @@ public final class FieldExpression implements Expression {
     @Override
     public String name()
     {
-        return "FIELD";
+        return "Field";
     }
 
     @Override

@@ -4,7 +4,7 @@
     <groupId>com.akiban</groupId>
     <artifactId>akiban-server</artifactId>
     <packaging>jar</packaging>
-    <version>1.3.0-SNAPSHOT</version>
+    <version>1.4.0-SNAPSHOT</version>
     <name>akiban-server</name>
     <properties>
         <!-- this is the default version number, hudson job sets this to the official number -->
@@ -76,12 +76,12 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-persistit</artifactId>
-            <version>3.1.2-SNAPSHOT</version>
+            <version>3.1.3-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
+            <version>1.0.4-SNAPSHOT</version>
         </dependency>
         <dependency>
             <groupId>org.apache.hadoop</groupId>
@@ -127,7 +127,7 @@
         <dependency>
             <groupId>com.akiban</groupId>
             <artifactId>akiban-sql-parser</artifactId>
-            <version>1.0.3-SNAPSHOT</version>
+            <version>1.0.4-SNAPSHOT</version>
             <type>test-jar</type>
             <scope>test</scope>
         </dependency>
@@ -327,6 +327,7 @@
                         <!-- General files that can't have or don't need header -->
                         <exclude>**/*.ddl</exclude>
                         <exclude>**/*.sql</exclude>
+                        <exclude>**/*.tag</exclude>
                         <exclude>**/*.expected</exclude>
                         <exclude>**/*.error</exclude>
                         <exclude>**/*.dat</exclude>
@@ -344,14 +345,14 @@
                         <!-- No extension. Manually add header and ignore -->
                         <exclude>bin/*</exclude>
                         <exclude>conf/config/jvm.options</exclude>
-                        <exclude>packages-common/jvm.options</exclude>
+                        <exclude>**/jvm.options</exclude>
                         <exclude>conf/config/jvm-options.cmd</exclude>
                         <!-- Files requiring a specific format (packaging control, test output, etc) -->
                         <exclude>debian/*</exclude>
                         <exclude>redhat/*</exclude>
                         <exclude>macosx/**</exclude>
                         <exclude>windows/**</exclude>
-                        <exclude>LICENSE.txt</exclude>
+                        <exclude>**/LICENSE*.txt</exclude>
                         <exclude>src/main/resources/version/akserver_version</exclude>
                         <exclude>src/test/resources/com/akiban/**/README*</exclude>
                         <exclude>src/test/resources/com/akiban/**/*.properties</exclude>
@@ -427,14 +428,18 @@
                                 </goals>
                                 <configuration>
                                     <tasks>
+                                        <copy file="${basedir}/${akiban.license}" tofile="${setup.staging.dir}/LICENSE.TXT" />
                                         <copy todir="${setup.staging.dir}">
-                                            <fileset dir="${basedir}" includes="bin/*.cmd,LICENSE.txt,doc/**" />
+                                            <fileset dir="${basedir}" includes="bin/*.cmd,doc/**" />
                                             <fileset dir="${basedir}/windows" />
                                             <fileset dir="${akiban.client.project}" includes="bin/*.cmd" />
                                         </copy>
                                         <copy todir="${setup.staging.dir}/lib">
-                                            <fileset dir="${akiban.client.project}/target" includes="akiban-client-tools-${project.version}.jar" />
+                                            <fileset dir="${akiban.client.project}/target" includes="akiban-client-tools-1.3.1-SNAPSHOT.jar" />
                                             <fileset dir="${akiban.client.project}/target/dependency" />
+                                        </copy>
+                                        <copy todir="${setup.staging.dir}/config">
+                                          <fileset dir="${basedir}/windows/${akiban.release.target}" />
                                         </copy>
                                         <get src="http://apache.spinellicreations.com/commons/daemon/binaries/windows/commons-daemon-1.0.10-bin-windows.zip" dest="${setup.staging.dir}/procrun.zip" usetimestamp="true" />
                                         <mkdir dir="${setup.staging.dir}/procrun" />
@@ -483,6 +488,8 @@
                 <setup.appversion>${project.version}</setup.appversion>
                 <setup.jarfile>${project.build.finalName}-jar-with-dependencies.jar</setup.jarfile>
                 <setup.output>${project.build.finalName}-installer</setup.output>
+                <akiban.license>LICENSE-EE.txt</akiban.license>
+                <akiban.release.target>enterprise</akiban.release.target> <!-- other options: { community } -->
                 <akiban.client.project>${basedir}/../client-latest</akiban.client.project>
             </properties>
         </profile>

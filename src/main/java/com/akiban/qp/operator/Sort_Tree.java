@@ -29,6 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 import com.akiban.sql.optimizer.explain.std.SortOperatorExplainer;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -128,7 +129,8 @@ class Sort_Tree extends Operator
 
     // Sort_Tree interface
 
-    public Sort_Tree(Operator inputOperator, RowType sortType, API.Ordering ordering, API.SortOption sortOption)
+    public Sort_Tree(Operator inputOperator, RowType sortType, API.Ordering ordering, API.SortOption sortOption,
+                     boolean usePValues)
     {
         ArgumentValidation.notNull("sortType", sortType);
         ArgumentValidation.isGT("ordering.columns()", ordering.sortColumns(), 0);
@@ -136,6 +138,7 @@ class Sort_Tree extends Operator
         this.sortType = sortType;
         this.ordering = ordering;
         this.sortOption = sortOption;
+        this.usePValues = usePValues;
     }
     
     // Class state
@@ -150,11 +153,15 @@ class Sort_Tree extends Operator
     private final RowType sortType;
     private final API.Ordering ordering;
     private final API.SortOption sortOption;
+    private final boolean usePValues;
 
     @Override
     public Explainer getExplainer()
     {
-        return new SortOperatorExplainer("SORT TREE", sortOption, sortType, inputOperator);
+        return new SortOperatorExplainer("Sort_Tree", sortOption, sortType, inputOperator);
+        
+        // TODO implement for real
+        //return PrimitiveExplainer.getInstance(toString()); // Dummy explainer
     }
 
     // Inner classes
@@ -170,7 +177,7 @@ class Sort_Tree extends Operator
             try {
                 CursorLifecycle.checkIdle(this);
                 input.open();
-                output = adapter().sort(context, input, sortType, ordering, sortOption, TAP_LOAD);
+                output = adapter().sort(context, input, sortType, ordering, sortOption, TAP_LOAD, usePValues);
                 output.open();
             } finally {
                 TAP_OPEN.out();

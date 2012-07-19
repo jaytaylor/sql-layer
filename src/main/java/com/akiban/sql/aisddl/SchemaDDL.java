@@ -39,6 +39,7 @@ import com.akiban.sql.parser.CreateSchemaNode;
 import com.akiban.sql.parser.DropSchemaNode;
 import com.akiban.sql.parser.ExistenceCheck;
 import com.akiban.sql.parser.StatementType;
+import com.akiban.sql.pg.PostgresQueryContext;
 
 
 public class SchemaDDL {
@@ -47,7 +48,8 @@ public class SchemaDDL {
     
     public static void createSchema (AkibanInformationSchema ais,
                                    String defaultSchemaName,
-                                   CreateSchemaNode createSchema)
+                                   CreateSchemaNode createSchema,
+                                   PostgresQueryContext context)
     {
         final String schemaName = createSchema.getSchemaName();
         ExistenceCheck condition = createSchema.getExistenceCheck();
@@ -57,6 +59,8 @@ public class SchemaDDL {
             {
                 case IF_NOT_EXISTS:
                     // schema already exists. does nothing
+                    if (context != null)
+                        context.warnClient(new DuplicateSchemaException(schemaName));
                     return;
                 case NO_CONDITION:
                     throw new DuplicateSchemaException (schemaName);
@@ -71,7 +75,8 @@ public class SchemaDDL {
     
     public static void dropSchema (DDLFunctions ddlFunctions,
             Session session,
-            DropSchemaNode dropSchema)
+            DropSchemaNode dropSchema,
+            PostgresQueryContext context)
     {
         AkibanInformationSchema ais = ddlFunctions.getAIS(session);
         final String schemaName = dropSchema.getSchemaName();
@@ -93,6 +98,8 @@ public class SchemaDDL {
             {
                 case IF_EXISTS:
                     // schema doesn't exists. does nothing
+                    if (context != null)
+                        context.warnClient(new NoSuchSchemaException(schemaName));
                     return;
                 case NO_CONDITION:
                     throw new NoSuchSchemaException(schemaName);

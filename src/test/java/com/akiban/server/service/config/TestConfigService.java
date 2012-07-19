@@ -68,6 +68,7 @@ public class TestConfigService extends ConfigurationServiceImpl {
         final int bufferSize = Integer.parseInt(ret.get(BUFFER_SIZE_KEY).getValue());
         String memoryKey = BUFFER_MEMORY_KEY_PREFIX + "." + bufferSize;
         ret.put(memoryKey, new Property(memoryKey, UNIT_TEST_PERSISTIT_MEMORY));
+        ret.put(COMMIT_POLICY_KEY, new Property(COMMIT_POLICY_KEY, UNIT_TEST_COMMIT_POLICY));
         if (extraProperties != null) {
             for (final Property property : extraProperties) {
                 ret.put(property.getKey(), property);
@@ -138,9 +139,11 @@ public class TestConfigService extends ConfigurationServiceImpl {
 
     private static final AtomicReference<Collection<Property>> startupConfigPropertiesRef = new AtomicReference<Collection<Property>>();
     public final static String DATA_PATH_KEY = "akserver.datapath";
+    private final static String COMMIT_POLICY_KEY = "persistit.txnpolicy";
     private final static String BUFFER_SIZE_KEY = "persistit.buffersize";
     private final static String BUFFER_MEMORY_KEY_PREFIX = "persistit.buffer.memory";
     private final static String JOURNAL_SIZE_KEY = "persistit.journalsize";
     private final static String UNIT_TEST_PERSISTIT_MEMORY = "20M";
     private final static long UNIT_TEST_PERSISTIT_JOURNAL_SIZE = 128 * 1024 * 1024;
+    private final static String UNIT_TEST_COMMIT_POLICY = "SOFT";
 }

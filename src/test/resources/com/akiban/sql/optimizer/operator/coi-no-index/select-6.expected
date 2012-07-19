@@ -1,8 +1,8 @@
 PhysicalSelect[name:varchar(32)[VARCHAR], order_date:date[DATE]]
-  project([Field(1), Field(4)])
+  project(Field(1), Field(4))
     Sort_Tree(flatten(flatten(test.customers, test.orders), test.items))
       Filter_Default([flatten(flatten(test.customers, test.orders), test.items)])
         Flatten_HKeyOrdered(flatten(test.customers, test.orders) INNER test.items)
           Flatten_HKeyOrdered(test.customers INNER test.orders)
-            Select_HKeyOrdered(test.items, Field(3) > Literal(100))
+            Select_HKeyOrdered(Field(3) > 100)
               GroupScan_Default(full scan on _akiban_customers)

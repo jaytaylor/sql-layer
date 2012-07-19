@@ -64,6 +64,7 @@ import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
 import com.akiban.server.error.InvalidOperationException;
 import com.akiban.sql.parser.ExistenceCheck;
+import com.akiban.sql.pg.PostgresQueryContext;
 
 /** DDL operations on Indices */
 public class IndexDDL
@@ -72,12 +73,13 @@ public class IndexDDL
     private IndexDDL() {
     }
 
-    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error)
+    private static boolean returnHere(ExistenceCheck condition, InvalidOperationException error, PostgresQueryContext context)
     {
         switch(condition)
         {
             case IF_EXISTS:
                     // doesn't exist, does nothing
+                context.warnClient(error);
                 return true;
             case NO_CONDITION:
                 throw error;
@@ -89,7 +91,8 @@ public class IndexDDL
     public static void dropIndex (DDLFunctions ddlFunctions,
                                     Session session,
                                     String defaultSchemaName,
-                                    DropIndexNode dropIndex) {
+                                    DropIndexNode dropIndex,
+                                    PostgresQueryContext context) {
         String groupName = null;
         TableName tableName = null;
         ExistenceCheck condition = dropIndex.getExistenceCheck();
@@ -108,7 +111,7 @@ public class IndexDDL
             tableName = TableName.create(indexSchemaName == null ? defaultSchemaName : indexSchemaName, indexTableName);
             UserTable table = ddlFunctions.getAIS(session).getUserTable(tableName);
             if (table == null) {
-                if(returnHere(condition, new NoSuchTableException(tableName)))
+                if(returnHere(condition, new NoSuchTableException(tableName), context))
                     return;
             }
             // if we can't find the index, set tableName to null
@@ -159,7 +162,7 @@ public class IndexDDL
         } else if (tableName != null) {
             ddlFunctions.dropTableIndexes(session, tableName, indexesToDrop);
         } else {
-            if(returnHere(condition, new NoSuchIndexException (indexName)))
+            if(returnHere(condition, new NoSuchIndexException (indexName), context))
                 return;
         }
     }

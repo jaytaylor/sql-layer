@@ -30,6 +30,7 @@ import com.akiban.server.error.AkibanInternalException;
 import com.akiban.server.error.ServiceStartupException;
 import com.akiban.server.service.Service;
 import com.akiban.server.types3.service.FunctionRegistryImpl;
+import com.google.inject.Inject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,8 +65,7 @@ public class OverloadResolutionServiceImpl implements OverloadResolutionService,
             logger.error("while creating registry", e);
             throw new ServiceStartupException(getClass().getSimpleName());
         }
-        T3Registry t3Registry = new T3Registry(finder);
-        OverloadResolver resolver = new OverloadResolver(t3Registry.scalars(), t3Registry.aggregates());
+        OverloadResolver resolver = new OverloadResolver(t3Registry);
         if (!resolverRef.compareAndSet(null, resolver))
             logger.warn("tried to set resolver when one already existed");
     }
@@ -80,6 +80,12 @@ public class OverloadResolutionServiceImpl implements OverloadResolutionService,
         resolverRef.set(null);
     }
 
+    @Inject
+    public OverloadResolutionServiceImpl(T3RegistryService registry) {
+        this.t3Registry = registry;
+    }
+
+    private final T3RegistryService t3Registry;
     private final AtomicReference<OverloadResolver> resolverRef = new AtomicReference<OverloadResolver>();
     private static final Logger logger = LoggerFactory.getLogger(OverloadResolutionServiceImpl.class);
 }

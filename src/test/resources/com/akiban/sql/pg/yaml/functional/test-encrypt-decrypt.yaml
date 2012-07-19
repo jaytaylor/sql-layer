@@ -9,7 +9,7 @@
 # BUG 1001289:
 # Status: new
 ---
-- CreateTable: t(varchar_field varchar(255))
+- CreateTable: t (varchar_field varchar(255))
 ---
 - Statement: SELECT aes_decrypt(aes_encrypt( X'68656C6C6F2C20776F726C642121', 'this is key'), 'this is key');
 - output: [[!!binary 'aGVsbG8sIHdvcmxkISE=']]

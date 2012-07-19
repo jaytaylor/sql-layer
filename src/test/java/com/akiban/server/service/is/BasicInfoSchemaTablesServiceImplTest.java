@@ -28,8 +28,10 @@ package com.akiban.server.service.is;
 
 import com.akiban.ais.model.AISBuilder;
 import com.akiban.ais.model.AkibanInformationSchema;
+import com.akiban.ais.model.Column;
 import com.akiban.ais.model.Group;
 import com.akiban.ais.model.Index;
+import com.akiban.ais.model.Join;
 import com.akiban.ais.model.Table;
 import com.akiban.ais.model.TableName;
 import com.akiban.ais.model.UserTable;
@@ -44,9 +46,11 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
@@ -89,6 +93,27 @@ public class BasicInfoSchemaTablesServiceImplTest {
         holder = null;
         bist = null;
         adapter = null;
+    }
+
+    private static void simpleTable(AISBuilder builder, String group, String schema, String table, String parentName, boolean withPk) {
+        builder.userTable(schema, table);
+        builder.column(schema, table, "id", 0, "INT", null, null, false, false, null, null);
+        if(parentName != null) {
+            builder.column(schema, table, "pid", 1, "INT", null, null, false, false, null, null);
+        }
+        if(withPk) {
+            builder.index(schema, table, Index.PRIMARY_KEY_CONSTRAINT, true, Index.PRIMARY_KEY_CONSTRAINT);
+            builder.indexColumn(schema, table, Index.PRIMARY_KEY_CONSTRAINT, "id", 0, true, null);
+        }
+
+        if(parentName == null) {
+            builder.createGroup(group, schema, "_akiban_"+table);
+        } else {
+            String joinName = table + "/" + parentName;
+            builder.joinTables(joinName, schema, parentName, schema, table);
+            builder.joinColumns(joinName, schema, parentName, "id", schema, table, "pid");
+            builder.addJoinToGroup(group, joinName, 0);
+        }
     }
 
     private void createTables() {
@@ -170,16 +195,48 @@ public class BasicInfoSchemaTablesServiceImplTest {
         builder.addJoinToGroup(table, joinName, 0);
         }
 
+        {
+        // bug1024965: Grouping constraints not in depth order
+        /*
+        * r
+        * |-m
+        * | |-b
+        * |   |-x
+        * |-a
+        *   |-w
+        */
+        String schema = "gco";
+        String group = "r";
+        simpleTable(builder, group, schema,  "r", null, true);
+        simpleTable(builder, group, schema, "m", "r", true);
+        simpleTable(builder, group, schema, "b", "m", true);
+        simpleTable(builder, group, schema, "x", "b", false);
+        simpleTable(builder, group, schema, "a", "r", true);
+        simpleTable(builder, group, schema, "w", "a", false);
+        }
+
         builder.basicSchemaIsComplete();
         builder.groupingIsComplete();
 
         Map<Table, Integer> ordinalMap = new HashMap<Table, Integer>();
+        List<UserTable> remainingTables = new ArrayList<UserTable>();
+        // Add all roots
         for(UserTable userTable : holder.getAis().getUserTables().values()) {
+            if(userTable.isRoot()) {
+                remainingTables.add(userTable);
+            }
+        }
+        while(!remainingTables.isEmpty()) {
+            UserTable userTable = remainingTables.remove(remainingTables.size()-1);
             ordinalMap.put(userTable, 0);
             userTable.setTreeName(userTable.getName().getTableName() + "_tree");
             for(Index index : userTable.getIndexesIncludingInternal()) {
                 index.computeFieldAssociations(ordinalMap);
                 index.setTreeName(index.getIndexName().getName() + "_tree");
+            }
+            // Add all immediate children
+            for(Join join : userTable.getChildJoins()) {
+                remainingTables.add(join.getChild());
             }
         }
         for(Group group : holder.getAis().getGroups().values()) {
@@ -236,6 +293,14 @@ public class BasicInfoSchemaTablesServiceImplTest {
                 final String msg = "row " + rowIndex + ", col " + colIndex;
                 final Object expected = expectedRows[rowIndex][colIndex];
                 final ValueSource actual = row.eval(colIndex);
+                
+                if(expected == null || actual.isNull()) {
+                    Column column = row.rowType().userTable().getColumn(colIndex);
+                    if(!Boolean.TRUE.equals(column.getNullable())) {
+                        fail(String.format("Expected (%s) or actual (%s) NULL for column (%s) declared NOT NULL",
+                                           expected, actual, column));
+                    }
+                }
 
                 if(expected == null) {
                     assertEquals(msg + " isNull", true, actual.isNull());
@@ -284,6 +349,7 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void schemataScan() {
         final Object[][] expected = {
+                { "gco", null, null, null, LONG },
                 { "test", null, null, null, LONG },
                 { "zap", null, null, null, LONG },
                 { "zzz", null, null, null, LONG },
@@ -296,6 +362,12 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tablesScan() {
         final Object[][] expected = {
+                { "gco", "a", "TABLE", LONG, "a_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "b", "TABLE", LONG, "b_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "m", "TABLE", LONG, "m_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "r", "TABLE", LONG, "r_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "w", "TABLE", LONG, "w_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
+                { "gco", "x", "TABLE", LONG, "x_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "bar", "TABLE", LONG, "bar_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "bar2", "TABLE", LONG, "bar2_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
                 { "test", "foo", "TABLE", LONG, "foo_tree", I_S, VARCHAR, I_S, VARCHAR, LONG },
@@ -312,6 +384,17 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void columnsScan() {
         final Object[][] expected = {
+                { "gco", "a", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "a", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "b", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "b", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "m", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "m", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "r", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "w", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "w", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "x", "id", 0L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
+                { "gco", "x", "pid", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
                 { "test", "bar", "col", 0L, "bigint", false, 8L, null, null, 0L, null, null, null, null, null, LONG },
                 { "test", "bar", "name", 1L, "int", false, 4L, null, null, 0L, null, null, null, null, null, LONG },
                 { "test", "bar2", "foo", 0L, "int", true, 4L, null, null, 0L, null, null, null, null, null, LONG },
@@ -334,6 +417,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void tableConstraintsScan() {
         final Object[][] expected = {
+                { "gco", "a", "a/r", "GROUPING", LONG },
+                { "gco", "a", "PRIMARY", "PRIMARY KEY", LONG },
+                { "gco", "b", "b/m", "GROUPING", LONG },
+                { "gco", "b", "PRIMARY", "PRIMARY KEY", LONG },
+                { "gco", "m", "m/r", "GROUPING", LONG },
+                { "gco", "m", "PRIMARY", "PRIMARY KEY", LONG },
+                { "gco", "r", "PRIMARY", "PRIMARY KEY", LONG },
+                { "gco", "w", "w/a", "GROUPING", LONG },
+                { "gco", "x", "x/b", "GROUPING", LONG },
                 { "test", "bar", "PRIMARY", "PRIMARY KEY", LONG },
                 { "test", "bar2", "bar2/bar", "GROUPING", LONG },
                 { "zap", "pow", "name_value", "UNIQUE", LONG },
@@ -358,6 +450,12 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void groupingConstraintsScan() {
         final Object[][] expected = {
+                { "gco", "r", "gco", "r", "gco.r", 0L, null, null, null, null, LONG },
+                { "gco", "r", "gco", "m", "gco.r/gco.m", 1L, "m/r", "gco", "r", "PRIMARY", LONG },
+                { "gco", "r", "gco", "b", "gco.r/gco.m/gco.b", 2L, "b/m", "gco", "m", "PRIMARY", LONG },
+                { "gco", "r", "gco", "x", "gco.r/gco.m/gco.b/gco.x", 3L, "x/b", "gco", "b", "PRIMARY", LONG },
+                { "gco", "r", "gco", "a", "gco.r/gco.a", 1L, "a/r", "gco", "r", "PRIMARY", LONG },
+                { "gco", "r", "gco", "w", "gco.r/gco.a/gco.w", 2L, "w/a", "gco", "a", "PRIMARY", LONG },
                 { "test", "bar", "test", "bar", "test.bar", 0L, null, null, null, null, LONG },
                 { "test", "bar", "test", "bar2", "test.bar/test.bar2", 1L, "bar2/bar", "test", "bar", "PRIMARY", LONG },
                 { "test", "foo", "test", "foo", "test.foo", 0L, null, null, null, null, LONG },
@@ -374,6 +472,15 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void keyColumnUsageScan() {    
         final Object[][] expected = {
+                {"gco", "a", "a/r", "pid", 0L, 0L, LONG },
+                {"gco", "a", "PRIMARY", "id", 0L, null, LONG },
+                {"gco", "b", "b/m", "pid", 0L, 0L, LONG },
+                {"gco", "b", "PRIMARY", "id", 0L, null, LONG },
+                {"gco", "m", "m/r", "pid", 0L, 0L, LONG },
+                {"gco", "m", "PRIMARY", "id", 0L, null, LONG },
+                {"gco", "r", "PRIMARY", "id", 0L, null, LONG },
+                {"gco", "w", "w/a", "pid", 0L, 0L, LONG },
+                {"gco", "x", "x/b", "pid", 0L, 0L, LONG },
                 { "test", "bar", "PRIMARY", "col", 0L, null, LONG },
                 { "test", "bar2", "bar2/bar", "pid", 0L, 0L, LONG },
                 { "zap", "pow", "name_value", "name", 0L, null, LONG },
@@ -390,6 +497,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexesScan() {
         final Object[][] expected = {
+                { "gco", "a", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
+                { "gco", "b", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
+                { "gco", "m", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
+                { "gco", "r", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
                 { "test", "bar", "PRIMARY", "PRIMARY", LONG, "PRIMARY_tree", "PRIMARY", true, null, LONG },
                 { "test", "bar2", "foo_name", null, LONG, "foo_name_tree", "INDEX", false, "RIGHT", LONG },
                 { "zap", "pow", "name_value", "name_value", LONG, "name_value_tree", "UNIQUE", true, null, LONG },
@@ -404,6 +515,10 @@ public class BasicInfoSchemaTablesServiceImplTest {
     @Test
     public void indexColumnsScan() {
         final Object[][] expected = {
+                { "gco", "PRIMARY", "a", "gco", "a", "id", 0L, true, null, LONG },
+                { "gco", "PRIMARY", "b", "gco", "b", "id", 0L, true, null, LONG },
+                { "gco", "PRIMARY", "m", "gco", "m", "id", 0L, true, null, LONG },
+                { "gco", "PRIMARY", "r", "gco", "r", "id", 0L, true, null, LONG },
                 { "test", "PRIMARY", "bar", "test", "bar", "col", 0L, true, null, LONG },
                 { "test", "foo_name", "bar2", "test", "bar2", "foo", 0L, true, null, LONG },
                 { "test", "foo_name", "bar2", "test", "bar", "name", 1L, true, null, LONG },

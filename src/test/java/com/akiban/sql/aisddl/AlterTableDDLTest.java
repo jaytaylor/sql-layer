@@ -50,6 +50,7 @@ import com.akiban.server.service.session.Session;
 import com.akiban.sql.StandardException;
 import com.akiban.sql.parser.AlterTableNode;
 import com.akiban.sql.parser.SQLParser;
+import com.akiban.sql.parser.SQLParserException;
 import com.akiban.sql.parser.StatementNode;
 import org.junit.After;
 import org.junit.Before;
@@ -248,6 +249,48 @@ public class AlterTableDDLTest {
         expectChildOf(C_NAME, xName);
     }
 
+    // Should map automatically to the PK
+    @Test
+    public void addGFKWithNoReferencedSingleColumn() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES c");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test
+    public void addGFKWithNoReferencedMultiColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id", "id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES c");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test(expected=JoinColumnMismatchException.class)
+    public void addGFKWithNoReferenceSingleColumnToMultiColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id) REFERENCES c");
+    }
+
+    @Test(expected=SQLParserException.class)
+    public void addGFKReferencedColumnListCannotBeEmpty() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+        parseAndRun("ALTER TABLE a ADD GROUPING FOREIGN KEY(other_id,other_id2) REFERENCES c()");
+    }
+
 
     //
     // DROP
@@ -333,13 +376,100 @@ public class AlterTableDDLTest {
     }
 
 
+    //
+    // ALTER GROUP ADD
+    //
+
+    @Test
+    public void groupAddSimple() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c(id)");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test
+    public void groupAddNoReferencedSingleColumn() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test
+    public void groupAddNoReferencedMultiColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id,other_id2) TO c");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, true);
+        expectChildOf(C_NAME, A_NAME);
+    }
+
+    @Test(expected=JoinColumnMismatchException.class)
+    public void groupAddNoReferencedSingleColumnToMultiColumn() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).colBigInt("id2", false).pk("id","id2");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("other_id").colBigInt("other_id2").pk("id");
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c");
+    }
+
+    @Test(expected=SQLParserException.class)
+    public void groupAddReferencedListCannotBeEmpty() throws StandardException {
+        buildCOIJoinedAUnJoined();
+        parseAndRun("ALTER GROUP ADD TABLE a(other_id) TO c()");
+    }
+
+
+    //
+    // ALTER GROUP DROP
+    //
+
+    @Test
+    public void groupDropTableTwoTableGroup() throws StandardException {
+        builder.userTable(C_NAME).colBigInt("id", false).pk("id");
+        builder.userTable(A_NAME).colBigInt("id", false).colBigInt("cid").pk("id").joinTo(C_NAME).on("cid", "id");
+
+        parseAndRun("ALTER GROUP DROP TABLE a");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(A_NAME, TEMP_NAME_2, TEMP_NAME_1, A_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, A_NAME, false);
+    }
+
+    @Test
+    public void groupDropTableLeafOfMultiple() throws StandardException {
+        buildCOIJoinedAUnJoined();
+
+        parseAndRun("ALTER GROUP DROP TABLE i");
+
+        expectCreated(TEMP_NAME_1);
+        expectRenamed(I_NAME, TEMP_NAME_2, TEMP_NAME_1, I_NAME);
+        expectDropped(TEMP_NAME_2);
+        expectGroupIsSame(C_NAME, I_NAME, false);
+    }
+
+
     private void parseAndRun(String sqlText) throws StandardException {
         StatementNode node = parser.parseStatement(sqlText);
         assertEquals("Was alter", AlterTableNode.class, node.getClass());
         ddlFunctions = new DDLFunctionsMock(builder.unvalidatedAIS());
         AlterTableDDL.alterTable(new MockHook(), ddlFunctions, null, null, NOP_COPIER, SCHEMA, (AlterTableNode)node);
     }
-
 
     private void expectCreated(TableName... names) {
         assertEquals("Creation order",

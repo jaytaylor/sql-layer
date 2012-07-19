@@ -110,12 +110,12 @@ public class SchemaFactory {
         }
         for(StatementNode stmt : nodes) {
             if (stmt instanceof CreateTableNode) {
-                TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt);
+                TableDDL.createTable(ddlFunctions , null, defaultSchema, (CreateTableNode) stmt, null);
             } else if (stmt instanceof CreateIndexNode) {
                 IndexDDL.createIndex(ddlFunctions, null, defaultSchema, (CreateIndexNode) stmt);
             } else if (stmt instanceof CreateViewNode) {
                 ViewDDL.createView(ddlFunctions, null, defaultSchema, (CreateViewNode) stmt,
-                                   new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema));
+                                   new AISBinderContext(ddlFunctions.getAIS(null), defaultSchema), null);
             } else {
                 throw new IllegalStateException("Unsupported StatementNode type: " + stmt);
             }
