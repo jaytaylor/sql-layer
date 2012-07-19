@@ -109,7 +109,7 @@ class Delete_Default implements UpdatePlannable {
     @Override
     public Explainer getExplainer()
     {
-        return new DUIOperatorExplainer("DELETE", inputOperator);
+        return new DUIOperatorExplainer("Delete", inputOperator);
     }
 
     @Override

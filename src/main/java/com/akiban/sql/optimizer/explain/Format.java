@@ -303,6 +303,20 @@ public class Format {
                 describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
                 sb.append(", ").append(atts.get(Label.SORT_OPTION).get(0).get());
                 break;
+            case DUI:
+                if (name.equals("Delete"))
+                {
+                    describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                    sb.append(" FROM ");
+                    describe(atts.get(Label.TABLE_TYPE).get(0), sb);
+                }
+                else if (name.equals("Insert"))
+                {
+                    describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
+                    sb.append("INTO");
+                    describe(atts.get(Label.TABLE_TYPE).get(0), sb);
+                }
+                break;
             default:
                 throw new UnsupportedOperationException("Formatter does not recognize " + type.name());
         }

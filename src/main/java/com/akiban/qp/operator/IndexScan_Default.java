@@ -210,7 +210,7 @@ class IndexScan_Default extends Operator
     {
         Attributes atts = new Attributes();
         
-        atts.put(Label.NAME, PrimitiveExplainer.getInstance("Index Scan"));
+        atts.put(Label.NAME, PrimitiveExplainer.getInstance("IndexScan"));
         atts.put(Label.ORDERING, PrimitiveExplainer.getInstance(ordering.toString()));
         atts.put(Label.LIMIT, PrimitiveExplainer.getInstance(indexKeyRange.toString()));
         
