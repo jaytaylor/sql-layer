@@ -187,4 +187,22 @@ public class AkCollatorMySQL extends AkCollator {
             }
         }
     }
+
+    @Override
+    public int hashCode(String value) {
+        int result = 0;
+        for (int i = 0; i < value.length(); i++) {
+            final int c = value.charAt(i);
+            assert c < 256;
+            int w = (byte) (weightTable[c] & 0xFF);
+            assert w != 0;
+            result = result * 31 + (byte) w;
+        }
+        return result;
+    }
+
+    @Override
+    public int hashCode(Key key) {
+        return CStringKeyCoder.hashCode(getCollationId(), key);
+    }
 }

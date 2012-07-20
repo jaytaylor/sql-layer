@@ -25,6 +25,8 @@
  */
 package com.akiban.server.collation;
 
+import java.util.Arrays;
+
 import com.akiban.server.types.ValueSource;
 import com.ibm.icu.text.Collator;
 import com.persistit.Key;
@@ -112,6 +114,17 @@ public class AkCollatorICU extends AkCollator {
         StringBuilder sb = new StringBuilder();
         Util.bytesToHex(sb, bytes, index, length);
         return sb.toString();
+    }
+
+    @Override
+    public int hashCode(String string) {
+        byte[] bytes = collator.get().getCollationKey(string).toByteArray();
+        return AkCollator.hashCode(bytes, 0, bytes.length);
+    }
+
+    @Override
+    public int hashCode(Key key) {
+        return CStringKeyCoder.hashCode(getCollationId(), key);
     }
 
 
