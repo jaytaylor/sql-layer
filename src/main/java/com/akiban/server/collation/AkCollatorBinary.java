@@ -63,12 +63,6 @@ public class AkCollatorBinary extends AkCollator {
         throw new UnsupportedOperationException("No sort key encoding for binary collation");
     }
 
-
-    @Override
-    public int compare(ValueSource value1, ValueSource value2) {
-        return compare(value1.getString(), value2.getString());
-    }
-
     @Override
     public int compare(String string1, String string2) {
         return string1.compareTo(string2);

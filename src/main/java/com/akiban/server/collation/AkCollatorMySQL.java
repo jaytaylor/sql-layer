@@ -83,11 +83,6 @@ public class AkCollatorMySQL extends AkCollator {
     }
 
     @Override
-    public int compare(ValueSource value1, ValueSource value2) {
-        return compare(value1.getString(), value2.getString());
-    }
-
-    @Override
     public int compare(String source, String target) {
         int a = source.length();
         int b = target.length();

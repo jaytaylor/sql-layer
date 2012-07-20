@@ -887,8 +887,7 @@ public class API
             append(expression, ascending, null);
         }
 
-        public void append(Expression expression, boolean ascending,
-                           AkCollator collator)
+        public void append(Expression expression, boolean ascending, AkCollator collator)
         {
             expressions.add(expression);
             directions.add(ascending);

@@ -1458,7 +1458,8 @@ public class OperatorAssembler extends BaseRule
             List<OrderByExpression> indexOrdering = index.getOrdering();
             for (int i = 0; i < indexOrdering.size(); i++) {
                 ordering.append(Expressions.field(indexRowType, i),
-                                indexOrdering.get(i).isAscending());
+                                indexOrdering.get(i).isAscending(),
+                                index.getIndexColumns().get(i).getColumn().getCollator() );
             }
             return ordering;
         }

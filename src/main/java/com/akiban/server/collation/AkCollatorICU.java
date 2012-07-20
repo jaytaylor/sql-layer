@@ -74,11 +74,6 @@ public class AkCollatorICU extends AkCollator {
     }
 
     @Override
-    public int compare(ValueSource value1, ValueSource value2) {
-        return compare(value1.getString(), value2.getString());
-    }
-
-    @Override
     public int compare(String source, String target) {
         return collator.get().compare(source, target);
     }

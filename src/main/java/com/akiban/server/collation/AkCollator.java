@@ -26,6 +26,7 @@
 package com.akiban.server.collation;
 
 import com.akiban.server.types.ValueSource;
+import com.akiban.server.types3.pvalue.PValueSource;
 import com.persistit.Key;
 
 public abstract class AkCollator {
@@ -70,7 +71,16 @@ public abstract class AkCollator {
     /**
      * Compare two string values: Comparable<ValueSource>
      */
-    abstract public int compare(ValueSource value1, ValueSource value2);
+    final public int compare(ValueSource value1, ValueSource value2) {
+        return compare(value1.getString(), value2.getString());
+    }
+
+    /**
+     * Compare two string values: Comparable<PValueSource>
+     */
+    final public int compare(PValueSource value1, PValueSource value2) {
+        return compare(value1.getString(), value2.getString());
+    }
 
     /**
      * Compare two string objects: Comparable<String>
