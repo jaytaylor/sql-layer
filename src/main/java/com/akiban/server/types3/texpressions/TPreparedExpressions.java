@@ -31,7 +31,7 @@ import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 
 public final class TPreparedExpressions {
 
-    public static Explainer<?> getExplainer(TPreparedExpression expression) {
+    public static Explainer getExplainer(TPreparedExpression expression) {
         String toString = expression.toString();
         return PrimitiveExplainer.getInstance(toString);
     }
