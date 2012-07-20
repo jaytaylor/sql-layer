@@ -35,6 +35,7 @@ import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
 import com.akiban.server.types3.TParsers;
 import com.akiban.server.types3.common.types.DoubleAttribute;
+import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.mcompat.mcasts.CastUtils;
@@ -45,10 +46,10 @@ import com.akiban.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
 {
-    public static final TClass DOUBLE = new MApproximateNumber(TypeId.DOUBLE_ID, PUnderlying.DOUBLE, TParsers.DOUBLE);
-    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber(TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE, TParsers.DOUBLE);
-    public static final TClass FLOAT = new MApproximateNumber(TypeId.REAL_ID, PUnderlying.FLOAT, TParsers.FLOAT);
-    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber(TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT, TParsers.FLOAT);
+    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, PUnderlying.DOUBLE, TParsers.DOUBLE);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE, TParsers.DOUBLE);
+    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, PUnderlying.FLOAT, TParsers.FLOAT);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT, TParsers.FLOAT);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
@@ -146,9 +147,10 @@ public class MApproximateNumber extends SimpleDtdTClass
         }
     }
 
-    private MApproximateNumber(TypeId typeId, PUnderlying underlying, TParser parser)
+
+    private MApproximateNumber(String name, TypeId typeId, PUnderlying underlying, TParser parser)
     {
-        super(MBundle.INSTANCE.id(), "double", 
+        super(MBundle.INSTANCE.id(), name, NumericFormatter.FORMAT.DOUBLE,
                 DoubleAttribute.class,
                 1, 1, 8,
                 underlying, parser, typeId);

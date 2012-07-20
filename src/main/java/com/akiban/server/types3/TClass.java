@@ -33,6 +33,7 @@ import com.akiban.server.types3.pvalue.PValueTargets;
 import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
+import com.akiban.util.AkibanAppender;
 import com.akiban.util.ArgumentValidation;
 import com.google.common.primitives.Booleans;
 import com.google.common.primitives.Doubles;
@@ -40,7 +41,6 @@ import com.google.common.primitives.Floats;
 import com.google.common.primitives.Longs;
 
 import java.nio.ByteBuffer;
-import java.util.EnumSet;
 import java.util.regex.Pattern;
 
 public abstract class TClass {
@@ -201,10 +201,14 @@ public abstract class TClass {
         return name.toString();
     }
 
+    public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+        formatter.format(instance, source, out);
+    }
+
     // for use by subclasses
 
     protected abstract TInstance doPickInstance(TInstance instance0, TInstance instance1);
-
+        
     protected abstract void validate(TInstance instance);
     // for use by this class
 
@@ -228,19 +232,19 @@ public abstract class TClass {
 
      protected <A extends Enum<A> & Attribute> TClass(TName name,
             Class<A> enumClass,
+            TClassFormatter formatter,
             int internalRepVersion, int serializationVersion, int serializationSize,
             PUnderlying pUnderlying)
      {
 
          ArgumentValidation.notNull("name", name);
          this.name = name;
+         this.formatter = formatter;
          this.internalRepVersion = internalRepVersion;
          this.serializationVersion = serializationVersion;
          this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
          this.pUnderlying = pUnderlying;
-         EnumSet<? extends Attribute> legalAttributes = EnumSet.allOf(enumClass);
-         attributes = new Attribute[legalAttributes.size()];
-         legalAttributes.toArray(attributes);
+         attributes = enumClass.getEnumConstants();
 
          this.enumClass = enumClass;
          for (int i = 0; i < attributes.length; ++i)
@@ -254,11 +258,13 @@ public abstract class TClass {
      protected <A extends Enum<A> & Attribute> TClass(TBundleID bundle,
             String name,
             Class<A> enumClass,
+            TClassFormatter formatter,
             int internalRepVersion, int serializationVersion, int serializationSize,
             PUnderlying pUnderlying)
      {
         this(new TName(bundle, name),
                 enumClass,
+                formatter,
                 internalRepVersion, serializationVersion, serializationSize,
                 pUnderlying);
 
@@ -266,6 +272,7 @@ public abstract class TClass {
 
     private final TName name;
     private final Class<?> enumClass;
+    protected final TClassFormatter formatter;
     private final Attribute[] attributes;
     private final int internalRepVersion;
     private final int serializationVersion;

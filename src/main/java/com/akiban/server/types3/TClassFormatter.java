@@ -23,21 +23,16 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
 package com.akiban.server.types3;
 
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.util.AkibanAppender;
 
-import java.util.List;
-
-public interface TOverload {
-    String overloadName();
-    TOverloadResult resultType();
-    List<TInputSet> inputSets();
-    TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
-    void finishPreptimePhase(TPreptimeContext context);
-    void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
-    String toString(List<? extends TPreparedExpression> inputs, TInstance resultType);
+public interface TClassFormatter {
+    
+    public void format(TInstance instance, PValueSource source, AkibanAppender out);
 }

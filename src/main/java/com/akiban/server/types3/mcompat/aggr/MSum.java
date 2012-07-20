@@ -80,7 +80,6 @@ public class MSum implements TAggregator {
             }
         }
         ;
-
         abstract void input(TInstance instance, PValueSource source, TInstance stateType, PValue state);
         private final TClass typeClass;
         

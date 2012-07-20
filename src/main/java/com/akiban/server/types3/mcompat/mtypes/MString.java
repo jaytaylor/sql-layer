@@ -27,7 +27,6 @@
 package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.server.collation.AkCollatorFactory;
-import com.akiban.server.error.StringTruncationException;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.common.types.StringAttribute;

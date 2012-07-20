@@ -27,8 +27,8 @@
 package com.akiban.server.types3.aksql.aktypes;
 
 import com.akiban.server.types3.TParsers;
+import com.akiban.server.types3.common.TFormatter;
 import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.aksql.akcasts.Cast_From_Varchar;
 import com.akiban.server.types3.common.types.NoAttrTClass;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.sql.types.TypeId;
@@ -40,6 +40,6 @@ import com.akiban.sql.types.TypeId;
 public class AkBool
 {
     public static final NoAttrTClass INSTANCE 
-            = new NoAttrTClass(AkBundle.INSTANCE.id(), "boolean", 1, 1, 1, 
+            = new NoAttrTClass(AkBundle.INSTANCE.id(), "boolean", TFormatter.FORMAT.BOOL, 1, 1, 1,
                                PUnderlying.BOOL, TParsers.BOOLEAN, TypeId.BOOLEAN_ID);
 }

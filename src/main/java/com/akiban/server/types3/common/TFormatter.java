@@ -24,20 +24,21 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3;
+package com.akiban.server.types3.common;
 
+import com.akiban.server.types3.TClassFormatter;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.pvalue.PValueSource;
-import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.util.AkibanAppender;
 
-import java.util.List;
+public class TFormatter {
 
-public interface TOverload {
-    String overloadName();
-    TOverloadResult resultType();
-    List<TInputSet> inputSets();
-    TPreptimeValue evaluateConstant(TPreptimeContext context, LazyList<? extends TPreptimeValue> inputs);
-    void finishPreptimePhase(TPreptimeContext context);
-    void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output);
-    String toString(List<? extends TPreparedExpression> inputs, TInstance resultType);
+    public static enum FORMAT implements TClassFormatter {
+        BOOL {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(Boolean.toString(source.getBoolean()));
+            }
+        }
+    }
 }

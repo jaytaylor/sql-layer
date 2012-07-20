@@ -26,32 +26,15 @@
 
 package com.akiban.server.types3.texpressions;
 
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
 
-/**
- * A placeholder TPreparedExpression -- the equivalent of UnsupportedOperationException.
- */
-@Deprecated
-public final class TDummyExpression implements TPreparedExpression {
-    @Override
-    public TPreptimeValue evaluateConstant() {
-        return new TPreptimeValue(resultType(), null);
+public final class TPreparedExpressions {
+
+    public static Explainer getExplainer(TPreparedExpression expression) {
+        String toString = expression.toString();
+        return PrimitiveExplainer.getInstance(toString);
     }
 
-    @Override
-    public TInstance resultType() {
-        return MNumeric.INT.instance();
-    }
-
-    @Override
-    public TEvaluatableExpression build() {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
-    @Override
-    public String toString() {
-        return "DummyExpression";
-    }
+    private TPreparedExpressions() {}
 }

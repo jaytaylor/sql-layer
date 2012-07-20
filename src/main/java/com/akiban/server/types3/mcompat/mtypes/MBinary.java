@@ -33,6 +33,7 @@ import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
@@ -123,9 +124,9 @@ public final class MBinary extends SimpleDtdTClass {
     }
     
     private MBinary(TypeId typeId, String name, int defaultLength) {
-        super(MBundle.INSTANCE.id(), name, Attrs.class, 1, 1, -1, PUnderlying.BYTES, null, typeId);
+        super(MBundle.INSTANCE.id(), name, NumericFormatter.FORMAT.BYTES, Attrs.class, 1, 1, -1, PUnderlying.BYTES, null, typeId);
         this.defaultLength = defaultLength;
     }
-    
+        
     private final int defaultLength;
 }

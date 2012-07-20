@@ -32,6 +32,7 @@ import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TFactory;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TParser;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
@@ -58,9 +59,9 @@ public class NoAttrTClass extends SimpleDtdTClass {
     protected void validate(TInstance instance) {
     }
 
-    public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
+    public NoAttrTClass(TBundleID bundle, String name, TClassFormatter formatter, int internalRepVersion,
                            int serializationVersion, int serializationSize, PUnderlying pUnderlying, TParser parser, TypeId typeId) {
-        super(bundle, name, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
+        super(bundle, name, formatter, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
                 pUnderlying, parser, typeId);
     }
 
