@@ -28,6 +28,8 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.row.Row;
+import com.akiban.server.PersistitKeyPValueSource;
 import com.akiban.server.PersistitKeyPValueTarget;
 import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.Comparison;
@@ -41,11 +43,11 @@ import com.akiban.server.types3.texpressions.TPreparedExpression;
 import com.akiban.server.types3.texpressions.TPreparedLiteral;
 import com.persistit.Key;
 
-class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> {
+class PValueSortKeyAdapter extends SortKeyAdapter<PValueSource, TPreparedExpression> {
 
     private PValueSortKeyAdapter() {}
     
-    public static final SortKeyAdapter<PValueSource> INSTANCE = new PValueSortKeyAdapter();
+    public static final SortKeyAdapter<PValueSource, TPreparedExpression> INSTANCE = new PValueSortKeyAdapter();
     
     @Override
     public AkType[] createAkTypes(int size) {
@@ -111,6 +113,40 @@ class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> {
         return source.isNull();
     }
 
+    @Override
+    public SortKeySource<PValueSource> createSource(TInstance tInstance) {
+        return new PValueSortKeySource(tInstance);
+    }
+
+    @Override
+    public long compare(TInstance tInstance, PValueSource one, PValueSource two) {
+        TClass tClass = tInstance.typeClass();
+        return tClass.compare(tInstance, one, tInstance, two);
+    }
+
+    @Override
+    public TPreparedExpression createComparison(TInstance tInstance,
+                                                AkCollator collator,
+                                                PValueSource one,
+                                                Comparison comparison,
+                                                PValueSource two) {
+        TPreparedExpression arg1 = new TPreparedLiteral(tInstance, one);
+        TPreparedExpression arg2 = new TPreparedLiteral(tInstance, two);
+        return new TComparisonExpression(arg1, comparison, arg2);
+    }
+
+    @Override
+    public boolean evaluateComparison(TPreparedExpression comparison) {
+        TEvaluatableExpression eval = comparison.build();
+        eval.evaluate();
+        return eval.resultValue().getBoolean();
+    }
+
+    @Override
+    public PValueSource eval(Row row, int field) {
+        return row.pvalue(field);
+    }
+
     private static class PValueSortKeyTarget implements SortKeyTarget<PValueSource> {
         @Override
         public void attach(Key key) {
@@ -123,10 +159,38 @@ class PValueSortKeyAdapter implements SortKeyAdapter<PValueSource> {
         {
             TInstance tInstance = tInstances[f];
             target.expectingType(source.getUnderlyingType());
+            append(source, null, tInstance, null);
+        }
+
+        @Override
+        public void append(PValueSource source, AkType akType, TInstance tInstance, AkCollator collator) {
             TClass tClass = tInstance.typeClass();
             tClass.writeCollating(source, tInstance, target);
         }
-        
+
+        @Override
+        public void append(PValueSource source, AkCollator collator, TInstance tInstance) {
+            throw new UnsupportedOperationException(); // TODO
+        }
+
         protected final PersistitKeyPValueTarget target = new PersistitKeyPValueTarget();
+    }
+    
+    private static class PValueSortKeySource implements SortKeySource<PValueSource> {
+        @Override
+        public void attach(Key key, int i, AkType fieldType, TInstance tInstance) {
+            source.attach(key, i, tInstance.typeClass().underlyingType());
+        }
+
+        @Override
+        public PValueSource asSource() {
+            return source;
+        }
+        
+        public PValueSortKeySource(TInstance tInstance) {
+            source = new PersistitKeyPValueSource(tInstance.typeClass().underlyingType());
+        }
+        
+        private final PersistitKeyPValueSource source;
     }
 }

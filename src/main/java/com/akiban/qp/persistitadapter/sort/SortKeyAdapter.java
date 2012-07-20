@@ -28,23 +28,37 @@ package com.akiban.qp.persistitadapter.sort;
 
 import com.akiban.ais.model.Column;
 import com.akiban.qp.expression.BoundExpressions;
+import com.akiban.qp.row.Row;
 import com.akiban.server.collation.AkCollator;
+import com.akiban.server.expression.std.Comparison;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
-import com.persistit.Key;
 
-interface SortKeyAdapter<S> {
-    AkType[] createAkTypes(int size);
-    AkCollator[] createAkCollators(int size);
-    TInstance[] createTInstances(int size);
-    void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators, TInstance[] tInstances);
+abstract class SortKeyAdapter<S, E> {
+    public abstract AkType[] createAkTypes(int size);
+    public abstract AkCollator[] createAkCollators(int size);
+    public abstract TInstance[] createTInstances(int size);
+    public abstract void setColumnMetadata(Column column, int f, AkType[] akTypes, AkCollator[] collators,
+                                           TInstance[] tInstances);
 
-    void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f);
+    public abstract void checkConstraints(BoundExpressions loExpressions, BoundExpressions hiExpressions, int f);
 
-    S[] createSourceArray(int size);
-    S get(BoundExpressions boundExpressions, int f);
+    public abstract S[] createSourceArray(int size);
+    public abstract S get(BoundExpressions boundExpressions, int f);
 
-    SortKeyTarget<S> createTarget();
+    public abstract SortKeyTarget<S> createTarget();
+    public abstract SortKeySource<S> createSource(TInstance tInstance);
+    
+    public abstract long compare(TInstance tInstance, S one, S two);
+    public abstract E createComparison(TInstance tInstance, AkCollator collator, S one, Comparison comparison, S two);
+    public abstract boolean evaluateComparison(E comparison);
+    
+    public boolean areEqual(TInstance tInstance, AkCollator collator, S one, S two) {
+        E expr = createComparison(tInstance, collator, one, Comparison.EQ, two);
+        return evaluateComparison(expr);
+    }
 
-    boolean isNull(S source);
+    public abstract boolean isNull(S source);
+
+    public abstract S eval(Row row, int field);
 }

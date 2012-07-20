@@ -29,6 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.types.ValueSource;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueSources;
@@ -125,6 +126,7 @@ class Using_BloomFilter extends Operator
                              long estimatedRowCount,
                              int filterBindingPosition,
                              Operator streamInput,
+                             List<AkCollator> collators,
                              boolean usePValues)
     {
         ArgumentValidation.notNull("filterInput", filterInput);
@@ -137,6 +139,7 @@ class Using_BloomFilter extends Operator
         this.estimatedRowCount = estimatedRowCount;
         this.filterBindingPosition = filterBindingPosition;
         this.streamInput = streamInput;
+        this.collators = collators;
         this.usePValues = usePValues;
     }
 
@@ -153,6 +156,7 @@ class Using_BloomFilter extends Operator
     private final long estimatedRowCount;
     private final int filterBindingPosition;
     private final Operator streamInput;
+    private final List<AkCollator> collators;
     private final boolean usePValues;
 
     @Override

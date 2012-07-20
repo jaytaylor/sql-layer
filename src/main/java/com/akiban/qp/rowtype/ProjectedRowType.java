@@ -29,7 +29,9 @@ package com.akiban.qp.rowtype;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types.AkType;
 import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.texpressions.TPreparedExpression;
 
+import java.util.ArrayList;
 import java.util.List;
 
 public class ProjectedRowType extends DerivedRowType
@@ -39,7 +41,8 @@ public class ProjectedRowType extends DerivedRowType
     @Override
     public String toString()
     {
-        return String.format("project(%s)", projections);
+        List<?> projectionsToString = projections == null ? tExprs : projections;
+        return String.format("project(%s)", projectionsToString);
     }
 
     // RowType interface
@@ -62,15 +65,24 @@ public class ProjectedRowType extends DerivedRowType
 
     // ProjectedRowType interface
 
-    public ProjectedRowType(DerivedTypesSchema schema, int typeId, List<? extends Expression> projections, List<? extends TInstance> tInstances)
+    public ProjectedRowType(DerivedTypesSchema schema, int typeId, List<? extends Expression> projections, List<? extends TPreparedExpression> tExpr)
     {
         super(schema, typeId);
         this.projections = projections;
-        this.tInstances = tInstances;
+        this.tExprs = tExpr;
+        if (tExpr != null) {
+            this.tInstances = new ArrayList<TInstance>(tExpr.size());
+            for (TPreparedExpression expr : tExpr)
+                tInstances.add(expr.resultType());
+        }
+        else {
+            this.tInstances = null;
+        }
     }
     
     // Object state
 
     private final List<? extends Expression> projections;
-    private final List<? extends TInstance> tInstances;
+    private final List<? extends TPreparedExpression> tExprs;
+    private final List<TInstance> tInstances;
 }

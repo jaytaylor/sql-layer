@@ -29,6 +29,7 @@ package com.akiban.qp.operator;
 import com.akiban.qp.row.Row;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.qp.util.ValueSourceHasher;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.expression.ExpressionEvaluation;
 import com.akiban.sql.optimizer.explain.Explainer;
@@ -129,6 +130,7 @@ class Select_BloomFilter extends Operator
     public Select_BloomFilter(Operator input,
                               Operator onPositive,
                               List<? extends Expression> fields,
+                              List<AkCollator> collators,
                               int bindingPosition)
     {
         ArgumentValidation.notNull("input", input);
@@ -140,6 +142,7 @@ class Select_BloomFilter extends Operator
         this.onPositive = onPositive;
         this.bindingPosition = bindingPosition;
         this.fields = fields;
+        this.collators = collators;
     }
 
     // Class state
@@ -154,6 +157,7 @@ class Select_BloomFilter extends Operator
     private final Operator onPositive;
     private final int bindingPosition;
     private final List<? extends Expression> fields;
+    private final List<AkCollator> collators;
 
     @Override
     public Explainer getExplainer() {

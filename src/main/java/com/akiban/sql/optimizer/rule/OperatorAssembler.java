@@ -30,6 +30,7 @@ import static com.akiban.sql.optimizer.rule.OldExpressionAssembler.*;
 
 import com.akiban.ais.model.IndexColumn;
 import com.akiban.qp.operator.API.JoinType;
+import com.akiban.server.collation.AkCollator;
 import com.akiban.server.expression.std.FieldExpression;
 import com.akiban.server.expression.subquery.ResultSetSubqueryExpression;
 import com.akiban.server.expression.subquery.ScalarSubqueryExpression;
@@ -84,6 +85,8 @@ import com.akiban.ais.model.Index;
 import com.akiban.ais.model.GroupTable;
 
 import com.akiban.server.api.dml.ColumnSelector;
+import com.akiban.server.types3.texpressions.ExistsSubqueryTExpression;
+import com.akiban.server.types3.texpressions.ScalarSubqueryTExpression;
 import com.akiban.util.tap.PointTap;
 import com.akiban.util.tap.Tap;
 
@@ -445,7 +448,7 @@ public class OperatorAssembler extends BaseRule
             protected TPreparedExpression existsExpression(Operator operator, RowType outerRowType,
                                                            RowType innerRowType,
                                                            int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ExistsSubqueryTExpression(operator, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
@@ -459,7 +462,7 @@ public class OperatorAssembler extends BaseRule
             protected TPreparedExpression scalarSubqueryExpression(Operator operator, TPreparedExpression innerExpression,
                                                                    RowType outerRowType, RowType innerRowType,
                                                                    int bindingPosition) {
-                throw new UnsupportedOperationException(); // TODO
+                return new ScalarSubqueryTExpression(operator, innerExpression, outerRowType, innerRowType, bindingPosition);
             }
 
             @Override
@@ -1171,7 +1174,21 @@ public class OperatorAssembler extends BaseRule
               impl = Distinct.Implementation.SORT;
             switch (impl) {
             case PRESORTED:
-                stream.operator = API.distinct_Partial(stream.operator, stream.rowType, usePValues);
+                PlanNode input = distinct.getInput();
+                if (input instanceof Sort) {
+                    input = ((Sort)input).getInput();
+                }
+                if (input instanceof Project) {
+                    List<AkCollator> collators = new ArrayList<AkCollator>();
+                    Project project = (Project) input;
+                    for (ExpressionNode expressionNode : project.getFields()) {
+                        collators.add(expressionNode.getCollator());
+                    }
+                    stream.operator = API.distinct_Partial(stream.operator, stream.rowType, collators, usePValues);
+                } else {
+                    throw new UnsupportedOperationException(String.format(
+                        "Can't use Distinct_Partial except following a projection. Try again when types3 is in place"));
+                }
                 break;
             default:
                 assembleSort(stream, stream.rowType.nFields(), distinct.getInput(),
@@ -1273,11 +1290,19 @@ public class OperatorAssembler extends BaseRule
             int pos = pushHashTable(bloomFilter);
             RowStream lstream = assembleStream(usingBloomFilter.getLoader());
             RowStream stream = assembleStream(usingBloomFilter.getInput());
+            List<AkCollator> collators = new ArrayList<AkCollator>();
+            if (usingBloomFilter.getLoader() instanceof IndexScan) {
+                IndexScan indexScan = (IndexScan) usingBloomFilter.getLoader();
+                for (IndexColumn indexColumn : indexScan.getIndexColumns()) {
+                    collators.add(indexColumn.getColumn().getCollator());
+                }
+            }
             stream.operator = API.using_BloomFilter(lstream.operator,
                                                     lstream.rowType,
                                                     bloomFilter.getEstimatedSize(),
                                                     pos,
                                                     stream.operator,
+                                                    collators,
                                                     usePValues);
             popHashTable(bloomFilter);
             return stream;
@@ -1292,9 +1317,14 @@ public class OperatorAssembler extends BaseRule
             boundRows.set(pos, null);
             List<Expression> fields = oldPartialAssembler.assembleExpressions(bloomFilterFilter.getLookupExpressions(),
                                                           stream.fieldOffsets);
+            List<AkCollator> collators = new ArrayList<AkCollator>();
+            for (ExpressionNode expressionNode : bloomFilterFilter.getLookupExpressions()) {
+                collators.add(expressionNode.getCollator());
+            }
             stream.operator = API.select_BloomFilter(stream.operator,
                                                      cstream.operator,
                                                      fields,
+                                                     collators,
                                                      pos);
             return stream;
         }        

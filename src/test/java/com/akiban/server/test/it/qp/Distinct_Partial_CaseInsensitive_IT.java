@@ -60,12 +60,8 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             "id int not null",
             "cs varchar(10)", // case sensitive
             "ci varchar(10) collate latin1_swedish_ci"); // case insensitive
-        Index csIndex = createIndex("s", "t", "idx_ics", "id", "cs");
-        Index ciIndex = createIndex("s", "t", "idx_ici", "id", "ci");
         schema = new Schema(rowDefCache().ais());
         tRowType = schema.userTableRowType(userTable(t));
-        csIndexRowType = tRowType.indexRowType(csIndex);
-        ciIndexRowType = tRowType.indexRowType(ciIndex);
         adapter = persistitAdapter(schema);
         queryContext = queryContext(adapter);
         group = groupTable(t);
@@ -218,19 +214,18 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
         RowType projectRowType = project.rowType();
         Ordering ordering = new Ordering();
         ordering.append(new FieldExpression(projectRowType, 0), true, caseSensitiveCollator);
-        // Do a binary-ordering sort at the end, preserving duplicates, so that the rows produced by distinct_Partial
-        // are in a known ordering. Simplifies verification.
-        Ordering binaryOrdering = new Ordering();
-        binaryOrdering.append(new FieldExpression(projectRowType, 0), true); // No collator -> binary
+        // Sort, preserving duplicates, so that we can test Distinct_Partial.
         Operator plan =
-            sort_InsertionLimited(
-                distinct_Partial(
+            distinct_Partial(
+                sort_InsertionLimited(
                     project,
-                    projectRowType),
+                    projectRowType,
+                    ordering,
+                    SortOption.PRESERVE_DUPLICATES,
+                    db.length),
                 projectRowType,
-                binaryOrdering,
-                SortOption.PRESERVE_DUPLICATES,
-                db.length);
+                Arrays.asList(caseSensitiveCollator),
+                false);
         RowBase[] expected = new RowBase[] {
             row(projectRowType, "AA_cs"),
             row(projectRowType, "Aa_cs"),
@@ -268,7 +263,9 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
                         ordering,
                         SortOption.PRESERVE_DUPLICATES,
                         db.length),
-                    projectRowType),
+                    projectRowType,
+                    Arrays.asList(caseInsensitiveCollator),
+                    false),
                 projectRowType,
                 convertToUpper,
                 null);
@@ -276,14 +273,11 @@ public class Distinct_Partial_CaseInsensitive_IT extends OperatorITBase
             row(projectRowType, "AA_CI"),
             row(projectRowType, "BB_CI"),
         };
-        dump(plan);
-        // compareRows(expected, cursor(plan, queryContext));
+        compareRows(expected, cursor(plan, queryContext));
     }
 
     private int t;
     private UserTableRowType tRowType;
-    private IndexRowType csIndexRowType;
-    private IndexRowType ciIndexRowType;
     private GroupTable group;
     private AkCollator caseSensitiveCollator;
     private AkCollator caseInsensitiveCollator;

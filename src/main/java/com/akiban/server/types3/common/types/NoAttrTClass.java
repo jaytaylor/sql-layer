@@ -27,14 +27,12 @@
 package com.akiban.server.types3.common.types;
 
 import com.akiban.qp.operator.QueryContext;
-import com.akiban.server.types3.Attribute;
-import com.akiban.server.types3.TBundleID;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.sql.types.TypeId;
+import com.akiban.util.AkibanAppender;
 
 public class NoAttrTClass extends SimpleDtdTClass {
 
@@ -57,9 +55,9 @@ public class NoAttrTClass extends SimpleDtdTClass {
     protected void validate(TInstance instance) {
     }
 
-    public NoAttrTClass(TBundleID bundle, String name, int internalRepVersion,
+    public NoAttrTClass(TBundleID bundle, String name, TClassFormatter formatter, int internalRepVersion,
                            int serializationVersion, int serializationSize, PUnderlying pUnderlying, TypeId typeId) {
-        super(bundle, name, Attribute.NONE.class, internalRepVersion, serializationVersion, serializationSize,
+        super(bundle, name, Attribute.NONE.class, formatter, internalRepVersion, serializationVersion, serializationSize,
                 pUnderlying, typeId);
     }
 

@@ -23,36 +23,16 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain;
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
+ */
+package com.akiban.server.types3;
 
-public abstract class Explainer {
-    public abstract Type getType();
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.AkibanAppender;
+
+public interface TClassFormatter {
     
-    /**
-     * 
-     * @return a map of this object's attributes if it's an OperationExplainer
-     *         a primitive object (Integer, Double, etc ...), otherwise.
-     */
-    public abstract Object get();
-    
-    public abstract boolean hasAttributes();
- 
-    public abstract boolean addAttribute (Label label, Explainer ex);
-    
-    @Override
-    public final boolean equals (Object o)
-    {
-        if (o != null && o instanceof Explainer)
-        {
-            return ((Explainer)o).get() == get();
-        }
-        else
-            return false;
-    }
-    
-    @Override
-    public final int hashCode ()
-    {
-        return get().hashCode();
-    }
+    public void format(TInstance instance, PValueSource source, AkibanAppender out);
 }

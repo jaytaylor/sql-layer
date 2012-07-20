@@ -46,7 +46,10 @@ public final class PersistitKeyValueSource implements ValueSource {
     // PersistitKeyValueSource interface
 
     public void attach(Key key, IndexColumn indexColumn) {
-        attach(key, indexColumn.getPosition(), indexColumn.getColumn().getType().akType(), indexColumn.getColumn().getCollator());
+        attach(key,
+               indexColumn.getPosition(),
+               indexColumn.getColumn().getType().akType(),
+               indexColumn.getColumn().getCollator());
     }
 
     public void attach(Key key, int depth, AkType type) {

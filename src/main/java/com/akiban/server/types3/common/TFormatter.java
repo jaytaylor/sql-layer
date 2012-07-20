@@ -23,36 +23,22 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain;
 
-public abstract class Explainer {
-    public abstract Type getType();
-    
-    /**
-     * 
-     * @return a map of this object's attributes if it's an OperationExplainer
-     *         a primitive object (Integer, Double, etc ...), otherwise.
-     */
-    public abstract Object get();
-    
-    public abstract boolean hasAttributes();
- 
-    public abstract boolean addAttribute (Label label, Explainer ex);
-    
-    @Override
-    public final boolean equals (Object o)
-    {
-        if (o != null && o instanceof Explainer)
-        {
-            return ((Explainer)o).get() == get();
+package com.akiban.server.types3.common;
+
+import com.akiban.server.types3.TClassFormatter;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.AkibanAppender;
+
+public class TFormatter {
+
+    public static enum FORMAT implements TClassFormatter {
+        BOOL {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(Boolean.toString(source.getBoolean()));
+            }
         }
-        else
-            return false;
-    }
-    
-    @Override
-    public final int hashCode ()
-    {
-        return get().hashCode();
     }
 }

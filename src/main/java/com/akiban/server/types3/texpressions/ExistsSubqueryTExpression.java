@@ -24,58 +24,50 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.qp.rowtype;
+package com.akiban.server.types3.texpressions;
 
-import java.util.List;
-
-import com.akiban.ais.model.HKey;
-import com.akiban.ais.model.UserTable;
-import com.akiban.server.expression.Expression;
+import com.akiban.qp.operator.Operator;
+import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.aksql.aktypes.AkBool;
+import com.akiban.server.types3.pvalue.PUnderlying;
+import com.akiban.server.types3.pvalue.PValueTarget;
 
-public class ProjectedUserTableRowType extends ProjectedRowType {
+public class ExistsSubqueryTExpression extends SubqueryTExpression
+{
+    private static final class InnerEvaluation extends SubqueryTEvaluateble
+    {
+        InnerEvaluation(Operator subquery,
+                        RowType outerRowType, RowType innerRowType,
+                        int bindingPosition)
+        {
+            super(subquery, outerRowType, innerRowType, bindingPosition, PUnderlying.BOOL);
+        }
 
-    public ProjectedUserTableRowType(DerivedTypesSchema schema, UserTable table, List<? extends Expression> projections, List<? extends TPreparedExpression> tExprs) {
-        super(schema, table.getTableId(), projections, tExprs);
-        this.table = table;
-        this.constraintChecker = new UserTableRowChecker(this);
+        @Override
+        protected void doEval(PValueTarget out)
+        {   
+            out.putBool(next() != null);
+        }
     }
 
-    @Override
-    public UserTable userTable() {
-        return table;
-    }
-
-    @Override
-    public boolean hasUserTable() {
-        return table != null;
+    public ExistsSubqueryTExpression(Operator subquery, RowType outerRowType, 
+                                     RowType innerRowType, int bindingPosition)
+    {
+        super(subquery, outerRowType, innerRowType, bindingPosition);
     }
     
     @Override
-    public int nFields()
+    public TInstance resultType()
     {
-        return table.getColumns().size();
+        return AkBool.INSTANCE.instance();
     }
 
     @Override
-    public ConstraintChecker constraintChecker()
+    public TEvaluatableExpression build()
     {
-        return constraintChecker;
+        return new InnerEvaluation(subquery(),
+                                   outerRowType(), innerRowType(),
+                                   bindingPosition());
     }
-
-    @Override
-    public HKey hKey()
-    {
-        return table.hKey();
-    }
-
-    @Override
-    public String toString()
-    {
-        return String.format("%s: %s", super.toString(), table);
-    }
-
-    private final UserTable table;
-    private final ConstraintChecker constraintChecker;
 }

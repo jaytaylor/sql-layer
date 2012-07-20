@@ -30,6 +30,7 @@ import com.akiban.server.types3.LazyList;
 import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInputSet;
+import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TOverload;
 import com.akiban.server.types3.TOverloadResult;
 import com.akiban.server.types3.TPreptimeContext;
@@ -64,6 +65,11 @@ public final class TValidatedOverload implements TOverload {
     @Override
     public void evaluate(TExecutionContext context, LazyList<? extends PValueSource> inputs, PValueTarget output) {
         overload.evaluate(context, inputs, output);
+    }
+
+    @Override
+    public String toString(List<? extends TPreparedExpression> inputs, TInstance resultType) {
+        return overload.toString(inputs, resultType);
     }
 
     // TOverload methods (cached)

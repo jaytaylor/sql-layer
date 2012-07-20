@@ -103,7 +103,7 @@ public abstract class SortCursor implements Cursor
                                     IterationHelper iterationHelper,
                                     boolean usePValues)
     {
-        SortKeyAdapter<?> adapter = usePValues
+        SortKeyAdapter<?, ?> adapter = usePValues
                 ? PValueSortKeyAdapter.INSTANCE
                 : OldExpressionsSortKeyAdapter.INSTANCE;
         return
@@ -111,7 +111,7 @@ public abstract class SortCursor implements Cursor
             ? (keyRange != null && keyRange.lexicographic()
                ? SortCursorUnidirectionalLexicographic.create(context, iterationHelper, keyRange, ordering, adapter)
                : SortCursorUnidirectional.create(context, iterationHelper, keyRange, ordering, adapter))
-            : SortCursorMixedOrder.create(context, iterationHelper, keyRange, ordering);
+            : SortCursorMixedOrder.create(context, iterationHelper, keyRange, ordering, adapter);
     }
 
     // For use by subclasses

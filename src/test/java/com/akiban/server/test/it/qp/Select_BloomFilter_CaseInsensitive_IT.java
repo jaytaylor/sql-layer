@@ -212,8 +212,8 @@ public class Select_BloomFilter_CaseInsensitive_IT extends OperatorITBase
     {
         Operator plan = plan(6);
         RowBase[] expected = new RowBase[] {
-            row(outputRowType, 6L, 61L, 601L),
-            row(outputRowType, 6L, 62L, 602L),
+            row(outputRowType, 6L, "XY", "aB"),
+            row(outputRowType, 6L, "Xy", "Ac"),
         };
         compareRows(expected, cursor(plan, queryContext));
     }
