@@ -471,6 +471,7 @@
                                             <fileset dir="${project.build.directory}" includes="${setup.jarfile}" />
                                         </copy>
                                         <exec dir="${setup.staging.dir}" executable="iscc" failonerror="true">
+                                            <arg line="/S&quot;GoDaddy=signtool sign /f $q${signing.cert.file}$q  /p $q${signing.cert.password}$q /t http://tsa.starfieldtech.com/ $f&quot;" />
                                             <arg line="/O.." />
                                             <arg line="/F&quot;${setup.output}&quot;" />
                                             <arg line="/dVERSION=${setup.appversion}" />
@@ -491,6 +492,8 @@
                 <akiban.license>LICENSE-EE.txt</akiban.license>
                 <akiban.release.target>enterprise</akiban.release.target> <!-- other options: { community } -->
                 <akiban.client.project>${basedir}/../client-latest</akiban.client.project>
+                <signing.cert.file>${basedir}/windows/testcert/testcert.pfx</signing.cert.file>
+                <signing.cert.password>test</signing.cert.password>
             </properties>
         </profile>
     </profiles>
