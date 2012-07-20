@@ -46,19 +46,19 @@ public class Cast_From_Datetime
 {
     public static final TCast TO_TINYINT = new FromInt64ToInt8(MDatetimes.DATETIME, MNumeric.TINYINT, false, Constantness.UNKNOWN);
 
-    public static final TCast TO_UNSIGNED_TINYINT = new FromInt64ToInt16(MDatetimes.DATETIME, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_TINYINT = new FromInt64ToUnsignedInt8(MDatetimes.DATETIME, MNumeric.TINYINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_SMALLINT = new FromInt64ToInt16(MDatetimes.DATETIME, MNumeric.SMALLINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_SMALINT = new FromInt64ToInt32(MDatetimes.DATETIME, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_SMALINT = new FromInt64ToUnsignedInt16(MDatetimes.DATETIME, MNumeric.SMALLINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_MEDIUMINT = new FromInt64ToInt32(MDatetimes.DATETIME, MNumeric.MEDIUMINT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToInt64(MDatetimes.DATETIME, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_MEDIUMINT = new FromInt64ToUnsignedInt32(MDatetimes.DATETIME, MNumeric.MEDIUMINT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_INT = new FromInt64ToInt32(MDatetimes.DATETIME, MNumeric.INT, false, Constantness.UNKNOWN);
     
-    public static final TCast TO_UNSIGNED_INT = new FromInt64ToInt64(MDatetimes.DATETIME, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
+    public static final TCast TO_UNSIGNED_INT = new FromInt64ToUnsignedInt32(MDatetimes.DATETIME, MNumeric.INT_UNSIGNED, false, Constantness.UNKNOWN);
     
     public static final TCast TO_BIGINT = new FromInt64ToInt64(MDatetimes.DATETIME, MNumeric.BIGINT, false, Constantness.UNKNOWN);
     
