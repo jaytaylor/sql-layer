@@ -23,36 +23,18 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain;
 
-public abstract class Explainer {
-    public abstract Type getType();
-    
-    /**
-     * 
-     * @return a map of this object's attributes if it's an OperationExplainer
-     *         a primitive object (Integer, Double, etc ...), otherwise.
-     */
-    public abstract Object get();
-    
-    public abstract boolean hasAttributes();
- 
-    public abstract boolean addAttribute (Label label, Explainer ex);
-    
-    @Override
-    public final boolean equals (Object o)
-    {
-        if (o != null && o instanceof Explainer)
-        {
-            return ((Explainer)o).get() == get();
-        }
-        else
-            return false;
+package com.akiban.server.types3.texpressions;
+
+import com.akiban.sql.optimizer.explain.Explainer;
+import com.akiban.sql.optimizer.explain.PrimitiveExplainer;
+
+public final class TPreparedExpressions {
+
+    public static Explainer getExplainer(TPreparedExpression expression) {
+        String toString = expression.toString();
+        return PrimitiveExplainer.getInstance(toString);
     }
-    
-    @Override
-    public final int hashCode ()
-    {
-        return get().hashCode();
-    }
+
+    private TPreparedExpressions() {}
 }

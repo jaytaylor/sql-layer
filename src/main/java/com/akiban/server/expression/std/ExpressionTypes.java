@@ -145,10 +145,13 @@ public class ExpressionTypes
               (type2 != null) &&
               ((type2.getType() == AkType.VARCHAR) || (type2.getType() == AkType.TEXT))))
             return null;
+        return mergeAkCollators(type1.getCharacterAttributes(), type2.getCharacterAttributes());
+    }
+
+    public static AkCollator mergeAkCollators(CharacterTypeAttributes type1Atts, CharacterTypeAttributes type2Atts) {
         CharacterTypeAttributes att;
         try {
-            att = CharacterTypeAttributes.mergeCollations(type1.getCharacterAttributes(), 
-                                                          type2.getCharacterAttributes());
+            att = CharacterTypeAttributes.mergeCollations(type1Atts, type2Atts);
         }
         catch (StandardException ex) {
             throw new SQLParserInternalException(ex);
@@ -160,7 +163,7 @@ public class ExpressionTypes
         }
         return null;
     }
-    
+
     private ExpressionTypes() {
     }
 }

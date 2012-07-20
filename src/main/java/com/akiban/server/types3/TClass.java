@@ -37,15 +37,11 @@ import com.akiban.server.types3.pvalue.PValueTarget;
 import com.akiban.util.AkibanAppender;
 import com.akiban.util.ArgumentValidation;
 import com.google.common.primitives.Booleans;
-import com.google.common.primitives.Chars;
 import com.google.common.primitives.Doubles;
 import com.google.common.primitives.Floats;
 import com.google.common.primitives.Longs;
-import com.google.common.primitives.Shorts;
 
 import java.nio.ByteBuffer;
-import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.regex.Pattern;
 
 public abstract class TClass {
@@ -247,9 +243,7 @@ public abstract class TClass {
          this.serializationVersion = serializationVersion;
          this.serializationSize = serializationSize < 0 ? -1 : serializationSize; // normalize all negative numbers
          this.pUnderlying = pUnderlying;
-         EnumSet<? extends Attribute> legalAttributes = EnumSet.allOf(enumClass);
-         attributes = new Attribute[legalAttributes.size()];
-         legalAttributes.toArray(attributes);
+         attributes = enumClass.getEnumConstants();
 
          this.enumClass = enumClass;
          for (int i = 0; i < attributes.length; ++i)

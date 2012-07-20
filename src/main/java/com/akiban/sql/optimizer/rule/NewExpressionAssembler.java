@@ -31,13 +31,17 @@ import com.akiban.qp.operator.API;
 import com.akiban.qp.operator.Operator;
 import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.std.Comparison;
+import com.akiban.server.expression.std.ExpressionTypes;
 import com.akiban.server.t3expressions.OverloadResolver;
 import com.akiban.server.t3expressions.OverloadResolver.OverloadResult;
 import com.akiban.server.types3.TAggregator;
 import com.akiban.server.types3.TCast;
+import com.akiban.server.types3.TClass;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.aksql.akfuncs.AkIfElse;
+import com.akiban.server.types3.common.types.StringAttribute;
+import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.texpressions.TCastExpression;
 import com.akiban.server.types3.texpressions.TComparisonExpression;
 import com.akiban.server.types3.texpressions.TPreparedBoundField;
@@ -55,6 +59,7 @@ import com.akiban.sql.optimizer.plan.ExpressionNode;
 import com.akiban.sql.optimizer.plan.FunctionExpression;
 import com.akiban.sql.optimizer.plan.IfElseExpression;
 import com.akiban.sql.optimizer.plan.ParameterExpression;
+import com.akiban.sql.types.CharacterTypeAttributes;
 import com.akiban.sql.types.TypeId;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -145,12 +150,21 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
 
     @Override
     protected TPreparedExpression collate(TPreparedExpression left, Comparison comparison, TPreparedExpression right, AkCollator collator) {
-        throw new UnsupportedOperationException(); // TODO
+        return new TComparisonExpression(left,  comparison, right, collator);
     }
 
     @Override
     protected AkCollator collator(ComparisonCondition cond, TPreparedExpression left, TPreparedExpression right) {
-        throw new UnsupportedOperationException(); // TODO
+        TInstance leftInstance = left.resultType();
+        TInstance rightInstance = right.resultType();
+        TClass tClass = leftInstance.typeClass();
+        assert tClass.equals(rightInstance.typeClass())
+                : tClass + " != " + rightInstance.typeClass();
+        if (tClass.underlyingType() != PUnderlying.STRING)
+            return null;
+        CharacterTypeAttributes leftAttributes = StringAttribute.characterTypeAttributes(leftInstance);
+        CharacterTypeAttributes rightAttributes = StringAttribute.characterTypeAttributes(rightInstance);
+        return ExpressionTypes.mergeAkCollators(leftAttributes, rightAttributes);
     }
 
     @Override
