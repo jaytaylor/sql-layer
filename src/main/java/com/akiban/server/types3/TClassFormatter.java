@@ -23,35 +23,16 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-
-package com.akiban.server.types3.texpressions;
-
-import com.akiban.server.types3.TInstance;
-import com.akiban.server.types3.TPreptimeValue;
-import com.akiban.server.types3.mcompat.mtypes.MNumeric;
-
-/**
- * A placeholder TPreparedExpression -- the equivalent of UnsupportedOperationException.
+/*
+ * To change this template, choose Tools | Templates
+ * and open the template in the editor.
  */
-@Deprecated
-public final class TDummyExpression implements TPreparedExpression {
-    @Override
-    public TPreptimeValue evaluateConstant() {
-        return new TPreptimeValue(resultType(), null);
-    }
+package com.akiban.server.types3;
 
-    @Override
-    public TInstance resultType() {
-        return MNumeric.INT.instance();
-    }
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.AkibanAppender;
 
-    @Override
-    public TEvaluatableExpression build() {
-        throw new UnsupportedOperationException(); // TODO
-    }
-
-    @Override
-    public String toString() {
-        return "DummyExpression";
-    }
+public interface TClassFormatter {
+    
+    public void format(TInstance instance, PValueSource source, AkibanAppender out);
 }

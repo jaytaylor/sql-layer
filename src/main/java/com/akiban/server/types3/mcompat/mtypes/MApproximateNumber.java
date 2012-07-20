@@ -27,26 +27,22 @@ package com.akiban.server.types3.mcompat.mtypes;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.server.error.OutOfRangeException;
-import com.akiban.server.types3.TAttributeValues;
-import com.akiban.server.types3.TAttributesDeclaration;
-import com.akiban.server.types3.TClass;
-import com.akiban.server.types3.TFactory;
-import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.*;
 import com.akiban.server.types3.common.types.DoubleAttribute;
+import com.akiban.server.types3.common.NumericFormatter;
 import com.akiban.server.types3.common.types.SimpleDtdTClass;
 import com.akiban.server.types3.mcompat.MBundle;
 import com.akiban.server.types3.pvalue.PUnderlying;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.server.types3.pvalue.PValueTarget;
-import com.akiban.sql.types.DataTypeDescriptor;
 import com.akiban.sql.types.TypeId;
 
 public class MApproximateNumber extends SimpleDtdTClass
 {
-    public static final TClass DOUBLE = new MApproximateNumber(TypeId.DOUBLE_ID, PUnderlying.DOUBLE);
-    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber(TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE);
-    public static final TClass FLOAT = new MApproximateNumber(TypeId.REAL_ID, PUnderlying.FLOAT);
-    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber(TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT);
+    public static final TClass DOUBLE = new MApproximateNumber("double", TypeId.DOUBLE_ID, PUnderlying.DOUBLE);
+    public static final TClass DOUBLE_UNSIGNED = new MApproximateNumber("double unsigned", TypeId.DOUBLE_UNSIGNED_ID, PUnderlying.DOUBLE);
+    public static final TClass FLOAT = new MApproximateNumber("float", TypeId.REAL_ID, PUnderlying.FLOAT);
+    public static final TClass FLOAT_UNSIGNED = new MApproximateNumber("float unsigned", TypeId.REAL_UNSIGNED_ID, PUnderlying.FLOAT);
     
     public static final int DEFAULT_DOUBLE_PRECISION = -1;
     public static final int DEFAULT_DOUBLE_SCALE = -1;
@@ -144,10 +140,10 @@ public class MApproximateNumber extends SimpleDtdTClass
         }
     }
 
-    private MApproximateNumber(TypeId typeId, PUnderlying underlying)
+    private MApproximateNumber(String name, TypeId typeId, PUnderlying underlying)
     {
-        super(MBundle.INSTANCE.id(), "double", 
-                DoubleAttribute.class,
+        super(MBundle.INSTANCE.id(), name,
+                DoubleAttribute.class, NumericFormatter.FORMAT.DOUBLE,
                 1, 1, 8,
                 underlying, typeId);
     }

@@ -24,20 +24,21 @@
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
 
-package com.akiban.server.types3.aksql.aktypes;
+package com.akiban.server.types3.common;
 
-import com.akiban.server.types3.common.TFormatter;
-import com.akiban.server.types3.aksql.AkBundle;
-import com.akiban.server.types3.common.types.NoAttrTClass;
-import com.akiban.server.types3.pvalue.PUnderlying;
-import com.akiban.sql.types.TypeId;
+import com.akiban.server.types3.TClassFormatter;
+import com.akiban.server.types3.TInstance;
+import com.akiban.server.types3.pvalue.PValueSource;
+import com.akiban.util.AkibanAppender;
 
-/**
- * 
- * Implement AkServer's bool type which is a Java's primitive boolean
- */
-public class AkBool
-{
-    public static final NoAttrTClass INSTANCE = new NoAttrTClass(
-            AkBundle.INSTANCE.id(), "boolean", TFormatter.FORMAT.BOOL, 1, 1, 1, PUnderlying.BOOL, TypeId.BOOLEAN_ID);
+public class TFormatter {
+
+    public static enum FORMAT implements TClassFormatter {
+        BOOL {
+            @Override
+            public void format(TInstance instance, PValueSource source, AkibanAppender out) {
+                out.append(Boolean.toString(source.getBoolean()));
+            }
+        }
+    }
 }

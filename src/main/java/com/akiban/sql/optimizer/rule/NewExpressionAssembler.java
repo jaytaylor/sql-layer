@@ -91,7 +91,6 @@ public final class NewExpressionAssembler extends ExpressionAssembler<TPreparedE
             overload = fexpr.getOverload();
         }
         else if (functionNode instanceof BooleanOperationExpression) {
-            BooleanOperationExpression bexpr = (BooleanOperationExpression) functionNode;
             List<TPreptimeValue> inputPreptimeValues = new ArrayList<TPreptimeValue>(argumentNodes.size());
             for (ExpressionNode argument : argumentNodes) {
                 inputPreptimeValues.add(argument.getPreptimeValue());
