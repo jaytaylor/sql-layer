@@ -34,7 +34,6 @@ import javax.swing.*;
 import javax.swing.text.*;
 
 import java.net.URL;
-import java.io.OutputStream;
 import java.io.PrintStream;
 
 public class SwingConsole extends JFrame implements WindowListener 
@@ -51,7 +50,7 @@ public class SwingConsole extends JFrame implements WindowListener
 
         this.serviceManager = serviceManager;
 
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
         addWindowListener(this);
         {
             boolean macOSX = "Mac OS X".equals(System.getProperty("os.name"));
@@ -65,7 +64,7 @@ public class SwingConsole extends JFrame implements WindowListener
                 JMenuItem quitMenuItem = new JMenuItem("Quit", KeyEvent.VK_Q);
                 quitMenuItem.addActionListener(new ActionListener() {
                         public void actionPerformed(ActionEvent e) {
-                            quit(true);
+                            quit();
                         }
                     });
                 quitMenuItem.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_Q, shift));
@@ -106,8 +105,12 @@ public class SwingConsole extends JFrame implements WindowListener
         JScrollPane scrollPane = new JScrollPane(textArea);
         add(scrollPane);
 
-        pack();
-        setLocation(200, 200);
+        // centerise the window
+        pack();       
+        Dimension screenSize = Toolkit.getDefaultToolkit().getScreenSize();
+        setSize(screenSize.width/2, screenSize.height/2);
+        setLocationRelativeTo(null);
+ 
         
         URL iconURL = SwingConsole.class.getClassLoader().getResource(SwingConsole.class.getPackage().getName().replace('.', '/') + "/" + ICON_PATH);
         if (iconURL != null) {
@@ -118,9 +121,9 @@ public class SwingConsole extends JFrame implements WindowListener
 
     @Override
     public void windowClosing(WindowEvent arg0) {
-        quit(false);
+        quit();
     }
-
+    
     @Override
     public void windowClosed(WindowEvent arg0) {
     }
@@ -177,19 +180,24 @@ public class SwingConsole extends JFrame implements WindowListener
         printStream = null;
     }
 
-    protected void quit(boolean force) {
-        switch (serviceManager.getState()) {
+    protected void quit() {
+        switch (serviceManager.getState()) {    
+        case ERROR_STARTING:
+            dispose();
+            break;
         default:
+            int yn = JOptionPane.showConfirmDialog(this, 
+                                                   "Do you really want to quit Akiban-Server?",
+                                                   "Attention!", 
+                                                    JOptionPane.YES_NO_OPTION,
+                                                    JOptionPane.QUESTION_MESSAGE);
+
+            if (yn != JOptionPane.YES_OPTION)
+                return;
             try {
                 serviceManager.stopServices();
             }
             catch (Exception ex) {
-            }
-            break;
-        case IDLE:
-        case ERROR_STARTING:
-            if (force) {
-                dispose();
             }
             break;
         }
