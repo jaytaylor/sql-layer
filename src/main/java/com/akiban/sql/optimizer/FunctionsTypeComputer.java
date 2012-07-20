@@ -304,7 +304,7 @@ public class FunctionsTypeComputer extends AISTypeComputer
         private final int nargs;
         public TernaryValuesAccess(TernaryOperatorNode node) {
             this.node = node;
-            nargs = node.getRightOperand() == ValueNode.NOT_SPECIFIED ? 2 : 3;
+            nargs = node.getRightOperand() == null ? 2 : 3;
         }
 
         @Override

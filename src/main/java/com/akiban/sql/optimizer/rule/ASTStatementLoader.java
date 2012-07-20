@@ -831,8 +831,9 @@ public class ASTStatementLoader extends BaseRule
             operands.add(toExpression(ternary.getLeftOperand(), projects));
             
             ValueNode third = ternary.getRightOperand();
-            if (third != ValueNode.NOT_SPECIFIED)
+            if (third != null)
                 operands.add(toExpression(third, projects));
+
             conditions.add(new FunctionCondition(ternary.getMethodName(),
                                                  operands,
                                                  ternary.getType(), ternary));
@@ -1230,10 +1231,11 @@ public class ASTStatementLoader extends BaseRule
                 operands.add(toExpression(ternary.getReceiver(), projects));
                 operands.add(toExpression(ternary.getLeftOperand(), projects));
                 
-                // absent argument is supposed to be different from null
+                // java null means not present
                 ValueNode third = ternary.getRightOperand();
-                if (third != ValueNode.NOT_SPECIFIED)
+                if (third != null)
                     operands.add(toExpression(third, projects));
+
                 return new FunctionExpression(ternary.getMethodName(),
                                               operands,
                                               ternary.getType(), ternary);

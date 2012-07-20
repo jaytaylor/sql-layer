@@ -53,4 +53,10 @@
 --- # test SUBSTR called with 2 args
 - Statement: SELECT SUBSTR('abcd', 1);
 - output: [['abcd']]
+--- # test with null literal
+- Statement: SELECT SUBSTR('abcd', null);
+- output: [[null]]
+---
+- Statement: SELECT SUBSTRING('abcd', 1, null);
+- output: [[null]]
 ...
