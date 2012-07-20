@@ -34,6 +34,7 @@ import com.akiban.server.types.extract.Extractors;
 import com.akiban.server.types3.aksql.aktypes.AkBool;
 import com.akiban.server.types3.texpressions.TEvaluatableExpression;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpressions;
 import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.ShareHolder;
@@ -172,7 +173,10 @@ class Select_HKeyOrdered extends Operator
         
         att.put(Label.NAME, PrimitiveExplainer.getInstance("Select_HKeyOrdered"));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
-        att.put(Label.PREDICATE, predicate.getExplainer());
+        if (predicate != null)
+            att.put(Label.PREDICATE, predicate.getExplainer());
+        else
+            att.put(Label.PREDICATE, TPreparedExpressions.getExplainer(pPredicate));
         return new OperationExplainer(Type.SELECT_HKEY, att);
     }
 

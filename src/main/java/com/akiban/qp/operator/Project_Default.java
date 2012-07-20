@@ -34,6 +34,7 @@ import com.akiban.qp.rowtype.RowType;
 import com.akiban.server.expression.Expression;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.texpressions.TPreparedExpression;
+import com.akiban.server.types3.texpressions.TPreparedExpressions;
 import com.akiban.sql.optimizer.explain.*;
 import com.akiban.util.ArgumentValidation;
 import com.akiban.util.tap.InOutTap;
@@ -202,8 +203,14 @@ class Project_Default extends Operator
         if (projectType.hasUserTable())
             att.put(Label.PROJECT_OPTION, PrimitiveExplainer.getInstance("Has User Table: " + projectType.userTable()));
         att.put(Label.INPUT_OPERATOR, inputOperator.getExplainer());
-        for (Expression ex : projections)
-            att.put(Label.PROJECTION, ex.getExplainer());
+        if (projections != null) {
+            for (Expression ex : projections)
+                att.put(Label.PROJECTION, ex.getExplainer());
+        }
+        else {
+            for (TPreparedExpression ex : pExpressions)
+                att.put(Label.PROJECTION, TPreparedExpressions.getExplainer(ex));
+        }
         return new OperationExplainer(Type.PROJECT, att);
     }
 
