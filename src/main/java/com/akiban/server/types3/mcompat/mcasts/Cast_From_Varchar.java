@@ -210,22 +210,22 @@ public class Cast_From_Varchar
         }
     };
     
-    public static final TCast TO_FLOAT = new TCastBase(MString.VARCHAR, MApproximateNumber.FLOAT, true, Constantness.UNKNOWN)
-    {
-
-        @Override
-        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
-        {
-            throw new UnsupportedOperationException("Not supported yet.");
-        }
-
-        @Override
-        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
-        {
-            FLOAT.parse(context, source, target);
-        }
-        
-    };
+//    public static final TCast TO_FLOAT = new TCastBase(MString.VARCHAR, MApproximateNumber.FLOAT, true, Constantness.UNKNOWN)
+//    {
+//
+//        @Override
+//        public TInstance targetInstance(TPreptimeContext context, TPreptimeValue preptimeInput, TInstance specifiedTarget)
+//        {
+//            throw new UnsupportedOperationException("Not supported yet.");
+//        }
+//
+//        @Override
+//        public void evaluate(TExecutionContext context, PValueSource source, PValueTarget target)
+//        {
+//            FLOAT.parse(context, source, target);
+//        }
+//        
+//    };
     
     public static final TCast TO_DOUBLE = new TCastBase(MString.VARCHAR, MApproximateNumber.DOUBLE, true, Constantness.UNKNOWN)
     {
