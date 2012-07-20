@@ -83,4 +83,14 @@ public class AkCollatorBinary extends AkCollator {
     public String toString() {
         return getName();
     }
+
+    @Override
+    public int hashCode(String string) {
+        return string.hashCode();
+    }
+
+    @Override
+    public int hashCode(Key key) {
+        return ((String)key.decode()).hashCode();
+    }
 }
