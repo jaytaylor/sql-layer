@@ -92,8 +92,11 @@ public class Format {
         {
             Explainer leftExplainer = atts.valuePairs().get(0).getValue();
             Explainer rightExplainer = atts.valuePairs().get(1).getValue();
-            if (name.equals(parentName) && atts.get(Label.ASSOCIATIVE).get(0).equals(PrimitiveExplainer.getInstance(true)))
-                needsParens = false;
+            if (name.equals(parentName) && atts.containsKey(Label.ASSOCIATIVE))
+            {
+                if(atts.get(Label.ASSOCIATIVE).get(0).equals(PrimitiveExplainer.getInstance(true)))
+                    needsParens = false;
+            }
             if (needsParens)
                 sb.append("(");
             describe(leftExplainer, sb, true, name);
@@ -303,7 +306,6 @@ public class Format {
                 }
                 break;
             case SORT:
-                //describe(atts.get(Label.INPUT_OPERATOR).get(0), sb);
                 int i = 0;
                 for (Explainer ex : atts.get(Label.EXPRESSIONS))
                 {

@@ -65,6 +65,7 @@ public final class BoolLogicExpression extends AbstractBinaryExpression {
     public Explainer getExplainer () {
         Explainer ex = new ExpressionExplainer (Type.BINARY_OPERATOR, name(), children());
         ex.addAttribute(Label.INFIX_REPRESENTATION, PrimitiveExplainer.getInstance(name()));
+        ex.addAttribute(Label.ASSOCIATIVE, PrimitiveExplainer.getInstance(true));
         return ex;
     }
     
