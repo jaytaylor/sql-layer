@@ -169,10 +169,13 @@ class IfEmpty_Default extends Operator
             this.oExpressions = null;
             validateExprs = pExpressions;
         }
-        else {
+        else if (expressions != null) {
             this.pExpressions = null;
             this.oExpressions = new ArrayList<Expression>(expressions);
             validateExprs = expressions;
+        }
+        else {
+            throw new IllegalArgumentException("both expressions lists are null");
         }
         ArgumentValidation.isEQ("rowType.nFields()", rowType.nFields(), "expressions.size()", validateExprs.size());
         this.inputPreservation = inputPreservation;
