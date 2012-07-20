@@ -27,6 +27,7 @@
 package com.akiban.sql.optimizer.rule;
 
 import com.akiban.server.types3.TPreptimeValue;
+import com.akiban.server.types3.Types3Switch;
 import com.akiban.server.types3.pvalue.PValueSource;
 import com.akiban.sql.optimizer.plan.*;
 import com.akiban.sql.optimizer.plan.ExpressionsSource.DistinctState;
@@ -52,6 +53,10 @@ public class ConstantFolder extends BaseRule
     private static final Logger logger = LoggerFactory.getLogger(ConstantFolder.class);
     
     private final boolean usePValues;
+    
+    public ConstantFolder() {
+        this(Types3Switch.ON);
+    }
 
     public ConstantFolder(boolean usePValues) {
         this.usePValues = usePValues;
