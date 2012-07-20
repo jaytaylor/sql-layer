@@ -28,6 +28,9 @@ package com.akiban.server.types3.texpressions;
 
 import com.akiban.qp.operator.QueryContext;
 import com.akiban.qp.row.Row;
+import com.akiban.server.types3.ErrorHandlingMode;
+import com.akiban.server.types3.TClass;
+import com.akiban.server.types3.TExecutionContext;
 import com.akiban.server.types3.TInstance;
 import com.akiban.server.types3.TPreptimeValue;
 import com.akiban.server.types3.pvalue.PValue;
@@ -72,7 +75,21 @@ public final class TPreparedParameter implements TPreparedExpression {
 
         @Override
         public void evaluate() {
-            pValue.putValueSource(context.getPValue(position));
+            if (!pValue.hasAnyValue()) { // only need to compute this once
+                TClass tClass = tInstance.typeClass();
+                PValueSource inSource = context.getPValue(position);
+                // TODO need a better execution context thinger
+                TExecutionContext executionContext = new TExecutionContext(
+                        null,
+                        null,
+                        tInstance,
+                        context,
+                        ErrorHandlingMode.WARN,
+                        ErrorHandlingMode.WARN,
+                        ErrorHandlingMode.WARN
+                );
+                tClass.fromObject(executionContext, inSource, pValue);
+            }
         }
 
         @Override
@@ -86,11 +103,13 @@ public final class TPreparedParameter implements TPreparedExpression {
 
         private InnerEvaluation(int position, TInstance tInstance) {
             this.position = position;
+            this.tInstance = tInstance;
             this.pValue = new PValue(tInstance.typeClass().underlyingType());
         }
 
         private final int position;
         private final PValue pValue;
         private QueryContext context;
+        private final TInstance tInstance;
     }
 }
