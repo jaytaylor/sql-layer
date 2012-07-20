@@ -23,36 +23,13 @@
  * USE OF THE SOFTWARE, THE TERMS AND CONDITIONS OF SUCH OTHER AGREEMENT SHALL
  * PREVAIL OVER ANY CONFLICTING TERMS OR CONDITIONS IN THIS AGREEMENT.
  */
-package com.akiban.sql.optimizer.explain;
+package com.akiban.qp.persistitadapter.sort;
 
-public abstract class Explainer {
-    public abstract Type getType();
-    
-    /**
-     * 
-     * @return a map of this object's attributes if it's an OperationExplainer
-     *         a primitive object (Integer, Double, etc ...), otherwise.
-     */
-    public abstract Object get();
-    
-    public abstract boolean hasAttributes();
- 
-    public abstract boolean addAttribute (Label label, Explainer ex);
-    
-    @Override
-    public final boolean equals (Object o)
-    {
-        if (o != null && o instanceof Explainer)
-        {
-            return ((Explainer)o).get() == get();
-        }
-        else
-            return false;
-    }
-    
-    @Override
-    public final int hashCode ()
-    {
-        return get().hashCode();
-    }
+import com.akiban.server.types.AkType;
+import com.akiban.server.types3.TInstance;
+import com.persistit.Key;
+
+public interface SortKeySource<S> {
+    void attach(Key key, int i, AkType fieldType, TInstance tInstance);
+    S asSource();
 }
